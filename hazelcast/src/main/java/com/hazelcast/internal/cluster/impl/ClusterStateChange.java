@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,12 @@ public class ClusterStateChange<T> implements IdentifiedDataSerializable {
         return newState;
     }
 
-    public <T> boolean isOfType(Class<T> type) {
+    public <T_SUGGESTED> boolean isOfType(Class<T_SUGGESTED> type) {
         return this.type.equals(type);
+    }
+
+    public ClusterState getClusterStateOrNull() {
+        return isOfType(ClusterState.class) ? (ClusterState) newState : null;
     }
 
     public void validate() {
@@ -101,7 +105,7 @@ public class ClusterStateChange<T> implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.CLUSTER_STATE_CHANGE;
     }
 

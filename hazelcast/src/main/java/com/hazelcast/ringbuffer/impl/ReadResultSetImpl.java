@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.internal.serialization.SerializationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractList;
+import java.util.function.Predicate;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_RESULT_SET;
@@ -52,7 +51,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_RE
  *            is {@code null} or returns the same type as the parameter
  */
 public class ReadResultSetImpl<O, E> extends AbstractList<E>
-        implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E>, Versioned {
+        implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E> {
 
     protected transient SerializationService serializationService;
     private transient int minSize;
@@ -191,7 +190,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return READ_RESULT_SET;
     }
 

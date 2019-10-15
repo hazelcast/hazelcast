@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class ReplicatedMapKeys implements Portable {
     private List<Data> keys;
 
     public ReplicatedMapKeys() {
-        this.keys = new ArrayList<Data>();
+        this.keys = new ArrayList<>();
     }
 
     public ReplicatedMapKeys(List<Data> keys) {
@@ -59,7 +59,7 @@ public class ReplicatedMapKeys implements Portable {
     public void readPortable(PortableReader reader) throws IOException {
         int size = reader.readInt("size");
         ObjectDataInput in = reader.getRawDataInput();
-        keys = new ArrayList<Data>(size);
+        keys = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readData());
         }

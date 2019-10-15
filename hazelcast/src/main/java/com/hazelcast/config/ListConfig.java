@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.IList;
+
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IList}.
+ * Contains the configuration for an {@link IList}.
  */
 public class ListConfig extends CollectionConfig<ListConfig> {
-
-    private transient ListConfigReadOnly readOnly;
 
     public ListConfig() {
     }
@@ -34,22 +34,8 @@ public class ListConfig extends CollectionConfig<ListConfig> {
         super(config);
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
     @Override
-    public ListConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ListConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.LIST_CONFIG;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,18 @@ package com.hazelcast.config.replacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Properties;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.StringUtil.UTF8_CHARSET;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
 
 /**
  * The common parent for {@link ConfigReplacer} implementations which allow to mask values by encrypting the value. This parent
@@ -126,8 +126,8 @@ public abstract class AbstractPbeReplacer implements ConfigReplacer {
         byte[] salt = new byte[saltLengthBytes];
         secureRandom.nextBytes(salt);
         byte[] encryptedVal = transform(Cipher.ENCRYPT_MODE, secretStr.getBytes(UTF8_CHARSET), salt, iterations);
-        return new String(Base64.encode(salt), UTF8_CHARSET) + ":" + iterations + ":"
-                + new String(Base64.encode(encryptedVal), UTF8_CHARSET);
+        return new String(Base64.getEncoder().encode(salt), UTF8_CHARSET) + ":" + iterations + ":"
+                + new String(Base64.getEncoder().encode(encryptedVal), UTF8_CHARSET);
     }
 
     /**
@@ -139,10 +139,10 @@ public abstract class AbstractPbeReplacer implements ConfigReplacer {
     protected String decrypt(String encryptedStr) throws Exception {
         String[] split = encryptedStr.split(":");
         checkTrue(split.length == 3, "Wrong format of the encrypted variable (" + encryptedStr + ")");
-        byte[] salt = Base64.decode(split[0].getBytes(UTF8_CHARSET));
+        byte[] salt = Base64.getDecoder().decode(split[0].getBytes(UTF8_CHARSET));
         checkTrue(salt.length == saltLengthBytes, "Salt length doesn't match.");
         int iterations = Integer.parseInt(split[1]);
-        byte[] encryptedVal = Base64.decode(split[2].getBytes(UTF8_CHARSET));
+        byte[] encryptedVal = Base64.getDecoder().decode(split[2].getBytes(UTF8_CHARSET));
         return new String(transform(Cipher.DECRYPT_MODE, encryptedVal, salt, iterations), UTF8_CHARSET);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.client.impl.spi.ClientContext;
+import com.hazelcast.client.impl.spi.ClientProxy;
+import com.hazelcast.client.impl.spi.ClientProxyFactory;
 
 public class DummyProxyFactory implements ClientProxyFactory {
 
     @Override
-    public ClientProxy create(String id) {
+    public ClientProxy create(String id, ClientContext context) {
         throw new UnsupportedOperationException("not implemented yet");
     }
 }

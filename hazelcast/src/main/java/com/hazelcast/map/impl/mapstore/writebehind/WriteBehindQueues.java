@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A class providing static factory methods that create write behind queues.
@@ -28,31 +27,29 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static WriteBehindQueue<DelayedEntry> createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter) {
-        final WriteBehindQueue<DelayedEntry> queue = createCyclicWriteBehindQueue();
-        final WriteBehindQueue<DelayedEntry> boundedQueue = createBoundedWriteBehindQueue(maxCapacity, counter, queue);
-        return createSynchronizedWriteBehindQueue(boundedQueue);
+    public static WriteBehindQueue<DelayedEntry> createDefaultWriteBehindQueue() {
+        return createSynchronizedWriteBehindQueue(createCoalescedWriteBehindQueue());
     }
 
-    public static WriteBehindQueue<DelayedEntry> createDefaultWriteBehindQueue() {
-        final WriteBehindQueue<DelayedEntry> queue = createCoalescedWriteBehindQueue();
-        return createSynchronizedWriteBehindQueue(queue);
+    public static WriteBehindQueue<DelayedEntry> createBoundedWriteBehindQueue(MapStoreContext mapStoreContext) {
+        NodeWideUsedCapacityCounter counter = mapStoreContext.getMapServiceContext().getNodeWideUsedCapacityCounter();
+        return createSynchronizedWriteBehindQueue(createBoundedWriteBehindQueue(createCyclicWriteBehindQueue(), counter));
+    }
+
+    static WriteBehindQueue<DelayedEntry> createCoalescedWriteBehindQueue() {
+        return new CoalescedWriteBehindQueue();
+    }
+
+    static <T extends DelayedEntry> WriteBehindQueue<T> createBoundedWriteBehindQueue(WriteBehindQueue<T> queue,
+                                                                                      NodeWideUsedCapacityCounter counter) {
+        return new BoundedWriteBehindQueue<>(queue, counter);
     }
 
     private static <T> WriteBehindQueue<T> createSynchronizedWriteBehindQueue(WriteBehindQueue<T> queue) {
-        return new SynchronizedWriteBehindQueue<T>(queue);
-    }
-
-    private static WriteBehindQueue<DelayedEntry> createCoalescedWriteBehindQueue() {
-        return new CoalescedWriteBehindQueue();
+        return new SynchronizedWriteBehindQueue<>(queue);
     }
 
     private static WriteBehindQueue<DelayedEntry> createCyclicWriteBehindQueue() {
         return new CyclicWriteBehindQueue();
-    }
-
-    private static <T> WriteBehindQueue<T> createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter,
-                                                                  WriteBehindQueue<T> queue) {
-        return new BoundedWriteBehindQueue<T>(maxCapacity, counter, queue);
     }
 }

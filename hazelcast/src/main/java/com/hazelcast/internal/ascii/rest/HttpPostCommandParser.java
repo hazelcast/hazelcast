@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
-import com.hazelcast.nio.ascii.TextDecoder;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ascii.TextDecoder;
 
 import java.util.StringTokenizer;
 
@@ -29,6 +30,11 @@ public class HttpPostCommandParser implements CommandParser {
 
     @Override
     public TextCommand parser(TextDecoder decoder, String cmd, int space) {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public TextCommand parser(TextDecoder decoder, String cmd, int space, Connection connection) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String uri;
@@ -37,6 +43,6 @@ public class HttpPostCommandParser implements CommandParser {
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }
-        return new HttpPostCommand(decoder, uri);
+        return new HttpPostCommand(decoder, uri, connection);
     }
 }

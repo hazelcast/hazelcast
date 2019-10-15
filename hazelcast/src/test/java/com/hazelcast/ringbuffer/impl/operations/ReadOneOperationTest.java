@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,16 @@ import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
@@ -40,7 +42,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadOneOperationTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz;
@@ -49,6 +51,9 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
     private Ringbuffer<Object> ringbuffer;
     private RingbufferContainer ringbufferContainer;
     private RingbufferService ringbufferService;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -99,7 +104,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
         assertTrue(shouldWait);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void whenTooFarAfterTail() throws Exception {
         ringbuffer.add("tail");
 
@@ -107,6 +112,8 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
 
         // since there is an item, we don't need to wait
         op.shouldWait();
+        expectedException.expect(IllegalArgumentException.class);
+        op.beforeRun();
     }
 
     @Test
@@ -118,12 +125,14 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
         assertTrue(shouldWait);
     }
 
-    @Test(expected = StaleSequenceException.class)
+    @Test
     public void whenOnTailAndBufferEmpty() throws Exception {
         ReadOneOperation op = getReadOneOperation(ringbuffer.tailSequence());
 
         // since there is an item, we don't need to wait
         op.shouldWait();
+        expectedException.expect(StaleSequenceException.class);
+        op.beforeRun();
     }
 
     @Test
@@ -160,7 +169,7 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
         assertEquals(toData("item1"), op.getResponse());
     }
 
-    @Test(expected = StaleSequenceException.class)
+    @Test
     public void whenBeforeHead() throws Exception {
         ringbuffer.add("item1");
         ringbuffer.add("item2");
@@ -172,6 +181,8 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
         ReadOneOperation op = getReadOneOperation(oldhead);
 
         op.shouldWait();
+        expectedException.expect(StaleSequenceException.class);
+        op.beforeRun();
     }
 
     private ReadOneOperation getReadOneOperation(long seq) {

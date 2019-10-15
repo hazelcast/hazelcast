@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.scheduledexecutor.impl.NamedTaskDecorator;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.concurrent.Callable;
 
 /**
  * A helper class with utilities to act upon {@link Runnable} and/or {@link Callable} tasks.
  */
-@Beta
 public final class TaskUtils {
 
     private TaskUtils() {

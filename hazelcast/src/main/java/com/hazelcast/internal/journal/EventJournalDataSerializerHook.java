@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public final class EventJournalDataSerializerHook implements DataSerializerHook 
      * Type ID for the {@link EventJournalInitialSubscriberState} class
      */
     public static final int EVENT_JOURNAL_INITIAL_SUBSCRIBER_STATE = 1;
+    public static final int DESERIALIZING_ENTRY = 2;
 
     @Override
     public int getFactoryId() {
@@ -52,6 +53,8 @@ public final class EventJournalDataSerializerHook implements DataSerializerHook 
                 switch (typeId) {
                     case EVENT_JOURNAL_INITIAL_SUBSCRIBER_STATE:
                         return new EventJournalInitialSubscriberState();
+                    case DESERIALIZING_ENTRY:
+                        return new DeserializingEntry();
                     default:
                         return null;
                 }

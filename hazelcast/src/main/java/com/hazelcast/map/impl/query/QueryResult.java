@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,22 +21,23 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.SortingUtil;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.SortingUtil;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullablePartitionIdSet;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullablePartitionIdSet;
 
 /**
  * Represents a result of the query execution in the form of an iterable
@@ -59,11 +60,11 @@ import java.util.Map;
  * QueryResultRow rows} and no further conversion is performed.
  * </ol>
  */
-public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializable, Iterable<QueryResultRow> {
+public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow> {
 
     private List rows = new LinkedList();
 
-    private Collection<Integer> partitionIds;
+    private PartitionIdSet partitionIds;
     private IterationType iterationType;
 
     private final transient SerializationService serializationService;
@@ -167,7 +168,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
     }
 
     @Override
-    public void completeConstruction(Collection<Integer> partitionIds) {
+    public void completeConstruction(PartitionIdSet partitionIds) {
         setPartitionIds(partitionIds);
         if (orderAndLimitExpected) {
             for (ListIterator iterator = rows.listIterator(); iterator.hasNext(); ) {
@@ -185,20 +186,21 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
     }
 
     @Override
-    public Collection<Integer> getPartitionIds() {
+    public PartitionIdSet getPartitionIds() {
         return partitionIds;
     }
 
     @Override
     public void combine(QueryResult result) {
-        Collection<Integer> otherPartitionIds = result.getPartitionIds();
+        PartitionIdSet otherPartitionIds = result.getPartitionIds();
         if (otherPartitionIds == null) {
             return;
         }
         if (partitionIds == null) {
-            partitionIds = new ArrayList<Integer>(otherPartitionIds.size());
+            partitionIds = new PartitionIdSet(otherPartitionIds);
+        } else {
+            partitionIds.addAll(otherPartitionIds);
         }
-        partitionIds.addAll(otherPartitionIds);
         rows.addAll(result.rows);
     }
 
@@ -207,8 +209,8 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
     }
 
     @Override
-    public void setPartitionIds(Collection<Integer> partitionIds) {
-        this.partitionIds = new ArrayList<Integer>(partitionIds);
+    public void setPartitionIds(PartitionIdSet partitionIds) {
+        this.partitionIds = new PartitionIdSet(partitionIds);
     }
 
     /**
@@ -224,20 +226,13 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.QUERY_RESULT;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        int partitionSize = (partitionIds == null) ? 0 : partitionIds.size();
-        out.writeInt(partitionSize);
-        if (partitionSize > 0) {
-            for (Integer partitionId : partitionIds) {
-                out.writeInt(partitionId);
-            }
-        }
-
+        writeNullablePartitionIdSet(partitionIds, out);
         out.writeByte(iterationType.getId());
 
         int resultSize = rows.size();
@@ -251,13 +246,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        int partitionSize = in.readInt();
-        if (partitionSize > 0) {
-            partitionIds = new ArrayList<Integer>(partitionSize);
-            for (int i = 0; i < partitionSize; i++) {
-                partitionIds.add(in.readInt());
-            }
-        }
+        partitionIds = readNullablePartitionIdSet(in);
 
         iterationType = IterationType.getById(in.readByte());
 

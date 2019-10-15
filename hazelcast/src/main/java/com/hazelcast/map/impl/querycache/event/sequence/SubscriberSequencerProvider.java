@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,8 @@ public interface SubscriberSequencerProvider {
      * @param expect      the expected sequence.
      * @param update      the new sequence.
      * @param partitionId ID of the partition.
-     * @return {@code true} if Compare-and-Set operation is successful, otherwise returns {@code false}.
+     * @return {@code true} if Compare-and-Set operation
+     * is successful, otherwise returns {@code false}.
      */
     boolean compareAndSetSequence(long expect, long update, int partitionId);
 
@@ -47,4 +48,9 @@ public interface SubscriberSequencerProvider {
      * @param partitionId ID of the partition.
      */
     void reset(int partitionId);
+
+    /**
+     * Like {@link #reset(int)} but this method resets all partition sequences.
+     */
+    void resetAll();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,19 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * An extension of the {@link EventProcessor} which logs and swallows any exception while processing the event.
  * The {@link #orderKey} for this processor is equal to the packet partition ID. This means that when running
- * inside a {@link com.hazelcast.util.executor.StripedExecutor}, all events for the same partition ID will be ordered.
+ * inside a {@link com.hazelcast.internal.util.executor.StripedExecutor}, all events for the same partition ID will be ordered.
  *
- * @see EventServiceImpl#sendEvent(com.hazelcast.nio.Address, EventEnvelope, int)
+ * @see EventServiceImpl#sendEvent(Address, EventEnvelope, int)
  */
 public class RemoteEventProcessor extends EventProcessor implements StripedRunnable {
 

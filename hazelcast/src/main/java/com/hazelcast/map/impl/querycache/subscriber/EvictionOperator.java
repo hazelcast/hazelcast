@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,12 +77,7 @@ class EvictionOperator {
     }
 
     private EvictionChecker createCacheEvictionChecker() {
-        return new EvictionChecker() {
-            @Override
-            public boolean isEvictionRequired() {
-                return cache.size() >= evictionConfig.getSize();
-            }
-        };
+        return () -> cache.size() >= evictionConfig.getSize();
     }
 
     private EvictionPolicyEvaluator<Data, QueryCacheRecord> createEvictionPolicyEvaluator() {

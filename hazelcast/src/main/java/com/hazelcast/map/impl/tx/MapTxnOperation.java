@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.spi.Notifier;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+
+import java.util.UUID;
 
 /**
- * Transactional operation interface for {@link com.hazelcast.core.IMap}
+ * Transactional operation interface for {@link IMap}
  */
 public interface MapTxnOperation extends Notifier {
 
@@ -29,5 +32,7 @@ public interface MapTxnOperation extends Notifier {
 
     void setThreadId(long threadId);
 
-    void setOwnerUuid(String ownerUuid);
+    void setOwnerUuid(UUID ownerUuid);
+
+    void setTransactionId(UUID transactionId);
 }

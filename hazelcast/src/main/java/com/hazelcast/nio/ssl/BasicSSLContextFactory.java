@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,22 @@
 
 package com.hazelcast.nio.ssl;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import java.util.Properties;
 
-public class BasicSSLContextFactory extends SSLEngineFactorySupport implements SSLContextFactory {
+import javax.net.ssl.SSLContext;
 
-    private SSLContext sslContext;
+/**
+ * Empty implementation. The real one is part of hazelcast-enterprise.
+ */
+public class BasicSSLContextFactory implements SSLContextFactory {
 
     @Override
     public void init(Properties properties) throws Exception {
-        load(properties);
-        KeyManager[] keyManagers = kmf == null ? null : kmf.getKeyManagers();
-        TrustManager[] trustManagers = tmf == null ? null : tmf.getTrustManagers();
-
-        sslContext = SSLContext.getInstance(protocol);
-        sslContext.init(keyManagers, trustManagers, null);
     }
 
     @Override
     public SSLContext getSSLContext() {
-        return sslContext;
+        return null;
     }
 
 }

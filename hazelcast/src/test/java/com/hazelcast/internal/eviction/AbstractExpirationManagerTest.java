@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,7 +148,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
 
     @Test
     public void gets_taskPeriodSeconds_from_config() {
-        Config config = new Config();
+        Config config = getConfig();
         String taskPeriodSeconds = "77";
         config.setProperty(taskPeriodSecondsPropName(), taskPeriodSeconds);
         HazelcastInstance node = createHazelcastInstance(config);
@@ -159,7 +159,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
 
     @Test
     public void gets_cleanupPercentage_from_config() {
-        Config config = new Config();
+        Config config = getConfig();
         String cleanupPercentage = "99";
         config.setProperty(cleanupPercentagePropName(), cleanupPercentage);
         HazelcastInstance node = createHazelcastInstance(config);
@@ -170,7 +170,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
 
     @Test
     public void gets_cleanupOperationCount_from_config() {
-        Config config = new Config();
+        Config config = getConfig();
         String cleanupOperationCount = "777";
         config.setProperty(cleanupOperationCountPropName(), cleanupOperationCount);
         HazelcastInstance node = createHazelcastInstance(config);
@@ -181,7 +181,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
 
     @Test
     public void stops_running_when_clusterState_turns_passive() {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(taskPeriodSecondsPropName(), "1");
         HazelcastInstance node = createHazelcastInstance(config);
 
@@ -198,7 +198,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
 
     @Test
     public void starts_running_when_clusterState_turns_active() {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(taskPeriodSecondsPropName(), "1");
         HazelcastInstance node = createHazelcastInstance(config);
 

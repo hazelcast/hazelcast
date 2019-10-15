@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,43 +17,46 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
-import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.services.ClientAwareService;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.internal.services.LockInterceptorService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.NotifiableEventListener;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.ReplicationSupportingService;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.spi.ClientAwareService;
-import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.NotifiableEventListener;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareService;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.PartitionAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 
@@ -70,15 +73,15 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  * @see MapReplicationSupportingService
  * @see MapStatisticsAwareService
  * @see MapPartitionAwareService
- * @see MapQuorumAwareService
+ * @see MapSplitBrainProtectionAwareService
  * @see MapClientAwareService
  * @see MapServiceContext
  */
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
-        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener,
-        ClusterVersionListener {
+        PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService, NotifiableEventListener,
+        ClusterStateListener, LockInterceptorService<Data> {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -93,10 +96,8 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected StatisticsAwareService statisticsAwareService;
     protected PartitionAwareService partitionAwareService;
     protected ClientAwareService clientAwareService;
-    protected MapQuorumAwareService quorumAwareService;
+    protected MapSplitBrainProtectionAwareService splitBrainProtectionAwareService;
     protected MapServiceContext mapServiceContext;
-    // RU_COMPAT_V3_9
-    protected MapIndexSynchronizer mapIndexSynchronizer;
 
     public MapService() {
     }
@@ -163,19 +164,19 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
-        return remoteService.createDistributedObject(objectName);
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
+        return remoteService.createDistributedObject(objectName, local);
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
-        remoteService.destroyDistributedObject(objectName);
-        quorumAwareService.onDestroy(objectName);
+    public void destroyDistributedObject(String objectName, boolean local) {
+        remoteService.destroyDistributedObject(objectName, local);
+        splitBrainProtectionAwareService.onDestroy(objectName);
     }
 
     @Override
-    public void onReplicationEvent(WanReplicationEvent replicationEvent) {
-        replicationSupportingService.onReplicationEvent(replicationEvent);
+    public void onReplicationEvent(WanReplicationEvent event, WanAcknowledgeType acknowledgeType) {
+        replicationSupportingService.onReplicationEvent(event, acknowledgeType);
     }
 
     @Override
@@ -194,7 +195,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
         transactionalService.rollbackTransaction(transactionId);
     }
 
@@ -204,8 +205,8 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public String getQuorumName(String name) {
-        return quorumAwareService.getQuorumName(name);
+    public String getSplitBrainProtectionName(String name) {
+        return splitBrainProtectionAwareService.getSplitBrainProtectionName(name);
     }
 
     public MapServiceContext getMapServiceContext() {
@@ -213,7 +214,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void clientDisconnected(String clientUuid) {
+    public void clientDisconnected(UUID clientUuid) {
         clientAwareService.clientDisconnected(clientUuid);
     }
 
@@ -253,10 +254,11 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    // RU_COMPAT_V3_9
-    // We wont need to sync the indexes in 3.10+ clusters.
-    public void onClusterVersionChange(Version newVersion) {
-        mapIndexSynchronizer.onClusterVersionChange(newVersion);
+    public void onBeforeLock(String distributedObjectName, Data key) {
+        int partitionId = mapServiceContext.getNodeEngine().getPartitionService().getPartitionId(key);
+        RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
+        // we have no use for the return value, invoked just for the side-effects
+        recordStore.getRecordOrNull(key);
     }
 
     public static ObjectNamespace getObjectNamespace(String mapName) {

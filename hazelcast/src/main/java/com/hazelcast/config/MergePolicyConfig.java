@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
+import java.util.Objects;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for {@link SplitBrainMergePolicy}.
@@ -44,8 +45,6 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
 
     private String policy = DEFAULT_MERGE_POLICY;
     private int batchSize = DEFAULT_BATCH_SIZE;
-
-    private MergePolicyConfig readOnly;
 
     public MergePolicyConfig() {
     }
@@ -72,11 +71,14 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     /**
      * Sets the classname of your {@link SplitBrainMergePolicy}.
      * <p>
-     * For the out-of-the-box merge policies the simple classname is sufficient, e.g. {@code PutIfAbsentMergePolicy}.
-     * But also the fully qualified classname is fine, e.g. com.hazelcast.spi.merge.PutIfAbsentMergePolicy.
-     * For a custom merge policy the fully qualified classname is needed.
+     * For the out-of-the-box merge policies the simple classname
+     * is sufficient, e.g. {@code PutIfAbsentMergePolicy}.
+     * But also the fully qualified classname is fine, e.g.
+     * com.hazelcast.spi.merge.PutIfAbsentMergePolicy. For a
+     * custom merge policy the fully qualified classname is needed.
      * <p>
-     * Must be a non-empty string. The default value is {@code PutIfAbsentMergePolicy}.
+     * Must be a non-empty string. The default
+     * value is {@code PutIfAbsentMergePolicy}.
      *
      * @param policy the classname of the merge policy
      * @return this {@code MergePolicyConfig} instance
@@ -87,7 +89,8 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the batch size, which will be used to determine the number of entries to be sent in a merge operation.
+     * Returns the batch size, which will be used to determine
+     * the number of entries to be sent in a merge operation.
      *
      * @return the batch size
      */
@@ -96,9 +99,11 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets the batch size, which will be used to determine the number of entries to be sent in a merge operation.
+     * Sets the batch size, which will be used to determine
+     * the number of entries to be sent in a merge operation.
      * <p>
-     * Must be a positive number. Set to {@code 1} to disable batching. The default value is {@value #DEFAULT_BATCH_SIZE}.
+     * Must be a positive number. Set to {@code 1} to disable
+     * batching. The default value is {@value #DEFAULT_BATCH_SIZE}.
      *
      * @param batchSize the batch size
      * @return this {@code MergePolicyConfig} instance
@@ -114,7 +119,7 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.MERGE_POLICY_CONFIG;
     }
 
@@ -143,7 +148,7 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
         if (batchSize != that.batchSize) {
             return false;
         }
-        return policy != null ? policy.equals(that.policy) : that.policy == null;
+        return Objects.equals(policy, that.policy);
     }
 
     @Override
@@ -159,35 +164,5 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
                 + "policy='" + policy + '\''
                 + ", batchSize=" + batchSize
                 + '}';
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MergePolicyConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MergePolicyConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    private static class MergePolicyConfigReadOnly extends MergePolicyConfig {
-
-        MergePolicyConfigReadOnly(MergePolicyConfig mergePolicyConfig) {
-            super(mergePolicyConfig);
-        }
-
-        @Override
-        public MergePolicyConfig setPolicy(String policy) {
-            throw new UnsupportedOperationException("This is a read-only configuration");
-        }
-
-        @Override
-        public MergePolicyConfig setBatchSize(int batchSize) {
-            throw new UnsupportedOperationException("This is a read-only configuration");
-        }
     }
 }

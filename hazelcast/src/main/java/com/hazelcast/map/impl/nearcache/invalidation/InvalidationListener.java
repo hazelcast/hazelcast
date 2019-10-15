@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.MapListener;
 
 /**
- * Used to receive invalidation events from an {@link com.hazelcast.core.IMap IMap}
- * <p/>
+ * Used to receive invalidation events from an {@link IMap IMap}
+ * <p>
  * For example, a client Near Cache implementation can listen changes in IMap data and
  * can remove stale data in its own cache.
  *

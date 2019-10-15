@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
-import com.hazelcast.util.ItemCounter;
+import com.hazelcast.internal.util.ItemCounter;
 
 import java.util.Map;
 import java.util.Set;
@@ -31,9 +31,9 @@ import java.util.Set;
  * {@link NioPipeline} should be migrated.
  */
 class LoadImbalance {
-    //number of events recorded by the busiest NioThread
+    //load recorded by the busiest NioThread
     long maximumLoad;
-    //number of events recorded by the least busy NioThread
+    //load recorded by the least busy NioThread
     long minimumLoad;
     //busiest NioThread
     NioThread srcOwner;

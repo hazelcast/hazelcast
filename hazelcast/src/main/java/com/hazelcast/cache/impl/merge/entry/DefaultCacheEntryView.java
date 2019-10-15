@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,10 @@ package com.hazelcast.cache.impl.merge.entry;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -31,7 +29,7 @@ import java.io.IOException;
  * Default heap based implementation of {@link com.hazelcast.cache.CacheEntryView}.
  */
 public class DefaultCacheEntryView
-        implements CacheEntryView<Data, Data>, IdentifiedDataSerializable, Versioned {
+        implements CacheEntryView<Data, Data>, IdentifiedDataSerializable {
 
     private Data key;
     private Data value;
@@ -104,10 +102,7 @@ public class DefaultCacheEntryView
         out.writeLong(accessHit);
         out.writeData(key);
         out.writeData(value);
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeData(expiryPolicy);
-        }
+        out.writeData(expiryPolicy);
     }
 
     @Override
@@ -118,13 +113,7 @@ public class DefaultCacheEntryView
         accessHit = in.readLong();
         key = in.readData();
         value = in.readData();
-        // RU_COMPAT_3_10
-        // DO NOT REMOVE UNTIL WAN PROTOCOL HAS BEEN IMPLEMENTED
-        // THE SOURCE CLUSTER SERIALIZES THE com.hazelcast.map.impl.wan.WanMapEntryView
-        // THE TARGET CLUSTER SHOULD DESERIALIZE THIS CLASS
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            expiryPolicy = in.readData();
-        }
+        expiryPolicy = in.readData();
     }
 
     @Override
@@ -133,7 +122,7 @@ public class DefaultCacheEntryView
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.DEFAULT_CACHE_ENTRY_VIEW;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,10 @@ import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
 import java.security.Permission;
@@ -32,7 +33,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class CacheAddNearCacheInvalidationListenerTask
-        extends AbstractCallableMessageTask<CacheAddNearCacheInvalidationListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<CacheAddNearCacheInvalidationListenerCodec.RequestParameters>
+        implements ListenerMessageTask {
 
     public CacheAddNearCacheInvalidationListenerTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,7 +48,7 @@ public class CacheAddNearCacheInvalidationListenerTask
                 = new NearCacheInvalidationListener(endpoint, cacheContext,
                 nodeEngine.getLocalMember().getUuid(), clientMessage.getCorrelationId());
 
-        String registrationId =
+        UUID registrationId =
                 cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
         endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
@@ -55,19 +57,19 @@ public class CacheAddNearCacheInvalidationListenerTask
     private final class NearCacheInvalidationListener extends AbstractCacheClientNearCacheInvalidationListener {
 
         NearCacheInvalidationListener(ClientEndpoint endpoint, CacheContext cacheContext,
-                                      String localMemberUuid, long correlationId) {
+                                      UUID localMemberUuid, long correlationId) {
             super(endpoint, cacheContext, localMemberUuid, correlationId);
         }
 
         @Override
-        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
+        protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<UUID> sourceUuids,
                                                         List<UUID> partitionUuids, List<Long> sequences) {
             return CacheAddNearCacheInvalidationListenerCodec.encodeCacheBatchInvalidationEvent(name, keys,
                     sourceUuids, partitionUuids, sequences);
         }
 
         @Override
-        protected ClientMessage encodeSingleInvalidation(String name, Data key, String sourceUuid,
+        protected ClientMessage encodeSingleInvalidation(String name, Data key, UUID sourceUuid,
                                                          UUID partitionUuid, long sequence) {
             return CacheAddNearCacheInvalidationListenerCodec.encodeCacheInvalidationEvent(name, key,
                     sourceUuid, partitionUuid, sequence);
@@ -91,7 +93,7 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddNearCacheInvalidationListenerCodec.encodeResponse((String) response);
+        return CacheAddNearCacheInvalidationListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

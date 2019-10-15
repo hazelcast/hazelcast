@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,30 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
  * Sent by the master to all members to finalize the join operation from a joining/returning node.
@@ -45,13 +48,13 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     /**
      * Operations to be executed before node is marked as joined.
-     * @see com.hazelcast.spi.PreJoinAwareService
+     * @see PreJoinAwareService
      * @since 3.9
      */
     private OnJoinOp preJoinOp;
     /** The operation to be executed on the target node after join completes, can be {@code null}. */
     private OnJoinOp postJoinOp;
-    private String clusterId;
+    private UUID clusterId;
     private long clusterStartTime;
     private ClusterState clusterState;
     private Version clusterVersion;
@@ -63,8 +66,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public FinalizeJoinOp(String targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
-                          long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
+    public FinalizeJoinOp(UUID targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
+                          long masterTime, UUID clusterId, long clusterStartTime, ClusterState clusterState,
                           Version clusterVersion, PartitionRuntimeState partitionRuntimeState) {
         super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.preJoinOp = preJoinOp;
@@ -79,8 +82,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
-        String callerUuid = getCallerUuid();
-        String targetUuid = getTargetUuid();
+        UUID callerUuid = getCallerUuid();
+        UUID targetUuid = getTargetUuid();
 
         checkDeserializationFailure(clusterService);
 
@@ -139,9 +142,9 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
 
         // Post join operations must be lock free; means no locks at all;
         // no partition locks, no key-based locks, no service level locks!
-        final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
+        Collection<Operation> postJoinOperations = nodeEngine.getPostJoinOperations();
 
-        if (postJoinOperations != null && postJoinOperations.length > 0) {
+        if (postJoinOperations != null && !postJoinOperations.isEmpty()) {
             final OperationService operationService = nodeEngine.getOperationService();
             final Collection<Member> members = clusterService.getMembers();
 
@@ -157,43 +160,36 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @Override
     protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         super.writeInternalImpl(out);
-
-        boolean hasPJOp = postJoinOp != null;
-        out.writeBoolean(hasPJOp);
-        if (hasPJOp) {
-            postJoinOp.writeData(out);
-        }
-        out.writeUTF(clusterId);
+        UUIDSerializationUtil.writeUUID(out, clusterId);
         out.writeLong(clusterStartTime);
         out.writeUTF(clusterState.toString());
         out.writeObject(clusterVersion);
         out.writeObject(preJoinOp);
+        out.writeObject(postJoinOp);
     }
 
     @Override
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
         super.readInternalImpl(in);
-
-        boolean hasPostJoinOp = in.readBoolean();
-        if (hasPostJoinOp) {
-            postJoinOp = new OnJoinOp();
-            try {
-                postJoinOp.readData(in);
-            } catch (Exception e) {
-                deserializationFailure = e;
-                // return immediately, do not attempt to read further
-                return;
-            }
-        }
-        clusterId = in.readUTF();
+        clusterId = UUIDSerializationUtil.readUUID(in);
         clusterStartTime = in.readLong();
         String stateName = in.readUTF();
         clusterState = ClusterState.valueOf(stateName);
         clusterVersion = in.readObject();
+        preJoinOp = readOnJoinOp(in);
+        postJoinOp = readOnJoinOp(in);
+    }
+
+    private OnJoinOp readOnJoinOp(ObjectDataInput in) {
+        if (deserializationFailure != null) {
+            // return immediately, do not attempt to read further
+            return null;
+        }
         try {
-            preJoinOp = in.readObject();
+            return in.readObject();
         } catch (Exception e) {
             deserializationFailure = e;
+            return null;
         }
     }
 
@@ -204,7 +200,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.FINALIZE_JOIN;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,13 @@ public interface AccumulatorHandler<T> {
      * Handles element.
      *
      * @param element     the element to be processed.
-     * @param lastElement {@code true} if this is the last element got from the {@code Accumulator}, otherwise {@code false}.
+     * @param lastElement {@code true} if this is the last element
+     *                    got from the {@code Accumulator}, otherwise {@code false}.
      */
     void handle(T element, boolean lastElement);
+
+    /**
+     * Resets this handler to its initial state.
+     */
+    void reset();
 }

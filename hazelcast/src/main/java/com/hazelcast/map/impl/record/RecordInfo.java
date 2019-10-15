@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,16 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_11;
 import static com.hazelcast.map.impl.record.Record.NOT_AVAILABLE;
 
 /**
  * Record info.
  */
 public class RecordInfo
-        implements IdentifiedDataSerializable, Versioned {
+        implements IdentifiedDataSerializable {
     protected long version;
     protected long ttl;
     protected long maxIdle;
@@ -147,11 +145,7 @@ public class RecordInfo
             out.writeLong(lastStoredTime);
             out.writeLong(expirationTime);
         }
-
-        //RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -166,11 +160,7 @@ public class RecordInfo
         boolean statsEnabled = in.readBoolean();
         lastStoredTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
         expirationTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
-
-        //RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
+        maxIdle = in.readLong();
 
     }
 
@@ -195,7 +185,7 @@ public class RecordInfo
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.RECORD_INFO;
     }
 }

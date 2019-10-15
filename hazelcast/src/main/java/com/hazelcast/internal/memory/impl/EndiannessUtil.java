@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.internal.memory.MemoryAccessor;
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
+import java.nio.ByteBuffer;
 
 /**
  * A utility class with methods that read/write multibyte values from/to byte-addressed memory, with
@@ -36,6 +37,11 @@ public final class EndiannessUtil {
      * Accesses bytes in a Java byte array
      */
     public static final ByteAccessStrategy<byte[]> BYTE_ARRAY_ACCESS = ByteArrayAccessStrategy.INSTANCE;
+
+    /**
+     * Accesses bytes in a Java ByteBuffer
+     */
+    public static final ByteAccessStrategy<ByteBuffer> BYTE_BUFFER_ACCESS = ByteBufferAccessStrategy.INSTANCE;
 
     /**
      * Accesses bytes in CPU's native address space

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
-import com.hazelcast.config.replacer.PropertyReplacer;
-import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -39,17 +35,12 @@ import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class XmlConfigImportVariableReplacementTest {
-
-    @Rule
-    public ExpectedException rule = ExpectedException.none();
-
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+public class XmlConfigImportVariableReplacementTest extends AbstractConfigImportVariableReplacementTest {
 
     @Test
     public void testImportElementOnlyAppearsInTopLevel() {
@@ -62,6 +53,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
+    @Override
     @Test
     public void testHazelcastElementOnlyAppearsOnce() {
         String xml = HAZELCAST_START_TAG
@@ -72,28 +64,27 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
+    @Override
     @Test
     public void readVariables() {
         String xml = HAZELCAST_START_TAG
-                + "    <semaphore name=\"${name}\">\n"
-                + "        <initial-permits>${initial.permits}</initial-permits>\n"
+                + "    <map name=\"${name}\">\n"
                 + "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n"
-                + "    </semaphore>"
+                + "    </map>"
                 + HAZELCAST_END_TAG;
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
-        properties.setProperty("initial.permits", "25");
 
         properties.setProperty("backupcount.part1", "0");
         properties.setProperty("backupcount.part2", "6");
         Config config = buildConfig(xml, properties);
-        SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
-        assertEquals(25, semaphoreConfig.getInitialPermits());
-        assertEquals(6, semaphoreConfig.getBackupCount());
-        assertEquals(0, semaphoreConfig.getAsyncBackupCount());
+        MapConfig mapConfig = config.getMapConfig("s");
+        assertEquals(6, mapConfig.getBackupCount());
+        assertEquals(0, mapConfig.getAsyncBackupCount());
     }
 
+    @Override
     @Test
     public void testImportConfigFromResourceVariables() throws Exception {
         File file = createConfigFile("foo", "bar");
@@ -117,6 +108,7 @@ public class XmlConfigImportVariableReplacementTest {
         assertTrue(join.getTcpIpConfig().isEnabled());
     }
 
+    @Override
     @Test
     public void testImportedConfigVariableReplacement() throws Exception {
         File file = createConfigFile("foo", "bar");
@@ -144,6 +136,7 @@ public class XmlConfigImportVariableReplacementTest {
         assertTrue(join.getTcpIpConfig().isEnabled());
     }
 
+    @Override
     @Test
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
@@ -162,6 +155,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(config1Xml, null);
     }
 
+    @Override
     @Test
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
         String template = HAZELCAST_START_TAG
@@ -180,6 +174,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(config1Xml, null);
     }
 
+    @Override
     @Test
     public void testImportEmptyResourceContent() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
@@ -192,6 +187,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(config1Xml, null);
     }
 
+    @Override
     @Test
     public void testImportEmptyResourceThrowsException() {
         String xml = HAZELCAST_START_TAG
@@ -201,6 +197,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
+    @Override
     @Test
     public void testImportNotExistingResourceThrowsException() {
         expectInvalid();
@@ -210,6 +207,33 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
+    @Test(expected = HazelcastException.class)
+    public void testImportFromNonHazelcastConfigThrowsException() throws Exception {
+        File file = createConfigFile("mymap", "config");
+        FileOutputStream os = new FileOutputStream(file);
+        String mapConfig = HAZELCAST_START_TAG
+                + "    <map name=\"mymap\">\n"
+                + "       <backup-count>6</backup-count>"
+                + "       <time-to-live-seconds>10</time-to-live-seconds>"
+                + "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
+                + "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n"
+                + "            <write-delay-seconds>10</write-delay-seconds>\n"
+                + "            <write-batch-size>100</write-batch-size>\n"
+                + "        </map-store>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, mapConfig);
+
+        String xml = ""
+                + "<non-hazelcast>\n"
+                + "  <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "</non-hazelcast>";
+
+        Config config = buildConfig(xml, null);
+        assertNull(config.getMapConfig("mymap"));
+    }
+
+    @Override
     @Test
     public void testImportNetworkConfigFromFile() throws Exception {
         File file = createConfigFile("foo", "bar");
@@ -234,6 +258,7 @@ public class XmlConfigImportVariableReplacementTest {
         assertTrue(join.getTcpIpConfig().isEnabled());
     }
 
+    @Override
     @Test
     public void testImportMapConfigFromFile() throws Exception {
         File file = createConfigFile("mymap", "config");
@@ -266,125 +291,100 @@ public class XmlConfigImportVariableReplacementTest {
         assertEquals("com.hazelcast.examples.MyMapStore", myMapStoreConfig.getClassName());
     }
 
+    @Override
     @Test
-    public void testImportGroupConfigFromClassPath() {
+    public void testImportOverlappingMapConfigFromFile() throws Exception {
+        File file = createConfigFile("mymap", "config");
+        FileOutputStream os = new FileOutputStream(file);
+        String mapConfig = HAZELCAST_START_TAG
+                + "    <map name=\"mymap\">\n"
+                + "       <backup-count>6</backup-count>"
+                + "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
+                + "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n"
+                + "            <write-delay-seconds>10</write-delay-seconds>\n"
+                + "            <write-batch-size>100</write-batch-size>\n"
+                + "        </map-store>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, mapConfig);
+
+        String xml = HAZELCAST_START_TAG
+                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "    <map name=\"mymap\">\n"
+                + "       <time-to-live-seconds>10</time-to-live-seconds>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml, null);
+        MapConfig myMapConfig = config.getMapConfig("mymap");
+        assertEquals("mymap", myMapConfig.getName());
+        assertEquals(10, myMapConfig.getTimeToLiveSeconds());
+
+        // these are the defaults here not overridden with the content of
+        // the imported document
+        // this is a difference between importing overlapping XML and YAML
+        // configuration
+        // YAML recursively merges the two files
+        assertEquals(1, myMapConfig.getBackupCount());
+        MapStoreConfig myMapStoreConfig = myMapConfig.getMapStoreConfig();
+        assertEquals(0, myMapStoreConfig.getWriteDelaySeconds());
+        assertEquals(1, myMapStoreConfig.getWriteBatchSize());
+        assertNull(myMapStoreConfig.getClassName());
+    }
+
+    @Override
+    @Test
+    public void testMapConfigFromMainAndImportedFile() throws Exception {
+        File file = createConfigFile("importmap", "config");
+        FileOutputStream os = new FileOutputStream(file);
+        String mapConfig = HAZELCAST_START_TAG
+                + "    <map name=\"importedMap\">\n"
+                + "       <backup-count>6</backup-count>"
+                + "       <time-to-live-seconds>10</time-to-live-seconds>"
+                + "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
+                + "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n"
+                + "            <write-delay-seconds>10</write-delay-seconds>\n"
+                + "            <write-batch-size>100</write-batch-size>\n"
+                + "        </map-store>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, mapConfig);
+
+        String xml = HAZELCAST_START_TAG
+                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "    <map name=\"mapInMain\">\n"
+                + "       <backup-count>2</backup-count>"
+                + "       <time-to-live-seconds>5</time-to-live-seconds>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml, null);
+        MapConfig mapInMainMapConfig = config.getMapConfig("mapInMain");
+        assertEquals("mapInMain", mapInMainMapConfig.getName());
+        assertEquals(5, mapInMainMapConfig.getTimeToLiveSeconds());
+        assertEquals(2, mapInMainMapConfig.getBackupCount());
+
+        MapConfig importedMap = config.getMapConfig("importedMap");
+        assertEquals("importedMap", importedMap.getName());
+        assertEquals(10, importedMap.getTimeToLiveSeconds());
+        assertEquals(6, importedMap.getBackupCount());
+        MapStoreConfig myMapStoreConfig = importedMap.getMapStoreConfig();
+        assertEquals(10, myMapStoreConfig.getWriteDelaySeconds());
+        assertEquals(100, myMapStoreConfig.getWriteBatchSize());
+        assertEquals("com.hazelcast.examples.MyMapStore", myMapStoreConfig.getClassName());
+    }
+
+    @Override
+    @Test
+    public void testImportConfigFromClassPath() {
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"classpath:test-hazelcast.xml\"/>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, null);
-        GroupConfig groupConfig = config.getGroupConfig();
-        assertEquals("foobar", groupConfig.getName());
-        assertEquals("dev-pass", groupConfig.getPassword());
+        assertEquals("foobar-xml", config.getClusterName());
     }
 
-    @Test
-    public void testXmlDeniesDuplicateNetworkConfig() {
-        expectDuplicateElementError("network");
-        String networkConfig = "    <network>\n"
-                + "        <join>\n"
-                + "            <multicast enabled=\"false\"/>\n"
-                + "            <tcp-ip enabled=\"true\"/>\n"
-                + "        </join>\n"
-                + "    </network>\n";
-        buildConfig(HAZELCAST_START_TAG + networkConfig + networkConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicateGroupConfig() {
-        expectDuplicateElementError("group");
-        String groupConfig = "    <group>\n"
-                + "        <name>foobar</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </group>\n";
-        buildConfig(HAZELCAST_START_TAG + groupConfig + groupConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicateLicenseKeyConfig() {
-        expectDuplicateElementError("license-key");
-        String licenseConfig = "    <license-key>foo</license-key>";
-        buildConfig(HAZELCAST_START_TAG + licenseConfig + licenseConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicatePropertiesConfig() {
-        expectDuplicateElementError("properties");
-        String propertiesConfig = "    <properties>\n"
-                + "        <property name='foo'>fooval</property>\n"
-                + "    </properties>\n";
-        buildConfig(HAZELCAST_START_TAG + propertiesConfig + propertiesConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicatePartitionGroupConfig() {
-        expectDuplicateElementError("partition-group");
-        String partitionConfig = "   <partition-group>\n"
-                + "      <member-group>\n"
-                + "          <interface>foo</interface>\n"
-                + "      </member-group>\n"
-                + "   </partition-group>\n";
-        buildConfig(HAZELCAST_START_TAG + partitionConfig + partitionConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicateListenersConfig() {
-        expectDuplicateElementError("listeners");
-        String listenersConfig = "   <listeners>"
-                + "        <listener>foo</listener>\n\n"
-                + "   </listeners>\n";
-        buildConfig(HAZELCAST_START_TAG + listenersConfig + listenersConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicateSerializationConfig() {
-        expectDuplicateElementError("serialization");
-        String serializationConfig = "       <serialization>\n"
-                + "        <portable-version>0</portable-version>\n"
-                + "        <data-serializable-factories>\n"
-                + "            <data-serializable-factory factory-id=\"1\">com.hazelcast.examples.DataSerializableFactory\n"
-                + "            </data-serializable-factory>\n"
-                + "        </data-serializable-factories>\n"
-                + "        <portable-factories>\n"
-                + "            <portable-factory factory-id=\"1\">com.hazelcast.examples.PortableFactory</portable-factory>\n"
-                + "        </portable-factories>\n"
-                + "        <serializers>\n"
-                + "            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>\n"
-                + "            <serializer type-class=\"com.hazelcast.examples.DummyType\"\n"
-                + "                class-name=\"com.hazelcast.examples.SerializerFactory\"/>\n"
-                + "        </serializers>\n"
-                + "        <check-class-def-errors>true</check-class-def-errors>\n"
-                + "    </serialization>\n";
-        buildConfig(HAZELCAST_START_TAG + serializationConfig + serializationConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicateServicesConfig() {
-        expectDuplicateElementError("services");
-        String servicesConfig = "   <services>       "
-                + "       <service enabled=\"true\">\n"
-                + "            <name>custom-service</name>\n"
-                + "            <class-name>com.hazelcast.examples.MyService</class-name>\n"
-                + "        </service>\n"
-                + "   </services>";
-        buildConfig(HAZELCAST_START_TAG + servicesConfig + servicesConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicateSecurityConfig() {
-        expectDuplicateElementError("security");
-        String securityConfig = "   <security/>\n";
-        buildConfig(HAZELCAST_START_TAG + securityConfig + securityConfig + HAZELCAST_END_TAG, null);
-    }
-
-    @Test
-    public void testXmlDeniesDuplicateMemberAttributesConfig() {
-        expectDuplicateElementError("member-attributes");
-        String memberAttConfig = "    <member-attributes>\n"
-                + "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n"
-                + "    </member-attributes>\n";
-        buildConfig(HAZELCAST_START_TAG + memberAttConfig + memberAttConfig + HAZELCAST_END_TAG, null);
-    }
-
+    @Override
     @Test
     public void testReplacers() throws Exception {
         File passwordFile = tempFolder.newFile(getClass().getSimpleName() + ".pwd");
@@ -409,30 +409,37 @@ public class XmlConfigImportVariableReplacementTest {
                 + "        </replacer>\n"
                 + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
-                + "    <group>\n"
-                + "        <name>${java.version} $ID{dev}</name>\n"
-                + "        <password>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</password>\n"
-                + "    </group>\n"
+                + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
+                + "    <instance-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</instance-name>\n"
                 + HAZELCAST_END_TAG;
-        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getName());
-        assertEquals("My very secret secret", groupConfig.getPassword());
+        Config config = buildConfig(xml, System.getProperties());
+        assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
+        assertEquals("My very secret secret", config.getInstanceName());
     }
 
-
-    @Test(expected = ConfigurationException.class)
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
     public void testMissingReplacement() throws Exception {
         String xml = HAZELCAST_START_TAG
                 + "    <config-replacers>\n"
                 + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
-                + "    <group>\n"
-                + "        <name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</name>\n"
-                + "    </group>\n"
+                + "    <cluster-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</cluster-name>\n"
                 + HAZELCAST_END_TAG;
         buildConfig(xml, System.getProperties());
     }
 
+    @Override
+    @Test
+    public void testBadVariableSyntaxIsIgnored() {
+        String xml = HAZELCAST_START_TAG
+                + "    <cluster-name>${noSuchPropertyAvailable]</cluster-name>\n"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml, System.getProperties());
+        assertEquals("${noSuchPropertyAvailable]", config.getClusterName());
+    }
+
+    @Override
     @Test
     public void testReplacerProperties() throws Exception {
         String xml = HAZELCAST_START_TAG
@@ -446,37 +453,25 @@ public class XmlConfigImportVariableReplacementTest {
                 + "            </properties>\n"
                 + "        </replacer>\n"
                 + "    </config-replacers>\n"
-                + "    <group>\n"
-                + "        <name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</name>\n"
-                + "    </group>\n"
+                + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
                 + HAZELCAST_END_TAG;
-        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals("a property  another property <test/> $T{p5}", groupConfig.getName());
+        Config config = buildConfig(xml, System.getProperties());
+        assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }
 
-    /**
-     * Given: No replacer is used in the configuration file<br>
-     * When: A property variable is used within the file<br>
-     * Then: The configuration parsing doesn't fail and the variable string remains unchanged (i.e. backward compatible
-     * behavior, as if {@code fail-if-value-missing} attribute is {@code false}).
-     */
+    @Override
     @Test
     public void testNoConfigReplacersMissingProperties() throws Exception {
         String xml = HAZELCAST_START_TAG
-                + "    <group>\n"
-                + "        <name>${noSuchPropertyAvailable}</name>\n"
-                + "    </group>\n"
+                + "    <cluster-name>${noSuchPropertyAvailable}</cluster-name>\n"
                 + HAZELCAST_END_TAG;
-        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals("${noSuchPropertyAvailable}", groupConfig.getName());
+        Config config = buildConfig(xml, System.getProperties());
+        assertEquals("${noSuchPropertyAvailable}", config.getClusterName());
     }
 
-    private void expectDuplicateElementError(String elName) {
-        expectInvalid();
-    }
-
+    @Override
     @Test
-    public void testXmlVariableReplacementAsSubstring() {
+    public void testVariableReplacementAsSubstring() {
         String xml = HAZELCAST_START_TAG
                 + "    <properties>\n"
                 + "        <property name=\"${env}-with-suffix\">local-with-suffix</property>\n"
@@ -489,8 +484,9 @@ public class XmlConfigImportVariableReplacementTest {
         assertEquals(config.getProperty("with-prefix-local"), "with-prefix-local");
     }
 
+    @Override
     @Test
-    public void testXmlImportWithVariableReplacementAsSubstring() throws Exception {
+    public void testImportWithVariableReplacementAsSubstring() throws Exception {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
         String networkConfig = HAZELCAST_START_TAG
@@ -509,22 +505,89 @@ public class XmlConfigImportVariableReplacementTest {
         assertEquals(config.getProperty("prop2"), "value2");
     }
 
-    private void expectInvalid() {
-        InvalidConfigurationTest.expectInvalid(rule);
+    @Override
+    @Test
+    public void testReplaceVariablesWithFileSystemConfig() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String configXml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, configXml);
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new FileSystemXmlConfig(file, properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static File createConfigFile(String filename, String suffix) throws Exception {
-        File file = File.createTempFile(filename, suffix);
-        file.setWritable(true);
-        file.deleteOnExit();
-        return file;
+    @Override
+    @Test
+    public void testReplaceVariablesWithInMemoryConfig() {
+        String configXml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_END_TAG;
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new InMemoryXmlConfig(configXml, properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
     }
 
-    private static void writeStringToStreamAndClose(FileOutputStream os, String string) throws Exception {
-        os.write(string.getBytes());
-        os.flush();
-        os.close();
+    @Override
+    @Test
+    public void testReplaceVariablesWithClasspathConfig() {
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new ClasspathXmlConfig("test-hazelcast-variable.xml", properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithUrlConfig() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String configXml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, configXml);
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new UrlXmlConfig("file:///" + file.getPath(), properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesUseSystemProperties() {
+        String configXml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_END_TAG;
+
+        System.setProperty("variable", "foobar");
+        Config config = buildConfig(configXml);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    private static Config buildConfig(String xml) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        return configBuilder.build();
     }
 
     private static Config buildConfig(String xml, Properties properties) {
@@ -540,26 +603,4 @@ public class XmlConfigImportVariableReplacementTest {
         return buildConfig(xml, properties);
     }
 
-    public static class IdentityReplacer implements ConfigReplacer {
-        @Override
-        public String getPrefix() {
-            return "ID";
-        }
-
-        @Override
-        public String getReplacement(String maskedValue) {
-            return maskedValue;
-        }
-
-        @Override
-        public void init(Properties properties) {
-        }
-    }
-
-    public static class TestReplacer extends PropertyReplacer {
-        @Override
-        public String getPrefix() {
-            return "T";
-        }
-    }
 }

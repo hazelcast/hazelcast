@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ class OSGiScriptEngine implements ScriptEngine {
     private ScriptEngine engine;
     private OSGiScriptEngineFactory factory;
 
-    public OSGiScriptEngine(ScriptEngine engine, OSGiScriptEngineFactory factory) {
+    OSGiScriptEngine(ScriptEngine engine, OSGiScriptEngineFactory factory) {
         this.engine = engine;
         this.factory = factory;
     }

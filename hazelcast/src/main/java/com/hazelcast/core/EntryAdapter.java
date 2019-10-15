@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.core;
+
+import com.hazelcast.map.MapEvent;
 
 /**
  * Adapter for {@link com.hazelcast.map.listener.MapListener}.
@@ -43,6 +45,11 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
 
     @Override
     public void entryEvicted(EntryEvent<K, V> event) {
+        onEntryEvent(event);
+    }
+
+    @Override
+    public void entryExpired(EntryEvent<K, V> event) {
         onEntryEvent(event);
     }
 

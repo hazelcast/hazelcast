@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@
 
 package com.hazelcast.console;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FileSystemXmlConfig;
@@ -24,24 +30,18 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Partition;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.Clock;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
@@ -67,11 +67,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.trim;
 import static com.hazelcast.memory.MemoryUnit.BYTES;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.StringUtil.equalsIgnoreCase;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.util.StringUtil.trim;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -127,7 +127,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     public IAtomicLong getAtomicNumber() {
-        atomicNumber = hazelcast.getAtomicLong(namespace);
+        atomicNumber = hazelcast.getCPSubsystem().getAtomicLong(namespace);
         return atomicNumber;
     }
 
@@ -447,7 +447,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             Member member = members.get(i % members.size());
             if (taskCount % totalThreadCount == 0) {
                 latchId = taskCount / totalThreadCount;
-                hazelcast.getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
+                hazelcast.getCPSubsystem().getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
 
             }
             Future f = executor.submitToMember(new SimulateLoadTask(durationSec, i + 1, "latch" + latchId), member);
@@ -675,7 +675,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     protected void handleMapPutAsync(String[] args) {
         try {
-            println(getMap().putAsync(args[1], args[2]).get());
+            println(getMap().putAsync(args[1], args[2]).toCompletableFuture().get());
         } catch (InterruptedException e) {
             currentThread().interrupt();
             e.printStackTrace();
@@ -698,7 +698,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     protected void handleMapGetAsync(String[] args) {
         try {
-            println(getMap().getAsync(args[1]).get());
+            println(getMap().getAsync(args[1]).toCompletableFuture().get());
         } catch (InterruptedException e) {
             currentThread().interrupt();
             e.printStackTrace();
@@ -952,7 +952,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
-        Lock lock = hazelcast.getLock(key);
+        Lock lock = hazelcast.getCPSubsystem().getLock(key);
         if (equalsIgnoreCase(lockStr, "lock")) {
             lock.lock();
             println("true");
@@ -1343,6 +1343,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     @Override
     public void entryEvicted(EntryEvent event) {
+        println(event);
+    }
+
+    @Override
+    public void entryExpired(EntryEvent<Object, Object> event) {
         println(event);
     }
 

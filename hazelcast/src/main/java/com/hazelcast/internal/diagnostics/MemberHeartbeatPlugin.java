@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -24,7 +24,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -51,7 +50,7 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(
-            PREFIX + ".member-heartbeat.period.seconds", 10, SECONDS);
+            "hazelcast.diagnostics.member-heartbeat.period.seconds", 10, SECONDS);
 
     /**
      * The maximum allowed deviation. E.g. if the interval of member/member
@@ -61,7 +60,7 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
      * will be rendered.
      */
     public static final HazelcastProperty MAX_DEVIATION_PERCENTAGE
-            = new HazelcastProperty(PREFIX + ".member-heartbeat.max-deviation-percentage", 100);
+            = new HazelcastProperty("hazelcast.diagnostics.member-heartbeat.max-deviation-percentage", 100);
 
     private static final float HUNDRED = 100f;
 

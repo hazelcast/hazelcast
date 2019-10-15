@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,15 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.partition.PartitionEventListener;
+import com.hazelcast.internal.partition.PartitionEventListener;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.annotation.PrivateApi;
 
-@PrivateApi
 class PartitionLostListenerAdapter implements PartitionEventListener<PartitionLostEvent> {
 
     private final PartitionLostListener listener;
 
-    public PartitionLostListenerAdapter(PartitionLostListener listener) {
+    PartitionLostListenerAdapter(PartitionLostListener listener) {
         this.listener = listener;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Extractable;
-import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.AbstractJsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
@@ -33,14 +36,15 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+import static com.hazelcast.query.impl.IndexUtils.canonicalizeAttribute;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 
 /**
  * Provides base features for predicates, such as extraction and conversion of the attribute's value.
  * It also handles apply() on MultiResult.
  */
 @BinaryInterface
-public abstract class AbstractPredicate<K, V>
-        implements Predicate<K, V>, IdentifiedDataSerializable {
+public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, IdentifiedDataSerializable {
 
     String attributeName;
 
@@ -50,27 +54,27 @@ public abstract class AbstractPredicate<K, V>
     }
 
     protected AbstractPredicate(String attributeName) {
-        this.attributeName = attributeName;
+        this.attributeName = canonicalizeAttribute(attributeName);
     }
 
     @Override
     public boolean apply(Map.Entry<K, V> mapEntry) {
         Object attributeValue = readAttributeValue(mapEntry);
         if (attributeValue instanceof MultiResult) {
-            return applyForMultiResult(mapEntry, (MultiResult) attributeValue);
+            return applyForMultiResult((MultiResult) attributeValue);
         } else if (attributeValue instanceof Collection || attributeValue instanceof Object[]) {
-            throw new IllegalArgumentException(String.format(
-                    "Cannot use %s predicate with an array or a collection attribute", getClass().getSimpleName()));
+            throw new IllegalArgumentException(String.format("Cannot use %s predicate with an array or a collection attribute",
+                    getClass().getSimpleName()));
         }
-        return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
+        return convertAndApplyForSingleAttributeValue(attributeValue);
     }
 
-    private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
-        List<Object> results = result.getResults();
+    private boolean applyForMultiResult(MultiResult result) {
+        List results = result.getResults();
         for (Object o : results) {
-            Comparable entryValue = (Comparable) convertEnumValue(o);
+            Comparable entryValue = (Comparable) o;
             // it's enough if there's only one result in the MultiResult that satisfies the predicate
-            boolean satisfied = applyForSingleAttributeValue(mapEntry, entryValue);
+            boolean satisfied = convertAndApplyForSingleAttributeValue(entryValue);
             if (satisfied) {
                 return true;
             }
@@ -78,24 +82,31 @@ public abstract class AbstractPredicate<K, V>
         return false;
     }
 
-    protected abstract boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue);
+    private boolean convertAndApplyForSingleAttributeValue(Object attributeValue) {
+        if (attributeValue instanceof JsonValue) {
+            if (attributeValue == NonTerminalJsonValue.INSTANCE) {
+                return false;
+            }
+            attributeValue = AbstractJsonGetter.convertFromJsonValue((JsonValue) attributeValue);
+        }
+        return applyForSingleAttributeValue((Comparable) attributeValue);
+    }
+
+    protected abstract boolean applyForSingleAttributeValue(Comparable attributeValue);
 
     /**
      * Converts givenAttributeValue to the type of entryAttributeValue
      * Good practice: do not invoke this method if entryAttributeValue == null
      *
-     * @param entry               map entry on the basis of which the conversion will be executed
      * @param entryAttributeValue attribute value extracted from the entry
      * @param givenAttributeValue given attribute value to be converted
      * @return converted givenAttributeValue
      */
-    protected Comparable convert(Map.Entry entry, Comparable entryAttributeValue, Comparable givenAttributeValue) {
-        if (givenAttributeValue == null) {
-            return null;
+    protected Comparable convert(Comparable entryAttributeValue, Comparable givenAttributeValue) {
+        if (isNull(givenAttributeValue)) {
+            return givenAttributeValue;
         }
-        if (givenAttributeValue instanceof IndexImpl.NullObject) {
-            return IndexImpl.NULL;
-        }
+
         AttributeType type = attributeType;
         if (type == null) {
             if (entryAttributeValue == null) {
@@ -103,15 +114,16 @@ public abstract class AbstractPredicate<K, V>
                 // Returning unconverted value is an optimization since the given value will be compared with null.
                 return givenAttributeValue;
             }
-            type = ((Extractable) entry).getAttributeType(attributeName);
+            type = QueryableEntry.extractAttributeType(entryAttributeValue);
             attributeType = type;
         }
 
-        Class<?> entryAttributeClass = entryAttributeValue != null ? entryAttributeValue.getClass() : null;
-        return convert(type, entryAttributeClass, givenAttributeValue);
+        return convert(type, entryAttributeValue, givenAttributeValue);
     }
 
-    private Comparable convert(AttributeType entryAttributeType, Class<?> entryAttributeClass, Comparable givenAttributeValue) {
+    private Comparable convert(AttributeType entryAttributeType, Comparable entryAttributeValue, Comparable givenAttributeValue) {
+
+        Class<?> entryAttributeClass = entryAttributeValue != null ? entryAttributeValue.getClass() : null;
         if (entryAttributeType == AttributeType.ENUM) {
             // if attribute type is enum, convert given attribute to enum string
             return entryAttributeType.getConverter().convert(givenAttributeValue);
@@ -128,13 +140,12 @@ public abstract class AbstractPredicate<K, V>
         }
     }
 
-    protected Object readAttributeValue(Map.Entry entry) {
+    private Object readAttributeValue(Map.Entry entry) {
         Extractable extractable = (Extractable) entry;
-        Object attributeValue = extractable.getAttributeValue(attributeName);
-        return convertEnumValue(attributeValue);
+        return extractable.getAttributeValue(attributeName);
     }
 
-    protected Object convertEnumValue(Object attributeValue) {
+    Object convertEnumValue(Object attributeValue) {
         if (attributeValue != null && attributeValue.getClass().isEnum()) {
             attributeValue = attributeValue.toString();
         }
@@ -158,7 +169,7 @@ public abstract class AbstractPredicate<K, V>
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof AbstractPredicate)) {
+        if (!(o instanceof AbstractPredicate)) {
             return false;
         }
 
@@ -169,6 +180,7 @@ public abstract class AbstractPredicate<K, V>
         return attributeName != null ? attributeName.equals(that.attributeName) : that.attributeName == null;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean canEqual(Object other) {
         return (other instanceof AbstractPredicate);
     }
@@ -177,4 +189,5 @@ public abstract class AbstractPredicate<K, V>
     public int hashCode() {
         return attributeName != null ? attributeName.hashCode() : 0;
     }
+
 }

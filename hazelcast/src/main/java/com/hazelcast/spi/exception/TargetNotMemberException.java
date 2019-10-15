@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@
 
 package com.hazelcast.spi.exception;
 
-import com.hazelcast.nio.Address;
-
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that indicates operation is send to a
  * machine that isn't member of the cluster.
  */
 public class TargetNotMemberException extends RetryableHazelcastException {
 
+    // RU_COMPAT
+    private static final long serialVersionUID = -3791433456807089118L;
+
     public TargetNotMemberException(String message) {
         super(message);
     }
 
-    public TargetNotMemberException(Address target, int partitionId, String operationName, String serviceName) {
+    public TargetNotMemberException(Object target, int partitionId, String operationName, String serviceName) {
         super("Not Member! target: " + target + ", partitionId: " + partitionId
                 + ", operation: " + operationName + ", service: " + serviceName);
     }

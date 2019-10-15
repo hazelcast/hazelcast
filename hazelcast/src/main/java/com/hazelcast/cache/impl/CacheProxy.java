@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,29 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
 import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
-import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.Member;
+import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -47,16 +48,26 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
-import java.util.Collection;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Future;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static java.util.Collections.emptyMap;
 
 /**
  * <h1>ICache implementation</h1>
@@ -77,7 +88,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  * @param <V> the type of value.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
+public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         implements EventJournalReader<EventJournalCacheEvent<K, V>> {
 
     CacheProxy(CacheConfig<K, V> cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
@@ -102,8 +113,8 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
         Operation operation = operationProvider.createContainsKeyOperation(dataKey);
         OperationService operationService = getNodeEngine().getOperationService();
         int partitionId = getPartitionId(dataKey);
-        InternalCompletableFuture<Boolean> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
-        return future.join();
+        InvocationFuture<Boolean> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+        return future.joinInternal();
     }
 
     @Override
@@ -118,15 +129,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
             validateNotNull(key);
             keysData.add(serializationService.toData(key));
         }
-        LoadAllTask loadAllTask = new LoadAllTask(operationProvider, keysData, replaceExistingValues, completionListener);
-        try {
-            submitLoadAllTask(loadAllTask);
-        } catch (Exception e) {
-            if (completionListener != null) {
-                completionListener.onException(e);
-            }
-            throw new CacheException(e);
-        }
+        createAndSubmitLoadAllTask(keysData, replaceExistingValues, completionListener);
     }
 
     @Override
@@ -219,7 +222,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
         if (clazz.isInstance(cacheConfig)) {
-            return clazz.cast(cacheConfig.getAsReadOnly());
+            return clazz.cast(new CacheConfigReadOnly<>(cacheConfig));
         }
         throw new IllegalArgumentException("The configuration class " + clazz + " is not supported by this implementation");
     }
@@ -230,22 +233,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
         validateNotNull(key);
         checkNotNull(entryProcessor, "Entry Processor is null");
         Data keyData = serializationService.toData(key);
-        Integer completionId = registerCompletionLatch(1);
-        Operation op = operationProvider.createEntryProcessorOperation(keyData, completionId, entryProcessor, arguments);
-        try {
-            OperationService operationService = getNodeEngine().getOperationService();
-            int partitionId = getPartitionId(keyData);
-            InternalCompletableFuture<T> future = operationService.invokeOnPartition(getServiceName(), op, partitionId);
-            T safely = future.join();
-            waitCompletionLatch(completionId);
-            return safely;
-        } catch (CacheException ce) {
-            deregisterCompletionLatch(completionId);
-            throw ce;
-        } catch (Exception e) {
-            deregisterCompletionLatch(completionId);
-            throw new EntryProcessorException(e);
-        }
+        return invokeInternal(keyData, entryProcessor, arguments);
     }
 
     @Override
@@ -294,7 +282,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
         CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration,
                 getNodeEngine().getSerializationService());
-        String regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
+        UUID regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -310,7 +298,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
-        String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
+        UUID regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId != null) {
             if (getService().deregisterListener(getDistributedObjectName(), regId)) {
                 removeListenerLocally(cacheEntryListenerConfiguration);
@@ -320,39 +308,26 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
         }
     }
 
-    private void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
-                                                       boolean isRegister) {
-        OperationService operationService = getNodeEngine().getOperationService();
-        Collection<Member> members = getNodeEngine().getClusterService().getMembers();
-        for (Member member : members) {
-            if (!member.localMember()) {
-                Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(), cacheEntryListenerConfiguration,
-                        isRegister);
-                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-            }
-        }
-    }
-
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClusterWideIterator<K, V>(this, false);
+        return new ClusterWideIterator<>(this, false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClusterWideIterator<K, V>(this, fetchSize, false);
+        return new ClusterWideIterator<>(this, fetchSize, false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         ensureOpen();
-        return new CachePartitionIterator<K, V>(this, fetchSize, partitionId, prefetchValues);
+        return new CachePartitionIterator<>(this, fetchSize, partitionId, prefetchValues);
     }
 
     @Override
-    public String addPartitionLostListener(CachePartitionLostListener listener) {
+    public UUID addPartitionLostListener(CachePartitionLostListener listener) {
         checkNotNull(listener, "CachePartitionLostListener can't be null");
 
         EventFilter filter = new CachePartitionLostEventFilter();
@@ -365,35 +340,323 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
     }
 
     @Override
-    public boolean removePartitionLostListener(String id) {
+    public boolean removePartitionLostListener(UUID id) {
         checkNotNull(id, "Listener ID should not be null!");
         return getService().getNodeEngine().getEventService()
                 .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
     }
 
     @Override
-    public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
+    public CompletionStage<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final CacheEventJournalSubscribeOperation op = new CacheEventJournalSubscribeOperation(nameWithPrefix);
         op.setPartitionId(partitionId);
         return getNodeEngine().getOperationService().invokeOnPartition(op);
     }
 
     @Override
-    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+    public <T> CompletionStage<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
             int minSize,
             int maxSize,
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+            Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection
     ) {
         if (maxSize < minSize) {
             throw new IllegalArgumentException("maxSize " + maxSize
                     + " must be greater or equal to minSize " + minSize);
         }
-        final CacheEventJournalReadOperation<K, V, T> op = new CacheEventJournalReadOperation<K, V, T>(
+        final CacheEventJournalReadOperation<K, V, T> op = new CacheEventJournalReadOperation<>(
                 nameWithPrefix, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
         return getNodeEngine().getOperationService().invokeOnPartition(op);
+    }
+
+    @Override
+    public CacheStatistics getLocalCacheStatistics() {
+        // TODO: throw UnsupportedOperationException if cache statistics are not enabled (but it breaks backward compatibility)
+        return getService().createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
+    }
+
+    @Override
+    public InternalCompletableFuture<V> getAsync(K key) {
+        return getAsync(key, null);
+    }
+
+    @Override
+    public InternalCompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+        ensureOpen();
+        validateNotNull(key);
+        Data keyData = serializationService.toData(key);
+        Operation op = operationProvider.createGetOperation(keyData, expiryPolicy);
+        return invoke(op, keyData, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> putAsync(K key, V value) {
+        return putAsync(key, value, null);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putAsyncInternal(key, value, expiryPolicy, false, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return putIfAbsentAsyncInternal(key, value, null, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putIfAbsentAsyncInternal(key, value, expiryPolicy, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<V> getAndPutAsync(K key, V value) {
+        return getAndPutAsync(key, value, null);
+    }
+
+    @Override
+    public InternalCompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putAsyncInternal(key, value, expiryPolicy, true, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> removeAsync(K key) {
+        return removeAsyncInternal(key, null, false, false, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> removeAsync(K key, V oldValue) {
+        return removeAsyncInternal(key, oldValue, true, false, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<V> getAndRemoveAsync(K key) {
+        return removeAsyncInternal(key, null, false, true, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V value) {
+        return replaceAsyncInternal(key, null, value, null, false, false, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
+        return replaceAsyncInternal(key, oldValue, newValue, null, true, false, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<V> getAndReplaceAsync(K key, V value) {
+        return replaceAsyncInternal(key, null, value, null, false, true, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return replaceAsyncInternal(key, null, value, expiryPolicy, false, true, false);
+    }
+
+    @Override
+    public V get(K key, ExpiryPolicy expiryPolicy) {
+        try {
+            Future<V> future = getAsync(key, expiryPolicy);
+            return future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public Map<K, V> getAll(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+        ensureOpen();
+        validateNotNull(keys);
+        if (keys.isEmpty()) {
+            return emptyMap();
+        }
+        final int keyCount = keys.size();
+        final Set<Data> ks = createHashSet(keyCount);
+        for (K key : keys) {
+            validateNotNull(key);
+            Data dataKey = serializationService.toData(key);
+            ks.add(dataKey);
+        }
+        Map<K, V> result = createHashMap(keyCount);
+        PartitionIdSet partitions = getPartitionsForKeys(ks);
+        try {
+            OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);
+            OperationService operationService = getNodeEngine().getOperationService();
+            Map<Integer, Object> responses = operationService.invokeOnPartitions(getServiceName(), factory, partitions);
+            for (Object response : responses.values()) {
+                MapEntries mapEntries = serializationService.toObject(response);
+                mapEntries.putAllToMap(serializationService, result);
+            }
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+        return result;
+    }
+
+    @Override
+    public void put(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            InternalCompletableFuture<Object> future = putAsyncInternal(key, value, expiryPolicy, false, true);
+            future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            InternalCompletableFuture<V> future = putAsyncInternal(key, value, expiryPolicy, true, true);
+            return future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
+        ensureOpen();
+        validateNotNull(map);
+
+        try {
+            // first we fill entry set per partition
+            int partitionCount = partitionService.getPartitionCount();
+            List<Map.Entry<Data, Data>>[] entriesPerPartition = groupDataToPartitions(map, partitionCount);
+
+            // then we invoke the operations and sync on completion of these operations
+            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    @Override
+    public boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
+        try {
+            ensureOpen();
+            validateNotNull(key);
+            validateNotNull(expiryPolicy);
+
+            Data keyData = serializationService.toData(key);
+            Data expiryPolicyData = serializationService.toData(expiryPolicy);
+            List<Data> list = Collections.singletonList(keyData);
+            Operation operation = operationProvider.createSetExpiryPolicyOperation(list, expiryPolicyData);
+            Future<Boolean> future = invoke(operation, keyData, true);
+            return future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public void setExpiryPolicy(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+        ensureOpen();
+        validateNotNull(keys);
+        validateNotNull(expiryPolicy);
+
+        try {
+            int partitionCount = partitionService.getPartitionCount();
+            List<Data>[] keysPerPartition = groupDataToPartitions(keys, partitionCount);
+            setTTLAllPartitionsAndWaitForCompletion(keysPerPartition, serializationService.toData(expiryPolicy));
+        } catch (Exception e) {
+            rethrow(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map.Entry<Data, Data>>[] groupDataToPartitions(Map<? extends K, ? extends V> map, int partitionCount) {
+        List<Map.Entry<Data, Data>>[] entriesPerPartition = new List[partitionCount];
+
+        for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
+            K key = entry.getKey();
+            V value = entry.getValue();
+            validateNotNull(key, value);
+
+            Data keyData = serializationService.toData(key);
+            Data valueData = serializationService.toData(value);
+
+            int partitionId = partitionService.getPartitionId(keyData);
+            List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
+            if (entries == null) {
+                entries = new ArrayList<>();
+                entriesPerPartition[partitionId] = entries;
+            }
+
+            entries.add(new AbstractMap.SimpleImmutableEntry<>(keyData, valueData));
+        }
+
+        return entriesPerPartition;
+    }
+
+    @Override
+    public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            Future<Boolean> future = putIfAbsentAsyncInternal(key, value, expiryPolicy, true);
+            return future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        try {
+            Future<Boolean> future = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
+            return future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            Future<Boolean> future = replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+            return future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
+        try {
+            Future<V> future = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, true);
+            return future.get();
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    @Override
+    public int size() {
+        ensureOpen();
+        try {
+            OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
+            Map<Integer, Object> results = getNodeEngine().getOperationService()
+                                                          .invokeOnAllPartitions(getServiceName(), operationFactory);
+            int total = 0;
+            for (Object result : results.values()) {
+                //noinspection RedundantCast
+                total += (Integer) getNodeEngine().toObject(result);
+            }
+            return total;
+        } catch (Throwable t) {
+            throw rethrowAllowedTypeFirst(t, CacheException.class);
+        }
     }
 }

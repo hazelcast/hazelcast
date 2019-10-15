@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.TextCommandService;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 
@@ -29,24 +29,30 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
 
     @Override
     public void handle(HttpDeleteCommand command) {
-        String uri = command.getURI();
-        if (uri.startsWith(URI_MAPS)) {
-            handleMap(command, uri);
-        } else if (uri.startsWith(URI_QUEUES)) {
-            handleQueue(command, uri);
-        } else {
+        try {
+            String uri = command.getURI();
+            if (uri.startsWith(URI_MAPS)) {
+                handleMap(command, uri);
+            } else if (uri.startsWith(URI_QUEUES)) {
+                handleQueue(command, uri);
+            } else {
+                command.send404();
+            }
+        } catch (IndexOutOfBoundsException e) {
             command.send400();
+        } catch (Exception e) {
+            command.send500();
         }
+
         textCommandService.sendResponse(command);
     }
 
     private void handleMap(HttpDeleteCommand command, String uri) {
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
-            String mapName = uri.substring(URI_MAPS.length(), uri.length());
+            String mapName = uri.substring(URI_MAPS.length());
             textCommandService.deleteAll(mapName);
             command.send200();
-
         } else {
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
             String key = uri.substring(indexEnd + 1);

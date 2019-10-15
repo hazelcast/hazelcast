@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.UUID;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
@@ -32,7 +35,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicaSyncInfoTest {
 
     private ReplicaFragmentSyncInfo replicaSyncInfo;
@@ -46,8 +49,8 @@ public class ReplicaSyncInfoTest {
     public void setUp() throws Exception {
         int partitionId = 23;
         int replicaIndex = 42;
-        Address target = new Address("127.0.0.1", 5701);
-        Address otherTarget = new Address("127.0.0.1", 5702);
+        PartitionReplica target = new PartitionReplica(new Address("127.0.0.1", 5701), new UUID(57, 1));
+        PartitionReplica otherTarget = new PartitionReplica(new Address("127.0.0.1", 5702), new UUID(57, 2));
 
         replicaSyncInfo = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
         replicaSyncInfoSameAttributes

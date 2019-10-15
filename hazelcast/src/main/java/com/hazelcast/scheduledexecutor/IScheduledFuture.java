@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,8 @@ public interface IScheduledFuture<V>
      * {@link #isCancelled} will always return {@code true} if this method returned {@code true}.
      *
      * @param mayInterruptIfRunning is throwing {@link UnsupportedOperationException}
-     * @return {@code false} if the task could not be cancelled, typically because it has already completed normally; {@code true
+     * @return {@code false} if the task could not be cancelled, typically because it has already completed normally;
+     * {@code true} otherwise
      */
     boolean cancel(boolean mayInterruptIfRunning);
 

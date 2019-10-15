@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,18 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 
 /**
- * A NormalResponse is send when an Operation needs to return a value. This response value can a 'normal' value,
+ * A NormalResponse is send when an Operation needs to return a value. This response value can be a 'normal' value,
  * but it can also contain the exception thrown.
- * <p/>
+ * <p>
  * Currently there is a limitation in the design that needs to be dealt with in the future: there is no distinction
  * made between an exception thrown or an exception returned as a regular value. In such a case, Hazelcast will
  * always rethrow the exception.
- * <p/>
- * The NormalResponse contains the actual 'value' but also the callid of that operation
+ * <p>
+ * The NormalResponse contains the actual 'value' and also the 'callId' of that operation
  * and the backup count. Based on the backup count, the invoker of the operation
  * knows when all the backups have completed.
  *
@@ -79,7 +79,7 @@ public class NormalResponse extends Response {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return NORMAL_RESPONSE;
     }
 

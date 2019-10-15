@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,22 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.map.IMap;
+
 import java.util.Map;
 
 /**
  * Local map statistics to be used by {@link MemberState} implementations.
  * <p>
- * As {@link com.hazelcast.core.IMap} is a partitioned data structure in
+ * As {@link IMap} is a partitioned data structure in
  * Hazelcast, each member owns a fraction of the total number of entries of a
  * distributed map.
  * <p>
- * Depending on the {@link com.hazelcast.core.IMap}'s configuration, each
+ * Depending on the {@link IMap}'s configuration, each
  * member may also hold backup entries of other members. LocalMapStats
  * provides the count of owned and backup entries besides their size in memory.
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 public interface LocalMapStats extends LocalInstanceStats {
 
     /**
@@ -99,7 +102,9 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getHits();
 
     /**
-     * Returns the number of currently locked locally owned keys.
+     * Returns the number of currently locked keys. The returned count
+     * includes locks on keys whether or not they are present in the map,
+     * since it is allowed to lock on keys that are not present.
      *
      * @return number of locked entries.
      */
@@ -119,6 +124,13 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return number of put operations
      */
     long getPutOperationCount();
+
+    /**
+     * Returns the number of set operations
+     *
+     * @return number of set operations
+     */
+    long getSetOperationCount();
 
     /**
      * Returns the number of get operations
@@ -142,6 +154,13 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getTotalPutLatency();
 
     /**
+     * Returns the total latency of set operations. To get the average latency, divide by the number of sets
+     *
+     * @return the total latency of set operations
+     */
+    long getTotalSetLatency();
+
+    /**
      * Returns the total latency of get operations. To get the average latency, divide by the number of gets
      *
      * @return the total latency of get operations
@@ -161,6 +180,13 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return the maximum latency of put operations
      */
     long getMaxPutLatency();
+
+    /**
+     * Returns the maximum latency of set operations.
+     *
+     * @return the maximum latency of set operations
+     */
+    long getMaxSetLatency();
 
     /**
      * Returns the maximum latency of get operations.
@@ -198,7 +224,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     long total();
 
     /**
-     * Cost of map & Near Cache & backup & Merkle trees in bytes
+     * Cost of map &amp; Near Cache &amp; backup &amp; Merkle trees in bytes
      * <p>
      * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heapcost is zero.
      *

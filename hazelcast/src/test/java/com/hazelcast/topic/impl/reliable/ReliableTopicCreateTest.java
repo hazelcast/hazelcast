@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,15 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ITopic;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReliableTopicCreateTest extends HazelcastTestSupport {
 
     @Test
@@ -206,7 +206,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         assertEquals(1, proxy.runnersMap.size());
 
         // check that the listener is of the right class.
-        ReliableMessageListenerRunner runner = (ReliableMessageListenerRunner) proxy.runnersMap.values().iterator().next();
+        MessageRunner runner = (MessageRunner) proxy.runnersMap.values().iterator().next();
         assertInstanceOf(ReliableMessageListenerMock.class, runner.listener);
     }
 
@@ -252,7 +252,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         assertEquals(1, proxy.runnersMap.size());
 
         // check that the listener is of the right class.
-        ReliableMessageListenerRunner runner = (ReliableMessageListenerRunner) proxy.runnersMap.values().iterator().next();
+        MessageRunner runner = (MessageRunner) proxy.runnersMap.values().iterator().next();
         InstanceAwareReliableMessageListenerMock mock
                 = assertInstanceOf(InstanceAwareReliableMessageListenerMock.class, runner.listener);
         assertNotNull(mock.hz);

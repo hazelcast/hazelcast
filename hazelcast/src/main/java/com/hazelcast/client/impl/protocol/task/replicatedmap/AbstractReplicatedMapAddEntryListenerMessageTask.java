@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
@@ -35,10 +37,11 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter>
         extends AbstractCallableMessageTask<Parameter>
-        implements EntryListener<Object, Object> {
+        implements EntryListener<Object, Object>, ListenerMessageTask {
 
     public AbstractReplicatedMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node,
                                                             Connection connection) {
@@ -49,7 +52,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     protected Object call() {
         ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
-        String registrationId;
+        UUID registrationId;
         Predicate predicate = getPredicate();
         if (predicate == null) {
             registrationId = eventPublishingService.addEventListener(this,
@@ -88,15 +91,18 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             return;
         }
 
-            Data key = serializationService.toData(event.getKey());
-            Data newValue = serializationService.toData(event.getValue());
-            Data oldValue = serializationService.toData(event.getOldValue());
-            Data mergingValue = serializationService.toData(event.getMergingValue());
+        DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
 
-            ClientMessage clientMessage = encodeEvent(key
-                    , newValue, oldValue, mergingValue, event.getEventType().getType(),
-                    event.getMember().getUuid(), 1);
-            sendClientMessage(key, clientMessage);
+        Data key = dataAwareEntryEvent.getKeyData();
+        Data newValue = dataAwareEntryEvent.getNewValueData();
+        Data oldValue = dataAwareEntryEvent.getOldValueData();
+        Data mergingValue = dataAwareEntryEvent.getMergingValueData();
+
+        ClientMessage clientMessage = encodeEvent(key
+                , newValue, oldValue, mergingValue, event.getEventType().getType(),
+                event.getMember().getUuid(), 1);
+        sendClientMessage(key, clientMessage);
+
     }
 
     private void handleMapEvent(MapEvent event) {
@@ -104,10 +110,10 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             return;
         }
 
-            ClientMessage clientMessage = encodeEvent(null
-                    , null, null, null, event.getEventType().getType(),
-                    event.getMember().getUuid(), event.getNumberOfEntriesAffected());
-            sendClientMessage(null, clientMessage);
+        ClientMessage clientMessage = encodeEvent(null
+                , null, null, null, event.getEventType().getType(),
+                event.getMember().getUuid(), event.getNumberOfEntriesAffected());
+        sendClientMessage(null, clientMessage);
     }
 
     private boolean shouldSendEvent(IMapEvent event) {
@@ -125,7 +131,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
 
 
     protected abstract ClientMessage encodeEvent(Data key, Data newValue, Data oldValue,
-                                                 Data mergingValue, int type, String uuid, int numberOfAffectedEntries);
+                                                 Data mergingValue, int type, UUID uuid, int numberOfAffectedEntries);
 
     @Override
     public void entryAdded(EntryEvent<Object, Object> event) {
@@ -148,8 +154,13 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
     @Override
+    public void entryExpired(EntryEvent<Object, Object> event) {
+        handleEvent(event);
+    }
+
+    @Override
     public void mapEvicted(MapEvent event) {
-        // TODO handle this event
+        handleMapEvent(event);
     }
 
     @Override

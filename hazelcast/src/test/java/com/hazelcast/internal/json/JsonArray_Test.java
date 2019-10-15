@@ -21,30 +21,25 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import static com.hazelcast.internal.json.TestUtil.assertException;
-import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.List;
-
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InOrder;
 
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.json.JsonWriter;
-import com.hazelcast.internal.json.ParseException;
-import com.hazelcast.test.annotation.QuickTest;
+import java.io.IOException;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.List;
+
+import static com.hazelcast.internal.json.TestUtil.assertException;
+import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 public class JsonArray_Test {
@@ -102,33 +97,6 @@ public class JsonArray_Test {
     JsonArray unmodifiableArray = JsonArray.unmodifiableArray(array);
 
     unmodifiableArray.add(23);
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void readFrom_reader() throws IOException {
-    assertEquals(new JsonArray(), JsonArray.readFrom(new StringReader("[]")));
-    assertEquals(new JsonArray().add("a").add(23),
-                 JsonArray.readFrom(new StringReader("[ \"a\", 23 ]")));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void readFrom_string() {
-    assertEquals(new JsonArray(), JsonArray.readFrom("[]"));
-    assertEquals(new JsonArray().add("a").add(23), JsonArray.readFrom("[ \"a\", 23 ]"));
-  }
-
-  @Test(expected = ParseException.class)
-  @SuppressWarnings("deprecation")
-  public void readFrom_illegalJson() {
-    JsonArray.readFrom("This is not JSON");
-  }
-
-  @Test(expected = UnsupportedOperationException.class)
-  @SuppressWarnings("deprecation")
-  public void readFrom_wrongJsonType() {
-    JsonArray.readFrom("\"This is not a JSON object\"");
   }
 
   @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -29,20 +29,22 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -50,10 +52,11 @@ import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TA
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BackupExpirationTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "test";
@@ -98,42 +101,99 @@ public class BackupExpirationTest extends HazelcastTestSupport {
 
         sleepSeconds(5);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance node : nodes) {
-                    assertEquals(0, getTotalEntryCount(node.getMap(MAP_NAME).getLocalMapStats()));
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance node : nodes) {
+                assertEquals(0, getTotalEntryCount(node.getMap(MAP_NAME).getLocalMapStats()));
             }
         });
     }
 
     @Test
-    public void updates_on_same_key_prevents_expiration_on_backups() throws Exception {
+    public void updates_on_same_key_prevents_expiration_on_backups() {
         configureAndStartNodes(10, 1, 1);
+        long waitTimeInMillis = 1000;
 
         IMap map = nodes[0].getMap(MAP_NAME);
         map.put(1, 1);
-        map.put(2, 2);
-        map.put(3, 3);
 
-        sleepSeconds(11);
+        final BackupExpiryTimeReader backupExpiryTimeReader = new BackupExpiryTimeReader(MAP_NAME);
 
-        map.get(1);
-        map.get(2);
-        map.get(3);
+        // First call to read expiry time
+        map.executeOnKey(1, backupExpiryTimeReader);
 
+        sleepAtLeastMillis(waitTimeInMillis);
         map.put(1, 1);
 
-        sleepSeconds(5);
+        // Second call to read expiry time
+        map.executeOnKey(1, backupExpiryTimeReader);
 
-        int total = 0;
-        for (HazelcastInstance node : nodes) {
-            total += getTotalEntryCount(node.getMap(MAP_NAME).getLocalMapStats());
+        final int backupCount = NODE_COUNT - 1;
+        final int executeOnKeyCallCount = 2;
+
+        assertTrueEventually(() -> assertEquals(executeOnKeyCallCount * backupCount,
+                ExpiryTimeReader.TIMES_QUEUE.size()));
+
+        long expiryFoundAt1stCall = -1;
+        for (int i = 0; i < backupCount; i++) {
+            expiryFoundAt1stCall = ExpiryTimeReader.TIMES_QUEUE.poll();
         }
 
-        // key 1 should still be in all replicas
-        assertEquals(REPLICA_COUNT, total);
+        long expiryFoundAt2ndCall = -1;
+        for (int i = 0; i < backupCount; i++) {
+            expiryFoundAt2ndCall = ExpiryTimeReader.TIMES_QUEUE.poll();
+        }
+
+
+        assertTrue(expiryFoundAt2ndCall + "-" + expiryFoundAt1stCall,
+                expiryFoundAt2ndCall >= expiryFoundAt1stCall + waitTimeInMillis);
+    }
+
+
+    public static class BackupExpiryTimeReader
+            implements EntryProcessor<Integer, Integer, Object>, Serializable {
+
+        private String mapName;
+
+        public BackupExpiryTimeReader(String mapName) {
+            this.mapName = mapName;
+        }
+
+        @Override
+        public Object process(Map.Entry<Integer, Integer> entry) {
+            return null;
+        }
+
+        @Override
+        public EntryProcessor<Integer, Integer, Object> getBackupProcessor() {
+            return new ExpiryTimeReader(mapName);
+        }
+    }
+
+    public static class ExpiryTimeReader
+            implements EntryProcessor<Integer, Integer, Object>, HazelcastInstanceAware, Serializable {
+
+        public static final ConcurrentLinkedQueue<Long> TIMES_QUEUE = new ConcurrentLinkedQueue<>();
+
+        private transient HazelcastInstance instance;
+
+        private String mapName;
+
+        public ExpiryTimeReader(String mapName) {
+            this.mapName = mapName;
+        }
+
+        @Override
+        public Object process(Map.Entry<Integer, Integer> entry) {
+            EntryView entryView = instance.getMap(mapName).getEntryView(entry.getKey());
+
+            TIMES_QUEUE.add(entryView.getExpirationTime());
+            return null;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.instance = hazelcastInstance;
+        }
     }
 
     @Test
@@ -149,8 +209,9 @@ public class BackupExpirationTest extends HazelcastTestSupport {
     // This EP mimics TTL expiration process by creating a record
     // which expires after 100 millis. TTL expired key should not be added to the expiration queue
     // after `recordStore.get`.
+    @SuppressFBWarnings("SE_NO_SERIALVERSIONID")
     public static final class BackupExpirationQueueLengthFinder
-            extends AbstractEntryProcessor implements HazelcastInstanceAware {
+            implements HazelcastInstanceAware, EntryProcessor {
 
         private transient HazelcastInstance node;
 
@@ -167,7 +228,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
             sleepSeconds(1);
             recordStore.get(dataKey, false, null);
 
-            InvalidationQueue expiredKeys = recordStore.getExpiredKeys();
+            InvalidationQueue expiredKeys = recordStore.getExpiredKeysQueue();
             return expiredKeys.size();
         }
 

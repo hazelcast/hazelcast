@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,10 +49,10 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getNearCacheKey;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getRecordFromNearCache;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getValueFromNearCache;
-import static com.hazelcast.nio.IOUtil.copy;
-import static com.hazelcast.nio.IOUtil.deleteQuietly;
-import static com.hazelcast.nio.IOUtil.getFileFromResources;
-import static com.hazelcast.nio.IOUtil.touch;
+import static com.hazelcast.internal.nio.IOUtil.copy;
+import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
+import static com.hazelcast.internal.nio.IOUtil.touch;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;

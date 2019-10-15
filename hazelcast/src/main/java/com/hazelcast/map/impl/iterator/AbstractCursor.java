@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ public abstract class AbstractCursor<T> implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         nextTableIndexToReadFrom = in.readInt();
         int size = in.readInt();
-        objects = new ArrayList<T>(size);
+        objects = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             objects.add(readElement(in));
         }

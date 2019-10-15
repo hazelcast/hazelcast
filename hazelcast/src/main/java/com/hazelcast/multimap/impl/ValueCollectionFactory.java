@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.impl;
 
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.util.SetUtil;
+import com.hazelcast.internal.util.SetUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,7 +36,7 @@ public final class ValueCollectionFactory {
 
     /**
      * Picks right collection type, like {@link java.util.Set} or {@link java.util.List}
-     * depending on the {@link com.hazelcast.config.MultiMapConfig#valueCollectionType} and creates it.
+     * depending on the {@link MultiMapConfig#getValueCollectionType()} and creates it.
      *
      * @param collectionType one of {@link com.hazelcast.config.MultiMapConfig.ValueCollectionType#SET}
      *                       or {@link com.hazelcast.config.MultiMapConfig.ValueCollectionType#LIST}
@@ -49,7 +49,7 @@ public final class ValueCollectionFactory {
 
     /**
      * Creates a same type collection with the given collection depending on the
-     * {@link com.hazelcast.config.MultiMapConfig#valueCollectionType}.
+     * {@link MultiMapConfig#getValueCollectionType()}.
      *
      * @param collection to be asked to return a new appropriate implementation instance
      *                   according to {@link MultiMapConfig.ValueCollectionType}
@@ -66,7 +66,7 @@ public final class ValueCollectionFactory {
 
     /**
      * Picks right collection type, like {@link java.util.Set} or {@link java.util.List}
-     * depending on the {@link com.hazelcast.config.MultiMapConfig#valueCollectionType} and creates it.
+     * depending on the {@link MultiMapConfig#getValueCollectionType()} and creates it.
      *
      * @param collectionType  one of {@link com.hazelcast.config.MultiMapConfig.ValueCollectionType#SET}
      *                        or {@link MultiMapConfig.ValueCollectionType#LIST}
@@ -88,7 +88,7 @@ public final class ValueCollectionFactory {
     /**
      * Picks right empty collection type, like {@link java.util.Collections#emptySet()}
      * or {@link java.util.Collections#emptyList()} )} depending on the
-     * {@link com.hazelcast.config.MultiMapConfig#valueCollectionType}
+     * {@link MultiMapConfig#getValueCollectionType()}
      *
      * @param collectionType one of {@link MultiMapConfig.ValueCollectionType#SET}
      *                       or {@link MultiMapConfig.ValueCollectionType#LIST}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor12byteKey;
 import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.util.HashUtil.fastIntMix;
-import static com.hazelcast.util.HashUtil.fastLongMix;
-import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.util.HashUtil.fastIntMix;
+import static com.hazelcast.internal.util.HashUtil.fastLongMix;
+import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 
 /**
  * Implementation of {@link HashSlotArray8byteKey} as a restriction of {@link HashSlotArrayBase}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,15 @@ public class JavaSerializationFilterConfig {
     private volatile ClassFilter blacklist;
     private volatile ClassFilter whitelist;
     private volatile boolean defaultsDisabled;
+
+    public JavaSerializationFilterConfig() {
+    }
+
+    public JavaSerializationFilterConfig(JavaSerializationFilterConfig javaSerializationFilterConfig) {
+        blacklist = new ClassFilter(javaSerializationFilterConfig.blacklist);
+        whitelist = new ClassFilter(javaSerializationFilterConfig.whitelist);
+        defaultsDisabled = javaSerializationFilterConfig.defaultsDisabled;
+    }
 
     public ClassFilter getBlacklist() {
         if (blacklist == null) {

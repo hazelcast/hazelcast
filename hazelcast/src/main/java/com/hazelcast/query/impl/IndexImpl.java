@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,247 +16,58 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.TypeConverter;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.monitor.impl.PerIndexStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
-import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static java.util.Collections.newSetFromMap;
 
-public class IndexImpl implements InternalIndex {
+/**
+ * Provides implementation of on-heap indexes.
+ */
+public class IndexImpl extends AbstractIndex {
 
-    public static final NullObject NULL = new NullObject();
+    private final Set<Integer> indexedPartitions = newSetFromMap(new ConcurrentHashMap<>());
 
-    protected final InternalSerializationService ss;
-    protected final Extractors extractors;
-    protected final IndexStore indexStore;
-
-    private final String attributeName;
-    private final boolean ordered;
-    private final IndexCopyBehavior copyBehavior;
-    private final PerIndexStats stats;
-
-    private volatile TypeConverter converter;
-
-    public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors,
-                     IndexCopyBehavior copyBehavior, PerIndexStats stats) {
-        this.attributeName = attributeName;
-        this.ordered = ordered;
-        this.ss = ss;
-        this.extractors = extractors;
-        this.copyBehavior = copyBehavior;
-        this.indexStore = createIndexStore(ordered, stats);
-        this.stats = stats;
+    public IndexImpl(
+        IndexConfig config,
+        InternalSerializationService ss,
+        Extractors extractors,
+        IndexCopyBehavior copyBehavior,
+        PerIndexStats stats
+    ) {
+        super(config, ss, extractors, copyBehavior, stats, null);
     }
 
+    @Override
     protected IndexStore createIndexStore(boolean ordered, PerIndexStats stats) {
-        return ordered ? new SortedIndexStore(copyBehavior) : new UnsortedIndexStore(copyBehavior);
-    }
-
-    @Override
-    public void saveEntryIndex(QueryableEntry entry, Object oldRecordValue, OperationSource operationSource) {
-        long timestamp = stats.makeTimestamp();
-        IndexOperationStats operationStats = stats.createOperationStats();
-
-        /*
-         * At first, check if converter is not initialized, initialize it before saving an entry index
-         * Because, if entity index is saved before,
-         * that thread can be blocked before executing converter setting code block,
-         * another thread can query over indexes without knowing the converter and
-         * this causes to class cast exceptions.
-         */
-        if (converter == null || converter == NULL_CONVERTER) {
-            converter = entry.getConverter(attributeName);
-        }
-
-        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getTargetObject(false));
-        if (oldRecordValue == null) {
-            indexStore.newIndex(newAttributeValue, entry, operationStats);
-            stats.onInsert(timestamp, operationStats, operationSource);
-        } else {
-            Object oldAttributeValue = extractAttributeValue(entry.getKeyData(), oldRecordValue);
-            indexStore.updateIndex(oldAttributeValue, newAttributeValue, entry, operationStats);
-            stats.onUpdate(timestamp, operationStats, operationSource);
-        }
-    }
-
-    @Override
-    public void removeEntryIndex(Data key, Object value, OperationSource operationSource) {
-        long timestamp = stats.makeTimestamp();
-        IndexOperationStats operationStats = stats.createOperationStats();
-
-        Object attributeValue = extractAttributeValue(key, value);
-        indexStore.removeIndex(attributeValue, key, operationStats);
-        stats.onRemove(timestamp, operationStats, operationSource);
-    }
-
-    private Object extractAttributeValue(Data key, Object value) {
-        return QueryableEntry.extractAttributeValue(extractors, ss, attributeName, key, value);
-    }
-
-    @Override
-    public Set<QueryableEntry> getRecords(Comparable[] values) {
-        if (values.length == 1) {
-            return getRecords(values[0]);
-        } else {
-            long timestamp = stats.makeTimestamp();
-
-            if (converter != null) {
-                Set<Comparable> convertedValues = createHashSet(values.length);
-                for (Comparable value : values) {
-                    convertedValues.add(convert(value));
-                }
-                Set<QueryableEntry> result = indexStore.getRecords(convertedValues);
-                stats.onIndexHit(timestamp, result.size());
-                return result;
-            }
-
-            stats.onIndexHit(timestamp, 0);
-            return Collections.emptySet();
-        }
-    }
-
-    @Override
-    public Set<QueryableEntry> getRecords(Comparable attributeValue) {
-        long timestamp = stats.makeTimestamp();
-
-        if (converter == null) {
-            stats.onIndexHit(timestamp, 0);
-            return new SingleResultSet(null);
-        }
-
-        Set<QueryableEntry> result = indexStore.getRecords(convert(attributeValue));
-        stats.onIndexHit(timestamp, result.size());
-        return result;
-    }
-
-    @Override
-    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedAttributeValue) {
-        long timestamp = stats.makeTimestamp();
-
-        if (converter == null) {
-            stats.onIndexHit(timestamp, 0);
-            return Collections.emptySet();
-        }
-
-        Set<QueryableEntry> result = indexStore.getSubRecords(comparisonType, convert(searchedAttributeValue));
-        stats.onIndexHit(timestamp, result.size());
-        return result;
-    }
-
-    @Override
-    public Set<QueryableEntry> getSubRecordsBetween(Comparable fromAttributeValue, Comparable toAttributeValue) {
-        long timestamp = stats.makeTimestamp();
-
-        if (converter == null) {
-            stats.onIndexHit(timestamp, 0);
-            return Collections.emptySet();
-        }
-
-        Set<QueryableEntry> result = indexStore.getSubRecordsBetween(convert(fromAttributeValue), convert(toAttributeValue));
-        stats.onIndexHit(timestamp, result.size());
-        return result;
-    }
-
-    /**
-     * Note: the fact that the given attributeValue is of type Comparable doesn't mean that this value is of the same
-     * type as the one that's stored in the index, thus the conversion is needed.
-     *
-     * @param attributeValue to be converted from given type to the type of the attribute that's stored in the index
-     * @return converted value that may be compared with the value that's stored in the index
-     */
-    private Comparable convert(Comparable attributeValue) {
-        return converter.convert(attributeValue);
-    }
-
-    /**
-     * Provides comparable null object.
-     */
-    @Override
-    public TypeConverter getConverter() {
-        return converter;
+        return ordered ? new OrderedIndexStore(copyBehavior) : new UnorderedIndexStore(copyBehavior);
     }
 
     @Override
     public void clear() {
-        indexStore.clear();
-        converter = null;
-        stats.onClear();
+        super.clear();
+        indexedPartitions.clear();
     }
 
     @Override
-    public void destroy() {
-        stats.onClear();
+    public boolean hasPartitionIndexed(int partitionId) {
+        return indexedPartitions.contains(partitionId);
     }
 
     @Override
-    public String getAttributeName() {
-        return attributeName;
+    public void markPartitionAsIndexed(int partitionId) {
+        assert !indexedPartitions.contains(partitionId);
+        indexedPartitions.add(partitionId);
     }
 
     @Override
-    public boolean isOrdered() {
-        return ordered;
+    public void markPartitionAsUnindexed(int partitionId) {
+        indexedPartitions.remove(partitionId);
     }
 
-    @Override
-    public PerIndexStats getPerIndexStats() {
-        return stats;
-    }
-
-    public static final class NullObject implements Comparable, IdentifiedDataSerializable {
-        @Override
-        public int compareTo(Object o) {
-            if (o == this || o instanceof NullObject) {
-                return 0;
-            }
-            return -1;
-        }
-
-        @Override
-        public int hashCode() {
-            return 0;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) {
-
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) {
-
-        }
-
-        @Override
-        public int getFactoryId() {
-            return PredicateDataSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getId() {
-            return PredicateDataSerializerHook.NULL_OBJECT;
-        }
-    }
 }

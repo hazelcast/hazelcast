@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,13 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,71 +40,70 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryResultSizeLimiterTest {
 
     private static final String ANY_MAP_NAME = "foobar";
-    private static final int DEFAULT_PARTITION_COUNT = 271;
+    private static final int PARTITION_COUNT = Integer.valueOf(GroupProperty.PARTITION_COUNT.getDefaultValue());
 
-    private final Map<Integer, Integer> localPartitions = new HashMap<Integer, Integer>();
+    private final Map<Integer, Integer> localPartitions = new HashMap<>();
 
     private QueryResultSizeLimiter limiter;
 
     @Test(expected = IllegalArgumentException.class)
     public void testNodeResultResultSizeLimitNegative() {
-        initMocksWithConfiguration(-2, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        initMocksWithConfiguration(-2);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNodeResultResultSizeLimitZero() {
-        initMocksWithConfiguration(0, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        initMocksWithConfiguration(0);
     }
 
     @Test
     public void testNodeResultFeatureDisabled() {
-        initMocksWithConfiguration(-1, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        initMocksWithConfiguration(-1);
         assertFalse(limiter.isQueryResultLimitEnabled());
     }
 
     @Test
     public void testNodeResultFeatureEnabled() {
-        initMocksWithConfiguration(1, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        initMocksWithConfiguration(1);
         assertTrue(limiter.isQueryResultLimitEnabled());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNodeResultPreCheckLimitNegative() {
-        initMocksWithConfiguration(Integer.MAX_VALUE, -2, Integer.MAX_VALUE);
+        initMocksWithConfiguration(Integer.MAX_VALUE, -2);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNodeResultPreCheckLimitZero() {
-        initMocksWithConfiguration(Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
+        initMocksWithConfiguration(Integer.MAX_VALUE, 0);
     }
 
     @Test
     public void testNodeResultPreCheckLimitDisabled() {
-        initMocksWithConfiguration(Integer.MAX_VALUE, -1, Integer.MAX_VALUE);
+        initMocksWithConfiguration(Integer.MAX_VALUE, -1);
         assertTrue(limiter.isQueryResultLimitEnabled());
         assertFalse(limiter.isPreCheckEnabled());
     }
 
     @Test
     public void testNodeResultPreCheckLimitEnabled() {
-        initMocksWithConfiguration(Integer.MAX_VALUE, 1, Integer.MAX_VALUE);
+        initMocksWithConfiguration(Integer.MAX_VALUE, 1);
         assertTrue(limiter.isQueryResultLimitEnabled());
         assertTrue(limiter.isPreCheckEnabled());
     }
@@ -227,20 +228,20 @@ public class QueryResultSizeLimiterTest {
         limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME);
     }
 
-    private void initMocksWithConfiguration(int maxResultSizeLimit, int maxLocalPartitionLimitForPreCheck) {
-        initMocksWithConfiguration(maxResultSizeLimit, maxLocalPartitionLimitForPreCheck, DEFAULT_PARTITION_COUNT);
+    private void initMocksWithConfiguration(int maxResultSizeLimit) {
+        initMocksWithConfiguration(maxResultSizeLimit, Integer.MAX_VALUE);
     }
 
-    private void initMocksWithConfiguration(int maxResultSizeLimit, int maxLocalPartitionLimitForPreCheck, int partitionCount) {
+    private void initMocksWithConfiguration(int maxResultSizeLimit, int maxLocalPartitionLimitForPreCheck) {
         Config config = new Config();
         config.setProperty(QUERY_RESULT_SIZE_LIMIT.getName(), valueOf(maxResultSizeLimit));
         config.setProperty(QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName(), valueOf(maxLocalPartitionLimitForPreCheck));
-        config.setProperty(PARTITION_COUNT.getName(), valueOf(partitionCount));
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), valueOf(PARTITION_COUNT));
 
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
         InternalPartitionService partitionService = mock(InternalPartitionService.class);
-        when(partitionService.getPartitionCount()).thenReturn(partitionCount);
+        when(partitionService.getPartitionCount()).thenReturn(PARTITION_COUNT);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getProperties()).thenReturn(hazelcastProperties);
@@ -252,7 +253,7 @@ public class QueryResultSizeLimiterTest {
         MapServiceContext mapServiceContext = mock(MapServiceContext.class);
         when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
         when(mapServiceContext.getRecordStore(anyInt(), anyString())).thenReturn(recordStore);
-        when(mapServiceContext.getOwnedPartitions()).thenReturn(localPartitions.keySet());
+        when(mapServiceContext.getOwnedPartitions()).thenReturn(new PartitionIdSet(PARTITION_COUNT, localPartitions.keySet()));
 
         limiter = new QueryResultSizeLimiter(mapServiceContext, Logger.getLogger(QueryResultSizeLimiterTest.class));
     }
@@ -274,11 +275,13 @@ public class QueryResultSizeLimiterTest {
         }
 
         @Override
-        public Integer answer(InvocationOnMock invocation) throws Throwable {
+        public Integer answer(InvocationOnMock invocation) {
             if (iterator.hasNext()) {
                 lastValue = iterator.next();
             }
             return lastValue;
         }
+
     }
+
 }

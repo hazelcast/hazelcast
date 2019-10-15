@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 
 import java.io.File;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A MetricSet for files. Currently only displays space statistics for the partition of the user.home
@@ -41,32 +42,10 @@ public final class FileMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         File file = new File(System.getProperty("user.home"));
-
-        metricsRegistry.register(file, "file.partition[user.home].freeSpace", MANDATORY,
-                new LongProbeFunction<File>() {
-                    @Override
-                    public long get(File file) {
-                        return file.getFreeSpace();
-                    }
-                }
-        );
-
-        metricsRegistry.register(file, "file.partition[user.home].totalSpace", MANDATORY,
-                new LongProbeFunction<File>() {
-                    @Override
-                    public long get(File file) {
-                        return file.getTotalSpace();
-                    }
-                }
-        );
-
-        metricsRegistry.register(file, "file.partition[user.home].usableSpace", MANDATORY,
-                new LongProbeFunction<File>() {
-                    @Override
-                    public long get(File file) {
-                        return file.getUsableSpace();
-                    }
-                }
-        );
+        MetricTagger tagger = metricsRegistry.newMetricTagger("file.partition")
+                                             .withIdTag("dir", "user.home");
+        tagger.registerStaticProbe(file, "freeSpace", MANDATORY, BYTES, File::getFreeSpace);
+        tagger.registerStaticProbe(file, "totalSpace", MANDATORY, BYTES, File::getTotalSpace);
+        tagger.registerStaticProbe(file, "usableSpace", MANDATORY, BYTES, File::getUsableSpace);
     }
 }

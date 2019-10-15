@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.client.impl.protocol.task.topic;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
@@ -31,12 +32,13 @@ import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
 import java.util.Random;
+import java.util.UUID;
 
-import static com.hazelcast.util.HashUtil.hashToIndex;
+import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 
 public class TopicAddMessageListenerMessageTask
         extends AbstractCallableMessageTask<TopicAddMessageListenerCodec.RequestParameters>
-        implements MessageListener {
+        implements MessageListener, ListenerMessageTask {
 
     private Data partitionKey;
     private Random rand = new Random();
@@ -49,7 +51,7 @@ public class TopicAddMessageListenerMessageTask
     protected Object call() throws Exception {
         partitionKey = serializationService.toData(parameters.name);
         TopicService service = getService(TopicService.SERVICE_NAME);
-        String registrationId = service.addMessageListener(parameters.name, this, parameters.localOnly);
+        UUID registrationId = service.addMessageListener(parameters.name, this, parameters.localOnly);
         endpoint.addListenerDestroyAction(TopicService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
     }
@@ -61,7 +63,7 @@ public class TopicAddMessageListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TopicAddMessageListenerCodec.encodeResponse((String) response);
+        return TopicAddMessageListenerCodec.encodeResponse((UUID) response);
     }
 
 
@@ -104,7 +106,7 @@ public class TopicAddMessageListenerMessageTask
 
         DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
         Data messageData = dataAwareMessage.getMessageData();
-        String publisherUuid = message.getPublishingMember().getUuid();
+        UUID publisherUuid = message.getPublishingMember().getUuid();
         ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData,
                 message.getPublishTime(), publisherUuid);
 

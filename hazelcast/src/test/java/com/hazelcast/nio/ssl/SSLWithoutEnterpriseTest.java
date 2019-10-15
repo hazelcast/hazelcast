@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.nio.ssl.TestKeyStoreUtil.createSslProperties;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SSLWithoutEnterpriseTest extends HazelcastTestSupport {
@@ -36,8 +34,7 @@ public class SSLWithoutEnterpriseTest extends HazelcastTestSupport {
     public void test() {
         Config config = new Config();
         SSLConfig sslConfig = new SSLConfig();
-        sslConfig.setEnabled(true)
-                .setProperties(createSslProperties());
+        sslConfig.setEnabled(true);
 
         config.getNetworkConfig().setSSLConfig(sslConfig);
 

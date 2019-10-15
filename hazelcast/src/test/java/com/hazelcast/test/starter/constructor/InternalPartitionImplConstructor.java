@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,21 +34,22 @@ public class InternalPartitionImplConstructor extends AbstractStarterObjectConst
     @Override
     Object createNew0(Object delegate) throws Exception {
         ClassLoader classloader = targetClass.getClassLoader();
-        Class<?> partitionListenerClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionListener");
-        Class<?> addressClass = classloader.loadClass("com.hazelcast.nio.Address");
-        Class<?> addressArrayClass = Array.newInstance(addressClass, 0).getClass();
-        // obtain reference to constructor InternalPartitionImpl(int partitionId, PartitionListener listener,
-        //                                                       Address thisAddress, Address[] addresses)
-        Constructor<?> constructor = targetClass.getDeclaredConstructor(Integer.TYPE, partitionListenerClass, addressClass,
-                addressArrayClass);
+        Class<?> partitionInterceptorClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionReplicaInterceptor");
+        Class<?> replicaClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionReplica");
+        Class<?> replicaArrayClass = Array.newInstance(replicaClass, 0).getClass();
+        // obtain reference to constructor InternalPartitionImpl(int partitionId, PartitionReplicaInterceptor interceptor,
+        //                                                       PartitionReplica localReplica, PartitionReplica[] replicas)
+        Constructor<?> constructor = targetClass.getDeclaredConstructor(Integer.TYPE, partitionInterceptorClass, replicaClass,
+                replicaArrayClass);
 
         Integer partitionId = (Integer) getFieldValueReflectively(delegate, "partitionId");
-        Object partitionListener = getFieldValueReflectively(delegate, "partitionListener");
-        Object thisAddress = getFieldValueReflectively(delegate, "thisAddress");
-        Object addresses = getFieldValueReflectively(delegate, "addresses");
-        Object[] args = new Object[]{partitionId, partitionListener, thisAddress, addresses};
+        Object partitionListener = getFieldValueReflectively(delegate, "interceptor");
+        Object localReplica = getFieldValueReflectively(delegate, "localReplica");
+        Object replicas = getFieldValueReflectively(delegate, "replicas");
 
+        Object[] args = new Object[] {partitionId, partitionListener, localReplica, replicas};
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, classloader);
+
         return constructor.newInstance(proxiedArgs);
     }
 }

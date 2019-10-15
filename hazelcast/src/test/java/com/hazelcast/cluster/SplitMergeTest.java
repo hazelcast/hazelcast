@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SplitMergeTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -52,8 +52,8 @@ public class SplitMergeTest extends HazelcastTestSupport {
         HazelcastInstance h1 = factory.newHazelcastInstance(newConfig());
         HazelcastInstance h2 = factory.newHazelcastInstance(newConfig());
 
-        String initialUuid_H1 = getNode(h1).getThisUuid();
-        String initialUuid_H2 = getNode(h2).getThisUuid();
+        UUID initialUuid_H1 = getNode(h1).getThisUuid();
+        UUID initialUuid_H2 = getNode(h2).getThisUuid();
 
         // create split
         closeConnectionBetween(h1, h2);
@@ -64,8 +64,8 @@ public class SplitMergeTest extends HazelcastTestSupport {
         mergeBack(h2, getAddress(h1));
         assertClusterSizeEventually(2, h1, h2);
 
-        String currentUuid_H1 = getNode(h1).getThisUuid();
-        String currentUuid_H2 = getNode(h2).getThisUuid();
+        UUID currentUuid_H1 = getNode(h1).getThisUuid();
+        UUID currentUuid_H2 = getNode(h2).getThisUuid();
 
         // h2 merges to h1.
         // UUID of h1 remains the same.

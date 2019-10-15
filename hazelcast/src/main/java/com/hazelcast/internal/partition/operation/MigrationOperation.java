@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,30 +19,32 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.partition.MigrationAwareService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
+
+import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 
 /**
  * Migration operation used by Hazelcast version 3.9
@@ -53,11 +55,8 @@ import java.util.logging.Level;
  */
 public class MigrationOperation extends BaseMigrationOperation implements TargetAware {
 
-    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new OperationResponseHandler() {
-        @Override
-        public void sendResponse(Operation op, Object obj) {
-            throw new HazelcastException("Migration operations can not send response!");
-        }
+    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = (op, obj) -> {
+        throw new HazelcastException("Migration operations can not send response!");
     };
 
     private ReplicaFragmentMigrationState fragmentMigrationState;
@@ -68,9 +67,9 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion,
-                       ReplicaFragmentMigrationState fragmentMigrationState, boolean firstFragment, boolean lastFragment) {
-        super(migrationInfo, partitionStateVersion);
+    public MigrationOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations, int partitionStateVersion,
+            ReplicaFragmentMigrationState fragmentMigrationState, boolean firstFragment, boolean lastFragment) {
+        super(migrationInfo, completedMigrations, partitionStateVersion);
         this.fragmentMigrationState = fragmentMigrationState;
         this.firstFragment = firstFragment;
         this.lastFragment = lastFragment;
@@ -85,7 +84,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
      */
     @Override
     public void run() throws Exception {
-        verifyMasterOnMigrationDestination();
         setActiveMigration();
 
         try {
@@ -98,14 +96,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             if (!success) {
                 onExecutionFailure(failureReason);
             }
-        }
-    }
-
-    private void verifyMasterOnMigrationDestination() {
-        NodeEngine nodeEngine = getNodeEngine();
-        Address masterAddress = nodeEngine.getMasterAddress();
-        if (!masterAddress.equals(migrationInfo.getMaster())) {
-            throw new IllegalStateException("Migration initiator is not master node! => " + toString());
         }
     }
 
@@ -135,9 +125,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
 
     private void runMigrationOperation(Operation op) throws Exception {
         prepareOperation(op);
-        op.beforeRun();
-        op.run();
-        op.afterRun();
+        runDirect(op);
     }
 
     protected void prepareOperation(Operation op) {
@@ -145,7 +133,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
                 .setPartitionId(getPartitionId())
                 .setReplicaIndex(getReplicaIndex());
         op.setOperationResponseHandler(ERROR_RESPONSE_HANDLER);
-        OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
+        OperationAccessor.setCallerAddress(op, migrationInfo.getSourceAddress());
     }
 
     private void afterMigrate() {
@@ -232,7 +220,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.MIGRATION;
     }
 
@@ -253,7 +241,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        fragmentMigrationState.writeData(out);
+        out.writeObject(fragmentMigrationState);
         out.writeBoolean(firstFragment);
         out.writeBoolean(lastFragment);
     }
@@ -261,8 +249,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        fragmentMigrationState = new ReplicaFragmentMigrationState();
-        fragmentMigrationState.readData(in);
+        fragmentMigrationState = in.readObject();
         firstFragment = in.readBoolean();
         lastFragment = in.readBoolean();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,23 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanReference;
@@ -43,11 +48,16 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static org.springframework.util.Assert.isTrue;
@@ -62,13 +72,13 @@ import static org.springframework.util.Assert.isTrue;
  * <li>{@link HazelcastTypeBeanDefinitionParser}</li>
  * </ul>
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
 public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     /**
      * Base Helper class for Spring Xml Builder
      */
-    public abstract class SpringXmlBuilderHelper extends AbstractXmlConfigHelper {
+    public abstract static class SpringXmlBuilderHelper extends AbstractXmlConfigHelper {
 
         protected BeanDefinitionBuilder configBuilder;
 
@@ -101,6 +111,14 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
         }
 
+        protected String getTextContent(Node node) {
+            return DomConfigHelper.getTextContent(node, domLevel3);
+        }
+
+        protected String getAttribute(Node node, String attName) {
+            return DomConfigHelper.getAttribute(node, attName, domLevel3);
+        }
+
         protected BeanDefinitionBuilder createBeanBuilder(Class clazz) {
             BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(clazz);
             builder.setScope(configBuilder.getBeanDefinition().getScope());
@@ -119,7 +137,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         @SuppressWarnings("SameParameterValue")
         protected BeanDefinitionBuilder createAndFillListedBean(Node node, Class clazz, String propertyName,
-                                               ManagedMap<String, AbstractBeanDefinition> managedMap, String... excludeNames) {
+                                                                ManagedMap<String, AbstractBeanDefinition> managedMap,
+                                                                String... excludeNames) {
 
             BeanDefinitionBuilder builder = createBeanBuilder(clazz);
             AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
@@ -133,7 +152,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void fillValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
             Collection<String> epn = excludeNames != null && excludeNames.length > 0
-                    ? new HashSet<String>(asList(excludeNames)) : null;
+                    ? new HashSet<>(asList(excludeNames)) : null;
             fillAttributeValues(node, builder, epn);
             for (Node n : childElements(node)) {
                 String name = xmlToJavaName(cleanNodeName(n));
@@ -147,7 +166,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void fillAttributeValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
             Collection<String> epn = excludeNames != null && excludeNames.length > 0
-                    ? new HashSet<String>(asList(excludeNames)) : null;
+                    ? new HashSet<>(asList(excludeNames)) : null;
             fillAttributeValues(node, builder, epn);
         }
 
@@ -166,8 +185,21 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
         }
 
+        protected void fillAttributesForAliasedDiscoveryStrategy(AliasedDiscoveryConfig config, Node node,
+                                                                 BeanDefinitionBuilder builder, String name) {
+            NamedNodeMap attributes = node.getAttributes();
+            if (attributes != null) {
+                for (int i = 0; i < attributes.getLength(); i++) {
+                    Node attribute = attributes.item(i);
+                    config.setProperty(attribute.getNodeName(), attribute.getNodeValue());
+                }
+            }
+            String propertyName = String.format("%sConfig", name);
+            builder.addPropertyValue(propertyName, config);
+        }
+
         protected ManagedList parseListeners(Node node, Class listenerConfigClass) {
-            ManagedList<BeanDefinition> listeners = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> listeners = new ManagedList<>();
             String implementationAttr = "implementation";
             for (Node listenerNode : childElements(node)) {
                 BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(listenerConfigClass);
@@ -182,7 +214,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected ManagedList parseProxyFactories(Node node, Class proxyFactoryConfigClass) {
-            ManagedList<BeanDefinition> list = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> list = new ManagedList<>();
             for (Node instanceNode : childElements(node)) {
                 BeanDefinitionBuilder confBuilder = createBeanBuilder(proxyFactoryConfigClass);
                 fillAttributeValues(instanceNode, confBuilder);
@@ -192,8 +224,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handleDataSerializableFactories(Node node, BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap<Integer, BeanReference> factories = new ManagedMap<Integer, BeanReference>();
-            ManagedMap<Integer, String> classNames = new ManagedMap<Integer, String>();
+            ManagedMap<Integer, BeanReference> factories = new ManagedMap<>();
+            ManagedMap<Integer, String> classNames = new ManagedMap<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("data-serializable-factory".equals(name)) {
@@ -220,7 +252,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             String typeClassName = "type-class";
             String overrideJavaSerializationName = "override-java-serialization";
 
-            ManagedList<BeanDefinition> serializers = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> serializers = new ManagedList<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("global-serializer".equals(name)) {
@@ -276,8 +308,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handlePortableFactories(Node node, BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap<Integer, BeanReference> factories = new ManagedMap<Integer, BeanReference>();
-            ManagedMap<Integer, String> classNames = new ManagedMap<Integer, String>();
+            ManagedMap<Integer, BeanReference> factories = new ManagedMap<>();
+            ManagedMap<Integer, String> classNames = new ManagedMap<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("portable-factory".equals(name)) {
@@ -335,13 +367,29 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     socketInterceptorConfigBuilder.getBeanDefinition());
         }
 
+        void handleClusterAttributes(Node node) {
+            NamedNodeMap attributes = node.getAttributes();
+            if (attributes != null) {
+                for (int a = 0; a < attributes.getLength(); a++) {
+                    Node att = attributes.item(a);
+                    String name = att.getNodeName();
+                    String value = att.getNodeValue();
+                    if ("name".equals(name)) {
+                        configBuilder.addPropertyValue("clusterName", value);
+                    } else if ("password".equals(name)) {
+                        configBuilder.addPropertyValue("clusterPassword", value);
+                    }
+                }
+            }
+        }
+
         protected void handleProperties(Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
             ManagedMap properties = parseProperties(node);
             beanDefinitionBuilder.addPropertyValue("properties", properties);
         }
 
         protected ManagedMap parseProperties(Node node) {
-            ManagedMap<String, String> properties = new ManagedMap<String, String>();
+            ManagedMap<String, String> properties = new ManagedMap<>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
                 String propertyName;
@@ -361,7 +409,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         @SuppressWarnings("checkstyle:npathcomplexity")
-        protected BeanDefinition getEvictionConfig(Node node) {
+        protected BeanDefinition getEvictionConfig(Node node, boolean isNearCache) {
             Node size = node.getAttributes().getNamedItem("size");
             Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
             Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
@@ -399,7 +447,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
 
             try {
-                checkEvictionConfig(evictionPolicyValue, comparatorClassNameValue, comparatorBean, false);
+                checkEvictionConfig(evictionPolicyValue, comparatorClassNameValue, comparatorBean, isNearCache);
             } catch (IllegalArgumentException e) {
                 throw new InvalidConfigurationException(e.getMessage());
             }
@@ -453,7 +501,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void handleDiscoveryStrategies(Node node, BeanDefinitionBuilder joinConfigBuilder) {
             BeanDefinitionBuilder discoveryConfigBuilder = createBeanBuilder(DiscoveryConfig.class);
-            ManagedList<BeanDefinition> discoveryStrategyConfigs = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> discoveryStrategyConfigs = new ManagedList<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("discovery-strategy".equals(name)) {
@@ -466,6 +514,38 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             discoveryConfigBuilder.addPropertyValue("discoveryStrategyConfigs", discoveryStrategyConfigs);
             joinConfigBuilder.addPropertyValue("discoveryConfig", discoveryConfigBuilder.getBeanDefinition());
+        }
+
+        protected void handleIndex(ManagedList<BeanDefinition> indexes, Node indexNode) {
+            BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(IndexConfig.class);
+
+            NamedNodeMap attributes = indexNode.getAttributes();
+
+            // Resolve name.
+            String name = getTextContent(attributes.getNamedItem("name"));
+            indexConfBuilder.addPropertyValue("name", name.isEmpty() ? null : name);
+
+            // Resolve type.
+            String typeStr = getTextContent(attributes.getNamedItem("type"));
+            IndexType type = IndexUtils.getIndexTypeFromXmlName(typeStr);
+            indexConfBuilder.addPropertyValue("type", type);
+
+            // Resolve columns.
+            List<String> columns = new ArrayList<>();
+
+            for (Node columnsNode : childElements(indexNode)) {
+                if ("attributes".equals(cleanNodeName(columnsNode))) {
+                    for (Node columnNode : childElements(columnsNode)) {
+                        if ("attribute".equals(cleanNodeName(columnNode))) {
+                            columns.add(getTextContent(columnNode));
+                        }
+                    }
+                }
+            }
+
+            indexConfBuilder.addPropertyValue("attributes", columns);
+
+            indexes.add(indexConfBuilder.getBeanDefinition());
         }
 
         private void handleDiscoveryServiceProvider(Node node, BeanDefinitionBuilder discoveryConfigBuilder) {
@@ -536,9 +616,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         private AbstractBeanDefinition createFilterListBean(Node node) {
             BeanDefinitionBuilder filterListBuilder = createBeanBuilder(ClassFilter.class);
-            ManagedSet<String> classes = new ManagedSet<String>();
-            ManagedSet<String> packages = new ManagedSet<String>();
-            ManagedSet<String> prefixes = new ManagedSet<String>();
+            ManagedSet<String> classes = new ManagedSet<>();
+            ManagedSet<String> packages = new ManagedSet<>();
+            ManagedSet<String> prefixes = new ManagedSet<>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("class".equals(name)) {

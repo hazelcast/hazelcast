@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,16 @@ import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,15 +48,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    private static final Predicate<Integer, Employee> TRUE_PREDICATE = Predicates.alwaysTrue();
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Employee> SQL_PREDICATE_GT = new SqlPredicate("id > 100");
+    private static final Predicate<Integer, Employee> SQL_PREDICATE_GT = Predicates.sql("id > 100");
     @SuppressWarnings("unchecked")
-    private static final Predicate<Integer, Employee> SQL_PREDICATE_LT = new SqlPredicate("id < 100");
+    private static final Predicate<Integer, Employee> SQL_PREDICATE_LT = Predicates.sql("id < 100");
 
     @Parameterized.Parameters(name = "query cache natural filtering: {0}")
     public static Collection<Object> parameters() {
@@ -79,12 +77,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         final int count = 111;
         populateMap(map, count);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(10, listener.getAddedEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(10, listener.getAddedEventCount()));
     }
 
     @Test
@@ -99,12 +92,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         final int count = 111;
         populateMap(map, count);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.getAddedEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, listener.getAddedEventCount()));
     }
 
     @Test
@@ -124,15 +112,12 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         populateMap(map, count);
         removeEntriesFromMap(map, 0, count);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                int cacheSize = cache.size();
-                String message = "Cache size is=" + cacheSize;
-                assertEquals(message, 0, cacheSize);
-                assertEquals(message, 2, addListener.getAddedEventCount());
-                assertEquals(message, 2, removeListener.getRemovedEventCount());
-            }
+        assertTrueEventually(() -> {
+            int cacheSize = cache.size();
+            String message = "Cache size is=" + cacheSize;
+            assertEquals(message, 0, cacheSize);
+            assertEquals(message, 2, addListener.getAddedEventCount());
+            assertEquals(message, 2, removeListener.getRemovedEventCount());
         });
     }
 
@@ -169,13 +154,10 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
         map.clear();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                // expecting at least 1 event
-                assertTrue(clearAllEventCount.get() >= 1);
-                assertEquals(0, queryCache.size());
-            }
+        assertTrueEventually(() -> {
+            // expecting at least 1 event
+            assertTrue(clearAllEventCount.get() >= 1);
+            assertEquals(0, queryCache.size());
         });
     }
 
@@ -193,12 +175,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         employee = new Employee(200);
         map.put(0, employee);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.getRemovedEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, listener.getRemovedEventCount()));
     }
 
     @Test
@@ -217,12 +194,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
         sleepAtLeastSeconds(5);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.getAddedEventCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, listener.getAddedEventCount()));
     }
 
     @Test
@@ -241,27 +213,12 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         // trigger creation of the query cache
         map.getQueryCache(cacheName);
         populateMap(map, 100);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(100, listener.getAddedEventCount());
-            }
-        });
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(100, listener.getAddedEventCount());
-            }
-        }, 5);
+        assertTrueEventually(() -> assertEquals(100, listener.getAddedEventCount()));
+        assertTrueAllTheTime(() -> assertEquals(100, listener.getAddedEventCount()), 5);
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expected, cache.size());
-            }
-        }, 10);
+        assertTrueEventually(() -> assertEquals(expected, cache.size()), 10);
     }
 
     private void testValueCaching(final boolean includeValue) {
@@ -274,15 +231,12 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         final int putCount = 1000;
         populateMap(map, putCount);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(putCount, cache.size());
-                if (includeValue) {
-                    assertTrue("There should not be any null value", listener.hasValue);
-                } else {
-                    assertFalse("There should not be any non-null value", listener.hasValue);
-                }
+        assertTrueEventually(() -> {
+            assertEquals(putCount, cache.size());
+            if (includeValue) {
+                assertTrue("There should not be any null value", listener.hasValue);
+            } else {
+                assertFalse("There should not be any non-null value", listener.hasValue);
             }
         });
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ package com.hazelcast.map.impl.nearcache.invalidation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.UUID;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static org.mockito.Mockito.mock;
@@ -32,6 +35,7 @@ public abstract class AbstractInvalidatorTest extends HazelcastTestSupport {
 
     private Invalidator invalidator;
     private Data key;
+    private UUID sourceUuid = UuidUtil.newUnsecureUUID();
 
     @Before
     public void setUp() {
@@ -46,12 +50,12 @@ public abstract class AbstractInvalidatorTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testInvalidate_withInvalidKey() {
-        invalidator.invalidateKey(null, "mapName", "sourceUuid");
+        invalidator.invalidateKey(null, "mapName", sourceUuid);
     }
 
     @Test(expected = NullPointerException.class)
     public void testInvalidate_withInvalidMapName() {
-        invalidator.invalidateKey(key, null, "sourceUuid");
+        invalidator.invalidateKey(key, null, sourceUuid);
     }
 
     @Test(expected = NullPointerException.class)
@@ -61,7 +65,7 @@ public abstract class AbstractInvalidatorTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testInvalidateAllKeys_withInvalidMapName() {
-        invalidator.invalidateAllKeys(null, "sourceUuid");
+        invalidator.invalidateAllKeys(null, sourceUuid);
     }
 
     @Test(expected = NullPointerException.class)

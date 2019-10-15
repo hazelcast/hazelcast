@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,18 +25,20 @@ import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.ListenerWrapperEventFilter;
-import com.hazelcast.spi.NotifiableEventListener;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.internal.services.ListenerWrapperEventFilter;
+import com.hazelcast.internal.services.NotifiableEventListener;
 
 import java.security.Permission;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 /**
@@ -46,7 +48,7 @@ import java.util.concurrent.Callable;
  * @see CacheService#registerListener(String, CacheEventListener, boolean localOnly)
  */
 public class CacheAddEntryListenerMessageTask
-        extends AbstractCallableMessageTask<CacheAddEntryListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<CacheAddEntryListenerCodec.RequestParameters> implements ListenerMessageTask {
 
     public CacheAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -57,7 +59,7 @@ public class CacheAddEntryListenerMessageTask
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
 
-        final String registrationId =
+        final UUID registrationId =
                 service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener, parameters.localOnly);
         endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
             @Override
@@ -145,7 +147,7 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddEntryListenerCodec.encodeResponse((String) response);
+        return CacheAddEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

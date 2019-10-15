@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class PartitioningStrategyFactory {
 
     // not private for tests
-    final ConcurrentHashMap<String, PartitioningStrategy> cache = new ConcurrentHashMap<String, PartitioningStrategy>();
+    final ConcurrentHashMap<String, PartitioningStrategy> cache = new ConcurrentHashMap<>();
 
     // this is set to the current NodeEngine.getConfigClassLoader
     private final ClassLoader configClassLoader;

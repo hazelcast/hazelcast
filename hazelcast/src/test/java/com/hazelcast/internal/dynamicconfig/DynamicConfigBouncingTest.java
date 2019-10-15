@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -35,12 +36,12 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import org.junit.Rule;
@@ -54,13 +55,13 @@ import java.util.Collections;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class DynamicConfigBouncingTest extends HazelcastTestSupport {
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
             .clusterSize(4)
             .driverCount(1)
-            .useTerminate()
+            .useTerminate(true)
             .build();
 
     public Config getConfig() {
@@ -109,7 +110,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig("queryCacheName")
                 .setBatchSize(100)
-                .addIndexConfig(new MapIndexConfig("attribute", false))
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "attribute"))
                 .addEntryListenerConfig(new EntryListenerConfig("foo.bar.Classname", false, true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT);
 
@@ -131,13 +132,13 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .addEntryListenerConfig(entryListener)
                 .addEntryListenerConfig(mapListener)
                 .addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig("foo.bar.Classname"))
-                .addMapIndexConfig(new MapIndexConfig("orderAttribute", true))
-                .addMapIndexConfig(new MapIndexConfig("unorderedAttribute", false))
-                .addMapAttributeConfig(new MapAttributeConfig("attribute", "foo.bar.ExtractorClass"))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "orderAttribute"))
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "unorderedAttribute"))
+                .addAttributeConfig(new AttributeConfig("attribute", "foo.bar.ExtractorClass"))
                 .addQueryCacheConfig(queryCacheConfig)
                 .setStatisticsEnabled(false)
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("foo.bar.Class"))
-                .setQuorumName("quorum");
+                .setSplitBrainProtectionName("split-brain-protection");
     }
 
     private static class MyEntryUpdatedListener implements EntryUpdatedListener, Serializable {
@@ -184,6 +185,11 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
 
         @Override
         public void entryEvicted(EntryEvent event) {
+        }
+
+        @Override
+        public void entryExpired(EntryEvent event) {
+
         }
 
         @Override

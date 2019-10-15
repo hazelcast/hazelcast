@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,27 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+
+import java.util.UUID;
 
 /**
  * Helper event listener methods for {@link MapServiceContext}.
  */
 public interface MapServiceContextEventListenerSupport {
 
-    String addLocalEventListener(Object mapListener, String mapName);
+    UUID addLocalEventListener(Object mapListener, String mapName);
 
-    String addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
+    UUID addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
-    String addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName);
+    UUID addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName);
 
-    String addEventListener(Object mapListener, EventFilter eventFilter, String mapName);
+    UUID addEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
-    String addPartitionLostListener(MapPartitionLostListener listener, String mapName);
+    UUID addPartitionLostListener(MapPartitionLostListener listener, String mapName);
 
-    boolean removeEventListener(String mapName, String registrationId);
+    boolean removeEventListener(String mapName, UUID registrationId);
 
-    boolean removePartitionLostListener(String mapName, String registrationId);
+    boolean removePartitionLostListener(String mapName, UUID registrationId);
 
 }

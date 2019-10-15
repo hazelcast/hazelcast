@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,22 @@ import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ import java.util.Map;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public class MapExecuteWithPredicateMessageTask
-        extends AbstractCallableMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<MapExecuteWithPredicateCodec.RequestParameters> implements BlockingMessageTask {
 
     public MapExecuteWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -53,7 +54,7 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected Object call() throws Exception {
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         Predicate predicate = serializationService.toObject(parameters.predicate);
 
@@ -66,13 +67,13 @@ public class MapExecuteWithPredicateMessageTask
     }
 
     private Object invokeOnPartition(PartitionPredicate partitionPredicate,
-                                     InternalOperationService operationService) {
-        int partitionId = getPartitionId();
+                                     OperationServiceImpl operationService) {
+        int partitionId = clientMessage.getPartitionId();
         Predicate predicate = partitionPredicate.getTarget();
         OperationFactory factory = createOperationFactory(predicate);
         InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(getServiceName(),
                 factory.createOperation(), partitionId);
-        Object result = invocationBuilder.invoke().join();
+        Object result = invocationBuilder.invoke().joinInternal();
         return reduce(Collections.singletonMap(partitionId, result));
     }
 

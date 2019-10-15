@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,20 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Partition;
+import com.hazelcast.map.IMap;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
+import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -64,7 +66,7 @@ import static org.junit.Assert.assertNotSame;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberMapReconciliationTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "MemberMapReconciliationTest";
@@ -173,14 +175,15 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
         return map;
     }
 
-    private static void waitForNearCacheInvalidationMetadata(final IMap<Integer, Integer> nearCachedMapFromNewServer,
+    private void waitForNearCacheInvalidationMetadata(final IMap<Integer, Integer> nearCachedMapFromNewServer,
                                                              final HazelcastInstance server) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 final DefaultNearCache nearCache = getNearCache((NearCachedMapProxyImpl) nearCachedMapFromNewServer);
 
-                StaleReadDetector staleReadDetector = nearCache.getNearCacheRecordStore().getStaleReadDetector();
+                NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
+                StaleReadDetector staleReadDetector = getStaleReadDetector(nearCacheRecordStore);
 
                 // we first assert that the stale detector is not the initial one, since the metadata that the records are
                 // initialized with on putting records into the record store is queried from the stale detector
@@ -195,6 +198,10 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
                 }
             }
         });
+    }
+
+    protected StaleReadDetector getStaleReadDetector(NearCacheRecordStore nearCacheRecordStore) {
+        return ((AbstractNearCacheRecordStore) nearCacheRecordStore).getStaleReadDetector();
     }
 
     private static DefaultNearCache getNearCache(NearCachedMapProxyImpl nearCachedMapFromNewServer) {

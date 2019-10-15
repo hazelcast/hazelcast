@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
@@ -36,7 +36,7 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         recordStore.evict(dataKey, true);
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -44,7 +44,7 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         publishWanRemove(dataKey);
     }
 
@@ -54,7 +54,7 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.EVICT_BACKUP;
     }
 
@@ -62,14 +62,12 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
-        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
-        disableWanReplicationEvent = in.readBoolean();
     }
 
 }

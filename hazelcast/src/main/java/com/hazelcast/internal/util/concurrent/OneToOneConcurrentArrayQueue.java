@@ -1,6 +1,6 @@
 /*
  * Original work Copyright 2015 Real Logic Ltd.
- * Modified work Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Modified work Copyright (c) 2015-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 
 package com.hazelcast.internal.util.concurrent;
 
-import com.hazelcast.util.function.Predicate;
-
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.Predicate;
 
 /**
  * Single producer to single consumer concurrent queue backed by an array.

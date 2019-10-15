@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Provides a basic configuration for a split-brain aware data structure.
@@ -29,10 +29,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
-        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable {
+        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     protected String name;
-    protected String quorumName;
+    protected String splitBrainProtectionName;
     protected MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     protected AbstractBasicConfig() {
@@ -44,11 +44,9 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
 
     protected AbstractBasicConfig(AbstractBasicConfig config) {
         this.name = config.name;
-        this.quorumName = config.quorumName;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
-
-    abstract T getAsReadOnly();
 
     /**
      * Gets the name of this data structure.
@@ -92,22 +90,22 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public T setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public T setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         //noinspection unchecked
         return (T) this;
     }
@@ -116,7 +114,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
     public String toString() {
         return  getClass().getSimpleName() + "{"
                 + "name='" + name + '\''
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + "}";
     }

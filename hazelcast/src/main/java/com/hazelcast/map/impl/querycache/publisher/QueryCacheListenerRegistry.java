@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,61 +16,62 @@
 
 package com.hazelcast.map.impl.querycache.publisher;
 
-import com.hazelcast.core.IFunction;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.Registry;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * Holds IDs of registered listeners which are registered to listen underlying
  * {@code IMap} events to feed {@link com.hazelcast.map.QueryCache QueryCache}.
  * <p>
- * This class contains mappings like: cacheId ---> registered listener IDs for underlying {@code IMap}.
+ * This class contains mappings like: cacheId ---&gt; registered listener IDs for underlying {@code IMap}.
  */
-public class QueryCacheListenerRegistry implements Registry<String, String> {
+public class QueryCacheListenerRegistry implements Registry<String, UUID> {
 
-    private final ConstructorFunction<String, String> registryConstructorFunction =
-            new ConstructorFunction<String, String>() {
+    private final ConstructorFunction<String, UUID> registryConstructorFunction =
+            new ConstructorFunction<String, UUID>() {
                 @Override
-                public String createNew(String ignored) {
-                    IFunction<String, String> registration = context.getPublisherContext().getListenerRegistrator();
+                public UUID createNew(String ignored) {
+                    Function<String, UUID> registration = context.getPublisherContext().getListenerRegistrator();
                     return registration.apply(mapName);
                 }
             };
 
     private final String mapName;
     private final QueryCacheContext context;
-    private final ConcurrentMap<String, String> listeners;
+    private final ConcurrentMap<String, UUID> listeners;
 
     public QueryCacheListenerRegistry(QueryCacheContext context, String mapName) {
         this.context = context;
         this.mapName = mapName;
-        this.listeners = new ConcurrentHashMap<String, String>();
+        this.listeners = new ConcurrentHashMap<>();
     }
 
     @Override
-    public String getOrCreate(String cacheId) {
+    public UUID getOrCreate(String cacheId) {
         return ConcurrencyUtil.getOrPutIfAbsent(listeners, cacheId, registryConstructorFunction);
     }
 
     @Override
-    public String getOrNull(String cacheId) {
+    public UUID getOrNull(String cacheId) {
         return listeners.get(cacheId);
     }
 
     @Override
-    public Map<String, String> getAll() {
+    public Map<String, UUID> getAll() {
         return Collections.unmodifiableMap(listeners);
     }
 
     @Override
-    public String remove(String cacheId) {
+    public UUID remove(String cacheId) {
         return listeners.remove(cacheId);
     }
 }

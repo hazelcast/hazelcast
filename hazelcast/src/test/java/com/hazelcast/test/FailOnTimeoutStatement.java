@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,14 +50,22 @@ public class FailOnTimeoutStatement extends Statement {
     @Override
     public void evaluate() throws Throwable {
         CallableStatement callable = new CallableStatement();
-        FutureTask<Throwable> task = new FutureTask<Throwable>(callable);
-        Thread thread = new Thread(task, name);
+        FutureTask<Throwable> task = new FutureTask<>(callable);
+        Thread thread = newThread(task, name);
         thread.setDaemon(true);
         thread.start();
         callable.awaitStarted();
         Throwable throwable = getResult(task, thread);
         if (throwable != null) {
             throw throwable;
+        }
+    }
+
+    Thread newThread(FutureTask<Throwable> task, String name) {
+        if (Thread.currentThread() instanceof MultithreadedTestRunnerThread) {
+            return new MultithreadedTestRunnerThread(task, name);
+        } else {
+            return new Thread(task, name);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Event filter which mathes map events on a specified entry key and matching a predefined {@link Predicate}.
+ * Event filter which matches map events on a specified entry key and
+ * matching a predefined {@link Predicate}.
  */
 public class QueryEventFilter extends EntryEventFilter {
 
@@ -51,6 +52,11 @@ public class QueryEventFilter extends EntryEventFilter {
         QueryableEntry entry = (QueryableEntry) arg;
         Data keyData = entry.getKeyData();
         return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry) arg);
+    }
+
+    @Override
+    public int getClassId() {
+        return MapDataSerializerHook.QUERY_EVENT_FILTER;
     }
 
     @Override
@@ -85,9 +91,7 @@ public class QueryEventFilter extends EntryEventFilter {
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + predicate.hashCode();
-        return result;
+        return 31 * super.hashCode() + predicate.hashCode();
     }
 
     @Override
@@ -95,10 +99,5 @@ public class QueryEventFilter extends EntryEventFilter {
         return "QueryEventFilter{"
                 + "predicate=" + predicate
                 + '}';
-    }
-
-    @Override
-    public int getId() {
-        return MapDataSerializerHook.QUERY_EVENT_FILTER;
     }
 }

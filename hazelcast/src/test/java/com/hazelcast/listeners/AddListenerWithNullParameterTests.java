@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AddListenerWithNullParameterTests extends HazelcastTestSupport {
 
     protected HazelcastInstance instance;
@@ -71,57 +71,57 @@ public class AddListenerWithNullParameterTests extends HazelcastTestSupport {
         instance.getMap("test").addEntryListener(mock(EntryListener.class), null, "key", true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testMultiMapAddEntryListener() {
         instance.getMultiMap("test").addEntryListener(null, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testMultiMapAddEntryListenerKey() {
         instance.getMultiMap("test").addEntryListener(null, "key", true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListener() {
         instance.getReplicatedMap("test").addEntryListener(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListenerKey() {
         instance.getReplicatedMap("test").addEntryListener(null, "key");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListenerPredicate() {
         instance.getReplicatedMap("test").addEntryListener(null, Predicates.alwaysTrue());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListener_NullPredicate() {
         instance.getReplicatedMap("test").addEntryListener(mock(EntryListener.class), null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListenerPredicateAndKey() {
         instance.getReplicatedMap("test").addEntryListener(null, Predicates.alwaysTrue(), "key");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testReplicatedMapAddEntryListenerKeyAnd_NullPredicate() {
         instance.getReplicatedMap("test").addEntryListener(mock(EntryListener.class), null, "key");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testListAddItemListener() {
         instance.getList("test").addItemListener(null, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testSetAddItemListener() {
         instance.getSet("test").addItemListener(null, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testQueueAddItemListener() {
         instance.getQueue("test").addItemListener(null, true);
     }

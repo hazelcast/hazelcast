@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,22 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
 
 /**
  * AbstractPartitionMessageTask
  */
-public abstract class AbstractPartitionMessageTask<P>
-        extends AbstractMessageTask<P>
-        implements ExecutionCallback, Executor {
+public abstract class AbstractPartitionMessageTask<P> extends AbstractMessageTask<P>
+        implements Executor, PartitionSpecificRunnable, BiConsumer<Object, Throwable> {
 
     protected AbstractPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -57,16 +57,24 @@ public abstract class AbstractPartitionMessageTask<P>
     }
 
     @Override
+    public int getPartitionId() {
+        return clientMessage.getPartitionId();
+    }
+
+    @Override
     public final void processMessage() {
         beforeProcess();
         Operation op = prepareOperation();
+        if (ClientMessage.isFlagSet(clientMessage.getHeaderFlags(), ClientMessage.BACKUP_AWARE_FLAG)) {
+            op.setClientCallId(clientMessage.getCorrelationId());
+        }
         op.setCallerUuid(endpoint.getUuid());
-        ICompletableFuture f = nodeEngine.getOperationService()
-                .createInvocationBuilder(getServiceName(), op, getPartitionId())
-                .setResultDeserialized(false)
-                .invoke();
+        InternalCompletableFuture f = nodeEngine.getOperationService()
+                                                .createInvocationBuilder(getServiceName(), op, getPartitionId())
+                                                .setResultDeserialized(false)
+                                                .invoke();
 
-        f.andThen(this, this);
+        f.whenCompleteAsync(this, this);
     }
 
     protected abstract Operation prepareOperation();
@@ -84,16 +92,15 @@ public abstract class AbstractPartitionMessageTask<P>
     }
 
     @Override
-    public void onResponse(Object response) {
-        beforeResponse();
-        sendResponse(response);
-        afterResponse();
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        beforeResponse();
-        handleProcessingFailure(t);
-        afterResponse();
+    public void accept(Object response, Throwable throwable) {
+        if (throwable == null) {
+            beforeResponse();
+            sendResponse(response);
+            afterResponse();
+        } else {
+            beforeResponse();
+            handleProcessingFailure(throwable);
+            afterResponse();
+        }
     }
 }

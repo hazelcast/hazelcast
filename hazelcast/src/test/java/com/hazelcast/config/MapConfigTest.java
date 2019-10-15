@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.config.MapPartitionLostListenerConfigReadOnly;
+import com.hazelcast.internal.config.MapStoreConfigReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -24,7 +27,7 @@ import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -46,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapConfigTest {
 
     @Test
@@ -75,31 +78,6 @@ public class MapConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void testSetBackupCountLowerLimit() {
         new MapConfig().setBackupCount(MapConfig.MIN_BACKUP_COUNT - 1);
-    }
-
-    @Test
-    public void testGetEvictionPercentage() {
-        assertEquals(MapConfig.DEFAULT_EVICTION_PERCENTAGE, new MapConfig().getEvictionPercentage());
-    }
-
-    @Test
-    public void testMinEvictionCheckMillis() {
-        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, new MapConfig().getMinEvictionCheckMillis());
-    }
-
-    @Test
-    public void testSetEvictionPercentage() {
-        assertEquals(50, new MapConfig().setEvictionPercentage(50).getEvictionPercentage());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetEvictionPercentageLowerLimit() {
-        new MapConfig().setEvictionPercentage(MapConfig.MIN_EVICTION_PERCENTAGE - 1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetEvictionPercentageUpperLimit() {
-        new MapConfig().setEvictionPercentage(MapConfig.MAX_EVICTION_PERCENTAGE + 1);
     }
 
     @Test
@@ -250,7 +228,8 @@ public class MapConfigTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withClassName() {
-        MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
+        MapPartitionLostListenerConfigReadOnly readOnly
+                = new MapPartitionLostListenerConfigReadOnly(new MapPartitionLostListenerConfig());
         readOnly.setClassName("com.hz");
     }
 
@@ -258,14 +237,15 @@ public class MapConfigTest {
     public void testMapPartitionLostListenerReadOnlyConfig_withImplementation() {
         MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
         MapPartitionLostListenerConfig listenerConfig = new MapPartitionLostListenerConfig(listener);
-        MapPartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
+        MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfigReadOnly(listenerConfig);
         assertEquals(listener, readOnly.getImplementation());
         readOnly.setImplementation(mock(MapPartitionLostListener.class));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withEventListenerImplementation() {
-        MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
+        MapPartitionLostListenerConfigReadOnly readOnly
+                = new MapPartitionLostListenerConfigReadOnly(new MapPartitionLostListenerConfig());
         readOnly.setImplementation(mock(EventListener.class));
     }
 
@@ -300,105 +280,6 @@ public class MapConfigTest {
         assertEquals(config1, config2);
         assertNotEquals(config1, config3);
         assertNotEquals(config2, config3);
-    }
-
-    @Test(expected = ConfigurationException.class)
-    public void givenCacheDeserializedValuesSetToALWAYS_whenSetOptimizeQueriesToFalse_thenThrowConfigurationException() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
-
-        // when
-        mapConfig.setOptimizeQueries(false);
-    }
-
-    @Test(expected = ConfigurationException.class)
-    public void givenCacheDeserializedValuesSetToNEVER_whenSetOptimizeQueriesToTrue_thenThrowConfigurationException() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
-
-        // when
-        mapConfig.setOptimizeQueries(true);
-    }
-
-    @Test
-    public void givenCacheDeserializedValuesIsDefault_whenSetOptimizeQueriesToTrue_thenSetCacheDeserializedValuesToALWAYS() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-
-        // when
-        mapConfig.setOptimizeQueries(true);
-
-        // then
-        CacheDeserializedValues cacheDeserializedValues = mapConfig.getCacheDeserializedValues();
-        assertEquals(CacheDeserializedValues.ALWAYS, cacheDeserializedValues);
-    }
-
-    @Test
-    public void givenCacheDeserializedValuesIsDefault_thenIsOptimizeQueriesReturnFalse() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-
-        // then
-        boolean optimizeQueries = mapConfig.isOptimizeQueries();
-        assertFalse(optimizeQueries);
-    }
-
-    @Test
-    public void givenCacheDeserializedValuesIsDefault_whenSetCacheDeserializedValuesToALWAYS_thenIsOptimizeQueriesReturnTrue() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-
-        // when
-        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
-
-        // then
-        boolean optimizeQueries = mapConfig.isOptimizeQueries();
-        assertTrue(optimizeQueries);
-    }
-
-    @Test
-    public void givenCacheDeserializedValuesIsDefault_whenSetCacheDeserializedValuesToNEVER_thenIsOptimizeQueriesReturnFalse() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-
-        // when
-        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
-
-        // then
-        boolean optimizeQueries = mapConfig.isOptimizeQueries();
-        assertFalse(optimizeQueries);
-    }
-
-    @Test(expected = ConfigurationException.class)
-    public void givenSetOptimizeQueryIsTrue_whenSetCacheDeserializedValuesToNEVER_thenThrowConfigurationException() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setOptimizeQueries(true);
-
-        // when
-        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
-    }
-
-    @Test(expected = ConfigurationException.class)
-    public void givenSetOptimizeQueryIsFalse_whenSetCacheDeserializedValuesToALWAYS_thenThrowConfigurationException() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setOptimizeQueries(false);
-
-        // when
-        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
-    }
-
-    @Test(expected = ConfigurationException.class)
-    public void givenSetOptimizeQueryIsTrue_whenSetCacheDeserializedValuesToINDEX_ONLY_thenThrowConfigurationException() {
-        // given
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setOptimizeQueries(true);
-
-        // when
-        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
     }
 
     @Test
@@ -442,30 +323,35 @@ public class MapConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapConfig.class)
-                .allFieldsShouldBeUsedExcept("readOnly")
-                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                .withPrefabValues(MaxSizeConfig.class,
-                        new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),
-                        new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_NODE))
-                .withPrefabValues(MapStoreConfig.class,
-                        new MapStoreConfig().setEnabled(true).setClassName("red"),
-                        new MapStoreConfig().setEnabled(true).setClassName("black"))
-                .withPrefabValues(NearCacheConfig.class,
-                        new NearCacheConfig(10, 20, false, InMemoryFormat.BINARY),
-                        new NearCacheConfig(15, 25, true, InMemoryFormat.OBJECT))
-                .withPrefabValues(WanReplicationRef.class,
-                        new WanReplicationRef().setName("red"),
-                        new WanReplicationRef().setName("black"))
-                .withPrefabValues(PartitioningStrategyConfig.class,
-                        new PartitioningStrategyConfig("red"),
-                        new PartitioningStrategyConfig("black"))
-                .withPrefabValues(MapConfigReadOnly.class,
-                        new MapConfigReadOnly(new MapConfig("red")),
-                        new MapConfigReadOnly(new MapConfig("black")))
-                .withPrefabValues(MergePolicyConfig.class,
-                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                .verify();
+                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                      .withPrefabValues(MaxSizeConfig.class,
+                              new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),
+                              new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_NODE))
+                      .withPrefabValues(MapStoreConfig.class,
+                              new MapStoreConfig().setEnabled(true).setClassName("red"),
+                              new MapStoreConfig().setEnabled(true).setClassName("black"))
+                      .withPrefabValues(NearCacheConfig.class,
+                              new NearCacheConfig().setTimeToLiveSeconds(10)
+                                                   .setMaxIdleSeconds(20)
+                                                   .setInvalidateOnChange(false)
+                                                   .setInMemoryFormat(InMemoryFormat.BINARY),
+                              new NearCacheConfig().setTimeToLiveSeconds(15)
+                                                   .setMaxIdleSeconds(25)
+                                                   .setInvalidateOnChange(true)
+                                                   .setInMemoryFormat(InMemoryFormat.OBJECT))
+                      .withPrefabValues(WanReplicationRef.class,
+                              new WanReplicationRef().setName("red"),
+                              new WanReplicationRef().setName("black"))
+                      .withPrefabValues(PartitioningStrategyConfig.class,
+                              new PartitioningStrategyConfig("red"),
+                              new PartitioningStrategyConfig("black"))
+                      .withPrefabValues(MapConfigReadOnly.class,
+                              new MapConfigReadOnly(new MapConfig("red")),
+                              new MapConfigReadOnly(new MapConfig("black")))
+                      .withPrefabValues(MergePolicyConfig.class,
+                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                      .verify();
     }
 
     @Test

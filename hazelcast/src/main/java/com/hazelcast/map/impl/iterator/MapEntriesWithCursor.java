@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,11 @@ public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Data>> 
     Entry<Data, Data> readElement(ObjectDataInput in) throws IOException {
         final Data key = in.readData();
         final Data value = in.readData();
-        return new AbstractMap.SimpleEntry<Data, Data>(key, value);
+        return new AbstractMap.SimpleEntry<>(key, value);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRIES_WITH_CURSOR;
     }
 }

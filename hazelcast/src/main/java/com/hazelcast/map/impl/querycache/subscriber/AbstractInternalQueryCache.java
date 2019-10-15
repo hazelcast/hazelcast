@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,36 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
-import java.util.AbstractMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
+import static java.util.Objects.requireNonNull;
 
 /**
- * Contains helper methods for {@link InternalQueryCache} main implementation.
+ * Contains helper methods for {@link
+ * InternalQueryCache} main implementation.
  *
  * @param <K> the key type for this {@link InternalQueryCache}
  * @param <V> the value type for this {@link InternalQueryCache}
@@ -56,15 +61,16 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final QueryCacheContext context;
     protected final QueryCacheConfig queryCacheConfig;
     protected final QueryCacheRecordStore recordStore;
-    protected final InternalSerializationService serializationService;
     protected final PartitioningStrategy partitioningStrategy;
+    protected final InternalSerializationService serializationService;
+    protected final Extractors extractors;
     /**
      * ID of registered listener on publisher side.
      */
-    protected String publisherListenerId;
+    protected volatile UUID publisherListenerId;
 
-    public AbstractInternalQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
-                                      IMap delegate, QueryCacheContext context) {
+    AbstractInternalQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
+                               IMap delegate, QueryCacheContext context) {
         this.cacheId = cacheId;
         this.cacheName = cacheName;
         this.queryCacheConfig = queryCacheConfig;
@@ -78,11 +84,16 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.indexes = Indexes.newBuilder(serializationService, COPY_ON_READ).build();
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
+        this.extractors = Extractors.newBuilder(serializationService).build();
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,
-                queryCacheConfig, getEvictionListener());
+                queryCacheConfig, getEvictionListener(), extractors);
 
-        for (MapIndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
-            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered());
+        assert indexes.isGlobal();
+
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
+            IndexConfig indexConfig0 = getNormalizedIndexConfig(indexConfig);
+
+            indexes.addOrGetIndex(indexConfig0, null);
         }
     }
 
@@ -91,8 +102,13 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     @Override
-    public void setPublisherListenerId(String publisherListenerId) {
-        this.publisherListenerId = publisherListenerId;
+    public UUID getPublisherListenerId() {
+        return publisherListenerId;
+    }
+
+    @Override
+    public void setPublisherListenerId(UUID publisherListenerId) {
+        this.publisherListenerId = requireNonNull(publisherListenerId, "publisherListenerId cannot be null");
     }
 
     @Override
@@ -113,12 +129,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     private EvictionListener getEvictionListener() {
-        return new EvictionListener<Data, QueryCacheRecord>() {
-            @Override
-            public void onEvict(Data dataKey, QueryCacheRecord record, boolean wasExpired) {
-                EventPublisherHelper.publishEntryEvent(context, mapName, cacheId, dataKey, null, record, EVICTED);
-            }
-        };
+        return (EvictionListener<Data, QueryCacheRecord>) (dataKey, record, wasExpired)
+                -> EventPublisherHelper.publishEntryEvent(context, mapName, cacheId,
+                dataKey, null, record, EVICTED, extractors);
     }
 
     PartitioningStrategy getPartitioningStrategy() {
@@ -138,7 +151,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
 
-            queryEntry.init(serializationService, keyData, value, Extractors.empty());
+            queryEntry.init(serializationService, keyData, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
@@ -156,19 +169,18 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
             Data keyData = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
-            queryEntry.init(serializationService, keyData, value, Extractors.empty());
+            queryEntry.init(serializationService, keyData, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                Object keyObject = queryEntry.getKey();
-                Object valueObject = queryEntry.getValue();
-                Map.Entry simpleEntry = new AbstractMap.SimpleEntry(keyObject, valueObject);
+                Map.Entry simpleEntry = new LazyMapEntry(queryEntry.getKeyData(), queryEntry.getValueData(),
+                        serializationService);
                 resultingSet.add(simpleEntry);
             }
         }
     }
 
-    protected void doFullValueScan(Predicate predicate, Set<V> resultingSet) {
+    protected void doFullValueScan(Predicate predicate, List<Data> resultingSet) {
         InternalSerializationService serializationService = this.serializationService;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
@@ -178,12 +190,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
 
-            queryEntry.init(serializationService, keyData, value, Extractors.empty());
+            queryEntry.init(serializationService, keyData, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                Object valueObject = queryEntry.getValue();
-                resultingSet.add((V) valueObject);
+                resultingSet.add(queryEntry.getValueData());
             }
         }
     }
@@ -206,8 +217,19 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     @Override
+    public Extractors getExtractors() {
+        return extractors;
+    }
+
+    @Override
     public void clear() {
         recordStore.clear();
         indexes.destroyIndexes();
+    }
+
+    protected IndexConfig getNormalizedIndexConfig(IndexConfig originalConfig) {
+        String name = delegate.getName() + "_" + cacheName;
+
+        return IndexUtils.validateAndNormalize(name, originalConfig);
     }
 }

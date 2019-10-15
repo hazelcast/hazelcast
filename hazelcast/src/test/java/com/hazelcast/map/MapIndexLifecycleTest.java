@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -32,20 +32,20 @@ import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.spi.CoreService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.internal.util.IterationType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -61,7 +61,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
     private static final int BOOK_COUNT = 1000;
@@ -114,7 +114,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void whenIndexAddedProgrammatically_existsOnAllMembers() {
         // GIVEN indexes are configured before Hazelcast starts
         int clusterSize = 3;
@@ -134,8 +134,8 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         instances[0] = instanceFactory.newHazelcastInstance(config);
         IMap<Integer, Book> bookMap = instances[0].getMap(mapName);
         fillMap(bookMap);
-        bookMap.addIndex("author", false);
-        bookMap.addIndex("year", true);
+        bookMap.addIndex(getIndexConfig("author", false));
+        bookMap.addIndex(getIndexConfig("year", true));
         assertEquals(BOOK_COUNT, bookMap.size());
 
         // THEN indexes are migrated and populated on all members
@@ -267,8 +267,8 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     private HazelcastInstance createNode(TestHazelcastInstanceFactory instanceFactory) {
         Config config = getConfig().setProperty(GroupProperty.PARTITION_COUNT.getName(), "4");
         config.getMapConfig(mapName)
-              .addMapIndexConfig(new MapIndexConfig("author", false))
-              .addMapIndexConfig(new MapIndexConfig("year", true))
+              .addIndexConfig(getIndexConfig("author", false))
+              .addIndexConfig(getIndexConfig("year", true))
               .setBackupCount(1);
         return instanceFactory.newHazelcastInstance(config);
     }
@@ -360,5 +360,9 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
     private static String getAuthorNameByKey(int key) {
         return String.valueOf(key % 7);
+    }
+
+    private static IndexConfig getIndexConfig(String attribute, boolean ordered) {
+        return new IndexConfig(ordered ? IndexType.SORTED : IndexType.HASH, attribute).setName(attribute);
     }
 }

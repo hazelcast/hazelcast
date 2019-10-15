@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,27 @@ package com.hazelcast.internal.management;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.client.Client;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.Member;
-import com.hazelcast.crdt.pncounter.PNCounterService;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
@@ -59,15 +61,14 @@ import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.monitor.impl.NodeStateImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -76,7 +77,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * A Factory for creating {@link TimedMemberState} instances.
@@ -124,23 +126,24 @@ public class TimedMemberStateFactory {
         createMemberState(memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
-        if (timedMemberState.isMaster()) {
-            Set<Member> memberSet = instance.getCluster().getMembers();
-            for (Member member : memberSet) {
-                MemberImpl memberImpl = (MemberImpl) member;
-                Address address = memberImpl.getAddress();
-                timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
-            }
+        Set<Member> memberSet = instance.getCluster().getMembers();
+        for (Member member : memberSet) {
+            MemberImpl memberImpl = (MemberImpl) member;
+            Address address = memberImpl.getAddress();
+            timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
         }
         timedMemberState.setMemberState(memberState);
-        GroupConfig groupConfig = instance.getConfig().getGroupConfig();
-        timedMemberState.setClusterName(groupConfig.getName());
-        SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
+        timedMemberState.setClusterName(instance.getConfig().getClusterName());
+        SSLConfig sslConfig = getActiveMemberNetworkConfig(instance.getConfig()).getSSLConfig();
         timedMemberState.setSslEnabled(sslConfig != null && sslConfig.isEnabled());
         timedMemberState.setLite(instance.node.isLiteMember());
 
-        SocketInterceptorConfig interceptorConfig = instance.getConfig().getNetworkConfig().getSocketInterceptorConfig();
+        SocketInterceptorConfig interceptorConfig = getActiveMemberNetworkConfig(instance.getConfig())
+                .getSocketInterceptorConfig();
         timedMemberState.setSocketInterceptorEnabled(interceptorConfig != null && interceptorConfig.isEnabled());
+
+        ManagementCenterConfig managementCenterConfig = instance.node.getConfig().getManagementCenterConfig();
+        timedMemberState.setScriptingEnabled(managementCenterConfig.isScriptingEnabled());
 
         return timedMemberState;
     }
@@ -163,9 +166,19 @@ public class TimedMemberStateFactory {
             serializableClientEndPoints.add(new ClientEndPointDTO(client));
         }
         memberState.setClients(serializableClientEndPoints);
+        memberState.setName(instance.getName());
+
+        memberState.setUuid(node.getThisUuid());
+        if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
+            memberState.setCpMemberUuid(null);
+        } else {
+            CPMember localCPMember = instance.getCPSubsystem().getLocalCPMember();
+            memberState.setCpMemberUuid(localCPMember != null ? localCPMember.getUuid() : null);
+        }
 
         Address thisAddress = node.getThisAddress();
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
+        memberState.setEndpoints(node.getLocalMember().getAddressMap());
         TimedMemberStateFactoryHelper.registerJMXBeans(instance, memberState);
 
         MemberPartitionStateImpl memberPartitionState = (MemberPartitionStateImpl) memberState.getMemberPartitionState();

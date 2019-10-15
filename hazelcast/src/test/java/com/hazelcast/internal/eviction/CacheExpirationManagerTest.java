@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cache.HazelcastExpiryPolicy;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
@@ -26,11 +27,11 @@ import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.instance.LifecycleServiceImpl;
+import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,11 +51,13 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static java.lang.String.format;
+import static javax.cache.expiry.Duration.ONE_HOUR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Test
@@ -138,6 +141,52 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
         backgroundClearTaskStops_whenLifecycleState(MERGING);
     }
 
+    @Test
+    public void no_expiration_task_starts_on_new_node_after_migration_when_there_is_no_expirable_entry() {
+        Config config = new Config();
+        config.setProperty(taskPeriodSecondsPropName(), "1");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        CacheManager cacheManager = createCacheManager(node1);
+        Cache cache = cacheManager.createCache("test", new CacheConfig());
+        cache.put(1, 1);
+
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        node1.shutdown();
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse("There should be zero CacheClearExpiredRecordsTask",
+                        hasClearExpiredRecordsTaskStarted(node2));
+            }
+        }, 3);
+    }
+
+    @Test
+    public void expiration_task_starts_on_new_node_after_migration_when_there_is_expirable_entry() {
+        Config config = new Config();
+        config.setProperty(taskPeriodSecondsPropName(), "1");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        CacheManager cacheManager = createCacheManager(node1);
+        Cache cache = cacheManager.createCache("test", new CacheConfig());
+        ((ICache) cache).put(1, 1, new HazelcastExpiryPolicy(ONE_HOUR, ONE_HOUR, ONE_HOUR));
+
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        node1.shutdown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue("There should be one ClearExpiredRecordsTask started",
+                        hasClearExpiredRecordsTaskStarted(node2));
+            }
+        });
+    }
+
 
     private void backgroundClearTaskStops_whenLifecycleState(LifecycleEvent.LifecycleState lifecycleState) {
         Config config = new Config();
@@ -188,7 +237,7 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Override
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
-        return new ExpirationManager(new CacheClearExpiredRecordsTask(getNodeEngineImpl(node), getPartitionSegments(node)), getNodeEngineImpl(node));
+        return new ExpirationManager(new CacheClearExpiredRecordsTask(getPartitionSegments(node), getNodeEngineImpl(node)), getNodeEngineImpl(node));
     }
 
     @Override

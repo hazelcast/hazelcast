@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
@@ -38,7 +38,7 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());
@@ -67,7 +67,7 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.GET_ENTRY_VIEW;
     }
 }

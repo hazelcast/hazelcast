@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -88,7 +90,7 @@ public interface Storage<K, R> {
      * @param sampleCount sample count.
      * @return sampled entries.
      */
-    Iterable<LazyEntryViewFromRecord> getRandomSamples(int sampleCount);
+    Iterable<EntryView> getRandomSamples(int sampleCount);
 
     /**
      * Fetch minimally {@code size} keys from the {@code tableIndex} position. The key is fetched on-heap.
@@ -118,4 +120,5 @@ public interface Storage<K, R> {
      */
     MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService);
 
+    Record extractRecordFromLazy(EntryView entryView);
 }

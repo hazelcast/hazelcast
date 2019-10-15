@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.util.List;
 public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
     // TODO: probably better to switch to an ArrayList to reduce litter
-    private final List<Operation> opList = new LinkedList<Operation>();
+    private final List<Operation> opList = new LinkedList<>();
     private int partitionId;
     private String name;
     private Data key;
@@ -162,7 +162,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_TRANSACTION_LOG_RECORD;
     }
 }

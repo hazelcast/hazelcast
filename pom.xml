@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,14 +23,13 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.11-SNAPSHOT</version>
+    <version>4.0-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
 
     <modules>
         <module>hazelcast</module>
-        <module>hazelcast-client</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-all</module>
@@ -38,10 +37,9 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.7.0-6</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <jdk.version>1.6</jdk.version>
+        <jdk.version>8</jdk.version>
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -56,24 +54,25 @@
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.1.0</maven.javadoc.plugin.version>
         <maven.antrun.plugin.version>1.7</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
+        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
+        <maven.shade.plugin.version>3.2.1</maven.shade.plugin.version>
         <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
-        <maven.animal.sniffer.plugin.version>1.15</maven.animal.sniffer.plugin.version>
+        <maven.animal.sniffer.plugin.version>1.17</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>2.21.0</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
-        <maven.spotbugs.plugin.version>3.1.6</maven.spotbugs.plugin.version>
+        <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
+        <maven.spotbugs.plugin.version>3.1.12</maven.spotbugs.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
+        <maven.jacoco.plugin.version>0.8.2</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>2.22.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
+        <maven.enforcer.plugin.version>3.0.0-M2</maven.enforcer.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
 
@@ -81,10 +80,11 @@
         <log4j2.version>2.3</log4j2.version>
         <slf4j.api.version>1.7.25</slf4j.api.version>
 
+        <jackson.version>2.9.7</jackson.version>
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>2.19.0</mockito.version>
-        <powermock.version>2.0.0-beta.5</powermock.version>
+        <powermock.version>2.0.2</powermock.version>
         <bytebuddy.version>1.8.17</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
         <jmh.version>1.16</jmh.version>
@@ -99,13 +99,22 @@
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
 
-        <jsr107.api.version>1.1.0</jsr107.api.version>
-        <jsr107.tck.version>1.1.0</jsr107.tck.version>
+        <checkstyle.version>8.19</checkstyle.version>
+
+        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+
+        <jsr107.api.version>1.1.1</jsr107.api.version>
+        <jsr107.tck.version>1.1.1</jsr107.tck.version>
+
+        <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
 
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>
+        <!-- Additional JVM system arguments -->
         <extraVmArgs/>
         <vmHeapSettings>-Xms512m -Xmx2G -XX:MaxPermSize=1024M</vmHeapSettings>
+        <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
+        <javaModuleArgs/>
     </properties>
     <licenses>
         <license>
@@ -165,6 +174,7 @@
                     <include>**/*.sh</include>
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
+                    <include>**/*.yaml</include>
                     <include>**/*.xsd</include>
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>
@@ -237,7 +247,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <useFile>false</useFile>
                     <trimStackTrace>false</trimStackTrace>
                     <runOrder>failedfirst</runOrder>
@@ -252,6 +261,7 @@
                     <!-- JaCoCo will use the argLine set here. Test profiles override it. -->
                     <argLine>
                         ${vmHeapSettings}
+                        ${javaModuleArgs}
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.test.use.network=false
@@ -264,7 +274,6 @@
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
-                        <exclude>**/mapreduce/**/*.java</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -279,9 +288,9 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration combine.self="override">
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>
                         ${vmHeapSettings}
+                        ${javaModuleArgs}
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
@@ -303,6 +312,26 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-tools</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <!-- JDK 1.8+ is required for compilation. -->
+                                    <version>[1.8.0,)</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -352,7 +381,6 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration combine.self="override">
-                                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
                                     <!-- 1C means 1 process per cpu core -->
@@ -360,6 +388,7 @@
                                     <reuseForks>true</reuseForks>
                                     <argLine>
                                         ${vmHeapSettings}
+                                        ${javaModuleArgs}
                                         -ea
                                         -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
@@ -377,11 +406,10 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.QuickTest AND
-                                        com.hazelcast.test.annotation.ParallelTest
+                                        com.hazelcast.test.annotation.ParallelJVMTest
                                     </groups>
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
@@ -399,10 +427,10 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration combine.self="override">
-                                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
                                     <argLine>
                                         ${vmHeapSettings}
+                                        ${javaModuleArgs}
                                         -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
@@ -418,13 +446,12 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**/*.java</exclude>
                                     </excludes>
                                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
                                         com.hazelcast.test.annotation.NightlyTest,
-                                        com.hazelcast.test.annotation.ParallelTest
+                                        com.hazelcast.test.annotation.ParallelJVMTest
                                     </excludedGroups>
                                 </configuration>
                             </execution>
@@ -446,11 +473,11 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -463,7 +490,6 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -478,10 +504,10 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -541,12 +567,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -577,6 +603,7 @@
             <properties>
                 <argLine>
                     ${vmHeapSettings}
+                    ${javaModuleArgs}
                     -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
@@ -601,7 +628,6 @@
                                 <exclude>**HibernateStatisticsTestSupport**</exclude>
                                 <exclude>**HibernateTestSupport**</exclude>
                                 <exclude>**RegionFactoryDefaultTest**</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                         </configuration>
                         <executions>
@@ -618,7 +644,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <testFailureIgnore>true</testFailureIgnore>
@@ -627,7 +652,6 @@
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -644,9 +668,9 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -710,16 +734,6 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>${maven.javadoc.plugin.version}</version>
                         <configuration>
-                            <javaApiLinks>
-                                <property>
-                                    <name>api_1.6</name>
-                                    <value>http://download.oracle.com/javase/1.6.0/docs/api/</value>
-                                </property>
-                                <property>
-                                    <name>api_1.7</name>
-                                    <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
-                                </property>
-                            </javaApiLinks>
                             <maxmemory>1024</maxmemory>
                         </configuration>
                         <executions>
@@ -728,6 +742,9 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <configuration>
+                                    <doclint>none</doclint>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -779,7 +796,7 @@
                             <excludePackageNames>
                                 *.impl:*.internal:*.operations:*.proxy:*.util:com.hazelcast.aws.security:
                                 *.handlermigration:*.client.connection.nio:*.client.console:*.buildutils:
-                                *.client.protocol.generator:*.cluster.client:*.concurrent:*.collection:
+                                *.cluster.client:*.concurrent:*.collection:
                                 *.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:*.transaction.client:
                                 *.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
                             </excludePackageNames>
@@ -790,6 +807,9 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <configuration>
+                                    <doclint>none</doclint>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -833,6 +853,13 @@
                             <enableRulesSummary>true</enableRulesSummary>
                             <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
                         </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.puppycrawl.tools</groupId>
+                                <artifactId>checkstyle</artifactId>
+                                <version>${checkstyle.version}</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -872,11 +899,11 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <parallel>none</parallel>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -890,7 +917,6 @@
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -903,9 +929,9 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -942,12 +968,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <parallel>none</parallel>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -961,7 +987,6 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -975,9 +1000,9 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -1011,67 +1036,32 @@
             <activation>
                 <jdk>[9,)</jdk>
             </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.plugin.version}</version>
-                        <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                            <useFile>false</useFile>
-                            <trimStackTrace>false</trimStackTrace>
-                            <!--
-                            Allow access to Operating system metrics:
-                                open jdk.management/com.sun.management.internal
+            <properties>
+                <!--
+                Allow access to Operating system metrics:
+                   open jdk.management/com.sun.management.internal
 
-                            Avoid warnings caused by reflection in
-                            SelectorOptimizer:
-                                open java.base/sun.nio.ch
-                            FilteringClassLoader:
-                                open java.base/java.lang
-                            TimedMemberStateFactoryHelper:
-                                open java.management/sun.management
+                Avoid warnings caused by reflection in
+                SelectorOptimizer:
+                   open java.base/sun.nio.ch
+                FilteringClassLoader:
+                   open java.base/java.lang
+                TimedMemberStateFactoryHelper:
+                   open java.management/sun.management
 
-                            Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
-                                export java.xml/jdk.xml.internal
-                             -->
-                            <argLine>
-                                ${vmHeapSettings}
-                                --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
-                                --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-                                --add-opens java.base/java.lang=ALL-UNNAMED
-                                --add-opens java.management/sun.management=ALL-UNNAMED
-                                --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
-                                --illegal-access=warn
-                                -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.mancenter.enabled=false
-                                -Dhazelcast.test.use.network=false
-                                -Dlog4j.skipJansi=true
-                                ${extraVmArgs}
-                            </argLine>
-                            <includes>
-                                <include>**/**.java</include>
-                            </includes>
-                            <excludes>
-                                <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
-                                <!--
-                                  An outdated PaxRunner used by the OSGi test prevents executing on Java 9+.
-                                  TODO: remove this exclude once we have a proper fix in the test class.
-                                -->
-                                <exclude>**/HazelcastOSGiIntegrationTest.java</exclude>
-                            </excludes>
-                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+                Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
+                   export java.xml/jdk.xml.internal
+                -->
+                <javaModuleArgs>
+                    --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
+                    --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+                    --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+                    --add-opens java.base/java.lang=ALL-UNNAMED
+                    --add-opens java.management/sun.management=ALL-UNNAMED
+                    --add-exports java.xml/jdk.xml.internal=ALL-UNNAMED
+                    --illegal-access=warn
+                </javaModuleArgs>
+            </properties>
             <modules>
                 <module>modulepath-tests</module>
             </modules>
@@ -1097,11 +1087,11 @@
                                     <value>com.hazelcast.test.compatibility.SamplingRunListener</value>
                                 </property>
                             </properties>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <trimStackTrace>false</trimStackTrace>
                             <runOrder>failedfirst</runOrder>
                             <argLine>
                                 ${vmHeapSettings}
+                                ${javaModuleArgs}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -1120,7 +1110,6 @@
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**/*.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -1150,19 +1139,15 @@
 
     <repositories>
         <repository>
-            <id>backup-repository</id>
-            <name>Maven Central (Backup)</name>
-            <url>http://repo2.maven.org/maven2/</url>
-        </repository>
-        <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-        <repository>
-            <id>release-repository</id>
-            <name>release repository</name>
-            <url>https://oss.sonatype.org/content/repositories/releases</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
 
@@ -1171,6 +1156,20 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
             <version>${jsr107.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <version>${snakeyaml.engine.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -1259,12 +1258,6 @@
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
             <version>${bytebuddy.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.7.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>

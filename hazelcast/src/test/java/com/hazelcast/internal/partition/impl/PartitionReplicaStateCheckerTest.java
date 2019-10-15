@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,17 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.internal.partition.service.TestPutOperation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +46,7 @@ import static com.hazelcast.internal.partition.AntiEntropyCorrectnessTest.setBac
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
     @Test
@@ -80,15 +81,15 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        Address[] replicaAddresses = partition.getReplicaAddresses();
+        PartitionReplica[] members = partition.getReplicas();
 
-        partition.setReplicaAddresses(new Address[replicaAddresses.length]);
+        partition.setReplicas(new PartitionReplica[members.length]);
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
         assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(members);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
     }
 
@@ -101,23 +102,24 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        Address[] replicaAddresses = partition.getReplicaAddresses();
+        PartitionReplica[] members = partition.getReplicas();
 
-        Address[] illegalReplicaAddresses = Arrays.copyOf(replicaAddresses, replicaAddresses.length);
-        Address address = new Address(replicaAddresses[0]);
-        illegalReplicaAddresses[0] = new Address(address.getInetAddress(), address.getPort() + 1000);
-        partition.setReplicaAddresses(illegalReplicaAddresses);
+        PartitionReplica[] illegalMembers = Arrays.copyOf(members, members.length);
+        Address address = members[0].address();
+        illegalMembers[0] = new PartitionReplica(
+                new Address(address.getInetAddress(), address.getPort() + 1000), members[0].uuid());
+        partition.setReplicas(illegalMembers);
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
         assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(members);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
     }
 
     @Test
-    public void shouldBeSafe_whenKnownReplicaOwnerPresent_whileNotActive() throws UnknownHostException {
+    public void shouldBeSafe_whenKnownReplicaOwnerPresent_whileNotActive() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -150,18 +152,18 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        Address[] replicaAddresses = partition.getReplicaAddresses();
+        PartitionReplica[] members = partition.getReplicas();
 
-        Address[] illegalReplicaAddresses = Arrays.copyOf(replicaAddresses, replicaAddresses.length);
-        Address address = new Address(replicaAddresses[0]);
-        illegalReplicaAddresses[0] = new Address(address.getInetAddress(), address.getPort() + 1000);
-        partition.setReplicaAddresses(illegalReplicaAddresses);
+        PartitionReplica[] illegalMembers = Arrays.copyOf(members, members.length);
+        Address address = members[0].address();
+        illegalMembers[0] = new PartitionReplica(new Address(address.getInetAddress(), address.getPort() + 1000), members[0].uuid());
+        partition.setReplicas(illegalMembers);
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
         assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(members);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
     }
 
@@ -209,8 +211,9 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         InternalPartitionServiceImpl partitionService1 = getNode(hz).partitionService;
         InternalPartitionServiceImpl partitionService2 = getNode(hz2).partitionService;
-        drainAllReplicaSyncPermits(partitionService1);
-        drainAllReplicaSyncPermits(partitionService2);
+        int maxPermits = drainAllReplicaSyncPermits(partitionService1);
+        int maxPermits2 = drainAllReplicaSyncPermits(partitionService2);
+        assertEquals(maxPermits, maxPermits2);
 
         warmUpPartitions(hz, hz2);
 
@@ -229,8 +232,8 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker1.getPartitionServiceState());
         assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker2.getPartitionServiceState());
 
-        addReplicaSyncPermits(partitionService1, 100);
-        addReplicaSyncPermits(partitionService2, 100);
+        addReplicaSyncPermits(partitionService1, maxPermits);
+        addReplicaSyncPermits(partitionService2, maxPermits);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -243,23 +246,17 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
     private void addReplicaSyncPermits(InternalPartitionServiceImpl partitionService, int k) {
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        for (int i = 0; i < k; i++) {
-            replicaManager.releaseReplicaSyncPermit();
-        }
+        replicaManager.releaseReplicaSyncPermits(k);
     }
 
     private int drainAllReplicaSyncPermits(InternalPartitionServiceImpl partitionService) {
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        int k = 0;
-        while (replicaManager.tryToAcquireReplicaSyncPermit()) {
-            k++;
-        }
-        return k;
+        return replicaManager.tryAcquireReplicaSyncPermits(Integer.MAX_VALUE);
     }
 
     private static class TestPutOperationWithAsyncBackup extends TestPutOperation {
 
-        public TestPutOperationWithAsyncBackup() {
+        TestPutOperationWithAsyncBackup() {
         }
 
         TestPutOperationWithAsyncBackup(int i) {

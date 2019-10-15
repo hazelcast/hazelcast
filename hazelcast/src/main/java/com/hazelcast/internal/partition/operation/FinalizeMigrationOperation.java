@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,17 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
@@ -67,9 +68,26 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
 
     @Override
     public void run() {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        int partitionId = migrationInfo.getPartitionId();
 
-        notifyServices(nodeEngine);
+        if (isOldBackupReplicaOwner() && partitionStateManager.isMigrating(partitionId)) {
+            // On old backup replica, migrating flag is not set during migration.
+            // Because replica is copied from partition owner to new backup replica.
+            // Old backup owner is not notified about migration until migration is committed
+            // and completed migration is published by master.
+            // If this partition's migrating flag is set, then it means another migration
+            // is submitted to this member for the same partition and it's already executed.
+            // This finalization is now obsolete.
+            getLogger().fine("Cannot execute migration finalization, because this member was previous owner of a backup replica,"
+                    + " and a new migration operation has already superseded this finalization. "
+                    + "This operation is now obsolete. -> " + migrationInfo);
+            return;
+        }
+
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        notifyServices();
 
         if (endpoint == MigrationEndpoint.SOURCE && success) {
             commitSource();
@@ -77,10 +95,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
             rollbackDestination();
         }
 
-        InternalPartitionServiceImpl partitionService = getService();
-        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        partitionStateManager.clearMigratingFlag(migrationInfo.getPartitionId());
-
+        partitionStateManager.clearMigratingFlag(partitionId);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }
@@ -91,7 +106,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
      * rollback logic. If this node was the source and backup replica for a partition, the services will first be notified that
      * the migration is starting.
      */
-    private void notifyServices(NodeEngineImpl nodeEngine) {
+    private void notifyServices() {
         PartitionMigrationEvent event = getPartitionMigrationEvent();
 
         Collection<MigrationAwareService> migrationAwareServices = getMigrationAwareServices();
@@ -99,8 +114,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         // Old backup owner is not notified about migration until migration
         // is committed on destination. This is the only place on backup owner
         // knows replica is moved away from itself.
-        if (nodeEngine.getThisAddress().equals(migrationInfo.getSource())
-                && migrationInfo.getSourceCurrentReplicaIndex() > 0) {
+        if (isOldBackupReplicaOwner()) {
             // execute beforeMigration on old backup before commit/rollback
             for (MigrationAwareService service : migrationAwareServices) {
                 beforeMigration(event, service);
@@ -215,6 +229,12 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    private boolean isOldBackupReplicaOwner() {
+        PartitionReplica source = migrationInfo.getSource();
+        return source != null && migrationInfo.getSourceCurrentReplicaIndex() > 0
+                && source.isIdentical(getNodeEngine().getLocalMember());
+    }
+
     @Override
     public boolean returnsResponse() {
         return false;
@@ -236,7 +256,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         throw new UnsupportedOperationException();
     }
 }

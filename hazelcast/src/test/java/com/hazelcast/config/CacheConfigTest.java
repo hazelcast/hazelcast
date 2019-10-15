@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -123,8 +123,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void cacheConfigXmlTest() throws IOException {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
-        assertEquals("test-group1", config1.getGroupConfig().getName());
-        assertEquals("test-pass1", config1.getGroupConfig().getPassword());
+        assertEquals("test-cluster1", config1.getClusterName());
 
         CacheSimpleConfig cacheConfig1 = config1.getCacheConfig("cache1");
         assertEquals("com.hazelcast.config.CacheConfigTest$MyCacheLoaderFactory",
@@ -304,7 +303,8 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig cacheWithDefaultMergePolicyConfig = config.getCacheConfig("cacheWithDefaultMergePolicy");
 
         assertNotNull(cacheWithDefaultMergePolicyConfig);
-        assertEquals(CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY, cacheWithDefaultMergePolicyConfig.getMergePolicy());
+        assertEquals(MergePolicyConfig.DEFAULT_MERGE_POLICY,
+                cacheWithDefaultMergePolicyConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test
@@ -314,15 +314,14 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleConfig cacheWithCustomMergePolicyConfig = config.getCacheConfig("cacheWithCustomMergePolicy");
 
         assertNotNull(cacheWithCustomMergePolicyConfig);
-        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicy());
+        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test
     public void cacheConfigXmlTest_constructingToCacheConfig() throws Exception {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
-        assertEquals("test-group1", config1.getGroupConfig().getName());
-        assertEquals("test-pass1", config1.getGroupConfig().getPassword());
+        assertEquals("test-cluster1", config1.getClusterName());
 
         CacheSimpleConfig cacheSimpleConfig1 = config1.getCacheConfig("cache1");
         CacheConfig cacheConfig1 = new CacheConfig(cacheSimpleConfig1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.compatibility.CompatibilityTestUtils;
+import com.hazelcast.test.starter.ReflectionUtils;
 import org.junit.After;
 import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.internal.runners.statements.RunAfters;
 import org.junit.internal.runners.statements.RunBefores;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.ExpectedExceptionMatcherBuilderAccessor;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -44,14 +47,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.Integer.getInteger;
 
 /**
@@ -74,13 +76,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         final String threadDumpOnFailure = System.getProperty("hazelcast.test.threadDumpOnFailure");
         THREAD_DUMP_ON_FAILURE = threadDumpOnFailure != null
                 ? Boolean.parseBoolean(threadDumpOnFailure) : JenkinsDetector.isOnJenkins();
-
-        // randomize multicast group
-        Random rand = new Random();
-        int g1 = rand.nextInt(255);
-        int g2 = rand.nextInt(255);
-        int g3 = rand.nextInt(255);
-        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
 
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
 
@@ -130,8 +125,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
-        // speed up closing connections in com.hazelcast.internal.networking.nio.NioChannel.doClose()
-        System.setProperty("hazelcast.channel.close.delayMs", "0");
     }
 
 
@@ -189,15 +182,19 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         List<FrameworkMethod> afters = getTestClass().getAnnotatedMethods(After.class);
         Statement nextStatement = statement;
         List<TestRule> testRules = getTestRules(target);
+        ExpectedException expectedException = null;
         if (!testRules.isEmpty()) {
             for (TestRule rule : testRules) {
                 if (rule instanceof BounceMemberRule) {
                     nextStatement = ((BounceMemberRule) rule).stopBouncing(statement);
                 }
+                if (rule instanceof ExpectedException) {
+                    expectedException = (ExpectedException) rule;
+                }
             }
         }
         if (THREAD_DUMP_ON_FAILURE) {
-            return new ThreadDumpAwareRunAfters(method, nextStatement, afters, target);
+            return new ThreadDumpAwareRunAfters(method, nextStatement, afters, target, expectedException);
         }
         if (afters.isEmpty()) {
             return nextStatement;
@@ -371,12 +368,15 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         private final Statement next;
         private final Object target;
         private final List<FrameworkMethod> afters;
+        private final ExpectedException expectedException;
 
-        ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target) {
+        ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target,
+                                 ExpectedException expectedException) {
             this.method = method;
             this.next = next;
             this.afters = afters;
             this.target = target;
+            this.expectedException = expectedException;
         }
 
         @Override
@@ -385,7 +385,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             try {
                 next.evaluate();
             } catch (Throwable e) {
-                if (!isJUnitAssumeException(e)) {
+                if (!isJUnitAssumeException(e) && !expectsException()) {
                     System.err.println("THREAD DUMP FOR TEST FAILURE: \"" + e.getMessage()
                             + "\" at \"" + method.getName() + "\"\n");
                     try {
@@ -410,6 +410,14 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
         private boolean isJUnitAssumeException(Throwable e) {
             return e instanceof AssumptionViolatedException;
+        }
+
+        private boolean expectsException() throws IllegalAccessException {
+            if (expectedException == null) {
+                return false;
+            }
+            Object exceptionMatcher = ReflectionUtils.getFieldValueReflectively(expectedException, "matcherBuilder");
+            return ExpectedExceptionMatcherBuilderAccessor.expectsThrowable(exceptionMatcher);
         }
     }
 

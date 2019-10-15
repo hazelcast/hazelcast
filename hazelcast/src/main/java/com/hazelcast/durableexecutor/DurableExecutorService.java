@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.durableexecutor;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 
 import java.util.concurrent.Callable;
@@ -30,7 +31,7 @@ import java.util.concurrent.RejectedExecutionException;
  * DurableExecutor also provides a way to retrieve the result of an execution with the given taskId.
  * @see ExecutorService
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 public interface DurableExecutorService extends ExecutorService, DistributedObject {
 
@@ -40,11 +41,9 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      * Future's {@code get} method will return the task's result upon
      * successful completion.
      * <p>
-     * <p>
      * If you would like to immediately block waiting
      * for a task, you can use constructions of the form
      * {@code result = exec.submit(aCallable).get();}
-     * <p>
      * <p>Note: The {@link Executors} class includes a set of methods
      * that can convert some other common closure-like objects,
      * for example, {@link java.security.PrivilegedAction} to

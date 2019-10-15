@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,25 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
@@ -44,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DistributedObjectTest extends HazelcastTestSupport {
 
     @Test
@@ -93,41 +96,6 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     public void testExecutorService() {
         HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getExecutorService("test");
-        test(instance, object);
-    }
-
-    @Test
-    public void testLock() {
-        HazelcastInstance instance = createHazelcastInstance();
-        DistributedObject object = instance.getLock("test");
-        test(instance, object);
-    }
-
-    @Test
-    public void testAtomicLong() {
-        HazelcastInstance instance = createHazelcastInstance();
-        DistributedObject object = instance.getAtomicLong("test");
-        test(instance, object);
-    }
-
-    @Test
-    public void testSemaphore() {
-        HazelcastInstance instance = createHazelcastInstance();
-        DistributedObject object = instance.getSemaphore("test");
-        test(instance, object);
-    }
-
-    @Test
-    public void testCountdownLatch() {
-        HazelcastInstance instance = createHazelcastInstance();
-        DistributedObject object = instance.getCountDownLatch("test");
-        test(instance, object);
-    }
-
-    @Test
-    public void testIdGenerator() {
-        HazelcastInstance instance = createHazelcastInstance();
-        DistributedObject object = instance.getIdGenerator("test");
         test(instance, object);
     }
 
@@ -220,12 +188,12 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         static final String NAME = "TestInitializingObjectService";
 
         @Override
-        public DistributedObject createDistributedObject(final String objectName) {
+        public DistributedObject createDistributedObject(final String objectName, boolean local) {
             return new TestInitializingObject(objectName);
         }
 
         @Override
-        public void destroyDistributedObject(final String objectName) {
+        public void destroyDistributedObject(final String objectName, boolean local) {
         }
     }
 
@@ -318,17 +286,49 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         assertOpenEventually(latch, 30);
     }
 
+    @Test
+    public void testProxyCreation_whenLocalOnly() {
+        int nodeCount = 4;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        Config config = new Config();
+        config.getServicesConfig().addServiceConfig(
+                new ServiceConfig().setImplementation(new TestInitializingObjectService())
+                                   .setEnabled(true).setName(TestInitializingObjectService.NAME)
+        );
+
+        String serviceName = TestInitializingObjectService.NAME;
+        String objectName = "test-object";
+
+        HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        ProxyRegistry[] registries = new ProxyRegistry[nodeCount];
+        for (int i = 0; i < instances.length; i++) {
+            instances[i] = factory.newHazelcastInstance(config);
+            NodeEngine nodeEngine = getNodeEngineImpl(instances[i]);
+            ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
+            registries[i] = proxyService.getOrCreateRegistry(serviceName);
+        }
+
+        for (int i = 0; i < instances.length; i++) {
+            registries[i].createProxy(objectName, true, true);
+            for (int j = i + 1; j < instances.length; j++) {
+                Collection<DistributedObject> objects = new ArrayList<>();
+                registries[j].getDistributedObjects(objects);
+                assertTrue(objects.isEmpty());
+            }
+        }
+    }
+
     private static class FailingInitializingObjectService implements RemoteService {
 
         static final String NAME = "FailingInitializingObjectService";
 
         @Override
-        public DistributedObject createDistributedObject(String objectName) {
+        public DistributedObject createDistributedObject(String objectName, boolean local) {
             throw new HazelcastException("Object creation is not allowed!");
         }
 
         @Override
-        public void destroyDistributedObject(final String objectName) {
+        public void destroyDistributedObject(final String objectName, boolean local) {
         }
     }
 }

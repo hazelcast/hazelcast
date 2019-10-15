@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,16 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
  */
-public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
+public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -47,9 +45,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
 
     private boolean statisticsEnabled = true;
 
-    private String quorumName;
-
-    private transient ExecutorConfigReadOnly readOnly;
+    private String splitBrainProtectionName;
 
     public ExecutorConfig() {
     }
@@ -68,20 +64,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
         this.poolSize = config.poolSize;
         this.queueCapacity = config.queueCapacity;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.quorumName = config.quorumName;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public ExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ExecutorConfigReadOnly(this);
-        }
-        return readOnly;
+        this.splitBrainProtectionName = config.splitBrainProtectionName;
     }
 
     /**
@@ -168,22 +151,22 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
     }
 
     /**
-     * Returns the quorum name for operations.
+     * Returns the split brain protection name for operations.
      *
-     * @return the quorum name
+     * @return the split brain protection name
      */
-    public String getQuorumName() {
-        return quorumName;
+    public String getSplitBrainProtectionName() {
+        return splitBrainProtectionName;
     }
 
     /**
-     * Sets the quorum name for operations.
+     * Sets the split brain protection name for operations.
      *
-     * @param quorumName the quorum name
+     * @param splitBrainProtectionName the split brain protection name
      * @return the updated configuration
      */
-    public ExecutorConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
+    public ExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
+        this.splitBrainProtectionName = splitBrainProtectionName;
         return this;
     }
 
@@ -194,7 +177,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
                 + "name='" + name + '\''
                 + ", poolSize=" + poolSize
                 + ", queueCapacity=" + queueCapacity
-                + ", quorumName=" + quorumName
+                + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + '}';
     }
 
@@ -204,7 +187,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.EXECUTOR_CONFIG;
     }
 
@@ -214,10 +197,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(poolSize);
         out.writeInt(queueCapacity);
         out.writeBoolean(statisticsEnabled);
-        // RU_COMPAT_3_9
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeUTF(quorumName);
-        }
+        out.writeUTF(splitBrainProtectionName);
     }
 
     @Override
@@ -226,10 +206,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
         poolSize = in.readInt();
         queueCapacity = in.readInt();
         statisticsEnabled = in.readBoolean();
-        // RU_COMPAT_3_9
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            quorumName = in.readUTF();
-        }
+        splitBrainProtectionName = in.readUTF();
     }
 
     @Override
@@ -253,7 +230,8 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
+                : that.splitBrainProtectionName != null) {
             return false;
         }
         return name.equals(that.name);
@@ -265,7 +243,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
         result = 31 * result + poolSize;
         result = 31 * result + queueCapacity;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
     }
 }

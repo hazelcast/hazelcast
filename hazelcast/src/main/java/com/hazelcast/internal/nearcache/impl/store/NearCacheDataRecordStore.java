@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@ package com.hazelcast.internal.nearcache.impl.store;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
-import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_INTEGER_FIELD_TYPES;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_LONG_FIELD_TYPES;
-import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 
 /**
  * {@link com.hazelcast.internal.nearcache.NearCacheRecordStore} implementation for Near Caches
@@ -79,7 +78,7 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     }
 
     @Override
-    protected NearCacheDataRecord valueToRecord(V value) {
+    protected NearCacheDataRecord createRecord(V value) {
         Data dataValue = toData(value);
         long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
@@ -90,41 +89,7 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     }
 
     @Override
-    protected V recordToValue(NearCacheDataRecord record) {
-        if (record.getValue() == null) {
-            return (V) CACHED_AS_NULL;
-        }
-        return dataToValue(record.getValue());
-    }
-
-    @Override
     protected void updateRecordValue(NearCacheDataRecord record, V value) {
         record.setValue(toData(value));
-    }
-
-    @Override
-    public Object selectToSave(Object... candidates) {
-        Object selectedCandidate = null;
-        if (candidates != null && candidates.length > 0) {
-            for (Object candidate : candidates) {
-                // give priority to Data typed candidate, so there will be no extra conversion from Object to Data
-                if (candidate instanceof Data) {
-                    selectedCandidate = candidate;
-                    break;
-                }
-            }
-            if (selectedCandidate != null) {
-                return selectedCandidate;
-            } else {
-                // select a non-null candidate
-                for (Object candidate : candidates) {
-                    if (candidate != null) {
-                        selectedCandidate = candidate;
-                        break;
-                    }
-                }
-            }
-        }
-        return selectedCandidate;
     }
 }

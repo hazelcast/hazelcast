@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.AbstractChannel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
@@ -26,7 +25,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.Date;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * A {@link com.hazelcast.internal.networking.Channel} implementation tailored
@@ -35,21 +35,21 @@ import java.util.Date;
  */
 public final class NioChannel extends AbstractChannel {
 
-    private static final int DELAY_MS = Integer.getInteger("hazelcast.channel.close.delayMs", 200);
+    // The close delays is needed for the TLS goodbye handshake to complete.
     NioInboundPipeline inboundPipeline;
     NioOutboundPipeline outboundPipeline;
 
-    private final MetricsRegistry metricsRegistry;
+    private final Executor closeListenerExecutor;
     private final ChannelInitializer channelInitializer;
     private final NioChannelOptions config;
 
     public NioChannel(SocketChannel socketChannel,
                       boolean clientMode,
                       ChannelInitializer channelInitializer,
-                      MetricsRegistry metricsRegistry) {
+                      Executor closeListenerExecutor) {
         super(socketChannel, clientMode);
         this.channelInitializer = channelInitializer;
-        this.metricsRegistry = metricsRegistry;
+        this.closeListenerExecutor = closeListenerExecutor;
         this.config = new NioChannelOptions(socketChannel.socket());
     }
 
@@ -81,13 +81,6 @@ public final class NioChannel extends AbstractChannel {
     }
 
     @Override
-    protected void onConnect() {
-        String metricsId = localSocketAddress() + "->" + remoteSocketAddress();
-        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
-        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
-    }
-
-    @Override
     public long lastReadTimeMillis() {
         return inboundPipeline.lastReadTimeMillis();
     }
@@ -113,64 +106,66 @@ public final class NioChannel extends AbstractChannel {
 
     @Override
     protected void close0() {
+        outboundPipeline.drainWriteQueues();
+
+        // the socket is immediately closed.
+        try {
+            socketChannel.close();
+        } catch (IOException e) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Failed to close " + this, e);
+            }
+        }
+
         if (Thread.currentThread() instanceof NioThread) {
-            new Thread() {
-                public void run() {
+            // we don't want to do any tasks on an io thread; we offload it instead
+            try {
+                closeListenerExecutor.execute(() -> {
                     try {
-                        doClose();
+                        notifyCloseListeners();
                     } catch (Exception e) {
                         logger.warning(e.getMessage(), e);
                     }
-                }
-            }.start();
+                });
+            } catch (RejectedExecutionException e) {
+                // if the task gets rejected, the networking must be shutting down.
+                logger.fine(e);
+            }
         } else {
-            doClose();
-        }
-    }
-
-    private void doClose() {
-        try {
-            inboundPipeline.requestClose();
-            outboundPipeline.requestClose();
-
-            if (DELAY_MS > 0) {
-                try {
-                    Thread.sleep(DELAY_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-            try {
-                socketChannel.close();
-            } catch (IOException e) {
-                logger.warning(e);
-            }
-        } finally {
             notifyCloseListeners();
         }
     }
-//
-//    @Override
-//    public String toString() {
-//        return "NioChannel{" + localSocketAddress() + "->" + remoteSocketAddress() + '}';
-//    }
 
-    //  this toString implementation is very useful for debugging. Please don't remove it.
+    @Override
+    public long bytesRead() {
+        return inboundPipeline.bytesRead();
+    }
+
+    @Override
+    public long bytesWritten() {
+        return outboundPipeline.bytesWritten();
+    }
+
     @Override
     public String toString() {
-        String local = getPort(localSocketAddress());
-        String remote = getPort(remoteSocketAddress());
-        String s = local + (isClientMode() ? "=>" : "->") + remote;
+        return "NioChannel{" + localSocketAddress() + "->" + remoteSocketAddress() + '}';
+    }
 
-        // this is added for debugging so that 'client' and 'server' have a different indentation and are easy to recognize.
+    //  this toString implementation is very useful for debugging. Please don't remove it.
+//    @Override
+//    public String toString() {
+//        String local = getPort(localSocketAddress());
+//        String remote = getPort(remoteSocketAddress());
+//        String s = local + (isClientMode() ? "=>" : "->") + remote;
+//
+//        // this is added for debugging so that 'client' and 'server' have a different indentation and are easy to recognize.
 //        if (!isClientMode()) {
 //            s = "                                                                                " + s;
 //        }
-
-        Date date = new Date();
-        return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + " " + s;
-    }
+//
+//        Date date = new Date();
+//        return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + " " + s;
+//    }
 
     private String getPort(SocketAddress socketAddress) {
         return socketAddress == null ? "*missing*" : Integer.toString(((InetSocketAddress) socketAddress).getPort());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -42,14 +42,14 @@ public final class MapEntries implements IdentifiedDataSerializable {
     }
 
     public MapEntries(int initialSize) {
-        keys = new ArrayList<Data>(initialSize);
-        values = new ArrayList<Data>(initialSize);
+        keys = new ArrayList<>(initialSize);
+        values = new ArrayList<>(initialSize);
     }
 
     public MapEntries(List<Map.Entry<Data, Data>> entries) {
         int initialSize = entries.size();
-        keys = new ArrayList<Data>(initialSize);
-        values = new ArrayList<Data>(initialSize);
+        keys = new ArrayList<>(initialSize);
+        values = new ArrayList<>(initialSize);
         for (Map.Entry<Data, Data> entry : entries) {
             keys.add(entry.getKey());
             values.add(entry.getValue());
@@ -63,7 +63,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
     }
 
     public List<Map.Entry<Data, Data>> entries() {
-        ArrayList<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(keys.size());
+        ArrayList<Map.Entry<Data, Data>> entries = new ArrayList<>(keys.size());
         putAllToList(entries);
         return entries;
     }
@@ -98,7 +98,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
         Iterator<Data> keyIterator = keys.iterator();
         Iterator<Data> valueIterator = values.iterator();
         while (keyIterator.hasNext()) {
-            targetList.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyIterator.next(), valueIterator.next()));
+            targetList.add(new AbstractMap.SimpleImmutableEntry<>(keyIterator.next(), valueIterator.next()));
         }
     }
 
@@ -117,8 +117,8 @@ public final class MapEntries implements IdentifiedDataSerializable {
 
     private void ensureEntriesCreated() {
         if (keys == null) {
-            keys = new ArrayList<Data>();
-            values = new ArrayList<Data>();
+            keys = new ArrayList<>();
+            values = new ArrayList<>();
         }
     }
 
@@ -128,7 +128,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.ENTRIES;
     }
 
@@ -145,8 +145,8 @@ public final class MapEntries implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        keys = new ArrayList<Data>(size);
-        values = new ArrayList<Data>(size);
+        keys = new ArrayList<>(size);
+        values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readData());
             values.add(in.readData());

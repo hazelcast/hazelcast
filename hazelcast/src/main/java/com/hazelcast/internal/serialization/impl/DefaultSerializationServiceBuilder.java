@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,31 +22,31 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationClassNameFilter;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ClassNameFilter;
-import com.hazelcast.nio.SerializationClassNameFilter;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.StringUtil;
-import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
@@ -60,12 +60,11 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
 
-    protected final Map<Integer, DataSerializableFactory> dataSerializableFactories =
-            new HashMap<Integer, DataSerializableFactory>();
+    protected final Map<Integer, DataSerializableFactory> dataSerializableFactories = new HashMap<>();
 
-    protected final Map<Integer, PortableFactory> portableFactories = new HashMap<Integer, PortableFactory>();
+    protected final Map<Integer, PortableFactory> portableFactories = new HashMap<>();
 
-    protected final Set<ClassDefinition> classDefinitions = new HashSet<ClassDefinition>();
+    protected final Set<ClassDefinition> classDefinitions = new HashSet<>();
 
     protected ClassLoader classLoader;
     protected SerializationConfig config;

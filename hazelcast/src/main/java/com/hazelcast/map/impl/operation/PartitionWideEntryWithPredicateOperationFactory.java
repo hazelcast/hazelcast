@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.util.collection.InflatableSet;
+import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -28,15 +30,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.collection.InflatableSet;
-import com.hazelcast.util.collection.InflatableSet.Builder;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,9 +45,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.collection.InflatableSet.newBuilder;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.MapUtil.createInt2ObjectHashMap;
-import static com.hazelcast.util.collection.InflatableSet.newBuilder;
+import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
 
 public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAwareOperationFactory {
 
@@ -97,7 +97,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         // index query succeeded
         List<Data> keyList = partitionIdToKeysMap.get(partition);
         assert keyList != null : "unexpected partition " + partition + ", expected partitions " + partitionIdToKeysMap.keySet();
-        Set<Data> keys = keyList.isEmpty() ? Collections.<Data>emptySet() : newBuilder(keyList).build();
+        Set<Data> keys = keyList.isEmpty() ? Collections.emptySet() : newBuilder(keyList).build();
         return new MultipleEntryWithPredicateOperation(name, keys, entryProcessor, predicate);
     }
 
@@ -127,7 +127,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
      */
     private Set<Data> tryToObtainKeysFromIndexes(NodeEngine nodeEngine) {
         // Do not use index in this case, because it requires full-table-scan.
-        if (predicate == TruePredicate.INSTANCE) {
+        if (predicate == Predicates.alwaysTrue()) {
             return null;
         }
 
@@ -170,7 +170,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         // to filter out possible unrequested partitions encountered among the
         // fetched keys.
         for (int partition : partitions) {
-            partitionToKeys.put(partition, Collections.<Data>emptyList());
+            partitionToKeys.put(partition, Collections.emptyList());
         }
 
         for (Data key : keys) {
@@ -183,7 +183,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
 
             if (keyList.isEmpty()) {
                 // we have a first key for this partition
-                keyList = new ArrayList<Data>();
+                keyList = new ArrayList<>();
                 partitionToKeys.put(partitionId, keyList);
             }
             keyList.add(key);
@@ -202,7 +202,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PARTITION_WIDE_PREDICATE_ENTRY_FACTORY;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.map.IMap;
+
 /**
- * Adapter for all {@link com.hazelcast.core.IMap} listeners. This interface is considered to be used only
- * by {@link com.hazelcast.core.IMap} internals.
- * <p/>
+ * Adapter for all {@link IMap} listeners. This interface is considered to be used only
+ * by {@link IMap} internals.
+ * <p>
  * Also every {@link com.hazelcast.map.listener.MapListener} should be wrapped
- * in a {@link com.hazelcast.map.impl.ListenerAdapter} before {@link com.hazelcast.spi.EventService} registration.
+ * in a {@link com.hazelcast.map.impl.ListenerAdapter} before {@link EventService} registration.
  */
 public interface ListenerAdapter<T> {
 

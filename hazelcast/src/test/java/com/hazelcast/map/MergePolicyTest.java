@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,19 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.cluster.MemberAttributeEvent;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
-import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
-import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -43,7 +42,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -61,7 +60,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
     @Test
     public void testLatestUpdateMapMergePolicy() {
         String mapName = randomMapName();
-        Config config = newConfig(LatestUpdateMapMergePolicy.class.getName(), mapName);
+        Config config = newConfig(LatestUpdateMergePolicy.class.getName(), mapName);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
@@ -105,7 +104,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
     @Test
     public void testHigherHitsMapMergePolicy() {
         String mapName = randomMapName();
-        Config config = newConfig(HigherHitsMapMergePolicy.class.getName(), mapName);
+        Config config = newConfig(HigherHitsMergePolicy.class.getName(), mapName);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
@@ -152,7 +151,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
     @Test
     public void testPutIfAbsentMapMergePolicy() {
         String mapName = randomMapName();
-        Config config = newConfig(PutIfAbsentMapMergePolicy.class.getName(), mapName);
+        Config config = newConfig(PutIfAbsentMergePolicy.class.getName(), mapName);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
@@ -273,11 +272,10 @@ public class MergePolicyTest extends HazelcastTestSupport {
                 .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
 
-        config.getGroupConfig()
-                .setName(generateRandomString(10));
+        config.setClusterName(generateRandomString(10));
 
         config.getMapConfig(mapName)
-                .setMergePolicy(mergePolicy);
+                .getMergePolicyConfig().setPolicy(mergePolicy);
 
         return config;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,60 @@
 
 package com.hazelcast.spi.properties;
 
+import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
-import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import java.util.Map;
+import java.util.function.Function;
+
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Defines the name and default value for Hazelcast properties.
  */
-@SuppressWarnings("checkstyle:javadocvariable")
+@SuppressWarnings({"checkstyle:javadocvariable", "checkstyle:magicnumber"})
 public final class GroupProperty {
 
     /**
-     * Use this property to verify that Hazelcast nodes only join the cluster when their 'application' level configuration is the
-     * same.
-     * <p/>
-     * If you have multiple machines, you want to make sure that each machine that joins the cluster
-     * has exactly the same 'application level' settings (such as settings that are not part of the Hazelcast configuration,
-     * maybe some file path). To prevent the machines with potentially different application level configuration from forming
-     * a cluster, you can set this property.
-     * <p/>
-     * You could use actual values, such as string paths, but you can also use an md5 hash. We make a guarantee
-     * that nodes will form a cluster (become a member) only if the token is an exact match. If this token is different, the
-     * member can't be started and therefore you will get the guarantee that all members in the cluster will have exactly the same
-     * application validation token.
-     * <p/>
+     * Use this property to verify that Hazelcast nodes only join the cluster
+     * when their 'application' level configuration is the same.
+     * <p>
+     * If you have multiple machines, you want to make sure that each machine
+     * that joins the cluster has exactly the same 'application level' settings
+     * (such as settings that are not part of the Hazelcast configuration, maybe
+     * some file path). To prevent the machines with potentially different
+     * application level configuration from forming a cluster, you can set this
+     * property.
+     * <p>
+     * You could use actual values, such as string paths, but you can also use
+     * an md5 hash. We make a guarantee that nodes will form a cluster (become a
+     * member) only if the token is an exact match. If this token is different,
+     * the member can't be started and therefore you will get the guarantee that
+     * all members in the cluster will have exactly the same application validation
+     * token.
+     * <p>
      * This validation token will be checked before a member joins the cluster.
      */
     public static final HazelcastProperty APPLICATION_VALIDATION_TOKEN
@@ -65,27 +82,92 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.partition.count", 271);
 
     /**
+     * For more detail see {@link #PARTITION_OPERATION_THREAD_COUNT}.
+     *
+     * If this property is set to false, Hazelcast will default to 3.x style
+     * operation thread configuration whereby the sum of the number of partition
+     * threads and IO threads exceeds the number of cores.
+     *
+     * If this property is set to true (default) Hazelcast will subtract the
+     * number of IO threads from the number of available processors and that will
+     * be the number of partition threads.
+     *
+     * If explicit number of partition threads is configured, this property is
+     * irrelevant.
+     *
+     * This property favors the typical get/set type of application. Application
+     * that are number crunching or query heavy, will get a performance hit
+     * because not all cores will be busy with processing operations since there
+     * are less operation threads than processors. So for such applications it
+     * is best to explicitly disable this property.
+     */
+    public static final HazelcastProperty PARTITION_OPERATION_THREAD_ISOLATED
+            = new HazelcastProperty("hazelcast.operation.thread.isolated", new Function<HazelcastProperties, Boolean>() {
+        @Override
+        public Boolean apply(HazelcastProperties properties) {
+            int availableProcessors = RuntimeAvailableProcessors.get();
+            if (availableProcessors < 20) {
+                return false;
+            }
+
+            int ioThreads = properties.getInteger(IO_INPUT_THREAD_COUNT) + properties.getInteger(IO_OUTPUT_THREAD_COUNT);
+            if (ioThreads > 8) {
+                return false;
+            }
+
+            return true;
+        }
+    });
+
+    /**
      * The number of partition operation handler threads per member.
-     * <p/>
+     * <p>
      * If this is less than the number of partitions on a member, partition operations
      * will queue behind other operations of different partitions.
-     * <p/>
-     * The default is -1, which means that the value is determined dynamically.
+     *
+     * If the JVM detects 20 or more cores, and 'hazelcast.operation.thread.isolated' is set to true,
+     * it will prevent creating more threads than available cores by
+     * determining the number of operation threads as corecount-iothreadcount.
+     * This will prevent that IO threads and partition threads will contend for cores and this leads to
+     * increases throughput and less jitter.
+     *
+     * If explicit number of partition threads is configured, than the magic where we try to determine optimal
+     * number of partition threads is bypassed.
      */
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.operation.thread.count", -1);
+            = new HazelcastProperty("hazelcast.operation.thread.count", new Function<HazelcastProperties, Integer>() {
+        @Override
+        public Integer apply(HazelcastProperties properties) {
+            int availableProcessors = RuntimeAvailableProcessors.get();
+            boolean isolated = properties.getBoolean(PARTITION_OPERATION_THREAD_ISOLATED);
+
+            if (isolated) {
+                int ioThreads = properties.getInteger(IO_INPUT_THREAD_COUNT) + properties.getInteger(IO_OUTPUT_THREAD_COUNT);
+                int partitionThreadCount = availableProcessors - ioThreads;
+                return checkPositive(partitionThreadCount, "partitionThreadCount must be positive,"
+                        + " but was " + partitionThreadCount);
+            } else {
+                return max(2, availableProcessors);
+            }
+        }
+    });
 
     /**
      * The number of generic operation handler threads per member.
-     * <p/>
-     * The default is -1, which means that the value is determined dynamically.
+     * <p>
+     * The default is max(2, processors/2);
      */
     public static final HazelcastProperty GENERIC_OPERATION_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.operation.generic.thread.count", -1);
+            = new HazelcastProperty("hazelcast.operation.generic.thread.count",
+            (Function<HazelcastProperties, Integer>) o -> {
+                // default generic operation thread count
+                int processors = RuntimeAvailableProcessors.get();
+                return max(2, processors / 2);
+            });
 
     /**
      * The number of priority generic operation handler threads per member.
-     * <p/>
+     * <p>
      * The default is 1.
      * <p>
      * Having at least 1 priority generic operation thread helps to improve cluster stability since a lot of cluster
@@ -114,21 +196,40 @@ public final class GroupProperty {
      * partition-specific operation thread, but there are also requests that can't be executed on a partition-specific operation
      * thread, such as {@code multimap.containsValue(value)}, because they need to access all partitions on a given
      * member.
+     *
+     * When not set it is set as core-size
      */
     public static final HazelcastProperty CLIENT_ENGINE_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.thread.count", -1);
 
+    /**
+     * The number of threads that the client engine has available for processing requests that are related to transactions
+     * When not set it is set as core-size.
+     */
     public static final HazelcastProperty CLIENT_ENGINE_QUERY_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.query.thread.count", -1);
 
     /**
-     * Time after which client connection is removed or owner node of a client is removed from the cluster.
-     * <p>
-     * ClientDisconnectionOperation runs and cleans all resources of a client (listeners are removed, locks/txn are released).
-     * With this property, client has a window to connect back and prevent cleaning up its resources.
+     * The number of threads that the client engine has available for processing requests that are blocking
+     * (example: related to transactions)
+     * When not set it is set as core-size * 20.
      */
-    public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
-            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 60);
+    public static final HazelcastProperty CLIENT_ENGINE_BLOCKING_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.clientengine.blocking.thread.count", -1);
+
+    /**
+     * Time period to check if a client is still part of the cluster.
+     */
+    public static final HazelcastProperty CLIENT_CLEANUP_PERIOD
+            = new HazelcastProperty("hazelcast.client.cleanup.period.millis", 10000, MILLISECONDS);
+
+    /**
+     * Timeout duration to decide if a client is still part of the cluster.
+     * If a member can not find any connection to a client in the cluster, it will clean up local resources that is
+     * owned by that client.
+     */
+    public static final HazelcastProperty CLIENT_CLEANUP_TIMEOUT
+            = new HazelcastProperty("hazelcast.client.cleanup.timeout.millis", 120000, MILLISECONDS);
 
     /**
      * Number of threads for the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.
@@ -182,14 +283,69 @@ public final class GroupProperty {
 
     /**
      * The number of threads doing socket input and the number of threads doing socket output.
-     * <p/>
+     * <p>
      * E.g., if 3 is configured, then you get 3 threads doing input and 3 doing output. For individual control,
      * check {@link #IO_INPUT_THREAD_COUNT} and {@link #IO_OUTPUT_THREAD_COUNT}.
-     * <p/>
-     * The default is 3 (i.e. 6 threads).
+     * <p>
+     * The default is depends on the number of available processors. If the available processors count is
+     * smaller than 20, there will be 3+3 io threads, otherwise 4+4.
+     *
+     * If SSL is enabled, then the default number of IO threads will be corecount/2.
      */
+    @SuppressWarnings("AnonInnerLength")
     public static final HazelcastProperty IO_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.io.thread.count", 3);
+            = new HazelcastProperty("hazelcast.io.thread.count", new Function<HazelcastProperties, Integer>() {
+        @Override
+        public Integer apply(HazelcastProperties properties) {
+            return isSSLDetected(properties) ? getWhenSSLDetected() : getWhenNoSSLDetected();
+        }
+
+        private boolean isSSLDetected(HazelcastProperties properties) {
+            Config config = properties.getConfig();
+            if (config == null) {
+                return false;
+            }
+
+            return isSSLDetected(config.getAdvancedNetworkConfig()) || isSSLDetected(config.getNetworkConfig());
+        }
+
+        private boolean isSSLDetected(AdvancedNetworkConfig networkConfig) {
+            if (networkConfig == null || !networkConfig.isEnabled()) {
+                return false;
+            }
+
+            for (Map.Entry<EndpointQualifier, EndpointConfig> entry : networkConfig.getEndpointConfigs().entrySet()) {
+                EndpointQualifier endpointQualifier = entry.getKey();
+                if (!endpointQualifier.equals(EndpointQualifier.MEMBER) && !entry.getKey().equals(EndpointQualifier.CLIENT)) {
+                    continue;
+                }
+                EndpointConfig endpointConfig = entry.getValue();
+                SSLConfig endpointSSLConfig = endpointConfig.getSSLConfig();
+                if (endpointSSLConfig != null && endpointSSLConfig.isEnabled()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean isSSLDetected(NetworkConfig networkConfig) {
+            if (networkConfig == null) {
+                return false;
+            }
+
+            SSLConfig sslConfig = networkConfig.getSSLConfig();
+            return sslConfig != null && sslConfig.isEnabled();
+        }
+
+        private int getWhenSSLDetected() {
+            return max(getWhenNoSSLDetected(), RuntimeAvailableProcessors.get() / 2);
+        }
+
+        private int getWhenNoSSLDetected() {
+            return RuntimeAvailableProcessors.get() >= 20 ? 4 : 3;
+        }
+    });
+    ;
 
     /**
      * Controls the number of socket input threads. By default it is the same as {@link #IO_THREAD_COUNT}.
@@ -204,12 +360,37 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.io.output.thread.count", IO_THREAD_COUNT);
 
     /**
+     * Optimization that allows sending of packets over the network to be done on the calling thread if the
+     * conditions are right. This can reduce latency and increase performance for low threaded environments.
+     *
+     * It is disabled by default.
+     */
+    public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
+            = new HazelcastProperty("hazelcast.io.write.through", true);
+
+    /**
+     * Property needed for concurrency detection so that write through can be done correctly.
+     * This property sets the window the concurrency detection will signalling
+     * that concurrency has been detected, even if there are no further updates in that window.
+     *
+     * Normally in a concurrency system the windows keeps sliding forward so it will always remain
+     * concurrent.
+     *
+     * Setting it too high effectively disabled the optimization because once concurrency has been detected
+     * it will keep that way. Setting it too low could lead to suboptimal performance because the system
+     * will try write through and other optimization even though the system is concurrent.
+     */
+    public static final HazelcastProperty CONCURRENT_WINDOW_MS
+            = new HazelcastProperty("hazelcast.concurrent.window.ms", 100, MILLISECONDS);
+
+
+    /**
      * The interval in seconds between {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
-     * <p/>
+     * <p>
      * Please see the documentation of {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * for a detailed explanation of the problem.
-     * <p/>
+     * <p>
      * The default is 20 seconds. A value smaller than 1 disables the balancer.
      */
     public static final HazelcastProperty IO_BALANCER_INTERVAL_SECONDS
@@ -219,21 +400,33 @@ public final class GroupProperty {
     public static final HazelcastProperty PREFER_IPv4_STACK
             = new HazelcastProperty("hazelcast.prefer.ipv4.stack", true);
 
-    @Deprecated
-    public static final HazelcastProperty VERSION_CHECK_ENABLED
-            = new HazelcastProperty("hazelcast.version.check.enabled", true);
-
     public static final HazelcastProperty PHONE_HOME_ENABLED
             = new HazelcastProperty("hazelcast.phone.home.enabled", true);
 
     public static final HazelcastProperty CONNECT_ALL_WAIT_SECONDS
             = new HazelcastProperty("hazelcast.connect.all.wait.seconds", 120, SECONDS);
 
+    /**
+     * Enables or disables MEMCACHE protocol on members.
+     *
+     * @see com.hazelcast.config.MemcacheProtocolConfig
+     */
     public static final HazelcastProperty MEMCACHE_ENABLED
             = new HazelcastProperty("hazelcast.memcache.enabled", false);
+    /**
+     * Enables or disables REST API on members.
+     *
+     * @see com.hazelcast.config.RestEndpointGroup
+     * @see com.hazelcast.config.RestApiConfig
+     */
     public static final HazelcastProperty REST_ENABLED
             = new HazelcastProperty("hazelcast.rest.enabled", false);
 
+    /**
+     * Enables or disables HTTP health check API on members.
+     *
+     * @see com.hazelcast.config.RestEndpointGroup#HEALTH_CHECK
+     */
     public static final HazelcastProperty HTTP_HEALTHCHECK_ENABLED
             = new HazelcastProperty("hazelcast.http.healthcheck.enabled", false);
 
@@ -314,13 +507,13 @@ public final class GroupProperty {
 
     /**
      * Overrides receive buffer size for connections opened by clients.
-     * <p/>
+     * <p>
      * Hazelcast creates all connections with receive buffer size set according to #PROP_SOCKET_RECEIVE_BUFFER_SIZE.
      * When it detects a connection was opened by a client then it adjusts receive buffer size
      * according to this property.
-     * <p/>
+     * <p>
      * Size is in kilobytes.
-     * <p/>
+     * <p>
      * The default is -1 (same as receive buffer size for connections opened by members).
      */
     public static final HazelcastProperty SOCKET_CLIENT_RECEIVE_BUFFER_SIZE
@@ -328,13 +521,13 @@ public final class GroupProperty {
 
     /**
      * Overrides send buffer size for connections opened by clients.
-     * <p/>
+     * <p>
      * Hazelcast creates all connections with send buffer size set according to #PROP_SOCKET_SEND_BUFFER_SIZE.
      * When it detects a connection was opened by a client then it adjusts send buffer size
      * according to this property.
-     * <p/>
+     * <p>
      * Size is in kilobytes.
-     * <p/>
+     * <p>
      * The default is -1 (same as receive buffer size for connections opened by members).
      */
     public static final HazelcastProperty SOCKET_CLIENT_SEND_BUFFER_SIZE
@@ -344,9 +537,9 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.socket.client.buffer.direct", false);
 
     public static final HazelcastProperty SOCKET_LINGER_SECONDS
-            = new HazelcastProperty("hazelcast.socket.linger.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.socket.linger.seconds", -1, SECONDS);
     public static final HazelcastProperty SOCKET_CONNECT_TIMEOUT_SECONDS
-            = new HazelcastProperty("hazelcast.socket.connect.timeout.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.socket.connect.timeout.seconds", 10, SECONDS);
     public static final HazelcastProperty SOCKET_KEEP_ALIVE
             = new HazelcastProperty("hazelcast.socket.keep.alive", true);
     public static final HazelcastProperty SOCKET_NO_DELAY
@@ -400,23 +593,6 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.max.no.heartbeat.seconds", 60, SECONDS);
 
     /**
-     * The interval at which master confirmations are sent from non-master nodes to the master node
-     *
-     * @deprecated since 3.10
-     */
-    @Deprecated
-    public static final HazelcastProperty MASTER_CONFIRMATION_INTERVAL_SECONDS
-            = new HazelcastProperty("hazelcast.master.confirmation.interval.seconds", 30, SECONDS);
-    /**
-     * The timeout which defines when a cluster member is removed because it has not sent any master confirmations.
-     *
-     * @deprecated since 3.10
-     */
-    @Deprecated
-    public static final HazelcastProperty MAX_NO_MASTER_CONFIRMATION_SECONDS
-            = new HazelcastProperty("hazelcast.max.no.master.confirmation.seconds", 150, SECONDS);
-
-    /**
      * Heartbeat failure detector type. Available options are:
      * <ul>
      * <li><code>deadline</code>:  A deadline based failure detector uses an absolute timeout
@@ -446,79 +622,6 @@ public final class GroupProperty {
     public static final HazelcastProperty CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.cluster.shutdown.timeout.seconds", 900, SECONDS);
 
-    /**
-     * If a member should be pinged when a sufficient amount of heartbeats have passed and the member has not sent any
-     * heartbeats. If the member is not reachable, it will be removed.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_ENABLED
-            = new HazelcastProperty("hazelcast.icmp.enabled", false);
-
-    /**
-     * Run ICMP detection in parallel with the Heartbeat failure detector.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_PARALLEL_MODE
-            = new HazelcastProperty("hazelcast.icmp.parallel.mode", true);
-
-    /**
-     * Enforce ICMP Echo Request mode for ping-detector. If OS is not supported,
-     * or not configured correctly as per reference-manual, hazelcast will fail to start.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_ECHO_FAIL_FAST
-            = new HazelcastProperty("hazelcast.icmp.echo.fail.fast.on.startup", true);
-
-    /**
-     * Ping timeout in milliseconds. This cannot be more than the interval value. Should always be smaller.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_TIMEOUT
-            = new HazelcastProperty("hazelcast.icmp.timeout", 1000, MILLISECONDS);
-
-    /**
-     * Interval between ping attempts in milliseconds. Default and min allowed, 1 second.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_INTERVAL
-            = new HazelcastProperty("hazelcast.icmp.interval", 1000, MILLISECONDS);
-
-    /**
-     * Max ping attempts before suspecting a member
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_MAX_ATTEMPTS
-            = new HazelcastProperty("hazelcast.icmp.max.attempts", 3);
-
-    /**
-     * Ping TTL, the maximum number of hops the packets should go through or 0 for the default.
-     * Zero in this case means unlimited hops.
-     *
-     * @deprecated as of 3.10 this can be configured through {@link com.hazelcast.config.IcmpFailureDetectorConfig}
-     * This will be removed in future versions. Until this is done,
-     * if the {@link com.hazelcast.config.IcmpFailureDetectorConfig} is null we will still fall back to this
-     */
-    public static final HazelcastProperty ICMP_TTL
-            = new HazelcastProperty("hazelcast.icmp.ttl", 0);
-
     public static final HazelcastProperty INITIAL_MIN_CLUSTER_SIZE
             = new HazelcastProperty("hazelcast.initial.min.cluster.size", 0);
     public static final HazelcastProperty INITIAL_WAIT_SECONDS
@@ -539,7 +642,7 @@ public final class GroupProperty {
      * You can use MAP_EXPIRY_DELAY_SECONDS to deal with some possible
      * edge cases, such as using EntryProcessor. Without this delay, you
      * may see that an EntryProcessor running on the owner partition
-     * found a key, but EntryBackupProcessor did not find it on backup,
+     * found a key, but entry backup processor did not find it on backup,
      * and as a result when backup promotes to owner you will end up
      * with an unprocessed key.
      */
@@ -563,15 +666,11 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.map.eviction.batch.size", 1);
 
     /**
-     * This property is a switch between old and new event publishing
-     * behavior of map#loadAll. When it is true, map#loadAll publishes
-     * entry ADDED events, when false, map#loadAll publishes entry
-     * LOADED events. By default LOADED events will be published.
-     *
-     * @since 3.11
+     * XML and system property for setting the hot restart required free space.
+     * By default, hot restart requires at least 15% free HD space.
      */
-    public static final HazelcastProperty MAP_LOAD_ALL_PUBLISHES_ADDED_EVENT
-            = new HazelcastProperty("hazelcast.map.loadAll.publishes.added.event", false);
+    public static final HazelcastProperty HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE
+            = new HazelcastProperty("hazelcast.hotrestart.free.native.memory.percentage", 15);
 
     public static final HazelcastProperty LOGGING_TYPE
             = new HazelcastProperty("hazelcast.logging.type", "jdk");
@@ -583,8 +682,6 @@ public final class GroupProperty {
 
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.slow.operations.count", 10);
-    public static final HazelcastProperty MC_URL_CHANGE_ENABLED
-            = new HazelcastProperty("hazelcast.mc.url.change.enabled", true);
 
     public static final HazelcastProperty CONNECTION_MONITOR_INTERVAL
             = new HazelcastProperty("hazelcast.connection.monitor.interval", 100, MILLISECONDS);
@@ -624,7 +721,7 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.slow.operation.detector.enabled", true);
 
     /**
-     * Defines a threshold above which a running operation in {@link com.hazelcast.spi.OperationService} is considered to be slow.
+     * Defines a threshold above which a running operation in {@link OperationService} is considered to be slow.
      * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stacktrace.
      */
     public static final HazelcastProperty SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS
@@ -632,7 +729,7 @@ public final class GroupProperty {
 
     /**
      * This value defines the retention time of invocations in slow operation logs.
-     * <p/>
+     * <p>
      * If an invocation is older than this value, it will be purged from the log to prevent unlimited memory usage.
      * When all invocations are purged from a log, the log itself will be deleted.
      *
@@ -656,13 +753,6 @@ public final class GroupProperty {
     public static final HazelcastProperty SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
             = new HazelcastProperty("hazelcast.slow.operation.detector.stacktrace.logging.enabled", false);
 
-    /**
-     * Property isn't used anymore.
-     */
-    @Deprecated
-    public static final HazelcastProperty SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
-            = new HazelcastProperty("hazelcast.slow.invocation.detector.threshold.millis", -1, MILLISECONDS);
-
     public static final HazelcastProperty LOCK_MAX_LEASE_TIME_SECONDS
             = new HazelcastProperty("hazelcast.lock.max.lease.time.seconds", Long.MAX_VALUE, SECONDS);
 
@@ -672,9 +762,9 @@ public final class GroupProperty {
     /**
      * Setting this capacity is valid if you set {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} to {@code false}.
      * Otherwise its value will not be taken into account.
-     * <p/>
+     * <p>
      * The per node maximum write-behind queue capacity is the total of all write-behind queue sizes in a node, including backups.
-     * <p/>
+     * <p>
      * The maximum value which can be set is {@link Integer#MAX_VALUE}
      */
     public static final HazelcastProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY
@@ -694,7 +784,7 @@ public final class GroupProperty {
 
     /**
      * Defines the cache invalidation event batch sending frequency in seconds.
-     * <p/>
+     * <p>
      * When the number of events do not come up to {@link #CACHE_INVALIDATION_MESSAGE_BATCH_SIZE} in the given time period (which
      * is defined by this property); those events are gathered into a batch and sent to target.
      */
@@ -715,7 +805,7 @@ public final class GroupProperty {
 
     /**
      * Defines the Near Cache invalidation event batch sending frequency in seconds.
-     * <p/>
+     * <p>
      * When the number of events do not come up to {@link #MAP_INVALIDATION_MESSAGE_BATCH_SIZE} in the given time period (which
      * is defined by this property); those events are gathered into a batch and sent to target.
      */
@@ -726,9 +816,9 @@ public final class GroupProperty {
      * Using back pressure, you can prevent an overload of pending asynchronous backups. With a map with a
      * single asynchronous backup, producing asynchronous backups could happen at a higher rate than
      * the consumption of the backup. This can eventually lead to an OOME (especially if the backups are slow).
-     * <p/>
+     * <p>
      * With back-pressure enabled, this can't happen.
-     * <p/>
+     * <p>
      * Back pressure is implemented by making asynchronous backups operations synchronous. This prevents the internal queues from
      * overflowing because the invoker will wait for the primary and for the backups to complete. The frequency of this is
      * determined by the sync-window.
@@ -742,15 +832,15 @@ public final class GroupProperty {
     /**
      * Controls the frequency of a BackupAwareOperation getting its async backups converted to a sync backups. This is needed
      * to prevent an accumulation of asynchronous backups and eventually running into stability issues.
-     * <p/>
+     * <p>
      * A sync window of 10 means that 1 in 10 BackupAwareOperations get their async backups convert to sync backups.
-     * <p/>
+     * <p>
      * A sync window of 1 means that every BackupAwareOperation get their async backups converted to sync backups. 1
      * is also the smallest legal value for the sync window.
-     * <p/>
+     * <p>
      * There is some randomization going on to prevent resonance. Therefore, with a sync window of n, not every Nth
      * BackupAwareOperation operation gets its async backups converted to sync.
-     * <p/>
+     * <p>
      * This property only has meaning when backpressure is enabled.
      */
     public static final HazelcastProperty BACKPRESSURE_SYNCWINDOW
@@ -758,11 +848,11 @@ public final class GroupProperty {
 
     /**
      * Control the maximum timeout in millis to wait for an invocation space to be available.
-     * <p/>
+     * <p>
      * If an invocation can't be made because there are too many pending invocations, then an exponential backoff is done
      * to give the system time to deal with the backlog of invocations. This property controls how long an invocation is
      * allowed to wait before getting a {@link com.hazelcast.core.HazelcastOverloadException}.
-     * <p/>
+     * <p>
      * The value needs to be equal or larger than 0.
      */
     public static final HazelcastProperty BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
@@ -770,16 +860,16 @@ public final class GroupProperty {
 
     /**
      * The maximum number of concurrent invocations per partition.
-     * <p/>
+     * <p>
      * To prevent the system from overloading, HZ can apply a constraint on the number of concurrent invocations. If the maximum
      * number of concurrent invocations has been exceeded and a new invocation comes in, then an exponential back-off is applied
      * till eventually a timeout happens or there is room for the invocation.
-     * <p/>
+     * <p>
      * By default it is configured as 100. With 271 partitions, that would give (271 + 1) * 100 = 27200 concurrent invocations
      * from a single member. The +1 is for generic operations. The reasons why 100 is chosen are:
      * - there can be concurrent operations that touch a lot of partitions which consume more than 1 invocation, and
-     * - certain methods like those from the IExecutor or ILock are also invocations and they can be very long running.
-     * <p/>
+     * - certain methods like those from the IExecutor are also invocations and they can be very long running.
+     * <p>
      * No promise is made for the invocations being tracked per partition, or if there is a general pool of invocations.
      */
     public static final HazelcastProperty BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION
@@ -787,13 +877,13 @@ public final class GroupProperty {
 
     /**
      * Run Query Evaluations for multiple partitions in parallel.
-     * <p/>
+     * <p>
      * Each Hazelcast member evaluates query predicates using a single thread by default. In most cases the overhead of
      * inter-thread communication overweight benefit of parallel execution.
-     * <p/>
+     * <p>
      * When you have a large dataset and/or slow predicate you may benefit from parallel predicate evaluations.
-     * Set to true if you are using slow predicates or have > 100,000s entries per member.
-     * <p/>
+     * Set to true if you are using slow predicates or have &lt; 100,000s entries per member.
+     * <p>
      * The default is false.
      */
     public static final HazelcastProperty QUERY_PREDICATE_PARALLEL_EVALUATION
@@ -801,10 +891,10 @@ public final class GroupProperty {
 
     /**
      * Run aggregation accumulation for multiple entries in parallel.
-     * <p/>
+     * <p>
      * Each Hazelcast member executes the accumulation stage of an aggregation using a single thread by default.
      * In most cases it pays off to do it in parallel.
-     * <p/>
+     * <p>
      * The default is true.
      */
     public static final HazelcastProperty AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION
@@ -812,34 +902,35 @@ public final class GroupProperty {
 
     /**
      * Result size limit for query operations on maps.
-     * <p/>
+     * <p>
      * This value defines the maximum number of returned elements for a single query result. If a query exceeds this number of
      * elements, a {@link QueryResultSizeExceededException} will be thrown.
-     * <p/>
+     * <p>
      * This feature prevents an OOME if a single node is requesting the whole data set of the cluster, such as by
-     * executing a query with {@link TruePredicate}. This applies internally for the {@link IMap#values()}, {@link IMap#keySet()}
-     * and {@link IMap#entrySet()} methods, which are good candidates for OOME in large clusters.
-     * <p/>
+     * executing a query with {@link Predicates#alwaysTrue()} predicate. This applies internally for the {@link IMap#values()},
+     * {@link IMap#keySet()} and {@link IMap#entrySet()} methods, which are good candidates for OOME in large clusters.
+     * <p>
      * This feature depends on an equal distribution of the data on the cluster nodes to calculate the result size limit per node.
      * Therefore, there is a minimum value of {@value QueryResultSizeLimiter#MINIMUM_MAX_RESULT_LIMIT} defined in
      * {@link QueryResultSizeLimiter}. Configured values below the minimum will be increased to the minimum.
-     * <p/>
-     * The feature can be disabled by setting its value to <tt>-1</tt> (which is the default value).
+     * <p>
+     * The feature can be disabled by setting its value to <code>-1</code> (which is the default value).
      */
     public static final HazelcastProperty QUERY_RESULT_SIZE_LIMIT
             = new HazelcastProperty("hazelcast.query.result.size.limit", -1);
 
     /**
-     * Maximum value of local partitions to trigger local pre-check for {@link TruePredicate} query operations on maps.
-     * <p/>
-     * To limit the result size of a query ({@see PROP_QUERY_RESULT_SIZE_LIMIT}); a local pre-check on the requesting node can be
+     * Maximum value of local partitions to trigger local pre-check for {@link Predicates#alwaysTrue()} predicate query operations
+     * on maps.
+     * <p>
+     * To limit the result size of a query ({@link #QUERY_RESULT_SIZE_LIMIT}); a local pre-check on the requesting node can be
      * done before the query is sent to the cluster. Since this may increase the latency, the pre-check is limited to a maximum
      * number of local partitions.
-     * <p/>
+     * <p>
      * By increasing this parameter, you can prevent the execution of the query on the cluster. Increasing this parameter
      * increases the latency due to the prolonged local pre-check.
-     * <p/>
-     * The pre-check can be disabled by setting the value to <tt>-1</tt>.
+     * <p>
+     * The pre-check can be disabled by setting the value to <code>-1</code>.
      *
      * @see #QUERY_RESULT_SIZE_LIMIT
      */
@@ -853,7 +944,7 @@ public final class GroupProperty {
      * <li>RULES - for optimizations based on static rules</li>
      * <li>NONE - optimization are disabled</li>
      * </ul>
-     * <p/>
+     * <p>
      * Values are case sensitive
      */
     public static final HazelcastProperty QUERY_OPTIMIZER_TYPE
@@ -868,26 +959,26 @@ public final class GroupProperty {
      *
      * Why is it needed? In order to support correctness the internal data-structures used by indexes need to do some copying.
      * The copying may take place on-read or on-write:
-     *
-     * -> Copying on-read means that each index-read operation will copy the result of the query before returning it to the
+     * <p>
+     * -&gt; Copying on-read means that each index-read operation will copy the result of the query before returning it to the
      * caller.This copying may be expensive, depending on the size of the result, since the result is stored in a map, which
      * means that all entries need to have the hash calculated before being stored in a bucket.
      * Each index-write operation however will be fast, since there will be no copying taking place.
-     *
-     * -> Copying on-write means that each index-write operation will completely copy the underlying map to provide the
+     * <p>
+     * -&gt; Copying on-write means that each index-write operation will completely copy the underlying map to provide the
      * copy-on-write semantics. Depending on the index size, it may be a very expensive operation.
      * Each index-read operation will be very fast, however, since it may just access the map and return it to the caller.
-     *
-     * -> Never copying is tricky. It means that the internal data structures of the index are concurrently modified without
+     * <p>
+     * -&gt; Never copying is tricky. It means that the internal data structures of the index are concurrently modified without
      * copy-on-write semantics. Index reads never copy the results of a query to a separate map.
      * It means that the results backed by the underlying index-map can change after the query has been executed.
      * Specifically an entry might have been added / removed from an index, or it might have been remapped.
      * Should be used in cases when a the caller expects "mostly correct" results - specifically, if it's ok
      * if some entries returned in the result set do not match the initial query criteria.
      * The fastest solution for read and writes, since no copying takes place.
-     *
+     * <p>
      * It's a tuneable trade-off - the user may decide.
-     *
+     * <p>
      * Valid Values:
      * <ul>
      * <li>COPY_ON_READY - Internal data structures of the index are concurrently modified without copy-on-write semantics.
@@ -908,7 +999,6 @@ public final class GroupProperty {
      * if some entries returned in the result set do not match the initial query criteria.
      * The fastest solution for read and writes, since no copying takes place.</li>
      * </ul>
-     * <p/>
      */
     public static final HazelcastProperty INDEX_COPY_BEHAVIOR
             = new HazelcastProperty("hazelcast.index.copy.behavior", IndexCopyBehavior.COPY_ON_READ.toString());
@@ -937,13 +1027,6 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.discovery.public.ip.enabled", false);
 
     /**
-     * When this property is true, if the server can not determine the connected client version, it shall assume that it is of
-     * 3.6.x version client. This property is especially needed if you are using ICache (or JCache).
-     */
-    public static final HazelcastProperty COMPATIBILITY_3_6_CLIENT_ENABLED
-            = new HazelcastProperty("hazelcast.compatibility.3.6.client", false);
-
-    /**
      * Hazelcast serialization version. This is single byte value between 1 and Max supported serialization version.
      *
      * @see BuildInfo#getSerializationVersion()
@@ -954,7 +1037,7 @@ public final class GroupProperty {
 
     /**
      * Override cluster version to use while node is not yet member of a cluster. The cluster version assumed before joining
-     * a cluster may affect the serialization format of cluster discovery & join operations and its compatibility with members
+     * a cluster may affect the serialization format of cluster discovery &amp; join operations and its compatibility with members
      * of a cluster running on different Hazelcast codebase versions. The default is to use the node's codebase version. You may
      * need to override it for your node to join a cluster running on a previous cluster version.
      */
@@ -977,29 +1060,6 @@ public final class GroupProperty {
             new HazelcastProperty("hazelcast.nio.tcp.spoofing.checks", false);
 
     /**
-     * This is a Java 6 specific property. In Java 7+ tasks are always removed
-     * on cancellation due to the explicit
-     * {@code java.util.concurrent.ScheduledThreadPoolExecutor#setRemoveOnCancelPolicy(boolean)}
-     * and constant time removal.
-     *
-     * In Java 6 there is no out-of-the-box support for removal of cancelled tasks,
-     * and the only way to implement this is using a linear scan of all pending
-     * tasks. Therefore in Java 6 there is a performance penalty.
-     *
-     * Using this property, in Java 6, one can control if cancelled tasks are removed.
-     * By default tasks are removed, because it can lead to temporary retention
-     * of memory if there a large volume of pending cancelled tasks. And this can
-     * lead to gc/performance problems as we saw with the transaction tests.
-     *
-     * However if this automatic removal of cancelled tasks start to become a
-     * performance problem, it can be disabled in Java 6.
-     *
-     * For more information see the {@link com.hazelcast.util.executor.LoggingScheduledExecutor}.
-     */
-    public static final HazelcastProperty TASK_SCHEDULER_REMOVE_ON_CANCEL =
-            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", true);
-
-    /**
      * By default, search for data structures config is performed within static configuration first:
      * <ul>
      * <li>Exact match in static config</li>
@@ -1020,6 +1080,33 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty SEARCH_DYNAMIC_CONFIG_FIRST
             = new HazelcastProperty("hazelcast.data.search.dynamic.config.first.enabled", false);
+
+    /**
+     * Defines whether Moby Names should be used for instance name generating when it is not provided by user.
+     * </p>
+     * Moby Name is a short human-readable name consisting of randomly chosen adjective and the surname of a famous person.
+     * </p>
+     * If set to true, Moby Name will be chosen, otherwise a name that is concatenation of static prefix, number and cluster name.
+     * </p>
+     * By default is true.
+     */
+    public static final HazelcastProperty MOBY_NAMING_ENABLED
+            = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
+
+    /**
+     * Client protocol message size limit (in bytes) for unverified connections (i.e. maximal length of authentication message).
+     */
+    public static final HazelcastProperty CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES =
+            new HazelcastProperty("hazelcast.client.protocol.max.message.bytes", 1024);
+
+    public static final HazelcastProperty AUDIT_LOG_ENABLED = new HazelcastProperty("hazelcast.auditlog.enabled", false);
+
+    /**
+     * The interval at which network stats (bytes sent and received) are re-calculated and published.
+     * Used only when Advanced Networking is enabled.
+     */
+    public static final HazelcastProperty NETWORK_STATS_REFRESH_INTERVAL_SECONDS
+            = new HazelcastProperty("hazelcast.network.stats.refresh.interval.seconds", 3, SECONDS);
 
     private GroupProperty() {
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
@@ -48,7 +48,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
             // ensure that they are stored
             assertNotNull(nearCacheRecordStore.get(i));
         }
@@ -56,7 +56,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.remove(i);
+            nearCacheRecordStore.invalidate(i);
             assertNull(nearCacheRecordStore.get(i));
         }
 
@@ -68,7 +68,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
             // ensure that they are stored
             assertNotNull(nearCacheRecordStore.get(i));
         }
@@ -93,7 +93,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         int expectedMisses = 0;
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
             expectedEntryCount++;
         }
 
@@ -130,11 +130,13 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
                 // NOP
         }
 
+        int sizeBefore = nearCacheRecordStore.size();
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            if (nearCacheRecordStore.remove(i * 3)) {
-                expectedEntryCount--;
-            }
+            nearCacheRecordStore.invalidate(i * 3);
         }
+        int sizeAfter = nearCacheRecordStore.size();
+        int invalidatedSize = sizeBefore - sizeAfter;
+        expectedEntryCount -= invalidatedSize;
 
         assertEquals(expectedEntryCount, nearCacheStats.getOwnedEntryCount());
         switch (inMemoryFormat) {
@@ -163,7 +165,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -186,7 +188,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -213,7 +215,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         sleepSeconds(cleanUpThresholdSeconds + 1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,12 @@ public class MemberAttributeChangedOp extends AbstractClusterOperation {
 
     private MemberAttributeOperationType operationType;
     private String key;
-    private Object value;
+    private String value;
 
     public MemberAttributeChangedOp() {
     }
 
-    public MemberAttributeChangedOp(MemberAttributeOperationType operationType, String key, Object value) {
+    public MemberAttributeChangedOp(MemberAttributeOperationType operationType, String key, String value) {
         this.operationType = operationType;
         this.key = key;
         this.value = value;
@@ -52,7 +52,7 @@ public class MemberAttributeChangedOp extends AbstractClusterOperation {
         out.writeUTF(key);
         out.writeByte(operationType.getId());
         if (operationType == PUT) {
-            out.writeObject(value);
+            out.writeUTF(value);
         }
     }
 
@@ -61,12 +61,12 @@ public class MemberAttributeChangedOp extends AbstractClusterOperation {
         key = in.readUTF();
         operationType = MemberAttributeOperationType.getValue(in.readByte());
         if (operationType == PUT) {
-            value = in.readObject();
+            value = in.readUTF();
         }
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.MEMBER_ATTR_CHANGED;
     }
 }

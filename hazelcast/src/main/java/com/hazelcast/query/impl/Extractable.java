@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.query.QueryException;
 
 /**
- * Enables extracting attribute values and types and their type from an object, usually from an Entry
+ * Enables extracting attribute value from an object, usually from an Entry
  */
 public interface Extractable {
-
     Object getAttributeValue(String attributeName) throws QueryException;
-
-    AttributeType getAttributeType(String attributeName) throws QueryException;
-
 }

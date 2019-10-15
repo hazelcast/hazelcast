@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -29,6 +29,5 @@
             <discovery-strategy enabled="true" class="com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy">
             </discovery-strategy>
         </discovery-strategies>
-        <connection-attempt-limit>2147483647</connection-attempt-limit> <!-- Integer.MAX_VALUE -->
     </network>
 </hazelcast-client>

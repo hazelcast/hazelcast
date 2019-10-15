@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.service.TestGetOperation;
 import com.hazelcast.internal.partition.service.TestPutOperation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -80,7 +80,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
             shutdownNodes(shutdownNodeCount);
             size -= shutdownNodeCount;
 
-            assertSizeAndData();
+            assertSizeAndDataEventually();
         }
     }
 
@@ -106,7 +106,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
             addresses = shutdownNodes(shutdownNodeCount);
             size -= shutdownNodeCount;
 
-            assertSizeAndData();
+            assertSizeAndDataEventually();
         }
     }
 

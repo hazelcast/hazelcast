@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 
-import java.util.Collection;
+import java.util.PrimitiveIterator;
 
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
@@ -31,14 +32,14 @@ import static java.lang.Math.min;
 
 /**
  * Responsible for limiting result size of queries.
- * <p/>
+ * <p>
  * This class defines a hard coded minimum {@link #MINIMUM_MAX_RESULT_LIMIT} as well as a factor {@link #MAX_RESULT_LIMIT_FACTOR}
  * to ensure that the actual result size limit will be a reasonable value. Due to the used hash algorithm the data of
  * a map is not distributed equally on all partitions in the cluster. Since the decision whether of not the
  * {@link QueryResultSizeExceededException} is thrown is made on the local number of partition entries, we need a reliable
  * distribution of data. The goal is to prevent false positives, since those might surprise the user.
  * So the exception should never been thrown below the configured limit.
- * <p/>
+ * <p>
  * The minimum value of {@value #MINIMUM_MAX_RESULT_LIMIT} and the factor of {@value #MAX_RESULT_LIMIT_FACTOR} were determined by
  * testing on which limit the exception was thrown with different map key types.
  */
@@ -121,7 +122,7 @@ public class QueryResultSizeLimiter {
         }
 
         // limit number of local partitions to check to keep runtime constant
-        Collection<Integer> localPartitions = mapServiceContext.getOwnedPartitions();
+        PartitionIdSet localPartitions = mapServiceContext.getOwnedPartitions();
         int partitionsToCheck = min(localPartitions.size(), maxLocalPartitionsLimitForPreCheck);
         if (partitionsToCheck == 0) {
             return;
@@ -140,10 +141,12 @@ public class QueryResultSizeLimiter {
         }
     }
 
-    private int getLocalPartitionSize(String mapName, Collection<Integer> localPartitions, int partitionsToCheck) {
+    private int getLocalPartitionSize(String mapName, PartitionIdSet localPartitions, int partitionsToCheck) {
         int localSize = 0;
         int partitionsChecked = 0;
-        for (int partitionId : localPartitions) {
+        PrimitiveIterator.OfInt partitionsIterator = localPartitions.intIterator();
+        while (partitionsIterator.hasNext()) {
+            int partitionId = partitionsIterator.nextInt();
             localSize += mapServiceContext.getRecordStore(partitionId, mapName).size();
             if (++partitionsChecked == partitionsToCheck) {
                 break;

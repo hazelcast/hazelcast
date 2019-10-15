@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,11 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,12 +37,13 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AdvancedCacheJournalTest extends HazelcastTestSupport {
 
     private static final int PARTITION_COUNT = 100;
@@ -58,17 +58,13 @@ public class AdvancedCacheJournalTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        EventJournalConfig eventJournalConfig = new EventJournalConfig()
-                .setEnabled(true)
-                .setCacheName("default");
-
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
         cacheConfig.getEvictionConfig().setSize(Integer.MAX_VALUE);
+        cacheConfig.setEventJournalConfig(new EventJournalConfig().setEnabled(true));
 
         return super.getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT))
-                .addEventJournalConfig(eventJournalConfig)
-                .addCacheConfig(cacheConfig);
+                    .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT))
+                    .addCacheConfig(cacheConfig);
     }
 
     @Test
@@ -84,7 +80,7 @@ public class AdvancedCacheJournalTest extends HazelcastTestSupport {
             }
         }
 
-        LinkedList<HazelcastInstance> instanceList = new LinkedList<HazelcastInstance>(Arrays.asList(instances));
+        LinkedList<HazelcastInstance> instanceList = new LinkedList<>(Arrays.asList(instances));
         waitAllForSafeState(instanceList);
 
         int expectedSize = keyCount * updateCount;
@@ -108,9 +104,9 @@ public class AdvancedCacheJournalTest extends HazelcastTestSupport {
     private static <K, V> int getJournalSize(Cache<K, V> cache) throws ExecutionException, InterruptedException {
         int total = 0;
         for (int i = 0; i < PARTITION_COUNT; i++) {
-            ICompletableFuture<ReadResultSet<Object>> future =
+            CompletionStage<ReadResultSet<Object>> future =
                     ((CacheProxy<K, V>) cache).readFromEventJournal(0, 0, 10000, i, null, null);
-            ReadResultSet<Object> resultSet = future.get();
+            ReadResultSet<Object> resultSet = future.toCompletableFuture().get();
             int readCount = resultSet.readCount();
             total += readCount;
         }

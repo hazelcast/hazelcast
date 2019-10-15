@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,29 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientService;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Endpoint;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -34,12 +47,19 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
- * Multiple Hazelcast instances can be created on a JVM.
- * Each Hazelcast instance has its own socket, threads.
+ * Hazelcast instance. Each instance is a member and/or client in a Hazelcast cluster. When
+ * you want to use Hazelcast's distributed data structures, you must first create an instance.
+ * Multiple Hazelcast instances can be created on a single JVM.
+ *
+ * Instances should be shut down explicitly. See the {@link #shutdown()} method.
+ * If the instance is a client and you don't shut it down explicitly, it will continue to run and
+ * even connect to another live member if the one it was connected fails.
+ *
+ * Each Hazelcast instance has its own socket and threads.
  *
  * @see Hazelcast#newHazelcastInstance(Config config)
  */
@@ -104,51 +124,12 @@ public interface HazelcastInstance {
     <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
 
     /**
-     * Creates or returns the job tracker instance with the specified name.
-     *
-     * @param name name of the job tracker
-     * @return job tracker instance with the specified name
-     * @since 3.2
-     * @deprecated MapReduce is deprecated and will be removed in 4.0.
-     * For map aggregations, you can use {@link com.hazelcast.aggregation.Aggregator} on IMap.
-     * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
-     */
-    JobTracker getJobTracker(String name);
-
-    /**
      * Creates or returns the distributed multimap instance with the specified name.
      *
      * @param name name of the distributed multimap
      * @return distributed multimap instance with the specified name
      */
     <K, V> MultiMap<K, V> getMultiMap(String name);
-
-    /**
-     * Creates or returns the distributed lock instance for the specified key object.
-     * The specified object is considered to be the key for this lock.
-     * So keys are considered equals cluster-wide as long as
-     * they are serialized to the same byte array such as String, long,
-     * Integer.
-     * <p/>
-     * Locks are fail-safe. If a member holds a lock and some of the
-     * members go down, the cluster will keep your locks safe and available.
-     * Moreover, when a member leaves the cluster, all the locks acquired
-     * by this dead member will be removed so that these locks can be
-     * available for live members immediately.
-     * <pre>
-     * Lock lock = hazelcastInstance.getLock("PROCESS_LOCK");
-     * lock.lock();
-     * try {
-     *   // process
-     * } finally {
-     *   lock.unlock();
-     * }
-     * </pre>
-     *
-     * @param key key of the lock instance
-     * @return distributed lock instance for the specified key.
-     */
-    ILock getLock(String key);
 
     /**
      * Creates or returns the distributed Ringbuffer instance with the specified name.
@@ -159,10 +140,10 @@ public interface HazelcastInstance {
     <E> Ringbuffer<E> getRingbuffer(String name);
 
     /**
-     * Creates or returns the reliable ReliableTopic instance with the specified name.
+     * Creates or returns the reliable topic instance with the specified name.
      *
-     * @param name name of the reliable ITopic
-     * @return the reliable ITopic
+     * @param name name of the reliable topic
+     * @return the reliable topic
      */
     <E> ITopic<E> getReliableTopic(String name);
 
@@ -175,7 +156,6 @@ public interface HazelcastInstance {
      * @return the cluster that this Hazelcast instance is part of
      */
     Cluster getCluster();
-
 
     /**
      * Returns the local Endpoint which this HazelcastInstance belongs to.
@@ -191,9 +171,8 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns the distributed executor service for the given name.
-     * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * Executor service enables you to run your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
-     * <p>
      * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
      * and doesn't have standard shutdown behavior</p>
      *
@@ -204,9 +183,8 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns the durable executor service for the given name.
-     * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * DurableExecutor service enables you to run your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
-     * <p>
      * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
      * and doesn't have standard shutdown behavior</p>
      *
@@ -255,23 +233,6 @@ public interface HazelcastInstance {
 
     /**
      * Creates or returns a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
-     * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt>. ID generation occurs almost at the speed of
-     * local <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
-     * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
-     *
-     * @param name name of the {@link IdGenerator}
-     * @return IdGenerator for the given name
-     *
-     * @deprecated The implementation can produce duplicate IDs in case of network split, even
-     * with split-brain protection enabled (during short window while split-brain is detected).
-     * Use {@link #getFlakeIdGenerator(String)} for an alternative implementation which does not
-     * suffer from this problem.
-     */
-    @Deprecated
-    IdGenerator getIdGenerator(String name);
-
-    /**
-     * Creates or returns a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
      * and are k-ordered (roughly ordered). IDs are in the range from {@code 0} to {@code
      * Long.MAX_VALUE}.
      * <p>
@@ -281,9 +242,6 @@ public interface HazelcastInstance {
      * {@link com.hazelcast.internal.cluster.ClusterService#getMemberListJoinVersion() see here}).
      * <p>
      * For more details and caveats, see class documentation for {@link FlakeIdGenerator}.
-     * <p>
-     * Note: this implementation doesn't share namespace with {@link #getIdGenerator(String)}.
-     * That is, {@code getIdGenerator("a")} is distinct from {@code getFlakeIdGenerator("a")}.
      *
      * @param name name of the {@link FlakeIdGenerator}
      * @return FlakeIdGenerator for the given name
@@ -291,45 +249,15 @@ public interface HazelcastInstance {
     FlakeIdGenerator getFlakeIdGenerator(String name);
 
     /**
-     * Creates or returns a cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed
-     * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
+     * Returns all {@link DistributedObject}s, that is all maps, queues,
+     * topics, locks etc.
+     * <p>
+     * The results are returned on a best-effort basis. The result might miss
+     * just-created objects and contain just-deleted objects. An existing
+     * object can also be missing from the list occasionally. One cluster
+     * member is queried to obtain the list.
      *
-     * @param name name of the {@link IAtomicLong} proxy
-     * @return IAtomicLong proxy for the given name
-     */
-    IAtomicLong getAtomicLong(String name);
-
-    /**
-     * Creates or returns a cluster-wide atomic reference. Hazelcast {@link IAtomicReference} is distributed
-     * implementation of <tt>java.util.concurrent.atomic.AtomicReference</tt>.
-     *
-     * @param name name of the {@link IAtomicReference} proxy
-     * @return {@link IAtomicReference} proxy for the given name
-     */
-    <E> IAtomicReference<E> getAtomicReference(String name);
-
-    /**
-     * Creates or returns a cluster-wide CountDownLatch. Hazelcast {@link ICountDownLatch} is distributed
-     * implementation of <tt>java.util.concurrent.CountDownLatch</tt>.
-     *
-     * @param name name of the {@link ICountDownLatch} proxy
-     * @return {@link ICountDownLatch} proxy for the given name
-     */
-    ICountDownLatch getCountDownLatch(String name);
-
-    /**
-     * Creates or returns a cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed
-     * implementation of <tt>java.util.concurrent.Semaphore</tt>.
-     *
-     * @param name name of the {@link ISemaphore} proxy
-     * @return {@link ISemaphore} proxy for the given name
-     */
-    ISemaphore getSemaphore(String name);
-
-    /**
-     * Returns all {@link DistributedObject}'s such as; queue, map, set, list, topic, lock, multimap.
-     *
-     * @return the collection of instances created by Hazelcast.
+     * @return the collection of all instances in the cluster
      */
     Collection<DistributedObject> getDistributedObjects();
 
@@ -340,7 +268,7 @@ public interface HazelcastInstance {
      * @param distributedObjectListener instance listener
      * @return returns registration ID
      */
-    String addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
+    UUID addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
 
     /**
      * Removes the specified Distributed Object listener. Returns silently
@@ -349,7 +277,7 @@ public interface HazelcastInstance {
      * @param registrationId ID of listener registration
      * @return {@code true} if registration is removed, {@code false} otherwise
      */
-    boolean removeDistributedObjectListener(String registrationId);
+    boolean removeDistributedObjectListener(UUID registrationId);
 
     /**
      * Returns the configuration of this Hazelcast instance.
@@ -368,19 +296,14 @@ public interface HazelcastInstance {
     PartitionService getPartitionService();
 
     /**
-     * Returns the quorum service of this Hazelcast instance.
+     * Returns the split brain protection service of this Hazelcast instance.
      * <p>
-     * Quorum service can be used to retrieve quorum callbacks which let you to notify quorum results of your own to
-     * the cluster quorum service.
+     * Split brain protection service can be used to retrieve split brain protection callbacks which let you to notify
+     * split brain protection results of your own to the cluster split brain protection service.
      *
-     * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
-     * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
-     * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
-     * specified one.
-     *
-     * @return the quorum service of this Hazelcast instance
+     * @return the split brain protection service of this Hazelcast instance
      */
-    QuorumService getQuorumService();
+    SplitBrainProtectionService getSplitBrainProtectionService();
 
     /**
      * Returns the client service of this Hazelcast instance.
@@ -462,7 +385,7 @@ public interface HazelcastInstance {
     CardinalityEstimator getCardinalityEstimator(String name);
 
     /**
-     * Creates or returns a {@link com.hazelcast.crdt.pncounter.PNCounter} with the given
+     * Creates or returns a {@link PNCounter} with the given
      * name.
      * <p>
      * The PN counter can be used as a counter with strong eventual consistency
@@ -471,19 +394,26 @@ public interface HazelcastInstance {
      * converge to the same value.
      *
      * @param name the name of the PN counter
-     * @return a {@link com.hazelcast.crdt.pncounter.PNCounter}
+     * @return a {@link PNCounter}
      */
     PNCounter getPNCounter(String name);
 
     /**
      * Creates or returns the {@link IScheduledExecutorService} scheduled executor service for the given name.
-     * ScheduledExecutor service enables you to schedule your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * ScheduledExecutor service enables you to schedule your <code>Runnable</code>s and <code>Callable</code>s
      * on the Hazelcast cluster.
      *
      * @param name name of the executor service
      * @return the scheduled executor service for the given name
      */
     IScheduledExecutorService getScheduledExecutorService(String name);
+
+    /**
+     * Returns the CP subsystem that offers a set of in-memory linearizable data structures
+     *
+     * @return the CP subsystem that offers a set of in-memory linearizable data structures
+     */
+    CPSubsystem getCPSubsystem();
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

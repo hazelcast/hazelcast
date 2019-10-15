@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.util.collection.ComposedKeyMap;
-import com.hazelcast.util.collection.InternalSetMultimap;
+import com.hazelcast.internal.util.collection.ComposedKeyMap;
+import com.hazelcast.internal.util.collection.InternalSetMultimap;
 
 import java.util.ArrayList;
 import java.util.Collection;

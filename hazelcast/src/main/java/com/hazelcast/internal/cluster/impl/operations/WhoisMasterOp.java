@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,13 +43,12 @@ public class WhoisMasterOp extends AbstractClusterOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        joinMessage = new JoinMessage();
-        joinMessage.readData(in);
+        joinMessage = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        joinMessage.writeData(out);
+        out.writeObject(joinMessage);
     }
 
     @Override
@@ -59,7 +58,7 @@ public class WhoisMasterOp extends AbstractClusterOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.WHOIS_MASTER;
     }
 }

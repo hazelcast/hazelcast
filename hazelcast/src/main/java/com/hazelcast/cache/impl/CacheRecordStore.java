@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,18 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.KeyBasedCacheOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
  * <p>
  * Hazelcast splits data homogeneously to partitions using keys. CacheRecordStore represents a named ICache on-heap
- * data store for a single partition.<br/>
+ * data store for a single partition.<br>
  * This data structure is responsible for CRUD operations, entry processing, statistics, publishing events, cache
  * loader and writer and internal data operations like backup.
  * </p>
@@ -45,7 +44,6 @@ import com.hazelcast.spi.serialization.SerializationService;
  *         </code>
  *     </pre>
  * See {@link KeyBasedCacheOperation} subclasses for actual examples.
- * </p>
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  * @see com.hazelcast.cache.impl.CacheService
@@ -55,13 +53,11 @@ public class CacheRecordStore
         extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap> {
 
     protected SerializationService serializationService;
-    protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String cacheNameWithPrefix, int partitionId, NodeEngine nodeEngine,
                             AbstractCacheService cacheService) {
         super(cacheNameWithPrefix, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
-        this.cacheRecordFactory = createCacheRecordFactory();
     }
 
     /**
@@ -100,11 +96,6 @@ public class CacheRecordStore
     protected CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key, CacheRecord record,
                                                                       long now, int completionId) {
         return new CacheEntryProcessorEntry(key, record, this, now, completionId);
-    }
-
-    protected CacheRecordFactory createCacheRecordFactory() {
-        return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                nodeEngine.getSerializationService());
     }
 
     @Override
@@ -169,5 +160,10 @@ public class CacheRecordStore
         } else {
             return serializationService.toData(obj);
         }
+    }
+
+    @Override
+    public void disposeDeferredBlocks() {
+        // NOP
     }
 }

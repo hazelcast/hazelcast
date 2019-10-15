@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,21 +26,20 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.Collection;
 import java.util.Collections;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.event.MapEventPublisherImpl.isIncludeValue;
 import static com.hazelcast.map.impl.querycache.event.QueryCacheEventDataBuilder.newQueryCacheEventDataBuilder;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 
 /**
  * Handles publishing of map events to continuous query caches
@@ -66,12 +65,6 @@ public class QueryCacheEventPublisher {
         String mapName = ((EventData) eventData).getMapName();
         int eventType = ((EventData) eventData).getEventType();
 
-        // in case of expiration, IMap publishes both EVICTED and EXPIRED events for a key
-        // only handling EVICTED event for that key is sufficient
-        if (EXPIRED.getType() == eventType) {
-            return;
-        }
-
         // this collection contains all defined query-caches on an IMap
         Collection<PartitionAccumulatorRegistry> partitionAccumulatorRegistries = getPartitionAccumulatorRegistries(mapName);
         if (isEmpty(partitionAccumulatorRegistries)) {
@@ -90,7 +83,7 @@ public class QueryCacheEventPublisher {
 
         for (PartitionAccumulatorRegistry registry : partitionAccumulatorRegistries) {
             DefaultQueryCacheEventData singleEventData = (DefaultQueryCacheEventData) convertQueryCacheEventDataOrNull(registry,
-                    dataKey, dataNewValue, dataOldValue, eventType, partitionId);
+                    dataKey, dataNewValue, dataOldValue, eventType, partitionId, mapName);
 
             if (singleEventData == null) {
                 continue;
@@ -111,7 +104,7 @@ public class QueryCacheEventPublisher {
             Accumulator accumulator = accumulatorRegistry.getOrCreate(partitionId);
 
             QueryCacheEventData singleEventData = newQueryCacheEventDataBuilder(false).withPartitionId(partitionId)
-                                                                                      .withEventType(eventType.getType()).build();
+                    .withEventType(eventType.getType()).build();
 
             accumulator.accumulate(singleEventData);
         }
@@ -119,17 +112,17 @@ public class QueryCacheEventPublisher {
 
     private QueryCacheEventData convertQueryCacheEventDataOrNull(PartitionAccumulatorRegistry registry, Data dataKey,
                                                                  Data dataNewValue, Data dataOldValue, int eventTypeId,
-                                                                 int partitionId) {
+                                                                 int partitionId, String mapName) {
         EventFilter eventFilter = registry.getEventFilter();
         EntryEventType eventType = EntryEventType.getByType(eventTypeId);
         // when using Hazelcast default event filtering strategy, then let the CQC workaround kick-in
         // otherwise, just deliver the event if it matches the registry's predicate according to the configured
         // filtering strategy
         if (filteringStrategy instanceof DefaultEntryEventFilteringStrategy) {
-            eventType = getCQCEventTypeOrNull(eventType, eventFilter, dataKey, dataNewValue, dataOldValue);
+            eventType = getCQCEventTypeOrNull(eventType, eventFilter, dataKey, dataNewValue, dataOldValue, mapName);
         } else {
             int producedEventTypeId = filteringStrategy.doFilter(eventFilter, dataKey, dataOldValue, dataNewValue,
-                    eventType, null);
+                    eventType, mapName);
             if (producedEventTypeId == FilteringStrategy.FILTER_DOES_NOT_MATCH) {
                 eventType = null;
             } else {
@@ -155,14 +148,14 @@ public class QueryCacheEventPublisher {
     // implementation when DefaultEntryEventFilteringStrategy is in use. It is not used when any
     // other filtering strategy is in place
     private EntryEventType getCQCEventTypeOrNull(EntryEventType eventType, EventFilter eventFilter,
-                                                 Data dataKey, Data dataNewValue, Data dataOldValue) {
+                                                 Data dataKey, Data dataNewValue, Data dataOldValue, String mapName) {
         boolean newValueMatching = filteringStrategy.doFilter(eventFilter, dataKey, dataOldValue, dataNewValue,
-                eventType, null) != FilteringStrategy.FILTER_DOES_NOT_MATCH;
+                eventType, mapName) != FilteringStrategy.FILTER_DOES_NOT_MATCH;
         if (eventType == UPDATED) {
             // UPDATED event has a special handling as it might result in either ADDING or REMOVING an entry to/from CQC
             // depending on a predicate
             boolean oldValueMatching = filteringStrategy.doFilter(eventFilter, dataKey, null, dataOldValue,
-                    EntryEventType.ADDED, null) != FilteringStrategy.FILTER_DOES_NOT_MATCH;
+                    EntryEventType.ADDED, mapName) != FilteringStrategy.FILTER_DOES_NOT_MATCH;
             if (oldValueMatching) {
                 if (!newValueMatching) {
                     eventType = REMOVED;

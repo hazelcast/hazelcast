@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,26 +18,25 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.nio.Address;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,7 +52,7 @@ import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERAT
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
 
     @Test
@@ -201,13 +200,13 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        InternalOperationService operationService = HazelcastTestSupport.getOperationService(hz1);
+        OperationServiceImpl operationService = HazelcastTestSupport.getOperationService(hz1);
         Address target = HazelcastTestSupport.getAddress(hz2);
 
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnTarget(null, new NonSerializableResponseOperation(), target);
 
-        future.join();
+        future.joinInternal();
     }
 
     @Test(expected = HazelcastSerializationException.class)
@@ -216,14 +215,14 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        InternalOperationService operationService = HazelcastTestSupport.getOperationService(hz1);
+        OperationServiceImpl operationService = HazelcastTestSupport.getOperationService(hz1);
         Address target = HazelcastTestSupport.getAddress(hz2);
 
 
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnTarget(null, new NonSerializableResponseOperation_withNormalResponseWrapper(), target);
 
-        future.join();
+        future.joinInternal();
     }
 
     private static class NonSerializableResponse {

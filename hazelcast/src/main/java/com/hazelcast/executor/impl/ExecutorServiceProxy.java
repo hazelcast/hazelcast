@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,31 @@
 
 package com.hazelcast.executor.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumException;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.FutureUtil.ExceptionHandler;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,7 +49,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -59,13 +61,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {
@@ -80,10 +82,10 @@ public class ExecutorServiceProxy
         @Override
         public void handleException(Throwable throwable) {
             if (throwable != null) {
-                if (throwable instanceof QuorumException) {
+                if (throwable instanceof SplitBrainProtectionException) {
                     sneakyThrow(throwable);
                 }
-                if (throwable.getCause() instanceof QuorumException) {
+                if (throwable.getCause() instanceof SplitBrainProtectionException) {
                     sneakyThrow(throwable.getCause());
                 }
             }
@@ -213,12 +215,12 @@ public class ExecutorServiceProxy
         NodeEngine nodeEngine = getNodeEngine();
         Callable<T> callable = createRunnableAdapter(task);
         Data callableData = nodeEngine.toData(callable);
-        String uuid = newUnsecureUuidString();
+        UUID uuid = newUnsecureUUID();
         int partitionId = getTaskPartitionId(callable);
 
         Operation op = new CallableTaskOperation(name, uuid, callableData)
                 .setPartitionId(partitionId);
-        InternalCompletableFuture future = invokeOnPartition(op);
+        InvocationFuture future = invokeOnPartition(op);
         boolean sync = checkSync();
         if (sync) {
             try {
@@ -226,7 +228,7 @@ public class ExecutorServiceProxy
             } catch (Exception exception) {
                 logger.warning(exception);
             }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), result, getAsyncExecutor());
+            return InternalCompletableFuture.newCompletedFuture(result);
         }
         return new CancellableDelegatingFuture<T>(future, result, nodeEngine, uuid, partitionId);
     }
@@ -249,20 +251,14 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        String uuid = newUnsecureUuidString();
+        UUID uuid = newUnsecureUUID();
 
         boolean sync = !preventSync && checkSync();
         Operation op = new CallableTaskOperation(name, uuid, taskData)
                 .setPartitionId(partitionId);
         InternalCompletableFuture future = invokeOnPartition(op);
         if (sync) {
-            Object response;
-            try {
-                response = future.get();
-            } catch (Exception e) {
-                response = e;
-            }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response, getAsyncExecutor());
+            return completedSynchronously(future, nodeEngine.getSerializationService());
         }
         return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, partitionId);
     }
@@ -305,32 +301,33 @@ public class ExecutorServiceProxy
         checkNotNull(task, "task can't be null");
         checkNotShutdown();
 
+        Data taskData = getNodeEngine().toData(task);
+        return submitToMember(taskData, member);
+    }
+
+    private  <T> Future<T> submitToMember(Data taskData, Member member) {
         NodeEngine nodeEngine = getNodeEngine();
-        Data taskData = nodeEngine.toData(task);
-        String uuid = newUnsecureUuidString();
-        Address target = ((MemberImpl) member).getAddress();
+        UUID uuid = newUnsecureUUID();
+        Address target = member.getAddress();
 
         boolean sync = checkSync();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         InternalCompletableFuture future = nodeEngine.getOperationService()
                 .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
         if (sync) {
-            Object response;
-            try {
-                response = future.get();
-            } catch (Exception e) {
-                response = e;
-            }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response, getAsyncExecutor());
+            return completedSynchronously(future, nodeEngine.getSerializationService());
         }
         return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, target);
     }
 
     @Override
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
+        checkNotNull(task, "task can't be null");
+        checkNotShutdown();
+        Data taskData = getNodeEngine().toData(task);
         Map<Member, Future<T>> futures = createHashMap(members.size());
         for (Member member : members) {
-            futures.put(member, submitToMember(task, member));
+            futures.put(member, submitToMember(taskData, member));
         }
         return futures;
     }
@@ -394,19 +391,25 @@ public class ExecutorServiceProxy
         submitToPartitionOwner(task, callback, nodeEngine.getPartitionService().getPartitionId(key));
     }
 
+    private  <T> void submitToMember(Data taskData, Member member, ExecutionCallback<T> callback) {
+        checkNotShutdown();
+
+        NodeEngine nodeEngine = getNodeEngine();
+        UUID uuid = newUnsecureUUID();
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
+        OperationService operationService = nodeEngine.getOperationService();
+        Address address = member.getAddress();
+        operationService
+                .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
+                .setExecutionCallback((ExecutionCallback) callback).invoke();
+    }
+
     @Override
     public <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback) {
         checkNotShutdown();
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Data taskData = nodeEngine.toData(task);
-        String uuid = newUnsecureUuidString();
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
-        OperationService operationService = nodeEngine.getOperationService();
-        Address address = ((MemberImpl) member).getAddress();
-        operationService
-                .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
-                .setExecutionCallback((ExecutionCallback) callback).invoke();
+        Data taskData = getNodeEngine().toData(task);
+        submitToMember(taskData, member, callback);
     }
 
     private String getRejectionMessage() {
@@ -420,8 +423,9 @@ public class ExecutorServiceProxy
         ExecutionCallbackAdapterFactory executionCallbackFactory = new ExecutionCallbackAdapterFactory(
                 nodeEngine.getLogger(ExecutionCallbackAdapterFactory.class), members, callback);
 
+        Data taskData = nodeEngine.toData(task);
         for (Member member : members) {
-            submitToMember(task, member, executionCallbackFactory.<T>callbackFor(member));
+            submitToMember(taskData, member, executionCallbackFactory.<T>callbackFor(member));
         }
     }
 
@@ -440,13 +444,7 @@ public class ExecutorServiceProxy
             futures.add(submit(task));
         }
         for (Future<T> future : futures) {
-            Object value;
-            try {
-                value = future.get();
-            } catch (ExecutionException e) {
-                value = e;
-            }
-            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
+            result.add(completedSynchronously(future, getNodeEngine().getSerializationService()));
         }
         return result;
     }
@@ -499,19 +497,13 @@ public class ExecutorServiceProxy
                 for (int l = i; l < size; l++) {
                     Future<T> f = futures.get(i);
                     if (f.isDone()) {
-                        Object v;
-                        try {
-                            v = f.get();
-                        } catch (ExecutionException ex) {
-                            v = ex;
-                        }
-                        futures.set(l, new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
+                        futures.set(l, completedSynchronously(f,  getNodeEngine().getSerializationService()));
                     }
                 }
                 break;
             }
 
-            futures.set(i, new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
+            futures.set(i, InternalCompletableFuture.newCompletedFuture(value));
             timeoutNanos -= System.nanoTime() - start;
         }
         return done;
@@ -574,7 +566,7 @@ public class ExecutorServiceProxy
         waitWithDeadline(calls, 3, TimeUnit.SECONDS, shutdownExceptionHandler);
     }
 
-    private InternalCompletableFuture submitShutdownOperation(OperationService operationService, Member member) {
+    private InvocationFuture<Object> submitShutdownOperation(OperationService operationService, Member member) {
         ShutdownOperation op = new ShutdownOperation(name);
         return operationService.invokeOnTarget(getServiceName(), op, member.getAddress());
     }
@@ -624,5 +616,21 @@ public class ExecutorServiceProxy
     @Override
     public String toString() {
         return "IExecutorService{" + "name='" + name + '\'' + '}';
+    }
+
+    private static <V> InternalCompletableFuture<V> completedSynchronously(Future<V> future,
+                                                                           SerializationService serializationService) {
+        try {
+            return InternalCompletableFuture.newCompletedFuture(future.get(), serializationService);
+        } catch (ExecutionException e) {
+            return InternalCompletableFuture.completedExceptionally(e.getCause());
+        } catch (CancellationException e) {
+            InternalCompletableFuture cancelledFuture = new InternalCompletableFuture();
+            future.cancel(true);
+            return cancelledFuture;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return InternalCompletableFuture.completedExceptionally(e);
+        }
     }
 }

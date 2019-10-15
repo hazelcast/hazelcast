@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public enum ConsistencyCheckStrategy {
     /**
      * Gets the ID for this ConsistencyCheckStrategy.
      * <p>
-     * This reason this ID is used instead of an the ordinal value is that the
+     * The reason this ID is used instead of an the ordinal value is that the
      * ordinal value is more prone to changes due to reordering.
      *
      * @return the ID

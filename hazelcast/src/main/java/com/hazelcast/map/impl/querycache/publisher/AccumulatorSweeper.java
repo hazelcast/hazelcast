@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ public final class AccumulatorSweeper {
      * In graceful shutdown, we are flushing all unsent events in an {@code Accumulator}. This event
      * will be the last event of an {@code Accumulator} upon flush and it is used to inform subscriber-side
      * to state that we reached the end of event sequence for the relevant partition.
-     * <p/>
+     * <p>
      * After this event received by subscriber-side, subscriber resets its next-expected-sequence counter to zero for the
      * corresponding partition.
      */

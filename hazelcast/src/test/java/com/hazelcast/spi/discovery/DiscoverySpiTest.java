@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,13 @@ import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.membergroup.DefaultMemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
@@ -190,14 +190,28 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
             assertNotNull(hazelcastInstance1);
 
             Member localMember = hazelcastInstance1.getCluster().getLocalMember();
-            assertEquals(Byte.MAX_VALUE, (byte) localMember.getByteAttribute("test-byte"));
-            assertEquals(Short.MAX_VALUE, (short) localMember.getShortAttribute("test-short"));
-            assertEquals(Integer.MAX_VALUE, (int) localMember.getIntAttribute("test-int"));
-            assertEquals(Long.MAX_VALUE, (long) localMember.getLongAttribute("test-long"));
-            assertEquals(Float.MAX_VALUE, localMember.getFloatAttribute("test-float"), 0);
-            assertEquals(Double.MAX_VALUE, localMember.getDoubleAttribute("test-double"), 0);
-            assertTrue(localMember.getBooleanAttribute("test-boolean"));
-            assertEquals("TEST", localMember.getStringAttribute("test-string"));
+            assertEquals("TEST", localMember.getAttribute("test-string"));
+        } finally {
+            instanceFactory.shutdownAll();
+        }
+    }
+
+    @Test
+    public void test_metadata_discovery_on_node_startup_overrides_what_is_configured_on_member() throws Exception {
+        final String overridenAttribute = "test-string";
+
+        String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
+        InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        Config config = new XmlConfigBuilder(xmlResource).build();
+        config.getMemberAttributeConfig().setAttribute(overridenAttribute, "config-property");
+
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(1);
+        try {
+            HazelcastInstance hazelcastInstance1 = instanceFactory.newHazelcastInstance(config);
+            assertNotNull(hazelcastInstance1);
+
+            Member localMember = hazelcastInstance1.getCluster().getLocalMember();
+            assertEquals("TEST", localMember.getAttribute(overridenAttribute));
         } finally {
             instanceFactory.shutdownAll();
         }
@@ -208,7 +222,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.11.xsd");
+        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-4.0.xsd");
         assertNotNull(schemaResource);
 
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -542,7 +556,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Map<String, Object> discoverLocalMetadata() {
+        public Map<String, String> discoverLocalMetadata() {
             return Collections.emptyMap();
         }
     }
@@ -696,15 +710,8 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Map<String, Object> discoverLocalMetadata() {
-            Map<String, Object> metadata = new HashMap<String, Object>();
-            metadata.put("test-byte", Byte.MAX_VALUE);
-            metadata.put("test-short", Short.MAX_VALUE);
-            metadata.put("test-int", Integer.MAX_VALUE);
-            metadata.put("test-long", Long.MAX_VALUE);
-            metadata.put("test-float", Float.MAX_VALUE);
-            metadata.put("test-double", Double.MAX_VALUE);
-            metadata.put("test-boolean", Boolean.TRUE);
+        public Map<String, String> discoverLocalMetadata() {
+            Map<String, String> metadata = new HashMap<>();
             metadata.put("test-string", "TEST");
             return metadata;
         }

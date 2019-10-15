@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.test.jitter.JitterRule.AGGREGATION_INTERVAL_MILLIS;
 import static com.hazelcast.test.jitter.JitterRule.CAPACITY;
-import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 
 class JitterRecorder {
 

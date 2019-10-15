@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.test.backup;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.partition.IPartition;
 
 import java.util.Arrays;
@@ -41,7 +41,7 @@ abstract class AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
         if (cluster == null || cluster.length == 0) {
             throw new IllegalArgumentException("Cluster has to have at least 1 member.");
         }
-        if (replicaIndex < 1 || replicaIndex > IPartition.MAX_BACKUP_COUNT) {
+        if (replicaIndex > IPartition.MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("Cannot access replica index " + replicaIndex);
         }
         this.cluster = cluster;

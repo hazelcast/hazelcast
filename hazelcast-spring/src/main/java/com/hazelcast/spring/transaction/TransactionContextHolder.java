@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,17 @@
 
 package com.hazelcast.spring.transaction;
 
+import javax.transaction.xa.XAResource;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalList;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalSet;
+
+import java.util.UUID;
 
 /**
  * Holder wrapping a Hazelcast TransactionContext.
@@ -24,34 +34,81 @@ import com.hazelcast.transaction.TransactionContext;
  * HazelcastTransactionManager binds instances of this class to the thread, for a given HazelcastInstance.
  *
  * @author Balint Krivan
+ * @author Sergey Bespalov
  * @see HazelcastTransactionManager
  */
-class TransactionContextHolder {
+class TransactionContextHolder implements TransactionContext {
 
     private final TransactionContext transactionContext;
     private boolean transactionActive;
 
-    public TransactionContextHolder(TransactionContext transactionContext) {
+    TransactionContextHolder(TransactionContext transactionContext) {
         this.transactionContext = transactionContext;
+    }
+
+    public void beginTransaction() {
+        transactionContext.beginTransaction();
+        transactionActive = true;
+    }
+
+    public void commitTransaction() throws TransactionException {
+        try {
+            transactionContext.commitTransaction();
+        } finally {
+            transactionActive = false;
+        }
+    }
+
+    public void rollbackTransaction() {
+        try {
+            transactionContext.rollbackTransaction();
+        } finally {
+            transactionActive = false;
+        }
     }
 
     public boolean isTransactionActive() {
         return transactionActive;
     }
 
-    public TransactionContext getContext() {
-        return transactionContext;
+    public <K, V> TransactionalMap<K, V> getMap(String name) {
+        return transactionContext.getMap(name);
     }
 
-    /**
-     * @see TransactionContext#beginTransaction()
-     */
-    public void beginTransaction() {
-        transactionContext.beginTransaction();
-        transactionActive = true;
+    public <E> TransactionalQueue<E> getQueue(String name) {
+        return transactionContext.getQueue(name);
     }
 
-    public void clear() {
-        transactionActive = false;
+    public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
+        return transactionContext.getMultiMap(name);
     }
+
+    public void suspendTransaction() {
+        transactionContext.suspendTransaction();
+    }
+
+    public void resumeTransaction() {
+        transactionContext.resumeTransaction();
+    }
+
+    public UUID getTxnId() {
+        return transactionContext.getTxnId();
+    }
+
+    public XAResource getXaResource() {
+        return transactionContext.getXaResource();
+    }
+
+    public <E> TransactionalList<E> getList(String name) {
+        return transactionContext.getList(name);
+    }
+
+    public <E> TransactionalSet<E> getSet(String name) {
+        return transactionContext.getSet(name);
+    }
+
+    public <T extends TransactionalObject> T getTransactionalObject(String serviceName, String name) {
+        return transactionContext.getTransactionalObject(serviceName, name);
+    }
+
 }

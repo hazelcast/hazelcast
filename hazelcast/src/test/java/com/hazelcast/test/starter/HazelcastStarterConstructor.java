@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public @interface HazelcastStarterConstructor {
      * The {@link ProxyPolicy} the supported classes should use.
      * <p>
      * Note: Classes which use {@link ProxyPolicy#NO_PROXY} have to implement
-     * {@link com.hazelcast.util.ConstructorFunction}. Classes which use
+     * {@link com.hazelcast.internal.util.ConstructorFunction}. Classes which use
      * {@link ProxyPolicy#SUBCLASS_PROXY} can be an empty class.
      *
      * @return the {@link ProxyPolicy} of the supported classes

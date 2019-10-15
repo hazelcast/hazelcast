@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         super.readInternal(in);
         name = in.readUTF();
         int size = in.readInt();
-        mergingEntries = new ArrayList<ReplicatedMapMergeTypes>(size);
+        mergingEntries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             ReplicatedMapMergeTypes mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
@@ -97,7 +97,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.MERGE;
     }
 }

@@ -11,7 +11,7 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 * Distributed implementation of `java.util.concurrent.ExecutorService`.
 * Distributed `MultiMap` for one-to-many relationships.
 * Distributed `Topic` for publish/subscribe messaging.
-* Distributed Query, MapReduce and Aggregators.
+* Distributed Query and Aggregators.
 * Synchronous (write-through) and asynchronous (write-behind) persistence.
 * Transaction support.
 * Specification compliant JCache implementation.
@@ -120,6 +120,6 @@ Hazelcast is available under the Apache 2 License. Please see the [Licensing sec
 
 #### Copyright
 
-Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.

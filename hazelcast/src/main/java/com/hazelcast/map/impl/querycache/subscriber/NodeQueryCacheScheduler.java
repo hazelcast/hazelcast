@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.TaskScheduler;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;

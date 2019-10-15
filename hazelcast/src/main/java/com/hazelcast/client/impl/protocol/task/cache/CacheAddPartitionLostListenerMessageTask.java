@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,19 @@ import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class CacheAddPartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<CacheAddPartitionLostListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<CacheAddPartitionLostListenerCodec.RequestParameters>
+        implements ListenerMessageTask {
 
 
     public CacheAddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -68,7 +71,7 @@ public class CacheAddPartitionLostListenerMessageTask
             registration = eventService
                     .registerListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter);
         }
-        String registrationId = registration.getId();
+        UUID registrationId = registration.getId();
         endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
 
@@ -81,7 +84,7 @@ public class CacheAddPartitionLostListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAddPartitionLostListenerCodec.encodeResponse((String) response);
+        return CacheAddPartitionLostListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

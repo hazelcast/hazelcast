@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -498,10 +498,10 @@ public class PortableTest {
 
         private Portable[] portables;
 
-        public TestObject1() {
+        TestObject1() {
         }
 
-        public TestObject1(Portable[] p) {
+        TestObject1(Portable[] p) {
             portables = p;
         }
 
@@ -530,7 +530,7 @@ public class PortableTest {
 
         private String shortString;
 
-        public TestObject2() {
+        TestObject2() {
             shortString = "Hello World";
         }
 

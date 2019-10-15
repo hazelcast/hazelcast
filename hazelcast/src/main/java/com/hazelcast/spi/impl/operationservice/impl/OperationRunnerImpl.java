@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,34 +18,28 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.quorum.QuorumException;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.CallStatus;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Offload;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -55,11 +49,19 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Offload;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -67,16 +69,17 @@ import java.util.logging.Level;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.spi.CallStatus.DONE_RESPONSE_ORDINAL;
-import static com.hazelcast.spi.CallStatus.DONE_VOID_ORDINAL;
-import static com.hazelcast.spi.CallStatus.OFFLOAD_ORDINAL;
-import static com.hazelcast.spi.CallStatus.WAIT_ORDINAL;
-import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
-import static com.hazelcast.spi.OperationAccessor.setConnection;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
-import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
-import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
-import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_BACKUP_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setConnection;
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.operationservice.Operations.isJoinOperation;
+import static com.hazelcast.spi.impl.operationservice.Operations.isMigrationOperation;
+import static com.hazelcast.spi.impl.operationservice.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.properties.GroupProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
@@ -86,7 +89,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
+class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvider {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -116,7 +119,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     // when partitionId = -1, it is generic
     // when partitionId = -2, it is ad hoc
     // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
-    // and therefor the {@link OperationRunner#currentTask()} always returns null
+    // and therefore the {@link OperationRunner#currentTask()} always returns null
     OperationRunnerImpl(OperationServiceImpl operationService, int partitionId, int genericId, Counter failedBackupsCounter) {
         super(partitionId);
         this.genericId = genericId;
@@ -139,13 +142,17 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
+    public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
-            registry.scanAndRegister(this, "operation.partition[" + partitionId + "]");
+            registry.newMetricTagger("operation.partition")
+                    .withTag("partitionId", String.valueOf(partitionId))
+                    .registerStaticMetrics(this);
         } else if (partitionId == -1) {
-            registry.scanAndRegister(this, "operation.generic[" + genericId + "]");
+            registry.newMetricTagger("operation.generic")
+                    .withTag("genericId", String.valueOf(genericId))
+                    .registerStaticMetrics(this);
         } else {
-            registry.scanAndRegister(this, "operation.adhoc");
+            registry.newMetricTagger("operation.adhoc").registerStaticMetrics(this);
         }
     }
 
@@ -190,7 +197,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
             ensureNoPartitionProblems(op);
 
-            ensureQuorumPresent(op);
+            ensureNoSplitBrain(op);
 
             op.beforeRun();
 
@@ -223,6 +230,10 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
                 break;
             case WAIT_ORDINAL:
                 nodeEngine.getOperationParker().park((BlockingOperation) op);
+                break;
+            case DONE_VOID_BACKUP_ORDINAL:
+                backupHandler.sendBackups(op);
+                op.afterRun();
                 break;
             default:
                 throw new IllegalStateException();
@@ -275,14 +286,17 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     /**
-     * Ensures that the quorum is present if the quorum is configured and the operation service is quorum aware.
+     * Ensures that there is no split brain if the split brain protection is configured and the operation
+     * service is split brain protection aware.
      *
-     * @param op the operation for which the quorum must be checked for presence
-     * @throws QuorumException if the operation requires a quorum and the quorum is not present
+     * @param op the operation for which the minimum cluster size property must satisfy
+     * @throws SplitBrainProtectionException if the operation requires a split brain protection and
+     * the the minimum cluster size property is not satisfied
      */
-    private void ensureQuorumPresent(Operation op) {
-        QuorumServiceImpl quorumService = operationService.nodeEngine.getQuorumService();
-        quorumService.ensureQuorumPresent(op);
+    private void ensureNoSplitBrain(Operation op) {
+        SplitBrainProtectionServiceImpl splitBrainProtectionService =
+                operationService.nodeEngine.getSplitBrainProtectionService();
+        splitBrainProtectionService.ensureNoSplitBrain(op);
     }
 
     private boolean timeout(Operation op) {
@@ -331,9 +345,10 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
                     op.getClass().getName(), op.getServiceName());
         }
 
-        Address owner = internalPartition.getReplicaAddress(op.getReplicaIndex());
-        if (op.validatesTarget() && !thisAddress.equals(owner)) {
-            throw new WrongTargetException(thisAddress, owner, partitionId, op.getReplicaIndex(),
+        PartitionReplica owner = internalPartition.getReplica(op.getReplicaIndex());
+        if (op.validatesTarget() && (owner == null || !owner.isIdentical(node.getLocalMember()))) {
+            Member target = owner != null ? node.getClusterService().getMember(owner.address(), owner.uuid()) : null;
+            throw new WrongTargetException(node.getLocalMember(), target, partitionId, op.getReplicaIndex(),
                     op.getClass().getName(), op.getServiceName());
         }
     }
@@ -414,7 +429,8 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet);
-            outboundResponseHandler.send(caller, new ErrorResponse(throwable, callId, packet.isUrgent()));
+            outboundResponseHandler.send(connection.getEndpointManager(), caller,
+                    new ErrorResponse(throwable, callId, packet.isUrgent()));
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {

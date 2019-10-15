@@ -1,0 +1,327 @@
+# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The default Hazelcast YAML configuration. This configuration is identical
+# to hazelcast-default.xml.
+#
+# This YAML file is used when no hazelcast.yaml is present and the
+# Hazelcast configuration is loaded from YAML configuration with
+# YamlConfigBuilder. If the configuration is loaded in another way,
+# hazelcast-default.xml is used as the default configuration.
+#
+# To learn how to configure Hazelcast, please see the Reference Manual
+# at https://hazelcast.org/documentation/
+hazelcast:
+  cluster:
+    name: dev
+  management-center:
+    enabled: false
+    url: http://localhost:8080/hazelcast-mancenter
+  network:
+    port:
+      auto-increment: true
+      port-count: 100
+      port: 5701
+    outbound-ports:
+      # Allowed port range when connecting to other nodes.
+      # 0 or * means use system provided port.
+      - 0
+    join:
+      multicast:
+        enabled: true
+        multicast-group: 224.2.2.3
+        multicast-port: 54327
+      tcp-ip:
+        enabled: false
+        interface: 127.0.0.1
+        member-list:
+          - 127.0.0.1
+      aws:
+        enabled: false
+        access-key: my-access-key
+        secret-key: my-secret-key
+        # optional, default is us-east-1
+        region: us-west-1
+        # optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property
+        host-header: ec2.amazonaws.com
+        # optional, only instances belonging to this group will be discovered, default will try all running instances
+        security-group-name: hazelcast-sg
+        tag-key: type
+        tag-value: hz-nodes
+      gcp:
+        enabled: false
+        zones: us-east1-b,us-east1-c
+      azure:
+        enabled: false
+        client-id: CLIENT_ID
+        client-secret: CLIENT_SECRET
+        tenant-id: TENANT_ID
+        subscription-id: SUB_ID
+        cluster-id: HZLCAST001
+        group-name: RESOURCE-GROUP-NAME
+      kubernetes:
+        enabled: false
+        namespace: MY-KUBERNETES-NAMESPACE
+        service-name: MY-SERVICE-NAME
+        service-label-name: MY-SERVICE-LABEL-NAME
+        service-label-value: MY-SERVICE-LABEL-VALUE
+      eureka:
+        enabled: false
+        self-registration: true
+        namespace: hazelcast
+    interfaces:
+      enabled: false
+      interfaces:
+        - 10.10.1.*
+    ssl:
+      enabled: false
+    socket-interceptor:
+      enabled: false
+    symmetric-encryption:
+      enabled: false
+      #   encryption algorithm such as
+      #   DES/ECB/PKCS5Padding,
+      #   PBEWithMD5AndDES,
+      #   AES/CBC/PKCS5Padding,
+      #   Blowfish,
+      #   DESede
+      algorithm: PBEWithMD5AndDES
+      # salt value to use when generating the secret key
+      salt: thesalt
+      # pass phrase to use when generating the secret key
+      password: thepass
+      # iteration count to use when generating the secret key
+      iteration-count: 19
+    failure-detector:
+      icmp:
+        enabled: false
+
+  partition-group:
+    enabled: false
+
+  executor-service:
+    default:
+      pool-size: 16
+      # Queue capacity. 0 means Integer.MAX_VALUE.
+      queue-capacity: 0
+
+  security:
+    client-block-unmapped-actions: true
+
+  queue:
+    default:
+      # Maximum size of the queue. When a JVM's local queue size reaches the maximum,
+      # all put/offer operations will get blocked until the queue size
+      # of the JVM goes down below the maximum.
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means
+      # Integer.MAX_VALUE. Default is 0.
+      max-size: 0
+
+      # Number of backups. If 1 is set as the backup-count for example,
+      # then all entries of the map will be copied to another JVM for
+      # fail-safety. 0 means no backup.
+      backup-count: 1
+
+      # Number of async backups. 0 means no backup.
+      async-backup-count: 0
+
+      empty-queue-ttl: -1
+
+      merge-policy:
+        batch-size: 100
+        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
+  map:
+    default:
+      # Data type that will be used for storing recordMap.
+      # Possible values:
+      # BINARY (default): keys and values will be stored as binary data
+      # OBJECT : values will be stored in their object forms
+      # NATIVE : values will be stored in non-heap region of JVM
+      in-memory-format: BINARY
+
+      # Metadata creation policy for this map. Hazelcast may process
+      # objects of supported types ahead of time to create additional
+      # metadata about them. This metadata then is used to make querying
+      # and indexing faster. Metadata creation may decrease put
+      # throughput. Valid values are:
+      # CREATE_ON_UPDATE (default): Objects of supported types are
+      # pre-processed when they are created and updated.
+      # OFF: No metadata is created.
+      metadata-policy: CREATE_ON_UPDATE
+
+      # Number of backups. If 1 is set as the backup-count for example,
+      # then all entries of the map will be copied to another JVM for
+      # fail-safety. 0 means no backup.
+      backup-count: 1
+
+      # Number of async backups. 0 means no backup.
+      async-backup-count: 0
+
+      # Maximum number of seconds for each entry to stay in the map. Entries that are
+      # older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
+      # will get automatically evicted from the map.
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0
+      time-to-live-seconds: 0
+
+      # Maximum number of seconds for each entry to stay idle in the map. Entries that are
+      # idle(not touched) for more than <max-idle-seconds> will get
+      # automatically evicted from the map. Entry is touched if get, put or containsKey is called.
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+      max-idle-seconds: 0
+
+      # Valid values are:
+      # NONE (no eviction),
+      # LRU (Least Recently Used),
+      # LFU (Least Frequently Used).
+      # NONE is the default.
+      eviction-policy: NONE
+
+      # Maximum size of the map. When max size is reached,
+      # map is evicted based on the policy defined.
+      # Any integer between 0 and Integer.MAX_VALUE. 0 means
+      # Integer.MAX_VALUE. Default is 0.
+      max-size:
+        policy: PER_NODE
+        max-size: 0
+
+        # While recovering from split-brain (network partitioning),
+        # map entries in the small cluster will merge into the bigger cluster
+        # based on the policy set here. When an entry merge into the
+        # cluster, there might an existing entry with the same key already.
+        # Values of these entries might be different for that same key.
+        # Which value should be set for the key? Conflict is resolved by
+        # the policy set here. Default policy is PutIfAbsentMapMergePolicy
+        #
+        # There are built-in merge policies such as
+        # com.hazelcast.spi.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
+        # com.hazelcast.spi.merge.PutIfAbsentMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
+        # com.hazelcast.spi.merge.HigherHitsMergePolicy ; entry with the higher hits wins.
+        # com.hazelcast.spi.merge.LatestUpdateMergePolicy ; entry with the latest update wins.
+        merge-policy:
+          batch-size: 100
+          class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
+
+        # Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
+        # Possible Values:
+        #              NEVER: Never cache deserialized object
+        #              INDEX-ONLY: Caches values only when they are inserted into an index.
+        #              ALWAYS: Always cache deserialized values.
+        cache-deserialized-values: INDEX-ONLY
+
+  multimap:
+    default:
+      backup-count: 1
+      value-collection-type: SET
+      merge-policy:
+        batch-size: 100
+        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
+
+  replicatedmap:
+    default:
+      in-memory-format: OBJECT
+      async-fillup: true
+      statistics-enabled: true
+      merge-policy:
+        batch-size: 100
+        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
+
+  list:
+    default:
+      backup-count: 1
+      merge-policy:
+        batch-size: 100
+        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
+
+  set:
+    default:
+      backup-count: 1
+      merge-policy:
+        batch-size: 100
+        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
+
+  reliable-topic:
+    default:
+      read-batch-size: 10
+      topic-overload-policy: BLOCK
+      statistics-enabled: true
+
+  ringbuffer:
+    default:
+      capacity: 10000
+      backup-count: 1
+      async-backup-count: 0
+      time-to-live-seconds: 0
+      in-memory-format: BINARY
+      merge-policy:
+        batch-size: 100
+        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
+
+  flake-id-generator:
+    default:
+      prefetch-count: 100
+      prefetch-validity-millis: 600000
+      id-offset: 0
+      node-id-offset: 0
+      statistics-enabled: true
+
+  serialization:
+    portable-version: 0
+
+  services:
+    enable-defaults: true
+
+  cardinality-estimator:
+    default:
+      backup-count: 1
+      async-backup-count: 0
+      merge-policy:
+        batch-size: 100
+        class-name: HyperLogLogMergePolicy
+
+  scheduled-executor-service:
+    default:
+      capacity: 100
+      durability: 1
+      pool-size: 16
+
+  crdt-replication:
+    replication-period-millis: 1000
+    max-concurrent-replication-targets: 1
+
+  pn-counter:
+    default:
+      replica-count: 2147483647
+      statistics-enabled: true
+
+  cp-subsystem:
+    cp-member-count: 0
+    group-size: 0
+    session-time-to-live-seconds: 300
+    session-heartbeat-interval-seconds: 5
+    missing-cp-member-auto-removal-seconds: 14400
+    fail-on-indeterminate-operation-state: false
+    raft-algorithm:
+      leader-election-timeout-in-millis: 2000
+      leader-heartbeat-period-in-millis: 5000
+      max-missed-leader-heartbeat-count: 5
+      append-request-max-entry-count: 100
+      commit-index-advance-count-to-snapshot: 10000
+      uncommitted-entry-count-to-reject-new-appends: 100
+      append-request-backoff-timeout-in-millis: 100
+#    semaphores:
+#      default:
+#        jdk-compatible: false
+#    locks:
+#      default:
+#        lock-acquire-limit: 0

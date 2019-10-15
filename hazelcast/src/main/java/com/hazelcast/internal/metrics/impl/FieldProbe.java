@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.util.counters.Counter;
 
 import java.lang.reflect.Field;
@@ -42,7 +44,7 @@ import static java.lang.String.format;
 /**
  * A FieldProbe is a {@link ProbeFunction} that reads out a field that is annotated with {@link Probe}.
  */
-abstract class FieldProbe implements ProbeFunction {
+abstract class FieldProbe implements ProbeFunction, ProbeAware {
 
     final Probe probe;
     final Field field;
@@ -55,18 +57,24 @@ abstract class FieldProbe implements ProbeFunction {
         field.setAccessible(true);
     }
 
+    @Override
+    public Probe getProbe() {
+        return probe;
+    }
+
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = namePrefix + '.' + getProbeOrFieldName();
-        metricsRegistry.registerInternal(source, name, probe.level(), this);
+        MetricTagger tagger = metricsRegistry
+                .newMetricTagger(namePrefix)
+                .withMetricTag(getProbeOrFieldName());
+        metricsRegistry.registerInternal(source, tagger, probe.level(), this);
     }
 
-    void register(ProbeBuilderImpl builder, Object source) {
-        builder
-                .withTag("unit", probe.unit().name().toLowerCase())
-                .register(source, getProbeOrFieldName(), probe.level(), this);
+    void register(MetricTaggerImpl tagger, Object source) {
+        tagger.withTag("unit", probe.unit().name().toLowerCase())
+              .registerStaticProbe(source, getProbeOrFieldName(), probe.level(), this);
     }
 
-    private String getProbeOrFieldName() {
+    String getProbeOrFieldName() {
         return probe.name().length() != 0 ? probe.name() : field.getName();
     }
 
@@ -85,7 +93,7 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class LongFieldProbe<S> extends FieldProbe implements LongProbeFunction<S> {
 
-        public LongFieldProbe(Field field, Probe probe, int type) {
+        LongFieldProbe(Field field, Probe probe, int type) {
             super(field, probe, type);
         }
 
@@ -117,7 +125,7 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class DoubleFieldProbe<S> extends FieldProbe implements DoubleProbeFunction<S> {
 
-        public DoubleFieldProbe(Field field, Probe probe, int type) {
+        DoubleFieldProbe(Field field, Probe probe, int type) {
             super(field, probe, type);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,10 @@ package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
-import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
-import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 
 /**
  * {@link com.hazelcast.internal.nearcache.NearCacheRecordStore} implementation for Near Caches
@@ -54,7 +52,7 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     }
 
     @Override
-    protected NearCacheObjectRecord<V> valueToRecord(V value) {
+    protected NearCacheObjectRecord<V> createRecord(V value) {
         value = toValue(value);
         long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
@@ -67,39 +65,5 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     @Override
     protected void updateRecordValue(NearCacheObjectRecord<V> record, V value) {
         record.setValue(toValue(value));
-    }
-
-    @Override
-    protected V recordToValue(NearCacheObjectRecord<V> record) {
-        if (record.getValue() == null) {
-            return (V) CACHED_AS_NULL;
-        }
-        return record.getValue();
-    }
-
-    @Override
-    public Object selectToSave(Object... candidates) {
-        Object selectedCandidate = null;
-        if (candidates != null && candidates.length > 0) {
-            for (Object candidate : candidates) {
-                // give priority to non Data typed candidate, so there will be no extra conversion from Data to Object
-                if (!(candidate instanceof Data)) {
-                    selectedCandidate = candidate;
-                    break;
-                }
-            }
-            if (selectedCandidate != null) {
-                return selectedCandidate;
-            } else {
-                // select a non-null candidate
-                for (Object candidate : candidates) {
-                    if (candidate != null) {
-                        selectedCandidate = candidate;
-                        break;
-                    }
-                }
-            }
-        }
-        return selectedCandidate;
     }
 }

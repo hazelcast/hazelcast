@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,31 +19,32 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.FutureUtil.ExceptionHandler;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -53,17 +54,17 @@ import java.util.logging.Level;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.peel;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService,
-        EventPublishingService<DistributedObjectEventPacket, Object>, MetricsProvider {
+                   EventPublishingService<DistributedObjectEventPacket, Object>, StaticMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:proxyService";
 
@@ -72,8 +73,8 @@ public class ProxyServiceImpl
 
     final NodeEngineImpl nodeEngine;
     final ILogger logger;
-    final ConcurrentMap<String, DistributedObjectListener> listeners =
-            new ConcurrentHashMap<String, DistributedObjectListener>();
+    final ConcurrentMap<UUID, DistributedObjectListener> listeners =
+            new ConcurrentHashMap<UUID, DistributedObjectListener>();
 
     private final ConstructorFunction<String, ProxyRegistry> registryConstructor =
             new ConstructorFunction<String, ProxyRegistry>() {
@@ -105,8 +106,8 @@ public class ProxyServiceImpl
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "proxy");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "proxy");
     }
 
     public void init() {
@@ -130,7 +131,7 @@ public class ProxyServiceImpl
         checkObjectNameNotNull(name);
 
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
-        registry.createProxy(name, true, true);
+        registry.createProxy(name, true, false);
         createdCounter.inc();
     }
 
@@ -171,6 +172,7 @@ public class ProxyServiceImpl
         waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, destroyProxyExceptionHandler);
     }
 
+    @Override
     public void destroyLocalDistributedObject(String serviceName, String name, boolean fireEvent) {
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
@@ -219,14 +221,14 @@ public class ProxyServiceImpl
     }
 
     @Override
-    public String addProxyListener(DistributedObjectListener distributedObjectListener) {
-        String id = UuidUtil.newUnsecureUuidString();
+    public UUID addProxyListener(DistributedObjectListener distributedObjectListener) {
+        UUID id = UuidUtil.newUnsecureUUID();
         listeners.put(id, distributedObjectListener);
         return id;
     }
 
     @Override
-    public boolean removeProxyListener(String registrationId) {
+    public boolean removeProxyListener(UUID registrationId) {
         return listeners.remove(registrationId) != null;
     }
 
@@ -237,7 +239,7 @@ public class ProxyServiceImpl
             try {
                 final ProxyRegistry registry = getOrCreateRegistry(serviceName);
                 if (!registry.contains(eventPacket.getName())) {
-                    registry.createProxy(eventPacket.getName(), false, true);
+                    registry.createProxy(eventPacket.getName(), true, true);
                     // listeners will be called if proxy is created here.
                 }
             } catch (HazelcastInstanceNotActiveException ignored) {

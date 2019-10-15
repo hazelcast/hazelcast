@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.wan.WanReplicationEvent;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.WAN_REPLICATION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.WAN_REPLICATION_DS_FACTORY_ID;
@@ -34,20 +33,9 @@ public class WanDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(WAN_REPLICATION_DS_FACTORY, WAN_REPLICATION_DS_FACTORY_ID);
 
-    /**
-     * ID of {@link com.hazelcast.wan.WanReplicationEvent}
-     */
-    public static final int WAN_REPLICATION_EVENT = 0;
-
-    /**
-     * ID of {@link com.hazelcast.map.impl.wan.MapReplicationUpdate}
-     */
-    public static final int MAP_REPLICATION_UPDATE = 1;
-
-    /**
-     * ID of {@link com.hazelcast.map.impl.wan.MapReplicationRemove}
-     */
-    public static final int MAP_REPLICATION_REMOVE = 2;
+    public static final int MAP_REPLICATION_UPDATE = 0;
+    public static final int MAP_REPLICATION_REMOVE = 1;
+    public static final int WAN_MAP_ENTRY_VIEW = 2;
 
     @Override
     public int getFactoryId() {
@@ -56,19 +44,16 @@ public class WanDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case WAN_REPLICATION_EVENT:
-                        return new WanReplicationEvent();
-                    case MAP_REPLICATION_UPDATE:
-                        return new MapReplicationUpdate();
-                    case MAP_REPLICATION_REMOVE:
-                        return new MapReplicationRemove();
-                    default:
-                        throw new IllegalArgumentException("Unknown type-id: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case MAP_REPLICATION_UPDATE:
+                    return new MapReplicationUpdate();
+                case MAP_REPLICATION_REMOVE:
+                    return new MapReplicationRemove();
+                case WAN_MAP_ENTRY_VIEW:
+                    return new WanMapEntryView<>();
+                default:
+                    throw new IllegalArgumentException("Unknown type-id: " + typeId);
             }
         };
     }

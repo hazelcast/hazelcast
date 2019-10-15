@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,20 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractLocalOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.util.Iterator;
+import java.util.logging.Level;
 
-public class CacheClearExpiredOperation extends AbstractLocalOperation implements PartitionAwareOperation, MutatingOperation {
+public class CacheClearExpiredOperation extends AbstractLocalOperation
+        implements PartitionAwareOperation, MutatingOperation {
 
     private int expirationPercentage;
 
@@ -80,6 +84,18 @@ public class CacheClearExpiredOperation extends AbstractLocalOperation implement
     }
 
     @Override
+    public void logError(Throwable e) {
+        if (e instanceof PartitionMigratingException) {
+            ILogger logger = getLogger();
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, e.toString());
+            }
+        } else {
+            super.logError(e);
+        }
+    }
+
+    @Override
     public void afterRun() throws Exception {
         prepareForNextCleanup();
     }
@@ -93,7 +109,7 @@ public class CacheClearExpiredOperation extends AbstractLocalOperation implement
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
     @Override

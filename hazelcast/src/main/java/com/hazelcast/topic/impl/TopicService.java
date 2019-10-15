@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,39 @@
 
 package com.hazelcast.topic.impl;
 
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.MapUtil;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.MapUtil;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
         StatisticsAwareService<LocalTopicStats> {
@@ -105,7 +107,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public ITopic createDistributedObject(String name) {
+    public ITopic createDistributedObject(String name, boolean local) {
         TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
 
         if (topicConfig.isGlobalOrderingEnabled()) {
@@ -116,7 +118,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public void destroyDistributedObject(String objectId) {
+    public void destroyDistributedObject(String objectId, boolean local) {
         statsMap.remove(objectId);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, objectId);
     }
@@ -127,7 +129,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         ClusterService clusterService = nodeEngine.getClusterService();
         MemberImpl member = clusterService.getMember(topicEvent.publisherAddress);
         if (member == null) {
-            member = new MemberImpl(topicEvent.publisherAddress, nodeEngine.getVersion(), false);
+            member = new MemberImpl.Builder(topicEvent.publisherAddress)
+                    .version(nodeEngine.getVersion())
+                    .build();
         }
         Message message = new DataAwareMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime, member
                 , nodeEngine.getSerializationService());
@@ -170,7 +174,10 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
     }
 
-    public String addMessageListener(String name, MessageListener listener, boolean localOnly) {
+    public @Nonnull
+    UUID addMessageListener(@Nonnull String name,
+                              @Nonnull MessageListener listener,
+                              boolean localOnly) {
         EventRegistration eventRegistration;
         if (localOnly) {
             eventRegistration = eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener);
@@ -181,7 +188,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return eventRegistration.getId();
     }
 
-    public boolean removeMessageListener(String name, String registrationId) {
+    public boolean removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
 

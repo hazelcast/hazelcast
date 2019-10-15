@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * Actor of the EntryOffloadableOperation -> EntryOffloadableSetUnlockOperation combined operations flow.
+ * Actor of the EntryOffloadableOperation -&gt; EntryOffloadableSetUnlockOperation combined operations flow.
  * If returned from the EntryOffloadableSetUnlockOperation, the preceding EntryOffloadableOperation will be retried.
  */
 public class EntryOffloadableLockMismatchException extends HazelcastException {

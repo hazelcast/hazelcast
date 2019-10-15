@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.util.JVMUtil;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A Metric pack for exposing {@link java.lang.Runtime} metrics.
@@ -44,58 +44,11 @@ public final class RuntimeMetricSet {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
 
-        metricsRegistry.register(runtime, "runtime.freeMemory", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.freeMemory();
-                    }
-                }
-        );
-
-        metricsRegistry.register(runtime, "runtime.totalMemory", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.totalMemory();
-                    }
-                }
-        );
-
-        metricsRegistry.register(runtime, "runtime.maxMemory", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.maxMemory();
-                    }
-                }
-        );
-
-        metricsRegistry.register(runtime, "runtime.usedMemory", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.totalMemory() - runtime.freeMemory();
-                    }
-                }
-        );
-
-        metricsRegistry.register(runtime, "runtime.availableProcessors", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.availableProcessors();
-                    }
-                }
-        );
-
-        metricsRegistry.register(mxBean, "runtime.uptime", MANDATORY,
-                new LongProbeFunction<RuntimeMXBean>() {
-                    @Override
-                    public long get(RuntimeMXBean runtimeMXBean) {
-                        return runtimeMXBean.getUptime();
-                    }
-                }
-        );
+        metricsRegistry.registerStaticProbe(runtime, "runtime.freeMemory", MANDATORY, Runtime::freeMemory);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.totalMemory", MANDATORY, Runtime::totalMemory);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.maxMemory", MANDATORY, Runtime::maxMemory);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.usedMemory", MANDATORY, JVMUtil::usedMemory);
+        metricsRegistry.registerStaticProbe(runtime, "runtime.availableProcessors", MANDATORY, Runtime::availableProcessors);
+        metricsRegistry.registerStaticProbe(mxBean, "runtime.uptime", MANDATORY, RuntimeMXBean::getUptime);
     }
 }

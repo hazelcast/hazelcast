@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,13 +31,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EvictableGetterCacheTest {
 
     @Test
     public void get_put_correctResult() {
         // GIVEN
-        EvictableGetterCache cache = new EvictableGetterCache(10, 10, 0.5f);
+        EvictableGetterCache cache = new EvictableGetterCache(10, 10, 0.5f, true);
         Getter x = mock(Getter.class);
         Getter y = mock(Getter.class);
 
@@ -53,7 +53,7 @@ public class EvictableGetterCacheTest {
     @Test
     public void get_put_correctSize() {
         // GIVEN
-        EvictableGetterCache cache = new EvictableGetterCache(10, 10, 0.5f);
+        EvictableGetterCache cache = new EvictableGetterCache(10, 10, 0.5f, true);
         Getter x = mock(Getter.class);
         Getter y = mock(Getter.class);
 
@@ -72,7 +72,7 @@ public class EvictableGetterCacheTest {
         // GIVEN
         int getterCacheSize = 10;
         float evictPercentage = 0.3f;
-        EvictableGetterCache cache = new EvictableGetterCache(10, getterCacheSize, evictPercentage);
+        EvictableGetterCache cache = new EvictableGetterCache(10, getterCacheSize, evictPercentage, true);
 
         // WHEN
         for (int i = 0; i < getterCacheSize - 1; i++) {
@@ -89,7 +89,7 @@ public class EvictableGetterCacheTest {
         // GIVEN
         int getterCacheSize = 10;
         float evictPercentage = 0.3f;
-        EvictableGetterCache cache = new EvictableGetterCache(10, getterCacheSize, evictPercentage);
+        EvictableGetterCache cache = new EvictableGetterCache(10, getterCacheSize, evictPercentage, true);
 
         // WHEN
         for (int i = 0; i < getterCacheSize; i++) {
@@ -107,7 +107,7 @@ public class EvictableGetterCacheTest {
         // GIVEN
         int classCacheSize = 10;
         float evictPercentage = 0.3f;
-        EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage);
+        EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage, true);
         Class[] classes = {
                 String.class, Character.class, Integer.class, Double.class, Byte.class, Long.class,
                 Number.class, Float.class, BigDecimal.class, BigInteger.class,
@@ -127,7 +127,7 @@ public class EvictableGetterCacheTest {
         // GIVEN
         int classCacheSize = 10;
         float evictPercentage = 0.3f;
-        EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage);
+        EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage, true);
         Class[] classes = {
                 String.class, Character.class, Integer.class, Double.class, Byte.class, Long.class,
                 Number.class, Float.class, BigDecimal.class, BigInteger.class,

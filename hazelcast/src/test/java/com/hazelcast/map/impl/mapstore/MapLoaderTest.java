@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,36 +18,38 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.core.MapStoreFactory;
-import com.hazelcast.instance.Node;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.MapStoreFactory;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
-import com.hazelcast.nio.Address;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.internal.util.EmptyStatement;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,7 +82,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapLoaderTest extends HazelcastTestSupport {
 
     @Rule
@@ -565,7 +567,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
             map.put(i, new SampleIndexableObject("My-" + i, i));
         }
 
-        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        Predicate predicate = Predicates.sql("name='My-5'");
         assertPredicateResultCorrect(map, predicate);
     }
 
@@ -581,7 +583,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance node = nodeBuilder.getRandomNode();
 
         IMap<Integer, SampleIndexableObject> map = node.getMap(mapName);
-        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        Predicate predicate = Predicates.sql("name='My-5'");
 
         assertLoadAllKeysCount(loader, 1);
         assertPredicateResultCorrect(map, predicate);
@@ -615,9 +617,10 @@ public class MapLoaderTest extends HazelcastTestSupport {
         MapLoader failingMapLoader = new FailingMapLoader();
         MapStoreConfig mapStoreConfig = new MapStoreConfig().setImplementation(failingMapLoader);
         MapConfig mapConfig = config.getMapConfig(getClass().getName()).setMapStoreConfig(mapStoreConfig);
+        final ILogger logger = Logger.getLogger(LoggingLifecycleListener.class);
 
         HazelcastInstance[] hz = createHazelcastInstanceFactory(2).newInstances(config, 2);
-        IMap map = hz[0].getMap(mapConfig.getName());
+        final IMap map = hz[0].getMap(mapConfig.getName());
 
         Throwable exception = null;
         try {
@@ -627,8 +630,28 @@ public class MapLoaderTest extends HazelcastTestSupport {
         }
         assertNotNull("Exception wasn't propagated", exception);
 
-        map.loadAll(true);
-        assertEquals(1, map.size());
+        // In the first map load, partitions are notified asynchronously
+        // by the com.hazelcast.map.impl.MapKeyLoader.sendKeyLoadCompleted
+        // method and also some partitions are notified twice.
+        // Because of this, a subsequent map load might get completed with the
+        // results of the first map load.
+        // This is why a subsequent map load might fail with the exception from
+        // a previous load. In this case, we need to try again.
+        // An alternative would be to wait for all partitions to be notified by
+        // the result from the first load before initiating a second load but
+        // unfortunately we can't observe this as some partitions are completed
+        // twice and we might just end up observing the first completion.
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                try {
+                    map.loadAll(true);
+                    assertEquals(1, map.size());
+                } catch (IllegalStateException e) {
+                    logger.info("Map load observed result from a previous load, retrying...", e);
+                }
+            }
+        });
     }
 
     @Test
@@ -653,8 +676,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         config.getMapConfig(mapName)
                 .setEvictionPolicy(EvictionPolicy.LRU)
-                .setEvictionPercentage(50)
-                .setMinEvictionCheckMillis(0)
                 .setMaxSizeConfig(maxSizeConfig)
                 .setMapStoreConfig(storeConfig);
 
@@ -722,8 +743,8 @@ public class MapLoaderTest extends HazelcastTestSupport {
         Config config = getConfig();
 
         MapConfig mapConfig = config.getMapConfig(mapName);
-        List<MapIndexConfig> indexConfigs = mapConfig.getMapIndexConfigs();
-        indexConfigs.add(new MapIndexConfig("name", true));
+        List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
+        indexConfigs.add(new IndexConfig(IndexType.SORTED, "name"));
 
         MapStoreConfig storeConfig = new MapStoreConfig();
         storeConfig.setFactoryImplementation(loader);
@@ -743,7 +764,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final SqlPredicate predicate) {
+    private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final Predicate predicate) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {

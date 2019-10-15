@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
@@ -41,6 +43,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -75,7 +78,9 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static Config getBaseConfig() {
         return smallInstanceConfig()
                 .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1")
-                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1");
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1")
+                .setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0")
+                .setProperty(NearCache.PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
     }
 
     /**
@@ -86,9 +91,9 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param <T>     the return type of the {@link Future}
      * @return the value of the {@link Future}
      */
-    public static <T> T getFuture(Future<T> future, String message) {
+    public static <T> T getFuture(CompletionStage<T> future, String message) {
         try {
-            return future.get();
+            return future.toCompletableFuture().get();
         } catch (InterruptedException e) {
             throw new AssertionError(message + " " + e.getMessage());
         } catch (ExecutionException e) {
@@ -441,9 +446,16 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheSize(NearCacheTestContext<?, ?, ?, ?> context, long expectedSize, String... messages) {
         String message = messages.length > 0 ? messages[0] + " " : "";
 
-        long nearCacheSize = context.nearCache.size();
-        assertEquals(format("%sNear Cache size didn't reach the desired value (%d vs. %d) (%s)",
-                message, expectedSize, nearCacheSize, context.stats), expectedSize, nearCacheSize);
+        try {
+            // if near cache is destroyed, it will not be available for size check.
+            long nearCacheSize = context.nearCache.size();
+            assertEquals(format("%sNear Cache size didn't reach the desired value (%d vs. %d) (%s)",
+                    message, expectedSize, nearCacheSize, context.stats), expectedSize, nearCacheSize);
+        } catch (IllegalStateException e) {
+            ILogger logger = Logger.getLogger(NearCacheTestUtils.class);
+            logger.info(format("Size check cannot be done on '%s' named Near Cache because it was destroyed",
+                    context.nearCache.getName()));
+        }
 
         long ownedEntryCount = context.stats.getOwnedEntryCount();
         assertEquals(format("%sNear Cache owned entry count didn't reach the desired value (%d vs. %d) (%s)",

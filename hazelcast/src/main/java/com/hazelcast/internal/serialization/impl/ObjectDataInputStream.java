@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.Closeable;
@@ -26,7 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
 
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.nio.Bits.UTF_8;
 
 public class ObjectDataInputStream extends VersionedObjectDataInput implements Closeable {
 
@@ -286,28 +286,21 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
         return new String[0];
     }
 
-    @Deprecated
-    public String readLine() throws IOException {
-        return dataInput.readLine();
+    @Override
+    public String readLine() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public String readUTF() throws IOException {
-        int charCount = readInt();
-        if (charCount == NULL_ARRAY_LENGTH) {
+        int numberOfBytes = readInt();
+        if (numberOfBytes == NULL_ARRAY_LENGTH) {
             return null;
         }
-        char[] charBuffer = new char[charCount];
-        byte b;
-        for (int i = 0; i < charCount; i++) {
-            b = dataInput.readByte();
-            if (b < 0) {
-                charBuffer[i] = Bits.readUtf8Char(dataInput, b);
-            } else {
-                charBuffer[i] = (char) b;
-            }
-        }
-        return new String(charBuffer, 0, charCount);
+
+        byte[] utf8Bytes = new byte[numberOfBytes];
+        dataInput.readFully(utf8Bytes);
+        return new String(utf8Bytes, UTF_8);
     }
 
     @Override
@@ -331,7 +324,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
     }
 
     @Override
-    public Object readObject() throws IOException {
+    public <T> T readObject() throws IOException {
         return serializationService.readObject(this);
     }
 
@@ -343,7 +336,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
     }
 
     @Override
-    public Object readObject(Class aClass) throws IOException {
+    public <T> T readObject(Class aClass) throws IOException {
         return serializationService.readObject(this, aClass);
     }
 

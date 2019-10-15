@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.aggregation;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,10 +53,12 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SumAggregationTest {
 
     public static final double ERROR = 1e-8;
+
+    private final InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigDecimalSum() {
@@ -80,7 +84,7 @@ public class SumAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalSum("bigDecimal");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
@@ -100,7 +104,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testBigDecimalSum_withAttributePath_withNull() {
         Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigDecimalSum("numberValue");
-        aggregation.accumulate(createExtractableEntryWithValue(null));
+        aggregation.accumulate(createExtractableEntryWithValue(null, ss));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -127,7 +131,7 @@ public class SumAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerSum("bigInteger");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
@@ -147,7 +151,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testBigIntegerSum_withAttributePath_withNull() {
         Aggregator<Map.Entry, BigInteger> aggregation = Aggregators.bigIntegerSum("numberValue");
-        aggregation.accumulate(createExtractableEntryWithValue(null));
+        aggregation.accumulate(createExtractableEntryWithValue(null, ss));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -174,7 +178,7 @@ public class SumAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleSum("doubleValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleSum("doubleValue");
@@ -193,7 +197,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testDoubleSum_withAttributePath_withNull() {
         Aggregator<Map.Entry, Double> aggregation = Aggregators.doubleSum("numberValue");
-        aggregation.accumulate(createExtractableEntryWithValue(null));
+        aggregation.accumulate(createExtractableEntryWithValue(null, ss));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -220,7 +224,7 @@ public class SumAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.integerSum("intValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.integerSum("intValue");
@@ -239,7 +243,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testIntegerSum_withAttributePath_withNull() {
         Aggregator<Map.Entry, Long> aggregation = Aggregators.integerSum("numberValue");
-        aggregation.accumulate(createExtractableEntryWithValue(null));
+        aggregation.accumulate(createExtractableEntryWithValue(null, ss));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -266,7 +270,7 @@ public class SumAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longSum("longValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longSum("longValue");
@@ -285,7 +289,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testLongSum_withAttributePath_withNull() {
         Aggregator<Map.Entry, Long> aggregation = Aggregators.longSum("numberValue");
-        aggregation.accumulate(createExtractableEntryWithValue(null));
+        aggregation.accumulate(createExtractableEntryWithValue(null, ss));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -316,7 +320,7 @@ public class SumAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.fixedPointSum("numberValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.fixedPointSum("numberValue");
@@ -335,7 +339,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testFixedPointSum_withAttributePath_withNull() {
         Aggregator<Map.Entry, Long> aggregation = Aggregators.fixedPointSum("numberValue");
-        aggregation.accumulate(createExtractableEntryWithValue(null));
+        aggregation.accumulate(createExtractableEntryWithValue(null, ss));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -366,7 +370,7 @@ public class SumAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.floatingPointSum("numberValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation
@@ -386,7 +390,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testFloatingPointSum_withAttributePath_withNull() {
         Aggregator<Map.Entry, Double> aggregation = Aggregators.floatingPointSum("numberValue");
-        aggregation.accumulate(createExtractableEntryWithValue(null));
+        aggregation.accumulate(createExtractableEntryWithValue(null, ss));
     }
 
 }

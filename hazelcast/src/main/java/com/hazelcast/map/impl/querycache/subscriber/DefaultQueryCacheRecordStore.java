@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
 import java.util.Map;
@@ -43,20 +43,24 @@ import java.util.Set;
 class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
 
     private static final int DEFAULT_CACHE_CAPACITY = 1000;
-    private final QueryCacheRecordHashMap cache;
-    private final QueryCacheRecordFactory recordFactory;
-    private final Indexes indexes;
-    private final InternalSerializationService serializationService;
-    private final EvictionOperator evictionOperator;
 
-    public DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
-                                        Indexes indexes,
-                                        QueryCacheConfig config, EvictionListener listener) {
+    private final Indexes indexes;
+    private final QueryCacheRecordHashMap cache;
+    private final EvictionOperator evictionOperator;
+    private final QueryCacheRecordFactory recordFactory;
+    private final InternalSerializationService serializationService;
+    private final Extractors extractors;
+
+    DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
+                                 Indexes indexes,
+                                 QueryCacheConfig config, EvictionListener listener,
+                                 Extractors extractors) {
         this.cache = new QueryCacheRecordHashMap(serializationService, DEFAULT_CACHE_CAPACITY);
         this.serializationService = serializationService;
         this.recordFactory = getRecordFactory(config.getInMemoryFormat());
         this.indexes = indexes;
         this.evictionOperator = new EvictionOperator(cache, config, listener, serializationService.getClassLoader());
+        this.extractors = extractors;
     }
 
     private QueryCacheRecord accessRecord(QueryCacheRecord record) {
@@ -96,11 +100,11 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     }
 
     private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {
-        if (indexes.hasIndex()) {
+        if (indexes.haveAtLeastOneIndex()) {
             Object currentValue = currentRecord.getValue();
-            QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, Extractors.empty());
+            QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
-            indexes.saveEntryIndex(queryEntry, oldValue, Index.OperationSource.USER);
+            indexes.putEntry(queryEntry, oldValue, Index.OperationSource.USER);
         }
     }
 
@@ -120,8 +124,8 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     }
 
     private void removeIndex(Data keyData, Object value) {
-        if (indexes.hasIndex()) {
-            indexes.removeEntryIndex(keyData, value, Index.OperationSource.USER);
+        if (indexes.haveAtLeastOneIndex()) {
+            indexes.removeEntry(keyData, value, Index.OperationSource.USER);
         }
     }
 

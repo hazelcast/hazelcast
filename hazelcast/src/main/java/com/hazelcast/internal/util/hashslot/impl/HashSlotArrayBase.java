@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
 import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
-import static com.hazelcast.util.HashUtil.fastLongMix;
+import static com.hazelcast.internal.util.HashUtil.fastLongMix;
 
 /**
  * Implementation of {@link HashSlotArray}, common to all its subtype implementations.

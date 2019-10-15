@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.core.ClientType;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
-import static com.hazelcast.util.StringUtil.timeToString;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -92,12 +91,6 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private void monitor(ClientEndpoint clientEndpoint) {
-        // C++ client sends heartbeat over its non-owner connections
-        // For other client types, disregard non-owner connections for heartbeat monitoring purposes
-        if (clientEndpoint.isOwnerConnection() == ClientType.CPP.equals(clientEndpoint.getClientType())) {
-            return;
-        }
-
         Connection connection = clientEndpoint.getConnection();
         long lastTimePacketReceived = connection.lastReadTimeMillis();
         long timeoutInMillis = SECONDS.toMillis(heartbeatTimeoutSeconds);

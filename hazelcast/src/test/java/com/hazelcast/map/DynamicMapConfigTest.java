@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -29,15 +28,15 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,7 +52,7 @@ import static org.junit.Assert.assertTrue;
  * This test verifies that the changes will be reflected to corresponding IMap at runtime.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicMapConfigTest extends HazelcastTestSupport {
 
     @Test
@@ -78,8 +77,9 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
     }
 
     private void updateMapConfig(String mapName, HazelcastInstance node) throws InterruptedException, ExecutionException {
-        MapConfig mapConfig = createMapConfig();
-        Operation updateMapConfigOperation = new UpdateMapConfigOperation(mapName, mapConfig);
+        Operation updateMapConfigOperation = new UpdateMapConfigOperation(mapName, 100, 22, 111,
+                MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE.getId(), false,
+                EvictionPolicy.LRU.getId());
         executeOperation(node, updateMapConfigOperation);
     }
 
@@ -101,22 +101,8 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         return evictionPolicy != NONE;
     }
 
-    private MapConfig createMapConfig() {
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setTimeToLiveSeconds(100);
-        mapConfig.setMaxIdleSeconds(22);
-        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        mapConfig.setEvictionPercentage(35);
-        mapConfig.setMinEvictionCheckMillis(199);
-        mapConfig.setReadBackupData(false);
-        mapConfig.setBackupCount(3);
-        mapConfig.setAsyncBackupCount(2);
-        mapConfig.setMaxSizeConfig(new MaxSizeConfig(111, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE));
-        return mapConfig;
-    }
-
     private Object executeOperation(HazelcastInstance node, Operation op) throws InterruptedException, ExecutionException {
-        InternalOperationService operationService = getOperationService(node);
+        OperationServiceImpl operationService = getOperationService(node);
         Address address = getAddress(node);
         InternalCompletableFuture future = operationService.invokeOnTarget(MapService.SERVICE_NAME, op, address);
         return future.get();

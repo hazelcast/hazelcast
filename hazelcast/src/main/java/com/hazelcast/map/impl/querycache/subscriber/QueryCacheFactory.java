@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.map.listener.MapListener;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,19 +44,31 @@ public class QueryCacheFactory {
 
         @Override
         public InternalQueryCache createNew(String cacheId) {
-            String cacheName = request.getCacheName();
             IMap delegate = request.getMap();
+            String mapName = request.getMapName();
+            String cacheName = request.getCacheName();
             QueryCacheContext context = request.getContext();
             QueryCacheConfig queryCacheConfig = request.getQueryCacheConfig();
 
-            return new DefaultQueryCache(cacheId, cacheName, queryCacheConfig, delegate, context);
+            DefaultQueryCache queryCache = new DefaultQueryCache(cacheId, cacheName, queryCacheConfig, delegate, context);
+
+            MapListener listener = request.getListener();
+            if (listener != null) {
+                // this is users listener which can be given as a parameter
+                // when calling `IMap.getQueryCache` method
+                request.getContext()
+                        .getSubscriberContext()
+                        .getEventService().addListener(mapName, cacheId, listener);
+            }
+
+            return queryCache;
         }
     }
 
     private final ConcurrentMap<String, InternalQueryCache> internalQueryCaches;
 
     public QueryCacheFactory() {
-        this.internalQueryCaches = new ConcurrentHashMap<String, InternalQueryCache>();
+        this.internalQueryCaches = new ConcurrentHashMap<>();
     }
 
     public InternalQueryCache create(QueryCacheRequest request, String cacheId) {

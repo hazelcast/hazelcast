@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.util.Collection;
 import java.util.Map;
@@ -35,8 +34,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
-import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * A ProxyRegistry contains all proxies for a given service. For example, it contains all proxies for the IMap.
@@ -176,7 +175,7 @@ public final class ProxyRegistry {
             if (!proxyService.nodeEngine.isRunning()) {
                 throw new HazelcastInstanceNotActiveException();
             }
-            proxyFuture = createProxy(name, publishEvent, initialize);
+            proxyFuture = createProxy(name, initialize, !publishEvent);
             if (proxyFuture == null) {
                 return getOrCreateProxyFuture(name, publishEvent, initialize);
             }
@@ -188,11 +187,14 @@ public final class ProxyRegistry {
      * Creates a DistributedObject proxy if it is not created yet
      *
      * @param name         The name of the distributedObject proxy object.
-     * @param publishEvent true if a DistributedObjectEvent should be fired.
      * @param initialize   true if he DistributedObject proxy object should be initialized.
+     * @param local        {@code true} if the proxy should be only created on the local member,
+     *                     otherwise fires {@code DistributedObjectEvent} to trigger cluster-wide
+     *                     proxy creation.
      * @return The DistributedObject instance if it is created by this method, null otherwise.
      */
-    public DistributedObjectFuture createProxy(String name, boolean publishEvent, boolean initialize) {
+    public DistributedObjectFuture createProxy(String name, boolean initialize,
+                                               boolean local) {
         if (proxies.containsKey(name)) {
             return null;
         }
@@ -206,14 +208,15 @@ public final class ProxyRegistry {
             return null;
         }
 
-        return doCreateProxy(name, publishEvent, initialize, proxyFuture);
+        return doCreateProxy(name, initialize, proxyFuture, local);
     }
 
-    private DistributedObjectFuture doCreateProxy(String name, boolean publishEvent, boolean initialize,
-                                                  DistributedObjectFuture proxyFuture) {
+    private DistributedObjectFuture doCreateProxy(String name, boolean initialize,
+                                                  DistributedObjectFuture proxyFuture, boolean local) {
+        boolean publishEvent = !local;
         DistributedObject proxy;
         try {
-            proxy = service.createDistributedObject(name);
+            proxy = service.createDistributedObject(name, local);
             if (initialize && proxy instanceof InitializingObject) {
                 try {
                     ((InitializingObject) proxy).initialize();
@@ -232,7 +235,7 @@ public final class ProxyRegistry {
             throw rethrow(e);
         }
 
-        InternalEventService eventService = proxyService.nodeEngine.getEventService();
+        EventService eventService = proxyService.nodeEngine.getEventService();
         ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), CREATED, serviceName,
                 name, proxy);
         eventService.executeEventCallback(callback);
@@ -263,7 +266,7 @@ public final class ProxyRegistry {
                     + t.getClass().getName() + ": " + t.getMessage());
             return;
         }
-        InternalEventService eventService = proxyService.nodeEngine.getEventService();
+        EventService eventService = proxyService.nodeEngine.getEventService();
         ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName,
                 name, proxy);
         eventService.executeEventCallback(callback);

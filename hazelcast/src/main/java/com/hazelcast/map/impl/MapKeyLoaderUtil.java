@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,21 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.UnmodifiableIterator;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.UnmodifiableIterator;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public final class MapKeyLoaderUtil {
 
@@ -149,21 +148,20 @@ public final class MapKeyLoaderUtil {
     }
 
     /**
-     * Returns a {@link IFunction} that transforms a {@link Data}
+     * Returns a {@link Function} that transforms a {@link Data}
      * parameter to an map entry where the key is the partition ID
      * and the value is the provided parameter.
      *
      * @param partitionService the partition service
      */
-    static IFunction<Data, Entry<Integer, Data>> toPartition(final IPartitionService partitionService) {
+    static Function<Data, Entry<Integer, Data>> toPartition(IPartitionService partitionService) {
         return new DataToEntry(partitionService);
     }
 
-    @SerializableByConvention
-    private static class DataToEntry implements IFunction<Data, Entry<Integer, Data>> {
+    private static class DataToEntry implements Function<Data, Entry<Integer, Data>> {
         private final IPartitionService partitionService;
 
-        public DataToEntry(IPartitionService partitionService) {
+        DataToEntry(IPartitionService partitionService) {
             this.partitionService = partitionService;
         }
 
@@ -172,7 +170,7 @@ public final class MapKeyLoaderUtil {
             // Null-pointer here, in case of null key loaded by MapLoader
             checkNotNull(input, "Key loaded by a MapLoader cannot be null.");
             Integer partition = partitionService.getPartitionId(input);
-            return new MapEntrySimple<Integer, Data>(partition, input);
+            return new MapEntrySimple<>(partition, input);
         }
     }
 

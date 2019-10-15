@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,18 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * Configuration for eviction.
- * You can set a limit for number of entries or total memory cost of entries.
+ * Configuration for storing and pre-loading Near Cache keys.
+ *
+ * Preloader re-populates Near Cache after client/server restart to provide
+ * fast access.
  *
  * @since 3.8
  */
@@ -50,8 +51,6 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     private String directory = "";
     private int storeInitialDelaySeconds = DEFAULT_STORE_INITIAL_DELAY_SECONDS;
     private int storeIntervalSeconds = DEFAULT_STORE_INTERVAL_SECONDS;
-
-    private NearCachePreloaderConfig readOnly;
 
     public NearCachePreloaderConfig() {
     }
@@ -115,7 +114,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.NEAR_CACHE_PRELOADER_CONFIG;
     }
 
@@ -143,13 +142,6 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
                 + ", storeInitialDelaySeconds=" + storeInitialDelaySeconds
                 + ", storeIntervalSeconds=" + storeIntervalSeconds
                 + '}';
-    }
-
-    NearCachePreloaderConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new NearCachePreloaderConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -182,45 +174,5 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
         result = 31 * result + storeInitialDelaySeconds;
         result = 31 * result + storeIntervalSeconds;
         return result;
-    }
-
-    /**
-     * A readonly version of the {@link NearCachePreloaderConfig}.
-     */
-    @PrivateApi
-    private static class NearCachePreloaderConfigReadOnly extends NearCachePreloaderConfig {
-
-        @SuppressWarnings("unused")
-        public NearCachePreloaderConfigReadOnly() {
-        }
-
-        NearCachePreloaderConfigReadOnly(NearCachePreloaderConfig nearCachePreloaderConfig) {
-            super(nearCachePreloaderConfig);
-        }
-
-        @Override
-        public NearCachePreloaderConfig setEnabled(boolean isEnabled) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public NearCachePreloaderConfig setDirectory(String directory) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public NearCachePreloaderConfig setStoreInitialDelaySeconds(int storeInitialDelaySeconds) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public NearCachePreloaderConfig setStoreIntervalSeconds(int storeIntervalSeconds) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getId() {
-            throw new UnsupportedOperationException("NearCachePreloaderConfigReadOnly is not serializable");
-        }
     }
 }

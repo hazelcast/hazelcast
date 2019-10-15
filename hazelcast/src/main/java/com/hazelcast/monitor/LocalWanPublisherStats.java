@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
-import com.hazelcast.wan.merkletree.ConsistencyCheckResult;
+import com.hazelcast.wan.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
+import com.hazelcast.wan.WanSyncStats;
+import com.hazelcast.wan.ConsistencyCheckResult;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.Map;
 
@@ -61,8 +63,8 @@ public interface LocalWanPublisherStats extends JsonSerializable {
     /**
      * Returns the current {@link WanPublisherState} of this publisher.
      *
-     * @see com.hazelcast.wan.WanReplicationService#pause(String, String)
-     * @see com.hazelcast.wan.WanReplicationService#stop(String, String)
+     * @see WanReplicationService#pause(String, String)
+     * @see WanReplicationService#stop(String, String)
      */
     WanPublisherState getPublisherState();
 
@@ -80,4 +82,9 @@ public interface LocalWanPublisherStats extends JsonSerializable {
      * Returns the last results of the consistency checks, mapped by map name.
      */
     Map<String, ConsistencyCheckResult> getLastConsistencyCheckResults();
+
+    /**
+     * Returns the last synchronization statistics, mapped by map name.
+     */
+    Map<String, WanSyncStats> getLastSyncStats();
 }

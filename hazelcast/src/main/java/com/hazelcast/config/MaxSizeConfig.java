@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
@@ -35,8 +35,6 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
      * Default maximum size of map.
      */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
-
-    private MaxSizeConfigReadOnly readOnly;
 
     private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
@@ -64,61 +62,67 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
          * Policy based on maximum number of entries stored per data structure (map, cache etc)
          * on each Hazelcast instance
          */
-        PER_NODE,
+        PER_NODE(0),
         /**
          * Policy based on maximum number of entries stored per data structure (map, cache etc)
          * on each partition
          */
-        PER_PARTITION,
+        PER_PARTITION(1),
         /**
          * Policy based on maximum used JVM heap memory percentage per data structure (map, cache etc)
          * on each Hazelcast instance
          */
-        USED_HEAP_PERCENTAGE,
+        USED_HEAP_PERCENTAGE(2),
         /**
          * Policy based on maximum used JVM heap memory in megabytes per data structure (map, cache etc)
          * on each Hazelcast instance
          */
-        USED_HEAP_SIZE,
+        USED_HEAP_SIZE(3),
         /**
          * Policy based on minimum free JVM heap memory percentage per JVM
          */
-        FREE_HEAP_PERCENTAGE,
+        FREE_HEAP_PERCENTAGE(4),
         /**
          * Policy based on minimum free JVM heap memory in megabytes per JVM
          */
-        FREE_HEAP_SIZE,
+        FREE_HEAP_SIZE(5),
         /**
          * Policy based on maximum used native memory in megabytes per data structure (map, cache etc)
          * on each Hazelcast instance
          */
-        USED_NATIVE_MEMORY_SIZE,
+        USED_NATIVE_MEMORY_SIZE(6),
         /**
          * Policy based on maximum used native memory percentage per data structure (map, cache etc)
          * on each Hazelcast instance
          */
-        USED_NATIVE_MEMORY_PERCENTAGE,
+        USED_NATIVE_MEMORY_PERCENTAGE(7),
         /**
          * Policy based on minimum free native memory in megabytes per Hazelcast instance
          */
-        FREE_NATIVE_MEMORY_SIZE,
+        FREE_NATIVE_MEMORY_SIZE(8),
         /**
          * Policy based on minimum free native memory percentage per Hazelcast instance
          */
-        FREE_NATIVE_MEMORY_PERCENTAGE
-    }
+        FREE_NATIVE_MEMORY_PERCENTAGE(9);
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MaxSizeConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MaxSizeConfigReadOnly(this);
+        private final byte id;
+
+        MaxSizePolicy(int id) {
+            this.id = (byte) id;
         }
-        return readOnly;
+
+        public byte getId() {
+            return id;
+        }
+
+        public static MaxSizePolicy getById(int id) {
+            for (MaxSizePolicy msp : values()) {
+                if (msp.getId() == id) {
+                    return msp;
+                }
+            }
+            throw new IllegalArgumentException("Unsupported ID value");
+        }
     }
 
     /**

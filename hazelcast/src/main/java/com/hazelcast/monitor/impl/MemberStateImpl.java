@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -40,21 +42,29 @@ import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.WanSyncState;
+import com.hazelcast.cluster.Address;
 
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.JsonUtil.getArray;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class MemberStateImpl implements MemberState {
 
     private String address;
+    private UUID uuid;
+    private UUID cpMemberUuid;
+    private String name;
+    private Map<EndpointQualifier, Address> endpoints = new HashMap<EndpointQualifier, Address>();
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
     private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
     private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
@@ -68,7 +78,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalWanStats> wanStats = new HashMap<String, LocalWanStats>();
     private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<String, LocalFlakeIdGeneratorStats>();
     private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
-    private Map<String, String> clientStats = new HashMap<String, String>();
+    private Map<UUID, String> clientStats = new HashMap<>();
     private MXBeansDTO beans = new MXBeansDTO();
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
@@ -152,6 +162,41 @@ public class MemberStateImpl implements MemberState {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    @Override
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    @Override
+    public UUID getCpMemberUuid() {
+        return cpMemberUuid;
+    }
+
+    public void setCpMemberUuid(UUID cpMemberUuid) {
+        this.cpMemberUuid = cpMemberUuid;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Map<EndpointQualifier, Address> getEndpoints() {
+        return endpoints;
+    }
+
+    public void setEndpoints(Map<EndpointQualifier, Address> addressMap) {
+        this.endpoints = addressMap;
     }
 
     public void putLocalMapStats(String name, LocalMapStats localMapStats) {
@@ -274,11 +319,11 @@ public class MemberStateImpl implements MemberState {
         this.wanSyncState = wanSyncState;
     }
 
-    public Map<String, String> getClientStats() {
+    public Map<UUID, String> getClientStats() {
         return clientStats;
     }
 
-    public void setClientStats(Map<String, String> clientStats) {
+    public void setClientStats(Map<UUID, String> clientStats) {
         this.clientStats = clientStats;
     }
 
@@ -286,6 +331,30 @@ public class MemberStateImpl implements MemberState {
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
+        String uuidString = uuid != null ? uuid.toString() : null;
+        root.add("uuid", uuidString);
+        String cpMemberUuidString = cpMemberUuid != null ? cpMemberUuid.toString() : null;
+        root.add("cpMemberUuid", cpMemberUuidString);
+        root.add("name", name);
+
+        final JsonArray endpoints = new JsonArray();
+        for (Entry<EndpointQualifier, Address> entry : this.endpoints.entrySet()) {
+            JsonObject address = new JsonObject();
+            address.set("host", entry.getValue().getHost());
+            address.set("port", entry.getValue().getPort());
+
+            JsonObject endpoint = new JsonObject();
+            endpoint.set("protocol", entry.getKey().getType().name());
+            endpoint.set("address", address);
+
+            if (entry.getKey().getIdentifier() != null) {
+                endpoint.set("id", entry.getKey().getIdentifier());
+            }
+
+            endpoints.add(endpoint);
+        }
+        root.add("endpoints", endpoints);
+
         serializeMap(root, "mapStats", mapStats);
         serializeMap(root, "multiMapStats", multiMapStats);
         serializeMap(root, "replicatedMapStats", replicatedMapStats);
@@ -319,8 +388,8 @@ public class MemberStateImpl implements MemberState {
         root.add("wanSyncState", wanSyncState.toJson());
 
         JsonObject clientStatsObject = new JsonObject();
-        for (Map.Entry<String, String> entry : clientStats.entrySet()) {
-            clientStatsObject.add(entry.getKey(), entry.getValue());
+        for (Map.Entry<UUID, String> entry : clientStats.entrySet()) {
+            clientStatsObject.add(entry.getKey().toString(), entry.getValue());
         }
         root.add("clientStats", clientStatsObject);
         return root;
@@ -338,6 +407,33 @@ public class MemberStateImpl implements MemberState {
     @SuppressWarnings("checkstyle:methodlength")
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
+        String uuidString = getString(json, "uuid", null);
+        uuid = uuidString != null ? UUID.fromString(uuidString) : null;
+        String cpMemberUuidString = getString(json, "cpMemberUuid", null);
+        cpMemberUuid = cpMemberUuidString != null ? UUID.fromString(cpMemberUuidString) : null;
+        name = getString(json, "name", null);
+
+        JsonArray endpoints = getArray(json, "endpoints");
+        for (JsonValue obj : endpoints) {
+            JsonObject endpoint = obj.asObject();
+            String id = endpoint.getString("id", null);
+            ProtocolType type = ProtocolType.valueOf(endpoint.getString("protocol", "MEMBER"));
+
+            JsonValue addr = endpoint.get("address");
+            String host = addr.asObject().getString("host", "");
+            int port = addr.asObject().getInt("port", 0);
+            EndpointQualifier qualifier = EndpointQualifier.resolve(type, id);
+            Address address = null;
+            try {
+                address = new Address(host, port);
+            } catch (UnknownHostException e) {
+                //ignore
+                ignore(e);
+            }
+
+            this.endpoints.put(qualifier, address);
+        }
+
         for (JsonObject.Member next : getObject(json, "mapStats")) {
             LocalMapStatsImpl stats = new LocalMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
@@ -438,7 +534,7 @@ public class MemberStateImpl implements MemberState {
             wanSyncState.fromJson(jsonWanSyncState);
         }
         for (JsonObject.Member next : getObject(json, "clientStats")) {
-            clientStats.put(next.getName(), next.getValue().asString());
+            clientStats.put(UUID.fromString(next.getName()), next.getValue().asString());
         }
     }
 
@@ -446,6 +542,9 @@ public class MemberStateImpl implements MemberState {
     public String toString() {
         return "MemberStateImpl{"
                 + "address=" + address
+                + ", uuid=" + uuid
+                + ", cpMemberUuid=" + cpMemberUuid
+                + ", name=" + name
                 + ", runtimeProps=" + runtimeProps
                 + ", mapStats=" + mapStats
                 + ", multiMapStats=" + multiMapStats

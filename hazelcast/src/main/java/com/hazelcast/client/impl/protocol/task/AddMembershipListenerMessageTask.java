@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,24 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
+import com.hazelcast.cluster.InitialMembershipEvent;
+import com.hazelcast.cluster.InitialMembershipListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.InitialMembershipEvent;
-import com.hazelcast.core.InitialMembershipListener;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 
 public class AddMembershipListenerMessageTask
         extends AbstractCallableMessageTask<ClientAddMembershipListenerCodec.RequestParameters> {
@@ -44,7 +49,9 @@ public class AddMembershipListenerMessageTask
     protected Object call() {
         String serviceName = ClusterServiceImpl.SERVICE_NAME;
         ClusterServiceImpl service = getService(serviceName);
-        String registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint));
+        boolean advancedNetworkConfigEnabled = isAdvancedNetworkEnabled();
+        UUID registrationId = service.addMembershipListener(
+                new MembershipListenerImpl(endpoint, advancedNetworkConfigEnabled));
         endpoint.addListenerDestroyAction(serviceName, serviceName, registrationId);
         return registrationId;
     }
@@ -56,7 +63,7 @@ public class AddMembershipListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientAddMembershipListenerCodec.encodeResponse((String) response);
+        return ClientAddMembershipListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override
@@ -86,16 +93,22 @@ public class AddMembershipListenerMessageTask
     private class MembershipListenerImpl
             implements InitialMembershipListener {
         private final ClientEndpoint endpoint;
+        private final boolean advancedNetworkConfigEnabled;
 
-        public MembershipListenerImpl(ClientEndpoint endpoint) {
+        MembershipListenerImpl(ClientEndpoint endpoint, boolean advancedNetworkConfigEnabled) {
             this.endpoint = endpoint;
+            this.advancedNetworkConfigEnabled = advancedNetworkConfigEnabled;
         }
 
         @Override
         public void init(InitialMembershipEvent membershipEvent) {
             ClusterService service = getService(ClusterServiceImpl.SERVICE_NAME);
-            Collection members = service.getMemberImpls();
-            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberListEvent(members);
+            Collection<MemberImpl> members = service.getMemberImpls();
+            Collection<Member> membersToSend = new ArrayList<>();
+            for (MemberImpl member : members) {
+                membersToSend.add(translateMemberAddress(member));
+            }
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberListEvent(membersToSend);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -108,7 +121,8 @@ public class AddMembershipListenerMessageTask
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
 
             ClientMessage eventMessage =
-                    ClientAddMembershipListenerCodec.encodeMemberEvent(member, MembershipEvent.MEMBER_ADDED);
+                    ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member),
+                            MembershipEvent.MEMBER_ADDED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -119,8 +133,8 @@ public class AddMembershipListenerMessageTask
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            ClientMessage eventMessage =
-                    ClientAddMembershipListenerCodec.encodeMemberEvent(member, MembershipEvent.MEMBER_REMOVED);
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberEvent(translateMemberAddress(member),
+                    MembershipEvent.MEMBER_REMOVED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -130,13 +144,12 @@ public class AddMembershipListenerMessageTask
                 return;
             }
 
-            MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
-            String uuid = member.getUuid();
             MemberAttributeOperationType op = memberAttributeEvent.getOperationType();
             String key = memberAttributeEvent.getKey();
             String value = memberAttributeEvent.getValue() == null ? null : memberAttributeEvent.getValue().toString();
-            ClientMessage eventMessage =
-                    ClientAddMembershipListenerCodec.encodeMemberAttributeChangeEvent(uuid, key, op.getId(), value);
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec
+                    .encodeMemberAttributeChangeEvent(memberAttributeEvent.getMember(), memberAttributeEvent.getMembers(), key,
+                            op.getId(), value);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -151,6 +164,28 @@ public class AddMembershipListenerMessageTask
                 return false;
             }
             return true;
+        }
+
+        // the member partition table that is sent out to clients must contain the addresses
+        // on which cluster members listen for CLIENT protocol connections.
+        // with advanced network config, we need to return Members whose getAddress method
+        // returns the CLIENT server socket address
+        private MemberImpl translateMemberAddress(MemberImpl member) {
+            if (!advancedNetworkConfigEnabled) {
+                return member;
+            }
+
+            Address clientAddress = member.getAddressMap().get(EndpointQualifier.CLIENT);
+
+            MemberImpl result = new MemberImpl.Builder(clientAddress)
+                    .version(member.getVersion())
+                    .uuid(member.getUuid())
+                    .localMember(member.localMember())
+                    .liteMember(member.isLiteMember())
+                    .memberListJoinVersion(member.getMemberListJoinVersion())
+                    .attributes(member.getAttributes())
+                    .build();
+            return result;
         }
     }
 }

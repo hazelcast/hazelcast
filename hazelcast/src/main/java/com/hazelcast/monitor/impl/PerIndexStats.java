@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.Index;
 
 /**
@@ -251,7 +252,7 @@ public interface PerIndexStats {
      * @param operationStats  the operation stats to track the stats.
      * @param operationSource the operation source.
      * @see #makeTimestamp
-     * @see com.hazelcast.query.impl.Index#saveEntryIndex
+     * @see com.hazelcast.query.impl.Index#putEntry
      */
     void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
 
@@ -262,7 +263,7 @@ public interface PerIndexStats {
      * @param operationStats  the operation stats to track the stats.
      * @param operationSource the operation source.
      * @see #makeTimestamp
-     * @see com.hazelcast.query.impl.Index#saveEntryIndex
+     * @see com.hazelcast.query.impl.Index#putEntry
      */
     void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
 
@@ -273,7 +274,7 @@ public interface PerIndexStats {
      * @param operationStats  the operation stats to track the stats.
      * @param operationSource the operation source.
      * @see #makeTimestamp
-     * @see com.hazelcast.query.impl.Index#removeEntryIndex
+     * @see com.hazelcast.query.impl.Index#removeEntry
      */
     void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
 
@@ -289,10 +290,10 @@ public interface PerIndexStats {
      * <p>
      * Following operations generate a hit:
      * <ul>
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable) Index.getRecords(Comparable)}
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable[]) Index.getRecords(Comparable[])}
-     * <li>{@link com.hazelcast.query.impl.Index#getSubRecords Index.getSubRecords}
-     * <li>{@link com.hazelcast.query.impl.Index#getSubRecordsBetween Index.getSubRecordsBetween}
+     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable)}
+     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable[])}
+     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparison, Comparable)}
+     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable, boolean, Comparable, boolean)}
      * </ul>
      *
      * @param timestamp      the time at which the hit-producing operation was

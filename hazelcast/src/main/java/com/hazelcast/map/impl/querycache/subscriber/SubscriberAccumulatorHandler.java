@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static java.lang.String.format;
 class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEventData> {
 
     // if a thread has this permission, that thread can process queues.
-    private static final Queue<Integer> POLL_PERMIT = new ConcurrentLinkedQueue<Integer>();
+    private static final Queue<Integer> POLL_PERMIT = new ConcurrentLinkedQueue<>();
 
     private final int partitionCount;
     private final boolean includeValue;
@@ -47,7 +47,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
     private final AtomicReferenceArray<Queue<Integer>> clearAllRemovedCountHolders;
     private final AtomicReferenceArray<Queue<Integer>> evictAllRemovedCountHolders;
 
-    public SubscriberAccumulatorHandler(boolean includeValue, InternalQueryCache queryCache,
+    SubscriberAccumulatorHandler(boolean includeValue, InternalQueryCache queryCache,
                                         InternalSerializationService serializationService) {
         this.includeValue = includeValue;
         this.queryCache = queryCache;
@@ -57,11 +57,20 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
         this.evictAllRemovedCountHolders = initRemovedCountHolders(partitionCount);
     }
 
+    @Override
+    public void reset() {
+        queryCache.clear();
+        for (int i = 0; i < partitionCount; i++) {
+            clearAllRemovedCountHolders.set(i, new ConcurrentLinkedQueue<>());
+            evictAllRemovedCountHolders.set(i, new ConcurrentLinkedQueue<>());
+        }
+    }
+
     private static AtomicReferenceArray<Queue<Integer>> initRemovedCountHolders(int partitionCount) {
         AtomicReferenceArray<Queue<Integer>> removedCountHolders
-                = new AtomicReferenceArray<Queue<Integer>>(partitionCount + 1);
+                = new AtomicReferenceArray<>(partitionCount + 1);
         for (int i = 0; i < partitionCount; i++) {
-            removedCountHolders.set(i, new ConcurrentLinkedQueue<Integer>());
+            removedCountHolders.set(i, new ConcurrentLinkedQueue<>());
         }
         removedCountHolders.set(partitionCount, POLL_PERMIT);
 
@@ -90,6 +99,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
                 break;
             case REMOVED:
             case EVICTED:
+            case EXPIRED:
                 queryCache.delete(keyData, entryEventType);
                 break;
             case CLEAR_ALL:
@@ -146,7 +156,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
      */
     private boolean noMissingMapWideEvent(AtomicReferenceArray<Queue<Integer>> removedCountHolders) {
         for (int i = 0; i < partitionCount; i++) {
-            if (removedCountHolders.get(i).size() < 1) {
+            if (removedCountHolders.get(i).isEmpty()) {
                 // means we still have not-received map-wide event for this partition
                 return false;
             }

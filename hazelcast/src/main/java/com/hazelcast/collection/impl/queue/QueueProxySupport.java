@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.queue.operations.AddAllOperation;
 import com.hazelcast.collection.impl.queue.operations.ClearOperation;
 import com.hazelcast.collection.impl.queue.operations.CompareAndRemoveOperation;
@@ -33,25 +34,26 @@ import com.hazelcast.collection.impl.queue.operations.SizeOperation;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializableList;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-abstract class QueueProxySupport extends AbstractDistributedObject<QueueService> implements InitializingObject {
+abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueService> implements InitializingObject {
 
     final String name;
     final int partitionId;
@@ -180,7 +182,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         }
     }
 
-    private InternalCompletableFuture invoke(Operation operation) {
+    private InvocationFuture<Object> invoke(Operation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, getPartitionId());
@@ -202,16 +204,21 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         return QueueService.SERVICE_NAME;
     }
 
+    @Nonnull
     @Override
     public final String getName() {
         return name;
     }
 
-    public String addItemListener(ItemListener listener, boolean includeValue) {
+    public @Nonnull
+    UUID addItemListener(@Nonnull ItemListener<E> listener,
+                           boolean includeValue) {
+        checkNotNull(listener, "Null listener is not allowed!");
         return getService().addItemListener(name, listener, includeValue, false);
     }
 
-    public boolean removeItemListener(String registrationId) {
+    public boolean removeItemListener(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "Null registrationId is not allowed!");
         return getService().removeItemListener(name, registrationId);
     }
 }

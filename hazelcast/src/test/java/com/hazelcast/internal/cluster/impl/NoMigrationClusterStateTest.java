@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,19 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +41,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static org.hamcrest.Matchers.empty;
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
     private final NoReplicationService service = new NoReplicationService();
@@ -111,6 +111,29 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             terminateInstance(instances[i]);
         }
+
+        for (int i = MAX_REPLICA_COUNT; i < clusterSize; i++) {
+            assertClusterSizeEventually(clusterSize - MAX_REPLICA_COUNT, instances[i]);
+            assertAllPartitionsAreAssigned(instances[i], 1);
+        }
+    }
+
+    @Test
+    public void lostPartitions_shouldBeAssigned_toAvailableMembers_whenMembersRemovedWhenClusterPASSIVE() {
+        int clusterSize = MAX_REPLICA_COUNT + 3;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance[] instances = factory.newInstances(new Config(), clusterSize);
+        warmUpPartitions(instances);
+        waitAllForSafeState(instances);
+
+        changeClusterStateEventually(instances[1], ClusterState.PASSIVE);
+
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            terminateInstance(instances[i]);
+        }
+
+        changeClusterStateEventually(instances[instances.length - 1], ClusterState.NO_MIGRATION);
 
         for (int i = MAX_REPLICA_COUNT; i < clusterSize; i++) {
             assertClusterSizeEventually(clusterSize - MAX_REPLICA_COUNT, instances[i]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
@@ -31,18 +30,17 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
-import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.core.EntryEventType.ADDED;
@@ -50,12 +48,13 @@ import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 /**
- * Operator for single key processing logic of {@link EntryProcessor}/{@link EntryBackupProcessor} related operations.
+ * Operator for single key processing logic of {@link EntryProcessor} and
+ * backup entry processor related operations.
  */
 public final class EntryOperator {
 
@@ -80,7 +79,7 @@ public final class EntryOperator {
     private final InMemoryFormat inMemoryFormat;
 
     private EntryProcessor entryProcessor;
-    private EntryBackupProcessor backupProcessor;
+    private EntryProcessor backupProcessor;
 
     // these fields can be used to reset this operator
     private Data dataKey;
@@ -117,7 +116,7 @@ public final class EntryOperator {
 
     private void setProcessor(Object processor) {
         if (backup) {
-            backupProcessor = ((EntryBackupProcessor) processor);
+            backupProcessor = ((EntryProcessor) processor);
             entryProcessor = null;
         } else {
             entryProcessor = ((EntryProcessor) processor);
@@ -173,7 +172,7 @@ public final class EntryOperator {
     private EntryOperator operateOnKeyValueInternal(Data dataKey, Object oldValue, Boolean locked) {
         init(dataKey, oldValue, null, null, null);
 
-        Map.Entry entry = createMapEntry(dataKey, oldValue, locked);
+        Entry entry = createMapEntry(dataKey, oldValue, locked);
         if (outOfPredicateScope(entry)) {
             return this;
         }
@@ -249,21 +248,21 @@ public final class EntryOperator {
         return partitionService.getPartitionId(key) != partitionId;
     }
 
-    private boolean outOfPredicateScope(Map.Entry entry) {
+    private boolean outOfPredicateScope(Entry entry) {
         assert entry instanceof QueryableEntry;
 
-        if (predicate == null || predicate == TruePredicate.INSTANCE) {
+        if (predicate == null || predicate == Predicates.alwaysTrue()) {
             return false;
         }
 
-        return predicate == FalsePredicate.INSTANCE || !predicate.apply(entry);
+        return predicate == Predicates.alwaysFalse() || !predicate.apply(entry);
     }
 
-    private Map.Entry createMapEntry(Data key, Object value, Boolean locked) {
+    private Entry createMapEntry(Data key, Object value, Boolean locked) {
         return new LockAwareLazyMapEntry(key, value, ss, mapContainer.getExtractors(), locked);
     }
 
-    private void findModificationType(Map.Entry entry) {
+    private void findModificationType(Entry entry) {
         LazyMapEntry lazyMapEntry = (LazyMapEntry) entry;
 
         if (!lazyMapEntry.isModified()
@@ -309,9 +308,9 @@ public final class EntryOperator {
         return System.nanoTime() - beginTimeNanos;
     }
 
-    private void process(Map.Entry entry) {
+    private void process(Entry entry) {
         if (backup) {
-            backupProcessor.processBackup(entry);
+            backupProcessor.process(entry);
             return;
         }
 

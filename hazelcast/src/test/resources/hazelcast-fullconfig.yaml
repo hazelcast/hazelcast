@@ -1,0 +1,172 @@
+# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A comprehensive example of Hazelcast configuration.
+#
+# Hazelcast resolves configuration using the following approach:
+#
+# 1. First is checks to see if the ’hazelcast.config’ system property is set. If it is, then the value is used as the path.
+#
+#    The config option can be set by adding the following to the java command: -Dhazelcast.config=path_to_the_hazelcast.yaml.
+#
+#    The value can be a normal file path, but can also be a classpath reference if it is prefixed with ’classpath:’.
+#
+# 2. Otherwise it checks if there is a ’hazelcast.yaml’ in the working directory.
+#
+# 3. After that it checks if there is a ’hazelcast.yaml’ in the root of the classpath.
+#
+# 4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
+#    ’hazelcast-default.yaml’, which is included in the the Hazelcast jar
+
+hazelcast:
+
+  import:
+    - hazelcast-fullconfig-without-network.yaml
+
+  network:
+    public-address: dummy
+    port:
+      auto-increment: true
+      port-count: 100
+      port: 5701
+    # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
+    reuse-address: true
+    outbound-ports:
+      - 33000-35000
+      - 37000,37001,37002,37003
+      - 38000,38500-38600
+    join:
+      multicast:
+        enabled: true
+        loopbackModeEnabled: true
+        multicast-group: 1.2.3.4
+        multicast-port: 12345
+        multicast-timeout-seconds: 5
+        multicast-time-to-live: 10
+        trusted-interfaces:
+          - 10.10.1.*
+          - 10.10.2.*
+      tcp-ip:
+        enabled: false
+        connection-timeout-seconds: 123
+        required-member: dummy
+        member: dummy1,dummy2
+        interface: 127.0.0.10
+        members: dummy3,dummy4
+        member-list:
+          - dummy5
+          - dummy6
+      aws:
+        enabled: false
+        access-key: my-access-key
+        secret-key: my-secret-key
+        iam-role: dummy
+        # optional, default is us-east-1
+        region: us-west-1
+        # optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property
+        host-header: ec2.amazonaws.com
+        # optional, only instances belonging to this group will be discovered, default will try all running instances
+        security-group-name: hazelcast-sg
+        tag-key: type
+        tag-value: hz-nodes
+        use-public-ip: true
+      gcp:
+        enabled: false
+        zones: us-east1-b,us-east1-c
+      azure:
+        enabled: false
+        client-id: CLIENT_ID
+        client-secret: CLIENT_SECRET
+        tenant-id: TENANT_ID
+        subscription-id: SUB_ID
+        cluster-id: HZLCAST001
+        group-name: RESOURCE-GROUP-NAME
+      kubernetes:
+        enabled: false
+        namespace: MY-KUBERNETES-NAMESPACE
+        service-name: MY-SERVICE-NAME
+        service-label-name: MY-SERVICE-LABEL-NAME
+        service-label-value: MY-SERVICE-LABEL-VALUE
+      eureka:
+        enabled: false
+        self-registration: true
+        namespace: hazelcast
+    #      discovery-strategies:
+    #        node-filter:
+    #          class: DummyFilterClass
+    #        discovery-strategies:
+    #          - class: DummyClass
+    #            enabled: true
+    #            properties:
+    #              foo: bar
+    interfaces:
+      enabled: true
+      interfaces:
+        - 10.10.1.*
+    ssl:
+      enabled: true
+      factory-class-name: com.hazelcast.examples.MySSLContextFactory
+      properties:
+        foo: bar
+    socket-interceptor:
+      enabled: true
+      class-name: com.hazelcast.examples.MySocketInterceptor
+      properties:
+        foo: bar
+    symmetric-encryption:
+      enabled: false
+      #   encryption algorithm such as
+      #   DES/ECB/PKCS5Padding,
+      #   PBEWithMD5AndDES,
+      #   AES/CBC/PKCS5Padding,
+      #   Blowfish,
+      #   DESede
+      algorithm: PBEWithMD5AndDES
+      # salt value to use when generating the secret key
+      salt: thesalt
+      # pass phrase to use when generating the secret key
+      password: thepass
+      # iteration count to use when generating the secret key
+      iteration-count: 19
+    member-address-provider:
+      enabled: false
+      class-name: DummyMemberAddressProvider
+      properties:
+        foo: bar
+    failure-detector:
+      icmp:
+        enabled: false
+        timeout-milliseconds: 1000
+        fail-fast-on-startup: true
+        interval-milliseconds: 1000
+        max-attempts: 2
+        parallel-mode: true
+        ttl: 255
+    rest-api:
+      enabled: true
+      endpoint-groups:
+        CLUSTER_READ:
+          enabled: true
+        CLUSTER_WRITE:
+          enabled: true
+        DATA:
+          enabled: true
+        HEALTH_CHECK:
+          enabled: true
+        HOT_RESTART:
+          enabled: true
+        WAN:
+          enabled: true
+    memcache-protocol:
+      enabled: true

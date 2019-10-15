@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,123 +16,134 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalMapStatsTest extends HazelcastTestSupport {
 
+    static final int OPERATION_COUNT = 10;
+
+    HazelcastInstance instance;
+    private String mapName = "mapName";
+
+    @Before
+    public void setUp() {
+        instance = createHazelcastInstance(getConfig());
+    }
+
+    protected LocalMapStats getMapStats() {
+        return instance.getMap(mapName).getLocalMapStats();
+    }
+
+    protected <K, V> IMap<K, V> getMap() {
+        warmUpPartitions(instance);
+        return instance.getMap(mapName);
+    }
+
     @Test
-    public void testHitsGenerated() throws Exception {
+    public void testHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getHits());
     }
 
     @Test
-    public void testPutAndHitsGenerated() throws Exception {
+    public void testPutAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getPutOperationCount());
         assertEquals(100, localMapStats.getHits());
     }
 
     @Test
-    public void testPutAsync() throws Exception {
+    public void testPutIfAbsentAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.putIfAbsent(i, i);
+            map.get(i);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(100, localMapStats.getPutOperationCount());
+        assertEquals(100, localMapStats.getHits());
+    }
+
+    @Test
+    public void testPutAsync() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.putAsync(i, i);
         }
-        final LocalMapStats localMapStats = map.getLocalMapStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(100, localMapStats.getPutOperationCount());
-            }
-        });
+        final LocalMapStats localMapStats = getMapStats();
+        assertTrueEventually(() -> assertEquals(100, localMapStats.getPutOperationCount()));
     }
 
     @Test
-    public void testGetAndHitsGenerated() throws Exception {
+    public void testGetAndHitsGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getGetOperationCount());
         assertEquals(100, localMapStats.getHits());
     }
 
     @Test
-    public void testPutAllGenerated() throws Exception {
+    public void testPutAllGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
-            Map<Integer, Integer> putMap = new HashMap<Integer, Integer>(2);
+            Map<Integer, Integer> putMap = new HashMap<>(2);
             putMap.put(i, i);
             putMap.put(100 + i, 100 + i);
             map.putAll(putMap);
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(200, localMapStats.getPutOperationCount());
     }
 
     @Test
-    public void testGetAllGenerated() throws Exception {
+    public void testGetAllGenerated() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 200; i++) {
             map.put(i, i);
         }
         for (int i = 0; i < 100; i++) {
-            Set<Integer> keys = new HashSet<Integer>();
+            Set<Integer> keys = new HashSet<>();
             keys.add(i);
             keys.add(100 + i);
             map.getAll(keys);
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(200, localMapStats.getGetOperationCount());
     }
 
@@ -141,77 +152,182 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
-            map.getAsync(i).get();
+            map.getAsync(i).toCompletableFuture().get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                final LocalMapStats localMapStats = map.getLocalMapStats();
-                assertEquals(100, localMapStats.getGetOperationCount());
-                assertEquals(100, localMapStats.getHits());
-            }
+        assertTrueEventually(() -> {
+            final LocalMapStats localMapStats = getMapStats();
+            assertEquals(100, localMapStats.getGetOperationCount());
+            assertEquals(100, localMapStats.getHits());
         });
     }
 
     @Test
-    public void testRemove() throws Exception {
+    public void testDelete() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            map.delete(i);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(100, localMapStats.getRemoveOperationCount());
+    }
+
+    @Test
+    public void testSet() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.set(i, i);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(0, localMapStats.getPutOperationCount());
+        assertEquals(100, localMapStats.getSetOperationCount());
+        assertEquals(0, localMapStats.getHits());
+        assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+        assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
+    }
+
+    @Test
+    public void testSetAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.set(i, i);
+            map.set(i, i);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(0, localMapStats.getPutOperationCount());
+        assertEquals(200, localMapStats.getSetOperationCount());
+        assertEquals(100, localMapStats.getHits());
+        assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+        assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
+    }
+
+    @Test
+    public void testSetWithTtlAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.set(i, i, 1, TimeUnit.MINUTES);
+            map.set(i, i, 1, TimeUnit.MINUTES);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(0, localMapStats.getPutOperationCount());
+        assertEquals(200, localMapStats.getSetOperationCount());
+        assertEquals(100, localMapStats.getHits());
+        assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+        assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
+    }
+
+    @Test
+    public void testSetWithTtlAndMaxIdleAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.set(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+            map.set(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(0, localMapStats.getPutOperationCount());
+        assertEquals(200, localMapStats.getSetOperationCount());
+        assertEquals(100, localMapStats.getHits());
+        assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+        assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
+    }
+
+    @Test
+    public void testSetAsyncAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 130; i++) {
+            map.setAsync(i, i);
+            map.setAsync(i, i);
+        }
+
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = getMapStats();
+            assertEquals(0, localMapStats.getPutOperationCount());
+            assertEquals(260, localMapStats.getSetOperationCount());
+            assertEquals(130, localMapStats.getHits());
+            assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+            assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
+        });
+    }
+
+    @Test
+    public void testSetAsyncWithTtlAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 57; i++) {
+            map.setAsync(i, i, 1, TimeUnit.MINUTES);
+            map.setAsync(i, i, 1, TimeUnit.MINUTES);
+        }
+
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = getMapStats();
+            assertEquals(0, localMapStats.getPutOperationCount());
+            assertEquals(114, localMapStats.getSetOperationCount());
+            assertEquals(57, localMapStats.getHits());
+            assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+            assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
+        });
+    }
+
+    @Test
+    public void testSetAsyncWithTtlAndMaxIdleAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.setAsync(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+            map.setAsync(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+        }
+
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = getMapStats();
+            assertEquals(0, localMapStats.getPutOperationCount());
+            assertEquals(200, localMapStats.getSetOperationCount());
+            assertEquals(100, localMapStats.getHits());
+            assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+            assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
+        });
+    }
+
+    @Test
+    public void testRemove() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.remove(i);
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getRemoveOperationCount());
     }
 
     @Test
-    public void testRemoveAsync() throws Exception {
+    public void testRemoveAsync() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.removeAsync(i);
         }
-        final LocalMapStats localMapStats = map.getLocalMapStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(100, localMapStats.getRemoveOperationCount());
-            }
-        });
+        final LocalMapStats localMapStats = getMapStats();
+        assertTrueEventually(() -> assertEquals(100, localMapStats.getRemoveOperationCount()));
     }
 
     @Test
-    public void testHitsGenerated_updatedConcurrently() throws Exception {
+    public void testHitsGenerated_updatedConcurrently() {
         final IMap<Integer, Integer> map = getMap();
         final int actionCount = 100;
         for (int i = 0; i < actionCount; i++) {
             map.put(i, i);
             map.get(i);
         }
-        final LocalMapStats localMapStats = map.getLocalMapStats();
+        final LocalMapStats localMapStats = getMapStats();
         final long initialHits = localMapStats.getHits();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < actionCount; i++) {
-                    map.get(i);
-                }
-                map.getLocalMapStats(); // causes the local stats object to update
+        new Thread(() -> {
+            for (int i = 0; i < actionCount; i++) {
+                map.get(i);
             }
+            getMapStats(); // causes the local stats object to update
         }).start();
 
         assertEquals(actionCount, initialHits);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(actionCount * 2, localMapStats.getHits());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(actionCount * 2, localMapStats.getHits()));
     }
 
     @Test
@@ -224,17 +340,17 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         map.put(key, "value");
         map.get(key);
 
-        long lastAccessTime = map.getLocalMapStats().getLastAccessTime();
+        long lastAccessTime = getMapStats().getLastAccessTime();
         assertTrue(lastAccessTime >= startTime);
 
         Thread.sleep(5);
         map.put(key, "value2");
-        long lastAccessTime2 = map.getLocalMapStats().getLastAccessTime();
+        long lastAccessTime2 = getMapStats().getLastAccessTime();
         assertTrue(lastAccessTime2 > lastAccessTime);
     }
 
     @Test
-    public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
+    public void testLastAccessTime_updatedConcurrently() {
         final long startTime = Clock.currentTimeMillis();
         final IMap<String, String> map = getMap();
 
@@ -242,199 +358,172 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         map.put(key, "value");
         map.put(key, "value");
 
-        final LocalMapStats localMapStats = map.getLocalMapStats();
+        final LocalMapStats localMapStats = getMapStats();
         final long lastUpdateTime = localMapStats.getLastUpdateTime();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                sleepAtLeastMillis(1);
-                map.put(key, "value2");
-                map.getLocalMapStats(); // causes the local stats object to update
-            }
+        new Thread(() -> {
+            sleepAtLeastMillis(1);
+            map.put(key, "value2");
+            getMapStats(); // causes the local stats object to update
         }).start();
 
         assertTrue(lastUpdateTime >= startTime);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(localMapStats.getLastUpdateTime() > lastUpdateTime);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(localMapStats.getLastUpdateTime() > lastUpdateTime));
     }
 
     @Test
-    public void testEvictAll() throws Exception {
+    public void testEvictAll() {
         IMap<String, String> map = getMap();
         map.put("key", "value");
         map.evictAll();
 
-        final long heapCost = map.getLocalMapStats().getHeapCost();
+        final long heapCost = getMapStats().getHeapCost();
 
         assertEquals(0L, heapCost);
     }
 
+
     @Test
-    public void testHits_whenMultipleNodes() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(getConfig());
-        MultiMap<Object, Object> multiMap0 = instances[0].getMultiMap("testHits_whenMultipleNodes");
-        MultiMap<Object, Object> multiMap1 = instances[1].getMultiMap("testHits_whenMultipleNodes");
+    public void testOtherOperationCount_containsKey() {
+        Map map = getMap();
 
-        // InternalPartitionService is used in order to determine owners of these keys that we will use.
-        InternalPartitionService partitionService = getNode(instances[0]).getPartitionService();
-        Address address = partitionService.getPartitionOwner(partitionService.getPartitionId("test1"));
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.containsKey(i);
+        }
 
-        boolean inFirstInstance = address.equals(getNode(instances[0]).getThisAddress());
-        multiMap0.get("test0");
-
-        multiMap0.put("test1", 1);
-        multiMap1.get("test1");
-
-        assertEquals(inFirstInstance ? 1 : 0, multiMap0.getLocalMultiMapStats().getHits());
-        assertEquals(inFirstInstance ? 0 : 1, multiMap1.getLocalMultiMapStats().getHits());
-
-        multiMap0.get("test1");
-        multiMap1.get("test1");
-        assertEquals(inFirstInstance ? 0 : 3, multiMap1.getLocalMultiMapStats().getHits());
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
-    public void testPutStats_afterPutAll() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(getConfig());
-        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-        for (int i = 1; i <= 5000; i++) {
-            map.put(i, i);
+    public void testOtherOperationCount_entrySet() {
+        Map map = getMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.entrySet();
         }
 
-        IMap<Integer, Integer> iMap = instances[0].getMap("example");
-        iMap.putAll(map);
-        final LocalMapStats localMapStats = iMap.getLocalMapStats();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(5000, localMapStats.getPutOperationCount());
-            }
-        });
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
-    public void testLocalMapStats_withMemberGroups() throws Exception {
-        final String mapName = randomMapName();
-        final String[] firstMemberGroup = {"127.0.0.1", "127.0.0.2"};
-        final String[] secondMemberGroup = {"127.0.0.3"};
+    public void testOtherOperationCount_keySet() {
+        Map map = getMap();
 
-        final Config config = createConfig(mapName, firstMemberGroup, secondMemberGroup);
-        final String[] addressArray = concatenateArrays(firstMemberGroup, secondMemberGroup);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.keySet();
+        }
 
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(addressArray);
-        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
-        final HazelcastInstance node3 = factory.newHazelcastInstance(config);
-
-        final IMap<Object, Object> test = node3.getMap(mapName);
-        test.put(1, 1);
-
-        assertBackupEntryCount(1, mapName, factory.getAllHazelcastInstances());
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
-    public void testLocalMapStats_preservedAfterEviction() {
-        String mapName = randomMapName();
-        Config config = new Config();
-        config.getProperties().setProperty(GroupProperty.PARTITION_COUNT.getName(), "5");
-        MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
-        maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
-        maxSizeConfig.setSize(25);
+    public void testOtherOperationCount_localKeySet() {
+        Map map = getMap();
 
-        HazelcastInstance instance = createHazelcastInstance(config);
-        IMap<Object, Object> map = instance.getMap(mapName);
-        final CountDownLatch entryEvictedLatch = new CountDownLatch(700);
-        map.addEntryListener(new EntryEvictedListener() {
-            @Override
-            public void entryEvicted(EntryEvent event) {
-                entryEvictedLatch.countDown();
-            }
-        }, true);
-        for (int i = 0; i < 1000; i++) {
-            map.put(i, i);
-            assertEquals(i, map.get(i));
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            ((IMap) map).localKeySet();
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
-        assertEquals(1000, localMapStats.getHits());
-        assertEquals(1000, localMapStats.getPutOperationCount());
-        assertEquals(1000, localMapStats.getGetOperationCount());
-        assertOpenEventually(entryEvictedLatch);
-        localMapStats = map.getLocalMapStats();
-        assertEquals(1000, localMapStats.getHits());
-        assertEquals(1000, localMapStats.getPutOperationCount());
-        assertEquals(1000, localMapStats.getGetOperationCount());
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
-    private void assertBackupEntryCount(final long expectedBackupEntryCount, final String mapName,
-                                        final Collection<HazelcastInstance> nodes) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long backup = 0;
-                for (HazelcastInstance node : nodes) {
-                    final IMap<Object, Object> map = node.getMap(mapName);
-                    backup += getBackupEntryCount(map);
-                }
-                assertEquals(expectedBackupEntryCount, backup);
-            }
-        });
-    }
+    @Test
+    public void testOtherOperationCount_values() {
+        Map map = getMap();
 
-    private long getBackupEntryCount(IMap<Object, Object> map) {
-        final LocalMapStats localMapStats = map.getLocalMapStats();
-        return localMapStats.getBackupEntryCount();
-    }
-
-    private String[] concatenateArrays(String[]... arrays) {
-        int len = 0;
-        for (String[] array : arrays) {
-            len += array.length;
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.values();
         }
-        String[] result = new String[len];
-        int destPos = 0;
-        for (String[] array : arrays) {
-            System.arraycopy(array, 0, result, destPos, array.length);
-            destPos += array.length;
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
+    }
+
+
+    @Test
+    public void testOtherOperationCount_valuesWithPredicate() {
+        Map map = getMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+
+            ((IMap) map).values(Predicates.lessThan("this", 0));
         }
-        return result;
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
-    private Config createConfig(String mapName, String[] firstGroup, String[] secondGroup) {
-        final MemberGroupConfig firstGroupConfig = createGroupConfig(firstGroup);
-        final MemberGroupConfig secondGroupConfig = createGroupConfig(secondGroup);
+    @Test
+    public void testOtherOperationCount_clear() {
+        Map map = getMap();
 
-        Config config = getConfig();
-        config.getPartitionGroupConfig().setEnabled(true)
-                .setGroupType(PartitionGroupConfig.MemberGroupType.CUSTOM);
-        config.getPartitionGroupConfig().addMemberGroupConfig(firstGroupConfig);
-        config.getPartitionGroupConfig().addMemberGroupConfig(secondGroupConfig);
-        config.getNetworkConfig().getInterfaces().addInterface("127.0.0.*");
-
-        config.getMapConfig(mapName).setBackupCount(2);
-
-        return config;
-    }
-
-    private MemberGroupConfig createGroupConfig(String[] addressArray) {
-        final MemberGroupConfig memberGroupConfig = new MemberGroupConfig();
-        for (String address : addressArray) {
-            memberGroupConfig.addInterface(address);
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.clear();
         }
-        return memberGroupConfig;
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
-    private <K, V> IMap<K, V> getMap() {
-        HazelcastInstance instance = createHazelcastInstance(getConfig());
-        return instance.getMap(randomString());
+    @Test
+    public void testOtherOperationCount_containsValue() {
+        Map map = getMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.containsValue(1);
+        }
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_isEmpty() {
+        Map map = getMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.isEmpty();
+        }
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_size() {
+        Map map = getMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.size();
+        }
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testLockedEntryCount_emptyMap() {
+        IMap<String, String> map = getMap();
+
+        map.lock("non-existent-key");
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(1, stats.getLockedEntryCount());
+    }
+
+    @Test
+    public void testLockedEntryCount_mapWithOneEntry() {
+        IMap<String, String> map = getMap();
+
+        map.put("key", "value");
+        map.lock("key");
+        map.lock("non-existent-key");
+
+        LocalMapStats stats = getMapStats();
+        assertEquals(2, stats.getLockedEntryCount());
     }
 }

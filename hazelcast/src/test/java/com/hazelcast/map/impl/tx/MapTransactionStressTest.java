@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalMultiMap;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.map.IMap;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -282,16 +282,16 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void rollbackTransaction(String transactionId) {
+        public void rollbackTransaction(UUID transactionId) {
         }
 
         @Override
-        public DistributedObject createDistributedObject(String objectName) {
+        public DistributedObject createDistributedObject(String objectName, boolean local) {
             return new DummyTransactionalObject(serviceName, objectName, null);
         }
 
         @Override
-        public void destroyDistributedObject(String objectName) {
+        public void destroyDistributedObject(String objectName, boolean local) {
         }
     }
 
@@ -393,7 +393,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return 0;
         }
     }

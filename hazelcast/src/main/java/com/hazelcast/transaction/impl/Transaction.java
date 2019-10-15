@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 
+import java.util.UUID;
+
 public interface Transaction {
 
     void begin() throws IllegalStateException;
@@ -29,7 +31,7 @@ public interface Transaction {
 
     void rollback() throws IllegalStateException;
 
-    String getTxnId();
+    UUID getTxnId();
 
     State getState();
 
@@ -41,7 +43,7 @@ public interface Transaction {
 
     TransactionLogRecord get(Object key);
 
-    String getOwnerUuid();
+    UUID getOwnerUuid();
 
     boolean isOriginatedFromClient();
 

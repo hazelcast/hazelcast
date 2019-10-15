@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.mockito.invocation.InvocationOnMock;
 
 /**
  * Default {@link org.mockito.stubbing.Answer} to create a mock for a proxied
- * {@link com.hazelcast.nio.tcp.FirewallingConnectionManager}.
+ * {@link com.hazelcast.internal.nio.tcp.FirewallingConnectionManager}.
  */
 class FirewallingConnectionManagerAnswer extends AbstractAnswer {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Properties;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Configuration for Login Module
@@ -75,15 +75,6 @@ public class LoginModuleConfig {
         return className;
     }
 
-    @Deprecated
-    /**
-     * @deprecated Not supported, to be removed in 4.0. Use {@link #getClassName()} instead
-     * @since 3.9
-     */
-    public Object getImplementation() {
-        throw new UnsupportedOperationException("Deprecated operation. Use getClassName instead.");
-    }
-
     public Properties getProperties() {
         return properties;
     }
@@ -95,15 +86,6 @@ public class LoginModuleConfig {
     public LoginModuleConfig setClassName(String className) {
         this.className = className;
         return this;
-    }
-
-    @Deprecated
-    /**
-     * @deprecated Not supported, to be removed in 4.0. User {@link #setClassName(String)} instead
-     * @since 3.9
-     */
-    public LoginModuleConfig setImplementation(Object implementation) {
-        throw new UnsupportedOperationException("Deprecated operation. Use setClassName instead.");
     }
 
     public LoginModuleConfig setUsage(LoginModuleUsage usage) {

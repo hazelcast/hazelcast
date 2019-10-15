@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -48,15 +48,15 @@ import static java.util.Arrays.asList;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction in arrays ONLY.
- * <p/>
+ * <p>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p/>
+ * <p>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing
  */
 @RunWith(Parameterized.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractionInArraySpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",

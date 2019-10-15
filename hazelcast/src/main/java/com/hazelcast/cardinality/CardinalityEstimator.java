@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.cardinality;
 
+import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.annotation.Beta;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * CardinalityEstimator is a redundant and highly available distributed data-structure used
@@ -27,9 +28,8 @@ import com.hazelcast.spi.annotation.Beta;
  * CardinalityEstimator is internally based on a HyperLogLog++ data-structure,
  * and uses P^2 byte registers for storage and computation. (Default P = 14)
  * <p>
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in cluster versions 3.10 and higher.
  */
-@Beta
 public interface CardinalityEstimator extends DistributedObject {
 
     /**
@@ -61,61 +61,57 @@ public interface CardinalityEstimator extends DistributedObject {
      * Objects are considered identical if they are serialized into the same binary blob.
      * In other words: It does <strong>not</strong> use Java equality.
      * <p>
-     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a {@link CompletionStage}.
      * The operations result can be obtained in a blocking way, or a
      * callback can be provided for execution upon completion, as demonstrated in the following examples:
      * <pre>
-     *     ICompletableFuture&lt;Void&gt; future = estimator.addAsync();
+     *     CompletionStage&lt;Void&gt; stage = estimator.addAsync();
      *     // do something else, then read the result
-     *     Boolean result = future.get(); // this method will block until the result is available
+     *     Boolean result = stage.toCompletableFuture().get(); // this method will block until the result is available
      * </pre>
      * <pre>
-     *     ICompletableFuture&lt;Void&gt; future = estimator.addAsync();
-     *     future.andThen(new ExecutionCallback&lt;Void&gt;() {
-     *          void onResponse(Void response) {
+     *     CompletionStage&lt;Void&gt; stage = estimator.addAsync();
+     *     stage.whenCompleteAsync((response, throwable) -> {
+     *          if (throwable == null) {
      *              // do something
-     *          }
-     *
-     *          void onFailure(Throwable t) {
+     *          } else {
      *              // handle failure
      *          }
      *     });
      * </pre>
      *
      * @param obj object to add in the estimation set.
-     * @return an {@link ICompletableFuture} API consumers can use to track execution of this request.
+     * @return a {@link CompletionStage} API consumers can use to chain further computation stages
      * @throws NullPointerException if obj is null
      * @since 3.8
      */
-    ICompletableFuture<Void> addAsync(Object obj);
+    CompletionStage<Void> addAsync(Object obj);
 
     /**
      * Estimates the cardinality of the aggregation so far.
      * If it was previously estimated and never invalidated, then a cached version is used.
      * <p>
-     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a {@link CompletionStage}.
      * The operations result can be obtained in a blocking way, or a
      * callback can be provided for execution upon completion, as demonstrated in the following examples:
      * <pre>
-     *     ICompletableFuture&lt;Long&gt; future = estimator.estimateAsync();
+     *     CompletionStage&lt;Long&gt; stage = estimator.estimateAsync();
      *     // do something else, then read the result
-     *     Long result = future.get(); // this method will block until the result is available
+     *     Long result = stage.toCompletableFuture().get(); // this method will block until the result is available
      * </pre>
      * <pre>
-     *     ICompletableFuture&lt;Long&gt; future = estimator.estimateAsync();
-     *     future.andThen(new ExecutionCallback&lt;Long&gt;() {
-     *          void onResponse(Long response) {
+     *     CompletionStage&lt;Long&gt; stage = estimator.estimateAsync();
+     *     stage.whenCompleteAsync((response, throwable) -> {
+     *          if (throwable == null) {
      *              // do something with the result
-     *          }
-     *
-     *          void onFailure(Throwable t) {
+     *          } else {
      *              // handle failure
      *          }
      *     });
      * </pre>
      *
-     * @return {@link ICompletableFuture} bearing the response, the estimate.
+     * @return {@link CompletionStage} bearing the response, the estimate.
      * @since 3.8
      */
-    ICompletableFuture<Long> estimateAsync();
+    CompletionStage<Long> estimateAsync();
 }

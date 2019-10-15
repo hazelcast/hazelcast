@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl;
 
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
@@ -40,7 +41,7 @@ public abstract class AbstractCollectionBackupTest extends HazelcastTestSupport 
     protected Config config = new Config();
 
     /**
-     * Returns an instance of a Hazelcast collection, e.g. {@link com.hazelcast.core.ISet}.
+     * Returns an instance of a Hazelcast collection, e.g. {@link ISet}.
      *
      * @param instance the {@link HazelcastInstance} to retrieve the collection from
      * @param name     the name of the collection

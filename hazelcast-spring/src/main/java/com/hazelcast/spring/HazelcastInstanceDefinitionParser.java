@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,17 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 
 /**
  * BeanDefinitionParser for Hazelcast Instance Configuration.
@@ -30,7 +35,7 @@ import org.w3c.dom.Node;
  * <pre>{@code
  * <hz:hazelcast id="instance">
  *      <hz:config>
- *          <hz:group name="dev" password="password"/>
+ *          <hz:cluster-name>dev</hz:cluster-name>
  *          <hz:network port="5701" port-auto-increment="false">
  *              <hz:join>
  *                  <hz:multicast enabled="false" multicast-group="224.2.2.3" multicast-port="54327"/>
@@ -39,14 +44,16 @@ import org.w3c.dom.Node;
  *                   </hz:tcp-ip>
  *              </hz:join>
  *          </hz:network>
- *          <hz:map name="map" backup-count="2" max-size="0" eviction-percentage="30"
- *              read-backup-data="true" eviction-policy="NONE"
- *          merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/>
+ *          <hz:map name="map" backup-count="2" max-size="0"
+ *             read-backup-data="true" eviction-policy="NONE"
+ *          merge-policy="com.hazelcast.spi.merge.PassThroughMergePolicy"/>
  *      </hz:config>
  * </hz:hazelcast>
  * }</pre>
  */
 public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
+
+    static final String CP_SUBSYSTEM_SUFFIX = "@cp-subsystem";
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -83,6 +90,18 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
             HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
             AbstractBeanDefinition configBeanDef = configParser.parseInternal(config, parserContext);
             builder.addConstructorArgValue(configBeanDef);
+
+            registerCPSubsystemBean(element);
+        }
+
+        private void registerCPSubsystemBean(Element element) {
+            String instanceBeanRef = element.getAttribute("id");
+            BeanDefinitionBuilder cpBeanDefBuilder = BeanDefinitionBuilder.rootBeanDefinition(CPSubsystem.class);
+            cpBeanDefBuilder.setFactoryMethodOnBean("getCPSubsystem", instanceBeanRef);
+
+            BeanDefinitionHolder holder =
+                    new BeanDefinitionHolder(cpBeanDefBuilder.getBeanDefinition(), instanceBeanRef + CP_SUBSYSTEM_SUFFIX);
+            registerBeanDefinition(holder, parserContext.getRegistry());
         }
     }
 }

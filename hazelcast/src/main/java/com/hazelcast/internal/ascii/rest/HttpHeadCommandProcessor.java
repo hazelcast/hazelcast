@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -39,6 +39,8 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
             command.send200();
         } else if (uri.startsWith(URI_QUEUES)) {
             command.send200();
+        } else if (uri.startsWith(URI_INSTANCE)) {
+            command.send200();
         } else if (uri.startsWith(URI_CLUSTER)) {
             command.send200();
         } else if (uri.equals(URI_HEALTH_URL)) {
@@ -46,7 +48,7 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
         } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
             command.send200();
         } else {
-            command.send400();
+            command.send404();
         }
         textCommandService.sendResponse(command);
     }

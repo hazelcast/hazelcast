@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.ENABLED;
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.LOG_PARTITIONS;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -118,7 +118,6 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
             @Override
             public void run() {
                 plugin.run(logWriter);
-                assertContains("MigrationStarted");
                 assertContains("MigrationCompleted");
             }
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.journal;
 
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.internal.services.ObjectNamespace;
 
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +31,8 @@ public interface EventJournalDataStructureAdapter<K, V, EJ_TYPE> extends EventJo
     V put(K key, V value);
 
     V put(K key, V value, long ttl, TimeUnit timeunit);
+
+    void putAll(Map<K, V> map);
 
     void load(K key);
 

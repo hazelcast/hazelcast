@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ package com.hazelcast.internal.networking;
  * ChannelHandlers are not expected to be thread-safe.
  *
  * @param <S> the type of the source. E.g. a ByteBuffer or
- *            a {@link com.hazelcast.util.function.Supplier}.
+ *            a {@link java.util.function.Supplier}.
  * @param <D> the type of the destination. E.g. a ByteBuffer
- *            or a {@link com.hazelcast.util.function.Consumer}.
+ *            or a {@link java.util.function.Consumer}.
  */
 public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
 
@@ -132,20 +132,5 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
      * @throws Throwable the new Throwable
      */
     public void interceptError(Throwable error) throws Throwable {
-    }
-
-    /**
-     * Asks handler to trigger the closing process.
-     *
-     * Only has meaning currently for TLS. Probably this method will be replaced
-     * by some kind of general purpose event handler. An event can be thrown
-     * in the pipeline and will be pushed through each handler and it is up
-     * to the handler to respond (or not). SO we could have a close event, but
-     * also other events like handlers sending messages to each other which requires
-     * custom exchange logic currently.
-     *
-     * @throws Exception
-     */
-    public void requestClose() throws Exception {
     }
 }

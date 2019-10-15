@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -30,7 +30,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -48,7 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
     @Rule
@@ -56,22 +57,22 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void multiAttribute_attributeNull() {
-        Projections.<Map.Entry<String, Person>>multiAttribute(null);
+        Projections.multiAttribute((String) null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void multiAttribute_attributeEmpty() {
-        Projections.<Map.Entry<String, Person>>multiAttribute("");
+        Projections.multiAttribute("");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void multiAttribute_attributeNullWithOther() {
-        Projections.<Map.Entry<String, Person>>multiAttribute("age", null, "height");
+        Projections.multiAttribute("age", null, "height");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void multiAttribute_attributeEmptyWithOther() {
-        Projections.<Map.Entry<String, Person>>multiAttribute("age", "", "height");
+        Projections.multiAttribute("age", "", "height");
     }
 
     @Test
@@ -79,7 +80,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
         IMap<String, Person> map = getMapWithNodeCount();
         populateMapWithPersons(map);
 
-        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("age", "height"));
+        Collection<Object[]> result = map.project(Projections.multiAttribute("age", "height"));
         assertThat(result, containsInAnyOrder(new Object[]{1.0d, 190}, new Object[]{4.0d, 123}));
     }
 
@@ -87,7 +88,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
     public void multiAttribute_emptyMap() {
         IMap<String, Person> map = getMapWithNodeCount();
 
-        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("age", "height"));
+        Collection<Object[]> result = map.project(Projections.multiAttribute("age", "height"));
 
         assertEquals(0, result.size());
     }
@@ -97,7 +98,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
         IMap<String, Person> map = getMapWithNodeCount();
         populateMapWithPersons(map);
 
-        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("__key"));
+        Collection<Object[]> result = map.project(Projections.multiAttribute("__key"));
 
         assertThat(result, containsInAnyOrder(new Object[]{"key1"}, new Object[]{"key2"}));
     }
@@ -108,7 +109,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
         map.put("key1", 1);
         map.put("key2", 2);
 
-        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Integer>>multiAttribute("this"));
+        Collection<Object[]> result = map.project(Projections.multiAttribute("this"));
 
         assertThat(result, containsInAnyOrder(new Object[]{1}, new Object[]{2}));
     }
@@ -119,7 +120,18 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
         map.put("key1", new Person(1.0d, null));
         map.put("007", new Person(null, 144));
 
-        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("age", "height"));
+        Collection<Object[]> result = map.project(Projections.multiAttribute("age", "height"));
+
+        assertThat(result, containsInAnyOrder(new Object[]{1.0d, null}, new Object[]{null, 144}));
+    }
+
+    @Test
+    public void multiAttribute_optional() {
+        IMap<String, Person> map = getMapWithNodeCount();
+        map.put("key1", new Person(1.0d, null));
+        map.put("007", new Person(null, 144));
+
+        Collection<Object[]> result = map.project(Projections.multiAttribute("optionalAge", "optionalHeight"));
 
         assertThat(result, containsInAnyOrder(new Object[]{1.0d, null}, new Object[]{null, 144}));
     }
@@ -179,5 +191,17 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
             age = in.readObject();
             height = in.readObject();
         }
+
+        @SuppressWarnings("unused")
+        public Optional<Double> optionalAge() {
+            return Optional.ofNullable(age);
+        }
+
+        @SuppressWarnings("unused")
+        public Optional<Integer> optionalHeight() {
+            return Optional.ofNullable(height);
+        }
+
     }
+
 }

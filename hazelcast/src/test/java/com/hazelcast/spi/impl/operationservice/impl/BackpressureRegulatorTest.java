@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressure;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BackpressureRegulatorTest extends HazelcastTestSupport {
 
     private static final int SYNC_WINDOW = 100;
@@ -53,6 +54,15 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         logger = mock(ILogger.class);
+    }
+
+    @Test
+    public void testWriteThroughDoesntEnableBackPressure() {
+        Config config = new Config();
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        BackpressureRegulator regulator = new BackpressureRegulator(hazelcastProperties, logger);
+        CallIdSequence callIdSequence = regulator.newCallIdSequence(ConcurrencyDetection.createEnabled(1000));
+        assertEquals(Integer.MAX_VALUE, callIdSequence.getMaxConcurrentInvocations());
     }
 
     @Test
@@ -74,7 +84,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConstruction_OneSyncWindow_syncOnEveryCall() {
+    public void testConstruction_OneSyncWindowB_syncOnEveryCall() {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "true");
         config.setProperty(BACKPRESSURE_SYNCWINDOW.getName(), "1");
@@ -95,7 +105,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
         BackpressureRegulator backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
 
-        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
+        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence(ConcurrencyDetection.createEnabled(100));
 
         assertInstanceOf(CallIdSequenceWithBackpressure.class, callIdSequence);
         assertEquals(backpressureRegulator.getMaxConcurrentInvocations(), callIdSequence.getMaxConcurrentInvocations());
@@ -108,7 +118,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
         BackpressureRegulator backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
 
-        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
+        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence(ConcurrencyDetection.createDisabled());
 
         assertInstanceOf(CallIdSequenceWithoutBackpressure.class, callIdSequence);
     }
@@ -216,7 +226,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
 
     private class PartitionSpecificOperation extends Operation implements PartitionAwareOperation, BackupAwareOperation {
 
-        public PartitionSpecificOperation(int partitionId) {
+        PartitionSpecificOperation(int partitionId) {
             setPartitionId(partitionId);
         }
 
@@ -247,7 +257,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
 
     private class GenericOperation extends Operation implements BackupAwareOperation {
 
-        public GenericOperation() {
+        GenericOperation() {
             setPartitionId(-1);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
         private volatile long produced;
 
-        public ProduceThread() {
+        ProduceThread() {
             super("ProduceThread");
         }
 
@@ -181,7 +181,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         private void addAll(List<Long> items) throws Exception {
             long sleepMs = 100;
             for (; ; ) {
-                long result = ringbuffer.addAllAsync(items, FAIL).get();
+                long result = ringbuffer.addAllAsync(items, FAIL).toCompletableFuture().get();
                 if (result != -1) {
                     break;
                 }
@@ -223,7 +223,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                 ReadResultSet<Long> result = null;
                 while (result == null) {
                     try {
-                        result = ringbuffer.readManyAsync(seq, 1, max, null).get();
+                        result = ringbuffer.readManyAsync(seq, 1, max, null).toCompletableFuture().get();
                     } catch (ExecutionException e) {
                         if (e.getCause() instanceof StaleSequenceException) {
                             // this consumer is used in a stress test and can fall behind the producer if it gets delayed

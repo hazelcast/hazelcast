@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,34 +18,38 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.net.UnknownHostException;
+import java.security.Permission;
 
 public class ExecutorServiceCancelOnAddressMessageTask
-        extends AbstractExecutorServiceCancelMessageTask<ExecutorServiceCancelOnAddressCodec.RequestParameters> {
+        extends AbstractAddressMessageTask<ExecutorServiceCancelOnAddressCodec.RequestParameters> {
 
     public ExecutorServiceCancelOnAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder createInvocationBuilder() throws UnknownHostException {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        final String serviceName = DistributedExecutorService.SERVICE_NAME;
-        CancellationOperation op = new CancellationOperation(parameters.uuid, parameters.interrupt);
-        return operationService.createInvocationBuilder(serviceName, op, parameters.address);
+    protected Operation prepareOperation() {
+        return new CancellationOperation(parameters.uuid, parameters.interrupt);
     }
 
+    @Override
+    protected Address getAddress() {
+        return parameters.address;
+    }
 
     @Override
     protected ExecutorServiceCancelOnAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ExecutorServiceCancelOnAddressCodec.decodeRequest(clientMessage);
+        parameters = ExecutorServiceCancelOnAddressCodec.decodeRequest(clientMessage);
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override
@@ -58,4 +62,23 @@ public class ExecutorServiceCancelOnAddressMessageTask
         return null;
     }
 
+    @Override
+    public String getServiceName() {
+        return DistributedExecutorService.SERVICE_NAME;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "cancel";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }

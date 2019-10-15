@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,6 +49,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = instance.getMap("default");
         int numberOfPuts = 2;
+        sleepSeconds(2);
         for (int i = 0; i < numberOfPuts; i++) {
             map.put(i, i);
             sleepSeconds(4);
@@ -57,7 +58,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(1, store.getStoreAllCount());
+                assertEquals(store.toString(), 1, store.getStoreAllMethodCallCount());
             }
         });
     }
@@ -77,15 +78,33 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
 
     private static class TestMapStore extends MapStoreAdapter {
 
-        private final AtomicInteger storeAll = new AtomicInteger();
+        private final AtomicInteger storeMethodCallCount = new AtomicInteger();
+        private final AtomicInteger storeAllMethodCallCount = new AtomicInteger();
+
+        @Override
+        public void store(Object key, Object value) {
+            storeMethodCallCount.incrementAndGet();
+        }
 
         @Override
         public void storeAll(Map map) {
-            storeAll.incrementAndGet();
+            storeAllMethodCallCount.incrementAndGet();
         }
 
-        int getStoreAllCount() {
-            return storeAll.get();
+        int getStoreAllMethodCallCount() {
+            return storeAllMethodCallCount.get();
+        }
+
+        int getStoreMethodCallCount() {
+            return storeMethodCallCount.get();
+        }
+
+        @Override
+        public String toString() {
+            return "TestMapStore{"
+                    + "storeMethodCallCount=" + getStoreMethodCallCount()
+                    + ", storeAllMethodCallCount=" + getStoreAllMethodCallCount()
+                    + '}';
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,29 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.hotrestart.InternalHotRestartService;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.MembershipAwareService;
-import com.hazelcast.spi.MembershipServiceEvent;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.internal.services.MembershipAwareService;
+import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -59,13 +62,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
+import java.util.logging.Level;
 
-import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
-import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_EVENT_EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
-import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
 /**
@@ -78,6 +83,7 @@ import static java.util.Collections.unmodifiableSet;
 public class MembershipManager {
 
     private static final long FETCH_MEMBER_LIST_MILLIS = 5000;
+    private static final String MASTERSHIP_CLAIM_EXECUTOR_NAME = "hz:cluster:mastership";
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -85,12 +91,18 @@ public class MembershipManager {
     private final Lock clusterServiceLock;
     private final ILogger logger;
 
-    private final AtomicReference<MemberMap> memberMapRef = new AtomicReference<MemberMap>(MemberMap.empty());
+    private final AtomicReference<MemberMap> memberMapRef = new AtomicReference<>(MemberMap.empty());
 
-    private final AtomicReference<MemberMap> membersRemovedInNotJoinableStateRef
-            = new AtomicReference<MemberMap>(MemberMap.empty());
+    /**
+     * Members removed from active cluster members list while cluster state
+     * doesn't allow new members to join, such as FROZEN or PASSIVE.
+     * <p>
+     * Missing members are associated with either their {@code UUID} or their {@code Address}
+     * depending on Hot Restart is enabled or not.
+     */
+    private final AtomicReference<Map<Object, MemberImpl>> missingMembersRef = new AtomicReference<>(Collections.emptyMap());
 
-    private final Set<Address> suspectedMembers = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    private final Set<Address> suspectedMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final int mastershipClaimTimeoutSeconds;
 
     MembershipManager(Node node, ClusterServiceImpl clusterService, Lock clusterServiceLock) {
@@ -112,13 +124,12 @@ public class MembershipManager {
         ExecutionService executionService = nodeEngine.getExecutionService();
         HazelcastProperties hazelcastProperties = node.getProperties();
 
+        executionService.register(MASTERSHIP_CLAIM_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
+
         long memberListPublishInterval = hazelcastProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
         memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
-        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
-            public void run() {
-                publishMemberList();
-            }
-        }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
+        executionService.scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, this::publishMemberList,
+                memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
     }
 
     private void registerThisMember() {
@@ -132,14 +143,14 @@ public class MembershipManager {
         return memberMap.getMember(address);
     }
 
-    public MemberImpl getMember(String uuid) {
+    public MemberImpl getMember(UUID uuid) {
         assert uuid != null : "UUID required!";
 
         MemberMap memberMap = memberMapRef.get();
         return memberMap.getMember(uuid);
     }
 
-    public MemberImpl getMember(Address address, String uuid) {
+    public MemberImpl getMember(Address address, UUID uuid) {
         assert address != null : "Address required!";
         assert uuid != null : "UUID required!";
 
@@ -269,13 +280,12 @@ public class MembershipManager {
         return sb.toString();
     }
 
-
     // handles both new and left members
     void updateMembers(MembersView membersView) {
         MemberMap currentMemberMap = memberMapRef.get();
 
-        Collection<MemberImpl> addedMembers = new LinkedList<MemberImpl>();
-        Collection<MemberImpl> removedMembers = new LinkedList<MemberImpl>();
+        Collection<MemberImpl> addedMembers = new LinkedList<>();
+        Collection<MemberImpl> removedMembers = new LinkedList<>();
         ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
 
         MemberImpl[] members = new MemberImpl[membersView.size()];
@@ -304,7 +314,7 @@ public class MembershipManager {
             long now = clusterService.getClusterTime();
             clusterHeartbeatManager.onHeartbeat(member, now);
 
-            clusterService.repairPartitionTableIfReturningMember(member);
+            repairPartitionTableIfReturningMember(member);
             members[memberIndex++] = member;
         }
 
@@ -322,13 +332,16 @@ public class MembershipManager {
             handleMemberRemove(memberMapRef.get(), member);
         }
 
+        clusterService.getClusterJoinManager().insertIntoRecentlyJoinedMemberSet(addedMembers);
         sendMembershipEvents(currentMemberMap.getMembers(), addedMembers);
 
-        MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
-        membersRemovedInNotJoinableStateRef.set(MemberMap.cloneExcluding(membersRemovedInNotJoinableState, members));
+        removeFromMissingMembers(members);
 
         clusterHeartbeatManager.heartbeat();
         clusterService.printMemberList();
+
+        //async call
+        node.getNodeExtension().scheduleClusterVersionAutoUpgrade();
     }
 
     private MemberImpl createNewMemberImplIfChanged(MemberInfo newMemberInfo, MemberImpl member) {
@@ -358,15 +371,61 @@ public class MembershipManager {
         return member;
     }
 
-    private MemberImpl createMember(MemberInfo memberInfo, Map<String, Object> attributes) {
+    private MemberImpl createMember(MemberInfo memberInfo, Map<String, String> attributes) {
         Address address = memberInfo.getAddress();
         Address thisAddress = node.getThisAddress();
         String ipV6ScopeId = thisAddress.getScopeId();
         address.setScopeId(ipV6ScopeId);
         boolean localMember = thisAddress.equals(address);
 
-        return new MemberImpl(address, memberInfo.getVersion(), localMember, memberInfo.getUuid(), attributes,
-                memberInfo.isLiteMember(), memberInfo.getMemberListJoinVersion(), node.hazelcastInstance);
+        MemberImpl.Builder builder;
+        if (memberInfo.getAddressMap() != null && memberInfo.getAddressMap().containsKey(MEMBER)) {
+            builder = new MemberImpl.Builder(memberInfo.getAddressMap());
+        } else {
+            builder = new MemberImpl.Builder(memberInfo.getAddress());
+        }
+
+        return builder.version(memberInfo.getVersion())
+                      .localMember(localMember)
+                      .uuid(memberInfo.getUuid())
+                      .attributes(attributes)
+                      .liteMember(memberInfo.isLiteMember())
+                      .memberListJoinVersion(memberInfo.getMemberListJoinVersion())
+                      .instance(node.hazelcastInstance)
+                      .build();
+    }
+
+    private void repairPartitionTableIfReturningMember(MemberImpl member) {
+        if (!clusterService.isMaster()) {
+            return;
+        }
+
+        if (clusterService.getClusterState().isMigrationAllowed()) {
+            return;
+        }
+
+        if (!node.getNodeExtension().isStartCompleted()) {
+            return;
+        }
+
+        MemberImpl missingMember = getMissingMember(member.getAddress(), member.getUuid());
+        if (missingMember != null) {
+            boolean repair;
+            Level level;
+            if (isHotRestartEnabled()) {
+                repair = !missingMember.getAddress().equals(member.getAddress());
+                level = Level.INFO;
+            } else {
+                repair = !missingMember.getUuid().equals(member.getUuid());
+                level = Level.FINE;
+            }
+            if (repair) {
+                logger.log(level, member + " is returning with a new identity. Old one was: " + missingMember
+                        + ". Will update partition table with the new identity.");
+                InternalPartitionServiceImpl partitionService = node.partitionService;
+                partitionService.replaceMember(missingMember, member);
+            }
+        }
     }
 
     void setLocalMemberListJoinVersion(int memberListJoinVersion) {
@@ -543,12 +602,12 @@ public class MembershipManager {
             clusterServiceLock.unlock();
         }
 
-        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(MASTERSHIP_CLAIM_EXECUTOR_NAME);
         executor.submit(new DecideNewMembersViewTask(localMemberMap, membersToAsk));
     }
 
     private Set<Member> collectMembersToAsk(MemberMap localMemberMap) {
-        Set<Member> membersToAsk = new HashSet<Member>();
+        Set<Member> membersToAsk = new HashSet<>();
         for (MemberImpl member : localMemberMap.getMembers()) {
             if (member.localMember() || suspectedMembers.contains(member.getAddress())) {
                 continue;
@@ -574,6 +633,9 @@ public class MembershipManager {
 
         // Make sure that all pending join requests are cancelled temporarily.
         clusterJoinManager.setMastershipClaimInProgress();
+
+        // pause migrations until mastership claim process completes
+        node.getPartitionService().pauseMigration();
 
         clusterService.setMasterAddress(node.getThisAddress());
         return true;
@@ -647,7 +709,7 @@ public class MembershipManager {
     }
 
     private void closeConnection(Address address, String reason) {
-        Connection conn = node.connectionManager.getConnection(address);
+        Connection conn = node.getEndpointManager(MEMBER).getConnection(address);
         if (conn != null) {
             conn.close(reason, null);
         }
@@ -660,11 +722,9 @@ public class MembershipManager {
                 logger.fine(removedMember + " is removed, added to members left while cluster is " + clusterState + " state");
             }
 
-            final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+            InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
             if (!hotRestartService.isMemberExcluded(removedMember.getAddress(), removedMember.getUuid())) {
-                MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
-                membersRemovedInNotJoinableStateRef
-                        .set(MemberMap.cloneAdding(membersRemovedInNotJoinableState, removedMember));
+                addToMissingMembers(removedMember);
             }
         }
 
@@ -683,7 +743,7 @@ public class MembershipManager {
     }
 
     void sendMembershipEvents(Collection<MemberImpl> currentMembers, Collection<MemberImpl> newMembers) {
-        Set<Member> eventMembers = new LinkedHashSet<Member>(currentMembers);
+        Set<Member> eventMembers = new LinkedHashSet<>(currentMembers);
         if (!newMembers.isEmpty()) {
             for (MemberImpl newMember : newMembers) {
                 // sync calls
@@ -692,7 +752,7 @@ public class MembershipManager {
 
                 // async events
                 eventMembers.add(newMember);
-                sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true);
+                sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<>(eventMembers)), true);
             }
         }
     }
@@ -704,13 +764,11 @@ public class MembershipManager {
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
-                nodeEngine.getExecutionService().execute(MEMBERSHIP_EVENT_EXECUTOR_NAME, new Runnable() {
-                    public void run() {
-                        if (added) {
-                            service.memberAdded(event);
-                        } else {
-                            service.memberRemoved(event);
-                        }
+                nodeEngine.getExecutionService().execute(MEMBERSHIP_EVENT_EXECUTOR_NAME, () -> {
+                    if (added) {
+                        service.memberAdded(event);
+                    } else {
+                        service.memberRemoved(event);
                     }
                 });
             }
@@ -737,7 +795,7 @@ public class MembershipManager {
     }
 
     private MembersView decideNewMembersView(MemberMap localMemberMap, Set<Member> members) {
-        Map<Address, Future<MembersView>> futures = new HashMap<Address, Future<MembersView>>();
+        Map<Address, Future<MembersView>> futures = new HashMap<>();
         MembersView latestMembersView = fetchLatestMembersView(localMemberMap, members, futures);
 
         if (logger.isFineEnabled()) {
@@ -745,7 +803,7 @@ public class MembershipManager {
         }
 
         // within the most recent members view, select the members that have reported their members view successfully
-        List<MemberInfo> finalMembers = new ArrayList<MemberInfo>();
+        List<MemberInfo> finalMembers = new ArrayList<>();
         for (MemberInfo memberInfo : latestMembersView.getMembers()) {
             Address address = memberInfo.getAddress();
             if (node.getThisAddress().equals(address)) {
@@ -807,7 +865,7 @@ public class MembershipManager {
         while (clusterService.isJoined()) {
 
             boolean done = true;
-            for (Entry<Address, Future<MembersView>> e : new ArrayList<Entry<Address, Future<MembersView>>>(futures.entrySet())) {
+            for (Entry<Address, Future<MembersView>> e : new ArrayList<>(futures.entrySet())) {
                 Address address = e.getKey();
                 Future<MembersView> future = e.getValue();
 
@@ -876,7 +934,7 @@ public class MembershipManager {
         return isNewMemberPresent;
     }
 
-    private Future<MembersView> invokeFetchMembersViewOp(Address target, String targetUuid) {
+    private Future<MembersView> invokeFetchMembersViewOp(Address target, UUID targetUuid) {
         Operation op = new FetchMembersViewOp(targetUuid).setCallerUuid(clusterService.getThisUuid());
 
         return nodeEngine.getOperationService()
@@ -885,33 +943,84 @@ public class MembershipManager {
                 .setCallTimeout(TimeUnit.SECONDS.toMillis(mastershipClaimTimeoutSeconds)).invoke();
     }
 
-    boolean isMemberRemovedInNotJoinableState(Address target) {
-        MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
-        return membersRemovedInNotJoinableState.contains(target);
+    /**
+     * Returns whether member with given identity (either {@code UUID} or {@code Address}
+     * depending on Hot Restart is enabled or not) is a known missing member or not.
+     *
+     * @param address Address of the missing member
+     * @param uuid Uuid of the missing member
+     * @return true if it's a known missing member, false otherwise
+     */
+    boolean isMissingMember(Address address, UUID uuid) {
+        Map<Object, MemberImpl> m = missingMembersRef.get();
+        return isHotRestartEnabled() ? m.containsKey(uuid) : m.containsKey(address);
     }
 
-    boolean isMemberRemovedInNotJoinableState(String uuid) {
-        MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
-        return membersRemovedInNotJoinableState.contains(uuid);
+    /**
+     * Returns the missing member using either its {@code UUID} or its {@code Address}
+     * depending on Hot Restart is enabled or not.
+     *
+     * @param address Address of the missing member
+     * @param uuid Uuid of the missing member
+     * @return the missing member
+     */
+    MemberImpl getMissingMember(Address address, UUID uuid) {
+        Map<Object, MemberImpl> m = missingMembersRef.get();
+        return isHotRestartEnabled() ? m.get(uuid) : m.get(address);
     }
 
-    MemberImpl getMemberRemovedInNotJoinableState(String uuid) {
-        MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
-        return membersRemovedInNotJoinableState.getMember(uuid);
+    /**
+     * Returns all missing members.
+     */
+    Collection<MemberImpl> getMissingMembers() {
+        return Collections.unmodifiableCollection(missingMembersRef.get().values());
     }
 
-    Collection<Member> getCurrentMembersAndMembersRemovedInNotJoinableState() {
+    private void addToMissingMembers(MemberImpl... members) {
+        Map<Object, MemberImpl> m = new HashMap<>(missingMembersRef.get());
+        if (isHotRestartEnabled()) {
+            for (MemberImpl member : members) {
+                m.put(member.getUuid(), member);
+            }
+        } else {
+            for (MemberImpl member : members) {
+                m.put(member.getAddress(), member);
+            }
+        }
+        missingMembersRef.set(unmodifiableMap(m));
+    }
+
+    private void removeFromMissingMembers(MemberImpl... members) {
+        Map<Object, MemberImpl> m = new HashMap<>(missingMembersRef.get());
+        if (isHotRestartEnabled()) {
+            for (MemberImpl member : members) {
+                m.remove(member.getUuid());
+            }
+        } else {
+            for (MemberImpl member : members) {
+                m.remove(member.getAddress());
+            }
+        }
+        missingMembersRef.set(unmodifiableMap(m));
+    }
+
+    private boolean isHotRestartEnabled() {
+        InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+        return hotRestartService.isEnabled();
+    }
+
+    Collection<Member> getActiveAndMissingMembers() {
         clusterServiceLock.lock();
         try {
-            MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
-            if (membersRemovedInNotJoinableState.size() == 0) {
+            Map<Object, MemberImpl> m = missingMembersRef.get();
+            if (m.isEmpty()) {
                 return getMemberSet();
             }
 
-            Collection<MemberImpl> removedMembers = membersRemovedInNotJoinableState.getMembers();
+            Collection<MemberImpl> removedMembers = m.values();
             Collection<MemberImpl> members = memberMapRef.get().getMembers();
 
-            Collection<Member> allMembers = new ArrayList<Member>(members.size() + removedMembers.size());
+            Collection<Member> allMembers = new ArrayList<>(members.size() + removedMembers.size());
             allMembers.addAll(members);
             allMembers.addAll(removedMembers);
 
@@ -921,25 +1030,30 @@ public class MembershipManager {
         }
     }
 
-    void addMembersRemovedInNotJoinableState(Collection<MemberImpl> members) {
+    void setMissingMembers(Collection<MemberImpl> members) {
         clusterServiceLock.lock();
         try {
-            MemberMap m = membersRemovedInNotJoinableStateRef.get();
-            m = MemberMap.cloneAdding(m, members.toArray(new MemberImpl[0]));
-            m = MemberMap.cloneExcluding(m, clusterService.getLocalMember());
-            membersRemovedInNotJoinableStateRef.set(m);
+            Map<Object, MemberImpl> m = new HashMap<>(members.size());
+            if (isHotRestartEnabled()) {
+                for (MemberImpl member : members) {
+                    m.put(member.getUuid(), member);
+                }
+            } else {
+                for (MemberImpl member : members) {
+                    m.put(member.getAddress(), member);
+                }
+            }
+            missingMembersRef.set(unmodifiableMap(m));
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    void shrinkMembersRemovedInNotJoinableState(Collection<String> memberUuidsToRemove) {
+    void shrinkMissingMembers(Collection<UUID> memberUuidsToRemove) {
         clusterServiceLock.lock();
         try {
-            Set<MemberImpl> membersRemoved
-                    = new LinkedHashSet<MemberImpl>(membersRemovedInNotJoinableStateRef.get().getMembers());
-
-            Iterator<MemberImpl> it = membersRemoved.iterator();
+            Map<Object, MemberImpl> m = new HashMap<>(missingMembersRef.get());
+            Iterator<MemberImpl> it = m.values().iterator();
             while (it.hasNext()) {
                 MemberImpl member = it.next();
                 if (memberUuidsToRemove.contains(member.getUuid())) {
@@ -950,18 +1064,18 @@ public class MembershipManager {
                     it.remove();
                 }
             }
-            membersRemovedInNotJoinableStateRef.set(MemberMap.createNew(membersRemoved.toArray(new MemberImpl[0])));
+            missingMembersRef.set(unmodifiableMap(m));
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    void removeMembersDeadInNotJoinableState() {
+    void removeAllMissingMembers() {
         clusterServiceLock.lock();
         try {
-            MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
-            Collection<MemberImpl> members = membersRemovedInNotJoinableState.getMembers();
-            membersRemovedInNotJoinableStateRef.set(MemberMap.empty());
+            Map<Object, MemberImpl> m = missingMembersRef.get();
+            Collection<MemberImpl> members = m.values();
+            missingMembersRef.set(Collections.emptyMap());
             for (MemberImpl member : members) {
                 onMemberRemove(member);
             }
@@ -971,7 +1085,7 @@ public class MembershipManager {
         }
     }
 
-    public MembersView promoteToDataMember(Address address, String uuid) {
+    public MembersView promoteToDataMember(Address address, UUID uuid) {
         clusterServiceLock.lock();
         try {
             ensureLiteMemberPromotionIsAllowed();
@@ -997,8 +1111,14 @@ public class MembershipManager {
                     if (member.localMember()) {
                         member = clusterService.promoteAndGetLocalMember();
                     } else {
-                        member = new MemberImpl(member.getAddress(), member.getVersion(), member.localMember(), member.getUuid(),
-                                member.getAttributes(), false, members[i].getMemberListJoinVersion(), node.hazelcastInstance);
+                        member = new MemberImpl.Builder(member.getAddressMap())
+                                .version(member.getVersion())
+                                .localMember(member.localMember())
+                                .uuid(member.getUuid())
+                                .attributes(member.getAttributes())
+                                .memberListJoinVersion(members[i].getMemberListJoinVersion())
+                                .instance(node.hazelcastInstance)
+                                .build();
                     }
                     members[i] = member;
                     break;
@@ -1071,13 +1191,16 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             memberMapRef.set(MemberMap.singleton(clusterService.getLocalMember()));
-            membersRemovedInNotJoinableStateRef.set(MemberMap.empty());
+            missingMembersRef.set(Collections.emptyMap());
             suspectedMembers.clear();
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
+    /**
+     * This task is only created on master node.
+     */
     private class DecideNewMembersViewTask implements Runnable {
         final MemberMap localMemberMap;
         final Set<Member> membersToAsk;
@@ -1089,6 +1212,17 @@ public class MembershipManager {
 
         @Override
         public void run() {
+            try {
+                innerRun();
+            } catch (Throwable e) {
+                logger.warning("Exception thrown while running DecideNewMembersViewTask", e);
+            } finally {
+                // Resume migrations, they are disabled when mastership claim is started
+                node.getPartitionService().resumeMigration();
+            }
+        }
+
+        private void innerRun() {
             MembersView newMembersView = decideNewMembersView(localMemberMap, membersToAsk);
             clusterServiceLock.lock();
             try {

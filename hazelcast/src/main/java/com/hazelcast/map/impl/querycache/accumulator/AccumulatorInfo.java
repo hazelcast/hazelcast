@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Metadata for an {@link Accumulator}.
  * <p>
- * This metadata is used in communications between: node <--> node and client <--> node.
+ * This metadata is used in communications between: node &lt;--&gt; node and client &lt;--&gt; node.
  *
  * @see QueryCacheConfig
  */
@@ -55,8 +55,10 @@ public class AccumulatorInfo implements Portable {
      */
     private volatile boolean publishable;
 
-    public static AccumulatorInfo createAccumulatorInfo(QueryCacheConfig config, String mapName, String cacheId,
-                                                        Predicate predicate) {
+    public static AccumulatorInfo toAccumulatorInfo(QueryCacheConfig config,
+                                                    String mapName,
+                                                    String cacheId,
+                                                    Predicate predicate) {
         checkNotNull(config, "config cannot be null");
 
         AccumulatorInfo info = new AccumulatorInfo();
@@ -74,9 +76,9 @@ public class AccumulatorInfo implements Portable {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public static AccumulatorInfo createAccumulatorInfo(String mapName, String cacheId, Predicate predicate, int batchSize,
-                                                        int bufferSize, long delaySeconds, boolean includeValue, boolean populate,
-                                                        boolean coalesce) {
+    public static AccumulatorInfo toAccumulatorInfo(String mapName, String cacheId, Predicate predicate, int batchSize,
+                                                    int bufferSize, long delaySeconds, boolean includeValue, boolean populate,
+                                                    boolean coalesce) {
         AccumulatorInfo info = new AccumulatorInfo();
         info.mapName = mapName;
         info.cacheId = cacheId;

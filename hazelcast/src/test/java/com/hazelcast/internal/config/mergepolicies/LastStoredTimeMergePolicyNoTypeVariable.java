@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config.mergepolicies;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
@@ -25,7 +26,7 @@ import java.io.IOException;
 
 /**
  * Custom merge policy which uses a single merge type,
- * which is just provided by by {@link com.hazelcast.core.IMap}.
+ * which is just provided by by {@link IMap}.
  * <p>
  * Doesn't use type variables to define the required merge types.
  */

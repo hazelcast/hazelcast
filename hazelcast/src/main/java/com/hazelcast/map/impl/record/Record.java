@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Metadata;
 
 /**
  * @param <V> the type of value which is in the Record
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface Record<V> {
 
     /**
@@ -40,6 +42,12 @@ public interface Record<V> {
 
     void onAccess(long now);
 
+    /**
+     * An implementation must be thread safe if the record might be accessed from multiple threads.
+     *
+     */
+    void onAccessSafe(long now);
+
     void onUpdate(long now);
 
     void onStore();
@@ -57,7 +65,7 @@ public interface Record<V> {
 
     /**
      * Get current cache value or null.
-     * <p/>
+     * <p>
      * Warning: Do not use this method directly as it might expose arbitrary objects acting as a lock.
      * Use {@link Records#getCachedValue(Record)} instead.
      *
@@ -117,10 +125,11 @@ public interface Record<V> {
 
     /**
      * Only used for Hot Restart, HDRecord
-     *
-     * @return
      */
     void setSequence(long sequence);
 
+    void setMetadata(Metadata metadata);
+
+    Metadata getMetadata();
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.fd;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 public class DeadlineClusterFailureDetector implements ClusterFailureDetector {
 
     private final long maxNoHeartbeatMillis;
-    private final ConcurrentMap<Member, Long> heartbeatTimes = new ConcurrentHashMap<Member, Long>();
+    private final ConcurrentMap<Member, Long> heartbeatTimes = new ConcurrentHashMap<>();
 
     public DeadlineClusterFailureDetector(long maxNoHeartbeatMillis) {
         this.maxNoHeartbeatMillis = maxNoHeartbeatMillis;

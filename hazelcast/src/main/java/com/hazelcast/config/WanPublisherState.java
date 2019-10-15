@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.config;
+
+import com.hazelcast.wan.impl.WanReplicationService;
 
 /**
  * Defines the state in which a WAN publisher can be in if it is not shutting
@@ -54,7 +56,7 @@ public enum WanPublisherState {
      * it will become available. Once it becomes available, you can then switch
      * the publisher state to REPLICATING to begin replicating to that cluster.
      *
-     * @see com.hazelcast.wan.WanReplicationService#clearQueues(String, String)
+     * @see WanReplicationService#removeWanEvents(String, String)
      */
     STOPPED((byte) 2, false, false);
 

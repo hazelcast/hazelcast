@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -27,7 +26,7 @@ import com.hazelcast.spi.merge.MergingCosts;
 import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +39,7 @@ import static org.hamcrest.CoreMatchers.containsString;
  * into the proxy creation of split-brain capable data structures.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MergePolicyValidatorCacheIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
 
     @Override
@@ -48,7 +47,7 @@ public class MergePolicyValidatorCacheIntegrationTest extends AbstractMergePolic
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
         cacheSimpleConfig.setName(name);
         cacheSimpleConfig.setStatisticsEnabled(false);
-        cacheSimpleConfig.setMergePolicy(mergePolicyConfig.getPolicy());
+        cacheSimpleConfig.getMergePolicyConfig().setPolicy(mergePolicyConfig.getPolicy());
 
         config.addCacheConfig(cacheSimpleConfig);
     }
@@ -140,15 +139,5 @@ public class MergePolicyValidatorCacheIntegrationTest extends AbstractMergePolic
         expectedException.expectMessage(containsString(customMapMergePolicy.getPolicy()));
         expectedException.expectMessage(containsString(MapMergeTypes.class.getName()));
         hz.getCacheManager().getCache("customMap");
-    }
-
-    @Test
-    public void testCache_withLegacyPutIfAbsentMergePolicy() {
-        MergePolicyConfig legacyMergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(PutIfAbsentCacheMergePolicy.class.getName());
-
-        HazelcastInstance hz = getHazelcastInstance("legacyPutIfAbsent", legacyMergePolicyConfig);
-
-        hz.getCacheManager().getCache("legacyPutIfAbsent");
     }
 }

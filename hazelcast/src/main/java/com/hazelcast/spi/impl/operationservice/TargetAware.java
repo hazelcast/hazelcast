@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
- * An {@link com.hazelcast.spi.Operation} that has to be aware of the remote
+ * An {@link Operation} that has to be aware of the remote
  * target member address before being serialized and sent over the network
  * can implement {@code TargetAware} interface so the target {@link Address}
  * will be injected to it.
  * <p>
  * The target {@link Address} injection only happens when the
- * {@link com.hazelcast.spi.Operation} is invoked using the invocation system.
+ * {@link Operation} is invoked using the invocation system.
  * When a {@code TargetAware} operation is explicitly sent to a remote target
  * or executed locally, {@link #setTarget(Address)} should be explicitly called
  * before the operation is sent or executed.

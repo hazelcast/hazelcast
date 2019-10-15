@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package com.hazelcast.internal.partition.service;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.util.ArrayList;
 import java.util.Collection;

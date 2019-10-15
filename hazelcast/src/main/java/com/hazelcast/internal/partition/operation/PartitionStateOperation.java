@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -45,10 +45,6 @@ public final class PartitionStateOperation extends AbstractPartitionOperation
     public PartitionStateOperation() {
     }
 
-    public PartitionStateOperation(PartitionRuntimeState partitionState) {
-        this(partitionState, false);
-    }
-
     public PartitionStateOperation(PartitionRuntimeState partitionState, boolean sync) {
         this.partitionState = partitionState;
         this.sync = sync;
@@ -57,7 +53,7 @@ public final class PartitionStateOperation extends AbstractPartitionOperation
     @Override
     public void run() {
         Address callerAddress = getCallerAddress();
-        partitionState.setEndpoint(callerAddress);
+        partitionState.setMaster(callerAddress);
         InternalPartitionServiceImpl partitionService = getService();
         success = partitionService.processPartitionRuntimeState(partitionState);
 
@@ -87,20 +83,19 @@ public final class PartitionStateOperation extends AbstractPartitionOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        partitionState = new PartitionRuntimeState();
-        partitionState.readData(in);
+        partitionState = in.readObject();
         sync = in.readBoolean();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        partitionState.writeData(out);
+        out.writeObject(partitionState);
         out.writeBoolean(sync);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return PartitionDataSerializerHook.PARTITION_STATE_OP;
     }
 }

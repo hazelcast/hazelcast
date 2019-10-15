@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,15 @@ public class PartitionQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index getIndex(String attributeName) {
-        if (indexes == null) {
-            return null;
+    void applyPerQueryStats() {
+        for (PerIndexStats stats : trackedStats) {
+            stats.incrementQueryCount();
         }
+    }
 
-        InternalIndex index = indexes.getIndex(attributeName);
+    @Override
+    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
+        InternalIndex index = indexes.matchIndex(pattern, matchHint);
         if (index == null) {
             return null;
         }
@@ -60,13 +63,6 @@ public class PartitionQueryContextWithStats extends QueryContext {
         trackedStats.add(index.getPerIndexStats());
 
         return index;
-    }
-
-    @Override
-    void applyPerQueryStats() {
-        for (PerIndexStats stats : trackedStats) {
-            stats.incrementQueryCount();
-        }
     }
 
 }

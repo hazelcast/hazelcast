@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.multimap.standalone;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Partition;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.partition.Partition;
 
 import java.util.Random;
 import java.util.concurrent.ExecutorService;

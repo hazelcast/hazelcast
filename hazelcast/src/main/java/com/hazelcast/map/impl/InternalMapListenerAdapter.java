@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.IMapEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.map.impl.MapListenerAdaptors.createListenerAdapters;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Internal-usage-only adapter which wraps all {@link MapListener} sub-interfaces into a {@link ListenerAdapter}.
- * <p/>
+ * <p>
  * Main purpose of this adapter is to avoid lots of instanceOf checks when firing events to check whether or not
  * a corresponding {@link MapListener} sub-interface for a specific {@link com.hazelcast.core.EntryEventType} is extended.
  * And also to provide an abstraction over all {@link MapListener} sub-interfaces to make a smooth usage when passing

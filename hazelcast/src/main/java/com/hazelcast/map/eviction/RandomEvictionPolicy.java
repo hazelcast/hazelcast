@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.map.eviction;
 
 import com.hazelcast.config.ConfigDataSerializerHook;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,7 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * Random eviction policy for an {@link com.hazelcast.core.IMap IMap}
+ * Random eviction policy for an {@link IMap IMap}
  */
 public class RandomEvictionPolicy extends MapEvictionPolicy implements IdentifiedDataSerializable {
 
@@ -45,7 +46,7 @@ public class RandomEvictionPolicy extends MapEvictionPolicy implements Identifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.RANDOM_EVICTION_POLICY;
     }
 

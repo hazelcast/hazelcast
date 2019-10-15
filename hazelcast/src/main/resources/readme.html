@@ -106,7 +106,7 @@
 			<li><a href="#getting-started">Getting Started</a></li>
 			<li><a href="#mancenter">Management Center</a></li>
 			<li><a href="#clients-languages">Getting Clients and Language APIs</a></li>
-			<li><a href="#plugins">Hazelcast Plugins</a></li>
+			<li><a href="#plugins">Hazelcast IMDG Plugins</a></li>
 			<li><a href="#resources">Training, Tutorials and Events</a></li>
 			<li><a href="#community">Hazelcast Community</a></li>
 			<li><a href="#support">Support</a></li>									
@@ -121,37 +121,38 @@
 			
 			<li><strong>/bin</strong>
 				<ul>
-				<li><strong>hazelcast.xml</strong> &mdash; the configuration file for Hazelcast.</li>
-				<li><strong>hazelcast-full-example.xml</strong> &mdash; It is the Hazelcast configuration file that includes all the configuration elements and attributes with their descriptions.</li>
-				<li><strong>start.bat</strong> &mdash; Starts a Hazelcast member for Windows users.</li>
-				<li><strong>start.sh</strong> &mdash;  Starts a Hazelcast member for Linux users.</li>
-                <li><strong>stop.bat</strong> &mdash; Stops the current running Hazelcast member for Windows users.</li>
-                <li><strong>stop.sh</strong> &mdash; Stops the current running Hazelcast member for Linux users.</li>
-                <li><strong>cluster.sh</strong> &mdash; Provides basic functionalities for cluster management such as getting and changing the cluster state, shutting down the cluster or forcing the cluster to clean its persisted data and make a fresh start.</li>
+				<li><strong>hazelcast.xml</strong> &mdash; the configuration file for Hazelcast IMDG.</li>
+				<li><strong>hazelcast-full-example.xml</strong> &mdash; It is the Hazelcast IMDG configuration file that includes all the configuration elements and attributes with their descriptions.</li>
+				<li><strong>start.bat</strong> &mdash; Starts a Hazelcast IMDG member for Windows users.</li>
+				<li><strong>start.sh</strong> &mdash;  Starts a Hazelcast IMDG member for Linux users.</li>
+                                      <li><strong>stop.bat</strong> &mdash; Stops the current running Hazelcast IMDG member for Windows users.</li>
+                                      <li><strong>stop.sh</strong> &mdash; Stops the current running Hazelcast IMDG member for Linux users.</li>
+                                      <li><strong>cluster.sh</strong> &mdash; Provides basic functionalities for cluster management such as getting and changing the cluster state, shutting down the cluster or forcing the cluster to clean its persisted data and make a fresh start.</li>
+                                      <li><strong>healthcheck.sh</strong> &mdash; Provides basic information about your cluster and member (on which you run this script) .</li>
 				</ul>
 			</li>
 			
-			<li><strong>/code-samples</strong> &mdash; Hazelcast code samples to learn from and include in your projects. Please refer to the <a href="code-samples/readme.html">code samples readme</a> for more information.</li>
+			<li><strong>/code-samples</strong> &mdash; Hazelcast IMDG code samples to learn from and include in your projects. Please refer to the <a href="code-samples/readme.html">code samples readme</a> for more information.</li>
 			
 			<li><strong>/demo</strong>
 				<ul>
-					<li><strong>clientConsole.bat</strong> &mdash; Starts a sample client application for Windows users. You can perform, for example, usual map operations using command line interface. This application requires an up and running Hazelcast cluster.</li>
-					<li><strong>clientConsole.sh</strong> &mdash; Starts a sample client application for Linux users. You can perform, for example, usual map operations using command line interface. This application requires an up and running Hazelcast cluster.</li>
-					<li><strong>console.bat</strong> &mdash; Starts a sample Hazelcast member application for Windows users.</li>
-					<li><strong>console.sh</strong> &mdash; Starts a sample Hazelcast member application for Linux users.</li>				
+					<li><strong>clientConsole.bat</strong> &mdash; Starts a sample client application for Windows users. You can perform, for example, usual map operations using command line interface. This application requires an up and running Hazelcast IMDG cluster.</li>
+					<li><strong>clientConsole.sh</strong> &mdash; Starts a sample client application for Linux users. You can perform, for example, usual map operations using command line interface. This application requires an up and running Hazelcast IMDG cluster.</li>
+					<li><strong>console.bat</strong> &mdash; Starts a sample Hazelcast IMDG member application for Windows users.</li>
+					<li><strong>console.sh</strong> &mdash; Starts a sample Hazelcast IMDG member application for Linux users.</li>				
 				</ul>			
 			</li>
 			
 			<li><strong>/docs</strong>
 				<ul>
-				<li><strong>/javadoc</strong> &mdash; <a href="docs/javadoc/index.html">Hazelcast Javadoc</a>.</li>
-				<li><strong>/manual</strong> &mdash; <a href="docs/manual/html/index.html">Hazelcast Reference Manual</a>, also available in <a href="docs/manual/html-single/index.html">single page</a> and <a href="docs/manual/pdf/hazelcast-documentation-${project.version}.pdf">pdf</a> formats.</li>
+				<li><strong>/javadoc</strong> &mdash; <a href="docs/javadoc/index.html">Hazelcast IMDG Javadoc</a>.</li>
+				<li><strong>/manual</strong> &mdash; <a href="docs/manual/html/index.html">Hazelcast IMDG Reference Manual</a>, also available in <a href="docs/manual/html-single/index.html">single page</a> and <a href="docs/manual/pdf/hazelcast-documentation-${project.version}.pdf">pdf</a> formats.</li>
 				</ul>			
 			</li>
 			
 			<li><strong>/lib</strong>
 				<ul>
-					<li><strong>hazelcast.jar</strong> &mdash; The core hazelcast JAR.</li>
+					<li><strong>hazelcast.jar</strong> &mdash; The core Hazelcast IMDG JAR.</li>
 					<li><strong>hazelcast-all.jar</strong> &mdash; Includes all of the libraries here in one JAR file.</li>
 					<li><strong>hazelcast-client.jar</strong> &mdash; The Java native client library to be included on classpath for Hazelcast client. This library contains clients which use the new Hazelcast Binary Client Protocol, introduced in the Hazelcast 3.5 Release.</li>
 					<li><strong>hazelcast-spring.jar</strong> &mdash; This is the library to integrate Hazelcast with Spring based applications.</li>
@@ -161,48 +162,58 @@
 			
 			<li><strong>/license</strong>
 				<ul>
-					<li><strong>apache-v2-license.txt</strong> &mdash; Hazelcast license.</li>
-					<li><strong>mancenter-license.txt</strong> &mdash; Management Center license.</li>
+					<li><strong>apache-v2-license.txt</strong> &mdash; Hazelcast IMDG license.</li>
 					<li><strong>minimal-json-license.txt</strong> &mdash; Minimal JSON parser and writer's license.</li>
 					<li><strong>notice.txt</strong> &mdash; NOTICE file corresponding to the section 4 (d) of the Apache License.</li>
-					<li><strong>README.txt</strong> &mdash; License README.</li>
 				</ul>			
 			</li>
+			<li><strong>/management-center</strong>
+				<ul>
+					<li><strong>changelog.txt</strong> &mdash; Shows the main changes performed for each Hazelcast Management Center release.</li>
+					<li><strong>/docs</strong> &mdash; Includes the HTML and PDF versions of Hazelcast Management Center Reference Manual.</li>
+					<li><strong>hazelcast-mancenter-3.11.war</strong> &mdash; File to be deployed when starting the tool.</li>
+					<li><strong>license.txt</strong> &mdash; Hazelcast Management Center license.</li>
+					<li><strong>release_notes.txt</strong> &mdash; Lists the new features, enhancements and fixes for this Hazelcast Management Center release.</li>
+					<li><strong>start.bat/start.sh</strong> &mdash; Script to start a Hazelcast Management Center instance for Windows and Linux users, respectively.</li>
+					<li><strong>updateLdapPassword.bat/updateLdapPassword.bat</strong> &mdash; Script to update the encrypted LDAP password stored in the KeyStore.</li>
+				</ul>			
+			</li>			
 		</ul>
 		
 		<h3 id="files">TXT Files</h3>
                                 <ul>
-				<li><strong>changelog.txt</strong> &mdash; Shows the documentation revision history for Hazelcast Reference Manual.</li>
-				<li><strong>release_notes.txt</strong> &mdash; Lists the new features, enhancements and fixes for this Hazelcast release.</li>
+				<li><strong>changelog.txt</strong> &mdash; Shows the main changes performed for each Hazelcast IMDG release.</li>
+				<li><strong>release_notes.txt</strong> &mdash; Lists the new features, enhancements and fixes for this Hazelcast IMDG release.</li>
 				</ul>
 	
 		
 		<h2 id="getting-started">Getting Started</h2>
-		<p>First, go through the included <a href="docs/manual/html-single/index.html#getting-started">Getting Started guide</a> to get Hazelcast up and running. Don't miss the sections on <a href="docs/manual/html-single/index.html#starting-the-member-and-client">starting a Hazelcast member and client</a> and 
+		<p>First, go through the included <a href="docs/manual/html-single/index.html#getting-started">Getting Started guide</a> to get Hazelcast IMDG up and running. Don't miss the sections on <a href="docs/manual/html-single/index.html#starting-the-member-and-client">starting a Hazelcast IMDG member and client</a> and 
 		<a href="docs/manual/html-single/index.html#understanding-configuration">configuring Hazelcast</a>.<br/>
-		<p>The <a href="http://hazelcast.org/getting-started/">online Getting Started guide</a> includes video tutorials to guide you through building your first Hazelcast application and running your cluster.</p>
+		<p>The <a href="http://hazelcast.org/getting-started/">online Getting Started guide</a> includes video tutorials to guide you through building your first Hazelcast IMDG application and running your cluster.</p>
 		
 		
-		<h2 id="mancenter">Management Center</h2>
-		<p>See the <a href="http://docs.hazelcast.org/docs/management-center/latest/manual/html/#">Management Center Reference Manual</a> for installation and usage instructions of Management Center.</p>
+		<h2 id="mancenter">Hazelcast Management Center</h2>
+		<p>Besides the /management-center folder in the Hazelcast IMDG package, you can have the Hazelcast Management Center also from the <a href="https://hazelcast.org/download/#management-center">downloads</a> page.</p>
+		<p>See the <a href="http://docs.hazelcast.org/docs/management-center/latest/manual/html/#">Hazelcast Management Center Reference Manual</a> for installation and detailed usage instructions.</p>
 
 		<h2 id="clients-languages">Getting Clients and Language APIs</h2>
 		<p>All of the following clients and language APIs are open source and supported by Hazelcast. Click on a client or language, and you will be directed to its release page.</p>
                                 <ul>
 				<li><a href="http://hazelcast.org/clients/java/" target="_blank">Java Client ${project.version}</a></li>
-				<li><a href="http://hazelcast.org/clients/net/" target="_blank">.NET Client 3.9.3</a></li>
-				<li><a href="http://hazelcast.org/clients/cplusplus/" target="_blank">C++ Client 3.10</a></li>
-				<li><a href="http://hazelcast.org/clients/node-js/" target="_blank">Node.js Client 0.8</a></li>
-				<li><a href="http://hazelcast.org/clients/python/" target="_blank">Python Client 3.8.1</a></li>
-				<li><a href="http://hazelcast.org/clients/go/" target="_blank">Go Client 0.3</a></li>
-				<li><a href="http://hazelcast.org/clients/scala/" target="_blank">Scala Client Binding 3.9.1</a></li>
-				<li><a href="http://hazelcast.org/clients/scala/" target="_blank">Scala Member Binding 3.9.1</a></li>
+				<li><a href="http://hazelcast.org/clients/net/" target="_blank">.NET Client 3.12</a></li>
+				<li><a href="http://hazelcast.org/clients/cplusplus/" target="_blank">C++ Client 3.12</a></li>
+				<li><a href="http://hazelcast.org/clients/node-js/" target="_blank">Node.js Client 3.12.1</a></li>
+				<li><a href="http://hazelcast.org/clients/python/" target="_blank">Python Client 3.12.1</a></li>
+				<li><a href="http://hazelcast.org/clients/go/" target="_blank">Go Client 0.5</a></li>
+				<li><a href="http://hazelcast.org/clients/scala/" target="_blank">Scala Client Binding 3.12</a></li>
+				<li><a href="http://hazelcast.org/clients/scala/" target="_blank">Scala Member Binding 3.12</a></li>
 				</ul>
 
 		<p>See <a href="http://hazelcast.org/clients-languages/" target="_blank">Clients & Languages page</a> to see the client/language feature comparison table.</p>
 
-		<h2 id="plugins">Hazelcast Plugins</h2>
-		<p>You can extend Hazelcast's functionality by adding its plugins. Please see <a href="http://hazelcast.org/plugins/">Plugins page</a> to learn about Hazelcast plugins you can use.</p>
+		<h2 id="plugins">Hazelcast IMDG Plugins</h2>
+		<p>You can extend Hazelcast IMDG's functionality by adding its plugins. Please see <a href="http://hazelcast.org/plugins/">Plugins page</a> to learn about Hazelcast IMDG plugins you can use.</p>
 			
 		<h2 id="resources">Training, Tutorials and Events</h2>
 		<ul>

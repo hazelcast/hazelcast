@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -56,30 +56,21 @@ public class BindMessage implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ClusterDataSerializerHook.BIND_MESSAGE;
     }
 
     @Override
     public void readData(final ObjectDataInput in) throws IOException {
-        localAddress = new Address();
-        localAddress.readData(in);
-        boolean hasTarget = in.readBoolean();
-        if (hasTarget) {
-            targetAddress = new Address();
-            targetAddress.readData(in);
-        }
+        localAddress = in.readObject();
+        targetAddress = in.readObject();
         reply = in.readBoolean();
     }
 
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
-        localAddress.writeData(out);
-        boolean hasTarget = targetAddress != null;
-        out.writeBoolean(hasTarget);
-        if (hasTarget) {
-            targetAddress.writeData(out);
-        }
+        out.writeObject(localAddress);
+        out.writeObject(targetAddress);
         out.writeBoolean(reply);
     }
 

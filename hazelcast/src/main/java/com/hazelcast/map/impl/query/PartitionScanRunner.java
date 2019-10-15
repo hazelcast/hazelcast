@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.CacheDeserializedValues;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -25,20 +25,23 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -47,11 +50,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
-import static com.hazelcast.util.SortingUtil.compareAnchor;
+import static com.hazelcast.internal.util.SortingUtil.compareAnchor;
 
 /**
- * Responsible for running a full-partition scna for a single partition in the calling thread.
+ * Responsible for running a full-partition scan for a single partition in the calling thread.
  */
 public class PartitionScanRunner {
 
@@ -75,18 +77,22 @@ public class PartitionScanRunner {
 
     @SuppressWarnings("unchecked")
     public void run(String mapName, Predicate predicate, int partitionId, Result result) {
-        PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
+        PagingPredicateImpl pagingPredicate = predicate instanceof PagingPredicateImpl ? (PagingPredicateImpl) predicate : null;
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        Iterator<Record> iterator = partitionContainer.getRecordStore(mapName).loadAwareIterator(getNow(), false);
-        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
+        RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+        Iterator<Record> iterator = recordStore.loadAwareIterator(getNow(), false);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry =
+                pagingPredicate == null ? null : pagingPredicate.getNearestAnchorEntry();
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
         LazyMapEntry queryEntry = new LazyMapEntry();
+        StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = (Data) toData(record.getKey());
+            Metadata metadata = getMetadataFromRecord(recordStore, record);
             Object value = toData(
                     useCachedValues ? Records.getValueOrCachedValue(record, serializationService) : record.getValue());
             if (value == null) {
@@ -94,7 +100,11 @@ public class PartitionScanRunner {
             }
 
             queryEntry.init(serializationService, key, value, extractors);
-            if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
+            queryEntry.setMetadata(metadata);
+            queryEntry.setRecord(record);
+            queryEntry.setStoreAdapter(storeAdapter);
+            boolean valid = predicate.apply(queryEntry);
+            if (valid && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 result.add(queryEntry);
 
                 // We can't reuse the existing entry after it was added to the
@@ -103,6 +113,11 @@ public class PartitionScanRunner {
             }
         }
         result.orderAndLimit(pagingPredicate, nearestAnchorEntry);
+    }
+
+    // overridden in ee
+    protected Metadata getMetadataFromRecord(RecordStore recordStore, Record record) {
+        return record.getMetadata();
     }
 
     /**
@@ -124,7 +139,7 @@ public class PartitionScanRunner {
      */
     public QueryableEntriesSegment run(String mapName, Predicate predicate, int partitionId, int tableIndex, int fetchSize) {
         int lastIndex = tableIndex;
-        final List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
+        final List<QueryableEntry> resultList = new LinkedList<>();
         final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         final RecordStore recordStore = partitionContainer.getRecordStore(mapName);
         final Extractors extractors = mapServiceContext.getExtractors(mapName);
@@ -155,7 +170,7 @@ public class PartitionScanRunner {
                 return true;
             default:
                 //if index exists then cached value is already set -> let's use it
-                return mapContainer.getIndexes(partitionId).hasIndex();
+                return mapContainer.getIndexes(partitionId).haveAtLeastOneIndex();
         }
     }
 

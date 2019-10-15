@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,16 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.OperationControl;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
+import com.hazelcast.spi.impl.operationservice.OperationControl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
@@ -38,6 +40,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
@@ -58,7 +61,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int ERROR_RESPONSE = 9;
     public static final int DEREGISTRATION = 10;
     public static final int ON_JOIN_REGISTRATION = 11;
-    public static final int REGISTRATION = 12;
+    public static final int REGISTRATION_OPERATION = 12;
     public static final int SEND_EVENT = 13;
     public static final int DIST_OBJECT_INIT = 14;
     public static final int DIST_OBJECT_DESTROY = 15;
@@ -67,6 +70,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int UNMODIFIABLE_LAZY_LIST = 18;
     public static final int OPERATION_CONTROL = 19;
     public static final int DISTRIBUTED_OBJECT_NS = 20;
+    public static final int REGISTRATION = 21;
+    public static final int NOOP_TENANT_CONTROL = 22;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -104,7 +109,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new DeregistrationOperation();
                     case ON_JOIN_REGISTRATION:
                         return new OnJoinRegistrationOperation();
-                    case REGISTRATION:
+                    case REGISTRATION_OPERATION:
                         return new RegistrationOperation();
                     case SEND_EVENT:
                         return new SendEventOperation();
@@ -122,6 +127,10 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new OperationControl();
                     case DISTRIBUTED_OBJECT_NS:
                         return new DistributedObjectNamespace();
+                    case REGISTRATION:
+                        return new Registration();
+                    case NOOP_TENANT_CONTROL:
+                        return (IdentifiedDataSerializable) TenantControl.NOOP_TENANT_CONTROL;
                     default:
                         return null;
                 }

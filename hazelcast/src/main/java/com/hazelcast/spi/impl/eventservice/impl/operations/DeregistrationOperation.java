@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl.operations;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
@@ -23,16 +24,17 @@ import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class DeregistrationOperation extends AbstractRegistrationOperation {
 
     private String topic;
-    private String id;
+    private UUID id;
 
     public DeregistrationOperation() {
     }
 
-    public DeregistrationOperation(String topic, String id, int memberListVersion) {
+    public DeregistrationOperation(String topic, UUID id, int memberListVersion) {
         super(memberListVersion);
         this.topic = topic;
         this.id = id;
@@ -55,17 +57,17 @@ public class DeregistrationOperation extends AbstractRegistrationOperation {
     @Override
     protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         out.writeUTF(topic);
-        out.writeUTF(id);
+        UUIDSerializationUtil.writeUUID(out, id);
     }
 
     @Override
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
         topic = in.readUTF();
-        id = in.readUTF();
+        id = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SpiDataSerializerHook.DEREGISTRATION;
     }
 }

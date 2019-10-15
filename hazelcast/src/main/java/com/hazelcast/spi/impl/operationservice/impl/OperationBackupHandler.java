@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,26 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
-import com.hazelcast.nio.Address;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
-import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
-import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.hasActiveInvocation;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 import static java.lang.Math.min;
 
 /**
@@ -47,12 +49,14 @@ final class OperationBackupHandler {
     private final NodeEngineImpl nodeEngine;
     private final BackpressureRegulator backpressureRegulator;
     private final OutboundOperationHandler outboundOperationHandler;
+    private final ILogger logger;
 
     OperationBackupHandler(OperationServiceImpl operationService, OutboundOperationHandler outboundOperationHandler) {
         this.outboundOperationHandler = outboundOperationHandler;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
         this.backpressureRegulator = operationService.backpressureRegulator;
+        this.logger = node.getLogger(getClass());
     }
 
     /**
@@ -77,7 +81,7 @@ final class OperationBackupHandler {
         return backupAcks;
     }
 
-    int sendBackups0(BackupAwareOperation backupAwareOp) throws Exception {
+    int sendBackups0(BackupAwareOperation backupAwareOp) {
         int requestedSyncBackups = requestedSyncBackups(backupAwareOp);
         int requestedAsyncBackups = requestedAsyncBackups(backupAwareOp);
         int requestedTotalBackups = requestedTotalBackups(backupAwareOp);
@@ -209,18 +213,20 @@ final class OperationBackupHandler {
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
 
             for (int replicaIndex = 1; replicaIndex <= totalBackups; replicaIndex++) {
-                Address target = partition.getReplicaAddress(replicaIndex);
+                PartitionReplica target = partition.getReplica(replicaIndex);
 
                 if (target == null) {
                     continue;
                 }
 
-                assertNoBackupOnPrimaryMember(partition, target);
+                if (skipSendingBackupToTarget(partition, target)) {
+                    continue;
+                }
 
                 boolean isSyncBackup = replicaIndex <= syncBackups;
 
                 Backup backup = newBackup(backupAwareOp, backupOpData, replicaVersions, replicaIndex, isSyncBackup);
-                outboundOperationHandler.send(backup, target);
+                outboundOperationHandler.send(backup, target.address());
 
                 if (isSyncBackup) {
                     sendSyncBackups++;
@@ -239,8 +245,11 @@ final class OperationBackupHandler {
     private int sendSingleBackup(BackupAwareOperation backupAwareOp, InternalPartition partition,
                                  long[] replicaVersions, int syncBackups, int replica) {
         Operation backupOp = getBackupOperation(backupAwareOp);
-        Address target = partition.getReplicaAddress(replica);
+        PartitionReplica target = partition.getReplica(replica);
         if (target != null) {
+            if (skipSendingBackupToTarget(partition, target)) {
+                return 0;
+            }
             // Since there is only one backup, backup operation is sent to only one node.
             // If backup operation is converted to `Data`, there will be these operations as below:
             //      - a temporary memory allocation (byte[]) for `Data`
@@ -250,15 +259,14 @@ final class OperationBackupHandler {
             // So in this case (there is only one backup), we don't convert backup operation to `Data` as temporary
             // before `Backup` is serialized but backup operation is already serialized directly into output
             // without any unnecessary memory allocation and copy when it is used as object inside `Backup`.
-            assertNoBackupOnPrimaryMember(partition, target);
             if (backupOp instanceof TargetAware) {
-                ((TargetAware) backupOp).setTarget(target);
+                ((TargetAware) backupOp).setTarget(target.address());
             }
 
             boolean isSyncBackup = syncBackups == 1;
 
             Backup backup = newBackup(backupAwareOp, backupOp, replicaVersions, 1, isSyncBackup);
-            outboundOperationHandler.send(backup, target);
+            outboundOperationHandler.send(backup, target.address());
 
             if (isSyncBackup) {
                 return 1;
@@ -319,27 +327,39 @@ final class OperationBackupHandler {
         Operation op = (Operation) backupAwareOp;
         Backup backup;
         if (backupOp instanceof Operation) {
-            backup = new Backup((Operation) backupOp, op.getCallerAddress(), replicaVersions, respondBack);
+            backup = new Backup((Operation) backupOp, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
         } else if (backupOp instanceof Data) {
-            backup = new Backup((Data) backupOp, op.getCallerAddress(), replicaVersions, respondBack);
+            backup = new Backup((Data) backupOp, op.getCallerAddress(), replicaVersions, respondBack, op.getClientCallId());
         } else {
             throw new IllegalArgumentException("Only 'Data' or 'Operation' typed backup operation is supported!");
         }
 
-        backup.setPartitionId(op.getPartitionId()).setReplicaIndex(replicaIndex);
+        backup.setPartitionId(op.getPartitionId()).setReplicaIndex(replicaIndex).setCallerUuid(op.getCallerUuid());
         if (hasActiveInvocation(op)) {
             setCallId(backup, op.getCallId());
         }
         return backup;
     }
 
-    /**
-     * Verifies that the backup of a partition doesn't end up at the member that also has the primary.
-     */
-    private void assertNoBackupOnPrimaryMember(InternalPartition partition, Address target) {
-        if (target.equals(node.getThisAddress())) {
-            throw new IllegalStateException("Normally shouldn't happen! Owner node and backup node "
-                    + "are the same! " + partition);
+    private boolean skipSendingBackupToTarget(InternalPartition partition, PartitionReplica target) {
+        ClusterServiceImpl clusterService = node.getClusterService();
+
+        assert !target.isIdentical(nodeEngine.getLocalMember()) : "Could not send backup operation, because "
+                + target + " is local member itself! Local-member: " + clusterService.getLocalMember()
+                + ", " + partition;
+
+        if (clusterService.getMember(target.address(), target.uuid()) == null) {
+            if (logger.isFinestEnabled()) {
+                if (clusterService.isMissingMember(target.address(), target.uuid())) {
+                    logger.finest("Could not send backup operation, because " + target + " is a missing member. "
+                            + partition);
+                } else {
+                    logger.finest("Could not send backup operation, because " + target + " is not a known member. "
+                            + partition);
+                }
+            }
+            return true;
         }
+        return false;
     }
 }

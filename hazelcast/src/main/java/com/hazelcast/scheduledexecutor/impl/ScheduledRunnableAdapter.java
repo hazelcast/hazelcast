@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitionAware;
-import com.hazelcast.instance.Node;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.internal.services.NodeAware;
 
 import java.io.IOException;
 import java.util.Map;
@@ -112,7 +112,7 @@ public class ScheduledRunnableAdapter<V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ScheduledExecutorDataSerializerHook.RUNNABLE_ADAPTER;
     }
 

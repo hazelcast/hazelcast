@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package com.hazelcast.internal.management.request;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ThreadDumpOperation;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 
 /**
  * Request for generating thread dumps.

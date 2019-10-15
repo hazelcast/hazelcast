@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -125,6 +126,10 @@ class BackpressureRegulator {
     }
 
     private int getMaxConcurrentInvocations(HazelcastProperties props) {
+        if (disabled) {
+            return Integer.MAX_VALUE;
+        }
+
         int invocationsPerPartition = props.getInteger(BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION);
         if (invocationsPerPartition < 1) {
             throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION
@@ -151,8 +156,8 @@ class BackpressureRegulator {
         }
     }
 
-    CallIdSequence newCallIdSequence() {
-        return CallIdFactory.newCallIdSequence(enabled, maxConcurrentInvocations, backoffTimeoutMs);
+    CallIdSequence newCallIdSequence(ConcurrencyDetection concurrencyDetection) {
+        return CallIdFactory.newCallIdSequence(maxConcurrentInvocations, backoffTimeoutMs, concurrencyDetection);
     }
 
     /**

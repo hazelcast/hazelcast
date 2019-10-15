@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,11 +32,11 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.config.WanPublisherState.PAUSED;
 import static com.hazelcast.config.WanPublisherState.REPLICATING;
 import static com.hazelcast.config.WanPublisherState.STOPPED;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ChangeWanStateRequestTest extends HazelcastTestSupport {
 
     private ManagementCenterService managementCenterService;
@@ -68,6 +68,6 @@ public class ChangeWanStateRequestTest extends HazelcastTestSupport {
         changeWanStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertNotEquals(ChangeWanStateRequest.SUCCESS, getString(result, "result"));
+        assertNotEquals("success", getString(result, "result"));
     }
 }

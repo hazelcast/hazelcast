@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.util.collection.InflatableSet;
+import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.collection.InflatableSet;
-import com.hazelcast.util.collection.InflatableSet.Builder;
-import com.hazelcast.wan.merkletree.MerkleTree;
+import com.hazelcast.wan.impl.merkletree.MerkleTree;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -69,7 +69,7 @@ public class MerkleTreeNodeEntries implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MERKLE_TREE_NODE_ENTRIES;
     }
 
@@ -88,7 +88,7 @@ public class MerkleTreeNodeEntries implements IdentifiedDataSerializable {
         int entryCount = in.readInt();
         Builder<EntryView<Data, Data>> entries = InflatableSet.newBuilder(entryCount);
         for (int j = 0; j < entryCount; j++) {
-            entries.add(in.<EntryView<Data, Data>>readObject());
+            entries.add(in.readObject());
         }
         nodeEntries = entries.build();
     }

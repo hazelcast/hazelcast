@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,10 +58,12 @@ public class CacheEventJournalBounceTest extends AbstractEventJournalBounceTest 
         final CacheSimpleConfig cacheConfig = new CacheSimpleConfig()
                 .setName(TEST_CACHE_NAME);
         cacheConfig.getEvictionConfig().setSize(Integer.MAX_VALUE);
-        return super.getConfig()
-                    .addCacheConfig(cacheConfig)
-                    .addEventJournalConfig(new EventJournalConfig().setEnabled(true)
-                                                                   .setCapacity(10000)
-                                                                   .setCacheName(TEST_CACHE_NAME));
+        Config config = super.getConfig()
+                             .addCacheConfig(cacheConfig);
+
+        config.getCacheConfig(TEST_CACHE_NAME)
+              .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+                                                             .setCapacity(10000));
+        return config;
     }
 }

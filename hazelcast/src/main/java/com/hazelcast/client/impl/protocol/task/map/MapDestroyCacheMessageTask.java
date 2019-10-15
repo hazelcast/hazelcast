@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,16 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.querycache.subscriber.operation.DestroyQueryCacheOperation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.internal.util.FutureUtil;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
  * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_DESTROYCACHE}
  */
 public class MapDestroyCacheMessageTask
-        extends AbstractCallableMessageTask<ContinuousQueryDestroyCacheCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<ContinuousQueryDestroyCacheCodec.RequestParameters> implements BlockingMessageTask {
 
     public MapDestroyCacheMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -64,7 +65,7 @@ public class MapDestroyCacheMessageTask
     }
 
     private void createInvocations(Collection<MemberImpl> members, List<Future<Boolean>> futures) {
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         for (MemberImpl member : members) {
             DestroyQueryCacheOperation operation =
                     new DestroyQueryCacheOperation(parameters.mapName, parameters.cacheName);

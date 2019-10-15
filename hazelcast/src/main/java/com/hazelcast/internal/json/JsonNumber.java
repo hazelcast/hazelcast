@@ -21,9 +21,9 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import java.io.IOException;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
+import java.io.IOException;
 
 @SuppressWarnings("serial") // use default serial UID
 @SerializableByConvention

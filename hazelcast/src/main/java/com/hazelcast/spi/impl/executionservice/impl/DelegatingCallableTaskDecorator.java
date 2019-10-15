@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +38,7 @@ class DelegatingCallableTaskDecorator<V>
      * @param callable Task to be executed
      * @param executor ExecutorService the task to be delegated to
      */
-    public DelegatingCallableTaskDecorator(Callable<V> callable, ExecutorService executor) {
+    DelegatingCallableTaskDecorator(Callable<V> callable, ExecutorService executor) {
         this.executor = executor;
         this.callable = callable;
     }

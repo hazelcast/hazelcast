@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,12 +62,9 @@ public class DoubleGaugeImplTest {
 
     @Test
     public void whenProbeThrowsException() {
-        metricsRegistry.register(this, "foo", MANDATORY,
-                new DoubleProbeFunction() {
-                    @Override
-                    public double get(Object o) {
-                        throw new RuntimeException();
-                    }
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
+                (DoubleProbeFunction) o -> {
+                    throw new RuntimeException();
                 });
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo");
@@ -79,13 +76,8 @@ public class DoubleGaugeImplTest {
 
     @Test
     public void whenDoubleProbe() {
-        metricsRegistry.register(this, "foo", MANDATORY,
-                new DoubleProbeFunction() {
-                    @Override
-                    public double get(Object o) {
-                        return 10;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
+                (DoubleProbeFunction) o -> 10);
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo");
 
         double actual = gauge.read();
@@ -95,13 +87,8 @@ public class DoubleGaugeImplTest {
 
     @Test
     public void whenLongProbe() {
-        metricsRegistry.register(this, "foo", MANDATORY,
-                new LongProbeFunction() {
-                    @Override
-                    public long get(Object o) throws Exception {
-                        return 10;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, "foo", MANDATORY,
+                (LongProbeFunction) o -> 10);
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo");
 
         double actual = gauge.read();
@@ -112,7 +99,7 @@ public class DoubleGaugeImplTest {
     @Test
     public void whenLongGaugeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.registerStaticMetrics(someObject, "foo");
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.longField");
         assertEquals(someObject.longField, gauge.read(), 0.1);
@@ -121,7 +108,7 @@ public class DoubleGaugeImplTest {
     @Test
     public void whenDoubleGaugeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.registerStaticMetrics(someObject, "foo");
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.doubleField");
         assertEquals(someObject.doubleField, gauge.read(), 0.1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,4 +81,10 @@ public interface SubscriberContext {
      * @see SubscriberContextSupport
      */
     SubscriberContextSupport getSubscriberContextSupport();
+
+    /**
+     * @param request see {@link QueryCacheRequest}
+     * @return a new instance of {@link QueryCacheEndToEndConstructor}
+     */
+    QueryCacheEndToEndConstructor newEndToEndConstructor(QueryCacheRequest request);
 }

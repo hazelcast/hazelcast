@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,38 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.event.MapEventData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
+import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
@@ -55,9 +57,10 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
 /**
  * Dispatches published events on replicated map to corresponding listeners.
  */
-public class ReplicatedMapEventPublishingService implements EventPublishingService {
+public class ReplicatedMapEventPublishingService
+        implements EventPublishingService {
 
-    private final HashMap<String, Boolean> statisticsMap = new HashMap<String, Boolean>();
+    private final HashMap<String, Boolean> statisticsMap = new HashMap<>();
 
     private final ReplicatedMapService replicatedMapService;
     private final NodeEngine nodeEngine;
@@ -105,7 +108,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
             if (statisticsEnabled) {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryEventData.getDataKey());
                 ReplicatedRecordStore recordStore = replicatedMapService.getPartitionContainer(partitionId)
-                        .getRecordStore(mapName);
+                                                                        .getRecordStore(mapName);
                 if (recordStore instanceof AbstractReplicatedRecordStore) {
                     LocalReplicatedMapStatsImpl stats = ((AbstractReplicatedRecordStore) recordStore).getStats();
                     stats.incrementReceivedEvents();
@@ -118,17 +121,16 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
                     mapEventData.getEventType(), mapEventData.getNumberOfEntries());
             EntryListener entryListener = (EntryListener) listener;
             EntryEventType type = EntryEventType.getByType(mapEventData.getEventType());
-            switch (type) {
-                case CLEAR_ALL:
-                    entryListener.mapCleared(mapEvent);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unsupported EntryEventType: " + type);
+            if (type == EntryEventType.CLEAR_ALL) {
+                entryListener.mapCleared(mapEvent);
+            } else {
+                throw new IllegalArgumentException("Unsupported EntryEventType: " + type);
             }
         }
     }
 
-    public String addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
+    public @Nonnull
+    UUID addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
@@ -137,7 +139,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
         return registration.getId();
     }
 
-    public boolean removeEventListener(String mapName, String registrationId) {
+    public boolean removeEventListener(@Nonnull String mapName, @Nonnull UUID registrationId) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
@@ -161,7 +163,9 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
     private Member getMember(EventData eventData) {
         Member member = replicatedMapService.getNodeEngine().getClusterService().getMember(eventData.getCaller());
         if (member == null) {
-            member = new MemberImpl(eventData.getCaller(), nodeEngine.getVersion(), false);
+            member = new MemberImpl.Builder(eventData.getCaller())
+                    .version(nodeEngine.getVersion())
+                    .build();
         }
         return member;
     }

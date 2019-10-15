@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainMergePolicy;
 import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 
@@ -28,7 +27,6 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
  * @param <T> the type of the merging value
  * @since 3.10
  */
-@Beta
 public class HigherHitsMergePolicy<V, T extends MergingHits<V>> extends AbstractSplitBrainMergePolicy<V, T> {
 
     public HigherHitsMergePolicy() {
@@ -49,7 +47,7 @@ public class HigherHitsMergePolicy<V, T extends MergingHits<V>> extends Abstract
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return SplitBrainDataSerializerHook.HIGHER_HITS;
     }
 }

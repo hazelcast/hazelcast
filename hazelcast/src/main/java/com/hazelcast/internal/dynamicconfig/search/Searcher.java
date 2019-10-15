@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,5 +36,5 @@ public interface Searcher<T extends IdentifiedDataSerializable> {
      * @return configuration for <code>name</code> or fallback config for <code>fallbackName</code>. If neither is
      * found, <code>null</code> is returned.
      */
-    T getConfig(@Nonnull final String name, final String fallbackName, @Nonnull final ConfigSupplier<T> configSupplier);
+    T getConfig(@Nonnull String name, String fallbackName, @Nonnull ConfigSupplier<T> configSupplier);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,15 +32,15 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISet;
+import com.hazelcast.map.IMap;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -55,18 +55,19 @@ import com.hazelcast.multimap.impl.MultiMapPartitionContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -86,6 +87,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
 import static com.hazelcast.internal.cluster.Versions.PREVIOUS_CLUSTER_VERSION;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static java.lang.reflect.Proxy.isProxyClass;
@@ -103,6 +105,8 @@ public class AnswerTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
+        Assume.assumeTrue("This test ensures access to internals works with a previous minor version. "
+                + "Test execution is skipped for new major versions.", CURRENT_CLUSTER_VERSION.getMinor() > 0);
         Config config = smallInstanceConfig()
                 .setInstanceName("test-name");
 
@@ -152,7 +156,7 @@ public class AnswerTest extends HazelcastTestSupport {
         SerializationService serializationService = nodeEngine.getSerializationService();
         assertNotNull("SerializationService should not be null", serializationService);
 
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         assertNotNull("InternalOperationService should not be null", operationService);
 
         CollectionService collectionService = nodeEngine.getService(SetService.SERVICE_NAME);
@@ -217,7 +221,8 @@ public class AnswerTest extends HazelcastTestSupport {
         Data data = serializationService.toData(original);
         assertNotNull("data should not be null", data);
         assertFalse("data should be no proxy class", isProxyClass(data.getClass()));
-        assertEquals("toObject() should return original value", original, serializationService.toObject(data));
+        assertEquals("toObject() should return original value", original,
+                ((Integer) serializationService.toObject(data)).intValue());
 
         SerializationService localSerializationService = new DefaultSerializationServiceBuilder().build();
         Data localData = localSerializationService.toData(original);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.mapreduce.helpers.Employee;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -32,6 +33,10 @@ public abstract class AbstractQueryCacheTestSupport extends HazelcastTestSupport
     protected String mapName = randomString();
     protected String cacheName = randomString();
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+
+    InMemoryFormat getInMemoryFormat() {
+        return InMemoryFormat.BINARY;
+    }
 
     void populateMap(IMap<Integer, Employee> map, int count) {
         populateMap(map, 0, count);
@@ -64,6 +69,7 @@ public abstract class AbstractQueryCacheTestSupport extends HazelcastTestSupport
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
         queryCacheConfig.getPredicateConfig().setImplementation(predicate);
+        queryCacheConfig.setInMemoryFormat(getInMemoryFormat());
         config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
 
         return factory.newInstances(config)[0].getMap(mapName);

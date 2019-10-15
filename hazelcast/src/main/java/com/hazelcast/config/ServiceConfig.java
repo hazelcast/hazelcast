@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,22 +78,6 @@ public class ServiceConfig {
     public ServiceConfig setImplementation(final Object serviceImpl) {
         this.serviceImpl = serviceImpl;
         return this;
-    }
-
-    /**
-     * @deprecated use {@link #getImplementation()} instead
-     */
-    @Deprecated
-    public Object getServiceImpl() {
-        return getImplementation();
-    }
-
-    /**
-     * @deprecated use {@link #setImplementation(Object)} instead
-     */
-    @Deprecated
-    public ServiceConfig setServiceImpl(final Object serviceImpl) {
-        return setImplementation(serviceImpl);
     }
 
     public Properties getProperties() {

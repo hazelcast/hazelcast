@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,28 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.map.IMap;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.BackupOperation;
 import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.SilentOperation;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
@@ -52,9 +52,10 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static org.junit.Assert.assertEquals;
@@ -63,7 +64,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BasicClusterStateTest extends HazelcastTestSupport {
 
     @Rule
@@ -359,10 +360,10 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(master, ClusterState.PASSIVE);
         master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
-        // Expected = 2 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        // * instances
-        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 3);
-        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 3);
+        // Expected = 7 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers * instances
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);
     }
 
     @Test
@@ -371,17 +372,18 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance master = factory.newHazelcastInstance();
         final HazelcastInstance other = factory.newHazelcastInstance();
 
-        final String registrationId = master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
-        // Expected = 3 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
-        // * instances
-        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 3);
-        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 3);
+        final UUID registrationId = master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
+        // Expected = 7 -> 1 added + 1 from {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers * instances
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 7);
 
         changeClusterStateEventually(master, ClusterState.PASSIVE);
         master.getPartitionService().removePartitionLostListener(registrationId);
-        // Expected = 2 -> see {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService} * instances
-        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 2);
-        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 2);
+        // Expected = 6 -> see {@link com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService}
+        // + 2 from map and cache ExpirationManagers* instances
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 6);
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 6);
     }
 
     @Test
@@ -464,7 +466,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
             public void run()
                     throws Exception {
 
-                final InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
+                final EventService eventService = getNode(instance).getNodeEngine().getEventService();
                 final Collection<EventRegistration> registrations =
                         eventService.getRegistrations(serviceName, topic);
                 assertEquals(size, registrations.size());

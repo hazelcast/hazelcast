@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,15 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.version.Version;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Cache PutAllBackup Operation is the backup operation used by load all operation. Provides backup of
@@ -64,19 +62,6 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
     }
 
     @Override
-    protected boolean requiresExplicitServiceName() {
-        // RU_COMPAT_3_10
-        // We are not checking target member version here since this requires
-        // the operation to be target-aware and that breaks the multi-member
-        // broadcast serialization optimization in OperationBackupHandler. It's
-        // cheaper just to transfer an additional service name string in
-        // mixed-version clusters than serializing the operation for each member
-        // individually.
-        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
-        return clusterVersion.isUnknownOrLessThan(Versions.V3_11);
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(cacheRecords != null);
@@ -107,7 +92,7 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.PUT_ALL_BACKUP;
     }
 }

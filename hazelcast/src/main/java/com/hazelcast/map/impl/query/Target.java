@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Target for a query.
- *
+ * <p>
  * Possible options:
  * - all nodes
  * - local node only
@@ -35,40 +36,32 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class Target implements IdentifiedDataSerializable {
 
-    public static final Target ALL_NODES = Target.of().allNodes().build();
-    public static final Target LOCAL_NODE = Target.of().localNode().build();
+    public static final Target ALL_NODES = new Target(TargetMode.ALL_NODES, null);
+    public static final Target LOCAL_NODE = new Target(TargetMode.LOCAL_NODE, null);
 
-    private TargetFlag target;
+    private TargetMode mode;
     private Integer partitionId;
 
     public Target() {
     }
 
-    private Target(TargetFlag targetFlag, Integer partitionId) {
-        this.target = checkNotNull(targetFlag);
+    private Target(TargetMode mode, Integer partitionId) {
+        this.mode = checkNotNull(mode);
         this.partitionId = partitionId;
-        if (targetFlag.equals(TargetFlag.PARTITION_OWNER) && partitionId == null) {
-            throw new IllegalArgumentException("It's forbidden to use null partitionId with PARTITION_OWNER target");
+        if (mode.equals(PARTITION_OWNER) && partitionId == null) {
+            throw new IllegalArgumentException("It's forbidden to use null partitionId with PARTITION_OWNER mode");
         }
     }
 
-    public Integer getPartitionId() {
+    public TargetMode mode() {
+        return mode;
+    }
+
+    public Integer partitionId() {
         return partitionId;
     }
 
-    public boolean isTargetLocalNode() {
-        return target.equals(TargetFlag.LOCAL_NODE);
-    }
-
-    public boolean isTargetAllNodes() {
-        return target.equals(TargetFlag.ALL_NODES);
-    }
-
-    public boolean isTargetPartitionOwner() {
-        return target.equals(TargetFlag.PARTITION_OWNER);
-    }
-
-    enum TargetFlag {
+    enum TargetMode {
         LOCAL_NODE,
         ALL_NODES,
         PARTITION_OWNER
@@ -80,52 +73,23 @@ public class Target implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.TARGET;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
-        out.writeUTF(target.name());
+        out.writeUTF(mode.name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.partitionId = in.readInt();
-        this.target = TargetFlag.valueOf(in.readUTF());
+        this.mode = TargetMode.valueOf(in.readUTF());
     }
 
-    public static TargetBuilder of() {
-        return new TargetBuilder();
-    }
-
-    public static final class TargetBuilder {
-
-        private TargetFlag target;
-        private Integer partitionId;
-
-        private TargetBuilder() {
-        }
-
-        public TargetBuilder allNodes() {
-            this.target = TargetFlag.ALL_NODES;
-            return this;
-        }
-
-        public TargetBuilder localNode() {
-            this.target = TargetFlag.LOCAL_NODE;
-            return this;
-        }
-
-        public TargetBuilder partitionOwner(int partitionId) {
-            this.target = TargetFlag.PARTITION_OWNER;
-            this.partitionId = partitionId;
-            return this;
-        }
-
-        public Target build() {
-            return new Target(target, partitionId);
-        }
+    public static Target createPartitionTarget(int partitionId) {
+        return new Target(TargetMode.PARTITION_OWNER, partitionId);
     }
 }

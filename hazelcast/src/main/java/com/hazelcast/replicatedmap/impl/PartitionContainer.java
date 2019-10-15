@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.replicatedmap.impl.record.DataReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ObjectReplicatedRecordStorage;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * Contains the record storage for the replicated maps which are the actual place where the data is stored.
@@ -45,26 +45,22 @@ public class PartitionContainer {
     }
 
     private ConcurrentHashMap<String, ReplicatedRecordStore> initReplicatedRecordStoreMapping() {
-        return new ConcurrentHashMap<String, ReplicatedRecordStore>();
+        return new ConcurrentHashMap<>();
     }
 
     private ConstructorFunction<String, ReplicatedRecordStore> buildConstructorFunction() {
-        return new ConstructorFunction<String, ReplicatedRecordStore>() {
-
-            @Override
-            public ReplicatedRecordStore createNew(String name) {
-                ReplicatedMapConfig replicatedMapConfig = service.getReplicatedMapConfig(name);
-                InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
-                switch (inMemoryFormat) {
-                    case OBJECT:
-                        return new ObjectReplicatedRecordStorage(name, service, partitionId);
-                    case BINARY:
-                        return new DataReplicatedRecordStore(name, service, partitionId);
-                    case NATIVE:
-                        throw new IllegalStateException("Native memory not yet supported for replicated map");
-                    default:
-                        throw new IllegalStateException("Unsupported in memory format: " + inMemoryFormat);
-                }
+        return name -> {
+            ReplicatedMapConfig replicatedMapConfig = service.getReplicatedMapConfig(name);
+            InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
+            switch (inMemoryFormat) {
+                case OBJECT:
+                    return new ObjectReplicatedRecordStorage(name, service, partitionId);
+                case BINARY:
+                    return new DataReplicatedRecordStore(name, service, partitionId);
+                case NATIVE:
+                    throw new IllegalStateException("Native memory not yet supported for replicated map");
+                default:
+                    throw new IllegalStateException("Unsupported in memory format: " + inMemoryFormat);
             }
         };
     }

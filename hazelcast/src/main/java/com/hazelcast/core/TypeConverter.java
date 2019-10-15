@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package com.hazelcast.core;
  * Implementations of this interface define a certain type conversation.
  * Conversation can happen from any kind of {@link java.lang.Comparable}
  * type to another.
- * <p/>
+ * <p>
  * Implementations of TypeConverter need to be fully thread-safe and
  * must have no internal state as they are expected to be used by
  * multiple threads and with shared instances.

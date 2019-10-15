@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
   This XML file is used when no hazelcast.xml is present.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/config/hazelcast-config-3.11.xsd
+  https://hazelcast.com/schema/config/hazelcast-config-4.0.xsd
   or the Reference Manual at https://hazelcast.org/documentation/
 -->
 
@@ -29,12 +29,10 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <group>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </group>
+    <cluster-name>dev</cluster-name>
+
     <management-center enabled="false">http://localhost:8080/hazelcast-mancenter</management-center>
     <network>
         <port auto-increment="true" port-count="100">5701</port>
@@ -68,6 +66,27 @@
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
+            <gcp enabled="false">
+                <zones>us-east1-b,us-east1-c</zones>
+            </gcp>
+            <azure enabled="false">
+                <client-id>CLIENT_ID</client-id>
+                <client-secret>CLIENT_SECRET</client-secret>
+                <tenant-id>TENANT_ID</tenant-id>
+                <subscription-id>SUB_ID</subscription-id>
+                <cluster-id>HZLCAST001</cluster-id>
+                <group-name>RESOURCE-GROUP-NAME</group-name>
+            </azure>
+            <kubernetes enabled="false">
+                <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+                <service-name>MY-SERVICE-NAME</service-name>
+                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
+                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+            </kubernetes>
+            <eureka enabled="false">
+                <self-registration>true</self-registration>
+                <namespace>hazelcast</namespace>
+            </eureka>
             <discovery-strategies>
             </discovery-strategies>
         </join>
@@ -142,6 +161,16 @@
         <in-memory-format>BINARY</in-memory-format>
 
         <!--
+            Metadata creation policy for this map. Hazelcast may process objects of supported types ahead of time to
+            create additional metadata about them. This metadata then is used to make querying and indexing faster.
+            Metadata creation may decrease put throughput.
+            Valid values are:
+            CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created and updated.
+            OFF: No metadata is created.
+        -->
+        <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
+
+        <!--
             Number of backups. If 1 is set as the backup-count for example,
             then all entries of the map will be copied to another JVM for
             fail-safety. 0 means no backup.
@@ -181,20 +210,6 @@
         -->
         <max-size policy="PER_NODE">0</max-size>
         <!--
-            `eviction-percentage` property is deprecated and will be ignored when it is set.
-
-            As of version 3.7, eviction mechanism changed.
-            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        -->
-        <eviction-percentage>25</eviction-percentage>
-        <!--
-            `min-eviction-check-millis` property is deprecated  and will be ignored when it is set.
-
-            As of version 3.7, eviction mechanism changed.
-            It uses a probabilistic algorithm based on sampling. Please see documentation for further details
-        -->
-        <min-eviction-check-millis>100</min-eviction-check-millis>
-        <!--
             While recovering from split-brain (network partitioning),
             map entries in the small cluster will merge into the bigger cluster
             based on the policy set here. When an entry merge into the
@@ -204,10 +219,10 @@
             the policy set here. Default policy is PutIfAbsentMapMergePolicy
 
             There are built-in merge policies such as
-            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
-            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
-            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
-            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
+            com.hazelcast.spi.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
+            com.hazelcast.spi.merge.PutIfAbsentMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
+            com.hazelcast.spi.merge.HigherHitsMergePolicy ; entry with the higher hits wins.
+            com.hazelcast.spi.merge.LatestUpdateMergePolicy ; entry with the latest update wins.
         -->
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
 
@@ -221,34 +236,6 @@
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
 
     </map>
-
-    <!--
-           Configuration for an event journal. The event journal keeps events related
-           to a specific partition and data structure. For instance, it could keep
-           map add, update, remove, merge events along with the key, old value, new value and so on.
-        -->
-    <event-journal enabled="false">
-        <mapName>mapName</mapName>
-        <capacity>10000</capacity>
-        <time-to-live-seconds>0</time-to-live-seconds>
-    </event-journal>
-
-    <event-journal enabled="false">
-        <cacheName>cacheName</cacheName>
-        <capacity>10000</capacity>
-        <time-to-live-seconds>0</time-to-live-seconds>
-    </event-journal>
-
-    <!--
-       Configuration for a merkle tree.
-       The merkle tree is a data structure used for efficient comparison of the
-       difference in the contents of large data structures. The precision of
-       such a comparison mechanism is defined by the depth of the merkle tree.
-    -->
-    <merkle-tree enabled="false">
-        <mapName>mapName</mapName>
-        <depth>10</depth>
-    </merkle-tree>
 
     <multimap name="default">
         <backup-count>1</backup-count>
@@ -273,22 +260,6 @@
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </set>
 
-    <jobtracker name="default">
-        <max-thread-size>0</max-thread-size>
-        <!-- Queue size 0 means number of partitions * 2 -->
-        <queue-size>0</queue-size>
-        <retry-count>0</retry-count>
-        <chunk-size>1000</chunk-size>
-        <communicate-stats>true</communicate-stats>
-        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
-    </jobtracker>
-
-    <semaphore name="default">
-        <initial-permits>0</initial-permits>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-    </semaphore>
-
     <reliable-topic name="default">
         <read-batch-size>10</read-batch-size>
         <topic-overload-policy>BLOCK</topic-overload-policy>
@@ -311,16 +282,6 @@
         <node-id-offset>0</node-id-offset>
         <statistics-enabled>true</statistics-enabled>
     </flake-id-generator>
-
-    <atomic-long name="default">
-        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
-    </atomic-long>
-
-    <atomic-reference name="default">
-        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
-    </atomic-reference>
-
-    <count-down-latch name="default"/>
 
     <serialization>
         <portable-version>0</portable-version>
@@ -352,4 +313,22 @@
         <replica-count>2147483647</replica-count>
         <statistics-enabled>true</statistics-enabled>
     </pn-counter>
+
+    <cp-subsystem>
+        <cp-member-count>0</cp-member-count>
+        <group-size>0</group-size>
+        <session-time-to-live-seconds>300</session-time-to-live-seconds>
+        <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
+        <missing-cp-member-auto-removal-seconds>14400</missing-cp-member-auto-removal-seconds>
+        <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+        <raft-algorithm>
+            <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
+            <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
+            <max-missed-leader-heartbeat-count>5</max-missed-leader-heartbeat-count>
+            <append-request-max-entry-count>100</append-request-max-entry-count>
+            <commit-index-advance-count-to-snapshot>10000</commit-index-advance-count-to-snapshot>
+            <uncommitted-entry-count-to-reject-new-appends>100</uncommitted-entry-count-to-reject-new-appends>
+            <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
+        </raft-algorithm>
+    </cp-subsystem>
 </hazelcast>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class AbstractJoinTest extends HazelcastTestSupport {
 
     /**
      * Checks if a HazelcastInstance created with config2, can be added to a HazelcastInstance created with config 1.
-     * <p/>
+     * <p>
      * This method expects that an IllegalStateException is thrown when the second HazelcastInstance is created and
      * it doesn't join the cluster but gets killed instead.
      *

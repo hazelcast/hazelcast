@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.ConcurrencyUtil.setMax;
-import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
@@ -308,13 +308,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     public void setMerkleTreesCost(long merkleTreesCost) {
     }
 
-    @Probe
-    @Override
-    public long getReplicationEventCount() {
-        return 0;
-    }
-
-
     @Override
     public NearCacheStatsImpl getNearCacheStats() {
         throw new UnsupportedOperationException("Replicated map has no Near Cache!");
@@ -333,6 +326,21 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     @Override
     public Map<String, LocalIndexStats> getIndexStats() {
         throw new UnsupportedOperationException("Queries on replicated maps are not supported.");
+    }
+
+    @Override
+    public long getSetOperationCount() {
+        throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
+    }
+
+    @Override
+    public long getTotalSetLatency() {
+        throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
+    }
+
+    @Override
+    public long getMaxSetLatency() {
+        throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
     }
 
     @Override

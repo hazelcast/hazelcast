@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -33,8 +33,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 public class MultiMapReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -96,7 +96,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
                 if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())) {
                     coll = createHashSet(collSize);
                 } else {
-                    coll = new LinkedList<MultiMapRecord>();
+                    coll = new LinkedList<>();
                 }
                 for (int k = 0; k < collSize; k++) {
                     MultiMapRecord record = new MultiMapRecord();
@@ -116,7 +116,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MultiMapDataSerializerHook.MULTIMAP_REPLICATION_OPERATION;
     }
 }

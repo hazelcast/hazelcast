@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.spi.properties;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static com.hazelcast.spi.properties.GroupProperty.ENTERPRISE_LICENSE_KEY;
 import static org.junit.Assert.assertEquals;
@@ -93,6 +93,34 @@ public class HazelcastPropertiesTest {
     }
 
     @Test
+    public void testGet_whenFunctionAvailable_andNoOtherSettings() {
+        Properties props = new Properties();
+        HazelcastProperty p = new HazelcastProperty("key", new Function<HazelcastProperties, Integer>() {
+            @Override
+            public Integer apply(HazelcastProperties properties) {
+                return 23;
+            }
+        });
+        HazelcastProperties properties = new HazelcastProperties(props);
+
+        assertEquals(23, properties.getInteger(p));
+    }
+
+    @Test
+    public void testGet_whenFunctionAvailable_andPropertySet() {
+        Properties props = new Properties();
+        props.setProperty("key", "1");
+        HazelcastProperty p = new HazelcastProperty("key", new Function<HazelcastProperties, Integer>() {
+            @Override
+            public Integer apply(HazelcastProperties properties) {
+                return 23;
+            }
+        });
+        HazelcastProperties properties = new HazelcastProperties(props);
+        assertEquals(1, properties.getInteger(p));
+    }
+
+    @Test
     public void setProperty_ensureHighestPriorityOfConfig() {
         config.setProperty(ENTERPRISE_LICENSE_KEY.getName(), "configValue");
         ENTERPRISE_LICENSE_KEY.setSystemProperty("systemValue");
@@ -126,9 +154,10 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void setProperty_inheritDefaultValueOfParentProperty() {
-        String inputIOThreadCount = defaultProperties.getString(GroupProperty.IO_INPUT_THREAD_COUNT);
+        HazelcastProperty parent = new HazelcastProperty("parent", 1);
+        HazelcastProperty child = new HazelcastProperty("child", parent);
 
-        assertEquals(GroupProperty.IO_THREAD_COUNT.getDefaultValue(), inputIOThreadCount);
+        assertEquals(1, defaultProperties.getInteger(child));
     }
 
     @Test
@@ -162,7 +191,8 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getInteger() {
-        int ioThreadCount = defaultProperties.getInteger(GroupProperty.IO_THREAD_COUNT);
+        HazelcastProperty property = new HazelcastProperty("key", 3);
+        int ioThreadCount = defaultProperties.getInteger(property);
 
         assertEquals(3, ioThreadCount);
     }
@@ -234,36 +264,18 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getEnum() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.DEBUG.toString());
-        HazelcastProperties properties = new HazelcastProperties(config);
+        config.getMetricsConfig().setMinimumLevel(ProbeLevel.DEBUG);
 
-        ProbeLevel level = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
 
         assertEquals(ProbeLevel.DEBUG, level);
     }
 
     @Test
     public void getEnum_default() {
-        ProbeLevel level = defaultProperties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
 
-        assertEquals(ProbeLevel.MANDATORY, level);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void getEnum_nonExistingEnum() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), "notExist");
-        HazelcastProperties properties = new HazelcastProperties(config);
-        properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-    }
-
-    @Test
-    public void getEnum_ignoredName() {
-        config.setProperty(Diagnostics.METRICS_LEVEL.getName(), "dEbUg");
-        HazelcastProperties properties = new HazelcastProperties(config);
-
-        ProbeLevel level = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-
-        assertEquals(ProbeLevel.DEBUG, level);
+        assertEquals(ProbeLevel.INFO, level);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
+import com.hazelcast.instance.BuildInfoProvider;
 
 /**
  * Contains the configuration for a Management Center.
@@ -26,6 +28,8 @@ public class ManagementCenterConfig {
     static final int UPDATE_INTERVAL = 3;
 
     private boolean enabled;
+
+    private boolean scriptingEnabled = ! BuildInfoProvider.getBuildInfo().isEnterprise();
 
     private String url;
 
@@ -48,6 +52,30 @@ public class ManagementCenterConfig {
      */
     public boolean isEnabled() {
         return enabled;
+    }
+
+    /**
+     * Enables/disables scripting on the member. Management center allows to send a script for execution to a member. The script
+     * can access the unerlying system Hazelcast member is running on with permissions of user running the member. Disabling
+     * scripting improves the member security.
+     * <p>
+     * Default value for this config element depends on Hazelcast edition: {@code false} for Hazelcast Enterprise, {@code true}
+     * for Hazelcast (open source).
+     *
+     * @param scriptingEnabled {@code true} to allow scripting on the member, {@code false} to disallow
+     * @return this management center config instance
+     * @since 3.12
+     */
+    public ManagementCenterConfig setScriptingEnabled(final boolean scriptingEnabled) {
+        this.scriptingEnabled = scriptingEnabled;
+        return this;
+    }
+
+    /**
+     * Returns if scripting is allowed ({@code true}) or disallowed ({@code false}).
+     */
+    public boolean isScriptingEnabled() {
+        return scriptingEnabled;
     }
 
     /**

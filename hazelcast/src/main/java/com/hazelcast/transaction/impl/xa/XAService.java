@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.transaction.TransactionContext;
@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -74,15 +75,15 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
         return xaResource;
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
     }
 
-    public TransactionContext newXATransactionContext(Xid xid, String ownerUuid, int timeout, boolean originatedFromClient) {
+    public TransactionContext newXATransactionContext(Xid xid, UUID ownerUuid, int timeout, boolean originatedFromClient) {
         return new XATransactionContextImpl(nodeEngine, xid, ownerUuid, timeout, originatedFromClient);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Represents a read-only view of a data structure key/value-pair for the merging process after a split-brain.
  *
@@ -25,7 +23,6 @@ import com.hazelcast.spi.annotation.Beta;
  * @param <V> the type of the value
  * @since 3.10
  */
-@Beta
 public interface MergingEntry<K, V> extends MergingValue<V> {
 
     /**

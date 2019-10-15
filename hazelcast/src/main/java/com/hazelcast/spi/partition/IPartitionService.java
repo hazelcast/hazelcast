@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package com.hazelcast.spi.partition;
 
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.spi.CoreService;
+import com.hazelcast.internal.services.CoreService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * An SPI service for accessing partition related information.
@@ -126,15 +127,15 @@ public interface IPartitionService extends CoreService {
      */
     Map<Address, List<Integer>> getMemberPartitionsMap();
 
-    String addMigrationListener(MigrationListener migrationListener);
+    UUID addMigrationListener(MigrationListener migrationListener);
 
-    boolean removeMigrationListener(String registrationId);
+    boolean removeMigrationListener(UUID registrationId);
 
-    String addPartitionLostListener(PartitionLostListener partitionLostListener);
+    UUID addPartitionLostListener(PartitionLostListener partitionLostListener);
 
-    String addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
+    UUID addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
 
-    boolean removePartitionLostListener(String registrationId);
+    boolean removePartitionLostListener(UUID registrationId);
 
     long getMigrationQueueSize();
 

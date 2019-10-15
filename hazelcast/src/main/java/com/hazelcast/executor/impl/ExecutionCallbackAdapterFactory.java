@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.executor.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.logging.ILogger;
 
@@ -27,8 +27,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 

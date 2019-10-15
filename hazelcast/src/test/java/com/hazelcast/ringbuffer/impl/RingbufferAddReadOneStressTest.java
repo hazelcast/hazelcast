@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
     class ProduceThread extends TestThread {
         private volatile long produced;
 
-        public ProduceThread() {
+        ProduceThread() {
             super("ProduceThread");
         }
 
@@ -143,7 +143,7 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
     class ConsumeThread extends TestThread {
         volatile long seq;
 
-        public ConsumeThread(int id) {
+        ConsumeThread(int id) {
             super("ConsumeThread-" + id);
         }
 

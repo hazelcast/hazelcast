@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class SampleTestObjects {
@@ -557,4 +558,17 @@ public final class SampleTestObjects {
             return attribute;
         }
     }
+
+    public static class ObjectWithOptional<T> implements Serializable {
+        private T attribute;
+
+        public ObjectWithOptional(T attribute) {
+            this.attribute = attribute;
+        }
+
+        public Optional<T> getAttribute() {
+            return Optional.ofNullable(attribute);
+        }
+    }
+
 }

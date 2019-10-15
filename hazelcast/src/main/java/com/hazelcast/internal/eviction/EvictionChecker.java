@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,7 @@ package com.hazelcast.internal.eviction;
  */
 public interface EvictionChecker {
 
-    EvictionChecker EVICT_ALWAYS = new EvictionChecker() {
-        @Override
-        public boolean isEvictionRequired() {
-            return true;
-        }
-    };
+    EvictionChecker EVICT_ALWAYS = () -> true;
 
     /**
      * Checks the state to see if it has reached its maximum configured size

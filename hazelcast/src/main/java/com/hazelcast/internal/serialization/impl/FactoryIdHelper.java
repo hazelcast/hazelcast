@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,17 +41,8 @@ public final class FactoryIdHelper {
     public static final String EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.executor";
     public static final int EXECUTOR_DS_FACTORY_ID = -13;
 
-    public static final String CDL_DS_FACTORY = "hazelcast.serialization.ds.cdl";
-    public static final int CDL_DS_FACTORY_ID = -14;
-
     public static final String LOCK_DS_FACTORY = "hazelcast.serialization.ds.lock";
     public static final int LOCK_DS_FACTORY_ID = -15;
-
-    public static final String SEMAPHORE_DS_FACTORY = "hazelcast.serialization.ds.semaphore";
-    public static final int SEMAPHORE_DS_FACTORY_ID = -16;
-
-    public static final String ATOMIC_LONG_DS_FACTORY = "hazelcast.serialization.ds.atomic_long";
-    public static final int ATOMIC_LONG_DS_FACTORY_ID = -17;
 
     public static final String TOPIC_DS_FACTORY = "hazelcast.serialization.ds.topic";
     public static final int TOPIC_DS_FACTORY_ID = -18;
@@ -62,17 +53,8 @@ public final class FactoryIdHelper {
     public static final String COLLECTION_DS_FACTORY = "hazelcast.serialization.ds.collection";
     public static final int COLLECTION_DS_FACTORY_ID = -20;
 
-    public static final String ATOMIC_REFERENCE_DS_FACTORY = "hazelcast.serialization.ds.atomic_reference";
-    public static final int ATOMIC_REFERENCE_DS_FACTORY_ID = -21;
-
     public static final String REPLICATED_MAP_DS_FACTORY = "hazelcast.serialization.ds.replicated_map";
     public static final int REPLICATED_MAP_DS_FACTORY_ID = -22;
-
-    public static final String MAP_REDUCE_DS_FACTORY = "hazelcast.serialization.ds.map_reduce";
-    public static final int MAP_REDUCE_DS_FACTORY_ID = -23;
-
-    public static final String AGGREGATIONS_DS_FACTORY = "hazelcast.serialization.ds.aggregations";
-    public static final int AGGREGATIONS_DS_FACTORY_ID = -24;
 
     public static final String CACHE_DS_FACTORY = "hazelcast.serialization.ds.cache";
     public static final int CACHE_DS_FACTORY_ID = -25;
@@ -148,6 +130,9 @@ public final class FactoryIdHelper {
 
     public static final String PN_COUNTER_DS_FACTORY = "hazelcast.serialization.ds.pn_counter";
     public static final int PN_COUNTER_DS_FACTORY_ID = -48;
+
+    public static final String METRICS_DS_FACTORY = "hazelcast.serialization.metrics";
+    public static final int METRICS_DS_FACTORY_ID = -49;
 
     // =========================== portables =============================================
 

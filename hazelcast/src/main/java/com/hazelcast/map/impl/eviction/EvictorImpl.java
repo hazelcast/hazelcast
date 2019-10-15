@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 
 /**
  * Evictor helper methods.
@@ -59,6 +59,11 @@ public class EvictorImpl implements Evictor {
             }
             evictEntry(recordStore, evictableEntry);
         }
+    }
+
+    @Override
+    public void forceEvict(RecordStore recordStore) {
+
     }
 
     private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {
@@ -98,7 +103,7 @@ public class EvictorImpl implements Evictor {
         recordStore.evict(key, backup);
 
         if (!backup) {
-            recordStore.doPostEvictionOperations(record, backup);
+            recordStore.doPostEvictionOperations(record);
         }
     }
 
@@ -122,11 +127,18 @@ public class EvictorImpl implements Evictor {
 
     protected Iterable<EntryView> getSamples(RecordStore recordStore) {
         Storage storage = recordStore.getStorage();
-        return (Iterable<EntryView>) storage.getRandomSamples(SAMPLE_COUNT);
+        return storage.getRandomSamples(SAMPLE_COUNT);
     }
 
     protected static long getNow() {
         return Clock.currentTimeMillis();
     }
 
+    @Override
+    public String toString() {
+        return "EvictorImpl{"
+                + ", mapEvictionPolicy=" + mapEvictionPolicy
+                + ", batchSize=" + batchSize
+                + '}';
+    }
 }

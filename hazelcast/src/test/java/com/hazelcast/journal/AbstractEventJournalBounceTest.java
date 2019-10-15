@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.projection.Projections;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.jitter.JitterRule;
@@ -34,7 +33,7 @@ import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
@@ -113,11 +112,11 @@ public abstract class AbstractEventJournalBounceTest {
 
         for (int i = 1; i < TEST_PARTITION_COUNT; i++) {
             try {
-                final EventJournalInitialSubscriberState state = reader.subscribeToEventJournal(i).get();
+                final EventJournalInitialSubscriberState state = reader.subscribeToEventJournal(i).toCompletableFuture().get();
                 final ReadResultSet<T> partitionEvents = reader.readFromEventJournal(
                         state.getOldestSequence(), 1,
                         (int) (state.getNewestSequence() - state.getOldestSequence() + 1), i,
-                        new TruePredicate<T>(), Projections.<T>identity()).get();
+                        new TruePredicate<T>(), new IdentityFunction<T>()).toCompletableFuture().get();
                 for (T event : partitionEvents) {
                     events.add(event);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ package com.hazelcast.query.impl.getters;
 abstract class Getter {
     protected final Getter parent;
 
-    public Getter(final Getter parent) {
+    Getter(final Getter parent) {
         this.parent = parent;
     }
 
@@ -40,7 +40,31 @@ abstract class Getter {
         return getValue(obj);
     }
 
+    /**
+     * Method for generic getters that can make use of metadata if available. These getters must
+     * gracefully fallback to not using metadata if unavailable.
+     */
+    Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+        return getValue(obj, attributePath);
+    }
+
+    /**
+     * Returns extracted object type for non-generic getters. It is only applicable when
+     * extracted object type can be determined before running the getter.
+     *
+     * @return The type of extracted attribute
+     */
     abstract Class getReturnType();
 
+    /**
+     * A getter instance may be re-used for all predicates that has the same target object
+     * type and attribute path.
+     *
+     * Generic getters such as {@link PortableGetter} should not be cached because the same
+     * getter is used for all entries regardless of attribute path. Instead, generic getters
+     * should use a singleton instance.
+     *
+     * @return {@code true} if this getter is cacheable, {@code false} otherwise.
+     */
     abstract boolean isCacheable();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,18 @@ package com.hazelcast.ringbuffer.impl.operations;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
 import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_MANY_OPERATION;
 
 public class ReadManyOperation<O> extends AbstractRingBufferOperation
-        implements BlockingOperation, ReadonlyOperation, Versioned {
+        implements BlockingOperation, ReadonlyOperation {
     transient long sequence;
 
     private int minSize;
@@ -79,11 +78,14 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
             return false;
         }
 
-        if (ringbuffer.shouldWait(sequence)) {
+        if (ringbuffer.isTooLargeSequence(sequence) || ringbuffer.isStaleSequence(sequence)) {
+            //no need to wait, let the operation continue and fail in beforeRun
+            return false;
+        }
+        if (sequence == ringbuffer.tailSequence() + 1) {
             // the sequence is not readable
             return true;
         }
-
         sequence = ringbuffer.readMany(sequence, resultSet);
         return !resultSet.isMinSizeReached();
     }
@@ -110,7 +112,7 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return READ_MANY_OPERATION;
     }
 

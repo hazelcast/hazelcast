@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,27 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -41,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "format:{0}")
@@ -58,7 +63,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     public void testIndexStatsQueryingChangingNumberOfMembers() {
         int queriesBulk = 100;
 
-        int entryCount = 100;
+        int entryCount = 1000;
         final int lessEqualCount = 20;
         double expectedEqual = 1.0 - 1.0 / entryCount;
         double expectedGreaterEqual = 1.0 - ((double) lessEqualCount) / entryCount;
@@ -73,8 +78,8 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map1 = instance1.getMap(mapName);
         IMap<Integer, Integer> map2 = instance2.getMap(mapName);
 
-        map1.addIndex("this", false);
-        map2.addIndex("this", false);
+        addIndex(map1);
+        addIndex(map2);
 
         for (int i = 0; i < entryCount; ++i) {
             map1.put(i, i);
@@ -117,7 +122,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         // let's add another member
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         IMap<Integer, Integer> map3 = instance3.getMap(mapName);
-        map3.addIndex("this", false);
+        addIndex(map3);
 
         waitAllForSafeState(instance1, instance2, instance3);
 
@@ -186,7 +191,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         assertEquals(originalMap3AverageHitSelectivity, valueStats(map3).getAverageHitSelectivity(), 0.001);
 
         assertEquals(originalOverallAverageHitSelectivity,
-                calculateOverallSelectivity(map2Hits, map2TotalHitSelectivity, map1, map3), 0.001);
+                calculateOverallSelectivity(map2Hits, map2TotalHitSelectivity, map1, map3), 0.015);
 
         for (int i = 0; i < queriesBulk; i++) {
             map3.entrySet(Predicates.alwaysTrue());
@@ -224,8 +229,8 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         IMap<Integer, Integer> map1 = instance1.getMap(mapName);
         IMap<Integer, Integer> map2 = instance2.getMap(mapName);
 
-        map1.addIndex("this", false);
-        map2.addIndex("this", false);
+        addIndex(map1);
+        addIndex(map2);
 
         assertEquals(0, valueStats(map1).getInsertCount());
         assertEquals(0, valueStats(map1).getUpdateCount());
@@ -278,7 +283,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         // let's add another member
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         IMap<Integer, Integer> map3 = instance3.getMap(mapName);
-        map3.addIndex("this", false);
+        addIndex(map3);
 
         waitAllForSafeState(instance1, instance2, instance3);
 
@@ -379,17 +384,29 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     }
 
     protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap... maps) {
-        long hits = initialHits;
-        double totalSelectivityCount = initialTotalSelectivityCount;
-
+        List<Indexes> allIndexes = new ArrayList<>();
         for (IMap map : maps) {
-            double averageHitSelectivity = valueStats(map).getAverageHitSelectivity();
-            long hitCount = valueStats(map).getHitCount();
-            double totalSelectivity = averageHitSelectivity * hitCount;
-            totalSelectivityCount += totalSelectivity;
-            hits += hitCount;
+            allIndexes.addAll(getAllIndexes(map));
         }
 
-        return totalSelectivityCount / hits;
+        long totalHitCount = 0;
+        double totalNormalizedHitCardinality = 0.0;
+        for (Indexes indexes : allIndexes) {
+            PerIndexStats perIndexStats = indexes.getIndex("this").getPerIndexStats();
+            totalHitCount += perIndexStats.getHitCount();
+            totalNormalizedHitCardinality += perIndexStats.getTotalNormalizedHitCardinality();
+        }
+        double averageHitSelectivity = totalHitCount == 0 ? 0.0 : 1.0 - totalNormalizedHitCardinality / totalHitCount;
+
+        if (totalHitCount + initialHits == 0) {
+            return 0.0;
+        } else {
+            return (averageHitSelectivity * totalHitCount + initialTotalSelectivityCount) / (totalHitCount + initialHits);
+        }
     }
+
+    protected void addIndex(IMap map) {
+        map.addIndex(new IndexConfig(IndexType.HASH, "this").setName("this"));
+    }
+
 }

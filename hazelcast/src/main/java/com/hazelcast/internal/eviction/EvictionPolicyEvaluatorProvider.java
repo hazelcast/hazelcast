@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@ import com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparat
 import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
- * Provider to get any kind ({@link EvictionPolicyType}) of {@link EvictionPolicyEvaluator}.
+ * Provider to get any kind ({@link EvictionPolicy}) of {@link EvictionPolicyEvaluator}.
  */
 public final class EvictionPolicyEvaluatorProvider {
 

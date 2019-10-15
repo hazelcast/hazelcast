@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.Expirable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 /**
  * <p>
@@ -28,7 +27,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
  *
  * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V, E> extends Expirable, Evictable<V>, Versioned {
+public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
 
     /**
      * Represents invalid (not set) time for creation time, expiration time, access time, etc...

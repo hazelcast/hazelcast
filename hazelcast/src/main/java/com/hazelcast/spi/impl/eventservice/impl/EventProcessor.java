@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.internal.util.executor.StripedRunnable;
+
+import java.util.UUID;
 
 /**
  * An event processor responsible of fetching the registration and service responsible for the published event
@@ -80,7 +82,7 @@ public class EventProcessor implements StripedRunnable {
             return null;
         }
 
-        String id = eventEnvelope.getEventId();
+        UUID id = eventEnvelope.getEventId();
         Registration registration = (Registration) segment.getRegistrationIdMap().get(id);
         if (registration == null) {
             if (eventService.nodeEngine.isRunning()) {

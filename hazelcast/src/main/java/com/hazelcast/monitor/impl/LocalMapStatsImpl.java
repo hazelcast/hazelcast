@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,10 +32,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.ConcurrencyUtil.setMax;
-import static com.hazelcast.util.JsonUtil.getInt;
-import static com.hazelcast.util.JsonUtil.getLong;
-import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -57,6 +58,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
             newUpdater(LocalMapStatsImpl.class, "getCount");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> PUT_COUNT =
             newUpdater(LocalMapStatsImpl.class, "putCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> SET_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "setCount");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> REMOVE_COUNT =
             newUpdater(LocalMapStatsImpl.class, "removeCount");
 
@@ -65,12 +68,16 @@ public class LocalMapStatsImpl implements LocalMapStats {
             newUpdater(LocalMapStatsImpl.class, "totalGetLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_PUT_LATENCIES =
             newUpdater(LocalMapStatsImpl.class, "totalPutLatenciesNanos");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_SET_LATENCIES =
+            newUpdater(LocalMapStatsImpl.class, "totalSetLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_REMOVE_LATENCIES =
             newUpdater(LocalMapStatsImpl.class, "totalRemoveLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_GET_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxGetLatency");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_PUT_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxPutLatency");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_SET_LATENCY =
+            newUpdater(LocalMapStatsImpl.class, "maxSetLatency");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
 
@@ -95,12 +102,16 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe
     private volatile long putCount;
     @Probe
+    private volatile long setCount;
+    @Probe
     private volatile long removeCount;
     private volatile long totalGetLatenciesNanos;
     private volatile long totalPutLatenciesNanos;
+    private volatile long totalSetLatenciesNanos;
     private volatile long totalRemoveLatenciesNanos;
     private volatile long maxGetLatency;
     private volatile long maxPutLatency;
+    private volatile long maxSetLatency;
     private volatile long maxRemoveLatency;
     @Probe
     private volatile long creationTime;
@@ -239,6 +250,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
+    public long getSetOperationCount() {
+        return setCount;
+    }
+
+    @Override
     public long getGetOperationCount() {
         return getCount;
     }
@@ -251,37 +267,49 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe
     @Override
     public long getTotalPutLatency() {
-        return NANOSECONDS.toMillis(totalPutLatenciesNanos);
+        return convertNanosToMillis(totalPutLatenciesNanos);
+    }
+
+    @Probe
+    @Override
+    public long getTotalSetLatency() {
+        return convertNanosToMillis(totalSetLatenciesNanos);
     }
 
     @Probe
     @Override
     public long getTotalGetLatency() {
-        return NANOSECONDS.toMillis(totalGetLatenciesNanos);
+        return convertNanosToMillis(totalGetLatenciesNanos);
     }
 
     @Probe
     @Override
     public long getTotalRemoveLatency() {
-        return NANOSECONDS.toMillis(totalRemoveLatenciesNanos);
+        return convertNanosToMillis(totalRemoveLatenciesNanos);
     }
 
     @Probe
     @Override
     public long getMaxPutLatency() {
-        return NANOSECONDS.toMillis(maxPutLatency);
+        return convertNanosToMillis(maxPutLatency);
+    }
+
+    @Probe
+    @Override
+    public long getMaxSetLatency() {
+        return convertNanosToMillis(maxSetLatency);
     }
 
     @Probe
     @Override
     public long getMaxGetLatency() {
-        return NANOSECONDS.toMillis(maxGetLatency);
+        return convertNanosToMillis(maxGetLatency);
     }
 
     @Probe
     @Override
     public long getMaxRemoveLatency() {
-        return NANOSECONDS.toMillis(maxRemoveLatency);
+        return convertNanosToMillis(maxRemoveLatency);
     }
 
     @Override
@@ -382,6 +410,12 @@ public class LocalMapStatsImpl implements LocalMapStats {
         setMax(this, MAX_PUT_LATENCY, latencyNanos);
     }
 
+    public void incrementSetLatencyNanos(long latencyNanos) {
+        SET_COUNT.incrementAndGet(this);
+        TOTAL_SET_LATENCIES.addAndGet(this, latencyNanos);
+        setMax(this, MAX_SET_LATENCY, latencyNanos);
+    }
+
     public void incrementGetLatencyNanos(long latencyNanos) {
         incrementGetLatencyNanos(1, latencyNanos);
     }
@@ -434,6 +468,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         JsonObject root = new JsonObject();
         root.add("getCount", getCount);
         root.add("putCount", putCount);
+        root.add("setCount", setCount);
         root.add("removeCount", removeCount);
         root.add("numberOfOtherOperations", numberOfOtherOperations);
         root.add("numberOfEvents", numberOfEvents);
@@ -450,12 +485,14 @@ public class LocalMapStatsImpl implements LocalMapStats {
         root.add("dirtyEntryCount", dirtyEntryCount);
 
         // keep the contract as milliseconds for latencies sent using Json
-        root.add("totalGetLatencies", NANOSECONDS.toMillis(totalGetLatenciesNanos));
-        root.add("totalPutLatencies", NANOSECONDS.toMillis(totalPutLatenciesNanos));
-        root.add("totalRemoveLatencies", NANOSECONDS.toMillis(totalRemoveLatenciesNanos));
-        root.add("maxGetLatency", NANOSECONDS.toMillis(maxGetLatency));
-        root.add("maxPutLatency", NANOSECONDS.toMillis(maxPutLatency));
-        root.add("maxRemoveLatency", NANOSECONDS.toMillis(maxRemoveLatency));
+        root.add("totalGetLatencies", convertNanosToMillis(totalGetLatenciesNanos));
+        root.add("totalPutLatencies", convertNanosToMillis(totalPutLatenciesNanos));
+        root.add("totalSetLatencies", convertNanosToMillis(totalSetLatenciesNanos));
+        root.add("totalRemoveLatencies", convertNanosToMillis(totalRemoveLatenciesNanos));
+        root.add("maxGetLatency", convertNanosToMillis(maxGetLatency));
+        root.add("maxPutLatency", convertNanosToMillis(maxPutLatency));
+        root.add("maxSetLatency", convertNanosToMillis(maxSetLatency));
+        root.add("maxRemoveLatency", convertNanosToMillis(maxRemoveLatency));
 
         root.add("heapCost", heapCost);
         root.add("merkleTreesCost", merkleTreesCost);
@@ -481,6 +518,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     public void fromJson(JsonObject json) {
         getCount = getLong(json, "getCount", -1L);
         putCount = getLong(json, "putCount", -1L);
+        setCount = getLong(json, "setCount", -1L);
         removeCount = getLong(json, "removeCount", -1L);
         numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
         numberOfEvents = getLong(json, "numberOfEvents", -1L);
@@ -488,12 +526,14 @@ public class LocalMapStatsImpl implements LocalMapStats {
         lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
 
         // Json uses milliseconds but we keep latencies in nanoseconds internally
-        totalGetLatenciesNanos = MILLISECONDS.toNanos(getLong(json, "totalGetLatencies", -1L));
-        totalPutLatenciesNanos = MILLISECONDS.toNanos(getLong(json, "totalPutLatencies", -1L));
-        totalRemoveLatenciesNanos = MILLISECONDS.toNanos(getLong(json, "totalRemoveLatencies", -1L));
-        maxGetLatency = MILLISECONDS.toNanos(getLong(json, "maxGetLatency", -1L));
-        maxPutLatency = MILLISECONDS.toNanos(getLong(json, "maxPutLatency", -1L));
-        maxRemoveLatency = MILLISECONDS.toNanos(getLong(json, "maxRemoveLatency", -1L));
+        totalGetLatenciesNanos = convertMillisToNanos(getLong(json, "totalGetLatencies", -1L));
+        totalPutLatenciesNanos = convertMillisToNanos(getLong(json, "totalPutLatencies", -1L));
+        totalSetLatenciesNanos = convertMillisToNanos(getLong(json, "totalSetLatencies", -1L));
+        totalRemoveLatenciesNanos = convertMillisToNanos(getLong(json, "totalRemoveLatencies", -1L));
+        maxGetLatency = convertMillisToNanos(getLong(json, "maxGetLatency", -1L));
+        maxPutLatency = convertMillisToNanos(getLong(json, "maxPutLatency", -1L));
+        maxSetLatency = convertMillisToNanos(getLong(json, "maxSetLatency", -1L));
+        maxRemoveLatency = convertMillisToNanos(getLong(json, "maxRemoveLatency", -1L));
 
         hits = getLong(json, "hits", -1L);
         ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
@@ -538,13 +578,16 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", numberOfEvents=" + numberOfEvents
                 + ", getCount=" + getCount
                 + ", putCount=" + putCount
+                + ", setCount=" + setCount
                 + ", removeCount=" + removeCount
-                + ", totalGetLatencies=" + NANOSECONDS.toMillis(totalGetLatenciesNanos)
-                + ", totalPutLatencies=" + NANOSECONDS.toMillis(totalPutLatenciesNanos)
-                + ", totalRemoveLatencies=" + NANOSECONDS.toMillis(totalRemoveLatenciesNanos)
-                + ", maxGetLatency=" + NANOSECONDS.toMillis(maxGetLatency)
-                + ", maxPutLatency=" + NANOSECONDS.toMillis(maxPutLatency)
-                + ", maxRemoveLatency=" + NANOSECONDS.toMillis(maxRemoveLatency)
+                + ", totalGetLatencies=" + convertNanosToMillis(totalGetLatenciesNanos)
+                + ", totalPutLatencies=" + convertNanosToMillis(totalPutLatenciesNanos)
+                + ", totalSetLatencies=" + convertNanosToMillis(totalSetLatenciesNanos)
+                + ", totalRemoveLatencies=" + convertNanosToMillis(totalRemoveLatenciesNanos)
+                + ", maxGetLatency=" + convertNanosToMillis(maxGetLatency)
+                + ", maxPutLatency=" + convertNanosToMillis(maxPutLatency)
+                + ", maxSetLatency=" + convertNanosToMillis(maxSetLatency)
+                + ", maxRemoveLatency=" + convertNanosToMillis(maxRemoveLatency)
                 + ", ownedEntryCount=" + ownedEntryCount
                 + ", backupEntryCount=" + backupEntryCount
                 + ", backupCount=" + backupCount
@@ -560,5 +603,13 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", indexedQueryCount=" + indexedQueryCount
                 + ", indexStats=" + indexStats
                 + '}';
+    }
+
+    private static long convertNanosToMillis(long nanos) {
+        return timeInMsOrOneIfResultIsZero(nanos, NANOSECONDS);
+    }
+
+    private static long convertMillisToNanos(long millis) {
+       return MILLISECONDS.toNanos(millis);
     }
 }

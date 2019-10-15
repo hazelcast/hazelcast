@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,52 +16,53 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.LockInterceptorService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.quorum.QuorumService;
-import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MultiMapMergeTypes;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.MigrationEndpoint;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
@@ -72,22 +73,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
-        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats>,
-        QuorumAwareService, SplitBrainHandlerService {
+                                        EventPublishingService<EventData, EntryListener>, TransactionalService,
+                                        StatisticsAwareService<LocalMultiMapStats>,
+        SplitBrainProtectionAwareService, SplitBrainHandlerService, LockInterceptorService<Data> {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
 
@@ -101,23 +104,20 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private final MultiMapPartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = createConcurrentHashMap(STATS_MAP_INITIAL_CAPACITY);
     private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction
-            = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
-        public LocalMultiMapStatsImpl createNew(String key) {
-            return new LocalMultiMapStatsImpl();
-        }
-    };
+            = key -> new LocalMultiMapStatsImpl();
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
-    private final QuorumService quorumService;
+    private final SplitBrainProtectionService splitBrainProtectionService;
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
+    private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
+            new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
             MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
-            String quorumName = multiMapConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
+            String splitBrainProtectionName = multiMapConfig.getSplitBrainProtectionName();
+            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
 
@@ -127,7 +127,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         this.partitionContainers = new MultiMapPartitionContainer[partitionCount];
         this.dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
         this.publisher = new MultiMapEventsPublisher(nodeEngine);
-        this.quorumService = nodeEngine.getQuorumService();
+        this.splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
     }
 
     @Override
@@ -136,25 +136,22 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         for (int partition = 0; partition < partitionCount; partition++) {
             partitionContainers[partition] = new MultiMapPartitionContainer(this, partition);
         }
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
-                @Override
-                public LockStoreInfo createNew(ObjectNamespace key) {
-                    String name = key.getObjectName();
-                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
-                    return new LockStoreInfo() {
-                        @Override
-                        public int getBackupCount() {
-                            return multiMapConfig.getBackupCount();
-                        }
+            lockService.registerLockStoreConstructor(SERVICE_NAME, key -> {
+                String name = key.getObjectName();
+                final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+                return new LockStoreInfo() {
+                    @Override
+                    public int getBackupCount() {
+                        return multiMapConfig.getBackupCount();
+                    }
 
-                        @Override
-                        public int getAsyncBackupCount() {
-                            return multiMapConfig.getAsyncBackupCount();
-                        }
-                    };
-                }
+                    @Override
+                    public int getAsyncBackupCount() {
+                        return multiMapConfig.getAsyncBackupCount();
+                    }
+                };
             });
         }
     }
@@ -189,7 +186,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name) {
+    public DistributedObject createDistributedObject(String name, boolean local) {
         MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
         checkMultiMapConfig(multiMapConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
@@ -197,18 +194,18 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         for (MultiMapPartitionContainer container : partitionContainers) {
             if (container != null) {
                 container.destroyMultiMap(name);
             }
         }
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
-        quorumConfigCache.remove(name);
+        splitBrainProtectionConfigCache.remove(name);
     }
 
     public Set<Data> localKeySet(String name) {
-        Set<Data> keySet = new HashSet<Data>();
+        Set<Data> keySet = new HashSet<>();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             IPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
@@ -242,7 +239,11 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         publisher.publishEntryEvent(multiMapName, eventType, key, newValue, oldValue);
     }
 
-    public String addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
+    public UUID addListener(String name,
+                              @Nonnull EventListener listener,
+                              Data key,
+                              boolean includeValue,
+                              boolean local) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
@@ -254,7 +255,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         return registration.getId();
     }
 
-    public boolean removeListener(String name, String registrationId) {
+    public boolean removeListener(String name, UUID registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
@@ -390,9 +391,9 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         int backupCount = config.getTotalBackupCount();
 
         Address thisAddress = clusterService.getThisAddress();
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            IPartition partition = nodeEngine.getPartitionService().getPartition(i, false);
-            MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
+        for (int partitionId = 0; partitionId < nodeEngine.getPartitionService().getPartitionCount(); partitionId++) {
+            IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
+            MultiMapPartitionContainer partitionContainer = getPartitionContainer(partitionId);
             MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name);
             if (multiMapContainer == null) {
                 continue;
@@ -442,7 +443,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
 
     }
 
@@ -453,11 +454,13 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public Map<String, LocalMultiMapStats> getStats() {
-        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
+        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
         for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
-            for (String name : partitionContainer.containerMap.keySet()) {
-                if (!multiMapStats.containsKey(name)) {
-                    multiMapStats.put(name, createStats(name));
+            if (partitionContainer != null) {
+                for (String name : partitionContainer.containerMap.keySet()) {
+                    if (!multiMapStats.containsKey(name)) {
+                        multiMapStats.put(name, createStats(name));
+                    }
                 }
             }
         }
@@ -482,18 +485,16 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     @Override
-    public String getQuorumName(String name) {
-        // RU_COMPAT_3_9
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
-            return null;
-        }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    public String getSplitBrainProtectionName(String name) {
+        Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
+                splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
+        return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
     }
 
-    public void ensureQuorumPresent(String distributedObjectName, QuorumType requiredQuorumPermissionType) {
-        quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
+    public void ensureNoSplitBrain(String distributedObjectName,
+                                   SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        splitBrainProtectionService.ensureNoSplitBrain(getSplitBrainProtectionName(distributedObjectName),
+                requiredSplitBrainProtectionPermissionType);
     }
 
     @Override
@@ -501,6 +502,14 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         MultiMapContainerCollector collector = new MultiMapContainerCollector(nodeEngine, partitionContainers);
         collector.run();
         return new Merger(collector);
+    }
+
+    @Override
+    public void onBeforeLock(String distributedObjectName, Data key) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        MultiMapPartitionContainer partitionContainer = getPartitionContainer(partitionId);
+        // we have no use for the return value, invoked just for the side-effects
+        partitionContainer.getOrCreateMultiMapContainer(distributedObjectName);
     }
 
     private class Merger extends AbstractContainerMerger<MultiMapContainer, Collection<Object>, MultiMapMergeTypes> {
@@ -526,7 +535,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                             = getMergePolicy(container.getConfig().getMergePolicyConfig());
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
 
-                    List<MultiMapMergeContainer> mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
+                    List<MultiMapMergeContainer> mergeContainers = new ArrayList<>(batchSize);
                     for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : container.getMultiMapValues().entrySet()) {
                         Data key = multiMapValueEntry.getKey();
                         MultiMapValue multiMapValue = multiMapValueEntry.getValue();
@@ -539,7 +548,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
                         if (mergeContainers.size() == batchSize) {
                             sendBatch(partitionId, name, mergePolicy, mergeContainers);
-                            mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
+                            mergeContainers = new ArrayList<>(batchSize);
                         }
                     }
                     if (mergeContainers.size() > 0) {

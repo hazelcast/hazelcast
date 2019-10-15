@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -24,11 +26,16 @@ import com.hazelcast.query.impl.getters.Extractors;
  * Provides on-heap indexes.
  */
 public class DefaultIndexProvider implements IndexProvider {
-
     @Override
-    public InternalIndex createIndex(String attributeName, boolean ordered, Extractors extractors,
-                                     InternalSerializationService ss, IndexCopyBehavior copyBehavior, PerIndexStats stats) {
-        return new IndexImpl(attributeName, ordered, ss, extractors, copyBehavior, stats);
+    public InternalIndex createIndex(
+        IndexConfig config,
+        Extractors extractors,
+        InternalSerializationService ss,
+        IndexCopyBehavior copyBehavior,
+        PerIndexStats stats,
+        StoreAdapter partitionStoreAdapter
+    ) {
+        return new IndexImpl(config, ss, extractors, copyBehavior, stats);
     }
 
 }

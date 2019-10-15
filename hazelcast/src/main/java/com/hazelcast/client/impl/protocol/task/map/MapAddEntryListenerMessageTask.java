@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+
+import java.util.UUID;
 
 public class MapAddEntryListenerMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerCodec.RequestParameters> {
@@ -45,7 +47,7 @@ public class MapAddEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
-                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+                                        Data meringValueData, int type, UUID uuid, int numberOfAffectedEntries) {
         return MapAddEntryListenerCodec.encodeEntryEvent(keyData, newValueData,
                 oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
     }
@@ -57,7 +59,7 @@ public class MapAddEntryListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAddEntryListenerCodec.encodeResponse((String) response);
+        return MapAddEntryListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

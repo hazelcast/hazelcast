@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.cardinality.impl.hyperloglog;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 /**
  * HyperLogLog is a redundant and highly available distributed data-structure used for cardinality estimation
@@ -31,7 +30,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
  * </ul>
  *
  */
-public interface HyperLogLog extends IdentifiedDataSerializable, Versioned {
+public interface HyperLogLog extends IdentifiedDataSerializable {
 
     /**
      * Computes a new estimate for the current status of the registers.

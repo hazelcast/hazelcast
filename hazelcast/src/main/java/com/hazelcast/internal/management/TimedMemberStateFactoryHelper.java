@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.dto.ConnectionManagerDTO;
 import com.hazelcast.internal.management.dto.EventServiceDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
@@ -27,12 +27,12 @@ import com.hazelcast.internal.management.dto.ProxyServiceDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.monitor.impl.MemberStateImpl;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
@@ -44,7 +44,7 @@ import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Helper class to be gather JMX related stats for {@link TimedMemberStateFactory}
@@ -57,8 +57,8 @@ final class TimedMemberStateFactoryHelper {
 
     static void registerJMXBeans(HazelcastInstanceImpl instance, MemberStateImpl memberState) {
         final EventService es = instance.node.nodeEngine.getEventService();
-        final InternalOperationService os = instance.node.nodeEngine.getOperationService();
-        final ConnectionManager cm = instance.node.connectionManager;
+        final OperationServiceImpl os = instance.node.nodeEngine.getOperationService();
+        final NetworkingService cm = instance.node.networkingService;
         final InternalPartitionService ps = instance.node.partitionService;
         final ProxyService proxyService = instance.node.nodeEngine.getProxyService();
         final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();

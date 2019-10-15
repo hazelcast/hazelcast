@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,22 @@ package com.hazelcast.spi.impl.operationparker.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.LiveOperations;
-import com.hazelcast.spi.LiveOperationsTracker;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.LiveOperations;
+import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Notifier;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -127,7 +128,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
      * response.
      * Invoked on the migration destination. This is executed under partition migration lock!
      */
-    public void onPartitionMigrate(Address thisAddress, MigrationInfo migrationInfo) {
+    void onPartitionMigrate(MigrationInfo migrationInfo) {
         Iterator<WaitSetEntry> it = queue.iterator();
         int partitionId = migrationInfo.getPartitionId();
         while (it.hasNext()) {
@@ -142,7 +143,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
             Operation op = entry.getOperation();
             if (partitionId == op.getPartitionId()) {
                 entry.setValid(false);
-                PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
+                PartitionMigratingException pme = new PartitionMigratingException(nodeEngine.getThisAddress(),
                         partitionId, op.getClass().getName(), op.getServiceName());
                 op.sendResponse(pme);
                 it.remove();
@@ -173,7 +174,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
-    public void invalidateAll(String callerUuid) {
+    public void invalidateAll(UUID callerUuid) {
         for (WaitSetEntry entry : queue) {
             if (!entry.isValid()) {
                 continue;
@@ -185,7 +186,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
         }
     }
 
-    public void cancelAll(String callerUuid, Throwable cause) {
+    public void cancelAll(UUID callerUuid, Throwable cause) {
         for (WaitSetEntry entry : queue) {
             if (!entry.isValid()) {
                 continue;

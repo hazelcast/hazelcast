@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.security.SimpleTokenCredentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Collection;
@@ -40,6 +41,7 @@ public final class SpiPortableHook implements PortableHook {
     public static final int MAP_PARTITION_LOST_EVENT = 6;
     public static final int PARTITION_LOST_EVENT = 7;
     public static final int CACHE_PARTITION_LOST_EVENT = 8;
+    public static final int SIMPLE_TOKEN_CRED = 9;
 
     @Override
     public int getFactoryId() {
@@ -68,6 +70,8 @@ public final class SpiPortableHook implements PortableHook {
                         return new PortablePartitionLostEvent();
                     case CACHE_PARTITION_LOST_EVENT:
                         return new PortableCachePartitionLostEvent();
+                    case SIMPLE_TOKEN_CRED:
+                        return new SimpleTokenCredentials();
                     default:
                         return null;
                 }

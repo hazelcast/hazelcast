@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,21 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.internal.util.Preconditions;
 
 import java.io.IOException;
+import java.util.UUID;
 
-// Even though this class is not used in client-member communication, we annotate it to be excluded from related tests, as it
-// cannot implement IdentifiedDataSerializable (both EventRegistration and IdentifiedDataSerializable interfaces define a
-// method {@code getId()} which differ in return type).
-// Since this class is still DataSerializable it should not be moved/renamed in 3.9, otherwise upgradability will be compromised.
-@BinaryInterface
 public class Registration implements EventRegistration {
 
-    private String id;
+    private UUID id;
     private String serviceName;
     private String topic;
     private EventFilter filter;
@@ -44,7 +41,7 @@ public class Registration implements EventRegistration {
     public Registration() {
     }
 
-    public Registration(String id, String serviceName, String topic,
+    public Registration(UUID id, String serviceName, String topic,
                         EventFilter filter, Address subscriber, Object listener, boolean localOnly) {
         this.id = Preconditions.checkNotNull(id, "Registration ID cannot be null!");
         this.filter = filter;
@@ -69,7 +66,7 @@ public class Registration implements EventRegistration {
     }
 
     @Override
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -108,7 +105,7 @@ public class Registration implements EventRegistration {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(id);
+        UUIDSerializationUtil.writeUUID(out, id);
         out.writeUTF(serviceName);
         out.writeUTF(topic);
         subscriber.writeData(out);
@@ -117,7 +114,7 @@ public class Registration implements EventRegistration {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        id = in.readUTF();
+        id = UUIDSerializationUtil.readUUID(in);
         serviceName = in.readUTF();
         topic = in.readUTF();
         subscriber = new Address();
@@ -134,5 +131,15 @@ public class Registration implements EventRegistration {
                 + ", subscriber=" + subscriber
                 + ", listener=" + listener
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SpiDataSerializerHook.REGISTRATION;
     }
 }

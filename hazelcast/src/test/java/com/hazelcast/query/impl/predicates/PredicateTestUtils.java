@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 
 import java.util.Map;
 
-import static com.hazelcast.instance.TestUtil.toData;
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.instance.impl.TestUtil.toData;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -97,11 +97,18 @@ public final class PredicateTestUtils {
     }
 
     public static Map.Entry entry(Object value) {
-        return new QueryEntry(new DefaultSerializationServiceBuilder().build(), toData(UuidUtil.newUnsecureUUID()),
-                value, Extractors.empty());
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        return new QueryEntry(serializationService, toData(UuidUtil.newUnsecureUUID()),
+                value, newExtractor(serializationService));
+    }
+
+    protected static Extractors newExtractor(InternalSerializationService serializationService) {
+        return Extractors.newBuilder(serializationService).build();
     }
 
     public static Map.Entry entry(Object key, Object value) {
-        return new QueryEntry(new DefaultSerializationServiceBuilder().build(), toData(key), value, Extractors.empty());
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        return new QueryEntry(serializationService, toData(key), value,
+                newExtractor(serializationService));
     }
 }

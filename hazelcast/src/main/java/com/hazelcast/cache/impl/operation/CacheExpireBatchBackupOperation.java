@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.WrongTargetException;
 
 import java.io.IOException;
@@ -33,29 +33,55 @@ import java.util.LinkedList;
  */
 public class CacheExpireBatchBackupOperation extends CacheOperation {
 
+    private int primaryEntryCount;
     private Collection<ExpiredKey> expiredKeys;
-    private int ownerPartitionEntryCount;
 
     public CacheExpireBatchBackupOperation() {
     }
 
-    public CacheExpireBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int ownerPartitionEntryCount) {
+    public CacheExpireBatchBackupOperation(String name, Collection<ExpiredKey> expiredKeys, int primaryEntryCount) {
         super(name, true);
         this.expiredKeys = expiredKeys;
-        this.ownerPartitionEntryCount = ownerPartitionEntryCount;
+        this.primaryEntryCount = primaryEntryCount;
     }
 
     @Override
     public void run() {
+        if (recordStore == null) {
+            return;
+        }
+
         for (ExpiredKey expiredKey : expiredKeys) {
             evictIfSame(expiredKey);
         }
 
-        int diff = recordStore.size() - ownerPartitionEntryCount;
-        for (int i = 0; i < diff; i++) {
-            recordStore.evictOneEntry();
+        equalizeEntryCountWithPrimary();
+    }
+
+    /**
+     * Equalizes backup entry count with primary in order to have identical
+     * memory occupancy.
+     */
+    private void equalizeEntryCountWithPrimary() {
+        int diff = recordStore.size() - primaryEntryCount;
+        if (diff > 0) {
+            recordStore.sampleAndForceRemoveEntries(diff);
+
+            assert recordStore.size() == primaryEntryCount : String.format("Failed"
+                            + " to remove %d entries while attempting to match"
+                            + " primary entry count %d,"
+                            + " recordStore size is now %d",
+                    diff, primaryEntryCount, recordStore.size());
         }
-        assert recordStore.size() == ownerPartitionEntryCount;
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        try {
+            super.afterRun();
+        } finally {
+            recordStore.disposeDeferredBlocks();
+        }
     }
 
     @Override
@@ -71,9 +97,6 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
     }
 
     protected void evictIfSame(ExpiredKey key) {
-        if (recordStore == null) {
-            return;
-        }
         CacheRecord record = recordStore.getRecord(key.getKey());
         if (record != null && record.getCreationTime() == key.getCreationTime()) {
             recordStore.removeRecord(key.getKey());
@@ -81,7 +104,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.EXPIRE_BATCH_BACKUP;
     }
 
@@ -93,7 +116,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
             out.writeData(expiredKey.getKey());
             out.writeLong(expiredKey.getCreationTime());
         }
-        out.writeInt(ownerPartitionEntryCount);
+        out.writeInt(primaryEntryCount);
     }
 
     @Override
@@ -104,6 +127,6 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
         for (int i = 0; i < size; i++) {
             expiredKeys.add(new ExpiredKey(in.readData(), in.readLong()));
         }
-        ownerPartitionEntryCount = in.readInt();
+        primaryEntryCount = in.readInt();
     }
 }

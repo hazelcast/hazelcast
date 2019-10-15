@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,25 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientListener;
-import com.hazelcast.core.ClientService;
-import com.hazelcast.instance.Node;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientListener;
+import com.hazelcast.client.ClientService;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
+import java.util.UUID;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * The default implementation of the {@link com.hazelcast.core.ClientService}.
+ * The default implementation of the {@link ClientService}.
  */
 public final class ClientServiceProxy implements ClientService {
 
-    private final ClientEngineImpl clientEngine;
+    private final ClientEngine clientEngine;
     private final NodeEngine nodeEngine;
 
     public ClientServiceProxy(Node node) {
@@ -47,7 +48,7 @@ public final class ClientServiceProxy implements ClientService {
     }
 
     @Override
-    public String addClientListener(ClientListener clientListener) {
+    public UUID addClientListener(ClientListener clientListener) {
         checkNotNull(clientListener, "clientListener should not be null");
 
         EventService eventService = nodeEngine.getEventService();
@@ -57,7 +58,7 @@ public final class ClientServiceProxy implements ClientService {
     }
 
     @Override
-    public boolean removeClientListener(String registrationId) {
+    public boolean removeClientListener(UUID registrationId) {
         checkNotNull(registrationId, "registrationId should not be null");
 
         EventService eventService = nodeEngine.getEventService();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.map.MapLoader;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
@@ -30,16 +31,11 @@ interface RecordStoreLoader {
      * when the map store is not configured for a map or the
      * map store is disabled.
      */
-    RecordStoreLoader EMPTY_LOADER = new RecordStoreLoader() {
-        @Override
-        public Future loadValues(List<Data> keys, boolean replaceExistingValues) {
-            return null;
-        }
-    };
+    RecordStoreLoader EMPTY_LOADER = (keys, replaceExistingValues) -> null;
 
     /**
      * Triggers loading values for the given {@code keys} from the
-     * defined {@link com.hazelcast.core.MapLoader}.
+     * defined {@link MapLoader}.
      * The values will be loaded asynchronously and this method will
      * return as soon as the value loading task has been offloaded
      * to a different thread.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 @SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT"})
 public abstract class HttpCommand extends AbstractTextCommand {
@@ -35,9 +35,11 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final String HEADER_EXPECT_100 = "expect: 100";
     public static final String HEADER_CUSTOM_PREFIX = "Hazelcast-";
     public static final byte[] RES_200 = stringToBytes("HTTP/1.1 200 OK\r\n");
+    // used to respond get requests with no content
+    public static final byte[] RES_200_WITH_NO_CONTENT = stringToBytes("HTTP/1.1 200 OK\nContent-Length: 0\n\n");
     public static final byte[] RES_400 = stringToBytes("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n");
-    public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\n\r\n");
-    public static final byte[] RES_404 = stringToBytes("HTTP/1.1 404 Not Found\r\n\r\n");
+    public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n");
+    public static final byte[] RES_404 = stringToBytes("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
     public static final byte[] RES_100 = stringToBytes("HTTP/1.1 100 Continue\r\n\r\n");
     public static final byte[] RES_204 = stringToBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n");
     public static final byte[] RES_503 = stringToBytes("HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n");
@@ -45,7 +47,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final byte[] CONTENT_TYPE = stringToBytes("Content-Type: ");
     public static final byte[] CONTENT_LENGTH = stringToBytes("Content-Length: ");
     public static final byte[] CONTENT_TYPE_PLAIN_TEXT = stringToBytes("text/plain");
-    public static final byte[] CONTENT_TYPE_JSON = stringToBytes("application/javascript");
+    public static final byte[] CONTENT_TYPE_JSON = stringToBytes("application/json");
     public static final byte[] CONTENT_TYPE_BINARY = stringToBytes("application/binary");
 
     protected final String uri;
@@ -56,6 +58,9 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public HttpCommand(TextCommandConstants.TextCommandType type, String uri) {
         super(type);
         this.uri = uri;
+        // the command line was parsed already, let's start with clear next line
+        this.nextLine = true;
+
     }
 
     @Override
@@ -75,6 +80,18 @@ public abstract class HttpCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(RES_400);
     }
 
+    public void send403() {
+        this.response = ByteBuffer.wrap(RES_403);
+    }
+
+    public void send404() {
+        this.response = ByteBuffer.wrap(RES_404);
+    }
+
+    public void send500() {
+        this.response = ByteBuffer.wrap(RES_500);
+    }
+
     public void setResponse(byte[] value) {
         this.response = ByteBuffer.wrap(value);
     }
@@ -82,7 +99,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public void send200() {
         setResponse(null, null);
     }
-
 
     /**
      * HTTP/1.0 200 OK

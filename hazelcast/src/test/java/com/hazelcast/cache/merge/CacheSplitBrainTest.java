@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.BackupAccessor;
 import com.hazelcast.test.backup.TestBackupUtils;
@@ -64,7 +64,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("WeakerAccess")
 public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
@@ -106,13 +106,13 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setStatisticsEnabled(false)
-                .setMergePolicy(mergePolicyClass.getName());
+                .getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
         config.getCacheConfig(cacheNameB)
                 .setInMemoryFormat(inMemoryFormat)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setStatisticsEnabled(false)
-                .setMergePolicy(mergePolicyClass.getName());
+                .getMergePolicyConfig().setPolicy(mergePolicyClass.getName());
         return config;
     }
 

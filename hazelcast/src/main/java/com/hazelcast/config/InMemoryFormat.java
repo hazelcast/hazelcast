@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,38 @@ package com.hazelcast.config;
 
 /**
  * Storage format type of values stored in cluster
-*/
+ */
 public enum InMemoryFormat {
     /**
      * As Binary
      */
-    BINARY,
+    BINARY(0),
     /**
      * As Object
      */
-    OBJECT,
+    OBJECT(1),
 
     /**
      * As native storage
      */
-    NATIVE
+    NATIVE(2);
+
+    private final byte id;
+
+    InMemoryFormat(int id) {
+        this.id = (byte) id;
+    }
+
+    public byte getId() {
+        return id;
+    }
+
+    public static InMemoryFormat getById(int id) {
+        for (InMemoryFormat imf : values()) {
+            if (imf.getId() == id) {
+                return imf;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID value");
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,25 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * <p>
  * Destroys the cache on the cluster or on a single node by calling
- * {@link ICacheService#deleteCache(String, String, boolean)}.
+ * {@link ICacheService#deleteCache(String, UUID, boolean)}.
  * </p>
- * @see ICacheService#deleteCache(String, String, boolean)
+ * @see ICacheService#deleteCache(String, UUID, boolean)
  */
 public class CacheDestroyOperation
         extends AbstractNamedOperation
@@ -64,7 +65,7 @@ public class CacheDestroyOperation
         }
     }
 
-    private void destroyCacheOnAllMembers(String name, String callerUuid) {
+    private void destroyCacheOnAllMembers(String name, UUID callerUuid) {
         NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
@@ -77,7 +78,7 @@ public class CacheDestroyOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.DESTROY_CACHE;
     }
 

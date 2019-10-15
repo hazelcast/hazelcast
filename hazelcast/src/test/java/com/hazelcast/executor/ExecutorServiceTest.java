@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,30 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,10 +53,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -77,7 +79,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     private static final int NODE_COUNT = 3;
@@ -127,8 +129,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         try {
             Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
             CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
-            completableFuture.andThen(callback);
+            InternalCompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            completableFuture.whenCompleteAsync(callback);
 
             callableLatch.countDown();
             assertOpenEventually(callback.getLatch());
@@ -150,9 +152,9 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             CountingDownExecutionCallback<String> callback1 = new CountingDownExecutionCallback<String>(callbackLatch);
             CountingDownExecutionCallback<String> callback2 = new CountingDownExecutionCallback<String>(callbackLatch);
 
-            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
-            completableFuture.andThen(callback1);
-            completableFuture.andThen(callback2);
+            CompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            completableFuture.whenCompleteAsync(callback1);
+            completableFuture.whenCompleteAsync(callback2);
 
             callableLatch.countDown();
             assertOpenEventually(callbackLatch);
@@ -171,12 +173,12 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
             Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
-            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            CompletableFuture<String> completableFuture = es.asCompletableFuture(future);
             callableLatch.countDown();
             future.get();
 
             CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-            completableFuture.andThen(callback);
+            completableFuture.whenCompleteAsync(callback);
 
             try {
                 assertOpenEventually(callback.getLatch());
@@ -200,14 +202,14 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
             Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
-            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            CompletableFuture<String> completableFuture = es.asCompletableFuture(future);
             callableLatch.countDown();
             future.get();
 
             CountingDownExecutionCallback<String> callback1 = new CountingDownExecutionCallback<String>(callbackLatch);
-            completableFuture.andThen(callback1);
+            completableFuture.whenCompleteAsync(callback1);
             CountingDownExecutionCallback<String> callback2 = new CountingDownExecutionCallback<String>(callbackLatch);
-            completableFuture.andThen(callback2);
+            completableFuture.whenCompleteAsync(callback2);
 
             assertOpenEventually(callbackLatch);
             assertEquals(CountDownLatchAwaitingCallable.RESULT, callback1.getResult());
@@ -223,16 +225,16 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertTrue(instance1.getCountDownLatch("latch").trySetCount(1));
+        assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
         String name = randomString();
         IExecutorService executorService = instance2.getExecutorService(name);
         ICountDownLatchAwaitCallable task = new ICountDownLatchAwaitCallable("latch");
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<Boolean> future = (ICompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
+        CompletableFuture<Boolean> future = (CompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(1);
-        future.andThen(callback);
-        instance1.getCountDownLatch("latch").countDown();
+        future.whenCompleteAsync(callback);
+        instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
         assertTrue(future.get());
         assertOpenEventually(callback.getLatch());
     }
@@ -246,11 +248,11 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         IExecutorService executorService = instance2.getExecutorService(name);
         BasicTestCallable task = new BasicTestCallable();
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<String> future = (ICompletableFuture<String>) executorService.submitToKeyOwner(task, key);
+        CompletableFuture<String> future = (CompletableFuture<String>) executorService.submitToKeyOwner(task, key);
         assertEquals(BasicTestCallable.RESULT, future.get());
 
         CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-        future.andThen(callback);
+        future.whenCompleteAsync(callback);
 
         assertOpenEventually(callback.getLatch(), 10);
     }
@@ -261,18 +263,18 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertTrue(instance1.getCountDownLatch("latch").trySetCount(1));
+        assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
         String name = randomString();
         IExecutorService executorService = instance2.getExecutorService(name);
         ICountDownLatchAwaitCallable task = new ICountDownLatchAwaitCallable("latch");
         String key = generateKeyOwnedBy(instance1);
-        ICompletableFuture<Boolean> future = (ICompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
+        CompletableFuture<Boolean> future = (CompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
         CountDownLatch latch = new CountDownLatch(2);
         CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(latch);
-        future.andThen(callback);
-        future.andThen(callback);
-        instance1.getCountDownLatch("latch").countDown();
+        future.whenCompleteAsync(callback);
+        future.whenCompleteAsync(callback);
+        instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
         assertTrue(future.get());
         assertOpenEventually(latch, 10);
     }
@@ -376,7 +378,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             assertEquals(Integer.valueOf(rand), future.get(10, TimeUnit.SECONDS));
         }
 
-        IAtomicLong count = instances[0].getAtomicLong("count");
+        IAtomicLong count = instances[0].getCPSubsystem().getAtomicLong("count");
         assertEquals(NODE_COUNT, count.get());
     }
 
@@ -407,7 +409,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
                     key, callback);
         }
         assertOpenEventually(responseLatch);
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
@@ -438,7 +440,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
                     localMember, callback);
         }
         assertOpenEventually(responseLatch);
-        assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
+        assertEquals(0, instances[0].getCPSubsystem().getAtomicLong("testSubmitToMemberRunnable").get());
         assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
@@ -461,7 +463,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(callback.getLatch());
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToMembersRunnable");
         assertEquals(sum, result.get());
         assertEquals(sum, callback.getCount());
     }
@@ -490,7 +492,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         assertTrue(responseLatch.await(30, TimeUnit.SECONDS));
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToAllMembersRunnable");
         assertEquals(NODE_COUNT * NODE_COUNT, result.get());
         assertEquals(NODE_COUNT * NODE_COUNT, nullResponseCount.get());
     }
@@ -579,7 +581,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             HazelcastInstance instance = instances[i];
             IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
 
-            String memberUuid = instance.getCluster().getLocalMember().getUuid();
+            UUID memberUuid = instance.getCluster().getLocalMember().getUuid();
             Future future = service.submitToMember(
                     new MemberUUIDCheckCallable(memberUuid), instance.getCluster().getLocalMember());
             futures.add(future);
@@ -599,7 +601,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             HazelcastInstance instance = instances[i];
             IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
 
-            String memberUuid = instance.getCluster().getLocalMember().getUuid();
+            UUID memberUuid = instance.getCluster().getLocalMember().getUuid();
             service.submitToMember(new MemberUUIDCheckCallable(memberUuid), instance.getCluster().getLocalMember(), callback);
         }
 
@@ -638,7 +640,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(latch);
-        IAtomicLong result = instances[0].getAtomicLong(name);
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong(name);
         assertEquals(sum, result.get());
         assertEquals(sum, count.get());
     }
@@ -663,7 +665,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             service.submitToAllMembers(new IncrementAtomicLongCallable("testSubmitToAllMembersCallable"), callback);
         }
         assertOpenEventually(countDownLatch);
-        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
+        IAtomicLong result = instances[0].getCPSubsystem().getAtomicLong("testSubmitToAllMembersCallable");
         assertEquals(NODE_COUNT * NODE_COUNT, result.get());
         assertEquals(NODE_COUNT * NODE_COUNT, count.get());
     }
@@ -672,9 +674,10 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testCancellationAwareTask() throws Exception {
-        SleepingTask task = new SleepingTask(5);
+        SleepingTask task = new SleepingTask(10);
         ExecutorService executor = createSingleNodeExecutorService("testCancellationAwareTask");
         Future future = executor.submit(task);
+
         try {
             future.get(2, TimeUnit.SECONDS);
             fail("Should throw TimeoutException!");
@@ -1063,7 +1066,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
         @Override
         public Boolean call() throws Exception {
-            return instance.getCountDownLatch(name).await(100, TimeUnit.SECONDS);
+            return instance.getCPSubsystem().getCountDownLatch(name).await(100, TimeUnit.SECONDS);
         }
 
         @Override

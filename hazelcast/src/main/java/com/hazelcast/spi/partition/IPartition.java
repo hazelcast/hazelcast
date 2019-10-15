@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package com.hazelcast.spi.partition;
 
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.partition.Partition;
 
 /**
- * Represents a Partition. It is comparable to the {@link com.hazelcast.core.Partition} but it is optimized for SPI
+ * Represents a Partition. It is comparable to the {@link Partition} but it is optimized for SPI
  * usage, so it exposes method not meant for regular Hazelcast users.
  * <p>
  * The IPartition provides access to information about a partition, most importantly the addresses of the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -42,12 +42,11 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private OperationServiceImpl operationService;
-    private HazelcastInstance local;
     private InboundResponseHandler inboundResponseHandler;
 
     @Before
@@ -55,7 +54,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
         config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "20000");
-        local = createHazelcastInstance(config);
+        HazelcastInstance local = createHazelcastInstance(config);
         warmUpPartitions(local);
 
         operationService = getOperationServiceImpl(local);
@@ -70,7 +69,11 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
     private Invocation newInvocation(Operation op) {
         Invocation.Context context = operationService.invocationContext;
         Invocation invocation = new PartitionInvocation(context, op, 0, 0, 0, false, false);
-        invocation.invTarget = getAddress(local);
+        try {
+            invocation.initInvocationTarget();
+        } catch (Exception e) {
+            fail(e.toString());
+        }
         return invocation;
     }
 
@@ -179,7 +182,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         inboundResponseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
 
         try {
-            invocation.future.join();
+            invocation.future.joinInternal();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }
@@ -210,7 +213,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         inboundResponseHandler.notifyCallTimeout(callId, null);
 
         try {
-            assertNull(invocation.future.join());
+            assertNull(invocation.future.joinInternal());
             fail();
         } catch (OperationTimeoutException expected) {
         }

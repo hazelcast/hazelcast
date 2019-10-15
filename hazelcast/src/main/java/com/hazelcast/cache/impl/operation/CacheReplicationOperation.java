@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.ServiceNamespace;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,7 +40,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Replication operation is the data migration operation of {@link com.hazelcast.cache.impl.CacheRecordStore}.
@@ -54,7 +56,6 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * <li>Create the configuration in the new node service.</li>
  * <li>Insert each record into {@link ICacheRecordStore}.</li>
  * </ul>
- * </p>
  * <p><b>Note:</b> This operation is a per partition operation.</p>
  */
 public class CacheReplicationOperation extends Operation implements IdentifiedDataSerializable {
@@ -67,7 +68,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     }
 
     public final void prepare(CachePartitionSegment segment, Collection<ServiceNamespace> namespaces,
-            int replicaIndex) {
+                              int replicaIndex) {
 
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace ns = (ObjectNamespace) namespace;
@@ -78,7 +79,12 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
 
             CacheConfig cacheConfig = recordStore.getConfig();
             if (cacheConfig.getTotalBackupCount() >= replicaIndex) {
-                storeRecordsToReplicate(recordStore);
+                Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false);
+                try {
+                    storeRecordsToReplicate(recordStore);
+                } finally {
+                    closeResource(tenantContext);
+                }
             }
         }
 
@@ -103,23 +109,31 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     public void run() throws Exception {
         ICacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
-            ICacheRecordStore cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
-            cache.reset();
-            Map<Data, CacheRecord> map = entry.getValue();
+            // establish thread-local context for this cache's tenant application before possibly creating records
+            // This is so CDI / JPA / EJB methods can be called from other than JavaEE threads
+            Closeable tenantContext = getTenantControl(service.getCacheConfig(entry.getKey())).setTenant(true);
+            ICacheRecordStore cache;
+            try {
+                cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
+                cache.reset();
+                Map<Data, CacheRecord> map = entry.getValue();
 
-            Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
-            while (iterator.hasNext()) {
-                if (cache.evictIfRequired()) {
-                    // No need to continue replicating records anymore.
-                    // We are already over eviction threshold, each put record will cause another eviction.
-                    break;
+                Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    if (cache.evictIfRequired()) {
+                        // No need to continue replicating records anymore.
+                        // We are already over eviction threshold, each put record will cause another eviction.
+                        break;
+                    }
+
+                    Map.Entry<Data, CacheRecord> next = iterator.next();
+                    Data key = next.getKey();
+                    CacheRecord record = next.getValue();
+                    iterator.remove();
+                    cache.putRecord(key, record, false);
                 }
-
-                Map.Entry<Data, CacheRecord> next = iterator.next();
-                Data key = next.getKey();
-                CacheRecord record = next.getValue();
-                iterator.remove();
-                cache.putRecord(key, record, false);
+            } finally {
+                tenantContext.close();
             }
         }
         data.clear();
@@ -144,7 +158,6 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         }
         int count = data.size();
         out.writeInt(count);
-        long now = Clock.currentTimeMillis();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             Map<Data, CacheRecord> cacheMap = entry.getValue();
             int subCount = cacheMap.size();
@@ -154,9 +167,6 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
                 final Data key = e.getKey();
                 final CacheRecord record = e.getValue();
 
-                if (record.isExpiredAt(now)) {
-                    continue;
-                }
                 out.writeData(key);
                 out.writeObject(record);
             }
@@ -217,7 +227,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_REPLICATION;
     }
 }

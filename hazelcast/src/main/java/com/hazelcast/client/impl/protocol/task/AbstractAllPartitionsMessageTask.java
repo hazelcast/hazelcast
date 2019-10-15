@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,28 +18,43 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Map;
+import java.util.function.BiConsumer;
 
-public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessageTask<P> {
+public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessageTask<P>
+        implements BiConsumer<Map<Integer, Object>, Throwable> {
 
     public AbstractAllPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() throws Exception {
+    protected void processMessage() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
-        sendResponse(reduce(map));
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
+        operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory)
+                        .whenCompleteAsync(this);
     }
 
     protected abstract OperationFactory createOperationFactory();
 
     protected abstract Object reduce(Map<Integer, Object> map);
+
+    @Override
+    public void accept(Map<Integer, Object> map, Throwable throwable) {
+        if (throwable == null) {
+            try {
+                sendResponse(reduce(map));
+            } catch (Exception e) {
+                handleProcessingFailure(e);
+            }
+        } else {
+            handleProcessingFailure(throwable);
+        }
+    }
 }

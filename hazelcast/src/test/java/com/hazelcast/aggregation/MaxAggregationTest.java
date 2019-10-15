@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.aggregation;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,10 +52,12 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MaxAggregationTest {
 
     public static final double ERROR = 1e-8;
+
+    private final InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigDecimalMax() {
@@ -81,7 +85,7 @@ public class MaxAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalMax("bigDecimal");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalMax("bigDecimal");
@@ -117,7 +121,7 @@ public class MaxAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerMax("bigInteger");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
@@ -154,7 +158,7 @@ public class MaxAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleMax("doubleValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<Double, Double>, Double> resultAggregation = Aggregators.doubleMax("doubleValue");
@@ -190,7 +194,7 @@ public class MaxAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Integer> aggregation = Aggregators.integerMax("intValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Integer> resultAggregation = Aggregators.integerMax("intValue");
@@ -226,7 +230,7 @@ public class MaxAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longMax("longValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longMax("longValue");
@@ -262,7 +266,7 @@ public class MaxAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMax("stringValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation
@@ -301,7 +305,7 @@ public class MaxAggregationTest {
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMax("stringValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation
@@ -316,13 +320,13 @@ public class MaxAggregationTest {
     public void testMaxBy_withAttributePath_withNull() {
         List<ValueContainer> values = sampleValueContainers(STRING);
         Collections.sort(values);
-        Map.Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(values.size() - 1));
+        Map.Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(values.size() - 1), ss);
         values.add(null);
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> aggregation
                 = Aggregators.maxBy("stringValue");
         for (ValueContainer value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> resultAggregation

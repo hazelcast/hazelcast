@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ClassNameFilter;
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
@@ -44,7 +46,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
-import static com.hazelcast.nio.IOUtil.newObjectInputStream;
+import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static java.lang.Math.max;
 
 
@@ -171,6 +173,9 @@ public final class JavaDefaultSerializers {
         }
 
         private Externalizable read(InputStream in, String className, ClassLoader classLoader) throws Exception {
+            if (classFilter != null) {
+                classFilter.filter(className);
+            }
             Externalizable ds = ClassLoaderUtil.newInstance(classLoader, className);
             ObjectInputStream objectInputStream = newObjectInputStream(classLoader, classFilter, in);
             ds.readExternal(objectInputStream);
@@ -319,6 +324,24 @@ public final class JavaDefaultSerializers {
 
             String name = in.readUTF();
             return Enum.valueOf(clazz, name);
+        }
+    }
+
+    public static final class HazelcastJsonValueSerializer extends SingletonSerializer<HazelcastJsonValue> {
+
+        @Override
+        public void write(ObjectDataOutput out, HazelcastJsonValue object) throws IOException {
+            out.writeUTF(object.toString());
+        }
+
+        @Override
+        public HazelcastJsonValue read(ObjectDataInput in) throws IOException {
+            return new HazelcastJsonValue(in.readUTF());
+        }
+
+        @Override
+        public int getTypeId() {
+            return JAVASCRIPT_JSON_SERIALIZATION_TYPE;
         }
     }
 

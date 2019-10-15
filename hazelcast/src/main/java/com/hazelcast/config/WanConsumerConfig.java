@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -38,9 +36,9 @@ import java.util.Map;
  * NOTE: EE only
  *
  * @see WanReplicationConfig#setWanConsumerConfig(WanConsumerConfig)
- * @see WanPublisherConfig#setClassName(String)
+ * @see CustomWanPublisherConfig#setClassName(String)
  */
-public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned {
+public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * @see #isPersistWanReplicatedData
@@ -157,7 +155,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.WAN_CONSUMER_CONFIG;
     }
 
@@ -171,25 +169,50 @@ public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned 
         }
         out.writeUTF(className);
         out.writeObject(implementation);
-
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeBoolean(persistWanReplicatedData);
-        }
+        out.writeBoolean(persistWanReplicatedData);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            properties.put(in.readUTF(), (Comparable) in.readObject());
+            properties.put(in.readUTF(), in.readObject());
         }
         className = in.readUTF();
         implementation = in.readObject();
+        persistWanReplicatedData = in.readBoolean();
+    }
 
-        // RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            persistWanReplicatedData = in.readBoolean();
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        WanConsumerConfig that = (WanConsumerConfig) o;
+
+        if (persistWanReplicatedData != that.persistWanReplicatedData) {
+            return false;
+        }
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+            return false;
+        }
+        return properties != null ? properties.equals(that.properties) : that.properties == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (persistWanReplicatedData ? 1 : 0);
+        result = 31 * result + (className != null ? className.hashCode() : 0);
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        return result;
     }
 }

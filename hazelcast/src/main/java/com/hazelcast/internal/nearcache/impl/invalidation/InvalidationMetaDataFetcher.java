@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.String.format;
 
 /**
@@ -115,8 +115,8 @@ public abstract class InvalidationMetaDataFetcher {
             return;
         }
 
-        repairUuids(resultHolder.partitionUuidList, handlers);
-        repairSequences(resultHolder.namePartitionSequenceList, handlers);
+        repairUuids(resultHolder.getPartitionUuidList(), handlers);
+        repairSequences(resultHolder.getNamePartitionSequenceList(), handlers);
     }
 
     protected void handleExceptionWhileProcessingMetadata(Member member, Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class SingleNearCacheInvalidation extends Invalidation {
     public SingleNearCacheInvalidation() {
     }
 
-    public SingleNearCacheInvalidation(Data key, String dataStructureName, String sourceUuid,
+    public SingleNearCacheInvalidation(Data key, String dataStructureName, UUID sourceUuid,
                                        UUID partitionUuid, long sequence) {
         super(dataStructureName, sourceUuid, partitionUuid, sequence);
         // key can be null when null it means this event is a clear event.
@@ -68,7 +68,7 @@ public class SingleNearCacheInvalidation extends Invalidation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return NEAR_CACHE_SINGLE_INVALIDATION;
     }
 }

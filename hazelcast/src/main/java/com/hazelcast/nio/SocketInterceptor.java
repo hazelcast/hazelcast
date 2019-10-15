@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.Properties;
  * An interface that provides the ability to intercept the creation of sockets.
  * It can be registered from client via config.
  *
- * For members see {@link com.hazelcast.nio.MemberSocketInterceptor}
+ * For members see {@link MemberSocketInterceptor}
  *
  * Warning: a SocketInterceptor provides access to the socket and will bypass
  * any TLS encryption. So be warned that any data send using the SocketInterceptor

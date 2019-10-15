@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
+import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
-import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,15 +35,26 @@ import java.io.IOException;
 public class UpdateMapConfigOperation extends AbstractManagementOperation {
 
     private String mapName;
-    private MapConfig mapConfig;
+    private int timeToLiveSeconds;
+    private int maxIdleSeconds;
+    private int maxSize;
+    private int maxSizePolicy;
+    private boolean readBackupData;
+    private int evictionPolicy;
 
-    @SuppressWarnings("unused")
     public UpdateMapConfigOperation() {
     }
 
-    public UpdateMapConfigOperation(String mapName, MapConfig mapConfig) {
+    public UpdateMapConfigOperation(String mapName, int timeToLiveSeconds, int maxIdleSeconds,
+                                    int maxSize, int maxSizePolicy, boolean readBackupData,
+                                    int evictionPolicy) {
         this.mapName = mapName;
-        this.mapConfig = mapConfig;
+        this.timeToLiveSeconds = timeToLiveSeconds;
+        this.maxIdleSeconds = maxIdleSeconds;
+        this.maxSize = maxSize;
+        this.maxSizePolicy = maxSizePolicy;
+        this.readBackupData = readBackupData;
+        this.evictionPolicy = evictionPolicy;
     }
 
     @Override
@@ -48,36 +62,40 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         MapService service = getService();
         MapConfig oldConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
         MapConfig newConfig = new MapConfig(oldConfig);
-        newConfig.setTimeToLiveSeconds(mapConfig.getTimeToLiveSeconds());
-        newConfig.setMaxIdleSeconds(mapConfig.getMaxIdleSeconds());
-        newConfig.setEvictionPolicy(mapConfig.getEvictionPolicy());
-        newConfig.setEvictionPercentage(mapConfig.getEvictionPercentage());
-        newConfig.setMinEvictionCheckMillis(mapConfig.getMinEvictionCheckMillis());
-        newConfig.setReadBackupData(mapConfig.isReadBackupData());
-        newConfig.setBackupCount(mapConfig.getBackupCount());
-        newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
-        newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
+        newConfig.setTimeToLiveSeconds(timeToLiveSeconds);
+        newConfig.setMaxIdleSeconds(maxIdleSeconds);
+        newConfig.setEvictionPolicy(EvictionPolicy.getById(evictionPolicy));
+        newConfig.setReadBackupData(readBackupData);
+        newConfig.setMaxSizeConfig(new MaxSizeConfig(maxSize, MaxSizePolicy.getById(maxSizePolicy)));
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
-        mapContainer.setMapConfig(newConfig.getAsReadOnly());
+        mapContainer.setMapConfig(new MapConfigReadOnly(newConfig));
         mapContainer.initEvictor();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        new MapConfigDTO(mapConfig).writeData(out);
+        out.writeInt(timeToLiveSeconds);
+        out.writeInt(maxIdleSeconds);
+        out.writeInt(maxSize);
+        out.writeInt(maxSizePolicy);
+        out.writeBoolean(readBackupData);
+        out.writeInt(evictionPolicy);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        MapConfigDTO adapter = new MapConfigDTO();
-        adapter.readData(in);
-        mapConfig = adapter.getMapConfig();
+        timeToLiveSeconds = in.readInt();
+        maxIdleSeconds = in.readInt();
+        maxSize = in.readInt();
+        maxSizePolicy = in.readInt();
+        readBackupData = in.readBoolean();
+        evictionPolicy = in.readInt();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ManagementDataSerializerHook.UPDATE_MAP_CONFIG;
     }
 }

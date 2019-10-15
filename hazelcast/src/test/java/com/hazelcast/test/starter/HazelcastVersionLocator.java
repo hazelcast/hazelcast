@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,20 @@ package com.hazelcast.test.starter;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.drainTo;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static java.io.File.separator;
 import static java.lang.String.format;
-import static org.apache.http.HttpStatus.SC_OK;
 
 public class HazelcastVersionLocator {
 
@@ -53,7 +52,7 @@ public class HazelcastVersionLocator {
     static {
         LOCAL_M2_REPOSITORY_PREFIX = System.getProperty("user.home") + separator + ".m2" + separator + "repository";
         MAVEN_CENTRAL_PREFIX = "https://repo1.maven.org/maven2";
-        HAZELCAST_REPOSITORY_PREFIX = "https://repository-hazelcast-l337.forge.cloudbees.com/release";
+        HAZELCAST_REPOSITORY_PREFIX = "https://repository.hazelcast.com/release";
     }
 
     public static File[] locateVersion(String version, File target, boolean enterprise) {
@@ -126,32 +125,23 @@ public class HazelcastVersionLocator {
     }
 
     private static File downloadFile(String url, File targetDirectory, String filename) {
-        CloseableHttpClient client = HttpClients.createDefault();
         File targetFile = new File(targetDirectory, filename);
         if (targetFile.isFile() && targetFile.exists()) {
             return targetFile;
         }
-        HttpGet request = new HttpGet(url);
+        FileOutputStream fos = null;
+        InputStream is = null;
         try {
-            CloseableHttpResponse response = client.execute(request);
-            if (response.getStatusLine().getStatusCode() != SC_OK) {
-                throw new GuardianException("Cannot download file from " + url
-                        + ", http response code: " + response.getStatusLine().getStatusCode());
-            }
-            HttpEntity entity = response.getEntity();
-            FileOutputStream fos = new FileOutputStream(targetFile);
-            entity.writeTo(fos);
-            fos.close();
+            is = new BufferedInputStream(new URL(url).openStream());
+            fos = new FileOutputStream(targetFile);
+            drainTo(is, fos);
             targetFile.deleteOnExit();
             return targetFile;
         } catch (IOException e) {
             throw rethrowGuardianException(e);
         } finally {
-            try {
-                client.close();
-            } catch (IOException e) {
-                // ignore
-            }
+            closeResource(fos);
+            closeResource(is);
         }
     }
 
@@ -198,7 +188,7 @@ public class HazelcastVersionLocator {
             sb.append(member ? "hazelcast:" : "hazelcast-client:");
         }
         sb.append(version)
-                .append(enterprise ? " -DremoteRepositories=https://repository-hazelcast-l337.forge.cloudbees.com/release" : "");
+                .append(enterprise ? " -DremoteRepositories=https://repository.hazelcast.com/release" : "");
         LOGGER.warning(sb.toString());
     }
 }

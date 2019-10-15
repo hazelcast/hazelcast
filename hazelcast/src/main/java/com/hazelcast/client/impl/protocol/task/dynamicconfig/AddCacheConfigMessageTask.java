@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.ArrayList;
@@ -69,7 +69,8 @@ public class AddCacheConfigMessageTask
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
         config.setKeyType(parameters.keyType);
         config.setManagementEnabled(parameters.managementEnabled);
-        config.setMergePolicy(parameters.mergePolicy);
+        // TODO also set merge policy batch size
+        config.getMergePolicyConfig().setPolicy(parameters.mergePolicy);
         config.setName(parameters.name);
         if (parameters.partitionLostListenerConfigs != null && !parameters.partitionLostListenerConfigs.isEmpty()) {
             List<CachePartitionLostListenerConfig> listenerConfigs = (List<CachePartitionLostListenerConfig>)
@@ -78,7 +79,7 @@ public class AddCacheConfigMessageTask
         } else {
             config.setPartitionLostListenerConfigs(new ArrayList<CachePartitionLostListenerConfig>());
         }
-        config.setQuorumName(parameters.quorumName);
+        config.setSplitBrainProtectionName(parameters.splitBrainProtectionName);
         config.setReadThrough(parameters.readThrough);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         config.setValueType(parameters.valueType);

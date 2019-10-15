@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.instance.EndpointQualifier;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -44,7 +44,6 @@ import java.util.List;
  * @see com.hazelcast.instance.DefaultAddressPicker
  * @see com.hazelcast.config.NetworkConfig#setMemberAddressProviderConfig(com.hazelcast.config.MemberAddressProviderConfig)
  */
-@Beta
 public interface MemberAddressProvider {
     /**
      * What address should Hazelcast bind to.
@@ -57,6 +56,8 @@ public interface MemberAddressProvider {
      */
     InetSocketAddress getBindAddress();
 
+    InetSocketAddress getBindAddress(EndpointQualifier qualifier);
+
     /**
      * What address should Hazelcast advertise to other members and clients.
      * When the port is set to {@code 0} then it will broadcast the same
@@ -65,4 +66,6 @@ public interface MemberAddressProvider {
      * @return address to advertise to others
      */
     InetSocketAddress getPublicAddress();
+
+    InetSocketAddress getPublicAddress(EndpointQualifier qualifier);
 }

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!--
+  This is a full example hazelcast-client-failover.xml that includes all
+  the configuration elements and attributes of a Hazelcast client
+  Blue/Green Deployment and Disaster Recovery configuration.
+
+  To use this, rename it to hazelcast-client-failover.xml and place it in
+  the directory where you start your Hazelcast client.
+
+  To learn how to configure Hazelcast clients for Blue/Green Deployment and
+  Disaster Recovery, please see the Reference Manual at
+  https://hazelcast.org/documentation/
+-->
+
+<!--suppress XmlDefaultAttributeValue -->
+<hazelcast-client-failover xmlns="http://www.hazelcast.com/schema/client-config"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
+                           http://www.hazelcast.com/schema/client-config/hazelcast-client-failover-config-4.0.xsd">
+
+    <!--
+        The Hazelcast client can configurations that the client is using to connect to a Hazelcast cluster in the case
+        of a disconnect is listed under the <clients> element. You can list client configurations as many as you want.
+        Each client configuration can be listed via <client> element nested into the <clients> element.
+    -->
+    <clients>
+        <client>your-first-hazelcast-client-configuration.xml</client>
+        <client>your-second-hazelcast-client-configuration.xml</client>
+    </clients>
+
+    <!--
+        Each time the client is disconnected from a cluster and it cannot connect back to the same one, the configured
+        client configuration defined under the <clients> element is iterated over. Count of these iterations before the
+        client decides to shut down is provided using the <try-count> configuration element. See the following
+        configuration related sections.
+    -->
+    <try-count>4</try-count>
+
+</hazelcast-client-failover>

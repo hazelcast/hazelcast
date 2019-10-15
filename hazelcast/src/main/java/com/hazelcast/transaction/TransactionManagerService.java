@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package com.hazelcast.transaction;
 
+import java.util.UUID;
+
 public interface TransactionManagerService {
 
     <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
 
     TransactionContext newTransactionContext(TransactionOptions options);
 
-    TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid);
+    TransactionContext newClientTransactionContext(TransactionOptions options, UUID clientUuid);
 }

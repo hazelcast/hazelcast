@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.request;
 
 /**
  * Represents async requests sent from Management Center.
- * <p/>
+ * <p>
  * Normally, ManagementCenterService handles {@code ConsoleRequest}s synchronously
  * on its {@code TaskPollThread}, a single thread polls tasks from Management Center,
  * executes them and writes back the response directly. This is fine for short running tasks

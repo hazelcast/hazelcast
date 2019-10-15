@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,20 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 
 public class AddPartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters>
+        implements ListenerMessageTask {
 
     public AddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,7 +53,7 @@ public class AddPartitionLostListenerMessageTask
             }
         };
 
-        String registrationId;
+        UUID registrationId;
         if (parameters.localOnly) {
             registrationId = partitionService.addLocalPartitionLostListener(listener);
         } else {
@@ -69,7 +71,7 @@ public class AddPartitionLostListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientAddPartitionLostListenerCodec.encodeResponse((String) response);
+        return ClientAddPartitionLostListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

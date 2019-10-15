@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -40,7 +40,7 @@ import static com.hazelcast.internal.serialization.impl.PortableUtils.getPortabl
 /**
  * Can't be accessed concurrently.
  */
-public class DefaultPortableReader extends ValueReader implements PortableReader {
+public class DefaultPortableReader implements ValueReader, PortableReader {
 
     private static final MultiResult NULL_EMPTY_TARGET_MULTIRESULT;
 

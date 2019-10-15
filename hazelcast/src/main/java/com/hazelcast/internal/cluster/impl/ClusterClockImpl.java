@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.Math.abs;

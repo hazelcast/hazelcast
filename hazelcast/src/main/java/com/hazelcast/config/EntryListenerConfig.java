@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapClearedListener;
@@ -35,7 +36,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.EventListener;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Configuration for EntryListener
@@ -45,8 +46,6 @@ public class EntryListenerConfig extends ListenerConfig {
     private boolean local;
 
     private boolean includeValue = true;
-
-    private EntryListenerConfigReadOnly readOnly;
 
     public EntryListenerConfig() {
     }
@@ -74,20 +73,6 @@ public class EntryListenerConfig extends ListenerConfig {
         local = config.isLocal();
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    @Override
-    public EntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new EntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -158,6 +143,13 @@ public class EntryListenerConfig extends ListenerConfig {
         }
 
         @Override
+        public void entryExpired(EntryEvent event) {
+            if (mapListener instanceof EntryExpiredListener) {
+                ((EntryExpiredListener) mapListener).entryExpired(event);
+            }
+        }
+
+        @Override
         public void entryRemoved(EntryEvent event) {
             if (mapListener instanceof EntryRemovedListener) {
                 ((EntryRemovedListener) mapListener).entryRemoved(event);
@@ -202,7 +194,7 @@ public class EntryListenerConfig extends ListenerConfig {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return ConfigDataSerializerHook.MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER;
         }
 
@@ -298,7 +290,7 @@ public class EntryListenerConfig extends ListenerConfig {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.ENTRY_LISTENER_CONFIG;
     }
 

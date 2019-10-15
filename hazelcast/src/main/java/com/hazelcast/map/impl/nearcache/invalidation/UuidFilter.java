@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Compares supplied UUID with this filters' UUID to prevent unneeded delivery of an invalidation event to operation caller.
@@ -30,30 +32,30 @@ import java.io.IOException;
  */
 public class UuidFilter implements EventFilter, IdentifiedDataSerializable {
 
-    private String uuid;
+    private UUID uuid;
 
     public UuidFilter() {
     }
 
-    public UuidFilter(String uuid) {
+    public UuidFilter(UUID uuid) {
         this.uuid = uuid;
     }
 
     @Override
     public boolean eval(Object suppliedUuid) {
-        assert suppliedUuid instanceof String;
+        assert suppliedUuid instanceof UUID;
 
         return uuid.equals(suppliedUuid);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        UUIDSerializationUtil.writeUUID(out, uuid);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
@@ -69,7 +71,7 @@ public class UuidFilter implements EventFilter, IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.UUID_FILTER;
     }
 }

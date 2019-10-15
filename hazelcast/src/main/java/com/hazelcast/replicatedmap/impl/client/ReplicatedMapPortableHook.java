@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collection;
 
@@ -56,30 +56,10 @@ public class ReplicatedMapPortableHook implements PortableHook {
             private final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[LENGTH];
 
             {
-                constructors[MAP_ENTRIES] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ReplicatedMapEntries();
-                    }
-                };
-                constructors[MAP_KEY_SET] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ReplicatedMapKeys();
-                    }
-                };
-                constructors[VALUES_COLLECTION] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ReplicatedMapValueCollection();
-                    }
-                };
-                constructors[MAP_ENTRY_EVENT] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ReplicatedMapPortableEntryEvent();
-                    }
-                };
+                constructors[MAP_ENTRIES] = arg -> new ReplicatedMapEntries();
+                constructors[MAP_KEY_SET] = arg -> new ReplicatedMapKeys();
+                constructors[VALUES_COLLECTION] = arg -> new ReplicatedMapValueCollection();
+                constructors[MAP_ENTRY_EVENT] = arg -> new ReplicatedMapPortableEntryEvent();
             }
 
             public Portable create(int classId) {

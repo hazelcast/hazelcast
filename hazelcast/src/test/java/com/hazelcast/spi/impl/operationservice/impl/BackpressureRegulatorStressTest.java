@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -89,96 +88,81 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
     @Test(timeout = 600000)
     public void asyncInvocation() throws Exception {
-        test(new StressThreadFactory() {
-            @Override
-            public StressThread create() {
-                StressThread stressThread = new StressThread();
-                stressThread.returnsResponse = true;
-                stressThread.syncInvocation = false;
-                stressThread.runDelayMs = 1;
-                stressThread.shouldBackup = false;
-                stressThread.asyncBackups = 0;
-                stressThread.syncBackups = 0;
-                stressThread.backupRunDelayMs = 0;
-                stressThread.partitionId = getPartitionId(remote);
-                return stressThread;
-            }
+        test(() -> {
+            StressThread stressThread = new StressThread();
+            stressThread.returnsResponse = true;
+            stressThread.syncInvocation = false;
+            stressThread.runDelayMs = 1;
+            stressThread.shouldBackup = false;
+            stressThread.asyncBackups = 0;
+            stressThread.syncBackups = 0;
+            stressThread.backupRunDelayMs = 0;
+            stressThread.partitionId = getPartitionId(remote);
+            return stressThread;
         });
     }
 
     @Test(timeout = 600000)
     public void asyncInvocation_and_syncBackups() throws Exception {
-        test(new StressThreadFactory() {
-            @Override
-            public StressThread create() {
-                StressThread stressThread = new StressThread();
-                stressThread.returnsResponse = true;
-                stressThread.syncInvocation = false;
-                stressThread.runDelayMs = 0;
-                stressThread.shouldBackup = false;
-                stressThread.asyncBackups = 0;
-                stressThread.syncBackups = 1;
-                stressThread.backupRunDelayMs = 1;
-                stressThread.partitionId = getPartitionId(remote);
-                return stressThread;
-            }
+        test(() -> {
+            StressThread stressThread = new StressThread();
+            stressThread.returnsResponse = true;
+            stressThread.syncInvocation = false;
+            stressThread.runDelayMs = 0;
+            stressThread.shouldBackup = false;
+            stressThread.asyncBackups = 0;
+            stressThread.syncBackups = 1;
+            stressThread.backupRunDelayMs = 1;
+            stressThread.partitionId = getPartitionId(remote);
+            return stressThread;
         });
     }
 
     @Test(timeout = 600000)
     public void asyncInvocation_and_asyncBackups() throws Exception {
-        test(new StressThreadFactory() {
-            @Override
-            public StressThread create() {
-                StressThread stressThread = new StressThread();
-                stressThread.returnsResponse = true;
-                stressThread.syncInvocation = false;
-                stressThread.runDelayMs = 0;
-                stressThread.shouldBackup = true;
-                stressThread.asyncBackups = 1;
-                stressThread.syncBackups = 0;
-                stressThread.backupRunDelayMs = 1;
-                stressThread.partitionId = getPartitionId(remote);
-                return stressThread;
-            }
+        test(() -> {
+            StressThread stressThread = new StressThread();
+            stressThread.returnsResponse = true;
+            stressThread.syncInvocation = false;
+            stressThread.runDelayMs = 0;
+            stressThread.shouldBackup = true;
+            stressThread.asyncBackups = 1;
+            stressThread.syncBackups = 0;
+            stressThread.backupRunDelayMs = 1;
+            stressThread.partitionId = getPartitionId(remote);
+            return stressThread;
         });
     }
 
     @Test(timeout = 600000)
     public void syncInvocation_and_asyncBackups() throws Exception {
-        test(new StressThreadFactory() {
-            @Override
-            public StressThread create() {
-                StressThread stressThread = new StressThread();
-                stressThread.returnsResponse = true;
-                stressThread.syncInvocation = true;
-                stressThread.runDelayMs = 0;
-                stressThread.shouldBackup = true;
-                stressThread.asyncBackups = 1;
-                stressThread.syncBackups = 0;
-                stressThread.backupRunDelayMs = 1;
-                stressThread.partitionId = getPartitionId(remote);
-                return stressThread;
-            }
+        test(() -> {
+            StressThread stressThread = new StressThread();
+            stressThread.returnsResponse = true;
+            stressThread.syncInvocation = true;
+            stressThread.runDelayMs = 0;
+            stressThread.shouldBackup = true;
+            stressThread.asyncBackups = 1;
+            stressThread.syncBackups = 0;
+            stressThread.backupRunDelayMs = 1;
+            stressThread.partitionId = getPartitionId(remote);
+            return stressThread;
         });
     }
 
     @Test(timeout = 600000)
     public void asyncInvocation_and_syncBackups_and_asyncBackups() throws Exception {
-        test(new StressThreadFactory() {
-            @Override
-            public StressThread create() {
-                StressThread stressThread = new StressThread();
-                stressThread.returnsResponse = true;
-                stressThread.syncInvocation = false;
-                stressThread.runDelayMs = 0;
-                stressThread.shouldBackup = true;
-                stressThread.asyncBackups = 1;
-                stressThread.syncBackups = 1;
-                stressThread.backupRunDelayMs = 1;
-                stressThread.partitionId = getPartitionId(remote);
-                return stressThread;
-            }
+        test(() -> {
+            StressThread stressThread = new StressThread();
+            stressThread.returnsResponse = true;
+            stressThread.syncInvocation = false;
+            stressThread.runDelayMs = 0;
+            stressThread.shouldBackup = true;
+            stressThread.asyncBackups = 1;
+            stressThread.syncBackups = 1;
+            stressThread.backupRunDelayMs = 1;
+            stressThread.partitionId = getPartitionId(remote);
+            return stressThread;
         });
     }
 
@@ -195,7 +179,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("the number of completed calls doesn't match the number of expected calls",
                         globalOperationCount.get(), completedCall.get());
             }
@@ -220,7 +204,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         public int runDelayMs = 1;
         public int backupRunDelayMs = 0;
 
-        public StressThread() {
+        StressThread() {
             super("StressThread-" + THREAD_ID_GENERATOR.incrementAndGet());
         }
 
@@ -265,20 +249,16 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         private void asyncInvoke(DummyOperation operation) {
             final long expectedResult = operation.result;
 
-            InternalCompletableFuture f = localOperationService.invokeOnPartition(null, operation, partitionId);
-            f.andThen(new ExecutionCallback() {
-                @Override
-                public void onResponse(Object response) {
+            InternalCompletableFuture<Object> f = localOperationService.invokeOnPartition(null, operation, partitionId);
+            f.whenCompleteAsync((response, t) -> {
+                if (t == null) {
                     completedCall.incrementAndGet();
 
                     if (!new Long(expectedResult).equals(response)) {
                         System.out.println("Wrong result received, expecting: " + expectedResult + " but found:" + response);
                         failedOperationCount.incrementAndGet();
                     }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
+                } else {
                     completedCall.incrementAndGet();
                     failedOperationCount.incrementAndGet();
                     t.printStackTrace();
@@ -318,10 +298,10 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         int runDelayMs = 1;
         int backupRunDelayMs = 0;
 
-        public DummyOperation() {
+        DummyOperation() {
         }
 
-        public DummyOperation(long result) {
+        DummyOperation(long result) {
             this.result = result;
         }
 

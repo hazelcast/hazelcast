@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,20 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractInvocationFuture_MiscTest extends AbstractInvocationFuture_AbstractTest {
 
     @Test
@@ -40,5 +43,67 @@ public class AbstractInvocationFuture_MiscTest extends AbstractInvocationFuture_
         future.complete(value);
         String s = future.toString();
         assertEquals("InvocationFuture{invocation=someinvocation, value=somevalue}", s);
+    }
+
+    @Test
+    public void getNumberOfDependents_whenNoneRegistered() {
+        assertEquals(0, future.getNumberOfDependents());
+    }
+
+    @Test
+    public void getNumberOfDependents_whenSomeRegistered() {
+        future.whenCompleteAsync((v, t) -> ignore(null));
+        future.thenRun(() -> ignore(null));
+        assertEquals(2, future.getNumberOfDependents());
+    }
+
+    @Test
+    public void obtrudeValue_whenIncomplete() {
+        future.obtrudeValue(value);
+
+        assertSame(value, future.join());
+    }
+
+    @Test
+    public void obtrudeValue_whenComplete() {
+        future.complete("this will be overwritten");
+        future.obtrudeValue(value);
+
+        assertSame(value, future.join());
+    }
+
+    @Test
+    public void obtrudeValue_triggersUntriggeredStages() {
+        InternalCompletableFuture nextStage = future.thenAccept(v -> assertSame(value, v));
+        future.obtrudeValue(value);
+
+        assertSame(value, future.join());
+        // ensure the consumer was executed and no exception was thrown
+        nextStage.join();
+    }
+
+    @Test
+    public void obtrudeException_whenNotComplete() {
+        future.obtrudeException(new ExpectedRuntimeException());
+
+        try {
+            future.joinInternal();
+            fail();
+        } catch (ExpectedRuntimeException e) {
+            ignore(e);
+        }
+    }
+
+    @Test
+    public void obtrudeException_whenComplete() {
+        future.complete(value);
+        future.obtrudeException(new ExpectedRuntimeException());
+
+        try {
+            future.joinInternal();
+            fail();
+        } catch (ExpectedRuntimeException e) {
+            ignore(e);
+        }
     }
 }

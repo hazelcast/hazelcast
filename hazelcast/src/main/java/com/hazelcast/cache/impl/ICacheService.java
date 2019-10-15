@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.RemoteService;
 
 import java.util.Collection;
+import java.util.UUID;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
@@ -87,7 +88,7 @@ public interface ICacheService
 
     CacheContext getOrCreateCacheContext(String cacheNameWithPrefix);
 
-    void deleteCache(String cacheNameWithPrefix, String callerUuid, boolean destroy);
+    void deleteCache(String cacheNameWithPrefix, UUID callerUuid, boolean destroy);
 
     void deleteCacheStat(String cacheNameWithPrefix);
 
@@ -101,11 +102,11 @@ public interface ICacheService
 
     NodeEngine getNodeEngine();
 
-    String registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
 
-    String registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
 
-    boolean deregisterListener(String cacheNameWithPrefix, String registrationId);
+    boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId);
 
     void deregisterAllListener(String cacheNameWithPrefix);
 
@@ -118,9 +119,9 @@ public interface ICacheService
      */
     CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat storageType);
 
-    String addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
+    UUID addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
 
-    void sendInvalidationEvent(String cacheNameWithPrefix, Data key, String sourceUuid);
+    void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid);
 
     /**
      * Returns {@code true} if WAN replication is enabled for the cache named {@code cacheNameWithPrefix}.
@@ -135,6 +136,13 @@ public interface ICacheService
      */
     CacheWanEventPublisher getCacheWanEventPublisher();
 
+
+    /**
+     * @param cacheNameWithPrefix the full name of the {@link
+     *                            com.hazelcast.cache.ICache}, including the manager scope prefix
+     */
+    void doPrepublicationChecks(String cacheNameWithPrefix);
+
     /**
      * Returns an interface for interacting with the cache event journals.
      */
@@ -145,10 +153,12 @@ public interface ICacheService
      * cluster version 3.10 or greater, the cluster-wide invocation ensures that all members of
      * the cluster will receive the cache config even in the face of cluster membership changes.
      *
-     * @param cacheConfig   the cache config to create on all members of the cluster
-     * @param <K>           key type parameter
-     * @param <V>           value type parameter
+     * @param cacheConfig the cache config to create on all members of the cluster
+     * @param <K>         key type parameter
+     * @param <V>         value type parameter
      * @since 3.10
      */
     <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig);
+
+    <K, V> void setTenantControl(CacheConfig<K, V> cacheConfig);
 }

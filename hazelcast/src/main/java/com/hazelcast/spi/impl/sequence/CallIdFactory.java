@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,25 @@
 
 package com.hazelcast.spi.impl.sequence;
 
+import com.hazelcast.internal.util.ConcurrencyDetection;
+
 public final class CallIdFactory {
 
     private CallIdFactory() {
     }
 
-    public static CallIdSequence newCallIdSequence(boolean isBackPressureEnabled, int maxAllowedConcurrentInvocations,
-                                                   long backoffTimeoutMs) {
-        if (!isBackPressureEnabled) {
-            return new CallIdSequenceWithoutBackpressure();
-        } else if (backoffTimeoutMs <= 0) {
-            return new FailFastCallIdSequence(maxAllowedConcurrentInvocations);
+    public static CallIdSequence newCallIdSequence(
+            int maxConcurrentInvocations,
+            long backoffTimeoutMs,
+            ConcurrencyDetection concurrencyDetection) {
+        if (concurrencyDetection.enabled()) {
+            if (backoffTimeoutMs > 0) {
+                return new CallIdSequenceWithBackpressure(maxConcurrentInvocations, backoffTimeoutMs, concurrencyDetection);
+            } else {
+                return new FailFastCallIdSequence(maxConcurrentInvocations, concurrencyDetection);
+            }
         } else {
-            return new CallIdSequenceWithBackpressure(maxAllowedConcurrentInvocations, backoffTimeoutMs);
+            return new CallIdSequenceWithoutBackpressure();
         }
     }
 }

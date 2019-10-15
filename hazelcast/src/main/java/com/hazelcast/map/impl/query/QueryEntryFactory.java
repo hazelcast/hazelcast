@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,18 @@ import com.hazelcast.query.impl.getters.Extractors;
 public final class QueryEntryFactory {
 
     private final CacheDeserializedValues cacheDeserializedValues;
+    private final InternalSerializationService serializationService;
+    private final Extractors extractors;
 
-    public QueryEntryFactory(CacheDeserializedValues cacheDeserializedValues) {
+    public QueryEntryFactory(CacheDeserializedValues cacheDeserializedValues,
+                             InternalSerializationService serializationService,
+                             Extractors extractors) {
         this.cacheDeserializedValues = cacheDeserializedValues;
+        this.serializationService = serializationService;
+        this.extractors = extractors;
     }
 
-    public QueryableEntry newEntry(InternalSerializationService serializationService,
-                                   Data key, Object value, Extractors extractors) {
+    public QueryableEntry newEntry(Data key, Object value) {
         switch (cacheDeserializedValues) {
             case NEVER:
                 return new QueryEntry(serializationService, key, value, extractors);

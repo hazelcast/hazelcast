@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.monitor.LocalWanStats;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.Map;
 
@@ -30,17 +30,17 @@ import java.util.Map;
 @ManagedDescription("WanReplicationPublisher")
 public class WanPublisherMBean extends HazelcastMBean<WanReplicationService> {
     private final String wanReplicationName;
-    private final String targetGroupName;
+    private final String wanPublisherId;
 
     public WanPublisherMBean(WanReplicationService wanReplicationService,
                              String wanReplicationName,
-                             String targetGroupName,
+                             String wanPublisherId,
                              ManagementService service) {
         super(wanReplicationService, service);
         this.wanReplicationName = wanReplicationName;
-        this.targetGroupName = targetGroupName;
+        this.wanPublisherId = wanPublisherId;
         this.objectName = service.createObjectName("WanReplicationPublisher",
-                wanReplicationName + "." + targetGroupName);
+                wanReplicationName + "." + wanPublisherId);
     }
 
     @ManagedAnnotation("state")
@@ -52,7 +52,7 @@ public class WanPublisherMBean extends HazelcastMBean<WanReplicationService> {
         }
         final LocalWanStats wanReplicationStats = wanStats.get(wanReplicationName);
         final Map<String, LocalWanPublisherStats> wanDelegatingPublisherStats = wanReplicationStats.getLocalWanPublisherStats();
-        final LocalWanPublisherStats wanPublisherStats = wanDelegatingPublisherStats.get(targetGroupName);
+        final LocalWanPublisherStats wanPublisherStats = wanDelegatingPublisherStats.get(wanPublisherId);
         return wanPublisherStats.getPublisherState().name();
     }
 

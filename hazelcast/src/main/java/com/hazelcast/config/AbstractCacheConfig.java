@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.config;
 import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
+import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
@@ -34,7 +35,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Base class for {@link CacheConfig}
@@ -90,8 +91,10 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
 
     protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
+    protected EventJournalConfig eventJournalConfig = new EventJournalConfig();
+
     /**
-     * The ClassLoader to be used to resolve key & value types, if set
+     * The ClassLoader to be used to resolve key &amp; value types, if set
      */
     protected transient ClassLoader classLoader;
     protected transient InternalSerializationService serializationService;
@@ -254,7 +257,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      *
      * @return hot restart config
      */
-    public HotRestartConfig getHotRestartConfig() {
+    public @Nonnull HotRestartConfig getHotRestartConfig() {
         return hotRestartConfig;
     }
 
@@ -264,8 +267,28 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      * @param hotRestartConfig hot restart config
      * @return this {@code CacheConfiguration} instance
      */
-    public CacheConfiguration<K, V> setHotRestartConfig(HotRestartConfig hotRestartConfig) {
-        this.hotRestartConfig = hotRestartConfig;
+    public CacheConfiguration<K, V> setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
+        this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig can't be null");
+        return this;
+    }
+
+    /**
+     * Gets the {@code EventJournalConfig} for this {@code CacheConfiguration}
+     *
+     * @return event journal config
+     */
+    public @Nonnull EventJournalConfig getEventJournalConfig() {
+        return eventJournalConfig;
+    }
+
+    /**
+     * Sets the {@code EventJournalConfig} for this {@code CacheConfiguration}
+     *
+     * @param eventJournalConfig event journal config
+     * @return this {@code CacheConfiguration} instance
+     */
+    public CacheConfiguration<K, V> setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        this.eventJournalConfig = checkNotNull(eventJournalConfig, "eventJournalConfig cannot be null!");
         return this;
     }
 
@@ -454,6 +477,8 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         result = 31 * result + (isStatisticsEnabled ? 1 : 0);
         result = 31 * result + (isStoreByValue ? 1 : 0);
         result = 31 * result + (isManagementEnabled ? 1 : 0);
+        result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + eventJournalConfig.hashCode();
         return result;
     }
 
@@ -508,7 +533,12 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         if (!thisListenerConfigs.equals(thatListenerConfigs)) {
             return false;
         }
-
+        if (!eventJournalConfig.equals(that.eventJournalConfig)) {
+            return false;
+        }
+        if (!hotRestartConfig.equals(that.hotRestartConfig)) {
+            return false;
+        }
         return keyValueTypesEqual(that);
     }
 

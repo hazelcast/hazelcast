@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ public class DataAwareEntryEventConstructor extends AbstractStarterObjectConstru
         // locate required classes on target class loader
         ClassLoader starterClassLoader = targetClass.getClassLoader();
         Class<?> dataClass = starterClassLoader.loadClass("com.hazelcast.nio.serialization.Data");
-        Class<?> memberClass = starterClassLoader.loadClass("com.hazelcast.core.Member");
-        Class<?> serServiceClass = starterClassLoader.loadClass("com.hazelcast.spi.serialization.SerializationService");
+        Class<?> memberClass = starterClassLoader.loadClass("com.hazelcast.cluster.Member");
+        Class<?> serServiceClass = starterClassLoader.loadClass("com.hazelcast.internal.serialization.SerializationService");
         Constructor<?> constructor = targetClass.getConstructor(memberClass, Integer.TYPE, String.class, dataClass,
                 dataClass, dataClass, dataClass, serServiceClass);
 

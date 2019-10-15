@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,21 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.OutOfMemoryHandler;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,8 +46,66 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
+
+    @Test
+    public void failed_store_operations_does_not_change_item_count_in_write_behind_queue_when_batching_enabled() {
+        failed_stores_does_not_change_item_count_in_write_behind_queue_without_coalescing(true);
+    }
+
+    @Test
+    public void failed_store_operations_does_not_change_item_count_in_write_behind_queue_when_batching_disabled() {
+        failed_stores_does_not_change_item_count_in_write_behind_queue_without_coalescing(false);
+    }
+
+    private void failed_stores_does_not_change_item_count_in_write_behind_queue_without_coalescing(boolean batchingEnabled) {
+        ExceptionThrowerMapStore mapStore = new ExceptionThrowerMapStore();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(1)
+                .withPartitionCount(1)
+                .withWriteCoalescing(false)
+                .withWriteBatchSize(batchingEnabled ? 1000 : 1)
+                .build();
+
+        int entryCountToStore = 1;
+        for (int i = 0; i < entryCountToStore; i++) {
+            map.put(i, i);
+        }
+
+        sleepAtLeastSeconds(5);
+
+        assertEquals(entryCountToStore, totalItemCountInWriteBehindQueues(map));
+        assertEquals(entryCountToStore, sizeOfWriteBehindQueueInPartition(0, map));
+    }
+
+    /**
+     * Returns total item count in all write behind queues of a node.
+     */
+    private static long totalItemCountInWriteBehindQueues(IMap map) {
+        MapService mapService = (MapService) ((MapProxyImpl) map).getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getNodeWideUsedCapacityCounter().currentValue();
+
+    }
+
+    private static int sizeOfWriteBehindQueueInPartition(int partitionId, IMap map) {
+        MapService mapService = (MapService) ((MapProxyImpl) map).getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
+        RecordStore recordStore = container.getRecordStore(map.getName());
+        return ((WriteBehindStore) recordStore.getMapDataStore()).getWriteBehindQueue().size();
+    }
+
+    private class ExceptionThrowerMapStore extends MapStoreAdapter {
+        @Override
+        public void store(Object key, Object value) {
+            throw new RuntimeException("Failed to store DB");
+        }
+    }
 
     @Test
     public void testStoreOperationDone_afterTemporaryMapStoreFailure() throws Exception {
@@ -135,7 +198,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
     private static class TemporaryMapStoreException extends RuntimeException {
 
-        public TemporaryMapStoreException() {
+        TemporaryMapStoreException() {
             super("Test exception");
         }
     }

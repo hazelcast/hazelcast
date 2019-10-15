@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,22 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_11;
-
 public class ReplicatedMapEntryView<K, V>
-        implements EntryView, IdentifiedDataSerializable, Versioned {
+        implements EntryView, IdentifiedDataSerializable {
 
     private static final int NOT_AVAILABLE = -1;
 
-    private K key;
-    private V value;
+    private Object key;
+    private Object value;
     private long creationTime;
     private long hits;
     private long lastAccessTime;
@@ -42,12 +40,22 @@ public class ReplicatedMapEntryView<K, V>
     private long ttl;
     private long maxIdle;
 
+    private SerializationService serializationService;
+
     public ReplicatedMapEntryView() {
+    }
+
+    public ReplicatedMapEntryView(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
     @Override
     public K getKey() {
-        return key;
+        // Null serializationService means, use raw type without any conversion
+        if (serializationService != null) {
+            key = serializationService.toObject(key);
+        }
+        return (K) key;
     }
 
     public ReplicatedMapEntryView<K, V> setKey(K key) {
@@ -57,7 +65,11 @@ public class ReplicatedMapEntryView<K, V>
 
     @Override
     public V getValue() {
-        return value;
+        // Null serializationService means, use raw type without any conversion
+        if (serializationService != null) {
+            value = serializationService.toObject(value);
+        }
+        return (V) value;
     }
 
     public ReplicatedMapEntryView<K, V> setValue(V value) {
@@ -131,7 +143,7 @@ public class ReplicatedMapEntryView<K, V>
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return maxIdle;
     }
 
@@ -142,17 +154,14 @@ public class ReplicatedMapEntryView<K, V>
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        IOUtil.writeObject(out, key);
-        IOUtil.writeObject(out, value);
+        IOUtil.writeObject(out, getKey());
+        IOUtil.writeObject(out, getValue());
         out.writeLong(creationTime);
         out.writeLong(hits);
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(ttl);
-        //RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -164,10 +173,7 @@ public class ReplicatedMapEntryView<K, V>
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
         ttl = in.readLong();
-        //RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
+        maxIdle = in.readLong();
     }
 
     @Override
@@ -176,20 +182,21 @@ public class ReplicatedMapEntryView<K, V>
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ReplicatedMapDataSerializerHook.ENTRY_VIEW;
     }
 
     @Override
     public String toString() {
         return "ReplicatedMapEntryView{"
-                + "key=" + key
-                + ", value=" + value
+                + "key=" + getKey()
+                + ", value=" + getValue()
                 + ", creationTime=" + creationTime
                 + ", hits=" + hits
                 + ", lastAccessTime=" + lastAccessTime
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", ttl=" + ttl
+                + ", maxIdle=" + maxIdle
                 + '}';
     }
 }

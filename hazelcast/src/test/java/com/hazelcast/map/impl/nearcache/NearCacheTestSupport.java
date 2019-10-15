@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,17 +22,16 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -184,7 +183,8 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected NearCacheConfig newNearCacheConfigWithEntryCountEviction(EvictionPolicy evictionPolicy, int size) {
         return newNearCacheConfig()
                 .setCacheLocalEntries(true)
-                .setEvictionConfig(new EvictionConfig(size, ENTRY_COUNT, evictionPolicy));
+                .setEvictionConfig(new EvictionConfig().setSize(size)
+                        .setMaximumSizePolicy(ENTRY_COUNT).setEvictionPolicy(evictionPolicy));
     }
 
     protected NearCacheConfig newNearCacheConfig() {
@@ -224,13 +224,8 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         assertOpenEventually(latch);
     }
 
-    protected void addEntryEvictedListener(IMap<Integer, Integer> map, final CountDownLatch latch) {
-        map.addLocalEntryListener(new EntryEvictedListener<Integer, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-                latch.countDown();
-            }
-        });
+    protected void addEntryExpiredListener(IMap<Integer, Integer> map, final CountDownLatch latch) {
+        map.addLocalEntryListener((EntryExpiredListener<Integer, Integer>) event -> latch.countDown());
     }
 
     protected void populateMapWithExpirableEntries(IMap<Integer, Integer> map, int mapSize, long ttl, TimeUnit timeunit) {
@@ -350,9 +345,9 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class IncrementEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
+    public static class IncrementEntryProcessor implements EntryProcessor<Integer, Integer, Integer> {
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Integer process(Map.Entry<Integer, Integer> entry) {
             int currentValue = entry.getValue();
             int newValue = currentValue + 1000;
             entry.setValue(newValue);

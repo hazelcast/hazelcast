@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker for private api.
+ * Marker for private functionality. This code is not intended for public usage and no compatibility
+ * guarantees are given. So it could be that the functionality changes, moves, gets deleted etc without
+ * any form of warning.
  */
 @Target({ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)

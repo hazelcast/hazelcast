@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,55 +20,56 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
+import com.hazelcast.map.impl.mapstore.writebehind.NodeWideUsedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.query.MapQueryEngine;
-import com.hazelcast.map.impl.query.PartitionScanRunner;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
-import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * Context which is needed by a map service.
  * <p>
- * Shared instances, configurations of all maps can be reached over this context.
+ * Shared instances, configurations of all
+ * maps can be reached over this context.
  * <p>
- * Also this context provides some support methods which are used in map operations and {@link RecordStore} implementations.
- * For example all {@link PartitionContainer} and {@link MapContainer} instances
- * can also be reached by using this interface.
+ * Also this context provides some support methods which are used
+ * in map operations and {@link RecordStore} implementations. For
+ * example all {@link PartitionContainer} and {@link MapContainer}
+ * instances can also be reached by using this interface.
  * <p>
- * It is also responsible for providing methods which are used by lower layers of
- * Hazelcast and exposed on {@link MapService}.
+ * It is also responsible for providing methods which are used by
+ * lower layers of Hazelcast and exposed on {@link MapService}.
  *
  * @see MapManagedService
  */
-public interface MapServiceContext extends MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
-
-    RecordComparator getRecordComparator(InMemoryFormat inMemoryFormat);
+public interface MapServiceContext extends MapServiceContextInterceptorSupport,
+        MapServiceContextEventListenerSupport {
 
     Object toObject(Object data);
 
@@ -88,7 +89,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      * Removes all record stores inside the supplied partition ID matching with
      * the supplied predicate.
      *
-     * @param predicate            to find partitions to be removed
+     * @param predicate            only matching record-stores with this predicate will be removed
      * @param partitionId          partition ID
      * @param onShutdown           {@code true} if this method is called during map service shutdown,
      *                             otherwise set {@code false}
@@ -99,6 +100,16 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      */
     void removeRecordStoresFromPartitionMatchingWith(Predicate<RecordStore> predicate, int partitionId,
                                                      boolean onShutdown, boolean onRecordStoreDestroy);
+
+    /**
+     * Removes write-behind-queue-reservation-counters inside
+     * supplied partition from matching record-stores.
+     *
+     * @param predicate   only matching record-stores
+     *                    with this predicate will be removed
+     * @param partitionId partition ID
+     */
+    void removeWbqCountersFromMatchingPartitionsWith(Predicate<RecordStore> predicate, int partitionId);
 
     MapService getService();
 
@@ -124,14 +135,12 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     RecordStore getExistingRecordStore(int partitionId, String mapName);
 
-    Collection<Integer> getOwnedPartitions();
+    PartitionIdSet getOwnedPartitions();
 
     /**
      * Reloads the cached collection of partitions owned by this node.
      */
     void reloadOwnedPartitions();
-
-    AtomicInteger getWriteBehindQueueItemCounter();
 
     ExpirationManager getExpirationManager();
 
@@ -139,15 +148,11 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     NodeEngine getNodeEngine();
 
-    MergePolicyProvider getMergePolicyProvider();
-
-    Object getMergePolicy(String name);
-
     MapEventPublisher getMapEventPublisher();
 
     MapEventJournal getEventJournal();
 
-    MapQueryEngine getMapQueryEngine(String name);
+    QueryEngine getQueryEngine(String name);
 
     QueryRunner getMapQueryRunner(String name);
 
@@ -157,9 +162,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapClearExpiredRecordsTask getClearExpiredRecordsTask();
 
-    MapOperationProvider getMapOperationProvider(String name);
-
-    MapOperationProvider getMapOperationProvider(MapConfig mapConfig);
+    MapOperationProvider getMapOperationProvider(String mapName);
 
     IndexProvider getIndexProvider(MapConfig mapConfig);
 
@@ -177,17 +180,15 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     void onClusterStateChange(ClusterState newState);
 
-    PartitionScanRunner getPartitionScanRunner();
-
     ResultProcessorRegistry getResultProcessorRegistry();
 
     MapNearCacheManager getMapNearCacheManager();
 
     QueryCacheContext getQueryCacheContext();
 
-    String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
+    UUID addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
 
-    String addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
+    UUID addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
 
     IndexCopyBehavior getIndexCopyBehavior();
 
@@ -202,4 +203,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      * @return The collection of the observers
      */
     Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId);
+
+    ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat);
+
+    NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter();
 }

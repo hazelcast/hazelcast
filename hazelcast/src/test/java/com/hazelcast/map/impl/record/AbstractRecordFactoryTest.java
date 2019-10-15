@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,7 +98,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     @Test
     public void testSetValue() {
         newRecordFactory(false, CacheDeserializedValues.ALWAYS);
-        record = factory.newRecord(object1);
+        record = factory.newRecord(data1, object1);
 
         factory.setValue(record, object2);
 
@@ -108,7 +108,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     @Test
     public void testSetValue_withData() {
         newRecordFactory(false, CacheDeserializedValues.ALWAYS);
-        record = factory.newRecord(object1);
+        record = factory.newRecord(data1, object1);
 
         factory.setValue(record, data2);
 
@@ -118,12 +118,13 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     @Test(expected = AssertionError.class)
     public void testSetValue_withNull() {
         newRecordFactory(false, CacheDeserializedValues.ALWAYS);
-        record = factory.newRecord(object1);
+        record = factory.newRecord(data1, object1);
 
         factory.setValue(record, null);
     }
 
-    abstract void newRecordFactory(boolean isStatisticsEnabled, CacheDeserializedValues cacheDeserializedValues);
+    abstract void newRecordFactory(boolean isStatisticsEnabled,
+                                   CacheDeserializedValues cacheDeserializedValues);
 
     abstract Class<?> getRecordClass();
 
@@ -140,7 +141,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     }
 
     Record<T> newRecord(RecordFactory<T> factory, Data key, Object value) {
-        Record<T> record = factory.newRecord(value);
+        Record<T> record = factory.newRecord(key, value);
         ((AbstractRecord) record).setKey(key);
         return record;
     }

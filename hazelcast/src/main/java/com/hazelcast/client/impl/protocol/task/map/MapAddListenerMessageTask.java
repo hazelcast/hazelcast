@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.map.IMapEvent;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -29,10 +30,11 @@ import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.BatchIMapEvent;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.security.Permission;
+import java.util.UUID;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -40,7 +42,7 @@ import java.security.Permission;
  */
 public class MapAddListenerMessageTask
         extends AbstractCallableMessageTask<ContinuousQueryAddListenerCodec.RequestParameters>
-        implements ListenerAdapter<IMapEvent> {
+        implements ListenerAdapter<IMapEvent>, ListenerMessageTask {
 
     public MapAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,10 +53,10 @@ public class MapAddListenerMessageTask
         return registerListener(endpoint, this);
     }
 
-    private String registerListener(ClientEndpoint endpoint, ListenerAdapter adapter) {
+    private UUID registerListener(ClientEndpoint endpoint, ListenerAdapter adapter) {
         MapService mapService = getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        String registrationId;
+        UUID registrationId;
         if (parameters.localOnly) {
             registrationId = mapServiceContext.addLocalListenerAdapter(adapter, parameters.listenerName);
         } else {
@@ -105,7 +107,7 @@ public class MapAddListenerMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ContinuousQueryAddListenerCodec.encodeResponse((String) response);
+        return ContinuousQueryAddListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override

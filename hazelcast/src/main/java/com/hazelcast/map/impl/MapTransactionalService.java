@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.tx.TransactionalMapProxy;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.transaction.impl.Transaction;
+
+import java.util.UUID;
 
 /**
  * Defines transactional service behavior of map service.
@@ -31,7 +33,7 @@ class MapTransactionalService implements TransactionalService {
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
 
-    public MapTransactionalService(MapServiceContext mapServiceContext) {
+    MapTransactionalService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
     }
@@ -43,6 +45,6 @@ class MapTransactionalService implements TransactionalService {
     }
 
     @Override
-    public void rollbackTransaction(String transactionId) {
+    public void rollbackTransaction(UUID transactionId) {
     }
 }

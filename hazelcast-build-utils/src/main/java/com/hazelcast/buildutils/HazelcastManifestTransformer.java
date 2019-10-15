@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.buildutils;
 
 import aQute.lib.osgi.Instruction;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.apache.maven.plugins.shade.resource.ManifestResourceTransformer;
@@ -47,6 +49,8 @@ import static org.codehaus.plexus.util.StringUtils.join;
  * integrating multiple dependencies into one output JAR.
  */
 public class HazelcastManifestTransformer extends ManifestResourceTransformer {
+
+    private static ILogger logger = Logger.getLogger(HazelcastManifestTransformer.class);
 
     private static final String VERSION_PREFIX = "version=";
     private static final String RESOLUTION_PREFIX = "resolution:=";
@@ -209,7 +213,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             for (String packageInstruction : packageInstructions) {
                 PackageDefinition packageDefinition = new PackageDefinition(packageInstruction);
                 Instruction instruction = Instruction.getPattern(packageDefinition.packageName);
-                System.out.println("Compiled import instruction '" + packageInstruction + "' -> " + instruction);
+                logger.fine("Compiled import instruction '" + packageInstruction + "' -> " + instruction);
                 importOverrideInstructions.add(new InstructionDefinition(packageDefinition, instruction));
             }
         }
@@ -219,7 +223,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             for (String packageInstruction : packageInstructions) {
                 PackageDefinition packageDefinition = new PackageDefinition(packageInstruction);
                 Instruction instruction = Instruction.getPattern(packageDefinition.packageName);
-                System.out.println("Compiled export instruction '" + packageInstruction + "' -> " + instruction);
+                logger.fine("Compiled export instruction '" + packageInstruction + "' -> " + instruction);
                 exportOverrideInstructions.add(new InstructionDefinition(packageDefinition, instruction));
             }
         }
@@ -230,7 +234,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         for (Map.Entry<String, PackageDefinition> entry : exportedPackages.entrySet()) {
             String definition = entry.getValue().buildDefinition(false);
             exports.add(definition);
-            System.out.println("Adding shaded export -> " + definition);
+            logger.fine("Adding shaded export -> " + definition);
         }
         return exports;
     }
@@ -247,9 +251,9 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             if (overridden != null) {
                 String definition = overridden.buildDefinition(true);
                 imports.add(definition);
-                System.out.println("Adding shaded import -> " + definition);
+                logger.fine("Adding shaded import -> " + definition);
             } else {
-                System.out.println("Removing shaded import -> " + entry.getValue().packageName);
+                logger.fine("Removing shaded import -> " + entry.getValue().packageName);
             }
         }
         return imports;
@@ -261,11 +265,11 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             if (instruction.matches(packageDefinition.packageName)) {
                 // is remove instruction?
                 if (instruction.isNegated()) {
-                    System.out.println("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
+                    logger.fine("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
                     return null;
                 }
 
-                System.out.println("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
+                logger.fine("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
 
                 PackageDefinition override = instructionDefinition.packageDefinition;
                 String packageName = packageDefinition.packageName;

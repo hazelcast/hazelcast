@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,28 +18,28 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.instance.Node;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,7 +63,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IndexIntegrationTest extends HazelcastTestSupport {
 
     @Test
@@ -78,7 +78,6 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setEvictionPolicy(EvictionPolicy.LFU);
-        mapConfig.setMinEvictionCheckMillis(0);
         // size=1 means each put/load will trigger eviction
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig(1, PER_PARTITION);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
@@ -89,7 +88,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, Trade> map = instance.getMap(name);
-        map.addIndex(attributeName, false);
+        map.addIndex(IndexType.HASH, attributeName);
 
         // WHEN
         // This `get` will trigger load from map-loader but since eviction kicks in, entry will get removed
@@ -103,7 +102,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertEquals(currency, trade.currency);
 
         List<Index> indexes = getIndexOfAttributeForMap(instance, name, attributeName);
-        Set<QueryableEntry> dollars = new HashSet<QueryableEntry>();
+        Set<QueryableEntry> dollars = new HashSet<>();
         for (Index index : indexes) {
             Set<QueryableEntry> result = index.getRecords(currency);
             if (result != null) {
@@ -116,12 +115,12 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     @Test
     public void putRemove_withIndex_whereAttributeIsNull() {
         // GIVEN
-        MapIndexConfig mapIndexConfig = new MapIndexConfig();
-        mapIndexConfig.setAttribute("amount");
-        mapIndexConfig.setOrdered(false);
+        IndexConfig indexConfig = new IndexConfig();
+        indexConfig.addAttribute("amount");
+        indexConfig.setType(IndexType.HASH);
 
         MapConfig mapConfig = new MapConfig().setName("map");
-        mapConfig.addMapIndexConfig(mapIndexConfig);
+        mapConfig.addIndexConfig(indexConfig);
 
         Config config = new Config();
         config.addMapConfig(mapConfig);
@@ -137,7 +136,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         map.put(1, trade);
         map.remove(1);
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate predicate = e.get("amount").isNull();
         Collection<Trade> values = map.values(predicate);
 
@@ -150,7 +149,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     public void putAndQuery_whenMultipleMappingFound_thenDoNotReturnDuplicatedEntry() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Body> map = instance.getMap(randomMapName());
-        map.addIndex("limbArray[any].fingerCount", true);
+        map.addIndex(IndexType.SORTED, "limbArray[any].fingerCount");
 
         Limb leftHand = new Limb("hand", new Nail("red"));
         Limb rightHand = new Limb("hand");
@@ -190,37 +189,73 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertThat(result, hasSize(1));
     }
 
+    @Test
+    public void testEmptyAndNullCollectionIndexing() {
+        HazelcastInstance instance = createHazelcastInstance();
+        IMap<Integer, Body> map = instance.getMap(randomMapName());
+        map.addIndex(IndexType.HASH, "limbArray[any].fingerCount");
+        map.addIndex(IndexType.SORTED, "limbCollection[any].fingerCount");
+
+        map.put(0, new Body("body0"));
+
+        map.put(1, new Body("body1", (Limb[]) null));
+
+        map.put(2, new Body("body2", (Limb) null));
+
+        Limb leftHand = new Limb("hand", new Nail("red"));
+        Limb rightHand = new Limb("hand");
+        Body body = new Body("body3", leftHand, rightHand);
+        map.put(3, body);
+
+        Predicate predicate = Predicates.sql("limbArray[any].fingerCount = '1'");
+        Collection<Body> values = map.values(predicate);
+        assertThat(values, hasSize(1));
+
+        predicate = Predicates.sql("limbCollection[any].fingerCount = '1'");
+        values = map.values(predicate);
+        assertThat(values, hasSize(1));
+    }
+
     private static List<Index> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
         Node node = getNode(instance);
         MapService service = node.nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
-        List<Index> result = new ArrayList<Index>();
+        List<Index> result = new ArrayList<>();
         for (int partitionId : mapServiceContext.getOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
-            result.add(indexes.getIndex(attribute));
+
+            for (InternalIndex index : indexes.getIndexes()) {
+                for (String component : index.getComponents()) {
+                    if (component.equals(IndexUtils.canonicalizeAttribute(attribute))) {
+                        result.add(index);
+
+                        break;
+                    }
+                }
+            }
         }
         return result;
     }
 
     static class Body implements Serializable {
         String name;
-        Limb[] limbArray = new Limb[0];
-        Collection<Limb> limbCollection = new ArrayList<Limb>();
+        Limb[] limbArray;
+        Collection<Limb> limbCollection;
 
         Body(String name, Limb... limbs) {
             this.name = name;
-            this.limbCollection = Arrays.asList(limbs);
+            this.limbCollection = limbs == null ? null : Arrays.asList(limbs);
             this.limbArray = limbs;
         }
     }
 
     static class Limb implements Serializable {
         String name;
-        Nail[] nailArray = new Nail[0];
+        Nail[] nailArray;
         int fingerCount;
-        Collection<Nail> nailCollection = new ArrayList<Nail>();
+        Collection<Nail> nailCollection;
 
         Limb(String name, Nail... nails) {
             this.name = name;
@@ -275,7 +310,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         SillySequence(int from, int count) {
             this.count = count;
-            this.payloadField = new ArrayList<Integer>(count);
+            this.payloadField = new ArrayList<>(count);
 
             int to = from + count;
             for (int i = from; i < to; i++) {
@@ -310,7 +345,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         String currency;
 
-        public DummyLoader(long amount, String currency) {
+        DummyLoader(long amount, String currency) {
             this.amount = amount;
             this.currency = currency;
         }
@@ -325,7 +360,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         @Override
         public Map<String, Trade> loadAll(Collection<String> keys) {
-            Map<String, Trade> map = new HashMap<String, Trade>();
+            Map<String, Trade> map = new HashMap<>();
             for (String key : keys) {
                 map.put(key, load(key));
             }

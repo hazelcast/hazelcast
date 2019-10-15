@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TEXT_PROTOCOLS_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TEXT_PROTOCOLS_DS_FACTORY_ID;
 
 /**
- * DataSerializerHook for memcache & REST protocol support classes
+ * DataSerializerHook for memcache &amp; REST protocol support classes
  */
 public final class TextProtocolsDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(TEXT_PROTOCOLS_DS_FACTORY, TEXT_PROTOCOLS_DS_FACTORY_ID);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,368 +16,217 @@
 
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
-import com.hazelcast.client.impl.protocol.util.BufferBuilder;
-import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
-import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
-import com.hazelcast.client.impl.protocol.util.SafeBuffer;
-import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.BinaryInterface;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
- * <p>
  * Client Message is the carrier framed data as defined below.
- * </p>
- * <p>
  * Any request parameter, response or event data will be carried in
  * the payload.
- * </p>
- * <p/>
- * <pre>
- * 0                   1                   2                   3
- * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |R|                      Frame Length                           |
- * +-------------+---------------+---------------------------------+
- * |  Version    |B|E|  Flags    |               Type              |
- * +-------------+---------------+---------------------------------+
- * |                                                               |
- * +                       CorrelationId                           +
- * |                                                               |
- * +---------------------------------------------------------------+
- * |                        PartitionId                            |
- * +-----------------------------+---------------------------------+
- * |        Data Offset          |                                 |
- * +-----------------------------+                                 |
- * |                      Message Payload Data                    ...
- * |                                                              ...
- * </pre>
+ *
+ * client-message               = message-first-frame *var-sized-param
+ * message-first-frame          = frame-length flags message-type correlation-id *fix-sized-param
+ * first-frame-flags            = %b1 %b1 %b0 13unused ; begin-fragment:1 end-fragment:1 final:0 ......
+ * frame-length                 = int32
+ * message-type                 = int32
+ * correlation-id               = int64
+ *
+ * var-sized-param              = string-frame / custom-type-frames / var-sized-param-list-frames / fixed-sized-param-list-frame
+ * / map-fixed-to-fixed-frame / map-var-sized-to-var-sized-frames / null-frame
+ *
+ * map-fixed-to-fixed-frame          = frame-length flags *fixed-size-entry
+ * fixed-size-entry                  = fixed-sized-param fixed-sized-param
+ * map-var-sized-to-var-sized-frames = begin-frame *var-sized-entry end-frame
+ * var-sized-entry                   = var-sized-param var-sized-param
+ *
+ * //map-fixed-sized-to-var-sized-frames // Not defined yet. Has no usage yet.
+ * //map-var-sized-to-fixed-sized-frames // Not defined yet. Has no usage yet.
+ *
+ * list-frames                  = var-sized-param-list-frames | fixed-sized-param-list-frame
+ * var-sized-param-list-frames  = begin-frame *var-sized-param  end-frame  ; all elements should be same type
+ * fixed-sized-param-list-frame = frame-length flags *fixed-sized-param    ; all elements should be same type
+ *
+ *
+ * string-frame                 = frame-length flags *OCTET ; Contains UTF-8 encoded octets
+ *
+ * custom-type-frames           = begin-frame *1custom-type-first-frame *var-sized-param end-frame
+ * custom-type-first-frame      = frame-length flags *fix-sized-param
+ *
+ *
+ * null-frame                   = %x00 %x00 %x00 %x05 null-flags
+ * null-flags                   = %b0  %b0  %b0 %b0 %b0 %b1 10reserved  ; is-null: 1
+ * ; frame-length is always 5
+ * begin-frame                  = %x00 %x00 %x00 %x05 begin-flags
+ * ; begin data structure: 1, end data structure: 0
+ * begin-flags                  = begin-fragment end-fragment final %b1 %b0 is-null 10reserved
+ * ; frame-length is always 5
+ * end-frame                    = %x00 %x00 %x00 %x05 end-flags
+ * ; next:0 or 1, begin list: 0, end list: 1
+ * end-flags                    = begin-fragment end-fragment final %b1 %b0 is-null 10reserved
+ *
+ * flags          = begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserved
+ * ; reserved for fragmentation
+ * begin-fragment = BIT
+ * ; reserved for fragmentation
+ * end-fragment   = BIT
+ * ; set to 1 when this frame is the last frame of the client-message
+ * final          = BIT
+ * ; set to 1 if this frame represents a null field.
+ * is-null        = BIT
+ * ; set to 1 if this is a begin-frame. begin-frame represents begin of a custom-type or a variable-field-list, 0 otherwise
+ * begin          = BIT
+ * ; set to 1 if this an end-frame. end-frame represents end of a custom-type or a variable-field-list, 0 otherwise
+ * end            = BIT
+ * ; Reserved for future usage.
+ * reserved       = BIT
+ * ; Irrelevant int this context
+ * unused         = BIT
+ * is-event       = BIT ;
+ *
+ * fixed-sized-param        = *OCTET
+ * ;fixed-sized-param       = OCTET / boolean / int16 / int32 / int64 / UUID
+ * ;boolean                 = %x00 / %x01
+ * ;int16                   = 16BIT
+ * ;int32                   = 32BIT
+ * ;int64                   = 64BIT
+ * ;UUID                    = int64 int64
  */
-public class ClientMessage
-        extends MessageFlyweight
-        implements OutboundFrame {
+@SuppressWarnings("checkstyle:MagicNumber")
+@BinaryInterface
+public final class ClientMessage implements OutboundFrame {
 
-    /**
-     * Current protocol version
-     */
-    public static final short VERSION = 1;
+    // All offsets here are offset of frame.content byte[]
+    // Note that frames have frame length and flags before this byte[] content
+    public static final int TYPE_FIELD_OFFSET = 0;
+    public static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    //backup acks field offset is used by response messages
+    public static final int RESPONSE_BACKUP_ACKS_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    //partition id field offset used by request and event messages
+    public static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    //offset valid for fragmentation frames only
+    public static final int FRAGMENTATION_ID_OFFSET = 0;
 
-    /**
-     * Begin Flag
-     */
-    public static final short BEGIN_FLAG = 0x80;
+    public static final int DEFAULT_FLAGS = 0;
+    public static final int BEGIN_FRAGMENT_FLAG = 1 << 15;
+    public static final int END_FRAGMENT_FLAG = 1 << 14;
+    public static final int UNFRAGMENTED_MESSAGE = BEGIN_FRAGMENT_FLAG | END_FRAGMENT_FLAG;
+    public static final int IS_FINAL_FLAG = 1 << 13;
+    public static final int BEGIN_DATA_STRUCTURE_FLAG = 1 << 12;
+    public static final int END_DATA_STRUCTURE_FLAG = 1 << 11;
+    public static final int IS_NULL_FLAG = 1 << 10;
+    public static final int IS_EVENT_FLAG = 1 << 9;
+    public static final int BACKUP_AWARE_FLAG = 1 << 8;
+    public static final int BACKUP_EVENT_FLAG = 1 << 7;
 
-    /**
-     * End Flag
-     */
-    public static final short END_FLAG = 0x40;
+    //frame length + flags
+    public static final int SIZE_OF_FRAME_LENGTH_AND_FLAGS = Bits.INT_SIZE_IN_BYTES + Bits.SHORT_SIZE_IN_BYTES;
+    public static final Frame NULL_FRAME = new Frame(new byte[0], IS_NULL_FLAG);
+    public static final Frame BEGIN_FRAME = new Frame(new byte[0], BEGIN_DATA_STRUCTURE_FLAG);
+    public static final Frame END_FRAME = new Frame(new byte[0], END_DATA_STRUCTURE_FLAG);
 
-    /**
-     * Begin and End Flags
-     */
-    public static final short BEGIN_AND_END_FLAGS = (short) (BEGIN_FLAG | END_FLAG);
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * Listener Event Flag
-     */
-    public static final short LISTENER_EVENT_FLAG = 0x01;
+    transient Frame startFrame;
+    transient Frame endFrame;
 
-    /**
-     * ClientMessage Fixed Header size in bytes
-     */
-    public static final int HEADER_SIZE;
-
-    private static final String PROP_HAZELCAST_PROTOCOL_UNSAFE = "hazelcast.protocol.unsafe.enabled";
-    private static final boolean USE_UNSAFE = Boolean.getBoolean(PROP_HAZELCAST_PROTOCOL_UNSAFE);
-
-    private static final int FRAME_LENGTH_FIELD_OFFSET = 0;
-    private static final int VERSION_FIELD_OFFSET = FRAME_LENGTH_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
-    private static final int FLAGS_FIELD_OFFSET = VERSION_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
-    private static final int TYPE_FIELD_OFFSET = FLAGS_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
-    private static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
-    private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
-    private static final int DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
-
-    static {
-
-        HEADER_SIZE = DATA_OFFSET_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
-    }
-
-    private transient int writeOffset;
     private transient boolean isRetryable;
     private transient boolean acquiresResource;
     private transient String operationName;
-    private Connection connection;
+    private transient Connection connection;
 
-    protected ClientMessage() {
+    private ClientMessage() {
+
     }
 
-    public Connection getConnection() {
-        return connection;
-    }
-
-    public void setConnection(Connection connection) {
-        this.connection = connection;
-    }
-
-    protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {
-        ensureHeaderSize(offset, buffer.capacity());
-        super.wrap(buffer.byteArray(), offset, USE_UNSAFE);
-        setDataOffset(HEADER_SIZE);
-        setFrameLength(HEADER_SIZE);
-        index(getDataOffset());
-        setPartitionId(-1);
-    }
-
-    private void ensureHeaderSize(int offset, int length) {
-        if (length - offset < HEADER_SIZE) {
-            throw new IndexOutOfBoundsException("ClientMessage buffer must contain at least "
-                    + HEADER_SIZE + " bytes! length: " + length + ", offset: " + offset);
+    private ClientMessage(Frame startFrame) {
+        this.startFrame = startFrame;
+        endFrame = startFrame;
+        while (endFrame.next != null) {
+            endFrame = endFrame.next;
         }
     }
 
-    protected void wrapForDecode(ClientProtocolBuffer buffer, int offset) {
-        ensureHeaderSize(offset, buffer.capacity());
-        super.wrap(buffer.byteArray(), offset, USE_UNSAFE);
-        index(getDataOffset());
+    public static ClientMessage createForEncode() {
+        return new ClientMessage();
     }
 
-    /**
-     * Returns the version field value.
-     *
-     * @return The version field value.
-     */
-    public short getVersion() {
-        return uint8Get(VERSION_FIELD_OFFSET);
+    public static ClientMessage createForDecode(Frame startFrame) {
+        return new ClientMessage(startFrame);
     }
 
-    /**
-     * Sets the version field value.
-     *
-     * @param version The value to set in the version field.
-     * @return The ClientMessage with the new version field value.
-     */
-    public ClientMessage setVersion(final short version) {
-        uint8Put(VERSION_FIELD_OFFSET, version);
+    public Frame getStartFrame() {
+        return startFrame;
+    }
+
+    public ClientMessage add(Frame frame) {
+        frame.next = null;
+        if (startFrame == null) {
+            startFrame = frame;
+            endFrame = frame;
+            return this;
+        }
+
+        endFrame.next = frame;
+        endFrame = frame;
         return this;
     }
 
-    /**
-     * @param flag Check this flag to see if it is set.
-     * @return true if the given flag is set, false otherwise.
-     */
-    public boolean isFlagSet(short flag) {
-        int i = getFlags() & flag;
-        return i == flag;
+    public ForwardFrameIterator frameIterator() {
+        return new ForwardFrameIterator(startFrame);
     }
 
-    /**
-     * Returns the flags field value.
-     *
-     * @return The flags field value.
-     */
-    public short getFlags() {
-        return uint8Get(FLAGS_FIELD_OFFSET);
-    }
-
-    /**
-     * Sets the flags field value.
-     *
-     * @param flags The value to set in the flags field.
-     * @return The ClientMessage with the new flags field value.
-     */
-    public ClientMessage addFlag(final short flags) {
-        uint8Put(FLAGS_FIELD_OFFSET, (short) (getFlags() | flags));
-        return this;
-    }
-
-    /**
-     * Returns the message type field.
-     *
-     * @return The message type field value.
-     */
     public int getMessageType() {
-        return uint16Get(TYPE_FIELD_OFFSET);
+        return Bits.readIntL(startFrame.content, ClientMessage.TYPE_FIELD_OFFSET);
     }
 
-    /**
-     * Sets the message type field.
-     *
-     * @param type The value to set in the message type field.
-     * @return The ClientMessage with the new message type field value.
-     */
-    public ClientMessage setMessageType(final int type) {
-        uint16Put(TYPE_FIELD_OFFSET, type);
+    public ClientMessage setMessageType(int messageType) {
+        Bits.writeIntL(startFrame.content, TYPE_FIELD_OFFSET, messageType);
         return this;
     }
 
-    /**
-     * Returns the frame length field.
-     *
-     * @return The frame length field.
-     */
-    public int getFrameLength() {
-        return int32Get(FRAME_LENGTH_FIELD_OFFSET);
-    }
-
-    /**
-     * Sets the frame length field.
-     *
-     * @param length The value to set in the frame length field.
-     * @return The ClientMessage with the new frame length field value.
-     */
-    public ClientMessage setFrameLength(final int length) {
-        int32Set(FRAME_LENGTH_FIELD_OFFSET, length);
-        return this;
-    }
-
-    /**
-     * Returns the correlation ID field.
-     *
-     * @return The correlation ID field.
-     */
     public long getCorrelationId() {
-        return int64Get(CORRELATION_ID_FIELD_OFFSET);
+        return Bits.readLongL(startFrame.content, CORRELATION_ID_FIELD_OFFSET);
     }
 
-    /**
-     * Sets the correlation ID field.
-     *
-     * @param correlationId The value to set in the correlation ID field.
-     * @return The ClientMessage with the new correlation ID field value.
-     */
-    public ClientMessage setCorrelationId(final long correlationId) {
-        int64Set(CORRELATION_ID_FIELD_OFFSET, correlationId);
+    public ClientMessage setCorrelationId(long correlationId) {
+        Bits.writeLongL(startFrame.content, CORRELATION_ID_FIELD_OFFSET, correlationId);
         return this;
     }
 
     /**
-     * Returns the partition ID field.
-     *
-     * @return The partition ID field.
+     * @return the number of acks will be send for a request
      */
-    public int getPartitionId() {
-        return int32Get(PARTITION_ID_FIELD_OFFSET);
+    public int getNumberOfBackupAcks() {
+        return Bits.readIntL(getStartFrame().content, RESPONSE_BACKUP_ACKS_FIELD_OFFSET);
     }
 
     /**
-     * Sets the partition ID field.
+     * Sets the setNumberOfAcks field.
      *
-     * @param partitionId The value to set in the partitions ID field.
-     * @return The ClientMessage with the new partitions ID field value.
-     */
-    public ClientMessage setPartitionId(final int partitionId) {
-        int32Set(PARTITION_ID_FIELD_OFFSET, partitionId);
-        return this;
-    }
-
-    /**
-     * Returns the setDataOffset field.
-     *
-     * @return The setDataOffset type field value.
-     */
-    public int getDataOffset() {
-        return uint16Get(DATA_OFFSET_FIELD_OFFSET);
-    }
-
-    /**
-     * Sets the dataOffset field.
-     *
-     * @param dataOffset The value to set in the dataOffset field.
+     * @param numberOfAcks The value to set in the setNumberOfAcks field.
      * @return The ClientMessage with the new dataOffset field value.
      */
-    public ClientMessage setDataOffset(final int dataOffset) {
-        uint16Put(DATA_OFFSET_FIELD_OFFSET, dataOffset);
+    public ClientMessage setNumberOfBackupAcks(final int numberOfAcks) {
+        Bits.writeIntL(getStartFrame().content, RESPONSE_BACKUP_ACKS_FIELD_OFFSET, numberOfAcks);
         return this;
     }
 
-    public ClientMessage updateFrameLength() {
-        setFrameLength(index());
+    public int getPartitionId() {
+        return Bits.readIntL(startFrame.content, PARTITION_ID_FIELD_OFFSET);
+    }
+
+    public ClientMessage setPartitionId(int partitionId) {
+        Bits.writeIntL(startFrame.content, PARTITION_ID_FIELD_OFFSET, partitionId);
         return this;
     }
 
-    public boolean writeTo(ByteBuffer dst) {
-        byte[] byteArray = buffer.byteArray();
-        int size = getFrameLength();
-
-        // the number of bytes that can be written to the bb
-        int bytesWritable = dst.remaining();
-
-        // the number of bytes that need to be written
-        int bytesNeeded = size - writeOffset;
-
-        int bytesWrite;
-        boolean done;
-        if (bytesWritable >= bytesNeeded) {
-            // all bytes for the value are available
-            bytesWrite = bytesNeeded;
-            done = true;
-        } else {
-            // not all bytes for the value are available. Write as much as is available
-            bytesWrite = bytesWritable;
-            done = false;
-        }
-
-        dst.put(byteArray, writeOffset, bytesWrite);
-        writeOffset += bytesWrite;
-
-        if (done) {
-            // clear the write offset so that same client message can be resend if needed
-            writeOffset = 0;
-        }
-        return done;
-    }
-
-    public boolean readFrom(ByteBuffer src) {
-        int frameLength = 0;
-        if (this.buffer == null) {
-            // init internal buffer
-            final int remaining = src.remaining();
-            if (remaining < Bits.INT_SIZE_IN_BYTES) {
-                // we don't have even the frame length ready
-                return false;
-            }
-            frameLength = Bits.readIntL(src);
-            // we need to restore the position; as if we didn't read the frame-length
-            src.position(src.position() - Bits.INT_SIZE_IN_BYTES);
-            if (frameLength < HEADER_SIZE) {
-                throw new IllegalArgumentException("Client message frame length cannot be smaller than header size.");
-            }
-            wrap(new byte[frameLength], 0, USE_UNSAFE);
-        }
-        frameLength = frameLength > 0 ? frameLength : getFrameLength();
-        accumulate(src, frameLength - index());
-        return isComplete();
-    }
-
-    private int accumulate(ByteBuffer src, int length) {
-        int remaining = src.remaining();
-        int readLength = remaining < length ? remaining : length;
-        if (readLength > 0) {
-            buffer.putBytes(index(), src, readLength);
-            index(index() + readLength);
-            return readLength;
-        }
-        return 0;
-    }
-
-    /**
-     * Checks the frame size and total data size to validate the message size.
-     *
-     * @return true if the message is constructed.
-     */
-    public boolean isComplete() {
-        return (index() >= HEADER_SIZE) && (index() == getFrameLength());
-    }
-
-    @Override
-    public boolean isUrgent() {
-        return false;
+    public int getHeaderFlags() {
+        return startFrame.flags;
     }
 
     public boolean isRetryable() {
@@ -404,66 +253,78 @@ public class ClientMessage
         return operationName;
     }
 
+    public static boolean isFlagSet(int flags, int flagMask) {
+        int i = flags & flagMask;
+        return i == flagMask;
+    }
+
+    public void setConnection(Connection connection) {
+        this.connection = connection;
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public int getFrameLength() {
+        int frameLength = 0;
+        Frame currentFrame = startFrame;
+        while (currentFrame != null) {
+            frameLength += currentFrame.getSize();
+            currentFrame = currentFrame.next;
+        }
+        return frameLength;
+    }
+
+    public boolean isUrgent() {
+        return false;
+    }
+
+    public void merge(ClientMessage fragment) {
+        // ignore the first frame of the fragment since first frame marks the fragment
+        Frame fragmentMessageStartFrame = fragment.startFrame.next;
+        this.endFrame.next = fragmentMessageStartFrame;
+        while (endFrame.next != null) {
+            endFrame = endFrame.next;
+        }
+    }
+
     @Override
     public String toString() {
-        int len = index();
         final StringBuilder sb = new StringBuilder("ClientMessage{");
         sb.append("connection=").append(connection);
-        sb.append(", length=").append(len);
-        if (len >= HEADER_SIZE) {
+        if (startFrame != null) {
+            sb.append(", length=").append(getFrameLength());
             sb.append(", correlationId=").append(getCorrelationId());
-            sb.append(", operation=").append(operationName);
+            sb.append(", operation=").append(getOperationName());
             sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
-            sb.append(", partitionId=").append(getPartitionId());
-            sb.append(", isComplete=").append(isComplete());
             sb.append(", isRetryable=").append(isRetryable());
-            sb.append(", isEvent=").append(isFlagSet(LISTENER_EVENT_FLAG));
-            sb.append(", writeOffset=").append(writeOffset);
+            sb.append(", isEvent=").append(isFlagSet(startFrame.flags, IS_EVENT_FLAG));
+            sb.append(", isFragmented=").append(!isFlagSet(startFrame.flags, UNFRAGMENTED_MESSAGE));
         }
         sb.append('}');
         return sb.toString();
     }
 
-    public static ClientMessage create() {
-        return new ClientMessage();
-    }
+    /**
+     * Copies the clientMessage efficiently with correlation id
+     * Only initialFrame is duplicated, rest of the frames are shared
+     *
+     * @param correlationId new id
+     * @return the copy message
+     */
+    public ClientMessage copyWithNewCorrelationId(long correlationId) {
 
-    public static ClientMessage createForEncode(int initialCapacity) {
-        if (initialCapacity < 0) {
-            throw new MaxMessageSizeExceeded();
-        }
-        if (USE_UNSAFE) {
-            return createForEncode(new UnsafeBuffer(new byte[initialCapacity]), 0);
-        } else {
-            return createForEncode(new SafeBuffer(new byte[initialCapacity]), 0);
-        }
-    }
+        Frame initialFrameCopy = startFrame.deepCopy();
+        ClientMessage newMessage = new ClientMessage(initialFrameCopy);
 
-    public static ClientMessage createForEncode(ClientProtocolBuffer buffer, int offset) {
-        ClientMessage clientMessage = new ClientMessage();
-        clientMessage.wrapForEncode(buffer, offset);
-        return clientMessage;
-    }
+        newMessage.setCorrelationId(correlationId);
 
-    public static ClientMessage createForDecode(ClientProtocolBuffer buffer, int offset) {
-        ClientMessage clientMessage = new ClientMessage();
-        clientMessage.wrapForDecode(buffer, offset);
-        return clientMessage;
-    }
-
-    public ClientMessage copy() {
-        byte[] oldBinary = buffer().byteArray();
-        byte[] bytes = Arrays.copyOf(oldBinary, oldBinary.length);
-        ClientMessage newMessage = ClientMessage.createForDecode(BufferBuilder.createBuffer(bytes), 0);
         newMessage.isRetryable = isRetryable;
         newMessage.acquiresResource = acquiresResource;
         newMessage.operationName = operationName;
-        return newMessage;
-    }
 
-    @Override
-    public int hashCode() {
-        return ByteBuffer.wrap(buffer().byteArray(), 0, getFrameLength()).hashCode();
+        return newMessage;
     }
 
     @Override
@@ -474,19 +335,135 @@ public class ClientMessage
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        ClientMessage that = (ClientMessage) o;
-
-        byte[] thisBytes = this.buffer().byteArray();
-        byte[] thatBytes = that.buffer().byteArray();
-        if (this.getFrameLength() != that.getFrameLength()) {
+        if (!super.equals(o)) {
             return false;
         }
-        for (int i = 0; i < this.getFrameLength(); i++) {
-            if (thisBytes[i] != thatBytes[i]) {
-                return false;
+
+        ClientMessage message = (ClientMessage) o;
+
+        if (isRetryable != message.isRetryable) {
+            return false;
+        }
+        if (acquiresResource != message.acquiresResource) {
+            return false;
+        }
+        if (!Objects.equals(operationName, message.operationName)) {
+            return false;
+        }
+        return Objects.equals(connection, message.connection);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (isRetryable ? 1 : 0);
+        result = 31 * result + (acquiresResource ? 1 : 0);
+        result = 31 * result + (operationName != null ? operationName.hashCode() : 0);
+        result = 31 * result + (connection != null ? connection.hashCode() : 0);
+        return result;
+    }
+
+    public static final class ForwardFrameIterator {
+        private Frame nextFrame;
+
+        private ForwardFrameIterator(Frame start) {
+            nextFrame = start;
+        }
+
+        public Frame next() {
+            Frame result = nextFrame;
+            if (nextFrame != null) {
+                nextFrame = nextFrame.next;
+            }
+            return result;
+        }
+
+        public boolean hasNext() {
+            return nextFrame != null;
+        }
+
+        public Frame peekNext() {
+            return nextFrame;
+        }
+
+    }
+
+    @SuppressWarnings("checkstyle:VisibilityModifier")
+    public static class Frame {
+        public final byte[] content;
+        //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
+        public int flags;
+
+        Frame next;
+
+        public Frame(byte[] content) {
+            this(content, DEFAULT_FLAGS);
+        }
+
+        public Frame(byte[] content, int flags) {
+            assert content != null;
+            this.content = content;
+            this.flags = flags;
+        }
+
+        // Shares the content bytes
+        public Frame copy() {
+            Frame frame = new Frame(content, flags);
+            frame.next = this.next;
+            return frame;
+        }
+
+        // Copies the content bytes
+        public Frame deepCopy() {
+            byte[] newContent = Arrays.copyOf(content, content.length);
+            Frame frame = new Frame(newContent, flags);
+            frame.next = this.next;
+            return frame;
+        }
+
+        public boolean isEndFrame() {
+            return ClientMessage.isFlagSet(flags, END_DATA_STRUCTURE_FLAG);
+        }
+
+        public boolean isBeginFrame() {
+            return ClientMessage.isFlagSet(flags, BEGIN_DATA_STRUCTURE_FLAG);
+        }
+
+        public boolean isNullFrame() {
+            return ClientMessage.isFlagSet(flags, IS_NULL_FLAG);
+        }
+
+        public int getSize() {
+            if (content == null) {
+                return SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+            } else {
+                return SIZE_OF_FRAME_LENGTH_AND_FLAGS + content.length;
             }
         }
-        return true;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Frame frame = (Frame) o;
+
+            if (flags != frame.flags) {
+                return false;
+            }
+            return Arrays.equals(content, frame.content);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(content);
+            result = 31 * result + flags;
+            return result;
+        }
     }
+
 }

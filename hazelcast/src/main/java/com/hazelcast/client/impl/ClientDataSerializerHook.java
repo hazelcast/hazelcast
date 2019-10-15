@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
-import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
-import com.hazelcast.client.impl.operations.OnJoinClientOperation;
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -33,10 +30,7 @@ public class ClientDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(CLIENT_DS_FACTORY, CLIENT_DS_FACTORY_ID);
 
-    public static final int CLIENT_DISCONNECT = 0;
-    public static final int RE_AUTH = 1;
     public static final int GET_CONNECTED_CLIENTS = 2;
-    public static final int ON_JOIN = 3;
     public static final int OP_FACTORY_WRAPPER = 4;
 
     @Override
@@ -50,14 +44,8 @@ public class ClientDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case CLIENT_DISCONNECT:
-                        return new ClientDisconnectionOperation();
-                    case RE_AUTH:
-                        return new ClientReAuthOperation();
                     case GET_CONNECTED_CLIENTS:
                         return new GetConnectedClientsOperation();
-                    case ON_JOIN:
-                        return new OnJoinClientOperation();
                     case OP_FACTORY_WRAPPER:
                         return new OperationFactoryWrapper();
                     default:

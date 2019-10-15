@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.WanCheckConsistencyOperation;
 
-import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
-import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 public class WanCheckConsistencyRequest implements ConsoleRequest {
 
@@ -49,16 +48,9 @@ public class WanCheckConsistencyRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
-        WanCheckConsistencyOperation operation = new WanCheckConsistencyOperation(schemeName, publisherName, mapName);
-        Object operationResult = resolveFuture(mcs.callOnThis(operation));
-        JsonObject result = new JsonObject();
-        if (operationResult == null) {
-            result.add("result", SUCCESS);
-        } else {
-            result.add("result", operationResult.toString());
-        }
-        out.add("result", result);
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
+        out.add("result", mcs.syncCallOnThis(
+                new WanCheckConsistencyOperation(schemeName, publisherName, mapName)));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,21 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.function.BiConsumer;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiConsumer;
 
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, MapMergeTypes> {
@@ -70,28 +66,6 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
     }
 
     @Override
-    protected void mergeStoreLegacy(RecordStore store, BiConsumer<Integer, Operation> consumer) {
-        long now = Clock.currentTimeMillis();
-        int partitionId = store.getPartitionId();
-        String name = store.getName();
-        MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
-        MapMergePolicy mergePolicy = ((MapMergePolicy) getMergePolicy(name));
-
-        //noinspection unchecked
-        Iterator<Record> iterator = store.iterator(now, false);
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            Data key = record.getKey();
-            Data value = toData(record.getValue());
-            EntryView<Data, Data> entryView = createSimpleEntryView(key, value, record);
-
-            Operation operation = operationProvider.createLegacyMergeOperation(name, entryView, mergePolicy, false);
-
-            consumer.accept(partitionId, operation);
-        }
-    }
-
-    @Override
     protected int getBatchSize(String dataStructureName) {
         MapConfig mapConfig = getMapConfig(dataStructureName);
         MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
@@ -105,8 +79,10 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
     }
 
     @Override
-    protected Object getMergePolicy(String dataStructureName) {
-        return mapServiceContext.getMergePolicy(dataStructureName);
+    protected SplitBrainMergePolicy getMergePolicy(String dataStructureName) {
+        MapConfig mapConfig = getMapConfig(dataStructureName);
+        MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
+        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,11 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -54,7 +54,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
     @Test
@@ -108,7 +108,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
     @Test
     public void testAddBinarySyncFillUp() {
-        Config config = buildConfig(InMemoryFormat.BINARY);
+        Config config = buildConfig(smallInstanceConfig(), InMemoryFormat.BINARY);
         config.getReplicatedMapConfig("default").setAsyncFillup(false);
         testFillUp(config);
     }
@@ -153,9 +153,12 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(2, instance1, instance2);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         for (String key : keys) {
             map1.put(key, "bar");
         }
@@ -893,7 +896,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void putNullKey() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
@@ -901,7 +904,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         map1.put(null, 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void removeNullKey() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
@@ -914,10 +917,10 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        assertFalse(map1.removeEntryListener("2"));
+        assertFalse(map1.removeEntryListener(UUID.randomUUID()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void removeNullListener() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();

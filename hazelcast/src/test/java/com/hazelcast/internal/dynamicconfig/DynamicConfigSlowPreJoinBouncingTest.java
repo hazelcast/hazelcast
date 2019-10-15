@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,16 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PreJoinAwareService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingTest {
 
     public Config getConfig() {
@@ -43,7 +43,7 @@ public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingT
 
         static final String SERVICE_NAME = "delaying-pre-join-op-prep-service";
 
-        public DelaysPreparingPreJoinOpService() {
+        DelaysPreparingPreJoinOpService() {
         }
 
         @Override

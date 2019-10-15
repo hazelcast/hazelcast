@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package com.hazelcast.topic.impl.reliable;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Message;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.Clock;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -79,7 +79,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void addMessageListener() {
-        String id = topic.addMessageListener(new ReliableMessageListenerMock());
+        UUID id = topic.addMessageListener(new ReliableMessageListenerMock());
 
         assertNotNull(id);
     }
@@ -94,7 +94,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     @Test
     public void removeMessageListener_whenExisting() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
 
         boolean removed = topic.removeMessageListener(id);
         assertTrue(removed);
@@ -111,7 +111,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void removeMessageListener_whenNonExisting() {
-        boolean result = topic.removeMessageListener(UUID.randomUUID().toString());
+        boolean result = topic.removeMessageListener(UUID.randomUUID());
 
         assertFalse(result);
     }
@@ -119,7 +119,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     @Test
     public void removeMessageListener_whenAlreadyRemoved() {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        String id = topic.addMessageListener(listener);
+        UUID id = topic.addMessageListener(listener);
         topic.removeMessageListener(id);
 
         boolean result = topic.removeMessageListener(id);

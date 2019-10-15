@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.core.ClientType;
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -35,36 +34,39 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
+ * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
  */
 public final class ClientEndpointImpl implements ClientEndpoint {
 
-    private final ClientEngineImpl clientEngine;
+    private final ClientEngine clientEngine;
+    private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final Connection connection;
-    private final ConcurrentMap<String, TransactionContext> transactionContextMap
-            = new ConcurrentHashMap<String, TransactionContext>();
-    private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
+    private final ConcurrentMap<UUID, TransactionContext> transactionContextMap
+            = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<UUID, Callable>();
     private final SocketAddress socketAddress;
     private final long creationTime;
 
     private LoginContext loginContext;
-    private ClientPrincipal principal;
-    private boolean ownerConnection;
+    private UUID clientUuid;
     private Credentials credentials;
     private volatile boolean authenticated;
-    private int clientVersion;
-    private String clientVersionString;
-    private long authenticationCorrelationId;
+    private String clientVersion;
     private volatile String stats;
+    private String clientName;
+    private Set<String> labels;
 
-    public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
+    public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
+        this.logger = clientEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
         this.connection = connection;
         if (connection instanceof TcpIpConnection) {
@@ -73,8 +75,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         } else {
             socketAddress = null;
         }
-        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
-        this.clientVersionString = "Unknown";
+        this.clientVersion = "Unknown";
         this.creationTime = System.currentTimeMillis();
     }
 
@@ -84,8 +85,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public String getUuid() {
-        return principal != null ? principal.getUuid() : null;
+    public UUID getUuid() {
+        return clientUuid;
     }
 
     @Override
@@ -103,25 +104,15 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
-    public boolean isOwnerConnection() {
-        return ownerConnection;
-    }
-
     @Override
-    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
-                              String clientVersion, long authCorrelationId) {
-        this.principal = principal;
-        this.ownerConnection = firstConnection;
+    public void authenticated(UUID clientUuid, Credentials credentials, String clientVersion,
+                              long authCorrelationId, String clientName, Set<String> labels) {
+        this.clientUuid = clientUuid;
         this.credentials = credentials;
         this.authenticated = true;
-        this.authenticationCorrelationId = authCorrelationId;
         this.setClientVersion(clientVersion);
-    }
-
-    @Override
-    public void authenticated(ClientPrincipal principal) {
-        this.principal = principal;
-        this.authenticated = true;
+        this.clientName = clientName;
+        this.labels = labels;
     }
 
     @Override
@@ -130,14 +121,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public int getClientVersion() {
-        return clientVersion;
-    }
-
-    @Override
     public void setClientVersion(String version) {
-        clientVersionString = version;
-        clientVersion = BuildInfo.calculateVersion(version);
+        clientVersion = version;
     }
 
     @Override
@@ -190,7 +175,17 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public TransactionContext getTransactionContext(String txnId) {
+    public String getName() {
+        return clientName;
+    }
+
+    @Override
+    public Set<String> getLabels() {
+        return labels;
+    }
+
+    @Override
+    public TransactionContext getTransactionContext(UUID txnId) {
         final TransactionContext transactionContext = transactionContextMap.get(txnId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context found for txnId:" + txnId);
@@ -209,12 +204,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void removeTransactionContext(String txnId) {
+    public void removeTransactionContext(UUID txnId) {
         transactionContextMap.remove(txnId);
     }
 
     @Override
-    public void addListenerDestroyAction(final String service, final String topic, final String id) {
+    public void addListenerDestroyAction(final String service, final String topic, final UUID id) {
         final EventService eventService = clientEngine.getEventService();
         addDestroyAction(id, new Callable<Boolean>() {
             @Override
@@ -225,12 +220,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void addDestroyAction(String registrationId, Callable<Boolean> removeAction) {
+    public void addDestroyAction(UUID registrationId, Callable<Boolean> removeAction) {
         removeListenerActions.put(registrationId, removeAction);
     }
 
     @Override
-    public boolean removeDestroyAction(String id) {
+    public boolean removeDestroyAction(UUID id) {
         return removeListenerActions.remove(id) != null;
     }
 
@@ -240,7 +235,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             try {
                 removeAction.call();
             } catch (Exception e) {
-                getLogger().warning("Exception during remove listener action", e);
+                logger.warning("Exception during remove listener action", e);
             }
         }
         removeListenerActions.clear();
@@ -261,32 +256,23 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             try {
                 context.rollbackTransaction();
             } catch (HazelcastInstanceNotActiveException e) {
-                getLogger().finest(e);
+                logger.finest(e);
             } catch (Exception e) {
-                getLogger().warning(e);
+                logger.warning(e);
             }
         }
         authenticated = false;
-    }
-
-    private ILogger getLogger() {
-        return clientEngine.getLogger(getClass());
     }
 
     @Override
     public String toString() {
         return "ClientEndpoint{"
                 + "connection=" + connection
-                + ", principal='" + principal
-                + ", ownerConnection=" + ownerConnection
+                + ", clientUuid='" + clientUuid
                 + ", authenticated=" + authenticated
-                + ", clientVersion=" + clientVersionString
+                + ", clientVersion=" + clientVersion
                 + ", creationTime=" + creationTime
                 + ", latest statistics=" + stats
                 + '}';
-    }
-
-    public long getAuthenticationCorrelationId() {
-        return authenticationCorrelationId;
     }
 }

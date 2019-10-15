@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
                 Class<? extends ParallelRunnerOptions> optionsClass = annotation.value();
                 Constructor constructor = optionsClass.getConstructor();
                 ParallelRunnerOptions parallelRunnerOptions = (ParallelRunnerOptions) constructor.newInstance();
-                return parallelRunnerOptions.maxParallelTests();
+                return min(parallelRunnerOptions.maxParallelTests(), DEFAULT_MAX_THREADS);
             } catch (Exception e) {
                 throw new InitializationError(e);
             }
@@ -116,7 +116,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             }
         }
         numThreads.incrementAndGet();
-        new Thread(new TestRunner(method, notifier)).start();
+        new MultithreadedTestRunnerThread(new TestRunner(method, notifier)).start();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * And Result set for Predicates.
@@ -155,7 +155,8 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     }
 
     /**
-     * @return returns estimated size without calculating the full result set in full-result scan.
+     * @return returns estimated size without calculating the full
+     * result set in full-result scan.
      */
     public int estimatedSize() {
         if (cachedSize == SIZE_UNINITIALIZED) {

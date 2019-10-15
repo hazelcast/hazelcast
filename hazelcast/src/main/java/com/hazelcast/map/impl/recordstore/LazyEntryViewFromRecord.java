@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 
 
 /**
  * Internally used {@link EntryView} implementation for sampling based eviction specific purposes.
- * <p/>
+ * <p>
  * Mainly :
  * - Wraps a {@link Record} and reaches all {@link EntryView} specific info over it
  * - Lazily de-serializes key and value.
@@ -107,7 +107,7 @@ public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurr
     }
 
     @Override
-    public Long getMaxIdle() {
+    public long getMaxIdle() {
         return record.getMaxIdle();
     }
 

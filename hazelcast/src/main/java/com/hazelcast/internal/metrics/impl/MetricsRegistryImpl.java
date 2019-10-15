@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,64 +16,55 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeBuilder;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
+import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
+import static java.util.Collections.unmodifiableSet;
+import static java.util.EnumSet.of;
 
 /**
  * The {@link MetricsRegistry} implementation.
  */
 public class MetricsRegistryImpl implements MetricsRegistry {
 
-    private static final Comparator<ProbeInstance> COMPARATOR = new Comparator<ProbeInstance>() {
-        @Override
-        public int compare(ProbeInstance o1, ProbeInstance o2) {
-            return o1.name.compareTo(o2.name);
-        }
-    };
-
     final ILogger logger;
     private final ProbeLevel minimumLevel;
 
-    private final ScheduledExecutorService scheduledExecutorService;
-    private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
+    private final ScheduledExecutorService scheduler;
+    private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<>();
 
     // use ConcurrentReferenceHashMap to allow unreferenced Class instances to be garbage collected
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
-            = new ConcurrentReferenceHashMap<Class<?>, SourceMetadata>();
-    private final LockStripe lockStripe = new LockStripe();
+            = new ConcurrentReferenceHashMap<>();
 
-    private final AtomicReference<SortedProbeInstances> sortedProbeInstancesRef
-            = new AtomicReference<SortedProbeInstances>(new SortedProbeInstances(0));
-
+    private final ConcurrentMap<DynamicMetricsProvider, Boolean> metricSourceMap
+            = new ConcurrentReferenceHashMap<>(STRONG, STRONG, of(IDENTITY_COMPARISONS));
 
     /**
      * Creates a MetricsRegistryImpl instance.
@@ -99,8 +90,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     public MetricsRegistryImpl(String name, ILogger logger, ProbeLevel minimumLevel) {
         this.logger = checkNotNull(logger, "logger can't be null");
         this.minimumLevel = checkNotNull(minimumLevel, "minimumLevel can't be null");
-
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(2,
+        this.scheduler = new ScheduledThreadPoolExecutor(2,
                 new ThreadFactoryImpl(createThreadPoolName(name, "MetricsRegistry")));
 
         if (logger.isFinestEnabled()) {
@@ -113,14 +103,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         return minimumLevel;
     }
 
-    long modCount() {
-        return sortedProbeInstancesRef.get().mod;
-    }
-
     @Override
     public Set<String> getNames() {
-        Set<String> names = new HashSet<String>(probeInstances.keySet());
-        return Collections.unmodifiableSet(names);
+        return unmodifiableSet(probeInstances.values().stream()
+                                             .map(probeInstance -> probeInstance.name)
+                                             .collect(Collectors.toSet()));
     }
 
     /**
@@ -141,32 +128,42 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void scanAndRegister(S source, String namePrefix) {
+    public <S> void registerStaticMetrics(S source, String namePrefix) {
         checkNotNull(source, "source can't be null");
         checkNotNull(namePrefix, "namePrefix can't be null");
 
-        SourceMetadata metadata = loadSourceMetadata(source.getClass());
-        metadata.register(this, source, namePrefix);
+        newMetricTagger(namePrefix).registerStaticMetrics(source);
     }
 
     @Override
-    public <S> void register(S source, String name, ProbeLevel level, LongProbeFunction<S> function) {
+    public void registerDynamicMetricsProvider(DynamicMetricsProvider metricsProvider) {
+        metricSourceMap.put(metricsProvider, TRUE);
+    }
+
+    @Override
+    public void deregisterDynamicMetricsProvider(DynamicMetricsProvider metricsProvider) {
+        metricSourceMap.remove(metricsProvider);
+    }
+
+    @Override
+    public <S> void registerStaticProbe(S source, String name, ProbeLevel level, LongProbeFunction<S> function) {
         checkNotNull(source, "source can't be null");
         checkNotNull(name, "name can't be null");
         checkNotNull(function, "function can't be null");
         checkNotNull(level, "level can't be null");
 
-        registerInternal(source, name, level, function);
+        registerInternal(source, newMetricTagger().withMetricTag(name), level, function);
     }
 
     @Override
-    public <S> void register(S source, String name, ProbeLevel level, DoubleProbeFunction<S> function) {
+    public <S> void registerStaticProbe(S source, String name, ProbeLevel level, DoubleProbeFunction<S> function) {
         checkNotNull(source, "source can't be null");
         checkNotNull(name, "name can't be null");
         checkNotNull(function, "function can't be null");
         checkNotNull(level, "level can't be null");
 
-        registerInternal(source, name, level, function);
+        MetricTagger metricTagger = newMetricTagger();
+        registerInternal(source, metricTagger.withMetricTag(name), level, function);
     }
 
     ProbeInstance getProbeInstance(String name) {
@@ -175,38 +172,25 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         return probeInstances.get(name);
     }
 
-    <S> void registerInternal(S source, String name, ProbeLevel probeLevel, ProbeFunction function) {
+    <S> void registerInternal(S source, MetricTagger tagger, ProbeLevel probeLevel, ProbeFunction function) {
         if (!probeLevel.isEnabled(minimumLevel)) {
             return;
         }
 
-        synchronized (lockStripe.getLock(source)) {
-            ProbeInstance probeInstance = probeInstances.get(name);
-            if (probeInstance == null) {
-                probeInstance = new ProbeInstance<S>(name, source, function);
-                probeInstances.put(name, probeInstance);
-            } else {
-                logOverwrite(probeInstance);
-            }
+        String metricId = tagger.metricId();
+        String metricName = tagger.metricName();
 
+        ProbeInstance probeInstance = probeInstances
+                .computeIfAbsent(metricId, k -> new ProbeInstance<>(metricName, source, function));
+
+        if (probeInstance.source == source && probeInstance.function == function) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Registered probeInstance " + name);
+                logger.finest("Registered probeInstance " + metricName);
             }
-
+        } else {
+            logOverwrite(probeInstance);
             probeInstance.source = source;
             probeInstance.function = function;
-        }
-
-        incrementMod();
-    }
-
-    private void incrementMod() {
-        for (; ; ) {
-            SortedProbeInstances current = sortedProbeInstancesRef.get();
-            SortedProbeInstances update = new SortedProbeInstances(current.mod + 1);
-            if (sortedProbeInstancesRef.compareAndSet(current, update)) {
-                break;
-            }
         }
     }
 
@@ -231,135 +215,45 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void deregister(S source) {
-        if (source == null) {
-            return;
-        }
+    public void collect(MetricsCollector collector) {
+        checkNotNull(collector, "collector can't be null");
 
-        boolean changed = false;
-        for (Map.Entry<String, ProbeInstance> entry : probeInstances.entrySet()) {
-            ProbeInstance probeInstance = entry.getValue();
+        MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(this::newMetricTagger, this::loadSourceMetadata,
+                collector, minimumLevel);
 
-            if (probeInstance.source != source) {
-                continue;
-            }
-
-            String name = entry.getKey();
-
-            boolean destroyed = false;
-            synchronized (lockStripe.getLock(source)) {
-                if (probeInstance.source == source) {
-                    changed = true;
-                    probeInstances.remove(name);
-                    probeInstance.source = null;
-                    probeInstance.function = null;
-                    destroyed = true;
-                }
-            }
-
-            if (destroyed && logger.isFinestEnabled()) {
-                logger.finest("Destroying probeInstance " + name);
-            }
-        }
-
-        if (changed) {
-            incrementMod();
-        }
+        collectionCycle.collectStaticMetrics(probeInstances.values());
+        collectionCycle.collectDynamicMetrics(metricSourceMap.keySet());
     }
 
     @Override
-    public void render(ProbeRenderer renderer) {
-        checkNotNull(renderer, "renderer can't be null");
-
-        for (ProbeInstance probeInstance : getSortedProbeInstances()) {
-            render(renderer, probeInstance);
-        }
-    }
-
-    @Override
-    public void collectMetrics(Object... objects) {
-        for (Object object : objects) {
-            if (object instanceof MetricsProvider) {
-                ((MetricsProvider) object).provideMetrics(this);
+    public void provideMetrics(Object... providers) {
+        for (Object provider : providers) {
+            if (provider instanceof StaticMetricsProvider) {
+                ((StaticMetricsProvider) provider).provideStaticMetrics(this);
             }
         }
     }
 
     @Override
-    public void discardMetrics(Object... objects) {
-        for (Object object : objects) {
-            if (object instanceof DiscardableMetricsProvider) {
-                ((DiscardableMetricsProvider) object).discardMetrics(this);
-            }
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel) {
+        if (!probeLevel.isEnabled(minimumLevel)) {
+            return null;
         }
-    }
-
-    List<ProbeInstance> getSortedProbeInstances() {
-        for (; ; ) {
-            SortedProbeInstances current = sortedProbeInstancesRef.get();
-            if (current.probeInstances != null) {
-                return current.probeInstances;
-            }
-
-            List<ProbeInstance> probeInstanceList = new ArrayList<ProbeInstance>(probeInstances.values());
-            Collections.sort(probeInstanceList, COMPARATOR);
-
-            SortedProbeInstances update = new SortedProbeInstances(current.mod, probeInstanceList);
-            if (sortedProbeInstancesRef.compareAndSet(current, update)) {
-                return update.probeInstances;
-            }
-        }
-    }
-
-    private void render(ProbeRenderer renderer, ProbeInstance probeInstance) {
-        ProbeFunction function = probeInstance.function;
-        Object source = probeInstance.source;
-        String name = probeInstance.name;
-
-        if (function == null || source == null) {
-            renderer.renderNoValue(name);
-            return;
-        }
-
-        try {
-            if (function instanceof LongProbeFunction) {
-                LongProbeFunction longFunction = (LongProbeFunction) function;
-                renderer.renderLong(name, longFunction.get(source));
-            } else {
-                DoubleProbeFunction doubleFunction = (DoubleProbeFunction) function;
-                renderer.renderDouble(name, doubleFunction.get(source));
-            }
-        } catch (Exception e) {
-            renderer.renderException(name, e);
-        }
-    }
-
-    @Override
-    public void scheduleAtFixedRate(final Runnable publisher, long period, TimeUnit timeUnit) {
-        scheduledExecutorService.scheduleAtFixedRate(publisher, 0, period, timeUnit);
+        return scheduler.scheduleAtFixedRate(publisher, 0, period, timeUnit);
     }
 
     public void shutdown() {
-        scheduledExecutorService.shutdown();
-    }
-
-    private static class SortedProbeInstances {
-        private final long mod;
-        private final List<ProbeInstance> probeInstances;
-
-        private SortedProbeInstances(long mod) {
-            this.mod = mod;
-            this.probeInstances = null;
-        }
-
-        SortedProbeInstances(long mod, List<ProbeInstance> probeInstances) {
-            this.mod = mod;
-            this.probeInstances = probeInstances;
-        }
+        // we want to immediately terminate; we don't want to wait till pending tasks have completed.
+        scheduler.shutdownNow();
     }
 
     @Override
-    public ProbeBuilder newProbeBuilder() {
-        return new ProbeBuilderImpl(this);
+    public MetricTagger newMetricTagger() {
+        return new MetricTaggerImpl(this, null);
+    }
+
+    @Override
+    public MetricTagger newMetricTagger(String namePrefix) {
+        return new MetricTaggerImpl(this, namePrefix);
     }
 }

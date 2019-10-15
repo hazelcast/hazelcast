@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.cluster.Address;
 
 public class DummyInternalPartition implements InternalPartition {
-    private Address[] replicas;
+    private PartitionReplica[] replicas;
     private int partitionId;
 
-    public DummyInternalPartition(Address[] replicas, int partitionId) {
+    public DummyInternalPartition(PartitionReplica[] replicas, int partitionId) {
         this.replicas = replicas;
         this.partitionId = partitionId;
     }
@@ -40,7 +41,17 @@ public class DummyInternalPartition implements InternalPartition {
 
     @Override
     public Address getOwnerOrNull() {
+        PartitionReplica replica = replicas[0];
+        return getAddress(replica);
+    }
+
+    @Override
+    public PartitionReplica getOwnerReplicaOrNull() {
         return replicas[0];
+    }
+
+    private static Address getAddress(PartitionReplica replica) {
+        return replica != null ? replica.address() : null;
     }
 
     @Override
@@ -50,16 +61,13 @@ public class DummyInternalPartition implements InternalPartition {
 
     @Override
     public Address getReplicaAddress(int replicaIndex) {
-        if (replicaIndex >= replicas.length) {
-            return null;
-        }
-        return replicas[replicaIndex];
+        return getAddress(getReplica(replicaIndex));
     }
 
     @Override
     public boolean isOwnerOrBackup(Address address) {
-        for (Address replica : replicas) {
-            if (replica.equals(address)) {
+        for (PartitionReplica replica : replicas) {
+            if (address.equals(replica.address())) {
                 return true;
             }
         }
@@ -67,7 +75,24 @@ public class DummyInternalPartition implements InternalPartition {
     }
 
     @Override
-    public int getReplicaIndex(Address address) {
-        throw new UnsupportedOperationException();
+    public PartitionReplica getReplica(int replicaIndex) {
+        if (replicaIndex >= replicas.length) {
+            return null;
+        }
+        return replicas[replicaIndex];
+    }
+
+    @Override
+    public int getReplicaIndex(PartitionReplica replica) {
+        if (replica == null) {
+            return -1;
+        }
+
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            if (replica.equals(replicas[i])) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

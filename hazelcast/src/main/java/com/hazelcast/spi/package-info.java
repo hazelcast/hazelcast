@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 /**
- * Provides interfaces/classes for the Hazelcast SPI for building distributed data structures and services.
- *
- * As a low-level API, it is expected to change in each release except for the patch releases.
+ * Contains functionality for the Hazelcast SPI
  */
 package com.hazelcast.spi;

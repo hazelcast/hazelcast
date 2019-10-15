@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package com.hazelcast.spi.impl.servicemanager;
-
-import com.hazelcast.spi.SharedService;
 
 import java.util.List;
 
@@ -60,14 +58,4 @@ public interface ServiceManager {
      * @return the found services.
      */
     <S> List<S> getServices(Class<S> serviceClass);
-
-    /**
-     * Gets a SharedService by serviceName.
-     *
-     * @param serviceName the name of the SharedService.
-     * @param <T>
-     * @return the found SharedService or null if not found.
-     * @throws IllegalArgumentException if a service with the name is found, but isn't a SharedService.
-     */
-    <T extends SharedService> T getSharedService(String serviceName);
 }

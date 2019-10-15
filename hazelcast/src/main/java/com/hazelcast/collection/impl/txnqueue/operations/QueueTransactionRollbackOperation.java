@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package com.hazelcast.collection.impl.txnqueue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Transaction Rollback Operation for the Queue. Rolls back the given transaction ID on the queue with the given name. This
@@ -32,12 +34,12 @@ import java.io.IOException;
  */
 public class QueueTransactionRollbackOperation extends QueueOperation {
 
-    private String transactionId;
+    private UUID transactionId;
 
     public QueueTransactionRollbackOperation() {
     }
 
-    public QueueTransactionRollbackOperation(String name, String transactionId) {
+    public QueueTransactionRollbackOperation(String name, UUID transactionId) {
         super(name);
         this.transactionId = transactionId;
     }
@@ -49,19 +51,19 @@ public class QueueTransactionRollbackOperation extends QueueOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return QueueDataSerializerHook.TRANSACTION_ROLLBACK;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(transactionId);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        transactionId = in.readUTF();
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 }

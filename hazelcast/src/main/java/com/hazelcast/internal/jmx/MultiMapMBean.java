@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.internal.jmx.suppliers.LocalMultiMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 
 /**
- * Management bean for {@link com.hazelcast.core.MultiMap}
+ * Management bean for {@link MultiMap}
  */
 @ManagedDescription("MultiMap")
 public class MultiMapMBean extends HazelcastMBean<MultiMap> {

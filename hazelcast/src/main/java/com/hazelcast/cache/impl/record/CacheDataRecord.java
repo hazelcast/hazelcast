@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,22 +64,18 @@ public class CacheDataRecord extends AbstractCacheRecord<Data, Data> {
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeData(value);
-        if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-            out.writeData(expiryPolicy);
-        }
+        out.writeData(expiryPolicy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         value = in.readData();
-        if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-            expiryPolicy = in.readData();
-        }
+        expiryPolicy = in.readData();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return CacheDataSerializerHook.CACHE_DATA_RECORD;
     }
 }

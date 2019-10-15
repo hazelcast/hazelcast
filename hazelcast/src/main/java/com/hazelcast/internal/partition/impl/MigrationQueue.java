@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ class MigrationQueue {
 
     private final AtomicInteger migrateTaskCount = new AtomicInteger();
 
-    private final BlockingQueue<MigrationRunnable> queue = new LinkedBlockingQueue<MigrationRunnable>();
+    private final BlockingQueue<MigrationRunnable> queue = new LinkedBlockingQueue<>();
 
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED",
             justification = "offer will always be successful since queue is unbounded")
@@ -49,7 +49,7 @@ class MigrationQueue {
     }
 
     public void clear() {
-        List<MigrationRunnable> sink = new ArrayList<MigrationRunnable>();
+        List<MigrationRunnable> sink = new ArrayList<>();
         queue.drainTo(sink);
 
         for (MigrationRunnable task : sink) {

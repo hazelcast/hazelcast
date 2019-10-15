@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,22 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static java.lang.String.format;
 import static java.lang.System.nanoTime;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -73,7 +74,7 @@ public final class RepairingTask implements Runnable {
     final long reconciliationIntervalNanos;
 
     private final int partitionCount;
-    private final String localUuid;
+    private final UUID localUuid;
     private final ILogger logger;
     private final TaskScheduler scheduler;
     private final InvalidationMetaDataFetcher invalidationMetaDataFetcher;
@@ -87,7 +88,7 @@ public final class RepairingTask implements Runnable {
 
     public RepairingTask(HazelcastProperties properties, InvalidationMetaDataFetcher invalidationMetaDataFetcher,
                          TaskScheduler scheduler, SerializationService serializationService,
-                         MinimalPartitionService partitionService, String localUuid, ILogger logger) {
+                         MinimalPartitionService partitionService, UUID localUuid, ILogger logger) {
         this.reconciliationIntervalNanos = SECONDS.toNanos(getReconciliationIntervalSeconds(properties));
         this.maxToleratedMissCount = getMaxToleratedMissCount(properties);
         this.invalidationMetaDataFetcher = invalidationMetaDataFetcher;
@@ -122,7 +123,9 @@ public final class RepairingTask implements Runnable {
     public void run() {
         try {
             fixSequenceGaps();
-            runAntiEntropyIfNeeded();
+            if (isAntiEntropyNeeded()) {
+                runAntiEntropy();
+            }
         } finally {
             if (running.get()) {
                 scheduleNextRun();
@@ -146,16 +149,18 @@ public final class RepairingTask implements Runnable {
      * Periodically sends generic operations to cluster members to get latest
      * invalidation metadata.
      */
-    private void runAntiEntropyIfNeeded() {
+    private void runAntiEntropy() {
+        invalidationMetaDataFetcher.fetchMetadata(handlers);
+        lastAntiEntropyRunNanos = nanoTime();
+    }
+
+    private boolean isAntiEntropyNeeded() {
         if (reconciliationIntervalNanos == 0) {
-            return;
+            return false;
         }
 
-        long sinceLastRun = nanoTime() - lastAntiEntropyRunNanos;
-        if (sinceLastRun >= reconciliationIntervalNanos) {
-            invalidationMetaDataFetcher.fetchMetadata(handlers);
-            lastAntiEntropyRunNanos = nanoTime();
-        }
+        long sinceLastRunNanos = nanoTime() - lastAntiEntropyRunNanos;
+        return sinceLastRunNanos >= reconciliationIntervalNanos;
     }
 
     private void scheduleNextRun() {
@@ -254,7 +259,7 @@ public final class RepairingTask implements Runnable {
                             long delay = roundNumber * RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS;
                             scheduler.schedule(this, delay, MILLISECONDS);
                         }
-                        // else don't reschedule this task again and fallback to anti-entropy (see #runAntiEntropyIfNeeded)
+                        // else don't reschedule this task again and fallback to anti-entropy (see #runAntiEntropy)
                         // if we haven't managed to initialize repairing handler so far.
                     }
                 }
@@ -277,22 +282,20 @@ public final class RepairingTask implements Runnable {
      * Every handler represents a single Near Cache.
      */
     private boolean isAboveMaxToleratedMissCount(RepairingHandler handler) {
-        int partition = 0;
-        long missCount = 0;
+        long totalMissCount = 0;
 
-        do {
-            MetaDataContainer metaData = handler.getMetaDataContainer(partition);
-            missCount += metaData.getMissedSequenceCount();
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            MetaDataContainer metaData = handler.getMetaDataContainer(partitionId);
+            totalMissCount += metaData.getMissedSequenceCount();
 
-            if (missCount > maxToleratedMissCount) {
+            if (totalMissCount > maxToleratedMissCount) {
                 if (logger.isFinestEnabled()) {
                     logger.finest(format("Above tolerated miss count:[map=%s,missCount=%d,maxToleratedMissCount=%d]",
-                            handler.getName(), missCount, maxToleratedMissCount));
+                            handler.getName(), totalMissCount, maxToleratedMissCount));
                 }
                 return true;
             }
-        } while (++partition < partitionCount);
-
+        }
         return false;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.internal.partition.impl.DummyInternalPartition;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,16 +31,22 @@ import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.UUID;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionRuntimeStateTest extends HazelcastTestSupport {
+
+    private UUID[] uuids = {
+            new UUID(57, 2),
+            new UUID(57, 1)
+    };
 
     @Test
     public void toString_whenConstructed() throws UnknownHostException {
         PartitionRuntimeState state = createPartitionState(0,
-                address("127.0.0.1", 5701),
-                address("127.0.0.2", 5702)
+                replica("127.0.0.1", 5701),
+                replica("127.0.0.2", 5702)
         );
         assertContains(state.toString(), "127.0.0.1");
         assertContains(state.toString(), "127.0.0.2");
@@ -49,8 +55,8 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
     @Test
     public void toString_whenDeserialized() throws UnknownHostException {
         PartitionRuntimeState state = createPartitionState(0,
-                address("127.0.0.1", 5701),
-                address("127.0.0.2", 5702)
+                replica("127.0.0.1", 5701),
+                replica("127.0.0.2", 5702)
         );
 
         state = serializeAndDeserialize(state);
@@ -61,8 +67,8 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
     @Test
     public void toString_whenDeserializedTwice() throws UnknownHostException {
         PartitionRuntimeState state = createPartitionState(0,
-                address("127.0.0.1", 5701),
-                address("127.0.0.2", 5702)
+                replica("127.0.0.1", 5701),
+                replica("127.0.0.2", 5702)
         );
 
         state = serializeAndDeserialize(state);
@@ -82,12 +88,12 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
         return state;
     }
 
-    private PartitionRuntimeState createPartitionState(int partitionId, Address... addresss) throws UnknownHostException {
-        DummyInternalPartition partition = new DummyInternalPartition(addresss, partitionId);
-        return new PartitionRuntimeState(new InternalPartition[]{partition}, Collections.<MigrationInfo>emptyList(), partitionId);
+    private PartitionRuntimeState createPartitionState(int partitionId, PartitionReplica... replicas) {
+        DummyInternalPartition partition = new DummyInternalPartition(replicas, partitionId);
+        return new PartitionRuntimeState(new InternalPartition[]{partition}, Collections.emptyList(), partitionId);
     }
 
-    private Address address(String host, int port) throws UnknownHostException {
-        return new Address(host, port);
+    private PartitionReplica replica(String host, int port) throws UnknownHostException {
+        return new PartitionReplica(new Address(host, port),  uuids[port % 2]);
     }
 }

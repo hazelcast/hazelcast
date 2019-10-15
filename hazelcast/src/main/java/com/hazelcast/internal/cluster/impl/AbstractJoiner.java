@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,25 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
 import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,11 +49,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static java.lang.Thread.currentThread;
 
-public abstract class AbstractJoiner implements Joiner {
+public abstract class AbstractJoiner
+        implements Joiner {
 
     private static final int JOIN_TRY_COUNT = 5;
     private static final int SPLIT_BRAIN_MERGE_TIMEOUT_SECONDS = 30;
@@ -68,7 +70,7 @@ public abstract class AbstractJoiner implements Joiner {
     protected final ILogger logger;
 
     // map blacklisted endpoints. Boolean value represents if blacklist is temporary or permanent
-    protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
+    protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<>();
     protected final ClusterJoinManager clusterJoinManager;
 
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
@@ -133,9 +135,9 @@ public abstract class AbstractJoiner implements Joiner {
     public final void join() {
         blacklistedAddresses.clear();
         doJoin();
-        if (!clusterService.isJoined() && shouldResetHotRestartData()) {
+        if (!clusterService.isJoined() && isMemberExcludedFromHotRestart()) {
             logger.warning("Could not join to the cluster because hot restart data must be reset.");
-            node.getNodeExtension().getInternalHotRestartService().resetHotRestartData();
+            node.getNodeExtension().getInternalHotRestartService().forceStartBeforeJoin();
             reset();
             doJoin();
         }
@@ -143,10 +145,10 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected final boolean shouldRetry() {
-        return node.isRunning() && !clusterService.isJoined() && !shouldResetHotRestartData();
+        return node.isRunning() && !clusterService.isJoined() && !isMemberExcludedFromHotRestart();
     }
 
-    private boolean shouldResetHotRestartData() {
+    private boolean isMemberExcludedFromHotRestart() {
         final NodeExtension nodeExtension = node.getNodeExtension();
         return !nodeExtension.isStartCompleted()
                 && nodeExtension.getInternalHotRestartService().isMemberExcluded(node.getThisAddress(), node.getThisUuid());
@@ -186,7 +188,7 @@ public abstract class AbstractJoiner implements Joiner {
                 boolean allConnected = true;
                 Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
-                    if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
+                    if (!member.localMember() && node.getEndpointManager(MEMBER).getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
                         if (logger.isFineEnabled()) {
                             logger.fine("Not-connected to " + member.getAddress());
@@ -236,7 +238,7 @@ public abstract class AbstractJoiner implements Joiner {
             logger.fine("Sending SplitBrainJoinMessage to " + target);
         }
 
-        Connection conn = node.connectionManager.getOrConnect(target, true);
+        Connection conn = node.getEndpointManager(MEMBER).getOrConnect(target, true);
         long timeout = SPLIT_BRAIN_CONN_TIMEOUT_MILLIS;
         while (conn == null) {
             timeout -= SPLIT_BRAIN_SLEEP_TIME_MILLIS;
@@ -251,7 +253,7 @@ public abstract class AbstractJoiner implements Joiner {
                 currentThread().interrupt();
                 return null;
             }
-            conn = node.connectionManager.getConnection(target);
+            conn = node.getEndpointManager(MEMBER).getConnection(target);
         }
 
         NodeEngine nodeEngine = node.nodeEngine;
@@ -283,7 +285,7 @@ public abstract class AbstractJoiner implements Joiner {
 
         OperationService operationService = node.nodeEngine.getOperationService();
         Collection<Member> memberList = clusterService.getMembers();
-        Collection<Future> futures = new ArrayList<Future>(memberList.size());
+        Collection<Future> futures = new ArrayList<>(memberList.size());
         for (Member member : memberList) {
             if (!member.localMember()) {
                 Operation op = new MergeClustersOp(targetAddress);

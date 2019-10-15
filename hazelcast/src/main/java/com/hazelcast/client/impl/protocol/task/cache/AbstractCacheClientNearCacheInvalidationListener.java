@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,10 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.internal.nearcache.impl.invalidation.AbstractBaseNearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.NotifiableEventListener;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.internal.services.NotifiableEventListener;
+
+import java.util.UUID;
 
 abstract class AbstractCacheClientNearCacheInvalidationListener extends AbstractBaseNearCacheInvalidationListener
         implements CacheEventListener, NotifiableEventListener<CacheService> {
@@ -33,7 +35,7 @@ abstract class AbstractCacheClientNearCacheInvalidationListener extends Abstract
 
     AbstractCacheClientNearCacheInvalidationListener(ClientEndpoint endpoint,
                                                      CacheContext cacheContext,
-                                                     String localMemberUuid,
+                                                     UUID localMemberUuid,
                                                      long correlationId) {
         super(localMemberUuid, correlationId);
 

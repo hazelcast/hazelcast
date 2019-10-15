@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,15 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.xa.TransactionAccessor;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class XATransactionCreateMessageTask
         extends AbstractCallableMessageTask<XATransactionCreateCodec.RequestParameters> {
@@ -38,7 +39,7 @@ public class XATransactionCreateMessageTask
     @Override
     protected Object call() throws Exception {
         XAService xaService = getService(getServiceName());
-        String ownerUuid = endpoint.getUuid();
+        UUID ownerUuid = endpoint.getUuid();
         TransactionContext context = xaService.newXATransactionContext(parameters.xid, ownerUuid, (int) parameters.timeout, true);
         TransactionAccessor.getTransaction(context).begin();
         endpoint.setTransactionContext(context);
@@ -52,7 +53,7 @@ public class XATransactionCreateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return XATransactionCreateCodec.encodeResponse((String) response);
+        return XATransactionCreateCodec.encodeResponse((UUID) response);
     }
 
     @Override

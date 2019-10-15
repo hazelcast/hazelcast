@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,16 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +42,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapStoreEvictionTest extends HazelcastTestSupport {
 
     private static final int MAP_STORE_ENTRY_COUNT = 1000;
@@ -153,7 +152,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
     private Config newConfig(String mapName, boolean sizeLimited, MapStoreConfig.InitialLoadMode loadMode) {
         Config cfg = new Config();
-        cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
+        cfg.setClusterName(getClass().getSimpleName());
         cfg.setProperty("hazelcast.partition.count", "5");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
@@ -166,7 +165,6 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
             MaxSizeConfig maxSizeConfig = new MaxSizeConfig(MAX_SIZE_PER_NODE, MaxSizeConfig.MaxSizePolicy.PER_NODE);
             mapConfig.setMaxSizeConfig(maxSizeConfig);
             mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-            mapConfig.setMinEvictionCheckMillis(0);
         }
 
         return cfg;

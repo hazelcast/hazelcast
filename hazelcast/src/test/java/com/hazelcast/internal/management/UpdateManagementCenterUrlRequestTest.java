@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class UpdateManagementCenterUrlRequestTest extends HazelcastTestSupport {
 
     private ManagementCenterService managementCenterService;
@@ -46,7 +46,7 @@ public class UpdateManagementCenterUrlRequestTest extends HazelcastTestSupport {
 
     @Test
     public void testExecuteScriptRequest() {
-        byte[] result = managementCenterService.clusterWideUpdateManagementCenterUrl("dev", "dev-pass", "invalid");
+        byte[] result = managementCenterService.clusterWideUpdateManagementCenterUrl("invalid");
         assertEquals(HttpCommand.RES_204, result);
     }
 }

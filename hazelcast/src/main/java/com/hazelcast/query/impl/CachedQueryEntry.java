@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,14 +95,14 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
         Object targetObject;
         if (key) {
             // keyData is never null
-            if (keyData.isPortable()) {
+            if (keyData.isPortable() || keyData.isJson()) {
                 targetObject = keyData;
             } else {
                 targetObject = getKey();
             }
         } else {
             if (valueObject == null) {
-                if (valueData.isPortable()) {
+                if (valueData.isPortable() || valueData.isJson()) {
                     targetObject = valueData;
                 } else {
                     targetObject = getValue();

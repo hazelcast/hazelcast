@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * Provides a mean of reading portable fields from a binary in form of java primitives
  * arrays of java primitives, nested portable fields and array of portable fields.
- * <p/>
+ * <p>
  * PortableReader read method family support nested paths. For example <code>body.brain.iq</code> is a valid nested path.
  */
 public interface PortableReader {
@@ -199,7 +199,7 @@ public interface PortableReader {
 
     /**
      * {@link PortableWriter#getRawDataOutput()}.
-     * <p/>
+     * <p>
      * Note that portable fields can not read after getRawDataInput() is called. In case this happens,
      * IOException will be thrown.
      *

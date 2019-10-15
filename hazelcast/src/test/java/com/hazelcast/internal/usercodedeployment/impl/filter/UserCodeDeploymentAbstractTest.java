@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package com.hazelcast.internal.usercodedeployment.impl.filter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.util.FilteringClassLoader;
+import com.hazelcast.internal.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Test;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
@@ -121,7 +121,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setBlacklistedPrefixes("usercodedeployment.blacklisted")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new BlacklistedEP();
+        EntryProcessor<Integer, Integer, Integer> myEP = new BlacklistedEP();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -145,7 +145,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setWhitelistedPrefixes("usercodedeployment.whitelisted")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -169,7 +169,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setWhitelistedPrefixes("usercodedeployment.whitelisted, usercodedeployment")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new WhitelistedEP();
+        EntryProcessor<Integer, Integer, Integer> myEP = new WhitelistedEP();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
     }
 
@@ -188,7 +188,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setProviderFilter("HAS_ATTRIBUTE:foo")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         try {
             executeSimpleTestScenario(i1Config, i2Config, myEP);
             fail();
@@ -200,7 +200,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
     @Test
     public void givenProviderFilterUsesMemberAttribute_whenSomeMemberHasMatchingAttribute_thenClassLoadingRequestSucceed() {
         Config i1Config = new Config();
-        i1Config.getMemberAttributeConfig().setStringAttribute("foo", "bar");
+        i1Config.getMemberAttributeConfig().setAttribute("foo", "bar");
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setClassCacheMode(getClassCacheMode());
@@ -213,11 +213,13 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
                 .setProviderFilter("HAS_ATTRIBUTE:foo")
                 .setClassCacheMode(getClassCacheMode());
 
-        EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
+        EntryProcessor<Integer, Integer, Integer> myEP = new IncrementingEntryProcessor();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
     }
 
-    protected void executeSimpleTestScenario(Config config, Config epFilteredConfig, EntryProcessor<Integer, Integer> ep) {
+    protected void executeSimpleTestScenario(Config config,
+                                             Config epFilteredConfig,
+                                             EntryProcessor<Integer, Integer, Integer> ep) {
         int keyCount = 100;
 
         factory = newFactory();

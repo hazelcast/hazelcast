@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.jsr.JsrTestUtil;
-import com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -27,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.config.mergepolicies.ComplexCustomMergePolicy;
 import com.hazelcast.spi.merge.MergingCosts;
 import com.hazelcast.spi.merge.MergingExpirationTime;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,7 +46,8 @@ import static org.hamcrest.CoreMatchers.containsString;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MergePolicyValidatorCachingProviderIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
+public class MergePolicyValidatorCachingProviderIntegrationTest
+        extends AbstractMergePolicyValidatorIntegrationTest {
 
     @BeforeClass
     public static void jsrSetup() {
@@ -70,7 +71,7 @@ public class MergePolicyValidatorCachingProviderIntegrationTest extends Abstract
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setName(name);
         cacheConfig.setStatisticsEnabled(false);
-        cacheConfig.setMergePolicy(mergePolicyConfig.getPolicy());
+        cacheConfig.getMergePolicyConfig().setPolicy(mergePolicyConfig.getPolicy());
 
         cacheManager.createCache(name, cacheConfig);
     }
@@ -151,7 +152,7 @@ public class MergePolicyValidatorCachingProviderIntegrationTest extends Abstract
     @Test
     public void testCache_withLegacyPutIfAbsentMergePolicy() {
         MergePolicyConfig legacyMergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(PutIfAbsentCacheMergePolicy.class.getName());
+                .setPolicy(PutIfAbsentMergePolicy.class.getName());
 
         getCache("legacyPutIfAbsent", legacyMergePolicyConfig);
     }

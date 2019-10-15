@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.core;
+
+import java.util.UUID;
 
 /**
  * LifecycleService allows you to shutdown, terminate, and listen to {@link LifecycleEvent}s
@@ -47,7 +49,7 @@ public interface LifecycleService {
      * @param lifecycleListener the listener object
      * @return the listener ID
      */
-    String addLifecycleListener(LifecycleListener lifecycleListener);
+    UUID addLifecycleListener(LifecycleListener lifecycleListener);
 
     /**
      * Removes a lifecycle listener.
@@ -55,5 +57,5 @@ public interface LifecycleService {
      * @param registrationId the listener ID returned by {@link #addLifecycleListener(LifecycleListener)}
      * @return true if the listener is removed successfully, false otherwise
      */
-    boolean removeLifecycleListener(String registrationId);
+    boolean removeLifecycleListener(UUID registrationId);
 }

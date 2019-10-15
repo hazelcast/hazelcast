@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.UUID;
 
 import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.singleton;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JoinMessageTrustCheckerTest extends HazelcastTestSupport {
 
     private ILogger logger = mock(ILogger.class);
@@ -82,6 +83,6 @@ public class JoinMessageTrustCheckerTest extends HazelcastTestSupport {
         InetAddress inetAddress = InetAddress.getByName(ip);
         Address address = new Address(inetAddress, 5701);
         ConfigCheck configCheck = new ConfigCheck();
-        return new JoinMessage(Packet.VERSION, 0, MemberVersion.UNKNOWN, address, "uuid", false, configCheck);
+        return new JoinMessage(Packet.VERSION, 0, MemberVersion.UNKNOWN, address, UUID.randomUUID(), false, configCheck);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
@@ -37,12 +37,15 @@ import static com.hazelcast.core.EntryEventType.MERGED;
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
- * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Contains multiple merge entries for split-brain
+ * healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
-public class MergeOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation {
+public class MergeOperation extends MapOperation
+        implements PartitionAwareOperation, BackupAwareOperation {
 
+    private boolean disableWanReplicationEvent;
     private List<MapMergeTypes> mergingEntries;
     private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
 
@@ -59,8 +62,9 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<MapMergeTypes> mergingEntries, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
-                   boolean disableWanReplicationEvent) {
+    public MergeOperation(String name, List<MapMergeTypes> mergingEntries,
+                          SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                          boolean disableWanReplicationEvent) {
         super(name);
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
@@ -68,7 +72,12 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public void run() {
+    protected boolean disableWanReplicationEvent() {
+        return disableWanReplicationEvent;
+    }
+
+    @Override
+    protected void runInternal() {
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent;
         hasBackups = mapContainer.getTotalBackupCount() > 0;
@@ -76,10 +85,10 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
 
         if (hasBackups) {
             mapEntries = new MapEntries(mergingEntries.size());
-            backupRecordInfos = new ArrayList<RecordInfo>(mergingEntries.size());
+            backupRecordInfos = new ArrayList<>(mergingEntries.size());
         }
         if (hasInvalidation) {
-            invalidationKeys = new ArrayList<Data>(mergingEntries.size());
+            invalidationKeys = new ArrayList<>(mergingEntries.size());
         }
 
         for (MapMergeTypes mergingEntry : mergingEntries) {
@@ -91,7 +100,6 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
         Data dataKey = mergingEntry.getKey();
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
-        //noinspection unchecked
         if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {
             hasMergedValues = true;
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
@@ -151,10 +159,8 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public void afterRun() throws Exception {
+    protected void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
-
-        super.afterRun();
     }
 
     @Override
@@ -177,7 +183,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        mergingEntries = new ArrayList<MapMergeTypes>(size);
+        mergingEntries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             MapMergeTypes mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
@@ -187,7 +193,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.MERGE;
     }
 }

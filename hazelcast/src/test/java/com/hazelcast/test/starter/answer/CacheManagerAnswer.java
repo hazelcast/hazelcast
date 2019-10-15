@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.test.starter.answer;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.spi.impl.NodeEngine;
 import org.mockito.invocation.InvocationOnMock;
 
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;

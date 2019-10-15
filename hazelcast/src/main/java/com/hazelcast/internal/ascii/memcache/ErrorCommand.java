@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.ERROR;
 import static com.hazelcast.internal.ascii.TextCommandConstants.SERVER_ERROR;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_SERVER;
-import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class ErrorCommand extends AbstractTextCommand {
     private ByteBuffer response;

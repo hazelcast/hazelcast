@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,12 @@ import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
+import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.concurrent.BlockingQueue;
@@ -46,15 +48,15 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
  * {@link NioInboundPipeline} and {@link NioOutboundPipeline} between {@link NioThread}
  * instances.
  *
- * It measures number of events serviced by each pipeline in a given interval and
+ * It measures load serviced by each pipeline in a given interval and
  * if imbalance is detected then it schedules pipeline migration to fix the situation.
  * The exact migration strategy can be customized via
  * {@link com.hazelcast.internal.networking.nio.iobalancer.MigrationStrategy}.
  *
  * Measuring interval can be customized via {@link GroupProperty#IO_BALANCER_INTERVAL_SECONDS}
  *
- * It doesn't leverage {@link com.hazelcast.nio.ConnectionListener} capability
- * provided by {@link com.hazelcast.nio.ConnectionManager} to observe connections
+ * It doesn't leverage {@link ConnectionListener} capability
+ * provided by {@link EndpointManager} to observe connections
  * as it has to be notified right after a physical TCP connection is created whilst
  * <code>ConnectionListener</code> is notified only after a successful (Hazelcast)
  * binding process.
@@ -159,7 +161,7 @@ public class IOBalancer {
                     logger.finest("There is at most 1 pipeline associated with each thread. "
                             + "There is nothing to balance");
                 } else {
-                    logger.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
+                    logger.finest("No imbalance has been detected. Max. load: " + max + " Min load: " + min + ".");
                 }
             }
         }

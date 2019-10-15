@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPreconditionsTest extends HazelcastTestSupport {
 
     private final int MINUTES = 60 * 1000;
@@ -303,7 +301,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddLocalEntryListenerWithMapListenerAndPredicateAndKey_NullListener() {
         MapListener mapListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addLocalEntryListener(mapListener, predicate, null, false);
     }
 
@@ -321,7 +319,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddLocalEntryListenerWithEntryListenerAndPredicateAndKey_NullListener() {
         EntryListener entryListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addLocalEntryListener(entryListener, predicate, null, false);
     }
 
@@ -335,7 +333,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddLocalEntryListenerWithMapListenerAndPredicate_NullListener() {
         MapListener mapListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addLocalEntryListener(mapListener, predicate, false);
     }
 
@@ -353,7 +351,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddLocalEntryListenerWithEntryListenerAndPredicate_NullListener() {
         EntryListener entryListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addLocalEntryListener(entryListener, predicate, false);
     }
 
@@ -414,7 +412,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithMapListenerAndPredicateAndKey_NullListener() {
         MapListener mapListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addEntryListener(mapListener, predicate, null, true);
     }
 
@@ -432,7 +430,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithEntryListenerAndPredicateAndKey_NullListener() {
         EntryListener entryListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addEntryListener(entryListener, predicate, null, false);
     }
 
@@ -446,7 +444,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithMapListenerAndPredicate_NullListener() {
         MapListener mapListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addEntryListener(mapListener, predicate, false);
     }
 
@@ -464,7 +462,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testAddEntryListenerWithEntryListenerAndPredicate_NullListener() {
         EntryListener entryListener = null;
-        Predicate predicate = new TruePredicate();
+        Predicate predicate = Predicates.alwaysTrue();
         map.addEntryListener(entryListener, predicate, false);
     }
 
@@ -523,7 +521,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.keySet(TruePredicate.INSTANCE);
+        map.keySet(Predicates.alwaysTrue());
     }
 
     @Test(expected = NullPointerException.class)
@@ -537,7 +535,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.entrySet(TruePredicate.INSTANCE);
+        map.entrySet(Predicates.alwaysTrue());
     }
 
     @Test(expected = NullPointerException.class)
@@ -551,7 +549,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.values(TruePredicate.INSTANCE);
+        map.values(Predicates.alwaysTrue());
     }
 
     @Test(expected = QueryResultSizeExceededException.class, timeout = 10 * MINUTES)
@@ -569,7 +567,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.localKeySet(TruePredicate.INSTANCE);
+        map.localKeySet(Predicates.alwaysTrue());
     }
 
     @Test(expected = NullPointerException.class, timeout = 10 * MINUTES)
@@ -583,14 +581,14 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testExecuteOnKey() {
-        map.executeOnKey(null, new EntryProcessor() {
+        map.executeOnKey(null, new EntryProcessor<Object, Object, Object>() {
             @Override
             public Object process(Map.Entry entry) {
                 return null;
             }
 
             @Override
-            public EntryBackupProcessor getBackupProcessor() {
+            public EntryProcessor<Object, Object, Object> getBackupProcessor() {
                 return null;
             }
         });
@@ -601,14 +599,14 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
         Set<Object> set = new HashSet<Object>();
         set.add(null);
 
-        map.executeOnKeys(set, new EntryProcessor() {
+        map.executeOnKeys(set, new EntryProcessor<Object, Object, Object>() {
             @Override
             public Object process(Map.Entry entry) {
                 return null;
             }
 
             @Override
-            public EntryBackupProcessor getBackupProcessor() {
+            public EntryProcessor<Object, Object, Object> getBackupProcessor() {
                 return null;
             }
         });
@@ -621,20 +619,15 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
         Set<Object> set = new ConcurrentSkipListSet<Object>();
         set.add(1);
 
-        map.executeOnKeys(set, new AbstractEntryProcessor() {
-            @Override
-            public Object process(Map.Entry entry) {
-                return entry.setValue(null);
-            }
-        });
+        map.executeOnKeys(set, entry -> entry.setValue(null));
 
         assertEquals(0, map.size());
     }
 
     private class TestEntryListener implements EntryListener {
-
         int entryAddedCalled;
         int entryEvictedCalled;
+        int entryExpiredCalled;
         int entryRemovedCalled;
         int entryUpdatedCalled;
         int mapClearedCalled;
@@ -648,6 +641,11 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
         @Override
         public void entryEvicted(EntryEvent event) {
             entryEvictedCalled++;
+        }
+
+        @Override
+        public void entryExpired(EntryEvent event) {
+            entryExpiredCalled++;
         }
 
         @Override

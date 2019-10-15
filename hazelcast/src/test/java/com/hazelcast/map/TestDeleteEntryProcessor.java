@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package com.hazelcast.map;
 
 import java.util.Map;
 
-class TestDeleteEntryProcessor extends AbstractEntryProcessor<String, TestData> {
+class TestDeleteEntryProcessor implements EntryProcessor<String, TestData, Boolean> {
 
     private static final long serialVersionUID = 1L;
 
     @Override
-    public Object process(Map.Entry<String, TestData> entry) {
+    public Boolean process(Map.Entry<String, TestData> entry) {
         entry.setValue(null);
         return true;
     }

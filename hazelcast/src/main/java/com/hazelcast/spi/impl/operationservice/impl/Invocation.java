@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,56 +16,60 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.client.impl.ClientBackupAwareResponse;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.partition.NoDataMemberInClusterException;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.AbstractInvocationFuture.ExceptionalResult;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.ManagedExecutorService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
-import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
-import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
-import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.hasActiveInvocation;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallTimeout;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setInvocationTime;
+import static com.hazelcast.spi.impl.operationservice.Operations.isJoinOperation;
+import static com.hazelcast.spi.impl.operationservice.Operations.isMigrationOperation;
+import static com.hazelcast.spi.impl.operationservice.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_DISABLED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
@@ -75,11 +79,6 @@ import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CA
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
-import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
-import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
-import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Math.max;
@@ -90,17 +89,16 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Evaluates the invocation of an {@link Operation}.
- * <p/>
+ * <p>
  * Using the {@link InvocationFuture}, one can wait for the completion of an invocation.
+ *
+ * @param <T> Target type of the Invocation
  */
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class Invocation implements OperationResponseHandler {
+public abstract class Invocation<T> extends BaseInvocation implements OperationResponseHandler {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
-
-    private static final AtomicIntegerFieldUpdater<Invocation> BACKUP_ACKS_RECEIVED =
-            AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsAcksReceived");
 
     private static final long MIN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
@@ -121,26 +119,6 @@ public abstract class Invocation implements OperationResponseHandler {
     public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
 
     /**
-     * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
-     */
-    volatile Object pendingResponse = VOID;
-
-    /**
-     * The time in millis when the response of the primary has been received.
-     */
-    volatile long pendingResponseReceivedMillis = -1;
-
-    /**
-     * Number of expected backups. It is set correctly as soon as the pending response is set. See {@link NormalResponse}.
-     */
-    volatile int backupsAcksExpected;
-
-    /**
-     * Number of backups acks received. See {@link BackupAckResponse}.
-     */
-    volatile int backupsAcksReceived;
-
-    /**
      * A flag to prevent multiple responses to be send to the invocation (only needed for local operations).
      */
     // TODO: this should not be needed; it is taken care of by the future anyway
@@ -151,34 +129,70 @@ public abstract class Invocation implements OperationResponseHandler {
      * The value 0 indicates that no heartbeat was received at all.
      */
     volatile long lastHeartbeatMillis;
-    volatile int invokeCount;
 
-    boolean remote;
-    Address invTarget;
-    MemberImpl targetMember;
+    final Context context;
+    final InvocationFuture future;
+    final long callTimeoutMillis;
+
     /**
-     * The connection endpoint which operation is sent through to the {@link #invTarget}.
+     * Shows number of times this Invocation is invoked.
+     * On each call of {@link #doInvoke(boolean)} method, {@code invokeCount} is incremented by one.
+     * <p>
+     * An invocation can be invoked at most {@link #tryCount} times.
+     * <p>
+     * When invocation is notified with {@link CallTimeoutResponse}, {@code invokeCount} is decremented back.
+     */
+    private volatile int invokeCount;
+
+    /**
+     * Shows whether this Invocation is targeting a remote member or not.
+     */
+    private boolean remote;
+    /**
+     * Shows the address of current target.
+     * <p>
+     * Target address can belong to an existing member or to a non-member in some cases (join, wan-replication etc.).
+     * If it belongs to an existing member, then {@link #targetMember} field will be set too.
+     */
+    private Address targetAddress;
+    /**
+     * Shows the current target member.
+     * <p>
+     * If this Invocation is targeting an existing member, then this field will be set.
+     * Otherwise it can be null in some cases (join, wan-replication etc.).
+     */
+    private Member targetMember;
+    /**
+     * The connection endpoint which operation is sent through to the {@link #targetAddress}.
      * It can be null if invocation is local or there's no established connection to the target yet.
      * <p>
      * Used mainly for logging/diagnosing the invocation.
      */
-    Connection connection;
+    private Connection connection;
     /**
      * Member list version read before operation is invoked on target. This version is used while notifying
      * invocation during a member left event.
      */
-    int memberListVersion;
+    private int memberListVersion;
 
-    final Context context;
-    final InvocationFuture future;
-    final int tryCount;
-    final long tryPauseMillis;
-    final long callTimeoutMillis;
+    private EndpointManager endpointManager;
 
     /**
-     * Refer to {@link com.hazelcast.spi.InvocationBuilder#setDoneCallback(Runnable)} for an explanation
+     * Shows maximum number of retry counts for this Invocation.
+     *
+     * @see #invokeCount
+     */
+    private final int tryCount;
+    /**
+     * Pause time, in milliseconds, between each retry of this Invocation.
+     */
+    private final long tryPauseMillis;
+
+    /**
+     * Refer to {@link InvocationBuilder#setDoneCallback(Runnable)} for an explanation
      */
     private final Runnable taskDoneCallback;
+
 
     Invocation(Context context,
                Operation op,
@@ -186,7 +200,8 @@ public abstract class Invocation implements OperationResponseHandler {
                int tryCount,
                long tryPauseMillis,
                long callTimeoutMillis,
-               boolean deserialize) {
+               boolean deserialize,
+               EndpointManager endpointManager) {
         this.context = context;
         this.op = op;
         this.taskDoneCallback = taskDoneCallback;
@@ -194,6 +209,7 @@ public abstract class Invocation implements OperationResponseHandler {
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
         this.future = new InvocationFuture(this, deserialize);
+        this.endpointManager = getEndpointManager(endpointManager);
     }
 
     @Override
@@ -230,8 +246,6 @@ public abstract class Invocation implements OperationResponseHandler {
         return false;
     }
 
-    protected abstract Address getTarget();
-
     abstract ExceptionAction onException(Throwable t);
 
     boolean isActive() {
@@ -247,16 +261,20 @@ public abstract class Invocation implements OperationResponseHandler {
      *
      * @throws Exception if the initialization was a failure
      */
-    private void initInvocationTarget() throws Exception {
-        invTarget = getTarget();
-
-        if (invTarget == null) {
+    final void initInvocationTarget() throws Exception {
+        Member previousTargetMember = targetMember;
+        T target = getInvocationTarget();
+        if (target == null) {
             remote = false;
             throw newTargetNullException();
         }
 
-        MemberImpl previousTargetMember = targetMember;
-        targetMember = context.clusterService.getMember(invTarget);
+        targetMember = toTargetMember(target);
+        if (targetMember != null) {
+            targetAddress = targetMember.getAddress();
+        } else {
+            targetAddress = toTargetAddress(target);
+        }
         memberListVersion = context.clusterService.getMemberListVersion();
 
         if (targetMember == null) {
@@ -266,16 +284,36 @@ public abstract class Invocation implements OperationResponseHandler {
                 throw new MemberLeftException(previousTargetMember);
             }
             if (!(isJoinOperation(op) || isWanReplicationOperation(op))) {
-                throw new TargetNotMemberException(
-                        invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
+                throw new TargetNotMemberException(target, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
             }
         }
 
         if (op instanceof TargetAware) {
-            ((TargetAware) op).setTarget(invTarget);
+            ((TargetAware) op).setTarget(targetAddress);
         }
 
-        remote = !context.thisAddress.equals(invTarget);
+        remote = !context.thisAddress.equals(targetAddress);
+    }
+
+    /**
+     * Returns the target of the Invocation.
+     * This can be an {@code Address}, {@code Member} or any other type Invocation itself knows.
+     */
+    abstract T getInvocationTarget();
+
+    /**
+     * Convert invocation's target object, obtained using {@link #getInvocationTarget()} method, to an {@link Address}.
+     */
+    abstract Address toTargetAddress(T target);
+
+    /**
+     * Convert invocation's target object, obtained using {@link #getInvocationTarget()} method, to a {@link Member}.
+     */
+    abstract Member toTargetMember(T target);
+
+    Exception newTargetNullException() {
+        return new WrongTargetException(context.clusterService.getLocalMember(), null, op.getPartitionId(),
+                op.getReplicaIndex(), op.getClass().getName(), op.getServiceName());
     }
 
     void notifyError(Object error) {
@@ -287,7 +325,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
         switch (onException(cause)) {
             case THROW_EXCEPTION:
-                notifyNormalResponse(cause, 0);
+                notifyThrowable(cause, 0);
                 break;
             case RETRY_INVOCATION:
                 if (invokeCount < tryCount) {
@@ -295,7 +333,7 @@ public abstract class Invocation implements OperationResponseHandler {
                     handleRetry(cause);
                 } else {
                     // we can't retry anymore, so lets send the cause to the future.
-                    notifyNormalResponse(cause, 0);
+                    notifyThrowable(cause, 0);
                 }
                 break;
             default:
@@ -304,6 +342,21 @@ public abstract class Invocation implements OperationResponseHandler {
     }
 
     void notifyNormalResponse(Object value, int expectedBackups) {
+        //if client call id is set that means invocation is made by a backup aware client
+        //we will complete the response immediately and delegate backup count to caller
+        if (op.getClientCallId() != -1) {
+            this.backupsAcksExpected = 0;
+            if (value instanceof Packet) {
+                NormalResponse response = context.serializationService.toObject(value);
+                value = response.getValue();
+            }
+            complete(new ClientBackupAwareResponse(expectedBackups, value));
+            return;
+        }
+        notifyResponse(value, expectedBackups);
+    }
+
+    protected void notifyThrowable(Throwable cause, int expectedBackups) {
         // if a regular response comes and there are backups, we need to wait for the backups
         // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
 
@@ -317,7 +370,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
             // it is very important that the response is set after the backupsAcksExpected is set, else the system
             // can assume the invocation is complete because there is a response and no backups need to respond
-            this.pendingResponse = value;
+            this.pendingResponse = new ExceptionalResult(cause);
 
             if (backupsAcksReceived != expectedBackups) {
                 // we are done since not all backups have completed. Therefor we should not notify the future
@@ -328,7 +381,7 @@ public abstract class Invocation implements OperationResponseHandler {
         // we are going to notify the future that a response is available; this can happen when:
         // - we had a regular operation (so no backups we need to wait for) that completed
         // - we had a backup-aware operation that has completed, but also all its backups have completed
-        complete(value);
+        completeExceptionally(cause);
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -369,33 +422,6 @@ public abstract class Invocation implements OperationResponseHandler {
         handleRetry("invocation timeout");
     }
 
-    // this method can be called concurrently
-    void notifyBackupComplete() {
-        int newBackupAcksCompleted = BACKUP_ACKS_RECEIVED.incrementAndGet(this);
-
-        Object pendingResponse = this.pendingResponse;
-        if (pendingResponse == VOID) {
-            // no pendingResponse has been set, so we are done since the invocation on the primary needs to complete first
-            return;
-        }
-
-        // if a pendingResponse is set, then the backupsAcksExpected has been set (so we can now safely read backupsAcksExpected)
-        int backupAcksExpected = this.backupsAcksExpected;
-        if (backupAcksExpected < newBackupAcksCompleted) {
-            // the backups have not yet completed, so we are done
-            return;
-        }
-
-        if (backupAcksExpected != newBackupAcksCompleted) {
-            // we managed to complete one backup, but we were not the one completing the last backup, so we are done
-            return;
-        }
-
-        // we are the lucky one since we just managed to complete the last backup for this invocation and since the
-        // pendingResponse is set, we can set it on the future
-        complete(pendingResponse);
-    }
-
     /**
      * Checks if this Invocation has received a heartbeat in time.
      *
@@ -407,8 +433,7 @@ public abstract class Invocation implements OperationResponseHandler {
      * @return {@code true} if there is a timeout detected, {@code false} otherwise.
      */
     boolean detectAndHandleTimeout(long heartbeatTimeoutMillis) {
-        // skip if local and not BackupAwareOperation
-        if (!(remote || op instanceof BackupAwareOperation)) {
+        if (skipTimeoutDetection()) {
             return false;
         }
 
@@ -420,6 +445,11 @@ public abstract class Invocation implements OperationResponseHandler {
         } else {
             return false;
         }
+    }
+
+    boolean skipTimeoutDetection() {
+        // skip if local and not BackupAwareOperation
+        return !(remote || op instanceof BackupAwareOperation);
     }
 
     HeartbeatTimeout detectTimeout(long heartbeatTimeoutMillis) {
@@ -454,31 +484,8 @@ public abstract class Invocation implements OperationResponseHandler {
         return TIMEOUT;
     }
 
-    // gets called from the monitor-thread
-    boolean detectAndHandleBackupTimeout(long timeoutMillis) {
-        // if the backups have completed, we are done; this also filters out all non backup-aware operations
-        // since the backupsAcksExpected will always be equal to the backupsAcksReceived
-        boolean backupsCompleted = backupsAcksExpected == backupsAcksReceived;
-        long responseReceivedMillis = pendingResponseReceivedMillis;
-
-        // if this has not yet expired (so has not been in the system for a too long period) we ignore it
-        long expirationTime = responseReceivedMillis + timeoutMillis;
-        boolean timeout = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
-
-        // if no response has yet been received, we we are done; we are only going to re-invoke an operation
-        // if the response of the primary has been received, but the backups have not replied
-        boolean responseReceived = pendingResponse != VOID;
-
-        if (backupsCompleted || !responseReceived || !timeout) {
-            return false;
-        }
-
-        if (shouldFailOnIndeterminateOperationState()) {
-            complete(new IndeterminateOperationStateException(this + " failed because backup acks missed."));
-            return true;
-        }
-
-        boolean targetDead = context.clusterService.getMember(invTarget) == null;
+    protected boolean shouldCompleteWithoutBackups() {
+        boolean targetDead = context.clusterService.getMember(targetAddress) == null;
         if (targetDead) {
             // the target doesn't exist, so we are going to re-invoke this invocation;
             // the reason for the re-invocation is that otherwise it's possible to lose data,
@@ -490,9 +497,6 @@ public abstract class Invocation implements OperationResponseHandler {
             resetAndReInvoke();
             return false;
         }
-
-        // the backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set
-        complete(pendingResponse);
         return true;
     }
 
@@ -588,11 +592,16 @@ public abstract class Invocation implements OperationResponseHandler {
     }
 
     private void doInvokeRemote() {
-        Connection connection = context.connectionManager.getOrConnect(invTarget);
+        assert endpointManager != null : "Endpoint manager was null";
+        Connection connection = endpointManager.getOrConnect(targetAddress);
         this.connection = connection;
         if (!context.outboundOperationHandler.send(op, connection)) {
-            notifyError(new RetryableIOException("Packet not sent to -> " + invTarget + " over " + connection));
+            notifyError(new RetryableIOException("Packet not sent to -> " + targetAddress + " over " + connection));
         }
+    }
+
+    private EndpointManager getEndpointManager(EndpointManager endpointManager) {
+        return endpointManager != null ? endpointManager : context.defaultEndpointManager;
     }
 
     private long getCallTimeoutMillis(long callTimeoutMillis) {
@@ -630,25 +639,19 @@ public abstract class Invocation implements OperationResponseHandler {
         }
     }
 
-    private Exception newTargetNullException() {
-        ClusterState clusterState = context.clusterService.getClusterState();
-        if (!clusterState.isMigrationAllowed()) {
-            return new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
-                    + "but partitions can't be assigned in cluster-state: " + clusterState);
-        }
-        if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-            return new NoDataMemberInClusterException(
-                    "Target of invocation cannot be found! Partition owner is null "
-                            + "but partitions can't be assigned since all nodes in the cluster are lite members.");
-        }
-        return new WrongTargetException(context.thisAddress, null, op.getPartitionId(),
-                    op.getReplicaIndex(), op.getClass().getName(), op.getServiceName());
-    }
-
     // This is an idempotent operation
     // because both invocationRegistry.deregister() and future.complete() are idempotent.
-    private void complete(Object value) {
+    @Override
+    protected void complete(Object value) {
         future.complete(value);
+        if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
+            context.asyncExecutor.execute(taskDoneCallback);
+        }
+    }
+
+    @Override
+    protected void completeExceptionally(Throwable t) {
+        future.completeExceptionallyInternal(t);
         if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
             context.asyncExecutor.execute(taskDoneCallback);
         }
@@ -687,7 +690,7 @@ public abstract class Invocation implements OperationResponseHandler {
         if (context.logger.isFinestEnabled()) {
             context.logger.finest(e);
         }
-        complete(new HazelcastInstanceNotActiveException(e.getMessage()));
+        completeExceptionally(new HazelcastInstanceNotActiveException(e.getMessage()));
     }
 
     private void resetAndReInvoke() {
@@ -704,6 +707,22 @@ public abstract class Invocation implements OperationResponseHandler {
         doInvoke(false);
     }
 
+    boolean isRemote() {
+        return remote;
+    }
+
+    Address getTargetAddress() {
+        return targetAddress;
+    }
+
+    Member getTargetMember() {
+        return targetMember;
+    }
+
+    int getMemberListVersion() {
+        return memberListVersion;
+    }
+
     @Override
     public String toString() {
         return "Invocation{"
@@ -716,7 +735,7 @@ public abstract class Invocation implements OperationResponseHandler {
                 + ", firstInvocationTime='" + timeToString(firstInvocationTimeMillis) + '\''
                 + ", lastHeartbeatMillis=" + lastHeartbeatMillis
                 + ", lastHeartbeatTime='" + timeToString(lastHeartbeatMillis) + '\''
-                + ", target=" + invTarget
+                + ", target=" + targetAddress
                 + ", pendingResponse={" + pendingResponse + '}'
                 + ", backupsAcksExpected=" + backupsAcksExpected
                 + ", backupsAcksReceived=" + backupsAcksReceived
@@ -789,8 +808,8 @@ public abstract class Invocation implements OperationResponseHandler {
         final ManagedExecutorService asyncExecutor;
         final ClusterClock clusterClock;
         final ClusterService clusterService;
-        final ConnectionManager connectionManager;
-        final InternalExecutionService executionService;
+        final NetworkingService networkingService;
+        final ExecutionService executionService;
         final long defaultCallTimeoutMillis;
         final InvocationRegistry invocationRegistry;
         final InvocationMonitor invocationMonitor;
@@ -804,13 +823,14 @@ public abstract class Invocation implements OperationResponseHandler {
         final InternalSerializationService serializationService;
         final Address thisAddress;
         final OutboundOperationHandler outboundOperationHandler;
+        final EndpointManager defaultEndpointManager;
 
         @SuppressWarnings("checkstyle:parameternumber")
         Context(ManagedExecutorService asyncExecutor,
                 ClusterClock clusterClock,
                 ClusterService clusterService,
-                ConnectionManager connectionManager,
-                InternalExecutionService executionService,
+                NetworkingService networkingService,
+                ExecutionService executionService,
                 long defaultCallTimeoutMillis,
                 InvocationRegistry invocationRegistry,
                 InvocationMonitor invocationMonitor,
@@ -823,11 +843,12 @@ public abstract class Invocation implements OperationResponseHandler {
                 MwCounter retryCount,
                 InternalSerializationService serializationService,
                 Address thisAddress,
-                OutboundOperationHandler outboundOperationHandler) {
+                OutboundOperationHandler outboundOperationHandler,
+                EndpointManager endpointManager) {
             this.asyncExecutor = asyncExecutor;
             this.clusterClock = clusterClock;
             this.clusterService = clusterService;
-            this.connectionManager = connectionManager;
+            this.networkingService = networkingService;
             this.executionService = executionService;
             this.defaultCallTimeoutMillis = defaultCallTimeoutMillis;
             this.invocationRegistry = invocationRegistry;
@@ -842,6 +863,7 @@ public abstract class Invocation implements OperationResponseHandler {
             this.serializationService = serializationService;
             this.thisAddress = thisAddress;
             this.outboundOperationHandler = outboundOperationHandler;
+            this.defaultEndpointManager = endpointManager;
         }
     }
 }

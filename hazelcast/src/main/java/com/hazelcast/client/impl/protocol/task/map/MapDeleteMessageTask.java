@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,22 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
 public class MapDeleteMessageTask
         extends AbstractMapPartitionMessageTask<MapDeleteCodec.RequestParameters> {
+
+    private transient long startTimeNanos;
 
     public MapDeleteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,6 +45,22 @@ public class MapDeleteMessageTask
         MapOperation op = operationProvider.createDeleteOperation(parameters.name, parameters.key, false);
         op.setThreadId(parameters.threadId);
         return op;
+    }
+
+    @Override
+    protected void beforeProcess() {
+        startTimeNanos = System.nanoTime();
+    }
+
+    @Override
+    protected void beforeResponse() {
+        final long latencyNanos = System.nanoTime() - startTimeNanos;
+        final MapService mapService = getService(MapService.SERVICE_NAME);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
+                    .incrementRemoveLatencyNanos(latencyNanos);
+        }
     }
 
     @Override

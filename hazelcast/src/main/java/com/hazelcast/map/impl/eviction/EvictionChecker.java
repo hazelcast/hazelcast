@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.eviction;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
@@ -26,21 +26,14 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.memory.MemorySize.toPrettyString;
 import static com.hazelcast.memory.MemoryUnit.MEGABYTES;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 /**
@@ -52,20 +45,27 @@ import static java.lang.String.format;
  */
 public class EvictionChecker {
 
-    protected static final double ONE_HUNDRED_PERCENT = 100D;
+    protected static final double ONE_HUNDRED = 100D;
     private static final int MIN_TRANSLATED_PARTITION_SIZE = 1;
 
-    protected final ILogger logger;
-    protected final MapServiceContext mapServiceContext;
-    protected final MemoryInfoAccessor memoryInfoAccessor;
-    protected final AtomicBoolean misconfiguredPerNodeMaxSizeWarningLogged;
+    private final int partitionCount;
+    private final ILogger logger;
+    private final ClusterService clusterService;
+    private final PartitionContainer[] containers;
+    private final MemoryInfoAccessor memoryInfoAccessor;
+    private final MapNearCacheManager mapNearCacheManager;
+    private final AtomicBoolean misconfiguredPerNodeMaxSizeWarningLogged;
 
     public EvictionChecker(MemoryInfoAccessor givenMemoryInfoAccessor, MapServiceContext mapServiceContext) {
         checkNotNull(givenMemoryInfoAccessor, "givenMemoryInfoAccessor cannot be null");
         checkNotNull(mapServiceContext, "mapServiceContext cannot be null");
 
-        this.logger = mapServiceContext.getNodeEngine().getLogger(getClass());
-        this.mapServiceContext = mapServiceContext;
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.logger = nodeEngine.getLogger(getClass());
+        this.containers = mapServiceContext.getPartitionContainers();
+        this.clusterService = nodeEngine.getClusterService();
+        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        this.mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         this.memoryInfoAccessor = givenMemoryInfoAccessor;
 
         if (logger.isFinestEnabled()) {
@@ -74,7 +74,6 @@ public class EvictionChecker {
 
         this.misconfiguredPerNodeMaxSizeWarningLogged = new AtomicBoolean();
     }
-
 
     public boolean checkEvictable(RecordStore recordStore) {
         if (recordStore.size() == 0) {
@@ -86,215 +85,95 @@ public class EvictionChecker {
         MapContainer mapContainer = recordStore.getMapContainer();
         MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        int maxConfiguredSize = maxSizeConfig.getSize();
 
         switch (maxSizePolicy) {
             case PER_NODE:
-                return checkPerNodeEviction(recordStore);
+                return recordStore.size() > toPerPartitionMaxSize(maxConfiguredSize, mapName);
             case PER_PARTITION:
-                int partitionId = recordStore.getPartitionId();
-                return checkPerPartitionEviction(mapName, maxSizeConfig, partitionId);
-            case USED_HEAP_PERCENTAGE:
-                return checkHeapPercentageEviction(mapName, maxSizeConfig);
+                return recordStore.size() > maxConfiguredSize;
             case USED_HEAP_SIZE:
-                return checkHeapSizeEviction(mapName, maxSizeConfig);
-            case FREE_HEAP_PERCENTAGE:
-                return checkFreeHeapPercentageEviction(maxSizeConfig);
+                return usedHeapInBytes(mapName) > MEGABYTES.toBytes(maxConfiguredSize);
             case FREE_HEAP_SIZE:
-                return checkFreeHeapSizeEviction(maxSizeConfig);
+                return availableMemoryInBytes() < MEGABYTES.toBytes(maxConfiguredSize);
+            case USED_HEAP_PERCENTAGE:
+                return (usedHeapInBytes(mapName) * ONE_HUNDRED / Math.max(maxMemoryInBytes(), 1)) > maxConfiguredSize;
+            case FREE_HEAP_PERCENTAGE:
+                return (availableMemoryInBytes() * ONE_HUNDRED / Math.max(maxMemoryInBytes(), 1)) < maxConfiguredSize;
             default:
                 throw new IllegalArgumentException("Not an appropriate max size policy [" + maxSizePolicy + ']');
         }
     }
 
-    protected boolean checkPerNodeEviction(RecordStore recordStore) {
-        double maxAllowedStoreSize = translatePerNodeSizeToPartitionSize(recordStore);
-        return recordStore.size() > maxAllowedStoreSize;
-    }
-
     /**
-     * Calculates and returns the expected maximum size of an evicted record-store
-     * when {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE PER_NODE} max-size-policy is used.
+     * Calculates and returns the expected maximum size of an evicted
+     * record-store when {@link
+     * com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE
+     * PER_NODE} max-size-policy is used.
      */
-    public double translatePerNodeSizeToPartitionSize(RecordStore recordStore) {
-        MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
-        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+    private double toPerPartitionMaxSize(int maxConfiguredSize, String mapName) {
+        int memberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
+        double translatedPartitionSize = (1D * maxConfiguredSize * memberCount / partitionCount);
 
-        int configuredMaxSize = maxSizeConfig.getSize();
-        int memberCount = nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR);
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-
-        double translatedPartitionSize = (1D * configuredMaxSize * memberCount / partitionCount);
         if (translatedPartitionSize < 1) {
             translatedPartitionSize = MIN_TRANSLATED_PARTITION_SIZE;
-            if (misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
-                int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
-                int newSize = MIN_TRANSLATED_PARTITION_SIZE * partitionCount / memberCount;
-                logger.warning(format("The max size configuration for map \"%s\" does not allow any data in the map. "
-                                + "Given the current cluster size of %d members with %d partitions, max size should be at "
-                                + "least %d. Map size is forced set to %d for backward compatibility", mapConfig.getName(),
-                        memberCount, partitionCount, minMaxSize, newSize));
-            }
+            logMisconfiguredPerNodeMaxSize(mapName, memberCount);
         }
+
         return translatedPartitionSize;
     }
 
-    protected boolean checkPerPartitionEviction(String mapName, MaxSizeConfig maxSizeConfig, int partitionId) {
-        final double maxSize = maxSizeConfig.getSize();
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
-        if (container == null) {
-            return false;
-        }
-        final int size = getRecordStoreSize(mapName, container);
-        return size > maxSize;
-    }
-
-    protected boolean checkHeapSizeEviction(String mapName, MaxSizeConfig maxSizeConfig) {
-        long usedHeapBytes = getUsedHeapInBytes(mapName);
-        if (usedHeapBytes == -1L) {
-            return false;
+    private void logMisconfiguredPerNodeMaxSize(String mapName, int memberCount) {
+        if (misconfiguredPerNodeMaxSizeWarningLogged.get()) {
+            return;
         }
 
-        int maxUsableHeapMegaBytes = maxSizeConfig.getSize();
-
-        return MEGABYTES.toBytes(maxUsableHeapMegaBytes) < usedHeapBytes;
+        if (misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
+            int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
+            int newSize = MIN_TRANSLATED_PARTITION_SIZE * partitionCount / memberCount;
+            logger.warning(format("The max size configuration for map \"%s\" does not allow any data in the map. "
+                            + "Given the current cluster size of %d members with %d partitions, max size should be at "
+                            + "least %d. Map size is forced set to %d for backward compatibility", mapName,
+                    memberCount, partitionCount, minMaxSize, newSize));
+        }
     }
 
-    protected boolean checkFreeHeapSizeEviction(MaxSizeConfig maxSizeConfig) {
-        long currentFreeHeapBytes = getAvailableMemory();
-        int minFreeHeapMegaBytes = maxSizeConfig.getSize();
-
-        return MEGABYTES.toBytes(minFreeHeapMegaBytes) > currentFreeHeapBytes;
-    }
-
-    protected boolean checkHeapPercentageEviction(String mapName, MaxSizeConfig maxSizeConfig) {
-        long usedHeapBytes = getUsedHeapInBytes(mapName);
-        if (usedHeapBytes == -1L) {
-            return false;
+    private long usedHeapInBytes(String mapName) {
+        long usedHeapInBytes = 0L;
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            usedHeapInBytes += getRecordStoreHeapCost(mapName, containers[partitionId]);
         }
 
-        double maxOccupiedHeapPercentage = maxSizeConfig.getSize();
-        long maxMemory = getMaxMemory();
-
-        if (maxMemory <= 0) {
-            return true;
-        }
-
-        return maxOccupiedHeapPercentage < (ONE_HUNDRED_PERCENT * usedHeapBytes / maxMemory);
-    }
-
-    protected boolean checkFreeHeapPercentageEviction(MaxSizeConfig maxSizeConfig) {
-        long totalMemory = getTotalMemory();
-        long freeMemory = getFreeMemory();
-        long maxMemory = getMaxMemory();
-        long availableMemory = freeMemory + (maxMemory - totalMemory);
-
-        boolean evictable;
-        double actualFreePercentage = 0;
-        double configuredFreePercentage = 0;
-
-        if (totalMemory <= 0 || freeMemory <= 0 || maxMemory <= 0 || availableMemory <= 0) {
-            evictable = true;
-        } else {
-            actualFreePercentage = ONE_HUNDRED_PERCENT * availableMemory / maxMemory;
-            configuredFreePercentage = maxSizeConfig.getSize();
-
-            evictable = configuredFreePercentage > actualFreePercentage;
-        }
-
-        if (evictable && logger.isFinestEnabled()) {
-            logger.finest(format("runtime.max=%s, runtime.used=%s, configuredFree%%=%.2f, actualFree%%=%.2f",
-                    toPrettyString(maxMemory),
-                    toPrettyString(totalMemory - freeMemory),
-                    configuredFreePercentage,
-                    actualFreePercentage));
-        }
-
-        return evictable;
-    }
-
-    protected long getTotalMemory() {
-        return memoryInfoAccessor.getTotalMemory();
-    }
-
-    protected long getFreeMemory() {
-        return memoryInfoAccessor.getFreeMemory();
-    }
-
-    protected long getMaxMemory() {
-        return memoryInfoAccessor.getMaxMemory();
-    }
-
-    protected long getAvailableMemory() {
-        final long totalMemory = getTotalMemory();
-        final long freeMemory = getFreeMemory();
-        final long maxMemory = getMaxMemory();
-        return freeMemory + (maxMemory - totalMemory);
-    }
-
-    protected long getUsedHeapInBytes(String mapName) {
-        long heapCost = 0L;
-        final List<Integer> partitionIds = findPartitionIds();
-        for (int partitionId : partitionIds) {
-            final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
-            if (container == null) {
-                continue;
-            }
-            heapCost += getRecordStoreHeapCost(mapName, container);
-        }
-
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        if (!mapContainer.getMapConfig().isNearCacheEnabled()) {
-            return heapCost;
-        }
-
-        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         NearCache nearCache = mapNearCacheManager.getNearCache(mapName);
-        NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
-        heapCost += nearCacheStats.getOwnedEntryMemoryCost();
-
-        return heapCost;
-    }
-
-    protected int getRecordStoreSize(String mapName, PartitionContainer partitionContainer) {
-        final RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(mapName);
-        if (existingRecordStore == null) {
-            return 0;
+        if (nearCache != null) {
+            NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
+            usedHeapInBytes += nearCacheStats.getOwnedEntryMemoryCost();
         }
-        return existingRecordStore.size();
+
+        return usedHeapInBytes;
     }
 
-    protected long getRecordStoreHeapCost(String mapName, PartitionContainer partitionContainer) {
-        final RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(mapName);
+    private long getRecordStoreHeapCost(String mapName, PartitionContainer container) {
+        RecordStore existingRecordStore = container.getExistingRecordStore(mapName);
         if (existingRecordStore == null) {
             return 0L;
         }
         return existingRecordStore.getOwnedEntryCost();
     }
 
-    protected List<Integer> findPartitionIds() {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final IPartitionService partitionService = nodeEngine.getPartitionService();
-        final int partitionCount = partitionService.getPartitionCount();
-        List<Integer> partitionIds = null;
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            if (isOwnerOrBackup(partitionId)) {
-                if (partitionIds == null) {
-                    partitionIds = new ArrayList<Integer>();
-                }
-                partitionIds.add(partitionId);
-            }
-        }
-        return partitionIds == null ? Collections.<Integer>emptyList() : partitionIds;
+    private long totalMemoryInBytes() {
+        return memoryInfoAccessor.getTotalMemory();
     }
 
-    protected boolean isOwnerOrBackup(int partitionId) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final IPartitionService partitionService = nodeEngine.getPartitionService();
-        final IPartition partition = partitionService.getPartition(partitionId, false);
-        final Address thisAddress = nodeEngine.getThisAddress();
-        return partition.isOwnerOrBackup(thisAddress);
+    private long freeMemoryInBytes() {
+        return memoryInfoAccessor.getFreeMemory();
+    }
+
+    private long maxMemoryInBytes() {
+        return memoryInfoAccessor.getMaxMemory();
+    }
+
+    private long availableMemoryInBytes() {
+        return freeMemoryInBytes() + maxMemoryInBytes() - totalMemoryInBytes();
     }
 }
-
-

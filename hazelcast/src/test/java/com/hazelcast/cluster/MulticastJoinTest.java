@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,28 +24,37 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MulticastJoinTest extends AbstractJoinTest {
 
+    @Rule
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
+
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -74,7 +83,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
 
         InterfacesConfig interfaces = networkConfig.getInterfaces();
         interfaces.setEnabled(true);
-        interfaces.addInterface("127.0.0.1");
+        interfaces.addInterface(pickLocalInetAddress().getHostAddress());
 
         testJoin(config);
     }
@@ -91,11 +100,11 @@ public class MulticastJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenDifferentGroupNames() throws Exception {
+    public void test_whenDifferentClusterNames() throws Exception {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config1.getGroupConfig().setName("group1");
+        config1.setClusterName("cluster1");
         config1.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
@@ -103,7 +112,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
         Config config2 = new Config();
         config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config2.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config2.getGroupConfig().setName("group2");
+        config2.setClusterName("cluster2");
         config2.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
@@ -202,4 +211,24 @@ public class MulticastJoinTest extends AbstractJoinTest {
         assertEquals(2, numNodesWithTwoMembers);
         assertEquals(2, numNodesThatKnowAboutH3);
     }
+
+    private static InetAddress pickLocalInetAddress() throws IOException {
+        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+        while (networkInterfaces.hasMoreElements()) {
+            NetworkInterface ni = networkInterfaces.nextElement();
+            if (!ni.isUp() || ni.isVirtual() || ni.isLoopback() || !ni.supportsMulticast()) {
+                continue;
+            }
+            Enumeration<InetAddress> e = ni.getInetAddresses();
+            while (e.hasMoreElements()) {
+                InetAddress inetAddress = e.nextElement();
+                if (inetAddress instanceof Inet6Address) {
+                    continue;
+                }
+                return inetAddress;
+            }
+        }
+        return InetAddress.getLocalHost();
+    }
+
 }

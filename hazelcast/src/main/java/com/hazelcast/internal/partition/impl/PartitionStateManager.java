@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,23 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.PartitionListener;
+import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
@@ -69,17 +69,18 @@ public class PartitionStateManager {
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
-    public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService, PartitionListener listener) {
+    public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
         this.logger = node.getLogger(getClass());
 
         this.partitionService = partitionService;
-        partitionCount = partitionService.getPartitionCount();
+        this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
 
-        Address thisAddress = node.getThisAddress();
+        PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(partitionService);
+        PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int i = 0; i < partitionCount; i++) {
-            this.partitions[i] = new InternalPartitionImpl(i, listener, thisAddress);
+            this.partitions[i] = new InternalPartitionImpl(i, interceptor, localReplica);
         }
 
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig(),
@@ -98,13 +99,8 @@ public class PartitionStateManager {
         return count;
     }
 
-    private Collection<MemberGroup> createMemberGroups(final Set<Address> excludedAddresses) {
-        MemberSelector exclude = new MemberSelector() {
-            @Override
-            public boolean select(Member member) {
-                return !excludedAddresses.contains(member.getAddress());
-            }
-        };
+    private Collection<MemberGroup> createMemberGroups(final Set<Member> excludedMembers) {
+        MemberSelector exclude = member -> !excludedMembers.contains(member);
         final MemberSelector selector = MemberSelectors.and(DATA_MEMBER_SELECTOR, exclude);
         final Collection<Member> members = node.getClusterService().getMembers(selector);
         return memberGroupFactory.createMemberGroups(members);
@@ -122,26 +118,26 @@ public class PartitionStateManager {
      * <li>the cluster state allows migrations. See {@link ClusterState#isMigrationAllowed()}</li>
      * </ul>
      * This will also set the manager state to initialized (if not already) and invoke the
-     * {@link PartitionListener#replicaChanged(PartitionReplicaChangeEvent)} for all changed replicas which
+     * {@link DefaultPartitionReplicaInterceptor} for all changed replicas which
      * will cancel replica synchronizations and increase the partition state version.
      *
-     * @param excludedAddresses members which are to be excluded from the new layout
+     * @param excludedMembers members which are to be excluded from the new layout
      * @return if the new partition was assigned
      * @throws HazelcastException if the partition state generator failed to arrange the partitions
      */
-    boolean initializePartitionAssignments(Set<Address> excludedAddresses) {
+    boolean initializePartitionAssignments(Set<Member> excludedMembers) {
         if (!isPartitionAssignmentAllowed()) {
             return false;
         }
 
-        Collection<MemberGroup> memberGroups = createMemberGroups(excludedAddresses);
+        Collection<MemberGroup> memberGroups = createMemberGroups(excludedMembers);
         if (memberGroups.isEmpty()) {
             logger.warning("No member group is available to assign partition ownership...");
             return false;
         }
 
         logger.info("Initializing cluster partition table arrangement...");
-        Address[][] newState = partitionStateGenerator.arrange(memberGroups, partitions);
+        PartitionReplica[][] newState = partitionStateGenerator.arrange(memberGroups, partitions);
         if (newState.length != partitionCount) {
             throw new HazelcastException("Invalid partition count! "
                     + "Expected: " + partitionCount + ", Actual: " + newState.length);
@@ -160,8 +156,8 @@ public class PartitionStateManager {
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];
-            Address[] replicas = newState[partitionId];
-            partition.setReplicaAddresses(replicas);
+            PartitionReplica[] replicas = newState[partitionId];
+            partition.setReplicas(replicas);
         }
         setInitialized();
         return true;
@@ -203,15 +199,17 @@ public class PartitionStateManager {
         }
         logger.info("Setting cluster partition table...");
         boolean foundReplica = false;
+        PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];
-            Address[] replicas = partitionTable.getAddresses(partitionId);
+            PartitionReplica[] replicas = partitionTable.getReplicas(partitionId);
             if (!foundReplica && replicas != null) {
                 for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                     foundReplica |= replicas[i] != null;
                 }
             }
-            partition.setInitialReplicaAddresses(replicas);
+            partition.reset(localReplica);
+            partition.setInitialReplicas(replicas);
         }
         stateVersion.set(partitionTable.getVersion());
         if (foundReplica) {
@@ -245,23 +243,22 @@ public class PartitionStateManager {
      * Checks all replicas for all partitions. If the cluster service does not contain the member for any
      * address in the partition table, it will remove the address from the partition.
      *
-     * @see ClusterService#getMember(Address)
+     * @see ClusterService#getMember(Address, String)
      */
-    void removeUnknownAddresses() {
+    void removeUnknownMembers() {
         ClusterServiceImpl clusterService = node.getClusterService();
 
         for (InternalPartitionImpl partition : partitions) {
             for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
-                Address address = partition.getReplicaAddress(i);
-                if (address == null) {
+                PartitionReplica replica = partition.getReplica(i);
+                if (replica == null) {
                     continue;
                 }
 
-                MemberImpl member = clusterService.getMember(address);
-                if (member == null) {
-                    partition.setReplicaAddress(i, null);
+                if (clusterService.getMember(replica.address(), replica.uuid()) == null) {
+                    partition.setReplica(i, null);
                     if (logger.isFinestEnabled()) {
-                        logger.finest("PartitionId=" + partition.getPartitionId() + " " + address
+                        logger.finest("PartitionId=" + partition.getPartitionId() + " " + replica
                                 + " is removed from replica index: " + i + ", partition: " + partition);
                     }
                 }
@@ -269,17 +266,14 @@ public class PartitionStateManager {
         }
     }
 
-    boolean isAbsentInPartitionTable(Address address) {
+    boolean isAbsentInPartitionTable(Member member) {
+        PartitionReplica replica = PartitionReplica.from(member);
         for (InternalPartitionImpl partition : partitions) {
-            if (partition.isOwnerOrBackup(address)) {
+            if (partition.isOwnerOrBackup(replica)) {
                 return false;
             }
         }
         return true;
-    }
-
-    boolean isPresentInPartitionTable(Address address) {
-        return !isAbsentInPartitionTable(address);
     }
 
     InternalPartition[] getPartitions() {
@@ -288,10 +282,10 @@ public class PartitionStateManager {
 
     /** Returns a copy of the current partition table. */
     public InternalPartition[] getPartitionsCopy() {
-        NopPartitionListener listener = new NopPartitionListener();
+        NopPartitionReplicaInterceptor interceptor = new NopPartitionReplicaInterceptor();
         InternalPartition[] result = new InternalPartition[partitions.length];
         for (int i = 0; i < partitionCount; i++) {
-            result[i] = partitions[i].copy(listener);
+            result[i] = partitions[i].copy(interceptor);
         }
         return result;
     }
@@ -300,12 +294,12 @@ public class PartitionStateManager {
         return partitions[partitionId];
     }
 
-    Address[][] repartition(Set<Address> excludedAddresses, Collection<Integer> partitionInclusionSet) {
+    PartitionReplica[][] repartition(Set<Member> excludedMembers, Collection<Integer> partitionInclusionSet) {
         if (!initialized) {
             return null;
         }
-        Collection<MemberGroup> memberGroups = createMemberGroups(excludedAddresses);
-        Address[][] newState = partitionStateGenerator.arrange(memberGroups, partitions, partitionInclusionSet);
+        Collection<MemberGroup> memberGroups = createMemberGroups(excludedMembers);
+        PartitionReplica[][] newState = partitionStateGenerator.arrange(memberGroups, partitions, partitionInclusionSet);
 
         if (newState == null) {
             if (logger.isFinestEnabled()) {
@@ -316,24 +310,28 @@ public class PartitionStateManager {
         return newState;
     }
 
-    public void setMigratingFlag(int partitionId) {
+    public boolean trySetMigratingFlag(int partitionId) {
         if (logger.isFinestEnabled()) {
             logger.finest("Setting partition-migrating flag. partitionId=" + partitionId);
         }
-        partitions[partitionId].setMigrating(true);
+        return partitions[partitionId].setMigrating();
     }
 
     public void clearMigratingFlag(int partitionId) {
         if (logger.isFinestEnabled()) {
             logger.finest("Clearing partition-migrating flag. partitionId=" + partitionId);
         }
-        partitions[partitionId].setMigrating(false);
+        partitions[partitionId].resetMigrating();
     }
 
-    /** Sets the replica addresses for the {@code partitionId}. */
-    void updateReplicaAddresses(int partitionId, Address[] replicaAddresses) {
+    public boolean isMigrating(int partitionId) {
+        return partitions[partitionId].isMigrating();
+    }
+
+    /** Sets the replica members for the {@code partitionId}. */
+    void updateReplicas(int partitionId, PartitionReplica[] replicas) {
         InternalPartitionImpl partition = partitions[partitionId];
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(replicas);
     }
 
     // called under partition service lock
@@ -346,14 +344,11 @@ public class PartitionStateManager {
     }
 
     void incrementVersion(int delta) {
-        if (delta >= 0) {
-            stateVersion.addAndGet(delta);
-        } else {
-            logger.warning("partition table version not incremented by " + delta);
-        }
+        assert delta > 0 : "Delta: " + delta;
+        stateVersion.addAndGet(delta);
     }
 
-    public void incrementVersion() {
+    void incrementVersion() {
         stateVersion.incrementAndGet();
     }
 
@@ -373,24 +368,29 @@ public class PartitionStateManager {
     void reset() {
         initialized = false;
         stateVersion.set(0);
+        // local member uuid changes during ClusterService reset
+        PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (InternalPartitionImpl partition : partitions) {
-            partition.reset();
+            partition.reset(localReplica);
         }
     }
 
-    int replaceAddress(Address oldAddress, Address newAddress) {
+    int replaceMember(Member oldMember, Member newMember) {
         if (!initialized) {
             return 0;
         }
+        PartitionReplica oldReplica = PartitionReplica.from(oldMember);
+        PartitionReplica newReplica = PartitionReplica.from(newMember);
+
         int count = 0;
         for (InternalPartitionImpl partition : partitions) {
-            if (partition.replaceAddress(oldAddress, newAddress) > -1) {
+            if (partition.replaceReplica(oldReplica, newReplica) > -1) {
                 count++;
             }
         }
         if (count > 0) {
             node.getNodeExtension().onPartitionStateChange();
-            logger.info("Replaced " + oldAddress + " with " + newAddress + " in partition table in "
+            logger.info("Replaced " + oldMember + " with " + newMember + " in partition table in "
                     + count + " partitions.");
         }
         return count;
@@ -398,7 +398,7 @@ public class PartitionStateManager {
 
     PartitionTableView getPartitionTable() {
         if (!initialized) {
-            return new PartitionTableView(new Address[partitions.length][InternalPartition.MAX_REPLICA_COUNT], 0);
+            return new PartitionTableView(new PartitionReplica[partitions.length][InternalPartition.MAX_REPLICA_COUNT], 0);
         }
         return new PartitionTableView(partitions, stateVersion.get());
     }

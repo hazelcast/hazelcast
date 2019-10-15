@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.hazelcast.internal.util.hashslot.SlotAssignmentResult;
 
 import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_CAPACITY;
 import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_LOAD_FACTOR;
-import static com.hazelcast.util.HashUtil.fastLongMix;
-import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.internal.util.HashUtil.fastLongMix;
+import static com.hazelcast.internal.util.QuickMath.modPowerOfTwo;
 
 /**
  * Implementation of {@link HashSlotArray8byteKey} as a restriction of {@link HashSlotArrayBase}

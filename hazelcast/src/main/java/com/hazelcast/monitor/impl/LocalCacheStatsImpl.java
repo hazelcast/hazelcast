@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,19 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.monitor.LocalCacheStats;
 
-import static com.hazelcast.util.JsonUtil.getFloat;
-import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getFloat;
+import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 /**
  * Default implementation of {@link com.hazelcast.monitor.LocalCacheStats}
- * <p/>
+ * <p>
  * This class just provides serialization/deserialization methods to be used in
  * {@link com.hazelcast.monitor.MemberState} implementation while sending/receiving statistics to/from
  * Management center.
- * <p/>
+ * <p>
  * There are no calculations are done in this class, all statistics gathered from
  * {@link com.hazelcast.cache.CacheStatistics}
- * <p/>
+ * <p>
  * No setter methods are provided, all class fields supposed to be populated either
  * by a {@link com.hazelcast.cache.CacheStatistics} or while deserialization process
  * ({@link #fromJson(com.hazelcast.internal.json.JsonObject)}.

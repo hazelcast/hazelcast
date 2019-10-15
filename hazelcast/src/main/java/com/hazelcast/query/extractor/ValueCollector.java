@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@
 package com.hazelcast.query.extractor;
 
 /**
- * Enables collecting values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
+ * Enables collecting values extracted in a {@link com.hazelcast.query.extractor.ValueExtractor}
  *
  * @param <T> type of the collected value
  */
-public abstract class ValueCollector<T> {
+@FunctionalInterface
+public interface ValueCollector<T> {
 
     /**
      * Collects a value passed as an argument
      *
      * @param value value to be collected
      */
-    public abstract void addObject(T value);
+    void addObject(T value);
 
 }

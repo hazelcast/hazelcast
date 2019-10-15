@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.config.Config;
+import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -32,19 +35,22 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
 
     private static final String TYPE_NAME = "ReplicatedMap";
 
     private TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(1);
-    private MBeanDataHolder holder = new MBeanDataHolder(hazelcastInstanceFactory);
+    private MBeanDataHolder holder;
 
     private ReplicatedMap<String, String> replicatedMap;
     private String objectName;
 
     @Before
     public void setUp() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.JMX_UPDATE_INTERVAL_SECONDS.getName(), "1");
+        holder = new MBeanDataHolder(hazelcastInstanceFactory, config);
         replicatedMap = holder.getHz().getReplicatedMap("replicatedMap");
         objectName = replicatedMap.getName();
 
@@ -137,6 +143,36 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
         assertEquals("Empty", values);
         assertEquals("Empty", entries);
         assertEquals(0, size);
+    }
+
+    @Test
+    public void testAttributeHitsAndOwnedEntryCountUpdatedAfterInterval()
+            throws Exception {
+        String firstKey = "firstKey";
+        String secondKey = "secondKey";
+        replicatedMap.put(firstKey, "firstValue");
+        replicatedMap.get(firstKey);
+        final String localHitsName = "localHits";
+        final String localOwnedEntryCountName = "localOwnedEntryCount";
+        long localHits = getLongAttribute(localHitsName);
+        long localEntryCount = getLongAttribute(localOwnedEntryCountName);
+        replicatedMap.get(firstKey);
+        replicatedMap.put(secondKey, "secondValue");
+        long localHitsNotUpdated = getLongAttribute(localHitsName);
+        long localEntryCountNotUpdated = getLongAttribute(localOwnedEntryCountName);
+        assertEquals(1, localHits);
+        assertEquals(1, localHitsNotUpdated);
+        assertEquals(1, localEntryCount);
+        assertEquals(1, localEntryCountNotUpdated);
+        sleepAtLeastSeconds(1);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(2, getLongAttribute(localHitsName).longValue());
+                assertEquals(2, getLongAttribute(localOwnedEntryCountName).longValue());
+            }
+        });
     }
 
     private String getStringAttribute(String name) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.test;
 
+import org.junit.runner.Runner;
+import org.junit.runners.model.InitializationError;
 import org.junit.runners.parameterized.ParametersRunnerFactory;
 
 /**
@@ -27,7 +29,8 @@ import org.junit.runners.parameterized.ParametersRunnerFactory;
 public class HazelcastSerialParametersRunnerFactory extends HazelcastParametersRunnerFactory {
 
     @Override
-    protected boolean isParallel(Class<?> testClass) {
-        return false;
+    protected Runner getClassRunner(Class<?> testClass, Object[] parameters, String testName)
+            throws InitializationError {
+        return new HazelcastSerialClassRunner(testClass, parameters, testName);
     }
 }

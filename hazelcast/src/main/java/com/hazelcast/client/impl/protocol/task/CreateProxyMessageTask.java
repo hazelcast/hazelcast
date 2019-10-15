@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,20 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 
 import java.security.Permission;
 import java.util.Collection;
 
-public class CreateProxyMessageTask extends AbstractInvocationMessageTask<ClientCreateProxyCodec.RequestParameters> {
+public class CreateProxyMessageTask extends AbstractInvocationMessageTask<ClientCreateProxyCodec.RequestParameters>
+        implements BlockingMessageTask {
 
     public CreateProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,7 +39,7 @@ public class CreateProxyMessageTask extends AbstractInvocationMessageTask<Client
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = nodeEngine.getOperationService();
         return operationService.createInvocationBuilder(getServiceName(), op, parameters.target).setTryCount(1);
     }
 
@@ -49,7 +50,9 @@ public class CreateProxyMessageTask extends AbstractInvocationMessageTask<Client
 
     @Override
     protected ClientCreateProxyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientCreateProxyCodec.decodeRequest(clientMessage);
+        parameters = ClientCreateProxyCodec.decodeRequest(clientMessage);
+        parameters.target = clientEngine.memberAddressOf(parameters.target);
+        return parameters;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ package com.hazelcast.topic;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,11 +42,11 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * This test creates a cluster of HazelcastInstances and a bunch of Topics.
- * <p/>
+ * <p>
  * On each instance, there is a listener for each topic.
- * <p/>
+ * <p>
  * There is a bunch of threads, that selects a random instance with a random topic to publish a message (int) on.
- * <p/>
+ * <p>
  * To verify that everything is fine, we expect that the total messages send by each topic is the same as the total
  * sum of messages receives by the topic listeners.
  */

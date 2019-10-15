@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,10 @@ public final class MBeanDataHolder {
      * Initialize with new hazelcast instance and MBean server
      */
     public MBeanDataHolder(TestHazelcastInstanceFactory factory) {
-        Config config = new Config();
+       this(factory, new Config());
+    }
+
+    public MBeanDataHolder(TestHazelcastInstanceFactory factory, Config config) {
         config.setInstanceName("hz:\",=*?" + ID_GEN.getAndIncrement());
         config.setProperty(GroupProperty.ENABLE_JMX.getName(), "true");
         hz = factory.newHazelcastInstance(config);

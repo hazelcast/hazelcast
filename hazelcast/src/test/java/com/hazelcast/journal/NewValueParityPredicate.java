@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package com.hazelcast.journal;
 
-import com.hazelcast.util.function.Predicate;
-
 import java.io.Serializable;
+import java.util.function.Predicate;
 
 /**
  * Event journal event predicate expecting an integer event value and

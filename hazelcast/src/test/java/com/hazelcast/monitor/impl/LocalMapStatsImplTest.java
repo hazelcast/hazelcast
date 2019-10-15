@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalMapStatsImplTest {
 
     private LocalMapStatsImpl localMapStats;
@@ -56,6 +56,8 @@ public class LocalMapStatsImplTest {
 
         localMapStats.incrementPutLatencyNanos(MILLISECONDS.toNanos(5631));
         localMapStats.incrementPutLatencyNanos(MILLISECONDS.toNanos(1));
+        localMapStats.incrementSetLatencyNanos(MILLISECONDS.toNanos(8721));
+        localMapStats.incrementSetLatencyNanos(MILLISECONDS.toNanos(1));
         localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(1233));
         localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(5));
         localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(9));
@@ -95,12 +97,15 @@ public class LocalMapStatsImplTest {
 
         assertEquals(11, localMapStats.total());
         assertEquals(2, localMapStats.getPutOperationCount());
+        assertEquals(2, localMapStats.getSetOperationCount());
         assertEquals(3, localMapStats.getGetOperationCount());
         assertEquals(1, localMapStats.getRemoveOperationCount());
         assertEquals(5632, localMapStats.getTotalPutLatency());
+        assertEquals(8722, localMapStats.getTotalSetLatency());
         assertEquals(1247, localMapStats.getTotalGetLatency());
         assertEquals(1238, localMapStats.getTotalRemoveLatency());
         assertEquals(5631, localMapStats.getMaxPutLatency());
+        assertEquals(8721, localMapStats.getMaxSetLatency());
         assertEquals(1233, localMapStats.getMaxGetLatency());
         assertEquals(1238, localMapStats.getMaxRemoveLatency());
         assertEquals(5, localMapStats.getOtherOperationCount());
@@ -136,12 +141,15 @@ public class LocalMapStatsImplTest {
 
         assertEquals(11, deserialized.total());
         assertEquals(2, deserialized.getPutOperationCount());
+        assertEquals(2, deserialized.getSetOperationCount());
         assertEquals(3, deserialized.getGetOperationCount());
         assertEquals(1, deserialized.getRemoveOperationCount());
         assertEquals(5632, deserialized.getTotalPutLatency());
+        assertEquals(8722, deserialized.getTotalSetLatency());
         assertEquals(1247, deserialized.getTotalGetLatency());
         assertEquals(1238, deserialized.getTotalRemoveLatency());
         assertEquals(5631, deserialized.getMaxPutLatency());
+        assertEquals(8721, deserialized.getMaxSetLatency());
         assertEquals(1233, deserialized.getMaxGetLatency());
         assertEquals(1238, deserialized.getMaxRemoveLatency());
         assertEquals(5, deserialized.getOtherOperationCount());
@@ -155,5 +163,81 @@ public class LocalMapStatsImplTest {
         assertEquals(5, deserialized.getIndexedQueryCount());
         assertNotNull(deserialized.getIndexStats());
         assertEquals(1, deserialized.getIndexStats().size());
+    }
+
+    @Test
+    public void testToString() {
+        String printed = localMapStats.toString();
+        assertTrue(printed.contains("lastAccessTime"));
+        assertTrue(printed.contains("lastUpdateTime"));
+        assertTrue(printed.contains("hits=12314"));
+        assertTrue(printed.contains("numberOfOtherOperations=5"));
+        assertTrue(printed.contains("numberOfEvents=2"));
+
+        assertTrue(printed.contains("getCount=3"));
+        assertTrue(printed.contains("putCount=2"));
+        assertTrue(printed.contains("setCount=2"));
+        assertTrue(printed.contains("removeCount=1"));
+
+        assertTrue(printed.contains("totalGetLatencies=1247"));
+        assertTrue(printed.contains("totalPutLatencies=5632"));
+        assertTrue(printed.contains("totalSetLatencies=8722"));
+        assertTrue(printed.contains("totalRemoveLatencies=1238"));
+
+        assertTrue(printed.contains("maxGetLatency=1233"));
+        assertTrue(printed.contains("maxPutLatency=5631"));
+        assertTrue(printed.contains("maxSetLatency=8721"));
+        assertTrue(printed.contains("maxRemoveLatency=1238"));
+
+        assertTrue(printed.contains("ownedEntryCount=5"));
+        assertTrue(printed.contains("backupEntryCount=3"));
+        assertTrue(printed.contains("backupCount=4"));
+        assertTrue(printed.contains("ownedEntryMemoryCost=1234"));
+        assertTrue(printed.contains("backupEntryMemoryCost=4321"));
+        assertTrue(printed.contains("creationTime"));
+        assertTrue(printed.contains("lockedEntryCount=1231"));
+        assertTrue(printed.contains("dirtyEntryCount=4252"));
+        assertTrue(printed.contains("heapCost=7461762"));
+        assertTrue(printed.contains("merkleTreesCost=0"));
+        assertTrue(printed.contains("nearCacheStats"));
+        assertTrue(printed.contains("queryCount=10"));
+        assertTrue(printed.contains("indexedQueryCount=5"));
+        assertTrue(printed.contains("indexStats"));
+    }
+
+    @Test
+    public void lowLatenciesRoundedToOneMillisecond() {
+        LocalMapStatsImpl stats = new LocalMapStatsImpl();
+        stats.incrementGetLatencyNanos(1);
+        stats.incrementPutLatencyNanos(1000);
+        stats.incrementSetLatencyNanos(10000);
+        stats.incrementRemoveLatencyNanos(MILLISECONDS.toNanos(1) + 100);
+
+        assertEquals(1, stats.getTotalGetLatency());
+        assertEquals(1, stats.getMaxGetLatency());
+        assertEquals(1, stats.getTotalPutLatency());
+        assertEquals(1, stats.getMaxPutLatency());
+        assertEquals(1, stats.getTotalSetLatency());
+        assertEquals(1, stats.getMaxSetLatency());
+        assertEquals(1, stats.getTotalRemoveLatency());
+        assertEquals(1, stats.getMaxRemoveLatency());
+    }
+
+    @Test
+    public void zeroLatenciesRemainZeroAfterConversion() {
+        LocalMapStatsImpl stats = new LocalMapStatsImpl();
+        stats.incrementGetLatencyNanos(0);
+        stats.incrementPutLatencyNanos(0);
+        stats.incrementSetLatencyNanos(0);
+        stats.incrementRemoveLatencyNanos(0);
+
+        assertEquals(0, stats.getTotalGetLatency());
+        assertEquals(0, stats.getMaxGetLatency());
+        assertEquals(0, stats.getTotalPutLatency());
+        assertEquals(0, stats.getMaxPutLatency());
+        assertEquals(0, stats.getTotalSetLatency());
+        assertEquals(0, stats.getMaxSetLatency());
+        assertEquals(0, stats.getTotalRemoveLatency());
+        assertEquals(0, stats.getMaxRemoveLatency());
     }
 }

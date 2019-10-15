@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
-import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.internal.jmx.ProxyServiceMBean}.

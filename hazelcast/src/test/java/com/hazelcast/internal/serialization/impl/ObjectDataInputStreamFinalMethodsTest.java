@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,18 +35,20 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Random;
 
+import static com.hazelcast.internal.util.JavaVersion.JAVA_11;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ObjectDataInputStream.class})
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ObjectDataInputStreamFinalMethodsTest {
 
     static final byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -59,6 +62,7 @@ public class ObjectDataInputStreamFinalMethodsTest {
 
     @Before
     public void before() throws Exception {
+        assumeTrue("This test uses PowerMock Whitebox.setInternalState which fails in JDK >= 12", JavaVersion.isAtMost(JAVA_11));
         byteOrder = BIG_ENDIAN;
         mockSerializationService = mock(InternalSerializationService.class);
         when(mockSerializationService.getByteOrder()).thenReturn(byteOrder);
@@ -299,10 +303,9 @@ public class ObjectDataInputStreamFinalMethodsTest {
         assertArrayEquals(new String[]{" "}, bytes);
     }
 
-    @Test
-    public void testReadLine() throws Exception {
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadLine() {
         inMockedDis.readLine();
-        verify(mockedDis).readLine();
     }
 
     @Test
@@ -344,7 +347,7 @@ public class ObjectDataInputStreamFinalMethodsTest {
 
     private class InitableByteArrayInputStream extends ByteArrayInputStream {
 
-        public InitableByteArrayInputStream(byte[] buf) {
+        InitableByteArrayInputStream(byte[] buf) {
             super(buf);
         }
 

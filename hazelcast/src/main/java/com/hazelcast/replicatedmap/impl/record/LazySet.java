@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class LazySet<K, V, R> implements Set<R> {
 
     @Override
     public Object[] toArray() {
-        List<Object> result = new ArrayList<Object>(storage.values().size());
+        List<Object> result = new ArrayList<>(storage.values().size());
         for (R r : this) {
             // we cannot use addAll() here, since it results in StackOverflowError
             //noinspection UseBulkOperation
@@ -69,7 +69,7 @@ class LazySet<K, V, R> implements Set<R> {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
-        List<Object> result = new ArrayList<Object>(storage.values().size());
+        List<Object> result = new ArrayList<>(storage.values().size());
         for (R r : this) {
             // we cannot use addAll() here, since it results in StackOverflowError
             //noinspection UseBulkOperation

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,28 +20,33 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
 
 public class CacheDestroyMessageTask
-        extends AbstractCallableMessageTask<CacheDestroyCodec.RequestParameters> {
+        extends AbstractInvocationMessageTask<CacheDestroyCodec.RequestParameters> {
 
     public CacheDestroyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        InternalOperationService operationService = nodeEngine.getOperationService();
-        CacheDestroyOperation cacheDestroyOperation = new CacheDestroyOperation(parameters.name);
-        InvocationBuilder builder = operationService.createInvocationBuilder(CacheService.SERVICE_NAME, cacheDestroyOperation,
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
+
+        return operationService.createInvocationBuilder(CacheService.SERVICE_NAME, op,
                 nodeEngine.getThisAddress());
-        return builder.invoke().join();
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return new CacheDestroyOperation(parameters.name);
     }
 
     @Override

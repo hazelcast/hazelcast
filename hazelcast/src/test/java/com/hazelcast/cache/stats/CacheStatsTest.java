@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheStatsTest extends CacheTestSupport {
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -152,7 +152,7 @@ public class CacheStatsTest extends CacheTestSupport {
         final long ENTRY_COUNT = 100;
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
-            cache.putAsync(i, "Value-" + i).get();
+            cache.putAsync(i, "Value-" + i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -245,7 +245,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
         assertEqualsEventually(new Callable<Long>() {
             @Override
@@ -309,7 +309,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
-            cache.removeAsync(i).get();
+            cache.removeAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -385,7 +385,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < GET_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -449,7 +449,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         for (int i = 0; i < GET_COUNT; i++) {
-            cache.getAsync(i).get();
+            cache.getAsync(i).toCompletableFuture().get();
         }
 
         assertEqualsEventually(new Callable<Long>() {
@@ -736,7 +736,9 @@ public class CacheStatsTest extends CacheTestSupport {
                 .setBackupCount(1)
                 .setStatisticsEnabled(true)
                 .setEvictionConfig(
-                        new EvictionConfig(maxEntryCount, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU)
+                        new EvictionConfig().setSize(maxEntryCount)
+                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                                .setEvictionPolicy(EvictionPolicy.LFU)
                 );
 
         Config config = new Config();

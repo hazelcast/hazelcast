@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,30 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+
 public class ClientPartitionListenerService {
 
     private final Map<ClientEndpoint, Long> partitionListeningEndpoints = new ConcurrentHashMap<ClientEndpoint, Long>();
     private final NodeEngineImpl nodeEngine;
+    private final boolean advancedNetworkConfigEnabled;
 
     ClientPartitionListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
     }
 
     public void onPartitionStateChange() {
@@ -54,12 +59,9 @@ public class ClientPartitionListenerService {
 
     private ClientMessage getPartitionsMessage() {
         PartitionTableView partitionTableView = nodeEngine.getPartitionService().createPartitionTableView();
-        Collection<Map.Entry<Address, List<Integer>>> partitions = getPartitions(partitionTableView);
+        Map<Address, List<Integer>> partitions = getPartitions(partitionTableView);
         int partitionStateVersion = partitionTableView.getVersion();
-        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent(partitions, partitionStateVersion);
-        clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-        clientMessage.setVersion(ClientMessage.VERSION);
-        return clientMessage;
+        return ClientAddPartitionListenerCodec.encodePartitionsEvent(partitions.entrySet(), partitionStateVersion);
     }
 
     public void registerPartitionListener(ClientEndpoint clientEndpoint, long correlationId) {
@@ -74,24 +76,48 @@ public class ClientPartitionListenerService {
         partitionListeningEndpoints.remove(clientEndpoint);
     }
 
-    public Collection<Map.Entry<Address, List<Integer>>> getPartitions(PartitionTableView partitionTableView) {
+    /**
+     * If any partition does not have an owner, this method returns empty collection
+     *
+     * @param partitionTableView will be converted to address-&gt;partitions mapping
+     * @return address-&gt;partitions mapping, where address is the client address of the member
+     */
+    public Map<Address, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
 
         Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
 
         int partitionCount = partitionTableView.getLength();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            Address owner = partitionTableView.getAddress(partitionId, 0);
+            PartitionReplica owner = partitionTableView.getReplica(partitionId, 0);
             if (owner == null) {
                 partitionsMap.clear();
-                return partitionsMap.entrySet();
+                return partitionsMap;
             }
-            List<Integer> indexes = partitionsMap.get(owner);
+            Address clientOwnerAddress = clientAddressOf(owner.address());
+            if (clientOwnerAddress == null) {
+                partitionsMap.clear();
+                return partitionsMap;
+            }
+            List<Integer> indexes = partitionsMap.get(clientOwnerAddress);
             if (indexes == null) {
                 indexes = new LinkedList<Integer>();
-                partitionsMap.put(owner, indexes);
+                partitionsMap.put(clientOwnerAddress, indexes);
             }
             indexes.add(partitionId);
         }
-        return partitionsMap.entrySet();
+        return partitionsMap;
+    }
+
+    private Address clientAddressOf(Address memberAddress) {
+        if (!advancedNetworkConfigEnabled) {
+            return memberAddress;
+        }
+        Member member = nodeEngine.getClusterService().getMember(memberAddress);
+        if (member != null) {
+            return member.getAddressMap().get(CLIENT);
+        } else {
+            // partition table contains stale entries for members which are not in the member list
+            return null;
+        }
     }
 }

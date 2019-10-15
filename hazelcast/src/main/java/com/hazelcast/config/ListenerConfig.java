@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,20 +23,19 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.EventListener;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
- * Contains the configuration for an {@link EventListener}. The configuration contains either the classname
- * of the EventListener implementation, or the actual EventListener instance.
+ * Contains the configuration for an {@link EventListener}. The configuration
+ * contains either the classname of the EventListener implementation, or the
+ * actual EventListener instance.
  */
 public class ListenerConfig implements IdentifiedDataSerializable {
 
     protected String className;
 
     protected EventListener implementation;
-
-    private ListenerConfigReadOnly readOnly;
 
     /**
      * Creates a ListenerConfig without className/implementation.
@@ -67,19 +66,6 @@ public class ListenerConfig implements IdentifiedDataSerializable {
      */
     public ListenerConfig(EventListener implementation) {
         this.implementation = isNotNull(implementation, "implementation");
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public ListenerConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     /**
@@ -151,33 +137,12 @@ public class ListenerConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ListenerConfig that = (ListenerConfig) o;
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return className != null ? className.hashCode() : 0;
-    }
-
-    @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.LISTENER_CONFIG;
     }
 
@@ -193,5 +158,28 @@ public class ListenerConfig implements IdentifiedDataSerializable {
         implementation = in.readObject();
     }
 
+    @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
+        ListenerConfig that = (ListenerConfig) o;
+
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        return implementation != null ? implementation.equals(that.implementation) : that.implementation == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        return result;
+    }
 }

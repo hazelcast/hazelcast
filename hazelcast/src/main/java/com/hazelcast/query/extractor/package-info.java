@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 /**
  * Contains classes related to custom attributes and the extraction of their values.
- * <br/>
+ * <br>
  * The values may be extracted with the usage of the {@link com.hazelcast.query.extractor.ValueExtractor} class.
  * The extracted values may be then collected by the {@link com.hazelcast.query.extractor.ValueCollector}.
  * The extraction logic may use custom arguments if specified by the user

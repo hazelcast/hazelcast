@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class DelegatingTaskDecorator implements Runnable {
      * @param runnable Task to be executed
      * @param executor Executor the task to be delegated to
      */
-    public DelegatingTaskDecorator(Runnable runnable, Executor executor) {
+    DelegatingTaskDecorator(Runnable runnable, Executor executor) {
         this.executor = executor;
         this.runnable = runnable;
     }

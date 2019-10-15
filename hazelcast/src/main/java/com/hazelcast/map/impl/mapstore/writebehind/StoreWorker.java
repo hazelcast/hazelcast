@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,20 +23,20 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
+import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -44,11 +44,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * When write-behind is enabled the work is offloaded to another thread than partition-operation-thread.
  * That thread uses this runnable task to process write-behind-queues. This task collects entries from
  * write behind queues and passes them to {@link #writeBehindProcessor}.
- * <p/>
+ * <p>
  * Only one {@link StoreWorker} task is created for a map on a member.
  */
 public class StoreWorker implements Runnable {
-
     private final String mapName;
     private final MapServiceContext mapServiceContext;
     private final IPartitionService partitionService;
@@ -160,7 +159,7 @@ public class StoreWorker implements Runnable {
 
     private static List<DelayedEntry> initListIfNull(List<DelayedEntry> list, int capacity) {
         if (list == null) {
-            list = new ArrayList<DelayedEntry>(capacity);
+            list = new ArrayList<>(capacity);
         }
         return list;
     }
@@ -213,22 +212,9 @@ public class StoreWorker implements Runnable {
     private void filterWriteBehindQueue(final long highestStoreTime, final long sequence, Collection<DelayedEntry> collection,
                                         WriteBehindQueue<DelayedEntry> queue) {
         if (sequence > 0) {
-
-            queue.filter(new IPredicate<DelayedEntry>() {
-                @Override
-                public boolean test(DelayedEntry delayedEntry) {
-                    return delayedEntry.getSequence() <= sequence;
-                }
-            }, collection);
-
+            queue.filter(delayedEntry -> delayedEntry.getSequence() <= sequence, collection);
         } else {
-
-            queue.filter(new IPredicate<DelayedEntry>() {
-                @Override
-                public boolean test(DelayedEntry delayedEntry) {
-                    return delayedEntry.getStoreTime() <= highestStoreTime;
-                }
-            }, collection);
+            queue.filter(delayedEntry -> delayedEntry.getStoreTime() <= highestStoreTime, collection);
         }
     }
 
@@ -256,6 +242,7 @@ public class StoreWorker implements Runnable {
                 continue;
             }
             final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
+            // TODO what if capacity is exceeded during addFirst
             queue.addFirst(failures);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.map.eviction;
 
 import com.hazelcast.config.ConfigDataSerializerHook;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,7 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * LFU eviction policy for an {@link com.hazelcast.core.IMap IMap}
+ * LFU eviction policy for an {@link IMap IMap}
  */
 public class LFUEvictionPolicy extends MapEvictionPolicy implements IdentifiedDataSerializable {
 
@@ -38,7 +39,7 @@ public class LFUEvictionPolicy extends MapEvictionPolicy implements IdentifiedDa
     public int compare(EntryView entryView1, EntryView entryView2) {
         long hits1 = entryView1.getHits();
         long hits2 = entryView2.getHits();
-        return (hits1 < hits2) ? -1 : ((hits1 == hits2) ? 0 : 1);
+        return Long.compare(hits1, hits2);
     }
 
     @Override
@@ -47,7 +48,7 @@ public class LFUEvictionPolicy extends MapEvictionPolicy implements IdentifiedDa
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return ConfigDataSerializerHook.LFU_EVICTION_POLICY;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.cluster;
 
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.version.Version;
 
 /**
@@ -25,7 +26,7 @@ import com.hazelcast.version.Version;
  * interface do not have have to register themselves, as their {@link #onClusterVersionChange(Version)} method will be
  * invoked automatically.
  *
- * Other listeners have to register themselves with {@link com.hazelcast.instance.NodeExtension#registerListener(Object)}.
+ * Other listeners have to register themselves with {@link NodeExtension#registerListener(Object)}.
  * Upon registration, the listener's {@link #onClusterVersionChange(Version)} method will be invoked once with the current
  * value of the cluster version.
  *

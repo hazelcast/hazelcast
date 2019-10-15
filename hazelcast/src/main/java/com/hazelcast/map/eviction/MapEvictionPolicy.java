@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.eviction;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.IMap;
 
 import java.util.Comparator;
 
@@ -25,13 +26,13 @@ import java.util.Comparator;
  * according to one of {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy MaxSizePolicies}
  * and it helps to find most appropriate entries to remove.
  *
- * {@link com.hazelcast.core.IMap IMap} has out-of-the-box eviction policies like {@link LRUEvictionPolicy},
+ * {@link IMap IMap} has out-of-the-box eviction policies like {@link LRUEvictionPolicy},
  * {@link LFUEvictionPolicy} and {@link RandomEvictionPolicy} but if there is a need to define another eviction policy,
  * users can introduce a custom one by extending {@link MapEvictionPolicy} class.
  *
  * <p>Implementation:</p>
  * {@link MapEvictionPolicy#compare(EntryView, EntryView)} method must be implemented to provide an ascending order
- * of entries. Because internal eviction algorithm will evict the smallest entry from {@link com.hazelcast.core.IMap IMap}
+ * of entries. Because internal eviction algorithm will evict the smallest entry from {@link IMap IMap}
  *
  * @param <K> the type of keys maintained by IMap
  * @param <V> the type of mapped values

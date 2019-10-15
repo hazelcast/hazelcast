@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class EntryListenerAdaptorsTest {
 
     /**
@@ -56,6 +56,7 @@ public class EntryListenerAdaptorsTest {
         String msg = "should be called exactly 1 times";
         assertEquals(msg, listener.entryAddedCalled, 1);
         assertEquals(msg, listener.entryEvictedCalled, 1);
+        assertEquals(msg, listener.entryExpiredCalled, 1);
         assertEquals(msg, listener.entryRemovedCalled, 1);
         assertEquals(msg, listener.entryUpdatedCalled, 1);
         assertEquals(msg, listener.mapClearedCalled, 1);
@@ -66,6 +67,7 @@ public class EntryListenerAdaptorsTest {
 
         int entryAddedCalled;
         int entryEvictedCalled;
+        int entryExpiredCalled;
         int entryRemovedCalled;
         int entryUpdatedCalled;
         int mapClearedCalled;
@@ -79,6 +81,11 @@ public class EntryListenerAdaptorsTest {
         @Override
         public void entryEvicted(EntryEvent event) {
             entryEvictedCalled++;
+        }
+
+        @Override
+        public void entryExpired(EntryEvent event) {
+            entryExpiredCalled++;
         }
 
         @Override

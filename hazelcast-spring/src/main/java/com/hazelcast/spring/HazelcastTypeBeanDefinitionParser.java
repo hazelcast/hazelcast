@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
 
 /**
  * BeanDefinitionParser for Type Configuration of Hazelcast Types like map, queue, topic etc.
@@ -69,7 +71,11 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
                     throw new IllegalStateException("'instance-ref' attribute is required for creating Hazelcast " + type);
                 }
                 String instanceRef = getTextContent(instanceRefNode);
-                builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
+                if (HazelcastNamespaceHandler.CP_TYPES.contains(type)) {
+                    builder.getRawBeanDefinition().setFactoryBeanName(instanceRef + CP_SUBSYSTEM_SUFFIX);
+                } else {
+                    builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
+                }
                 builder.addDependsOn(instanceRef);
 
                 Node nameNode = attributes.getNamedItem("name");

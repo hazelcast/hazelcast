@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,13 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -40,7 +37,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MapRemoveAllTest extends HazelcastTestSupport {
 
     @Rule
@@ -75,7 +72,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.removeAll(TruePredicate.INSTANCE);
+        map.removeAll(Predicates.alwaysTrue());
 
         assertEquals(0, map.size());
     }
@@ -87,7 +84,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.removeAll(FalsePredicate.INSTANCE);
+        map.removeAll(Predicates.alwaysFalse());
 
         assertEquals(MAP_SIZE, map.size());
     }
@@ -112,7 +109,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.removeAll(new SqlPredicate("__key >= 100"));
+        map.removeAll(Predicates.sql("__key >= 100"));
 
         waitAllForSafeState(instances);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,11 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
-
-import static com.hazelcast.internal.cluster.Versions.V3_10;
 
 public class AddReplicatedMapConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddReplicatedMapConfigCodec.RequestParameters> {
@@ -54,15 +51,8 @@ public class AddReplicatedMapConfigMessageTask
         ReplicatedMapConfig config = new ReplicatedMapConfig(parameters.name);
         config.setAsyncFillup(parameters.asyncFillup);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        if (clusterVersion.isGreaterOrEqual(V3_10) && parameters.mergeBatchSizeExist) {
-            MergePolicyConfig mergePolicyConfig = mergePolicyConfig(true, parameters.mergePolicy,
-                    parameters.mergeBatchSize);
-            config.setMergePolicyConfig(mergePolicyConfig);
-        } else {
-            // RU_COMPAT_3_9
-            config.setMergePolicy(parameters.mergePolicy);
-        }
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             for (ListenerConfigHolder holder : parameters.listenerConfigs) {

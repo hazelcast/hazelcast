@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,8 +86,8 @@ public interface InboundPipeline {
      * network.
      *
      * Even if there is no data to be read, it will cause at least one processing
-     * of the inbound pipeline. This will force any buffered data to be pushed
-     * through the inbound pipeline.
+     * of the InboundPipeline. This will force any buffered data to be pushed
+     * through the InboundPipeline.
      *
      * This method is threadsafe and can safely be called from any thread.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.impl.predicates.FalsePredicate;
+import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.BetweenPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
@@ -28,12 +29,18 @@ import com.hazelcast.query.impl.predicates.LikePredicate;
 import com.hazelcast.query.impl.predicates.NotEqualPredicate;
 import com.hazelcast.query.impl.predicates.NotPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
+import com.hazelcast.query.impl.predicates.PartitionPredicateImpl;
 import com.hazelcast.query.impl.predicates.RegexPredicate;
+import com.hazelcast.query.impl.predicates.SqlPredicate;
+import com.hazelcast.query.impl.predicates.TruePredicate;
 
+import java.util.Comparator;
 import java.util.Date;
+import java.util.Map;
 
 /**
- * A utility class to create {@link com.hazelcast.query.Predicate} instances.
+ * A utility class to create new {@link PredicateBuilder} and {@link com.hazelcast.query.Predicate} instances.
  * <p>
  * <b>Special Attributes</b>
  * <p>
@@ -169,6 +176,7 @@ import java.util.Date;
  * </ul>
  * </ul>
  */
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling"})
 public final class Predicates {
 
     //we don't want instances. private constructor.
@@ -176,17 +184,25 @@ public final class Predicates {
     }
 
     /**
+     * Creates a new instance of {@link PredicateBuilder}.
+     * @return the new {@link PredicateBuilder} instance.
+     */
+    public static PredicateBuilder newPredicateBuilder() {
+        return new PredicateBuilderImpl();
+    }
+
+    /**
      * Creates an <b>always true</b> predicate that will pass all items.
      */
     public static <K, V> Predicate<K, V> alwaysTrue() {
-        return new TruePredicate();
+        return TruePredicate.INSTANCE;
     }
 
     /**
      * Creates an <b>always false</b> predicate that will filter out all items.
      */
     public static <K, V> Predicate<K, V> alwaysFalse() {
-        return new FalsePredicate();
+        return FalsePredicate.INSTANCE;
     }
 
     /**
@@ -196,7 +212,7 @@ public final class Predicates {
      * @param klass the class the created predicate will check for.
      * @return the created <b>instance of</b> predicate.
      */
-    public static Predicate instanceOf(final Class klass) {
+    public static <K, V> Predicate<K, V> instanceOf(final Class klass) {
         return new InstanceOfPredicate(klass);
     }
 
@@ -209,7 +225,7 @@ public final class Predicates {
      * @param predicates the child predicates to form the resulting <b>and</b> predicate from.
      * @return the created <b>and</b> predicate instance.
      */
-    public static Predicate and(Predicate... predicates) {
+    public static <K, V> Predicate<K, V> and(Predicate... predicates) {
         return new AndPredicate(predicates);
     }
 
@@ -219,7 +235,7 @@ public final class Predicates {
      * @param predicate the predicate to negate the value of.
      * @return the created <b>not</b> predicate instance.
      */
-    public static Predicate not(Predicate predicate) {
+    public static <K, V> Predicate<K, V> not(Predicate predicate) {
         return new NotPredicate(predicate);
     }
 
@@ -232,7 +248,7 @@ public final class Predicates {
      * @param predicates the child predicates to form the resulting <b>or</b> predicate from.
      * @return the created <b>or</b> predicate instance.
      */
-    public static Predicate or(Predicate... predicates) {
+    public static <K, V> Predicate<K, V> or(Predicate... predicates) {
         return new OrPredicate(predicates);
     }
 
@@ -248,7 +264,7 @@ public final class Predicates {
      * @return the created <b>not equal</b> predicate instance.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate notEqual(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> notEqual(String attribute, Comparable value) {
         return new NotEqualPredicate(attribute, value);
     }
 
@@ -264,7 +280,7 @@ public final class Predicates {
      * @return the created <b>equal</b> predicate instance.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate equal(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> equal(String attribute, Comparable value) {
         return new EqualPredicate(attribute, value);
     }
 
@@ -285,7 +301,7 @@ public final class Predicates {
      * @see #ilike(String, String)
      * @see #regex(String, String)
      */
-    public static Predicate like(String attribute, String pattern) {
+    public static <K, V> Predicate<K, V> like(String attribute, String pattern) {
         return new LikePredicate(attribute, pattern);
     }
 
@@ -306,7 +322,7 @@ public final class Predicates {
      * @see #like(String, String)
      * @see #regex(String, String)
      */
-    public static Predicate ilike(String attribute, String pattern) {
+    public static <K, V> Predicate<K, V> ilike(String attribute, String pattern) {
         return new ILikePredicate(attribute, pattern);
     }
 
@@ -325,7 +341,7 @@ public final class Predicates {
      * @see #like(String, String)
      * @see #ilike(String, String)
      */
-    public static Predicate regex(String attribute, String pattern) {
+    public static <K, V> Predicate<K, V> regex(String attribute, String pattern) {
         return new RegexPredicate(attribute, pattern);
     }
 
@@ -341,7 +357,7 @@ public final class Predicates {
      * @return the created <b>greater than</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate greaterThan(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> greaterThan(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, false, false);
     }
 
@@ -357,7 +373,7 @@ public final class Predicates {
      * @return the created <b>greater than or equal to</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate greaterEqual(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> greaterEqual(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, true, false);
     }
 
@@ -373,7 +389,7 @@ public final class Predicates {
      * @return the created <b>less than</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate lessThan(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> lessThan(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, false, true);
     }
 
@@ -389,7 +405,7 @@ public final class Predicates {
      * @return the created <b>less than or equal to</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate lessEqual(String attribute, Comparable value) {
+    public static <K, V> Predicate<K, V> lessEqual(String attribute, Comparable value) {
         return new GreaterLessPredicate(attribute, value, true, true);
     }
 
@@ -407,7 +423,7 @@ public final class Predicates {
      * @return the created <b>between</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate between(String attribute, Comparable from, Comparable to) {
+    public static <K, V> Predicate<K, V> between(String attribute, Comparable from, Comparable to) {
         return new BetweenPredicate(attribute, from, to);
     }
 
@@ -423,8 +439,88 @@ public final class Predicates {
      * @return the created <b>in</b> predicate.
      * @throws IllegalArgumentException if the {@code attribute} does not exist.
      */
-    public static Predicate in(String attribute, Comparable... values) {
+    public static <K, V> Predicate<K, V> in(String attribute, Comparable... values) {
         return new InPredicate(attribute, values);
+    }
+
+    /**
+     * Creates a <b>SQL</b> predicate that will pass items that match the given SQL 'where' expression. The following
+     * operators are supported: {@code =}, {@code &lt;}, {@code &gt;}, {@code &lt;=}, {@code &gt;=}, {@code ==},
+     * {@code !=}, {@code &lt;&gt;}, {@code between}, {@code in}, {@code like}, {@code ilike}, {@code regex},
+     * {@code and}, {@code or}.
+     * <p>
+     * Example: {@code active AND (age &gt; 20 OR salary &lt; 60000)}
+     * <p>
+     * See also <i>Special Attributes</i>, <i>Attribute Paths</i>, <i>Handling of {@code null}</i> and
+     * <i>Implicit Type Conversion</i> sections of {@link Predicates}.
+     *
+     * @param expression the 'where' expression.
+     * @return the created <b>sql</b> predicate instance.
+     * @throws IllegalArgumentException if the SQL expression is invalid.
+     */
+    public static <K, V> Predicate<K, V> sql(String expression) {
+        return new SqlPredicate(expression);
+    }
+
+    /**
+     * Creates a paging predicate with a page size. Results will not be filtered and will be returned in natural order.
+     *
+     * @param pageSize page size
+     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     */
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(int pageSize) {
+        return new PagingPredicateImpl<>(pageSize);
+    }
+
+    /**
+     * Creates a paging predicate with an inner predicate and page size. Results will be filtered via inner predicate
+     * and will be returned in natural order.
+     *
+     * @param predicate the inner predicate through which results will be filtered
+     * @param pageSize  the page size
+     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * @throws {@link IllegalArgumentException} if inner predicate is also a paging predicate
+     */
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(Predicate predicate, int pageSize) {
+        return new PagingPredicateImpl<>(predicate, pageSize);
+    }
+
+    /**
+     * Creates a paging predicate with a comparator and page size. Results will not be filtered and will be ordered
+     * via comparator.
+     *
+     * @param comparator the comparator through which results will be ordered
+     * @param pageSize   the page size
+     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     */
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(Comparator<Map.Entry<K, V>> comparator, int pageSize) {
+        return new PagingPredicateImpl<>(comparator, pageSize);
+    }
+
+    /**
+     * Creates a paging predicate with an inner predicate, comparator and page size. Results will be filtered via inner predicate
+     * and will be ordered via comparator.
+     *
+     * @param predicate  the inner predicate through which results will be filtered
+     * @param comparator the comparator through which results will be ordered
+     * @param pageSize   the page size
+     * @throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * @throws {@link IllegalArgumentException} if inner predicate is also a {@link PagingPredicate}
+     */
+    public static <K, V> PagingPredicate<K, V> pagingPredicate(Predicate<K, V> predicate, Comparator<Map.Entry<K, V>> comparator,
+                                                               int pageSize) {
+        return new PagingPredicateImpl<>(predicate, comparator, pageSize);
+    }
+
+    /**
+     * Creates a new partition predicate that restricts the execution of the target predicate to a single partition.
+     *
+     * @param partitionKey the partition key
+     * @param target       the target {@link Predicate}
+     * @throws NullPointerException     if partition key or target predicate is {@code null}
+     */
+    public static <K, V> PartitionPredicate<K, V> partitionPredicate(Object partitionKey, Predicate<K, V> target) {
+        return new PartitionPredicateImpl<>(partitionKey, target);
     }
 
 }

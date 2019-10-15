@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
@@ -24,9 +23,8 @@ import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,8 +33,9 @@ import java.util.List;
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
 public class PutAllBackupOperation extends MapOperation
-        implements PartitionAwareOperation, BackupOperation, Versioned {
+        implements PartitionAwareOperation, BackupOperation {
 
+    private boolean disableWanReplicationEvent;
     private MapEntries entries;
     private List<RecordInfo> recordInfos;
 
@@ -52,7 +51,7 @@ public class PutAllBackupOperation extends MapOperation
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         for (int i = 0; i < entries.size(); i++) {
             Data dataKey = entries.getKey(i);
             Data dataValue = entries.getValue(i);
@@ -62,6 +61,11 @@ public class PutAllBackupOperation extends MapOperation
             publishWanUpdate(dataKey, dataValue);
             evict(dataKey);
         }
+    }
+
+    @Override
+    protected boolean disableWanReplicationEvent() {
+        return disableWanReplicationEvent;
     }
 
     @Override
@@ -77,11 +81,7 @@ public class PutAllBackupOperation extends MapOperation
         for (RecordInfo recordInfo : recordInfos) {
             recordInfo.writeData(out);
         }
-
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeBoolean(disableWanReplicationEvent);
-        }
+        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
@@ -91,21 +91,17 @@ public class PutAllBackupOperation extends MapOperation
         entries = new MapEntries();
         entries.readData(in);
         int size = entries.size();
-        recordInfos = new ArrayList<RecordInfo>(size);
+        recordInfos = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             RecordInfo recordInfo = new RecordInfo();
             recordInfo.readData(in);
             recordInfos.add(recordInfo);
         }
-
-        // RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            disableWanReplicationEvent = in.readBoolean();
-        }
+        disableWanReplicationEvent = in.readBoolean();
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MapDataSerializerHook.PUT_ALL_BACKUP;
     }
 }
