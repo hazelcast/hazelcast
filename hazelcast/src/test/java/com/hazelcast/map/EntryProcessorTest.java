@@ -1292,8 +1292,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
         // so there is no chance of data being modified after the index has been queried.
         final int expectedApplyCount = inMemoryFormat == NATIVE ? 0 : 2;
-        assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
-                expectedApplyCount, PREDICATE_APPLY_COUNT.get());
+        assertTrueEventually(() -> assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
+                expectedApplyCount, PREDICATE_APPLY_COUNT.get()));
     }
 
     static class ApplyCountAwareIndexedTestPredicate implements IndexAwarePredicate {
