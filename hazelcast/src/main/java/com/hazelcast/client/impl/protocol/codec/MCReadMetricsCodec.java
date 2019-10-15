@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Reads the recorded metrics starting with the smallest sequence number
  * greater or equals to the sequence number set in fromSequence.
  */
-@Generated("d0662684137a572989bb7fd50726f278")
+@Generated("d789caaefcd74bc666ec8c009d276bb9")
 public final class MCReadMetricsCodec {
     //hex: 0x270100
     public static final int REQUEST_MESSAGE_TYPE = 2556160;

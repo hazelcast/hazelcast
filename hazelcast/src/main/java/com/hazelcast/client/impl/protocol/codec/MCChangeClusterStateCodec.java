@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("0d7e08172c8b289c3c5058d02f737ac4")
+@Generated("78794bcdd1a58d51b27c534602500ded")
 public final class MCChangeClusterStateCodec {
     //hex: 0x270200
     public static final int REQUEST_MESSAGE_TYPE = 2556416;
