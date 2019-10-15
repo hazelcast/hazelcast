@@ -43,7 +43,6 @@ import com.hazelcast.internal.management.request.GetCacheEntryRequest;
 import com.hazelcast.internal.management.request.GetClusterStateRequest;
 import com.hazelcast.internal.management.request.GetMapEntryRequest;
 import com.hazelcast.internal.management.request.GetMemberSystemPropertiesRequest;
-import com.hazelcast.internal.management.request.MapConfigRequest;
 import com.hazelcast.internal.management.request.MemberConfigRequest;
 import com.hazelcast.internal.management.request.PromoteMemberRequest;
 import com.hazelcast.internal.management.request.RunGcRequest;
@@ -98,6 +97,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
  */
 public class ManagementCenterService {
+    public static final String SERVICE_NAME = "hz:core:managementCenterService";
 
     private static final int HTTP_SUCCESS = 200;
     private static final int HTTP_NOT_MODIFIED = 304;
@@ -610,7 +610,6 @@ public class ManagementCenterService {
 
         private void registerConfigRequests() {
             register(new GetMemberSystemPropertiesRequest());
-            register(new MapConfigRequest());
             register(new MemberConfigRequest());
         }
 

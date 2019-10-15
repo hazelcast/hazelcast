@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.metrics;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MetricsReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
@@ -31,7 +31,7 @@ import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 
-public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<MetricsReadMetricsCodec.RequestParameters> {
+public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<MCReadMetricsCodec.RequestParameters> {
 
     public ReadMetricsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -59,8 +59,8 @@ public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<Metric
     }
 
     @Override
-    protected MetricsReadMetricsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MetricsReadMetricsCodec.decodeRequest(clientMessage);
+    protected MCReadMetricsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MCReadMetricsCodec.decodeRequest(clientMessage);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<Metric
 
         List<Map.Entry<Long, byte[]>> elements = ringbufferSlice.elements();
         long nextSequence = ringbufferSlice.nextSequence();
-        return MetricsReadMetricsCodec.encodeResponse(elements, nextSequence);
+        return MCReadMetricsCodec.encodeResponse(elements, nextSequence);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<Metric
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[] {parameters.uuid, parameters.fromSequence};
     }
 }
 

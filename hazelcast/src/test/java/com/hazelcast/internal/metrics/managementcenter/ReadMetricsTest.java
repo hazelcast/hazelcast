@@ -73,7 +73,8 @@ public class ReadMetricsTest extends HazelcastTestSupport {
 
         AtomicLong nextSequence = new AtomicLong();
         assertTrueEventually(() -> {
-            MetricsResultSet result = client.readMetricsAsync(member, nextSequence.get()).get();
+            MetricsResultSet result = client.getManagementCenterService()
+                    .readMetricsAsync(member, nextSequence.get()).get();
             nextSequence.set(result.nextSequence());
             // call should not return empty result - it should wait until a result is available
             assertFalse("empty result", result.collections().isEmpty());
@@ -100,7 +101,7 @@ public class ReadMetricsTest extends HazelcastTestSupport {
         MemberImpl member = new MemberImpl(addr, ver, false, UuidUtil.newUnsecureUUID());
 
         exception.expectCause(Matchers.instanceOf(IllegalArgumentException.class));
-        client.readMetricsAsync(member, 0).get();
+        client.getManagementCenterService().readMetricsAsync(member, 0).get();
     }
 
     @Test
@@ -111,7 +112,8 @@ public class ReadMetricsTest extends HazelcastTestSupport {
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
 
         exception.expectCause(Matchers.instanceOf(IllegalArgumentException.class));
-        client.readMetricsAsync(instance.getCluster().getLocalMember(), 0).get();
+        client.getManagementCenterService()
+                .readMetricsAsync(instance.getCluster().getLocalMember(), 0).get();
     }
 
     private static class MetricKeyConsumer implements MetricConsumer {
