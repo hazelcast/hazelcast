@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.BiConsumerEx;
 import com.hazelcast.jet.function.SupplierEx;
@@ -117,6 +118,11 @@ public final class WriteJdbcP<T> implements Processor {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        return true;
     }
 
     @Override
