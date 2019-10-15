@@ -275,12 +275,12 @@ public class TestClientApplicationContext {
         AwsConfig awsConfig = networkConfig.getAwsConfig();
         assertFalse(awsConfig.isEnabled());
         assertTrue(awsConfig.isUsePublicIp());
-        assertEquals("sample-access-key", awsConfig.getAccessKey());
-        assertEquals("sample-secret-key", awsConfig.getSecretKey());
-        assertEquals("sample-region", awsConfig.getRegion());
-        assertEquals("sample-group", awsConfig.getSecurityGroupName());
-        assertEquals("sample-tag-key", awsConfig.getTagKey());
-        assertEquals("sample-tag-value", awsConfig.getTagValue());
+        assertEquals("sample-access-key", awsConfig.getProperty("access-key"));
+        assertEquals("sample-secret-key", awsConfig.getProperty("secret-key"));
+        assertEquals("sample-region", awsConfig.getProperty("region"));
+        assertEquals("sample-group", awsConfig.getProperty("security-group-name"));
+        assertEquals("sample-tag-key", awsConfig.getProperty("tag-key"));
+        assertEquals("sample-tag-value", awsConfig.getProperty("tag-value"));
     }
 
     @Test
