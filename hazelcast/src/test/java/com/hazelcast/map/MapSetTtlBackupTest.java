@@ -105,9 +105,9 @@ public class MapSetTtlBackupTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         HazelcastInstance instance = instances[0];
 
-        putKeys(instance, mapName, 10, 0, 20);
+        putKeys(instance, mapName, 15, 0, 20);
         setTtl(instance, mapName, 0, 20, 0, TimeUnit.SECONDS);
-        sleepAtLeastMillis(10100);
+        sleepAtLeastMillis(15100);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             assertKeys(instances, mapName, 0, 20);
         }
