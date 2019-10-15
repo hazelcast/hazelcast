@@ -42,11 +42,10 @@ import com.hazelcast.version.Version;
 import com.hazelcast.wan.AddWanConfigResult;
 import com.hazelcast.wan.WanReplicationService;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -686,8 +685,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
     private void handleCPGroup(HttpPostCommand command) throws UnsupportedEncodingException {
         if (!checkCredentials(command)) {
-            textCommandService.sendResponse(command);
             command.send403();
+            textCommandService.sendResponse(command);
             return;
         }
 
