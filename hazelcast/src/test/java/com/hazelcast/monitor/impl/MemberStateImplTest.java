@@ -213,8 +213,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals("someStats", deserializedClientStats.get(clientUuid));
 
         assertNotNull(deserialized.getInboundNetworkStats());
-        assertEquals(42, (long) deserialized.getInboundNetworkStats().getBytesTransceived(ProtocolType.MEMBER));
+        assertEquals(42, deserialized.getInboundNetworkStats().getBytesTransceived(ProtocolType.MEMBER));
         assertNotNull(deserialized.getOutboundNetworkStats());
-        assertEquals(24, (long) deserialized.getOutboundNetworkStats().getBytesTransceived(ProtocolType.MEMBER));
+        assertEquals(24, deserialized.getOutboundNetworkStats().getBytesTransceived(ProtocolType.MEMBER));
     }
 }
