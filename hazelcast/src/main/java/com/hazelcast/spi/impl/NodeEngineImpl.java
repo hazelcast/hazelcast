@@ -350,11 +350,6 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public boolean isActive() {
-        return isRunning();
-    }
-
-    @Override
     public boolean isRunning() {
         return node.isRunning();
     }
