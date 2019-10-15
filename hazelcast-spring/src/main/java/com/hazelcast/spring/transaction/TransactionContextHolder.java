@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring.transaction;
 
-import javax.transaction.xa.XAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalList;
