@@ -124,6 +124,7 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
             return AcquireResult.waitKeyAdded(cancelledWaitKeys);
         }
 
+        ownerInvocationRefUids.put(BiTuple.of(endpoint, invocationUid), NOT_LOCKED);
         return AcquireResult.failed(cancelledWaitKeys);
     }
 
@@ -238,8 +239,7 @@ public class Lock extends BlockingResource<LockInvocationKey> implements Identif
     }
 
     private void removeInvocationRefUids(long sessionId) {
-        ownerInvocationRefUids.keySet()
-                              .removeIf(lockEndpointUUIDBiTuple -> lockEndpointUUIDBiTuple.element1.sessionId() == sessionId);
+        ownerInvocationRefUids.keySet().removeIf(t -> t.element1.sessionId() == sessionId);
     }
 
     /**

@@ -114,7 +114,8 @@ public class SemaphoreService extends AbstractBlockingService<AcquireInvocationK
         }
 
         if (!result.success()) {
-            throw new IllegalArgumentException();
+            throw new IllegalStateException("Could not release " + permits + " permits in Semaphore[" + name
+                    + "] because the caller has acquired less than " + permits + " permits");
         }
     }
 

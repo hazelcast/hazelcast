@@ -85,7 +85,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         return getPrimaryInstance();
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testRetriedLockDoesNotCancelPendingLockRequest() {
         lockByOtherThread();
 
@@ -114,7 +114,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         }, 10);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testNewLockCancelsPendingLockRequest() {
         lockByOtherThread();
 
@@ -145,7 +145,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         }
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testRetriedTryLockWithTimeoutDoesNotCancelPendingLockRequest() {
         lockByOtherThread();
 
@@ -198,7 +198,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         });
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testNewTryLockWithTimeoutCancelsPendingLockRequest() {
         lockByOtherThread();
 
@@ -229,7 +229,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         }
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testRetriedTryLockWithoutTimeoutDoesNotCancelPendingLockRequest() {
         lockByOtherThread();
 
@@ -258,7 +258,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         }, 10);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testNewUnlockCancelsPendingLockRequest() {
         lockByOtherThread();
 
@@ -292,7 +292,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         }
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testLockAcquireRetry() {
         lock.lock();
         lock.unlock();
@@ -306,13 +306,13 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         RaftInvocationManager invocationManager = getRaftInvocationManager();
         UUID invUid = newUnsecureUUID();
 
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid)).join();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid)).join();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid)).joinInternal();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid)).joinInternal();
 
         assertEquals(1, lock.getLockCount());
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testLockReentrantAcquireRetry() {
         lock.lock();
         lock.unlock();
@@ -327,14 +327,14 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         UUID invUid1 = newUnsecureUUID();
         UUID invUid2 = newUnsecureUUID();
 
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid1)).join();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid2)).join();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid2)).join();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid1)).joinInternal();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid2)).joinInternal();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, getThreadId(), invUid2)).joinInternal();
 
         assertEquals(2, lock.getLockCount());
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testPendingLockAcquireRetry() {
         CountDownLatch unlockLatch = new CountDownLatch(1);
         spawn(() -> {
@@ -373,15 +373,15 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         InternalCompletableFuture<Long> f2 = invocationManager
                 .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, MINUTES.toMillis(5)));
 
-        long fence1 = f1.join();
-        long fence2 = f2.join();
+        long fence1 = f1.joinInternal();
+        long fence2 = f2.joinInternal();
 
         assertEquals(fence1, lock.getFence());
         assertEquals(fence1, fence2);
         assertEquals(1, lock.getLockCount());
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testRetriedUnlockIsSuccessfulAfterLockedByAnotherEndpoint() {
         lock.lock();
 
@@ -390,14 +390,14 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         RaftInvocationManager invocationManager = getRaftInvocationManager();
         UUID invUid = newUnsecureUUID();
 
-        invocationManager.invoke(groupId, new UnlockOp(objectName, sessionId, getThreadId(), invUid)).join();
+        invocationManager.invoke(groupId, new UnlockOp(objectName, sessionId, getThreadId(), invUid)).joinInternal();
 
         lockByOtherThread();
 
-        invocationManager.invoke(groupId, new UnlockOp(objectName, sessionId, getThreadId(), invUid)).join();
+        invocationManager.invoke(groupId, new UnlockOp(objectName, sessionId, getThreadId(), invUid)).joinInternal();
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testIsLockedByCurrentThreadCallInitializesLockedSessionId() {
         lock.lock();
         lock.unlock();
@@ -410,7 +410,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
 
         RaftInvocationManager invocationManager = getRaftInvocationManager();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).join();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).joinInternal();
 
         // the current thread acquired the lock once and we pretend that there was a operation timeout in lock.lock() call
 
@@ -420,7 +420,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertEquals(sessionId, (long) lockedSessionId);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testLockCallInitializesLockedSessionId() {
         lock.lock();
         lock.unlock();
@@ -433,7 +433,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
 
         RaftInvocationManager invocationManager = getRaftInvocationManager();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).join();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).joinInternal();
 
         lock.lock();
 
@@ -442,7 +442,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertEquals(sessionId, (long) lockedSessionId);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testUnlockCallInitializesLockedSessionId() {
         lock.lock();
         lock.unlock();
@@ -455,8 +455,8 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
 
         RaftInvocationManager invocationManager = getRaftInvocationManager();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).join();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).join();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).joinInternal();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).joinInternal();
 
         lock.unlock();
 
@@ -465,7 +465,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertEquals(sessionId, (long) lockedSessionId);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testIsLockedCallInitializesLockedSessionId() {
         lock.lock();
         lock.unlock();
@@ -478,7 +478,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
 
         RaftInvocationManager invocationManager = getRaftInvocationManager();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).join();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).joinInternal();
 
         boolean locked = lock.isLocked();
 
@@ -488,7 +488,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertEquals(sessionId, (long) lockedSessionId);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testGetLockCountCallInitializesLockedSessionId() {
         lock.lock();
         lock.unlock();
@@ -501,7 +501,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertNotEquals(NO_SESSION_ID, sessionId);
 
         RaftInvocationManager invocationManager = getRaftInvocationManager();
-        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).join();
+        invocationManager.invoke(groupId, new LockOp(objectName, sessionId, threadId, newUnsecureUUID())).joinInternal();
 
         int getLockCount = lock.getLockCount();
 
@@ -511,7 +511,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         assertEquals(sessionId, (long) lockedSessionId);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testRetriedWaitKeysAreExpiredTogether() {
         CountDownLatch releaseLatch = new CountDownLatch(1);
         spawn(() -> {
@@ -576,7 +576,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         });
 
         RaftOp op = new ExpireWaitKeysOp(LockService.SERVICE_NAME, Collections.singletonList(lockWaitTimeoutKeyRef[0]));
-        invocationManager.invoke(groupId, op).join();
+        invocationManager.invoke(groupId, op).joinInternal();
 
         assertTrueEventually(() -> assertTrue(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty()));
 
@@ -584,14 +584,14 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> assertFalse(lock.isLocked()));
 
-        long fence1 = f1.join();
-        long fence2 = f2.join();
+        long fence1 = f1.joinInternal();
+        long fence2 = f2.joinInternal();
 
         assertInvalidFence(fence1);
         assertInvalidFence(fence2);
     }
 
-    @Test
+    @Test(timeout = 300_000)
     public void testExpiredAndRetriedTryLockRequestReceivesFailureResponse() {
         final CountDownLatch unlockLatch = new CountDownLatch(1);
         spawn(() -> {
@@ -610,7 +610,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         InternalCompletableFuture<Long> f1 = invocationManager
                 .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(5)));
 
-        long fence1 = f1.join();
+        long fence1 = f1.joinInternal();
         assertEquals(INVALID_FENCE, fence1);
 
         unlockLatch.countDown();
@@ -620,7 +620,7 @@ public abstract class AbstractFencedLockFailureTest extends HazelcastRaftTestSup
         InternalCompletableFuture<Long> f2 = invocationManager
                 .invoke(groupId, new TryLockOp(objectName, sessionId, getThreadId(), invUid, SECONDS.toMillis(5)));
 
-        long fence2 = f2.join();
+        long fence2 = f2.joinInternal();
         assertEquals(INVALID_FENCE, fence2);
     }
 

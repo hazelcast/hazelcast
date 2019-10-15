@@ -179,7 +179,7 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
         long sessionId = sessionService.getAllSessions(groupId).get().iterator().next().id();
 
         getRaftInvocationManager(proxyInstance)
-                .invoke(groupId, new UnlockOp(objectName, sessionId, getThreadId(), newUnsecureUUID())).join();
+                .invoke(groupId, new UnlockOp(objectName, sessionId, getThreadId(), newUnsecureUUID())).joinInternal();
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
