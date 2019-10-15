@@ -32,12 +32,16 @@ import com.hazelcast.cp.CPMember;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
+import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.map.impl.MapService;
@@ -76,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.ToLongFunction;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -205,6 +210,12 @@ public class TimedMemberStateFactory {
         createWanSyncState(memberState);
 
         memberState.setClientStats(node.clientEngine.getClientStatistics());
+
+        AggregateEndpointManager aggregateEndpointManager = node.getNetworkingService().getAggregateEndpointManager();
+        memberState.setInboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
+                NetworkStats::getBytesReceived));
+        memberState.setOutboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
+                NetworkStats::getBytesSent));
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {
@@ -417,8 +428,16 @@ public class TimedMemberStateFactory {
         return ++count;
     }
 
-
     private ICacheService getCacheService() {
         return instance.node.nodeEngine.getService(ICacheService.SERVICE_NAME);
+    }
+
+    private AdvancedNetworkStatsDTO createAdvancedNetworkStats(Map<EndpointQualifier, NetworkStats> stats,
+                                                               ToLongFunction<NetworkStats> getBytesFn) {
+        AdvancedNetworkStatsDTO statsDTO = new AdvancedNetworkStatsDTO();
+        for (Map.Entry<EndpointQualifier, NetworkStats> entry : stats.entrySet()) {
+            statsDTO.incBytesTransceived(entry.getKey().getType(), getBytesFn.applyAsLong(entry.getValue()));
+        }
+        return statsDTO;
     }
 }
