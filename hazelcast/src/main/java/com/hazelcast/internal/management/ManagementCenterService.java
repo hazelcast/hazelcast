@@ -26,7 +26,6 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventBatch;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
@@ -513,7 +512,7 @@ public class ManagementCenterService {
                 }
 
                 outputStream = connection.getOutputStream();
-                writer = new OutputStreamWriter(outputStream, "UTF-8");
+                writer = new OutputStreamWriter(outputStream, UTF_8);
 
                 JsonObject root = new JsonObject();
                 TimedMemberState memberState = timedMemberState.get();
@@ -563,7 +562,7 @@ public class ManagementCenterService {
             InputStreamReader reader = null;
             try {
                 inputStream = connection.getInputStream();
-                reader = new InputStreamReader(inputStream, "UTF-8");
+                reader = new InputStreamReader(inputStream, UTF_8);
                 JsonObject response = Json.parse(reader).asObject();
                 lastConfigETag = connection.getHeaderField("ETag");
                 bwListConfigHandler.handleConfig(response);
@@ -584,8 +583,7 @@ public class ManagementCenterService {
      */
     private final class TaskPollThread extends Thread {
 
-        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests
-                = new HashMap<Integer, Class<? extends ConsoleRequest>>();
+        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests = new HashMap<>();
 
         private final ExecutionService executionService = instance.node.getNodeEngine().getExecutionService();
 
@@ -678,8 +676,8 @@ public class ManagementCenterService {
             InputStreamReader reader = null;
             try {
                 inputStream = openTaskInputStream();
-                reader = new InputStreamReader(inputStream, "UTF-8");
-                JsonObject request = JsonValue.readFrom(reader).asObject();
+                reader = new InputStreamReader(inputStream, UTF_8);
+                JsonObject request = Json.parse(reader).asObject();
                 if (!request.isEmpty()) {
                     JsonObject innerRequest = getObject(request, "request");
                     final int type = getInt(innerRequest, "type");
@@ -717,7 +715,7 @@ public class ManagementCenterService {
         private boolean processTaskAndSendResponse(int taskId, ConsoleRequest task) throws Exception {
             HttpURLConnection connection = openPostResponseConnection();
             OutputStream outputStream = connection.getOutputStream();
-            final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+            final OutputStreamWriter writer = new OutputStreamWriter(outputStream, UTF_8);
             try {
                 JsonObject root = new JsonObject();
                 root.add("taskId", taskId);
