@@ -187,7 +187,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
         return map;
     }
 
-    private static class ExceptionThrowingAggregator<I> extends Aggregator<I, Double> {
+    private static class ExceptionThrowingAggregator<I> implements Aggregator<I, Double> {
 
         private boolean throwOnAccumulate;
         private boolean throwOnCombine;

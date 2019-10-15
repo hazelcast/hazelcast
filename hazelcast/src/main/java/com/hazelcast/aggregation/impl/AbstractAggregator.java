@@ -43,7 +43,7 @@ import java.util.Objects;
  * @param <E> extracted value type
  * @param <R> result type
  */
-public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
+public abstract class AbstractAggregator<I, E, R> implements Aggregator<I, R> {
 
     protected String attributePath;
 
