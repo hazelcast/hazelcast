@@ -308,13 +308,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     public void setMerkleTreesCost(long merkleTreesCost) {
     }
 
-    @Probe
-    @Override
-    public long getReplicationEventCount() {
-        return 0;
-    }
-
-
     @Override
     public NearCacheStatsImpl getNearCacheStats() {
         throw new UnsupportedOperationException("Replicated map has no Near Cache!");

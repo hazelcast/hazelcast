@@ -60,7 +60,6 @@ public class EmptyLocalReplicatedMapStatsTest {
         assertEquals(0, localReplicatedMapStats.getMaxRemoveLatency());
         assertEquals(0, localReplicatedMapStats.getOtherOperationCount());
         assertEquals(0, localReplicatedMapStats.getEventOperationCount());
-        assertEquals(0, localReplicatedMapStats.getReplicationEventCount());
 
         assertEquals(0, localReplicatedMapStats.getHeapCost());
         assertEquals(0, localReplicatedMapStats.getMerkleTreesCost());

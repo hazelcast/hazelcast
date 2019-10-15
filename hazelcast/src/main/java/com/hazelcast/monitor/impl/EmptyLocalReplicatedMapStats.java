@@ -57,11 +57,6 @@ public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats {
     }
 
     @Override
-    public long getReplicationEventCount() {
-        return 0;
-    }
-
-    @Override
     public long getOwnedEntryCount() {
         return 0;
     }
