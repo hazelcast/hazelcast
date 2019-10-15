@@ -128,7 +128,7 @@ public class WriteJdbcPTest extends PipelineTestSupport {
 
             @Override
             public Connection getEx() throws SQLException {
-                if (exceptionThrown) {
+                if (!exceptionThrown) {
                     exceptionThrown = true;
                     throw new SQLException();
                 }
@@ -143,7 +143,7 @@ public class WriteJdbcPTest extends PipelineTestSupport {
 
             @Override
             public void acceptEx(PreparedStatement stmt, Person item) throws SQLException {
-                if (exceptionThrown) {
+                if (!exceptionThrown) {
                     exceptionThrown = true;
                     throw new SQLException();
                 }
