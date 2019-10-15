@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -32,8 +33,8 @@ import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -417,16 +418,20 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         waitAllForLeaderElection(instances, INITIAL_METADATA_GROUP_ID);
         RaftEndpoint leaderEndpoint = getLeaderMember(getRaftNode(instances[0], getMetadataGroupId(instances[0])));
 
-        final HazelcastInstance leader = getInstance(leaderEndpoint);
-        HazelcastInstance follower = null;
-        for (HazelcastInstance instance : instances) {
-            if (!instance.getCPSubsystem().getLocalCPMember().getUuid().equals(leaderEndpoint.getUuid())) {
-                follower = instance;
-                break;
-            }
-        }
+        HazelcastInstance leader = getInstance(leaderEndpoint);
+        HazelcastInstance follower = getRandomFollowerInstance(instances, getMetadataGroupId(instances[0]));
 
-        assertNotNull(follower);
+        // Ensure other nodes have an active connection to the follower
+        // Otherwise blockCommunicationBetween(..) can cause a split-brain.
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                if (follower == instance) {
+                    continue;
+                }
+                EndpointManager endpointManager = getEndpointManager(instance);
+                assertNotNull(endpointManager.getOrConnect(getAddress(follower)));
+            }
+        });
         blockCommunicationBetween(leader, follower);
 
         List<CPGroupId> groupIds = new ArrayList<>();
