@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.statistics.Statistics;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -240,8 +241,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
         final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(Statistics.ENABLED.getName(), "false");
-        clientConfig.setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS));
+        clientConfig.setProperty(ClientProperty.STATISTICS_ENABLED.getName(), "false");
+        clientConfig.setProperty(ClientProperty.STATISTICS_PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS));
 
         hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -274,8 +275,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
     private HazelcastClientInstanceImpl createHazelcastClient() {
         ClientConfig clientConfig = new ClientConfig()
-                .setProperty(Statistics.ENABLED.getName(), "true")
-                .setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS))
+                .setProperty(ClientProperty.STATISTICS_ENABLED.getName(), "true")
+                .setProperty(ClientProperty.STATISTICS_PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS))
                 // add IMap and ICache with Near Cache config
                 .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
                 .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
@@ -319,7 +320,6 @@ public class ClientStatisticsTest extends ClientTestSupport {
     private static Map<String, String> getStats(HazelcastClientInstanceImpl client, ClientEngineImpl clientEngine) {
         Map<UUID, String> clientStatistics = clientEngine.getClientStatistics();
         assertNotNull("clientStatistics should not be null", clientStatistics);
-        System.out.println("FATAL " + clientStatistics.size());
         assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
         Set<Map.Entry<UUID, String>> entries = clientStatistics.entrySet();
         Map.Entry<UUID, String> statEntry = entries.iterator().next();

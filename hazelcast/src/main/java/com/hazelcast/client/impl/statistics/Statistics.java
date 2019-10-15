@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.ClientType;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -32,7 +33,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,19 +45,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * it will be scheduled for periodic statistics collection and sent.
  */
 public class Statistics {
-    /**
-     * Use to enable the client statistics collection.
-     * <p>
-     * The default is false.
-     */
-    public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled", false);
-
-    /**
-     * The period in seconds the statistics run.
-     */
-    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
-            SECONDS);
-
     private static final String NEAR_CACHE_CATEGORY_PREFIX = "nc.";
     private static final char STAT_SEPARATOR = ',';
     private static final char KEY_VALUE_SEPARATOR = '=';
@@ -76,7 +63,7 @@ public class Statistics {
 
     public Statistics(final HazelcastClientInstanceImpl clientInstance) {
         this.properties = clientInstance.getProperties();
-        this.enabled = properties.getBoolean(ENABLED);
+        this.enabled = properties.getBoolean(ClientProperty.STATISTICS_ENABLED);
         this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
         this.metricsRegistry = clientInstance.getMetricsRegistry();
@@ -90,10 +77,10 @@ public class Statistics {
             return;
         }
 
-        long periodSeconds = properties.getSeconds(PERIOD_SECONDS);
+        long periodSeconds = properties.getSeconds(ClientProperty.STATISTICS_PERIOD_SECONDS);
         if (periodSeconds <= 0) {
-            long defaultValue = Long.parseLong(PERIOD_SECONDS.getDefaultValue());
-            logger.warning("Provided client statistics " + PERIOD_SECONDS.getName()
+            long defaultValue = Long.parseLong(ClientProperty.STATISTICS_PERIOD_SECONDS.getDefaultValue());
+            logger.warning("Provided client statistics " + ClientProperty.STATISTICS_PERIOD_SECONDS.getName()
                     + " cannot be less than or equal to 0. You provided " + periodSeconds
                     + " seconds as the configuration. Client will use the default value of " + defaultValue + " instead.");
             periodSeconds = defaultValue;
