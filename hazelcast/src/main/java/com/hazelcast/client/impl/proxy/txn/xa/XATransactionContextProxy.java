@@ -41,7 +41,6 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionalObjectKey;
 
-import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.util.HashMap;
 import java.util.Map;
@@ -172,10 +171,5 @@ public class XATransactionContextProxy implements ClientTransactionContext {
 
     public XATransactionProxy getTransaction() {
         return transaction;
-    }
-
-    @Override
-    public XAResource getXaResource() {
-        throw new UnsupportedOperationException("Use HazelcastInstance.getXAResource() instead!");
     }
 }
