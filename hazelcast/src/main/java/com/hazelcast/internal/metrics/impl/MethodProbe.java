@@ -20,8 +20,8 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeAware;
+import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
 
 import java.lang.reflect.Method;
@@ -72,10 +72,8 @@ abstract class MethodProbe implements ProbeFunction, ProbeAware {
         metricsRegistry.registerInternal(source, tagger, probe.level(), this);
     }
 
-    void register(MetricTaggerImpl builder, Object source) {
-        builder
-                .withTag("unit", probe.unit().name().toLowerCase())
-                .registerStaticProbe(source, getProbeOrMethodName(), probe.level(), this);
+    void register(MetricsRegistryImpl metricsRegistry, MetricTagger tagger, Object source) {
+        metricsRegistry.registerStaticProbe(source, tagger, getProbeOrMethodName(), probe.level(), probe.unit(), this);
     }
 
     String getProbeOrMethodName() {

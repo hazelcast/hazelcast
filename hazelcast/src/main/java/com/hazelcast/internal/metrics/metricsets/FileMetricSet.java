@@ -44,8 +44,8 @@ public final class FileMetricSet {
         File file = new File(System.getProperty("user.home"));
         MetricTagger tagger = metricsRegistry.newMetricTagger("file.partition")
                                              .withIdTag("dir", "user.home");
-        tagger.registerStaticProbe(file, "freeSpace", MANDATORY, BYTES, File::getFreeSpace);
-        tagger.registerStaticProbe(file, "totalSpace", MANDATORY, BYTES, File::getTotalSpace);
-        tagger.registerStaticProbe(file, "usableSpace", MANDATORY, BYTES, File::getUsableSpace);
+        metricsRegistry.registerStaticProbe(file, tagger, "freeSpace", MANDATORY, BYTES, File::getFreeSpace);
+        metricsRegistry.registerStaticProbe(file, tagger, "totalSpace", MANDATORY, BYTES, File::getTotalSpace);
+        metricsRegistry.registerStaticProbe(file, tagger, "usableSpace", MANDATORY, BYTES, File::getUsableSpace);
     }
 }

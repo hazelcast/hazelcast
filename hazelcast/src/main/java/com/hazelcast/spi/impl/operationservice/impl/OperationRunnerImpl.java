@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
@@ -25,6 +26,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
@@ -36,7 +38,6 @@ import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -144,15 +145,15 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
-            registry.newMetricTagger("operation.partition")
-                    .withTag("partitionId", String.valueOf(partitionId))
-                    .registerStaticMetrics(this);
+            MetricTagger tagger = registry.newMetricTagger("operation.partition")
+                                          .withTag("partitionId", String.valueOf(partitionId));
+            registry.registerStaticMetrics(tagger, this);
         } else if (partitionId == -1) {
-            registry.newMetricTagger("operation.generic")
-                    .withTag("genericId", String.valueOf(genericId))
-                    .registerStaticMetrics(this);
+            MetricTagger tagger = registry.newMetricTagger("operation.generic")
+                                          .withTag("genericId", String.valueOf(genericId));
+            registry.registerStaticMetrics(tagger, this);
         } else {
-            registry.newMetricTagger("operation.adhoc").registerStaticMetrics(this);
+            registry.registerStaticMetrics(this, "operation.adhoc");
         }
     }
 

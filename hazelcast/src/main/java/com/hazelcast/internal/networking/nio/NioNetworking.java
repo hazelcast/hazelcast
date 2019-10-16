@@ -20,7 +20,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricTaggerSupplier;
-import com.hazelcast.internal.metrics.MetricsExtractor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -326,39 +326,39 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
         for (Channel channel : channels) {
             String pipelineId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
 
             MetricTagger taggerIn = taggerSupplier.getMetricTagger("tcp.connection.in")
                                                   .withIdTag("pipelineId", pipelineId);
-            extractor.extractMetrics(taggerIn, channel.inboundPipeline());
+            context.collect(taggerIn, channel.inboundPipeline());
 
             MetricTagger taggerOut = taggerSupplier.getMetricTagger("tcp.connection.out")
                                                    .withIdTag("pipelineId", pipelineId);
-            extractor.extractMetrics(taggerOut, channel.outboundPipeline());
+            context.collect(taggerOut, channel.outboundPipeline());
         }
 
         for (NioThread nioThread : inputThreads) {
             MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.inputThread")
                                                 .withIdTag("thread", nioThread.getName());
-            extractor.extractMetrics(tagger, nioThread);
+            context.collect(tagger, nioThread);
         }
 
         for (NioThread nioThread : outputThreads) {
             MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.outputThread")
                                                 .withIdTag("thread", nioThread.getName());
-            extractor.extractMetrics(tagger, nioThread);
+            context.collect(tagger, nioThread);
         }
 
         IOBalancer ioBalancer = this.ioBalancer;
         if (ioBalancer != null) {
             MetricTagger taggerBalancer = taggerSupplier.getMetricTagger("tcp.balancer");
-            extractor.extractMetrics(taggerBalancer, ioBalancer);
+            context.collect(taggerBalancer, ioBalancer);
         }
 
         MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
-        extractor.extractMetrics(tagger, this);
+        context.collect(tagger, this);
     }
 
     private class ChannelCloseListenerImpl implements ChannelCloseListener {

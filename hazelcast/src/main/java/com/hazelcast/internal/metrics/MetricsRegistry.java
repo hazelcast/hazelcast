@@ -144,6 +144,26 @@ public interface MetricsRegistry {
     <S> void registerStaticMetrics(S source, String namePrefix);
 
     /**
+     * Scans the source object for any fields/methods that have been annotated
+     * with {@link Probe} annotation, and registers these fields/methods as
+     * static probe instances.
+     * <p>
+     * If a probe is called 'queueSize' and the namePrefix is 'operations',
+     * then the name of the probe instance is 'operations.queueSize'.
+     * <p>
+     * If a probe with the same name already exists, then the probe is replaced.
+     * <p>
+     * If an object has no @Probe annotations, the call is ignored.
+     *
+     * @param tagger the tagger.
+     * @param source the object to scan.
+     * @throws NullPointerException     if namePrefix or source is null.
+     * @throws IllegalArgumentException if the source contains a Probe
+     *                                  annotation on a field/method of unsupported type.
+     */
+    <S> void registerStaticMetrics(MetricTagger tagger, S source);
+
+    /**
      * Registers dynamic metrics sources that collect metrics in each metrics
      * collection cycle.
      *
@@ -165,24 +185,99 @@ public interface MetricsRegistry {
      *
      * If a probe for the given name exists, it will be overwritten.
      *
-     * @param name  the name of the probe.
-     * @param level the ProbeLevel
-     * @param probe the probe
+     * @param source   the object that the probe function to be used with
+     * @param name     the name of the probe
+     * @param level    the ProbeLevel
+     * @param unit     the unit
+     * @param function the probe function
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void registerStaticProbe(S source, String name, ProbeLevel level, LongProbeFunction<S> probe);
+    <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+                                 ProbeFunction function);
 
     /**
      * Registers a probe.
      *
      * If a probe for the given name exists, it will be overwritten.
      *
+     * @param source   the object that the probe function to be used with
+     * @param name     the name of the probe.
+     * @param level    the ProbeLevel
+     * @param function the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, String name, ProbeLevel level, LongProbeFunction<S> function);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source the object that the probe function to be used with
+     * @param name   the name of the probe.
+     * @param level  the ProbeLevel
+     * @param unit   the unit
+     * @param probe  the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, String name, ProbeLevel level, ProbeUnit unit, LongProbeFunction<S> probe);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source the object that the probe function to be used with
+     * @param name   the name of the probe.
+     * @param level  the ProbeLevel
+     * @param unit   the unit
+     * @param probe  the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+                                 LongProbeFunction<S> probe);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source   the object that the probe function to be used with
      * @param name  the name of the probe
      * @param level the ProbeLevel
      * @param probe the probe
      * @throws NullPointerException if source, name, level or probe is null.
      */
     <S> void registerStaticProbe(S source, String name, ProbeLevel level, DoubleProbeFunction<S> probe);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source the object that the probe function to be used with
+     * @param name   the name of the probe
+     * @param level  the ProbeLevel
+     * @param unit   the unit
+     * @param probe  the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, String name, ProbeLevel level, ProbeUnit unit, DoubleProbeFunction<S> probe);
+
+    /**
+     * Registers a probe.
+     *
+     * If a probe for the given name exists, it will be overwritten.
+     *
+     * @param source the object that the probe function to be used with
+     * @param name   the name of the probe
+     * @param level  the ProbeLevel
+     * @param unit   the unit
+     * @param probe  the probe
+     * @throws NullPointerException if source, name, level or probe is null.
+     */
+    <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+                                 DoubleProbeFunction<S> probe);
 
     /**
      * Schedules a publisher to be executed at a fixed rate.

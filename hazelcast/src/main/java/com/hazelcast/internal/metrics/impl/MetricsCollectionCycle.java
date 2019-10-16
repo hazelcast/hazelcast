@@ -22,11 +22,13 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 
 import java.util.Collection;
@@ -46,11 +48,11 @@ class MetricsCollectionCycle {
     private final Function<Class, SourceMetadata> lookupMetadataFunction;
     private final MetricsCollector metricsCollector;
     private final ProbeLevel minimumLevel;
+    private final MetricsContext metricsContext = new MetricsContext();
 
-    MetricsCollectionCycle(MetricTaggerSupplier taggerSupplier,
-                           Function<Class, SourceMetadata> lookupMetadataFunction,
+    MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFunction,
                            MetricsCollector metricsCollector, ProbeLevel minimumLevel) {
-        this.taggerSupplier = taggerSupplier;
+        this.taggerSupplier = new TaggerSupplier();
         this.lookupMetadataFunction = lookupMetadataFunction;
         this.metricsCollector = metricsCollector;
         this.minimumLevel = minimumLevel;
@@ -71,7 +73,7 @@ class MetricsCollectionCycle {
 
     void collectDynamicMetrics(Collection<DynamicMetricsProvider> metricsSources) {
         for (DynamicMetricsProvider metricsSource : metricsSources) {
-            metricsSource.provideDynamicMetrics(taggerSupplier, this::extractAndCollectDynamicMetrics);
+            metricsSource.provideDynamicMetrics(taggerSupplier, metricsContext);
         }
     }
 
@@ -143,5 +145,45 @@ class MetricsCollectionCycle {
         }
 
         return emptySet();
+    }
+
+    private class MetricsContext implements MetricsCollectionContext {
+
+        @Override
+        public void collect(MetricTagger metricTagger, Object source) {
+            extractAndCollectDynamicMetrics(metricTagger, source);
+        }
+
+        @Override
+        public void collect(MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit, long value) {
+            if (level.isEnabled(minimumLevel)) {
+                metricsCollector.collectLong(tagger.withTag("unit", unit.name().toLowerCase())
+                                                   .withMetricTag(name)
+                                                   .metricName(), value, emptySet());
+            }
+        }
+
+
+        @Override
+        public void collect(MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit, double value) {
+            if (level.isEnabled(minimumLevel)) {
+                metricsCollector.collectDouble(tagger.withTag("unit", unit.name().toLowerCase())
+                                                     .withMetricTag(name)
+                                                     .metricName(), value, emptySet());
+            }
+        }
+    }
+
+    private static class TaggerSupplier implements MetricTaggerSupplier {
+
+        @Override
+        public MetricTagger getMetricTagger() {
+            return getMetricTagger(null);
+        }
+
+        @Override
+        public MetricTagger getMetricTagger(String namespace) {
+            return new MetricTaggerImpl(namespace);
+        }
     }
 }

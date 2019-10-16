@@ -68,12 +68,7 @@ public final class OperatingSystemMetricSet {
         registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad", PERCENTAGE_MULTIPLIER);
 
         metricsRegistry.registerStaticProbe(mxBean, "os.systemLoadAverage", MANDATORY,
-                new DoubleProbeFunction<OperatingSystemMXBean>() {
-                    @Override
-                    public double get(OperatingSystemMXBean bean) {
-                        return bean.getSystemLoadAverage();
-                    }
-                }
+                OperatingSystemMXBean::getSystemLoadAverage
         );
     }
 

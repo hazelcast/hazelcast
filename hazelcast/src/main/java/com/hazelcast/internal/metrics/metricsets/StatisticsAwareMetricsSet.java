@@ -20,7 +20,7 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricTaggerSupplier;
-import com.hazelcast.internal.metrics.MetricsExtractor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.monitor.LocalIndexStats;
@@ -64,7 +64,7 @@ public final class StatisticsAwareMetricsSet {
         }
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsExtractor extractor) {
+        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
             for (StatisticsAwareService statisticsAwareService : serviceManager.getServices(StatisticsAwareService.class)) {
                 Map<String, LocalInstanceStats> stats = statisticsAwareService.getStats();
                 if (stats == null) {
@@ -85,7 +85,7 @@ public final class StatisticsAwareMetricsSet {
                     if (nearCacheStats != null) {
                         MetricTagger tagger = taggerSupplier.getMetricTagger(baseName + ".nearcache")
                                                             .withIdTag("name", name);
-                        extractor.extractMetrics(tagger, nearCacheStats);
+                        context.collect(tagger, nearCacheStats);
                     }
 
                     if (localInstanceStats instanceof LocalMapStatsImpl) {
@@ -94,13 +94,13 @@ public final class StatisticsAwareMetricsSet {
                             MetricTagger tagger = taggerSupplier.getMetricTagger(baseName + ".index")
                                                                 .withIdTag("name", name)
                                                                 .withTag("index", indexEntry.getKey());
-                            extractor.extractMetrics(tagger, indexEntry.getValue());
+                            context.collect(tagger, indexEntry.getValue());
                         }
                     }
 
                     MetricTagger tagger = taggerSupplier.getMetricTagger(baseName)
                                                         .withIdTag("name", name);
-                    extractor.extractMetrics(tagger, localInstanceStats);
+                    context.collect(tagger, localInstanceStats);
                 }
             }
         }

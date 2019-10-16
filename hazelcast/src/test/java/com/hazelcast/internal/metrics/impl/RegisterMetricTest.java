@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,14 +31,17 @@ import org.junit.runner.RunWith;
 
 import java.io.OutputStream;
 import java.util.LinkedList;
+import java.util.Set;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RegisterMetricTest extends HazelcastTestSupport {
 
+    public static final int IGNORED = 42;
     private MetricsRegistryImpl metricsRegistry;
 
     @Before
@@ -51,7 +56,7 @@ public class RegisterMetricTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void whenObjectNull() {
-        metricsRegistry.registerStaticMetrics(null, "bar");
+        metricsRegistry.registerStaticMetrics((Object) null, "bar");
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -68,6 +73,80 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testRegisterStaticMetrics() {
+        MultiFieldAndMethod source = new MultiFieldAndMethod();
+        metricsRegistry.registerStaticMetrics(metricsRegistry.newMetricTagger("test"), source);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=count,metric=test.method1]");
+        assertContains(metricNames, "[unit=count,metric=test.method2]");
+        assertContains(metricNames, "[unit=count,metric=test.field1]");
+        assertContains(metricNames, "[unit=count,metric=test.field2]");
+    }
+
+    // long functions
+
+    @Test
+    public void testRegisterStaticProbeLong_withTagger() {
+        metricsRegistry
+                .registerStaticProbe(new MultiFieldAndMethod(), metricsRegistry.newMetricTagger("test"), "someMetric", INFO,
+                        BYTES,
+                        (LongProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=bytes,metric=test.someMetric]");
+    }
+
+    @Test
+    public void testRegisterStaticProbeLong_withoutTagger() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), "someMetric", INFO, BYTES,
+                (LongProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=bytes,metric=someMetric]");
+    }
+
+    @Test
+    public void testRegisterStaticProbeLong_withoutTagger_withoutUnit() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), "someMetric", INFO,
+                (LongProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[metric=someMetric]");
+    }
+
+    // double functions
+
+    @Test
+    public void testRegisterStaticProbeDouble_withTagger() {
+        metricsRegistry
+                .registerStaticProbe(new MultiFieldAndMethod(), metricsRegistry.newMetricTagger("test"), "someMetric", INFO,
+                        BYTES,
+                        (DoubleProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=bytes,metric=test.someMetric]");
+    }
+
+    @Test
+    public void testRegisterStaticProbeDouble_withoutTagger() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), "someMetric", INFO, BYTES,
+                (DoubleProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[unit=bytes,metric=someMetric]");
+    }
+
+    @Test
+    public void testRegisterStaticProbeDouble_withoutTagger_withoutUnit() {
+        metricsRegistry.registerStaticProbe(new MultiFieldAndMethod(), "someMetric", INFO,
+                (DoubleProbeFunction<MultiFieldAndMethod>) source -> IGNORED);
+        Set<String> metricNames = metricsRegistry.getNames();
+
+        assertContains(metricNames, "[metric=someMetric]");
+    }
+
     public class SomeField {
         @Probe
         long field;
@@ -82,7 +161,7 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         @Probe
         long field1;
         @Probe
-        long field2;
+        double field2;
 
         @Probe
         int method1() {
@@ -90,7 +169,7 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         }
 
         @Probe
-        int method2() {
+        double method2() {
             return 2;
         }
     }
