@@ -265,6 +265,6 @@ public class ListenerLeakTest extends HazelcastTestSupport {
 
         client.shutdown();
         Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
-        assertEquals(0, backupListeners.size());
+        assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
     }
 }
