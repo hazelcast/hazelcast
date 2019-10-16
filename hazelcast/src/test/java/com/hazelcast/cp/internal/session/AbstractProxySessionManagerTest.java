@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 
 public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestSupport {
 
-    private static final int sessionTTLSeconds = 5;
+    private static final int sessionTTLSeconds = 10;
 
     HazelcastInstance[] members;
     protected RaftGroupId groupId;
@@ -193,7 +193,8 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
     }
 
     private SessionAccessor getSessionAccessor() {
-        return getNodeEngineImpl(members[0]).getService(RaftSessionService.SERVICE_NAME);
+        HazelcastInstance leaderInstance = getLeaderInstance(members, groupId);
+        return getNodeEngineImpl(leaderInstance).getService(RaftSessionService.SERVICE_NAME);
     }
 
     @Override
