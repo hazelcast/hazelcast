@@ -535,9 +535,9 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
 
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
         assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
@@ -552,9 +552,12 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         HazelcastInstance hz4 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, hz3);
-
-        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
+            }
+        });
         assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz4));
     }
 
