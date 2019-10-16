@@ -37,6 +37,7 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
 
         Object objectValue = serializationService.toObject(value);
         Record<Object> record = statisticsEnabled ? new ObjectRecordWithStats(objectValue) : new ObjectRecord(objectValue);
+        record.setKey(key);
         return record;
     }
 

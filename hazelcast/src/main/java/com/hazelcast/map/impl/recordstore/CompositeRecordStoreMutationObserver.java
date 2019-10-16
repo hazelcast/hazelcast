@@ -24,8 +24,7 @@ import java.util.LinkedList;
 
 class CompositeRecordStoreMutationObserver<R extends Record> implements RecordStoreMutationObserver<R> {
 
-    private final Collection<RecordStoreMutationObserver<R>> mutationObservers = new
-            LinkedList<>();
+    private final Collection<RecordStoreMutationObserver<R>> mutationObservers = new LinkedList<>();
 
     CompositeRecordStoreMutationObserver(Collection<RecordStoreMutationObserver<R>> mutationObservers) {
         this.mutationObservers.addAll(mutationObservers);
@@ -33,6 +32,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onClear() {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onClear();
         }
@@ -40,6 +43,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onPutRecord(Data key, R record) {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onPutRecord(key, record);
         }
@@ -47,6 +54,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onReplicationPutRecord(Data key, R record) {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onReplicationPutRecord(key, record);
         }
@@ -54,6 +65,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onUpdateRecord(Data key, R record, Object newValue) {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onUpdateRecord(key, record, newValue);
         }
@@ -61,6 +76,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onRemoveRecord(Data key, R record) {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onRemoveRecord(key, record);
         }
@@ -68,6 +87,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onEvictRecord(Data key, R record) {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onEvictRecord(key, record);
         }
@@ -75,6 +98,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onLoadRecord(Data key, R record) {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onLoadRecord(key, record);
         }
@@ -82,6 +109,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onDestroy(boolean internal) {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onDestroy(internal);
         }
@@ -89,6 +120,10 @@ class CompositeRecordStoreMutationObserver<R extends Record> implements RecordSt
 
     @Override
     public void onReset() {
+        if (mutationObservers.isEmpty()) {
+            return;
+        }
+
         for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onReset();
         }

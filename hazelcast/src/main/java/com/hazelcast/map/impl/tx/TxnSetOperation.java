@@ -22,8 +22,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,7 +34,7 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
 
 /**
  * An operation to unlock and set (key,value) on the partition .
@@ -86,7 +84,7 @@ public class TxnSetOperation extends BasePutOperation
                 oldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-            recordStore.setTxn(dataKey, dataValue, ttl, RecordStore.DEFAULT_MAX_IDLE, transactionId);
+            recordStore.setTxn(dataKey, dataValue, ttl, DEFAULT_MAX_IDLE, transactionId);
             shouldBackup = true;
         }
     }
@@ -134,11 +132,8 @@ public class TxnSetOperation extends BasePutOperation
     @Override
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
-        RecordInfo replicationInfo = buildRecordInfo(record);
-        if (isPostProcessing(recordStore)) {
-            dataValue = mapServiceContext.toData(record.getValue());
-        }
-        return new TxnSetBackupOperation(name, dataKey, dataValue, replicationInfo, transactionId);
+        dataValue = getValueOrPostProcessedValue(record, dataValue);
+        return new TxnSetBackupOperation(name, record, dataValue, transactionId);
     }
 
     @Override

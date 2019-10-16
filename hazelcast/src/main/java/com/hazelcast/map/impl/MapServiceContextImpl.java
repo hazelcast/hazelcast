@@ -544,79 +544,99 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void interceptAfterGet(String mapName, Object value) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
-        if (!interceptors.isEmpty()) {
-            value = toObject(value);
-            for (MapInterceptor interceptor : interceptors) {
-                interceptor.afterGet(value);
-            }
-        }
-    }
-
-    @Override
-    public Object interceptPut(String mapName, Object oldValue, Object newValue) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
-        Object result = null;
-        if (!interceptors.isEmpty()) {
-            result = toObject(newValue);
-            oldValue = toObject(oldValue);
-            for (MapInterceptor interceptor : interceptors) {
-                Object temp = interceptor.interceptPut(oldValue, result);
-                if (temp != null) {
-                    result = temp;
-                }
-            }
-        }
-        return result == null ? newValue : result;
-    }
-
-    @Override
-    public void interceptAfterPut(String mapName, Object newValue) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
-        if (!interceptors.isEmpty()) {
-            newValue = toObject(newValue);
-            for (MapInterceptor interceptor : interceptors) {
-                interceptor.afterPut(newValue);
-            }
-        }
-    }
-
-    @Override
     public MapClearExpiredRecordsTask getClearExpiredRecordsTask() {
         return clearExpiredRecordsTask;
     }
 
+    // TODO: interceptors should get a wrapped object which includes the serialized version
     @Override
-    public Object interceptRemove(String mapName, Object value) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
-        Object result = null;
-        if (!interceptors.isEmpty()) {
-            result = toObject(value);
-            for (MapInterceptor interceptor : interceptors) {
-                Object temp = interceptor.interceptRemove(result);
-                if (temp != null) {
-                    result = temp;
-                }
+    public Object interceptGet(InterceptorRegistry interceptorRegistry, Object currentValue) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return currentValue;
+        }
+
+        Object result = toObject(currentValue);
+        for (MapInterceptor interceptor : interceptors) {
+            Object temp = interceptor.interceptGet(result);
+            if (temp != null) {
+                result = temp;
             }
         }
-        return result == null ? value : result;
+        return result == null ? currentValue : result;
     }
 
     @Override
-    public void interceptAfterRemove(String mapName, Object value) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
+    public void interceptAfterGet(InterceptorRegistry interceptorRegistry, Object value) {
         List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
-        if (!interceptors.isEmpty()) {
-            value = toObject(value);
-            for (MapInterceptor interceptor : interceptors) {
-                interceptor.afterRemove(value);
+        if (interceptors.isEmpty()) {
+            return;
+        }
+
+        value = toObject(value);
+        for (MapInterceptor interceptor : interceptors) {
+            interceptor.afterGet(value);
+        }
+    }
+
+    @Override
+    public Object interceptPut(InterceptorRegistry interceptorRegistry, Object oldValue, Object newValue) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return newValue;
+        }
+
+        Object result = toObject(newValue);
+        oldValue = toObject(oldValue);
+        for (MapInterceptor interceptor : interceptors) {
+            Object temp = interceptor.interceptPut(oldValue, result);
+            if (temp != null) {
+                result = temp;
             }
+        }
+        return result;
+    }
+
+    @Override
+    public void interceptAfterPut(InterceptorRegistry interceptorRegistry, Object newValue) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return;
+        }
+
+        newValue = toObject(newValue);
+        for (MapInterceptor interceptor : interceptors) {
+            interceptor.afterPut(newValue);
+        }
+    }
+
+    @Override
+    public Object interceptRemove(InterceptorRegistry interceptorRegistry, Object value) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return value;
+        }
+
+        Object result = toObject(value);
+        for (MapInterceptor interceptor : interceptors) {
+            Object temp = interceptor.interceptRemove(result);
+            if (temp != null) {
+                result = temp;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void interceptAfterRemove(InterceptorRegistry interceptorRegistry, Object value) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return;
+        }
+
+        value = toObject(value);
+        for (MapInterceptor interceptor : interceptors) {
+            interceptor.afterRemove(value);
         }
     }
 
@@ -627,39 +647,14 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String generateInterceptorId(String mapName, MapInterceptor interceptor) {
-        return interceptor.getClass().getName() + interceptor.hashCode();
-    }
-
-    @Override
     public boolean removeInterceptor(String mapName, String id) {
         MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.getInterceptorRegistry().deregister(id);
     }
 
-    // TODO: interceptors should get a wrapped object which includes the serialized version
     @Override
-    public Object interceptGet(String mapName, Object value) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
-        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
-        Object result = null;
-        if (!interceptors.isEmpty()) {
-            result = toObject(value);
-            for (MapInterceptor interceptor : interceptors) {
-                Object temp = interceptor.interceptGet(result);
-                if (temp != null) {
-                    result = temp;
-                }
-            }
-        }
-        return result == null ? value : result;
-    }
-
-    @Override
-    public boolean hasInterceptor(String mapName) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        return !mapContainer.getInterceptorRegistry().getInterceptors().isEmpty();
+    public String generateInterceptorId(String mapName, MapInterceptor interceptor) {
+        return interceptor.getClass().getName() + interceptor.hashCode();
     }
 
     @Override

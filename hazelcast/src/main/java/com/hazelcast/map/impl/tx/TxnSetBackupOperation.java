@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
 public class TxnSetBackupOperation extends PutBackupOperation {
     private UUID transactionId;
@@ -36,19 +35,17 @@ public class TxnSetBackupOperation extends PutBackupOperation {
     public TxnSetBackupOperation() {
     }
 
-    public TxnSetBackupOperation(String name, Data dataKey, Data dataValue,
-                                 RecordInfo recordInfo, UUID transactionId) {
-        super(name, dataKey, dataValue, recordInfo);
+    public TxnSetBackupOperation(String name, Record<Data> record, Data dataValue, UUID transactionId) {
+        super(name, record, dataValue);
         this.transactionId = transactionId;
     }
 
     @Override
     protected void runInternal() {
-        Record record = recordStore.putBackupTxn(dataKey, dataValue, recordInfo.getTtl(),
-                recordInfo.getMaxIdle(), isPutTransient(), getCallerProvenance(), transactionId);
-
-        applyRecordInfo(record, recordInfo);
-        recordStore.forceUnlock(dataKey);
+        Record currentRecord = recordStore.putBackupTxn(record, isPutTransient(),
+                getCallerProvenance(), transactionId);
+        Records.copyMetadataFrom(record, currentRecord);
+        recordStore.forceUnlock(currentRecord.getKey());
     }
 
     @Override

@@ -21,7 +21,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -37,14 +36,15 @@ import java.util.Map;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
 
 /**
- * Inserts the {@link MapEntries} for a single partition to the local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
+ * Inserts the {@link MapEntries} for a single partition to the
+ * local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
  * <p>
- * Used to reduce the number of remote invocations of an {@link IMap#putAll(Map)} call.
+ * Used to reduce the number of remote invocations
+ * of an {@link IMap#putAll(Map)} call.
  */
 public class PutAllOperation extends MapOperation
         implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
@@ -57,8 +57,8 @@ public class PutAllOperation extends MapOperation
     private transient boolean hasBackups;
     private transient boolean hasInvalidation;
 
-    private List<RecordInfo> backupRecordInfos;
-    private List<Data> invalidationKeys;
+    private transient List backupRecordAndDataValuePairs;
+    private transient List<Data> invalidationKeys;
 
     public PutAllOperation() {
     }
@@ -78,7 +78,7 @@ public class PutAllOperation extends MapOperation
         hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
-            backupRecordInfos = new ArrayList<>(mapEntries.size());
+            backupRecordAndDataValuePairs = new ArrayList<>(mapEntries.size());
         }
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mapEntries.size());
@@ -103,7 +103,7 @@ public class PutAllOperation extends MapOperation
     private void put(Data dataKey, Data dataValue) {
         Object oldValue = putToRecordStore(dataKey, dataValue);
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
-        mapServiceContext.interceptAfterPut(name, dataValue);
+        mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
 
         if (hasMapListener) {
             EntryEventType eventType = (oldValue == null ? ADDED : UPDATED);
@@ -116,8 +116,8 @@ public class PutAllOperation extends MapOperation
         }
         if (hasBackups) {
             Record record = recordStore.getRecord(dataKey);
-            RecordInfo replicationInfo = buildRecordInfo(record);
-            backupRecordInfos.add(replicationInfo);
+            backupRecordAndDataValuePairs.add(record);
+            backupRecordAndDataValuePairs.add(dataValue);
         }
 
         evict(dataKey);
@@ -127,9 +127,10 @@ public class PutAllOperation extends MapOperation
     }
 
     /**
-     * The method recordStore.put() tries to fetch the old value from the MapStore,
-     * which can lead to a serious performance degradation if loading from MapStore is expensive.
-     * We prevent this by calling recordStore.set() if no map listeners are registered.
+     * The method recordStore.put() tries to fetch the old value from
+     * the MapStore, which can lead to a serious performance degradation
+     * if loading from MapStore is expensive. We prevent this by
+     * calling recordStore.set() if no map listeners are registered.
      */
     private Object putToRecordStore(Data dataKey, Data dataValue) {
         if (hasMapListener) {
@@ -176,7 +177,8 @@ public class PutAllOperation extends MapOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos, false);
+        return new PutAllBackupOperation(name,
+                backupRecordAndDataValuePairs, false);
     }
 
     @Override

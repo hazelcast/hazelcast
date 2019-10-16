@@ -18,19 +18,19 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.SerializableByConvention;
-import com.hazelcast.query.impl.predicates.SkipIndexPredicate;
 import com.hazelcast.query.impl.predicates.BoundedRangePredicate;
 import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
 import com.hazelcast.query.impl.predicates.CompositeRangePredicate;
-import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
+import com.hazelcast.query.impl.predicates.SkipIndexPredicate;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -57,13 +57,16 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests to verify serializable classes conventions are observed. Each conventions test scans the classpath (excluding
- * test classes) and tests <b>concrete</b> classes which implement (directly or transitively) {@code Serializable} or
- * {@code DataSerializable} interface, then verifies that it's either annotated with {@link BinaryInterface},
- * is excluded from conventions tests by being annotated with {@link SerializableByConvention} or
- * they also implement {@code IdentifiedDataSerializable}.
- * Additionally, tests whether IDS instanced obtained from DS factories
- * have the same ID as the one reported by their `getClassId` method and that F_ID/ID combinations are unique.
+ * Tests to verify serializable classes conventions are observed.
+ * Each conventions test scans the classpath (excluding test classes)
+ * and tests <b>concrete</b> classes which implement (directly or
+ * transitively) {@code Serializable} or {@code DataSerializable}
+ * interface, then verifies that it's either annotated with {@link
+ * BinaryInterface}, is excluded from conventions tests by being annotated
+ * with {@link SerializableByConvention} or they also implement {@code
+ * IdentifiedDataSerializable}. Additionally, tests whether IDS instanced
+ * obtained from DS factories have the same ID as the one reported by
+ * their `getClassId` method and that F_ID/ID combinations are unique.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})

@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
 
 public class MapPutTransientMessageTask
         extends AbstractMapPutMessageTask<MapPutTransientCodec.RequestParameters> {

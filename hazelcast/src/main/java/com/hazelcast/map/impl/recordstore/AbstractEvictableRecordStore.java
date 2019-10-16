@@ -27,8 +27,8 @@ import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -49,6 +49,8 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
 
 /**
  * Contains eviction specific functionality.

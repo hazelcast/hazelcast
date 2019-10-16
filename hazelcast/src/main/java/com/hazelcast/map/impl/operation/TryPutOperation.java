@@ -20,8 +20,8 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
 
 public class TryPutOperation extends BasePutOperation implements MutatingOperation {
 

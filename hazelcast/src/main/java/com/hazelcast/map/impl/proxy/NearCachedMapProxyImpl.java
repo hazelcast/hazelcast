@@ -25,6 +25,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalida
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -579,7 +580,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (value == CACHED_AS_NULL) {
             return null;
         }
-        mapServiceContext.interceptAfterGet(name, value);
+        InterceptorRegistry interceptorRegistry = mapServiceContext.getMapContainer(name).getInterceptorRegistry();
+        mapServiceContext.interceptAfterGet(interceptorRegistry, value);
         return deserializeValue ? toObject(value) : value;
     }
 

@@ -17,9 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -34,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.core.EntryEventType.MERGED;
-import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
  * Contains multiple merge entries for split-brain
@@ -54,10 +51,10 @@ public class MergeOperation extends MapOperation
     private transient boolean hasBackups;
     private transient boolean hasInvalidation;
 
-    private transient MapEntries mapEntries;
-    private transient List<RecordInfo> backupRecordInfos;
     private transient List<Data> invalidationKeys;
     private transient boolean hasMergedValues;
+
+    private List backupRecordAndDataValuePairs;
 
     public MergeOperation() {
     }
@@ -84,8 +81,7 @@ public class MergeOperation extends MapOperation
         hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
-            mapEntries = new MapEntries(mergingEntries.size());
-            backupRecordInfos = new ArrayList<>(mergingEntries.size());
+            backupRecordAndDataValuePairs = new ArrayList<>(mergingEntries.size() * 2);
         }
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mergingEntries.size());
@@ -103,7 +99,7 @@ public class MergeOperation extends MapOperation
         if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {
             hasMergedValues = true;
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
-            mapServiceContext.interceptAfterPut(name, dataValue);
+            mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
 
             if (hasMapListener) {
                 mapEventPublisher.publishEvent(getCallerAddress(), name, MERGED, dataKey, oldValue, dataValue);
@@ -112,8 +108,12 @@ public class MergeOperation extends MapOperation
                 publishWanUpdate(dataKey, dataValue);
             }
             if (hasBackups) {
-                mapEntries.add(dataKey, dataValue);
-                backupRecordInfos.add(buildRecordInfo(recordStore.getRecord(dataKey)));
+                Record record = recordStore.getRecord(dataKey);
+                if (record != null) {
+                    // TODO what about backup of removed records?
+                    backupRecordAndDataValuePairs.add(record);
+                    backupRecordAndDataValuePairs.add(dataValue);
+                }
             }
             evict(dataKey);
             if (hasInvalidation) {
@@ -145,7 +145,7 @@ public class MergeOperation extends MapOperation
 
     @Override
     public boolean shouldBackup() {
-        return hasBackups && !backupRecordInfos.isEmpty();
+        return hasBackups && !backupRecordAndDataValuePairs.isEmpty();
     }
 
     @Override
@@ -165,7 +165,7 @@ public class MergeOperation extends MapOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos, disableWanReplicationEvent);
+        return new PutAllBackupOperation(name, backupRecordAndDataValuePairs, disableWanReplicationEvent);
     }
 
     @Override

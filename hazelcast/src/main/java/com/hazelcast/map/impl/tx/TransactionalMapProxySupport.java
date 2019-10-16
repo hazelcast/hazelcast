@@ -21,6 +21,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.comparators.ValueComparator;
+import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -47,7 +48,7 @@ import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
 
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.impl.tx.TransactionalMapProxy}
@@ -186,7 +187,8 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return null;
         }
 
-        mapServiceContext.interceptAfterGet(name, value);
+        InterceptorRegistry interceptorRegistry = mapServiceContext.getMapContainer(name).getInterceptorRegistry();
+        mapServiceContext.interceptAfterGet(interceptorRegistry, value);
         return deserializeValue ? ss.toObject(value) : value;
     }
 

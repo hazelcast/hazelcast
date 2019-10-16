@@ -214,7 +214,8 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public boolean isPostProcessing(RecordStore recordStore) {
         MapDataStore mapDataStore = recordStore.getMapDataStore();
-        return mapDataStore.isPostProcessingMapStore() || mapServiceContext.hasInterceptor(name);
+        return mapDataStore.isPostProcessingMapStore()
+                || !mapContainer.getInterceptorRegistry().getInterceptors().isEmpty();
     }
 
     public void setThreadId(long threadId) {
@@ -340,5 +341,12 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected final TxnReservedCapacityCounter wbqCapacityCounter() {
         return recordStore.getMapDataStore().getTxnReservedCapacityCounter();
+    }
+
+    protected final Data getValueOrPostProcessedValue(Record record, Data dataValue) {
+        if (!isPostProcessing(recordStore)) {
+            return dataValue;
+        }
+        return mapServiceContext.toData(record.getValue());
     }
 }

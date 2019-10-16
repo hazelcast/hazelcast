@@ -60,7 +60,8 @@ public class PutFromLoadAllOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
+        boolean hasInterceptor = !mapContainer.getInterceptorRegistry()
+                .getInterceptors().isEmpty();
 
         List<Data> loadingSequence = this.loadingSequence;
         for (int i = 0; i < loadingSequence.size(); ) {
@@ -89,6 +90,7 @@ public class PutFromLoadAllOperation extends MapOperation
             if (value != null) {
                 callAfterPutInterceptors(value);
             }
+
             if (isPostProcessing(recordStore)) {
                 Record record = recordStore.getRecord(key);
                 checkNotNull(record, "Value loaded by a MapLoader cannot be null.");
@@ -115,9 +117,9 @@ public class PutFromLoadAllOperation extends MapOperation
         invalidationKeys.add(key);
     }
 
-
     private void callAfterPutInterceptors(Object value) {
-        mapService.getMapServiceContext().interceptAfterPut(name, value);
+        mapService.getMapServiceContext()
+                .interceptAfterPut(mapContainer.getInterceptorRegistry(), value);
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.record;
 
 class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
-
     private volatile Object value;
 
     ObjectRecordWithStats() {
@@ -50,7 +49,6 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
         }
 
         ObjectRecordWithStats that = (ObjectRecordWithStats) o;
-
         return value.equals(that.value);
     }
 
@@ -59,5 +57,13 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
         int result = super.hashCode();
         result = 31 * result + value.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ObjectRecordWithStats{"
+                + "value=" + value
+                + ", " + super.toString()
+                + "} ";
     }
 }

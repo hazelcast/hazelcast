@@ -17,9 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,20 +29,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
-
 public class PutAllBackupOperation extends MapOperation
         implements PartitionAwareOperation, BackupOperation {
 
     private boolean disableWanReplicationEvent;
-    private MapEntries entries;
-    private List<RecordInfo> recordInfos;
+    private List recordAndDataValuePairs;
 
-    public PutAllBackupOperation(String name, MapEntries entries,
-                                 List<RecordInfo> recordInfos, boolean disableWanReplicationEvent) {
+    private transient List<Record> dataRecords;
+
+    public PutAllBackupOperation(String name,
+                                 List recordAndDataValuePairs,
+                                 boolean disableWanReplicationEvent) {
         super(name);
-        this.entries = entries;
-        this.recordInfos = recordInfos;
+        this.recordAndDataValuePairs = recordAndDataValuePairs;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
@@ -52,15 +50,27 @@ public class PutAllBackupOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        for (int i = 0; i < entries.size(); i++) {
-            Data dataKey = entries.getKey(i);
-            Data dataValue = entries.getValue(i);
-            Record record = recordStore.putBackup(dataKey, dataValue, getCallerProvenance());
-            applyRecordInfo(record, recordInfos.get(i));
-
-            publishWanUpdate(dataKey, dataValue);
-            evict(dataKey);
+        if (dataRecords == null) {
+            // If dataRecords is null and we are in
+            // `runInternal` method, means this operation
+            // has not been serialized/deserialized
+            // and is running directly on caller node
+            for (int i = 0; i < recordAndDataValuePairs.size(); i += 2) {
+                Record record = (Record) recordAndDataValuePairs.get(i);
+                putBackup(record);
+            }
+        } else {
+            for (Record<Data> record : dataRecords) {
+                putBackup(record);
+            }
         }
+    }
+
+    private void putBackup(Record record) {
+        Record currentRecord = recordStore.putBackup(record, false, getCallerProvenance());
+        Records.copyMetadataFrom(record, currentRecord);
+        publishWanUpdate(record.getKey(), record.getValue());
+        evict(record.getKey());
     }
 
     @Override
@@ -69,17 +79,14 @@ public class PutAllBackupOperation extends MapOperation
     }
 
     @Override
-    public Object getResponse() {
-        return entries;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        entries.writeData(out);
-        for (RecordInfo recordInfo : recordInfos) {
-            recordInfo.writeData(out);
+        out.writeInt(recordAndDataValuePairs.size() / 2);
+        for (int i = 0; i < recordAndDataValuePairs.size(); i += 2) {
+            Record record = (Record) recordAndDataValuePairs.get(i);
+            Data dataValue = (Data) recordAndDataValuePairs.get(i + 1);
+            Records.writeRecord(out, record, dataValue);
         }
         out.writeBoolean(disableWanReplicationEvent);
     }
@@ -88,16 +95,13 @@ public class PutAllBackupOperation extends MapOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        entries = new MapEntries();
-        entries.readData(in);
-        int size = entries.size();
-        recordInfos = new ArrayList<>(size);
+        int size = in.readInt();
+        List<Record> dataRecords = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            RecordInfo recordInfo = new RecordInfo();
-            recordInfo.readData(in);
-            recordInfos.add(recordInfo);
+            dataRecords.add(Records.readRecord(in));
         }
-        disableWanReplicationEvent = in.readBoolean();
+        this.dataRecords = dataRecords;
+        this.disableWanReplicationEvent = in.readBoolean();
     }
 
     @Override

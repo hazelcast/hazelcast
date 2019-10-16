@@ -16,14 +16,42 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Metadata;
+
+import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @param <V> the type of value which is in the Record
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface Record<V> {
+    /**
+     * Base time to be used for storing time values as diffs
+     * (int) rather than full blown epoch based vals (long)
+     * This allows for a space in seconds, of roughly 68 years.
+     *
+     * Reference value (1514764800000) - Monday, January 1, 2018 12:00:00 AM
+     *
+     * The fixed time in the past (instead of {@link
+     * System#currentTimeMillis()} prevents any time discrepancies among nodes,
+     * mis-translated as diffs of -1 ie. {@link Record#NOT_AVAILABLE} values.
+     * (see. https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
+     */
+    long EPOCH_TIME = zeroOutMs(1514764800000L);
+
+    /**
+     * Default TTL value of a record.
+     */
+    long DEFAULT_TTL = -1L;
+
+    /**
+     * Default Max Idle value of a record.
+     */
+    long DEFAULT_MAX_IDLE = -1L;
 
     /**
      * If not a {@link com.hazelcast.map.impl.record.CachedDataRecord}.
@@ -40,18 +68,6 @@ public interface Record<V> {
 
     void setValue(V value);
 
-    void onAccess(long now);
-
-    /**
-     * An implementation must be thread safe if the record might be accessed from multiple threads.
-     *
-     */
-    void onAccessSafe(long now);
-
-    void onUpdate(long now);
-
-    void onStore();
-
     /**
      * Returns heap cost of this record in bytes.
      *
@@ -66,7 +82,8 @@ public interface Record<V> {
     /**
      * Get current cache value or null.
      * <p>
-     * Warning: Do not use this method directly as it might expose arbitrary objects acting as a lock.
+     * Warning: Do not use this method directly as it
+     * might expose arbitrary objects acting as a lock.
      * Use {@link Records#getCachedValue(Record)} instead.
      *
      * @return current cached value or null or cached record mutex.
@@ -84,14 +101,6 @@ public interface Record<V> {
      */
     boolean casCachedValue(Object expectedValue, Object newValue);
 
-    long getTtl();
-
-    void setTtl(long ttl);
-
-    long getMaxIdle();
-
-    void setMaxIdle(long maxIdle);
-
     long getLastAccessTime();
 
     void setLastAccessTime(long lastAccessTime);
@@ -104,9 +113,9 @@ public interface Record<V> {
 
     void setCreationTime(long creationTime);
 
-    long getHits();
+    int getHits();
 
-    void setHits(long hits);
+    void setHits(int hits);
 
     long getExpirationTime();
 
@@ -132,4 +141,112 @@ public interface Record<V> {
 
     Metadata getMetadata();
 
+    default long recomputeWithBaseTime(int value) {
+        if (value == NOT_AVAILABLE) {
+            return 0L;
+        }
+
+        long exploded = SECONDS.toMillis(value);
+        return exploded + EPOCH_TIME;
+    }
+
+    default int stripBaseTime(long value) {
+        int diff = NOT_AVAILABLE;
+        if (value > 0) {
+            diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
+        }
+
+        return diff;
+    }
+
+    default long getTtl() {
+        int ttl = getRawTtl();
+        return ttl == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
+    }
+
+    default void setTtl(long ttl) {
+        long ttlSeconds = MILLISECONDS.toSeconds(ttl);
+        if (ttlSeconds == 0 && ttl != 0) {
+            ttlSeconds = 1;
+        }
+
+        setRawTtl(ttlSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) ttlSeconds);
+    }
+
+    default long getMaxIdle() {
+        int maxIdle = getRawMaxIdle();
+        return maxIdle == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
+    }
+
+    default void setMaxIdle(long maxIdle) {
+        long maxIdleSeconds = MILLISECONDS.toSeconds(maxIdle);
+        if (maxIdleSeconds == 0 && maxIdle != 0) {
+            maxIdleSeconds = 1;
+        }
+        setRawMaxIdle(maxIdleSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) maxIdleSeconds);
+    }
+
+    default void onAccess(long now) {
+        int hits = getHits();
+        if (hits < Integer.MAX_VALUE) {
+            // protect against potential overflow
+            setHits(hits + 1);
+        }
+
+        onAccessSafe(now);
+    }
+
+    /**
+     * An implementation must be thread safe if the
+     * record might be accessed from multiple threads.
+     */
+    default void onAccessSafe(long now) {
+        setLastAccessTime(now);
+    }
+
+
+    default void onUpdate(long now) {
+        setVersion(getVersion() + 1);
+        setLastUpdateTime(now);
+    }
+
+    default void onStore() {
+        setLastStoredTime(Clock.currentTimeMillis());
+    }
+
+    // Below raw methods are used during serialization of a record.
+
+    /**
+     * @return record reader writer id to be used
+     * when serializing/de-serializing this record object.
+     */
+    RecordReaderWriter getMatchingRecordReaderWriter();
+
+    int getRawTtl();
+
+    int getRawMaxIdle();
+
+    int getRawCreationTime();
+
+    int getRawLastAccessTime();
+
+    int getRawLastUpdateTime();
+
+    void setRawTtl(int readInt);
+
+    void setRawMaxIdle(int readInt);
+
+    void setRawCreationTime(int readInt);
+
+    void setRawLastAccessTime(int readInt);
+
+    void setRawLastUpdateTime(int readInt);
+
+    int getRawLastStoredTime();
+
+    void setRawLastStoredTime(int time);
+
+    int getRawExpirationTime();
+
+    void setRawExpirationTime(int time);
 }

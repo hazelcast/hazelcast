@@ -35,8 +35,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
 import static java.util.Collections.singletonList;
 
 /**
