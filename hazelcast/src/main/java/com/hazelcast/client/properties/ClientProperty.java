@@ -164,12 +164,12 @@ public final class ClientProperty {
      * can be done correctly. This property sets the window the concurrency detection will signalling
      * that concurrency has been detected, even if there are no further updates in that window.
      *
-     * Normally in a concurrency system the windows keeps sliding forward so it will always remain
+     * Normally in a concurrent system the window keeps sliding forward so it will always remain
      * concurrent.
      *
-     * Setting it too high effectively disabled the optimization because once concurrency has been detected
+     * Setting it too high effectively disables the optimization because once concurrency has been detected
      * it will keep that way. Setting it too low could lead to suboptimal performance because the system
-     * will try write through and other optimization even though the system is concurrent.
+     * will try write through and other optimizations even though the system is concurrent.
      */
     public static final HazelcastProperty CONCURRENT_WINDOW_MS
             = new HazelcastProperty("hazelcast.client.concurrent.window.ms", 100, MILLISECONDS);
