@@ -72,6 +72,7 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableCollection;
@@ -191,15 +192,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
         discoveryCompleted.set(false);
 
-        synchronized (metadataGroupIdRef) {
-            RaftGroupId newMetadataGroupId = new RaftGroupId(METADATA_CP_GROUP_NAME, seed, 0);
-            metadataGroupIdRef.set(newMetadataGroupId);
-            try {
-                metadataStore.persistMetadataGroupId(newMetadataGroupId);
-            } catch (IOException e) {
-                throw new HazelcastException(e);
-            }
-            logger.fine("New METADATA groupId: " + newMetadataGroupId);
+        RaftGroupId newMetadataGroupId = new RaftGroupId(METADATA_CP_GROUP_NAME, seed, 0);
+        logger.fine("New METADATA groupId: " + newMetadataGroupId);
+        metadataGroupIdRef.set(newMetadataGroupId);
+        try {
+            metadataStore.persistMetadataGroupId(newMetadataGroupId);
+        } catch (IOException e) {
+            throw new HazelcastException(e);
         }
 
         scheduleDiscoverInitialCPMembersTask(false);
@@ -290,9 +289,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             throw new IllegalStateException("Metadata groupId is not allowed to be set!");
         }
 
-        synchronized (metadataGroupIdRef) {
-            metadataGroupIdRef.set(restoredMetadataGroupId);
-        }
+        metadataGroupIdRef.set(restoredMetadataGroupId);
 
         logger.fine("Restored METADATA groupId: " + restoredMetadataGroupId);
     }
@@ -526,7 +523,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         RaftGroupId groupId = group.id();
         if (group.containsMember(getLocalCPMember().toRaftEndpoint())) {
-            raftService.createRaftNode(groupId, group.members());
+            createRaftNodeAsync(group);
         } else {
             // Broadcast group-info to non-metadata group members
             OperationService operationService = nodeEngine.getOperationService();
@@ -540,6 +537,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
 
         return groupId;
+    }
+
+    private void createRaftNodeAsync(CPGroupInfo group) {
+        nodeEngine.getExecutionService().execute(ASYNC_EXECUTOR, () -> raftService.createRaftNode(group.id(), group.members()));
     }
 
     private Map<UUID, CPMemberInfo> getActiveMembersMap() {
@@ -842,7 +843,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
             if (getLocalCPMember().toRaftEndpoint().equals(addedMember)) {
                 // we are the added member to the group, we can try to create the local raft node if not created already
-                raftService.createRaftNode(group.id(), group.members());
+                createRaftNodeAsync(group);
             }
 
             return true;
@@ -910,7 +911,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         // So, during pre-join we skip the update.
         // If this member does not have any persisted CP data,
         // then it's ok to process the update even though persistence is enabled.
-        if (!raftService.isStartCompleted() && metadataStore.hasMetadata()) {
+        if (!raftService.isStartCompleted() && metadataStore.containsLocalMemberFile()) {
             if (!metadataGroupId.equals(newMetadataGroupId)) {
                 logger.severe("Restored METADATA groupId: " + metadataGroupId + " is different than received METADATA groupId: "
                         + newMetadataGroupId + ". There must have been a CP Subsystem reset while this member was down...");
@@ -923,18 +924,15 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             return;
         }
 
-        synchronized (metadataGroupIdRef) {
-            metadataGroupId = getMetadataGroupId();
-            if (metadataGroupId.getSeed() >= newMetadataGroupId.getSeed()) {
-                return;
-            }
-            metadataGroupIdRef.set(newMetadataGroupId);
-            try {
-                metadataStore.persistMetadataGroupId(newMetadataGroupId);
-            } catch (IOException e) {
-                throw new HazelcastException(e);
-            }
-            logger.fine("Updated METADATA groupId: " + newMetadataGroupId);
+        metadataGroupId = getMetadataGroupId();
+        if (metadataGroupId.getSeed() >= newMetadataGroupId.getSeed()) {
+            return;
+        }
+        metadataGroupIdRef.set(newMetadataGroupId);
+        try {
+            metadataStore.persistMetadataGroupId(newMetadataGroupId);
+        } catch (IOException e) {
+            throw new HazelcastException(e);
         }
     }
 
@@ -1326,9 +1324,9 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 // - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
                 // but instead generates a new UUID.
                 localCPMember.set(localCPMemberCandidate);
+                metadataStore.persistLocalCPMember(localCPMemberCandidate);
                 RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.getSeed());
                 raftService.getInvocationManager().invoke(metadataGroupId, op).get();
-                metadataStore.persistLocalCPMember(localCPMemberCandidate);
             } catch (Exception e) {
                 logger.severe("Could not initialize METADATA CP group with CP members: " + metadataMembers, e);
                 raftService.destroyRaftNode(metadataGroupId);

@@ -40,7 +40,7 @@ public final class NopCPMetadataStore implements CPMetadataStore {
     }
 
     @Override
-    public boolean hasMetadata() {
+    public boolean containsLocalMemberFile() {
         return false;
     }
 

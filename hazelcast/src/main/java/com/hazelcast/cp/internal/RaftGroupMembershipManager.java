@@ -491,7 +491,7 @@ class RaftGroupMembershipManager {
                 allGroups.add(group);
             }
 
-            logger.info("Searching for leadership imbalance in " + groupIds.size() + " CPGroups, "
+            logger.fine("Searching for leadership imbalance in " + groupIds.size() + " CPGroups, "
                     + "average groups per member is " + avgGroupsPerMember);
 
             Set<CPMember> handledMembers = new HashSet<>(members.size());
