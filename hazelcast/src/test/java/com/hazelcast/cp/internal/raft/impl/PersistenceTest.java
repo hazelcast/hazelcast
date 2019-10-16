@@ -20,6 +20,7 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.dataservice.RaftDataService;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
+import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
@@ -315,8 +316,7 @@ public class PersistenceTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderIsRestarted_then_itRestoresItsRaftStateAndBecomesLeader() throws ExecutionException, InterruptedException {
-        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setLeaderHeartbeatPeriodInMillis(SECONDS.toMillis(30));
-        group = new LocalRaftGroupBuilder(3, config).setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY)
+        group = new LocalRaftGroupBuilder(3).setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY)
                                             .setAppendNopEntryOnLeaderElection(true)
                                             .build();
         group.start();
@@ -334,8 +334,12 @@ public class PersistenceTest extends HazelcastTestSupport {
         InMemoryRaftStateStore stateStore = getRaftStateStore(leader);
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
+        // Block voting between followers
+        // to avoid a leader election before leader restarts.
+        blockVotingBetweenFollowers();
+
         group.terminateNode(terminatedEndpoint);
-        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
         RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertSame(newLeader, restartedNode);
@@ -362,7 +366,7 @@ public class PersistenceTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertEquals(getCommitIndex(leader), getCommitIndex(terminatedFollower));
+        assertTrueEventually(() -> assertEquals(getCommitIndex(leader), getCommitIndex(terminatedFollower)));
 
         RaftEndpoint terminatedEndpoint = terminatedFollower.getLocalMember();
         InMemoryRaftStateStore stateStore = getRaftStateStore(terminatedFollower);
@@ -484,8 +488,8 @@ public class PersistenceTest extends HazelcastTestSupport {
     @Test
     public void when_leaderIsRestarted_then_itRestoresItsRaftStateWithSnapshotAndBecomesLeader() throws ExecutionException, InterruptedException {
         final int committedEntryCountToSnapshot = 50;
-        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(committedEntryCountToSnapshot)
-                                                              .setLeaderHeartbeatPeriodInMillis(SECONDS.toMillis(30));
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig()
+                .setCommitIndexAdvanceCountToSnapshot(committedEntryCountToSnapshot);
         group = new LocalRaftGroupBuilder(3, config).setAppendNopEntryOnLeaderElection(true)
                                                     .setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY)
                                                     .build();
@@ -505,15 +509,19 @@ public class PersistenceTest extends HazelcastTestSupport {
         InMemoryRaftStateStore stateStore = getRaftStateStore(leader);
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
-        group.terminateNode(terminatedEndpoint);
-        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        // Block voting between followers
+        // to avoid a leader election before leader restarts.
+        blockVotingBetweenFollowers();
 
-        final RaftNodeImpl newLeader = group.waitUntilLeaderElected();
+        group.terminateNode(terminatedEndpoint);
+        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+
+        RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertSame(restartedNode, newLeader);
 
         assertTrueEventually(() -> {
-            assertTrue(getTerm(newLeader) > term);
-            assertEquals(commitIndex + 1, getCommitIndex(newLeader));
+            assertTrue(getTerm(restartedNode) > term);
+            assertEquals(commitIndex + 1, getCommitIndex(restartedNode));
             RaftDataService service = group.getService(restartedNode);
             for (int i = 0; i <= committedEntryCountToSnapshot; i++) {
                 assertEquals("val" + i, service.get(i + 2));
@@ -521,10 +529,18 @@ public class PersistenceTest extends HazelcastTestSupport {
         });
     }
 
+    private void blockVotingBetweenFollowers() {
+        RaftEndpoint[] endpoints = group.getFollowerEndpoints();
+        for (RaftEndpoint endpoint : endpoints) {
+            if (group.isRunning(endpoint)) {
+                group.dropMessagesToAll(endpoint, PreVoteRequest.class);
+            }
+        }
+    }
+
     @Test
     public void when_leaderIsRestarted_then_itBecomesLeaderAndAppliesPreviouslyCommittedMemberList() throws ExecutionException, InterruptedException {
-        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setLeaderHeartbeatPeriodInMillis(SECONDS.toMillis(30));
-        group = new LocalRaftGroupBuilder(3, config).setAppendNopEntryOnLeaderElection(true)
+        group = new LocalRaftGroupBuilder(3).setAppendNopEntryOnLeaderElection(true)
                                             .setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY)
                                             .build();
         group.start();
@@ -532,7 +548,7 @@ public class PersistenceTest extends HazelcastTestSupport {
         RaftNodeImpl leader = group.waitUntilLeaderElected();
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         RaftNodeImpl removedFollower = followers[0];
-        final RaftNodeImpl runningFollower = followers[1];
+        RaftNodeImpl runningFollower = followers[1];
 
         group.terminateNode(removedFollower.getLocalMember());
         leader.replicate(new ApplyRaftRunnable("val")).get();
@@ -542,8 +558,12 @@ public class PersistenceTest extends HazelcastTestSupport {
         InMemoryRaftStateStore stateStore = getRaftStateStore(leader);
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
+        // Block voting between followers
+        // to avoid a leader election before leader restarts.
+        blockVotingBetweenFollowers();
+
         group.terminateNode(terminatedEndpoint);
-        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
         RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertSame(restartedNode, newLeader);
@@ -594,8 +614,7 @@ public class PersistenceTest extends HazelcastTestSupport {
     @Test
     public void when_leaderIsRestarted_then_itBecomesLeaderAndAppliesPreviouslyCommittedMemberListViaSnapshot() throws ExecutionException, InterruptedException {
         int committedEntryCountToSnapshot = 50;
-        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(committedEntryCountToSnapshot)
-                                                              .setLeaderHeartbeatPeriodInMillis(SECONDS.toMillis(30));
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(committedEntryCountToSnapshot);
         group = new LocalRaftGroupBuilder(3, config).setAppendNopEntryOnLeaderElection(true)
                                                     .setRaftStateStoreFactory(RAFT_STATE_STORE_FACTORY)
                                                     .build();
@@ -618,8 +637,12 @@ public class PersistenceTest extends HazelcastTestSupport {
         InMemoryRaftStateStore stateStore = getRaftStateStore(leader);
         RestoredRaftState terminatedState = stateStore.toRestoredRaftState();
 
+        // Block voting between followers
+        // to avoid a leader election before leader restarts.
+        blockVotingBetweenFollowers();
+
         group.terminateNode(terminatedEndpoint);
-        final RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
+        RaftNodeImpl restartedNode = group.createNewRaftNode(terminatedState, stateStore);
 
         RaftNodeImpl newLeader = group.waitUntilLeaderElected();
         assertSame(restartedNode, newLeader);

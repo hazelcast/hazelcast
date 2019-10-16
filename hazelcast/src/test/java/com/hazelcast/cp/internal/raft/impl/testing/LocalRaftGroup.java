@@ -330,6 +330,23 @@ public class LocalRaftGroup {
         return nodes[getIndexOfRunning(endpoint)];
     }
 
+    public RaftEndpoint[] getFollowerEndpoints() {
+        RaftEndpoint leaderEndpoint = getLeaderEndpoint();
+        RaftEndpoint[] n = new RaftEndpoint[members.length - 1];
+        int i = 0;
+        for (RaftEndpoint member : members) {
+            if (!member.equals(leaderEndpoint)) {
+                n[i++] = member;
+            }
+        }
+
+        if (i != n.length) {
+            throw new IllegalArgumentException();
+        }
+
+        return n;
+    }
+
     public RaftEndpoint getEndpoint(int index) {
         return members[index];
     }
@@ -639,5 +656,16 @@ public class LocalRaftGroup {
 
     public void terminateNode(RaftEndpoint endpoint) {
         terminateNode(getIndexOfRunning(endpoint));
+    }
+
+    public boolean isRunning(RaftEndpoint endpoint) {
+        Assert.assertNotNull(endpoint);
+        for (int i = 0; i < members.length; i++) {
+            if (!endpoint.equals(members[i])) {
+                continue;
+            }
+            return !integrations[i].isShutdown();
+        }
+        throw new IllegalArgumentException("Unknown endpoint: " + endpoint);
     }
 }
