@@ -69,7 +69,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
 
     // use ConcurrentReferenceHashMap to allow unreferenced Class instances to be garbage collected
-    private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap = new ConcurrentReferenceHashMap<Class<?>, SourceMetadata>();
+    private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap =
+            new ConcurrentReferenceHashMap<Class<?>, SourceMetadata>();
     private final LockStripe lockStripe = new LockStripe();
 
     private final AtomicLong modCount = new AtomicLong();
