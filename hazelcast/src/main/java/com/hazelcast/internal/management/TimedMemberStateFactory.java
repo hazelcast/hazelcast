@@ -115,12 +115,10 @@ public class TimedMemberStateFactory {
     }
 
     public void init() {
-        instance.node.nodeEngine.getExecutionService().scheduleWithRepetition(new Runnable() {
-            @Override
-            public void run() {
-                memberStateSafe = instance.getPartitionService().isLocalMemberSafe();
-            }
-        }, INITIAL_PARTITION_SAFETY_CHECK_DELAY, PARTITION_SAFETY_CHECK_PERIOD, TimeUnit.SECONDS);
+        instance.node.nodeEngine.getExecutionService().scheduleWithRepetition(
+                () -> memberStateSafe = instance.getPartitionService().isLocalMemberSafe(),
+                INITIAL_PARTITION_SAFETY_CHECK_DELAY, PARTITION_SAFETY_CHECK_PERIOD, TimeUnit.SECONDS
+        );
     }
 
     public TimedMemberState createTimedMemberState() {
@@ -130,7 +128,7 @@ public class TimedMemberStateFactory {
         TimedMemberState timedMemberState = new TimedMemberState();
         createMemberState(memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
-        timedMemberState.setMemberList(new ArrayList<String>());
+        timedMemberState.setMemberList(new ArrayList<>());
         Set<Member> memberSet = instance.getCluster().getMembers();
         for (Member member : memberSet) {
             MemberImpl memberImpl = (MemberImpl) member;
@@ -157,7 +155,7 @@ public class TimedMemberStateFactory {
         return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
-    protected LocalOperationStats getOperationStats() {
+    private LocalOperationStats getOperationStats() {
         return new LocalOperationStatsImpl(instance.node);
     }
 
@@ -234,7 +232,7 @@ public class TimedMemberStateFactory {
         memberState.setClusterHotRestartStatus(state);
     }
 
-    protected void createNodeState(MemberStateImpl memberState) {
+    private void createNodeState(MemberStateImpl memberState) {
         Node node = instance.node;
         ClusterService cluster = instance.node.clusterService;
         NodeStateImpl nodeState = new NodeStateImpl(cluster.getClusterState(), node.getState(),
