@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ManagedContext;
@@ -525,14 +524,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
-
-        return addLocalEntryListenerInternal(listener);
-    }
-
-    @Override
     public UUID addLocalEntryListener(@Nonnull MapListener listener,
                                       @Nonnull Predicate<K, V> predicate,
                                       boolean includeValue) {
@@ -544,30 +535,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
-                                      @Nonnull Predicate<K, V> predicate,
-                                      boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
-
-        return addLocalEntryListenerInternal(listener, predicate, null, includeValue);
-    }
-
-    @Override
     public UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                      @Nonnull Predicate<K, V> predicate,
-                                      @Nullable K key,
-                                      boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
-
-        return addLocalEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
-    }
-
-    @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                       @Nonnull Predicate<K, V> predicate,
                                       @Nullable K key,
                                       boolean includeValue) {
@@ -587,14 +555,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
-
-        return addEntryListenerInternal(listener, null, includeValue);
-    }
-
-    @Override
     public UUID addEntryListener(@Nonnull MapListener listener, @Nonnull K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
@@ -604,15 +564,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull K key, boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener);
-
-        return addEntryListenerInternal(listener, toDataWithStrategy(key), includeValue);
-    }
-
-    @Override
     public UUID addEntryListener(@Nonnull MapListener listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  @Nullable K key,
@@ -625,30 +576,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 @Nullable K key,
-                                 boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
-
-        return addEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
-    }
-
-    @Override
     public UUID addEntryListener(@Nonnull MapListener listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(listener, predicate);
-
-        return addEntryListenerInternal(listener, predicate, null, includeValue);
-    }
-
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
