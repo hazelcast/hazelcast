@@ -34,6 +34,8 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 public class ManagementCenterService {
 
     private final HazelcastClientInstanceImpl client;
@@ -67,6 +69,8 @@ public class ManagementCenterService {
      */
     @Nonnull
     public CompletableFuture<Void> changeClusterState(ClusterState newState) {
+        checkNotNull(newState);
+
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCChangeClusterStateCodec.encodeRequest(newState.getId()),
@@ -80,15 +84,43 @@ public class ManagementCenterService {
     }
 
     /**
-     * Gets the config ƒor a given map.
+     * Gets the config ƒor a given map from a random member.
      */
     @Nonnull
     public CompletableFuture<MCMapConfig> getMapConfig(String map) {
-        ClientInvocation invocation = new ClientInvocation(
-                client,
-                MCGetMapConfigCodec.encodeRequest(map),
-                map
-        );
+        checkNotNull(map);
+
+        return doGetMapConfig(null, map);
+    }
+
+    /**
+     * Gets the config ƒor a given map from a specific member.
+     */
+    @Nonnull
+    public CompletableFuture<MCMapConfig> getMapConfig(Member member, String map) {
+        checkNotNull(member);
+        checkNotNull(map);
+
+        return doGetMapConfig(member, map);
+    }
+
+    private CompletableFuture<MCMapConfig> doGetMapConfig(Member member, String map) {
+        ClientInvocation invocation;
+        if (member == null) {
+            invocation = new ClientInvocation(
+                    client,
+                    MCGetMapConfigCodec.encodeRequest(map),
+                    map
+            );
+        } else {
+            invocation = new ClientInvocation(
+                    client,
+                    MCGetMapConfigCodec.encodeRequest(map),
+                    map,
+                    member.getAddress()
+            );
+        }
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
@@ -102,10 +134,16 @@ public class ManagementCenterService {
     }
 
     /**
-     * Updates the config of a given map.
+     * Updates the config of a given map on a given member.
      */
     @Nonnull
-    public CompletableFuture<Void> updateMapConfig(UpdateMapConfigParameters parameters) {
+    public CompletableFuture<Void> updateMapConfig(Member member,
+                                                   UpdateMapConfigParameters parameters) {
+        checkNotNull(member);
+        checkNotNull(parameters);
+        checkNotNull(parameters.getEvictionPolicy());
+        checkNotNull(parameters.getMaxSizePolicy());
+
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCUpdateMapConfigCodec.encodeRequest(
@@ -116,7 +154,8 @@ public class ManagementCenterService {
                         parameters.isReadBackupData(),
                         parameters.getMaxSize(),
                         parameters.getMaxSizePolicy().getId()),
-                null
+                parameters.getMap(),
+                member.getAddress()
         );
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
