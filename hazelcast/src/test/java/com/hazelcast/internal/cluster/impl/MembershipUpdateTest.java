@@ -552,9 +552,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         HazelcastInstance hz4 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, hz3);
-
-        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
+        assertTrueEventually(() -> assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3)));
         assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz4));
     }
 
