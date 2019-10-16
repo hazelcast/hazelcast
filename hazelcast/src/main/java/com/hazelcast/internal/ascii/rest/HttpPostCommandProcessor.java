@@ -33,6 +33,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.version.Version;
+import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
 
@@ -530,7 +531,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @param command the HTTP command
      * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
      *                                      named character encoding is not supported
-     * @see com.hazelcast.config.WanPublisherState#PAUSED
+     * @see WanPublisherState#PAUSED
      */
     private void handleWanPausePublisher(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;
@@ -557,7 +558,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @param command the HTTP command
      * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
      *                                      named character encoding is not supported
-     * @see com.hazelcast.config.WanPublisherState#STOPPED
+     * @see WanPublisherState#STOPPED
      */
     private void handleWanStopPublisher(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;
@@ -584,7 +585,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @param command the HTTP command
      * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
      *                                      named character encoding is not supported
-     * @see com.hazelcast.config.WanPublisherState#REPLICATING
+     * @see WanPublisherState#REPLICATING
      */
     private void handleWanResumePublisher(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;

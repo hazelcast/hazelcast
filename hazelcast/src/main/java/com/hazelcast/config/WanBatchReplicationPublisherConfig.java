@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.wan.WanPublisherState;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
