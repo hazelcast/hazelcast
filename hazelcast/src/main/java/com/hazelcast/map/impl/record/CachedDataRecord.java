@@ -83,6 +83,7 @@ class CachedDataRecord extends DataRecord {
     public String toString() {
         return "CachedDataRecord{"
                 + "cachedValue=" + cachedValue
-                + "} " + super.toString();
+                + ", " + super.toString()
+                + "} ";
     }
 }

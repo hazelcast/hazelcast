@@ -34,10 +34,6 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
 
     private transient volatile Object cachedValue;
 
-    CachedDataRecordWithStats() {
-        super();
-    }
-
     CachedDataRecordWithStats(Data value) {
         super(value);
     }
@@ -93,6 +89,7 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
     public String toString() {
         return "CachedDataRecordWithStats{"
                 + "cachedValue=" + cachedValue
-                + "} " + super.toString();
+                + ", " + super.toString()
+                + "} ";
     }
 }

@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.util.Clock;
-
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
@@ -30,11 +28,6 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     private int expirationTime = NOT_AVAILABLE;
 
     AbstractRecordWithStats() {
-    }
-
-    @Override
-    public final void onStore() {
-        lastStoredTime = stripBaseTime(Clock.currentTimeMillis());
     }
 
     @Override

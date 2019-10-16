@@ -70,6 +70,7 @@ public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
     public String toString() {
         return "DataRecordWithStats{"
                 + "value=" + value
-                + "} " + super.toString();
+                + ", " + super.toString()
+                + "} ";
     }
 }

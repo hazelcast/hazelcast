@@ -76,6 +76,7 @@ class DataRecord extends AbstractRecord<Data> {
     public String toString() {
         return "DataRecord{"
                 + "value=" + value
-                + "} " + super.toString();
+                + ", " + super.toString()
+                + "} ";
     }
 }

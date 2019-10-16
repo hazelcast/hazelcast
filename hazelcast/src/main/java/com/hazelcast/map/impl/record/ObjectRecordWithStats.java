@@ -63,6 +63,7 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
     public String toString() {
         return "ObjectRecordWithStats{"
                 + "value=" + value
-                + "} " + super.toString();
+                + ", " + super.toString()
+                + "} ";
     }
 }

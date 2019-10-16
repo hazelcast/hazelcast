@@ -26,8 +26,6 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @param <V> the type of the value of Record.
@@ -82,35 +80,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public long getTtl() {
-        return ttl == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
-    }
-
-    @Override
-    public void setTtl(long ttl) {
-        long ttlSeconds = MILLISECONDS.toSeconds(ttl);
-        if (ttlSeconds == 0 && ttl != 0) {
-            ttlSeconds = 1;
-        }
-
-        this.ttl = ttlSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) ttlSeconds;
-    }
-
-    @Override
-    public long getMaxIdle() {
-        return maxIdle == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
-    }
-
-    @Override
-    public void setMaxIdle(long maxIdle) {
-        long maxIdleSeconds = MILLISECONDS.toSeconds(maxIdle);
-        if (maxIdleSeconds == 0 && maxIdle != 0) {
-            maxIdleSeconds = 1;
-        }
-        this.maxIdle = maxIdleSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) maxIdleSeconds;
-    }
-
-    @Override
     public long getLastAccessTime() {
         return recomputeWithBaseTime(lastAccessTime);
     }
@@ -158,29 +127,8 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public void onUpdate(long now) {
-        version++;
-        lastUpdateTime = stripBaseTime(now);
-    }
-
-    @Override
     public Object getCachedValueUnsafe() {
         return Record.NOT_CACHED;
-    }
-
-    @Override
-    public void onAccess(long now) {
-        hits++;
-        onAccessSafe(now);
-    }
-
-    @Override
-    public void onAccessSafe(long now) {
-        lastAccessTime = stripBaseTime(now);
-    }
-
-    @Override
-    public void onStore() {
     }
 
     @Override

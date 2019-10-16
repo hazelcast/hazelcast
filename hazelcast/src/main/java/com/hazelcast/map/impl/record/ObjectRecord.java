@@ -74,6 +74,7 @@ public class ObjectRecord extends AbstractRecord<Object> implements Record<Objec
     public String toString() {
         return "ObjectRecord{"
                 + "value=" + value
-                + "} " + super.toString();
+                + ", " + super.toString()
+                + "} ";
     }
 }
