@@ -133,7 +133,7 @@ public abstract class AbstractJsonGetter extends Getter {
 
                 } else {
                     // non array case
-                    if (!findAttribute(parser, pathCursor)) {
+                    if (!findAttribute(parser, pathCursor, false)) {
                         return null;
                     }
                 }
@@ -209,10 +209,15 @@ public abstract class AbstractJsonGetter extends Getter {
      *
      * @param parser
      * @param pathCursor
-     * @return {@code true} if given attribute name exists in the current object
+     * @param multiValue {@code true} if called by {@link
+     *                   #getMultiValue} otherwise set {@code false}
+     * @return {@code true} if given attribute
+     * name exists in the current object
      * @throws IOException
+     * @see #getMultiValue
      */
-    private boolean findAttribute(JsonParser parser, JsonPathCursor pathCursor) throws IOException {
+    private boolean findAttribute(JsonParser parser,
+                                  JsonPathCursor pathCursor, boolean multiValue) throws IOException {
         JsonToken token = parser.getCurrentToken();
         if (token != START_OBJECT) {
             return false;
@@ -225,6 +230,8 @@ public abstract class AbstractJsonGetter extends Getter {
             if (pathCursor.getCurrent().equals(parser.getCurrentName())) {
                 parser.nextToken();
                 return true;
+            } else if (multiValue) {
+                parser.nextToken();
             } else {
                 parser.nextToken();
                 parser.skipChildren();
@@ -271,7 +278,7 @@ public abstract class AbstractJsonGetter extends Getter {
             } else {
                 if (currentToken == START_OBJECT) {
                     do {
-                        if (!findAttribute(parser, pathCursor)) {
+                        if (!findAttribute(parser, pathCursor, true)) {
                             break;
                         }
 
