@@ -268,8 +268,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     public void collect(MetricsCollector collector) {
         checkNotNull(collector, "collector can't be null");
 
-        MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(this::newMetricTagger, this::loadSourceMetadata,
-                collector, minimumLevel);
+        MetricsCollectionCycle collectionCycle = new MetricsCollectionCycle(this::loadSourceMetadata, collector, minimumLevel);
 
         collectionCycle.collectStaticMetrics(probeInstances.values());
         collectionCycle.collectDynamicMetrics(metricSourceMap.keySet());
@@ -299,11 +298,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public MetricTagger newMetricTagger() {
-        return new MetricTaggerImpl(this, null);
+        return new MetricTaggerImpl(null);
     }
 
     @Override
     public MetricTagger newMetricTagger(String namePrefix) {
-        return new MetricTaggerImpl(this, namePrefix);
+        return new MetricTaggerImpl(namePrefix);
     }
 }

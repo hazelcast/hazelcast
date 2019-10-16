@@ -50,10 +50,9 @@ class MetricsCollectionCycle {
     private final ProbeLevel minimumLevel;
     private final MetricsContext metricsContext = new MetricsContext();
 
-    MetricsCollectionCycle(MetricTaggerSupplier taggerSupplier,
-                           Function<Class, SourceMetadata> lookupMetadataFunction,
+    MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFunction,
                            MetricsCollector metricsCollector, ProbeLevel minimumLevel) {
-        this.taggerSupplier = taggerSupplier;
+        this.taggerSupplier = new TaggerSupplier();
         this.lookupMetadataFunction = lookupMetadataFunction;
         this.metricsCollector = metricsCollector;
         this.minimumLevel = minimumLevel;
@@ -172,6 +171,19 @@ class MetricsCollectionCycle {
                                                      .withMetricTag(name)
                                                      .metricName(), value, emptySet());
             }
+        }
+    }
+
+    private static class TaggerSupplier implements MetricTaggerSupplier {
+
+        @Override
+        public MetricTagger getMetricTagger() {
+            return getMetricTagger(null);
+        }
+
+        @Override
+        public MetricTagger getMetricTagger(String namespace) {
+            return new MetricTaggerImpl(namespace);
         }
     }
 }

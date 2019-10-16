@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,8 +31,7 @@ public class MetricTaggerImplTest {
 
     @Test
     public void testMetricId_withPrefixAndId() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTaggerImpl tagger = new MetricTaggerImpl(registry, "prefix")
+        MetricTaggerImpl tagger = new MetricTaggerImpl("prefix")
                 .withIdTag("idTag", "idValue")
                 .withMetricTag("metricValue");
 
@@ -43,8 +40,7 @@ public class MetricTaggerImplTest {
 
     @Test
     public void testMetricId_withPrefixWithoutId() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTaggerImpl tagger = new MetricTaggerImpl(registry, "prefix")
+        MetricTaggerImpl tagger = new MetricTaggerImpl("prefix")
                 .withMetricTag("metricValue");
 
         assertEquals("prefix.metricValue", tagger.metricId());
@@ -52,8 +48,7 @@ public class MetricTaggerImplTest {
 
     @Test
     public void testMetricId_withoutPrefixWithId() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTaggerImpl tagger = new MetricTaggerImpl(registry, null)
+        MetricTaggerImpl tagger = new MetricTaggerImpl(null)
                 .withIdTag("idTag", "idValue")
                 .withMetricTag("metricValue");
 
@@ -62,8 +57,7 @@ public class MetricTaggerImplTest {
 
     @Test
     public void testMetricId_withoutPrefixAndId() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTaggerImpl tagger = new MetricTaggerImpl(registry, null)
+        MetricTaggerImpl tagger = new MetricTaggerImpl(null)
                 .withMetricTag("metricValue");
 
         assertEquals("metricValue", tagger.metricId());
@@ -71,8 +65,7 @@ public class MetricTaggerImplTest {
 
     @Test
     public void testMetricName_withPrefixAndId() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTaggerImpl tagger = new MetricTaggerImpl(registry, "prefix")
+        MetricTaggerImpl tagger = new MetricTaggerImpl("prefix")
                 .withIdTag("idTag", "idValue")
                 .withMetricTag("metricValue");
 
@@ -81,8 +74,7 @@ public class MetricTaggerImplTest {
 
     @Test
     public void testMetricName_withPrefixWithoutId() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTaggerImpl tagger = new MetricTaggerImpl(registry, "prefix")
+        MetricTaggerImpl tagger = new MetricTaggerImpl("prefix")
                 .withMetricTag("metricValue");
 
         assertEquals("[metric=prefix.metricValue]", tagger.metricName());
@@ -90,8 +82,7 @@ public class MetricTaggerImplTest {
 
     @Test
     public void testMetricName_withoutPrefixWithId() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTaggerImpl tagger = new MetricTaggerImpl(registry, null)
+        MetricTaggerImpl tagger = new MetricTaggerImpl(null)
                 .withIdTag("idTag", "idValue")
                 .withMetricTag("metricValue");
 
@@ -100,8 +91,7 @@ public class MetricTaggerImplTest {
 
     @Test
     public void testMetricName_withoutPrefixAndId() {
-        MetricsRegistryImpl registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
-        MetricTaggerImpl tagger = new MetricTaggerImpl(registry, null)
+        MetricTaggerImpl tagger = new MetricTaggerImpl(null)
                 .withMetricTag("metricValue");
 
         assertEquals("[metric=metricValue]", tagger.metricName());

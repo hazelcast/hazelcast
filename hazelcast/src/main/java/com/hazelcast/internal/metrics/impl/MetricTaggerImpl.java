@@ -28,14 +28,12 @@ import static com.hazelcast.internal.metrics.MetricsUtil.escapeMetricNamePart;
  */
 public class MetricTaggerImpl implements MetricTagger {
 
-    private final MetricsRegistryImpl metricsRegistry;
     private final String keyPrefix;
     private final String metricNamePrefix;
     private final String id;
     private final String metricName;
 
-    MetricTaggerImpl(MetricsRegistryImpl metricsRegistry, String metricNamePrefix) {
-        this.metricsRegistry = metricsRegistry;
+    MetricTaggerImpl(String metricNamePrefix) {
         this.keyPrefix = "[";
         this.metricNamePrefix = metricNamePrefix;
         this.id = null;
@@ -47,7 +45,6 @@ public class MetricTaggerImpl implements MetricTagger {
     }
 
     private MetricTaggerImpl(MetricTaggerImpl tagger, String keyPrefix, String id, String metricName) {
-        this.metricsRegistry = tagger.metricsRegistry;
         this.keyPrefix = keyPrefix;
         this.metricNamePrefix = tagger.metricNamePrefix;
         this.id = id;
