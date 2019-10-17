@@ -77,6 +77,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToLongFunction;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
@@ -108,6 +110,7 @@ public class TimedMemberStateFactory {
         );
     }
 
+    @Nonnull
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);

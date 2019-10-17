@@ -6787,6 +6787,22 @@ public class ClientCompatibilityTest_2_0 {
         assertTrue(isEqual(aListOfStringToString, parameters.systemProperties));
     }
 
+    @Test
+    public void test_MCGetTimedMemberStateCodec_encodeRequest() {
+        int fileClientMessageIndex = 801;
+        ClientMessage encoded = MCGetTimedMemberStateCodec.encodeRequest();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCGetTimedMemberStateCodec_decodeResponse() {
+        int fileClientMessageIndex = 802;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetTimedMemberStateCodec.ResponseParameters parameters = MCGetTimedMemberStateCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aString, parameters.timedMemberStateJson));
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

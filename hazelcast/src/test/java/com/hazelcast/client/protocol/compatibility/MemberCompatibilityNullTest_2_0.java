@@ -7232,6 +7232,21 @@ public class MemberCompatibilityNullTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_MCGetTimedMemberStateCodec_decodeRequest() {
+        int fileClientMessageIndex = 801;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetTimedMemberStateCodec.RequestParameters parameters = MCGetTimedMemberStateCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCGetTimedMemberStateCodec_encodeResponse() {
+        int fileClientMessageIndex = 802;
+        ClientMessage encoded = MCGetTimedMemberStateCodec.encodeResponse(null);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
      private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

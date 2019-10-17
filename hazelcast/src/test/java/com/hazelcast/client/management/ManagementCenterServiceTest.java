@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.impl.management.UpdateMapConfigParameters;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,6 +38,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -69,9 +71,11 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         factory = new TestHazelcastFactory(NODE_COUNT);
-        System.arraycopy(factory.newInstances(getConfig(), NODE_COUNT - 1), 0, hazelcastInstances,
-                0, NODE_COUNT - 1);
-        hazelcastInstances[NODE_COUNT - 1] = factory.newHazelcastInstance(getConfig().setLiteMember(true));
+        hazelcastInstances[0] = factory.newHazelcastInstance(getConfig());
+        hazelcastInstances[1] = factory.newHazelcastInstance(getConfig().setLiteMember(true));
+        Config config = getConfig();
+        config.getManagementCenterConfig().setEnabled(true).setUrl("a");
+        hazelcastInstances[2] = factory.newHazelcastInstance(config);
 
         members = Arrays.stream(hazelcastInstances)
                 .map(instance -> instance.getCluster().getLocalMember())
@@ -142,8 +146,8 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
                 .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
         String configXml2 = managementCenterService.getMemberConfig(members[1])
                 .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertEquals(configXml1, configXml2);
         assertContains(configXml1, "<cluster-name>dev</cluster-name>");
+        assertContains(configXml2, "<cluster-name>dev</cluster-name>");
     }
 
     @Test
@@ -174,11 +178,11 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void promoteMember() throws Exception {
-        assertTrue(members[2].isLiteMember());
+        assertTrue(members[1].isLiteMember());
 
-        resolve(managementCenterService.promoteLiteMember(members[2]));
+        resolve(managementCenterService.promoteLiteMember(members[1]));
 
-        assertFalse(hazelcastInstances[2].getCluster().getLocalMember().isLiteMember());
+        assertFalse(hazelcastInstances[1].getCluster().getLocalMember().isLiteMember());
     }
 
     @Test
@@ -205,5 +209,21 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     private <T> T resolve(CompletableFuture<T> future) throws Exception {
         return future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
+    }
+
+    @Test
+    public void testGetTimedMemberState() {
+        assertTrueEventually(() -> {
+            Optional<String> timedMemberStateJson = managementCenterService.getTimedMemberState(members[2])
+                    .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
+            assertTrue(timedMemberStateJson.isPresent());
+        });
+    }
+
+    @Test
+    public void testGetTimedMemberState_empty() throws Exception {
+        Optional<String> timedMemberStateJson = managementCenterService.getTimedMemberState(members[0])
+                .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
+        assertFalse(timedMemberStateJson.isPresent());
     }
 }

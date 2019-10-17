@@ -78,6 +78,13 @@ import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableEx
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetTimedMemberStateMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetMemberConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetSystemPropertiesMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetThreadDumpMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.RunGcMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ShutdownMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMemberConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetSystemPropertiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetThreadDumpMessageTask;
@@ -2242,6 +2249,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 new MessageTaskFactory() {
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new GetSystemPropertiesMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new GetTimedMemberStateMessageTask(clientMessage, node, connection);
                     }
                 });
     }
