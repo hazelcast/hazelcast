@@ -39,6 +39,7 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.wan.WanPublisherState;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeWanStateOperation;

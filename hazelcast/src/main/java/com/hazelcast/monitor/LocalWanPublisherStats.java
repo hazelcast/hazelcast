@@ -17,7 +17,7 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.wan.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 import com.hazelcast.wan.WanSyncStats;

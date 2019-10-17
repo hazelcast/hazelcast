@@ -18,7 +18,7 @@ package com.hazelcast.monitor.impl;
 
 
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
