@@ -62,7 +62,8 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
         createRaftGroups(instances, groupCount);
 
         HazelcastInstance metadataLeader = getLeaderInstance(instances, getMetadataGroupId(instances[0]));
-        Collection<CPMember> cpMembers = metadataLeader.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().get();
+        Collection<CPMember> cpMembers = metadataLeader.getCPSubsystem().getCPSubsystemManagementService().getCPMembers()
+                                                       .toCompletableFuture().get();
 
         rebalanceLeaderships(metadataLeader);
 

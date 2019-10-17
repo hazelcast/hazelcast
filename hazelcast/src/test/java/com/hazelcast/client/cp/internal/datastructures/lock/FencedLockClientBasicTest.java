@@ -73,7 +73,8 @@ public class FencedLockClientBasicTest extends FencedLockBasicTest {
     public void test_sessionIsClosedOnCPSubsystemReset() throws Exception {
         lock.lock();
 
-        instances[0].getCPSubsystem().getCPSubsystemManagementService().restart().get();
+        instances[0].getCPSubsystem().getCPSubsystemManagementService().restart()
+                    .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
             HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;

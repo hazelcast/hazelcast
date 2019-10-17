@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.ascii.rest;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.cp.CPGroup;
@@ -36,10 +37,9 @@ import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Collection;
+import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
@@ -192,7 +192,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleGetCPGroupIds(final HttpGetCommand command) {
-        InternalCompletableFuture<Collection<CPGroupId>> f = getCpSubsystemManagementService().getCPGroupIds();
+        CompletionStage<Collection<CPGroupId>> f = getCpSubsystemManagementService().getCPGroupIds();
         f.whenCompleteAsync((groupIds, t) -> {
             if (t == null) {
                 JsonArray arr = new JsonArray();
@@ -239,7 +239,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void handleGetCPGroupByName(final HttpGetCommand command) {
         String prefix = URI_CP_GROUPS_URL + "/";
         String groupName = command.getURI().substring(prefix.length()).trim();
-        InternalCompletableFuture<CPGroup> f = getCpSubsystemManagementService().getCPGroup(groupName);
+        CompletionStage<CPGroup> f = getCpSubsystemManagementService().getCPGroup(groupName);
         f.whenCompleteAsync((group, t) -> {
             if (t == null) {
                 if (group != null) {
@@ -268,7 +268,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleGetCPMembers(final HttpGetCommand command) {
-        InternalCompletableFuture<Collection<CPMember>> f = getCpSubsystemManagementService().getCPMembers();
+        CompletionStage<Collection<CPMember>> f = getCpSubsystemManagementService().getCPMembers();
         f.whenCompleteAsync((cpMembers, t) -> {
             if (t == null) {
                 JsonArray arr = new JsonArray();

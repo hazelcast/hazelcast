@@ -123,7 +123,8 @@ public class CountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTe
         instances[1].shutdown();
 
         HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
-        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
+                   .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
             CountDownLatchService service = getNodeEngineImpl(newInstance).getService(CountDownLatchService.SERVICE_NAME);
