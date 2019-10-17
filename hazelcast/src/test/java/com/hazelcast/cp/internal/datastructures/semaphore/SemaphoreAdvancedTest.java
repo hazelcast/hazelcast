@@ -82,11 +82,6 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
             }
         });
 
-        for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
-            semaphore.acquire();
-            semaphore.release();
-        }
-
         CPGroupId groupId = getGroupId();
 
         assertTrueEventually(() -> {
@@ -95,6 +90,11 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
+
+        for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
+            semaphore.acquire();
+            semaphore.release();
+        }
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
