@@ -1294,10 +1294,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         private boolean completeDiscoveryIfNotCPMember(List<CPMemberInfo> cpMembers, CPMemberInfo localCPMemberCandidate) {
             if (!cpMembers.contains(localCPMemberCandidate)) {
                 logger.info("I am not a CP member! I'll serve as an AP member.");
-                discoveryCompleted.set(true);
                 try {
                     boolean marked = metadataStore.tryMarkAPMember();
-                    assert marked || !raftService.getCPPersistenceService().isEnabled();
+                    assert marked;
+                    discoveryCompleted.set(true);
                 } catch (IOException e) {
                     throw new HazelcastException(e);
                 }
@@ -1311,13 +1311,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             List<CPMemberInfo> metadataMembers = discoveredCPMembers.subList(0, config.getGroupSize());
             RaftGroupId metadataGroupId = getMetadataGroupId();
             try {
-                if (metadataMembers.contains(localCPMemberCandidate)) {
-                    List<RaftEndpoint> metadataEndpoints = new ArrayList<>();
-                    for (CPMemberInfo member : metadataMembers) {
-                        metadataEndpoints.add(member.toRaftEndpoint());
-                    }
-                    raftService.createRaftNode(metadataGroupId, metadataEndpoints, localCPMemberCandidate.toRaftEndpoint());
-                }
                 // By default, we use the same member UUID for both AP and CP members.
                 // But it's not guaranteed to be same. For example;
                 // - During a split-brain merge, AP member UUID is renewed but CP member UUID remains the same.
@@ -1325,6 +1318,15 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 // but instead generates a new UUID.
                 localCPMember.set(localCPMemberCandidate);
                 metadataStore.persistLocalCPMember(localCPMemberCandidate);
+
+                if (metadataMembers.contains(localCPMemberCandidate)) {
+                    List<RaftEndpoint> metadataEndpoints = new ArrayList<>();
+                    for (CPMemberInfo member : metadataMembers) {
+                        metadataEndpoints.add(member.toRaftEndpoint());
+                    }
+                    raftService.createRaftNode(metadataGroupId, metadataEndpoints, localCPMemberCandidate.toRaftEndpoint());
+                }
+
                 RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.getSeed());
                 raftService.getInvocationManager().invoke(metadataGroupId, op).get();
             } catch (Exception e) {

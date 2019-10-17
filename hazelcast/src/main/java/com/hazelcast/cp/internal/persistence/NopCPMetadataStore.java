@@ -36,7 +36,7 @@ public final class NopCPMetadataStore implements CPMetadataStore {
 
     @Override
     public boolean tryMarkAPMember() {
-        return false;
+        return true;
     }
 
     @Override
