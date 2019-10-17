@@ -56,18 +56,22 @@ public interface MetricTagger {
      * Returns the name for the metric. It is used by the {@link MetricsCollector}s
      * and {@link MetricsPublisher}s. The returned format is like
      * {@code [name=myMap,unit=count,metric=map.entryCount]}.
+     * <p>
+     * The value returned by this method is immutable.
      */
     String metricName();
 
     /**
      * Returns the id for the metric. Used in {@link MetricsRegistryImpl}
      * as the key of the static metric built with this MetricTagger. The
-     * returned format is {@code map[myMap].entryCount}.
-     * <p/>
-     * The purpose of the metricId is to make creating {@link Gauge}s easier
+     * returned format is {@code prefix[idTagValue].metricName}. Non-ID tags
+     * and ID tag name are ignored.
+     * <p>
+     * The purpose of the metricId is to make creation of {@link Gauge}s easier
      * and less error prone. With the {@link #metricName()}, changing the
-     * order of the tags, adding/removing tags break existing gauges.
+     * order of the tags or adding/removing tags breaks existing gauges.
+     * <p>
+     * The value returned by this method is immutable.
      */
     String metricId();
 }
-

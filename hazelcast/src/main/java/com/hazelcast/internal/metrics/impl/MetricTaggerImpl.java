@@ -20,7 +20,7 @@ import com.hazelcast.internal.metrics.MetricTagger;
 
 import javax.annotation.CheckReturnValue;
 
-import static com.hazelcast.internal.metrics.MetricsUtil.containsSpecialCharacters;
+import static com.hazelcast.internal.metrics.MetricsUtil.containsNoSpecialCharacters;
 import static com.hazelcast.internal.metrics.MetricsUtil.escapeMetricNamePart;
 
 /**
@@ -54,7 +54,7 @@ public class MetricTaggerImpl implements MetricTagger {
     @Override
     @CheckReturnValue
     public MetricTaggerImpl withTag(String tag, String value) {
-        assert containsSpecialCharacters(tag) : "tag contains special characters";
+        assert containsNoSpecialCharacters(tag) : "tag contains special characters";
 
         return new MetricTaggerImpl(this,
                 getKeyPrefix(tag, value));
@@ -67,7 +67,8 @@ public class MetricTaggerImpl implements MetricTagger {
     @Override
     @CheckReturnValue
     public MetricTaggerImpl withIdTag(String tag, String value) {
-        assert containsSpecialCharacters(tag) : "tag contains special characters";
+        assert containsNoSpecialCharacters(tag) : "tag contains special characters";
+        assert id == null : "More than one ID tag added";
 
         return new MetricTaggerImpl(this,
                 getKeyPrefix(tag, value),
@@ -86,7 +87,7 @@ public class MetricTaggerImpl implements MetricTagger {
     @Override
     public String metricName() {
         String metricName = this.keyPrefix + ']';
-        assert metricName != null && !metricName.equals("[]");
+        assert !metricName.equals("[]");
         return metricName;
     }
 

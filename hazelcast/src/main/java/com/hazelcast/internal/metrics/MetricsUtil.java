@@ -69,8 +69,8 @@ public final class MetricsUtil {
     }
 
     @SuppressFBWarnings(value = "ES_COMPARING_PARAMETER_STRING_WITH_EQ", justification = "it's intentional")
-    public static boolean containsSpecialCharacters(String namePart) {
-        // escapeMetricNamePart method returns input object of no escaping is needed,
+    public static boolean containsNoSpecialCharacters(String namePart) {
+        // escapeMetricNamePart method returns input object if no escaping is needed,
         // we assume that.
         //noinspection StringEquality
         return escapeMetricNamePart(namePart) == namePart;
