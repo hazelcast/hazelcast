@@ -47,6 +47,13 @@ public abstract class AbstractConfigImportVariableReplacementTest {
         IOUtils.writeStringToStreamAndClose(os, string);
     }
 
+    static String createFileWithContent(String filename, String suffix, String content) throws Exception {
+        File file = createConfigFile(filename, suffix);
+        FileOutputStream os = new FileOutputStream(file);
+        writeStringToStreamAndClose(os, content);
+        return file.getAbsolutePath();
+    }
+
     @Test
     public abstract void testHazelcastElementOnlyAppearsOnce();
 
