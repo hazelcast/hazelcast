@@ -167,7 +167,7 @@ public final class Assertions {
      * Example:
      * <pre>{@code
      * p.drawFrom(TestSources.items(4, 3, 2, 1))
-     *  .apply(Assertions.assertAnyOrder(Arrays.asList(1, 3)))
+     *  .apply(Assertions.assertContains(Arrays.asList(1, 3)))
      *  .drainTo(Sinks.logger())
      * }</pre>
      */
