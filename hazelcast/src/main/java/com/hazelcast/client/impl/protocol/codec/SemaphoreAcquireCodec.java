@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * then the current thread becomes disabled for thread scheduling purposes
  * and lies dormant until other threads release enough permits.
  */
-@Generated("dc80dc7c9d431f9bfdf661b854cc8ec7")
+@Generated("da245f5a5a0888c7b111508533e162c6")
 public final class SemaphoreAcquireCodec {
     //hex: 0x0D0200
     public static final int REQUEST_MESSAGE_TYPE = 852480;

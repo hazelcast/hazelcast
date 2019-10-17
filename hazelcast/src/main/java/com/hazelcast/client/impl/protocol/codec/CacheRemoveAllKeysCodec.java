@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * For every entry in the key set, the following are called: any registered CacheEntryRemovedListeners if the cache
  * is a write-through cache, the CacheWriter. If the key set is empty, the CacheWriter is not called.
  */
-@Generated("2921283c7ec5d25ab53a33a6bb3a0b98")
+@Generated("41ca5e443b658b500ece01ea955f6e59")
 public final class CacheRemoveAllKeysCodec {
     //hex: 0x150400
     public static final int REQUEST_MESSAGE_TYPE = 1377280;

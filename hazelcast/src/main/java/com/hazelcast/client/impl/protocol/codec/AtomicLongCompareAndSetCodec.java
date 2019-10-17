@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically sets the value to the given updated value only if the current
  * value the expected value.
  */
-@Generated("c4fea4644f97d71bb57127d01a84970c")
+@Generated("6c32572db4d31486401acee85dffbf3b")
 public final class AtomicLongCompareAndSetCodec {
     //hex: 0x0A0400
     public static final int REQUEST_MESSAGE_TYPE = 656384;

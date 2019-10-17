@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -39,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * very poor performance if called repeatedly (for example, in a loop). If the use case is different from querying
  * the data, please copy the resulting set into a new java.util.HashSet.
  */
-@Generated("01918c56be65a2402f86a521325ef9fb")
+@Generated("48288991f6c9579eaab7038cacd39c74")
 public final class ReplicatedMapKeySetCodec {
     //hex: 0x0E0F00
     public static final int REQUEST_MESSAGE_TYPE = 921344;

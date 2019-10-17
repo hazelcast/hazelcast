@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Evicts the specified key from this map. If a MapStore is defined for this map, then the entry is not deleted
  * from the underlying MapStore, evict only removes the entry from the memory.
  */
-@Generated("dad421cadbf3006aa3a2a7a99d0a3a3a")
+@Generated("13a8d21c4e1f02a3a4a45cf310382873")
 public final class MapEvictCodec {
     //hex: 0x012200
     public static final int REQUEST_MESSAGE_TYPE = 74240;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if the reference contains the value.
  */
-@Generated("1bbe22e9b0f8d72591717d027736b166")
+@Generated("dc4e8eaab18edc886c96204b86d379e4")
 public final class AtomicRefContainsCodec {
     //hex: 0x0B0300
     public static final int REQUEST_MESSAGE_TYPE = 721664;
@@ -63,10 +65,10 @@ public final class AtomicRefContainsCodec {
         /**
          * The value to check (is allowed to be null).
          */
-        public com.hazelcast.nio.serialization.Data value;
+        public @Nullable com.hazelcast.nio.serialization.Data value;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.nio.serialization.Data value) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, @Nullable com.hazelcast.nio.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);

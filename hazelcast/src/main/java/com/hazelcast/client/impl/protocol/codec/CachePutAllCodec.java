@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("882e57a931c648bf89acff7f8d89bcc8")
+@Generated("3a305ff0d74d8fcfbc9e6e84774594d1")
 public final class CachePutAllCodec {
     //hex: 0x151C00
     public static final int REQUEST_MESSAGE_TYPE = 1383424;
@@ -64,7 +66,7 @@ public final class CachePutAllCodec {
          * expiry policy for the entry. Byte-array which is serialized from an object implementing
          * {@link javax.cache.expiry.ExpiryPolicy} interface.
          */
-        public com.hazelcast.nio.serialization.Data expiryPolicy;
+        public @Nullable com.hazelcast.nio.serialization.Data expiryPolicy;
 
         /**
          * user generated id which shall be received as a field of the cache event upon completion of
@@ -73,7 +75,7 @@ public final class CachePutAllCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> entries, com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> entries, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

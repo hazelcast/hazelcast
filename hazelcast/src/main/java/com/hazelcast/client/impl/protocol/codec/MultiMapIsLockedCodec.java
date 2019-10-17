@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks the lock for the specified key. If the lock is acquired, this method returns true, else it returns false.
  */
-@Generated("2de4a4e508db2fb2899773f1780b161d")
+@Generated("d31aa7c73c03960d9a6d465f6d67acba")
 public final class MultiMapIsLockedCodec {
     //hex: 0x021200
     public static final int REQUEST_MESSAGE_TYPE = 135680;

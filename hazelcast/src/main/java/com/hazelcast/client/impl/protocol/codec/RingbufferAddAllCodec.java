@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -41,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
  * The result of the future contains the sequenceId of the last written item
  */
-@Generated("37dc5338a0645dca965688d670cb1aa2")
+@Generated("6b866e6672d56be96ed4a58057b1afda")
 public final class RingbufferAddAllCodec {
     //hex: 0x190900
     public static final int REQUEST_MESSAGE_TYPE = 1640704;

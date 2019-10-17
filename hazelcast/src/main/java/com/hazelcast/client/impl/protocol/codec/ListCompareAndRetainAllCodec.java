@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retains only the elements in this list that are contained in the specified collection (optional operation).
  * In other words, removes from this list all of its elements that are not contained in the specified collection.
  */
-@Generated("af356d631633bdb9a5a85e1173123721")
+@Generated("f15fa6e4df2d1f951350abc02dbc0126")
 public final class ListCompareAndRetainAllCodec {
     //hex: 0x050800
     public static final int REQUEST_MESSAGE_TYPE = 329728;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it means that the caller thread could not acquire the lock for the key within the timeout duration,
  * thus the put operation is not successful.
  */
-@Generated("ecf68a41f689fda323de3a5d6c9c40d3")
+@Generated("61ac21cb145d91b920836a5aaa69aaad")
 public final class MapTryPutCodec {
     //hex: 0x010F00
     public static final int REQUEST_MESSAGE_TYPE = 69376;

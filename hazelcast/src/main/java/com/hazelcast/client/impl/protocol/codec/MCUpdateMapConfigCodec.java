@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the config of a map.
  */
-@Generated("78f0719d4a0e829cf9a5640b73890adf")
+@Generated("31c37f6d85a5d2dbb7f5a632753c3410")
 public final class MCUpdateMapConfigCodec {
     //hex: 0x270400
     public static final int REQUEST_MESSAGE_TYPE = 2556928;

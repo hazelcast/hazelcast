@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the collection of values associated with the key.
  */
-@Generated("e99d27a1cb4c517cfcf031d8e7731688")
+@Generated("617430996e27ed5701afbf20868bae8c")
 public final class TransactionalMultiMapGetCodec {
     //hex: 0x110200
     public static final int REQUEST_MESSAGE_TYPE = 1114624;

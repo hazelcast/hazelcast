@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
  * rounded to the next closest second value.
  */
-@Generated("3c038adeed3ffc3e64cbcf01febc7f82")
+@Generated("1d0f7337ac2f3ee7e77db517891a98e8")
 public final class MapPutWithMaxIdleCodec {
     //hex: 0x014A00
     public static final int REQUEST_MESSAGE_TYPE = 84480;
@@ -123,10 +125,10 @@ public final class MapPutWithMaxIdleCodec {
         /**
          * old value of the entry
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.nio.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

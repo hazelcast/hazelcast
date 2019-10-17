@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the specified number of entries from the specified partition starting from specified table index
  * that match the predicate and applies the projection logic on them.
  */
-@Generated("a4dc2e1e7f5971b4aaac939ccee13200")
+@Generated("688fa6868dc7bfc1acd8314667937a9c")
 public final class MapFetchWithQueryCodec {
     //hex: 0x014600
     public static final int REQUEST_MESSAGE_TYPE = 83456;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this set contains no elements.
  */
-@Generated("b198bb933dc8e1aa66fb72dd86fe0464")
+@Generated("f589e37283926dfa56f1dc762dc9097a")
 public final class SetIsEmptyCodec {
     //hex: 0x060D00
     public static final int REQUEST_MESSAGE_TYPE = 396544;

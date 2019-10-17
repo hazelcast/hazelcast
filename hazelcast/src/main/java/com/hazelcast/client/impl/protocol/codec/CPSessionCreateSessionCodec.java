@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a session for the caller on the given CP group.
  */
-@Generated("12b56c26ea51c0fc700d12e272516143")
+@Generated("4063b8efe4e8af5606e4acf9b9f546f8")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x220100
     public static final int REQUEST_MESSAGE_TYPE = 2228480;

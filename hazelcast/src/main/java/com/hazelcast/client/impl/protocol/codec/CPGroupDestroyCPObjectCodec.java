@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the distributed object with the given name on the requested
  * CP group
  */
-@Generated("ecac904221937a57c7a337b7d76be0c4")
+@Generated("83489d24a45a3d6ca9b6c0551990ce96")
 public final class CPGroupDestroyCPObjectCodec {
     //hex: 0x210200
     public static final int REQUEST_MESSAGE_TYPE = 2163200;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * configured javax.cache.integration.CacheLoader might be called to retrieve the values of the keys from any kind
  * of external resource.
  */
-@Generated("ca3f57b2d0ea242e0d855a7550e48975")
+@Generated("178e10c63c8c168d6b65eb770a278dcb")
 public final class CacheGetAllCodec {
     //hex: 0x150A00
     public static final int REQUEST_MESSAGE_TYPE = 1378816;
@@ -66,10 +68,10 @@ public final class CacheGetAllCodec {
          * Expiry policy for the entry. Byte-array which is serialized from an object implementing
          * javax.cache.expiry.ExpiryPolicy interface.
          */
-        public com.hazelcast.nio.serialization.Data expiryPolicy;
+        public @Nullable com.hazelcast.nio.serialization.Data expiryPolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, com.hazelcast.nio.serialization.Data expiryPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

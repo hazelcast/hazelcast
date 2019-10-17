@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * elements, and others will impose restrictions on the type of elements that may be added. List classes should
  * clearly specify in their documentation any restrictions on what elements may be added.
  */
-@Generated("78010da081ce7890aff46694d9f4ebb1")
+@Generated("05c7cc67e264d8fce24265eb64fc1eeb")
 public final class ListAddCodec {
     //hex: 0x050400
     public static final int REQUEST_MESSAGE_TYPE = 328704;

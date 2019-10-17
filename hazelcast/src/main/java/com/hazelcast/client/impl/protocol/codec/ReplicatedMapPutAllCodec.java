@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-@Generated("0ff88db132b174d5c2ead4aa2fc0afaf")
+@Generated("26c941fda5fc81d5687f61a8b8581f11")
 public final class ReplicatedMapPutAllCodec {
     //hex: 0x0E0800
     public static final int REQUEST_MESSAGE_TYPE = 919552;

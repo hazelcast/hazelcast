@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns an iterator over the elements in this list in proper sequence.
  */
-@Generated("01bd5468d4c7bf24b7841c69623c9660")
+@Generated("833567468b5827127af841d0d65de5c3")
 public final class ListIteratorCodec {
     //hex: 0x051600
     public static final int REQUEST_MESSAGE_TYPE = 333312;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and removes the head of this queue.  This method differs from poll only in that it throws an exception
  * if this queue is empty.
  */
-@Generated("c6a15311c1e05261eb4a9d95568fb03d")
+@Generated("745f5c18c6f4e2a053dc8c380dda51fc")
 public final class QueueRemoveCodec {
     //hex: 0x030400
     public static final int REQUEST_MESSAGE_TYPE = 197632;

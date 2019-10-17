@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * null is returned. If the cache is configured for read-through operation mode, the underlying configured
  * javax.cache.integration.CacheLoader might be called to retrieve the value of the key from any kind of external resource.
  */
-@Generated("13ccec4c8312c8b262ca869f24a17755")
+@Generated("f3a40ba3b50bac8756bd1a017e91bd86")
 public final class CacheGetCodec {
     //hex: 0x150E00
     public static final int REQUEST_MESSAGE_TYPE = 1379840;
@@ -65,10 +67,10 @@ public final class CacheGetCodec {
          * Expiry policy for the entry. Byte-array which is serialized from an object implementing
          * javax.cache.expiry.ExpiryPolicy interface.
          */
-        public com.hazelcast.nio.serialization.Data expiryPolicy;
+        public @Nullable com.hazelcast.nio.serialization.Data expiryPolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data expiryPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -99,10 +101,10 @@ public final class CacheGetCodec {
         /**
          * The value assigned to the given key, or null if not assigned.
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.nio.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

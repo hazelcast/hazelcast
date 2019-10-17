@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this set contains the specified element.
  */
-@Generated("b451a64ec306d2d908fecf91a57af33c")
+@Generated("5de70160bebcc93fbb41fa599ffbffd4")
 public final class SetContainsCodec {
     //hex: 0x060200
     public static final int REQUEST_MESSAGE_TYPE = 393728;

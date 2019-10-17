@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Alters the currently stored value by applying a function on it.
  */
-@Generated("122e6bab21ac68073664ba9d8245c727")
+@Generated("7583b7ff7ba427eba0f4ee329e5d5546")
 public final class AtomicRefCompareAndSetCodec {
     //hex: 0x0B0200
     public static final int REQUEST_MESSAGE_TYPE = 721408;
@@ -63,15 +65,15 @@ public final class AtomicRefCompareAndSetCodec {
         /**
          * The expected value
          */
-        public com.hazelcast.nio.serialization.Data oldValue;
+        public @Nullable com.hazelcast.nio.serialization.Data oldValue;
 
         /**
          * The new value
          */
-        public com.hazelcast.nio.serialization.Data newValue;
+        public @Nullable com.hazelcast.nio.serialization.Data newValue;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.nio.serialization.Data oldValue, com.hazelcast.nio.serialization.Data newValue) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, @Nullable com.hazelcast.nio.serialization.Data oldValue, @Nullable com.hazelcast.nio.serialization.Data newValue) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

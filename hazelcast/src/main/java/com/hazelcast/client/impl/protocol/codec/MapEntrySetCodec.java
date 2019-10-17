@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-@Generated("900d3a6bcb2f2b1c80252d68f3753c56")
+@Generated("1268995e527687e5fd3f86821490caba")
 public final class MapEntrySetCodec {
     //hex: 0x012900
     public static final int REQUEST_MESSAGE_TYPE = 76032;

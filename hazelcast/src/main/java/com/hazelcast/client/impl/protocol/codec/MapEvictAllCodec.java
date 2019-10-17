@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * called by this method. If you do want to deleteAll to be called use the clear method. The EVICT_ALL event is
  * fired for any registered listeners.
  */
-@Generated("d0140a189dd20906dbf9de9153beadbf")
+@Generated("4a9c39b95eaf38438ac1505446876bcc")
 public final class MapEvictAllCodec {
     //hex: 0x012300
     public static final int REQUEST_MESSAGE_TYPE = 74496;

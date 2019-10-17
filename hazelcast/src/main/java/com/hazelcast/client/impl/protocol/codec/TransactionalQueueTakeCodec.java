@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
  */
-@Generated("a67e1ef1504d0a0661e45cfbdb8c7656")
+@Generated("ae56a872e90347e7294ec5a1c016dd4e")
 public final class TransactionalQueueTakeCodec {
     //hex: 0x140200
     public static final int REQUEST_MESSAGE_TYPE = 1311232;
@@ -97,10 +99,10 @@ public final class TransactionalQueueTakeCodec {
         /**
          * The head of this queue
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.nio.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

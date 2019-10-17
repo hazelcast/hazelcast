@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the collection of values associated with the key. The collection is NOT backed by the map, so changes to
  * the map are NOT reflected in the collection, and vice-versa.
  */
-@Generated("8f1accf0bb1590740eac4a849bac0cde")
+@Generated("1aff75dbbcaec55f920f3499466c4fc1")
 public final class MultiMapGetCodec {
     //hex: 0x020200
     public static final int REQUEST_MESSAGE_TYPE = 131584;

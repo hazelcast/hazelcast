@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
  * to define when the value is outdated and thus should be removed from the replicated map.
  */
-@Generated("1bbf756fecd64f94fc8e027f2843a053")
+@Generated("ef21d7bda7ad7bcdc8435aa7742d1f11")
 public final class ReplicatedMapPutCodec {
     //hex: 0x0E0100
     public static final int REQUEST_MESSAGE_TYPE = 917760;
@@ -105,10 +107,10 @@ public final class ReplicatedMapPutCodec {
         /**
          * The old value if existed for the key.
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.nio.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

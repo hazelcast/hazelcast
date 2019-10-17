@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map maps one or more keys to the specified value.
  * This operation will probably require time linear in the map size for most implementations of the Map interface.
  */
-@Generated("2551839717ed7797c4cb4d800c4248b3")
+@Generated("0a84d86fb3a2c370b7b035eb3a98f7ad")
 public final class ReplicatedMapContainsValueCodec {
     //hex: 0x0E0500
     public static final int REQUEST_MESSAGE_TYPE = 918784;

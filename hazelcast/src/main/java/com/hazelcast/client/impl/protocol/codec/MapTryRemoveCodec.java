@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the key is already locked by another thread and/or member, then this operation will wait the timeout
  * amount for acquiring the lock.
  */
-@Generated("2c6f2a61fbecc67e748d5d6ea58512fe")
+@Generated("f29e14961791983d5c741b5b12096c77")
 public final class MapTryRemoveCodec {
     //hex: 0x010E00
     public static final int REQUEST_MESSAGE_TYPE = 69120;

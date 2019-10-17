@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If ttl is 0, then the entry lives forever. Similar to the put operation except that set doesn't
  * return the old value, which is more efficient.
  */
-@Generated("f19a63df2fa7d61cea3e9305576a1481")
+@Generated("68243665e46de483da0d8f18a8fd4099")
 public final class MapSetCodec {
     //hex: 0x011200
     public static final int REQUEST_MESSAGE_TYPE = 70144;

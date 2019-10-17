@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -38,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("e6eb06d4a99c0540f0ab7f6b98a0d881")
+@Generated("bb890f5226222178e9af4b88cc21c0e6")
 public final class ClientCreateProxiesCodec {
     //hex: 0x001300
     public static final int REQUEST_MESSAGE_TYPE = 4864;

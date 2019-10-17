@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("4d2986cae7dbfc2051b88b6ca0a1e670")
+@Generated("eb38541d7054120db6e7eab5cfde6814")
 public final class ClientRemoveDistributedObjectListenerCodec {
     //hex: 0x000E00
     public static final int REQUEST_MESSAGE_TYPE = 3584;

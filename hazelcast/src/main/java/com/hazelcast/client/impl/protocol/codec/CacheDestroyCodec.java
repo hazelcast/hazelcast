@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the cache. Clears the internal content and releases any resource.
  */
-@Generated("c83ad90d56b53bcb6465c409c01f6f13")
+@Generated("41d0bd0429749bb1a67bd6d7c8f17896")
 public final class CacheDestroyCodec {
     //hex: 0x150800
     public static final int REQUEST_MESSAGE_TYPE = 1378304;

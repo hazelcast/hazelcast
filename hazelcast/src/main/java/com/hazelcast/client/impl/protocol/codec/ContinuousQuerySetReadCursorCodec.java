@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -39,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method returns `false` if the event is not in the buffer of event publisher side. That means recovery is not
  * possible.
  */
-@Generated("87df4cd23df5cdbd81bb25de79251c2f")
+@Generated("9b5480d9718f431c81c6685653844f14")
 public final class ContinuousQuerySetReadCursorCodec {
     //hex: 0x180500
     public static final int REQUEST_MESSAGE_TYPE = 1574144;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no key-value mappings.
  */
-@Generated("511eab7f6ccafc6c36469b7b4833eed2")
+@Generated("626a5a617f6566cfd714c130e1c406d6")
 public final class MapIsEmptyCodec {
     //hex: 0x012F00
     public static final int REQUEST_MESSAGE_TYPE = 77568;

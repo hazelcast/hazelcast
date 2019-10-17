@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
  * Returns the results mapped by each key in the map.
  */
-@Generated("4b6f144dbd1f111252465ea99d2ae004")
+@Generated("9d03d62d283806234e91aa308aab1fe4")
 public final class MapExecuteWithPredicateCodec {
     //hex: 0x013500
     public static final int REQUEST_MESSAGE_TYPE = 79104;

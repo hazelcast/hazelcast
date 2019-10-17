@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
  * collection is modified while the operation is in progress.
  */
-@Generated("fb55ee53a5b9c3c92305243ceba08bcb")
+@Generated("8bad1934c4f16229cbaec9eb596576c8")
 public final class SetAddAllCodec {
     //hex: 0x060600
     public static final int REQUEST_MESSAGE_TYPE = 394752;

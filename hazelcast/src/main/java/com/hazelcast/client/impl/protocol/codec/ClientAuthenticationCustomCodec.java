@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("ffadb1b77ad5e7bfc24f22ef5f83918f")
+@Generated("396b5adfabb358c9516498784e6ef3bc")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -66,7 +68,7 @@ public final class ClientAuthenticationCustomCodec {
         /**
          * Unique string identifying the connected client uniquely.
          */
-        public java.util.UUID uuid;
+        public @Nullable java.util.UUID uuid;
 
         /**
          * The type of the client. E.g. JAVA, CPP, CSHARP, etc.
@@ -103,10 +105,10 @@ public final class ClientAuthenticationCustomCodec {
          * the expected id of the cluster. Checked on the server side when provided.
          * Authentication fails and 3:NOT_ALLOWED_IN_CLUSTER returned, in case of mismatch
          */
-        public java.util.UUID clusterId;
+        public @Nullable java.util.UUID clusterId;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.nio.serialization.Data credentials, java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, java.util.UUID clusterId) {
+    public static ClientMessage encodeRequest(com.hazelcast.nio.serialization.Data credentials, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, @Nullable java.util.UUID clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -153,12 +155,12 @@ public final class ClientAuthenticationCustomCodec {
         /**
          * TODO DOC
          */
-        public com.hazelcast.cluster.Address address;
+        public @Nullable com.hazelcast.cluster.Address address;
 
         /**
          * Unique string identifying the connected client uniquely.
          */
-        public java.util.UUID uuid;
+        public @Nullable java.util.UUID uuid;
 
         /**
          * client side supported version to inform server side
@@ -183,7 +185,7 @@ public final class ClientAuthenticationCustomCodec {
         public java.util.UUID clusterId;
     }
 
-    public static ClientMessage encodeResponse(byte status, com.hazelcast.cluster.Address address, java.util.UUID uuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID uuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

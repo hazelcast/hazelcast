@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If this map has a MapStore, this method flushes all the local dirty entries by calling MapStore.storeAll()
  * and/or MapStore.deleteAll().
  */
-@Generated("b9b70014256e4019eb3e79bd441a0546")
+@Generated("da27ab2d3a82680c68bba87d3a5a55ef")
 public final class MapFlushCodec {
     //hex: 0x010D00
     public static final int REQUEST_MESSAGE_TYPE = 68864;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an index to this map with specified configuration.
  */
-@Generated("f469500833a67ef8b896bcf8a14e2649")
+@Generated("d4ccf748d2ba075ee5594efc1e4cc277")
 public final class MapAddIndexCodec {
     //hex: 0x012D00
     public static final int REQUEST_MESSAGE_TYPE = 77056;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all of this collection's elements that are also contained in the specified collection (optional operation).
  * After this call returns, this collection will contain no elements in common with the specified collection.
  */
-@Generated("f3c8d09994db6f2bcb3e4afea5af3d40")
+@Generated("bc689cd619865fca9b58f5755322ddee")
 public final class QueueCompareAndRemoveAllCodec {
     //hex: 0x030D00
     public static final int REQUEST_MESSAGE_TYPE = 199936;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns number of items in the ringbuffer. If no ttl is set, the size will always be equal to capacity after the
  * head completed the first looparound the ring. This is because no items are getting retired.
  */
-@Generated("03624168332857b71cb4e90bd602a1a9")
+@Generated("2891fd1ce08dd9aa7141845e3bf1ea2c")
 public final class RingbufferSizeCodec {
     //hex: 0x190100
     public static final int REQUEST_MESSAGE_TYPE = 1638656;

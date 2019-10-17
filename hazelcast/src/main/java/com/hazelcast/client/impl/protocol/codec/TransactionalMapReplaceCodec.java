@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Replaces the entry for a key only if it is currently mapped to some value. The object to be replaced will be
  * accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("026cf6370c9194e20ca8e2be8260cd05")
+@Generated("3c9e27cad13c29bb5d8c9f1dcc04b32b")
 public final class TransactionalMapReplaceCodec {
     //hex: 0x100900
     public static final int REQUEST_MESSAGE_TYPE = 1050880;
@@ -112,10 +114,10 @@ public final class TransactionalMapReplaceCodec {
         /**
          * The previous value associated with key, or null if there was no mapping for key.
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.nio.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

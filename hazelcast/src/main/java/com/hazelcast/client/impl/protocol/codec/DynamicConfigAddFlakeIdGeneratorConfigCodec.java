@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a flake ID generator configuration for the same name already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("8fe32c7ede5b7eaf8bb7807d5433b6bb")
+@Generated("4e4bab15e4af5213f2dcdb8c874ee3cc")
 public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     //hex: 0x1E1200
     public static final int REQUEST_MESSAGE_TYPE = 1970688;

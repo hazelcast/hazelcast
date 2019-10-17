@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it is retried for at most 3 times (on the failing nodes only). If it does not work after the third time, this
  * method throws a OPERATION_TIMEOUT back to the caller.
  */
-@Generated("7df06c54e5e3e22055d1f00aac0e7838")
+@Generated("aeca221d75bc6b501d16a113da413fa5")
 public final class ReplicatedMapClearCodec {
     //hex: 0x0E0900
     public static final int REQUEST_MESSAGE_TYPE = 919808;

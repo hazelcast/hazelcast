@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the projection logic on map entries filtered with the Predicate and returns the result
  */
-@Generated("1b3b15abad27fdca4634b812a2e561ab")
+@Generated("b16f64d000c522478485af8edbff96a4")
 public final class MapProjectWithPredicateCodec {
     //hex: 0x014100
     public static final int REQUEST_MESSAGE_TYPE = 82176;

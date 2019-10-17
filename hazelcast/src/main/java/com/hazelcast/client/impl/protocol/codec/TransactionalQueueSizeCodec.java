@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this collection.If this collection contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE.
  */
-@Generated("2148c5ad78afba09bd4b1c16c2eacdb4")
+@Generated("a4b3a7299f3e98005e34effc54a448d6")
 public final class TransactionalQueueSizeCodec {
     //hex: 0x140500
     public static final int REQUEST_MESSAGE_TYPE = 1312000;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -40,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-@Generated("a0e7f1c5ab25c38a0a22d12cf0613981")
+@Generated("7cad5253bcbb2f1751293e4b5e226b51")
 public final class RingbufferReadManyCodec {
     //hex: 0x190A00
     public static final int REQUEST_MESSAGE_TYPE = 1640960;
@@ -83,10 +85,10 @@ public final class RingbufferReadManyCodec {
         /**
          * Filter is allowed to be null, indicating there is no filter.
          */
-        public com.hazelcast.nio.serialization.Data filter;
+        public @Nullable com.hazelcast.nio.serialization.Data filter;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minCount, int maxCount, com.hazelcast.nio.serialization.Data filter) {
+    public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minCount, int maxCount, @Nullable com.hazelcast.nio.serialization.Data filter) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -130,7 +132,7 @@ public final class RingbufferReadManyCodec {
         /**
          * TODO DOC
          */
-        public long[] itemSeqs;
+        public @Nullable long[] itemSeqs;
 
         /**
          * TODO DOC
@@ -138,7 +140,7 @@ public final class RingbufferReadManyCodec {
         public long nextSeq;
     }
 
-    public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.nio.serialization.Data> items, long[] itemSeqs, long nextSeq) {
+    public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.nio.serialization.Data> items, @Nullable long[] itemSeqs, long nextSeq) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

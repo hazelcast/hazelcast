@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -41,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * duration passes. If the session is closed between reentrant acquires,
  * the call fails with {@code LockOwnershipLostException}.
  */
-@Generated("daf053b6486659f679df8df4abc998cf")
+@Generated("38d0408cae693c4073d11c86de61e321")
 public final class FencedLockTryLockCodec {
     //hex: 0x070200
     public static final int REQUEST_MESSAGE_TYPE = 459264;

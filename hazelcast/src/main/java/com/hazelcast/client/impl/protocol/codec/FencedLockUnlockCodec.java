@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -38,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code LockOwnershipLostException}. Returns true if the lock is still
  * held by the caller after a successful unlock() call, false otherwise.
  */
-@Generated("a6d11d4644b6af9c2a165c36673329de")
+@Generated("1a238c1a976f0f7b15f61ee99d020e66")
 public final class FencedLockUnlockCodec {
     //hex: 0x070300
     public static final int REQUEST_MESSAGE_TYPE = 459520;

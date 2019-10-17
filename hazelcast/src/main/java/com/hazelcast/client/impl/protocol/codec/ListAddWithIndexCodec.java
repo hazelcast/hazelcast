@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Inserts the specified element at the specified position in this list (optional operation). Shifts the element
  * currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
  */
-@Generated("9ed319bc84a7fdfa904c7a9301083bb3")
+@Generated("8a5aac4a977721a42dd1349e180c670e")
 public final class ListAddWithIndexCodec {
     //hex: 0x051100
     public static final int REQUEST_MESSAGE_TYPE = 332032;

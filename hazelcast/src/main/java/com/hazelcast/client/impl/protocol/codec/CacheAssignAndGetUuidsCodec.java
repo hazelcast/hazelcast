@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("520b7abdd8f937dd80a82aa8f0ec0cf5")
+@Generated("67f3ee457fb83bba0cc0cb1c20b6b381")
 public final class CacheAssignAndGetUuidsCodec {
     //hex: 0x152000
     public static final int REQUEST_MESSAGE_TYPE = 1384448;

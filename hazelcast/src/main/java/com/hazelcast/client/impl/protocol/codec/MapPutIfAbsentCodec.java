@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
  * with a value. Entry will expire and get evicted after the ttl.
  */
-@Generated("51b2d7d8b6edba9201ce513f8993898d")
+@Generated("73ce9375567bf8ec98f624779fad9ffc")
 public final class MapPutIfAbsentCodec {
     //hex: 0x011100
     public static final int REQUEST_MESSAGE_TYPE = 69888;
@@ -112,10 +114,10 @@ public final class MapPutIfAbsentCodec {
         /**
          * returns a clone of the previous value, not the original (identically equal) value previously put into the map.
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.nio.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

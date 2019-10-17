@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically removes the mapping for a key only if currently mapped to the given value.
  */
-@Generated("c2f06b8a99608b246a5753e24d021eb5")
+@Generated("20f63a3a76b47f44cc3add7467442491")
 public final class CacheRemoveCodec {
     //hex: 0x151700
     public static final int REQUEST_MESSAGE_TYPE = 1382144;
@@ -64,7 +66,7 @@ public final class CacheRemoveCodec {
         /**
          * value expected to be associated with the specified key.
          */
-        public com.hazelcast.nio.serialization.Data currentValue;
+        public @Nullable com.hazelcast.nio.serialization.Data currentValue;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -73,7 +75,7 @@ public final class CacheRemoveCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data currentValue, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, @Nullable com.hazelcast.nio.serialization.Data currentValue, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

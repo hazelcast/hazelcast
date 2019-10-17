@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified value.
  */
-@Generated("337b52365d5fa5835545f677055e20ef")
+@Generated("128b4a58b9ccc9919a93ad76dc33603f")
 public final class TransactionalMapContainsValueCodec {
     //hex: 0x101200
     public static final int REQUEST_MESSAGE_TYPE = 1053184;

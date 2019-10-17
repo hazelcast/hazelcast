@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * ListIterator#next next. An initial call to ListIterator#previous previous would return the element with the
  * specified index minus one.
  */
-@Generated("b5a6d226170b10393dc0e3ca4ba628a7")
+@Generated("49e7818dcda75931d07836a867b0f2b7")
 public final class ListListIteratorCodec {
     //hex: 0x051700
     public static final int REQUEST_MESSAGE_TYPE = 333568;

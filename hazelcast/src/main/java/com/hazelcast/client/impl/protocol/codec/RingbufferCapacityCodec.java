@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the capacity of this Ringbuffer.
  */
-@Generated("8f848987acd159e8e1ee4fcc9596454e")
+@Generated("c76ce61cb969c1d3f8b135f167b5a5ab")
 public final class RingbufferCapacityCodec {
     //hex: 0x190400
     public static final int REQUEST_MESSAGE_TYPE = 1639424;

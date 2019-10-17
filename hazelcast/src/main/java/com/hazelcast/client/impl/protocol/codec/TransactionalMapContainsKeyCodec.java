@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified key.
  */
-@Generated("724def964dc4009b71bbcc9dd9b1fae8")
+@Generated("4cfb1a4c29818820e41e5e763a091f3d")
 public final class TransactionalMapContainsKeyCodec {
     //hex: 0x100100
     public static final int REQUEST_MESSAGE_TYPE = 1048832;

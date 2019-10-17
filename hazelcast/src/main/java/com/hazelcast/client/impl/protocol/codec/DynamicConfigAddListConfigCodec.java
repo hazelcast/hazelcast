@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a list configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("694fec9ad76cf17113130dd71a287652")
+@Generated("00434cbd4969b1ffe8777386f930448e")
 public final class DynamicConfigAddListConfigCodec {
     //hex: 0x1E0500
     public static final int REQUEST_MESSAGE_TYPE = 1967360;
@@ -64,7 +66,7 @@ public final class DynamicConfigAddListConfigCodec {
         /**
          * item listener configurations
          */
-        public java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs;
+        public @Nullable java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs;
 
         /**
          * number of synchronous backups
@@ -91,7 +93,7 @@ public final class DynamicConfigAddListConfigCodec {
          * required in the cluster for the lock to remain functional. When {@code null}, split brain protection does not
          * apply to this lock configuration's operations.
          */
-        public java.lang.String splitBrainProtectionName;
+        public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
          * TODO DOC
@@ -104,7 +106,7 @@ public final class DynamicConfigAddListConfigCodec {
         public int mergeBatchSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, boolean statisticsEnabled, java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

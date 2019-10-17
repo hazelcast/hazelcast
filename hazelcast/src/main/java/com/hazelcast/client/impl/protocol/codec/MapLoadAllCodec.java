@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads all keys into the store. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-@Generated("3e0c72e7026bb4317c7cc57bebcfb599")
+@Generated("03dcf0c03b5e01350d2058cb650cce33")
 public final class MapLoadAllCodec {
     //hex: 0x012400
     public static final int REQUEST_MESSAGE_TYPE = 74752;

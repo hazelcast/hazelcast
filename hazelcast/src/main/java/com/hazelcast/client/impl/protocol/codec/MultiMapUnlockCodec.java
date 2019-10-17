@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Releases the lock for the specified key regardless of the lock owner. It always successfully unlocks the key,
  * never blocks and returns immediately.
  */
-@Generated("8675f9b7b15ea260856de7926b2d73d4")
+@Generated("635b10146c7e3456efa6300cc1f70e8d")
 public final class MultiMapUnlockCodec {
     //hex: 0x021300
     public static final int REQUEST_MESSAGE_TYPE = 135936;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and lies dormant until one of two things happens:the lock is acquired by the current thread, or the specified
  * waiting time elapses.
  */
-@Generated("b68eab02ba06564142980a01b940c0b3")
+@Generated("8d1ea4884901e5cd361b2578c9754111")
 public final class MultiMapTryLockCodec {
     //hex: 0x021100
     public static final int REQUEST_MESSAGE_TYPE = 135424;

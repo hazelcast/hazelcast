@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the sequence of the tail. The tail is the side of the ringbuffer where the items are added to.
  * The initial value of the tail is -1.
  */
-@Generated("cf0bd58d4bf8ee39cfd6e55432b526bf")
+@Generated("8c1f47d42f52c68fe0d899b26ca543ca")
 public final class RingbufferTailSequenceCodec {
     //hex: 0x190200
     public static final int REQUEST_MESSAGE_TYPE = 1638912;

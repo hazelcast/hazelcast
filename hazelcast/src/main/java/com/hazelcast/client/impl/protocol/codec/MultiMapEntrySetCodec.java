@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the set of key-value pairs in the multimap.The collection is NOT backed by the map, so changes to the map
  * are NOT reflected in the collection, and vice-versa
  */
-@Generated("5b095dfb465cc47284ace185e3710e1f")
+@Generated("eb8d29ef9c20db746c85a5c5c07167dd")
 public final class MultiMapEntrySetCodec {
     //hex: 0x020600
     public static final int REQUEST_MESSAGE_TYPE = 132608;

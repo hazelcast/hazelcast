@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -49,7 +51,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * waiting time elapses then the value false is returned.  If the time is
  * less than or equal to zero, the method will not wait at all.
  */
-@Generated("0e4f9e7aa693a146d9cfb607ea997c0c")
+@Generated("67847f9fd05e9bd66e90c987d3dfec4a")
 public final class CountDownLatchAwaitCodec {
     //hex: 0x0C0200
     public static final int REQUEST_MESSAGE_TYPE = 786944;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CacheEntryRemoveListeners notified. java.util.Iterator#next() may return null if the entry is no longer present,
  * has expired or has been evicted.
  */
-@Generated("2baa7b3aad53cbbf036d028e89ebd516")
+@Generated("1d49a57e149a5fa63c068a8526dc8b29")
 public final class CacheIterateCodec {
     //hex: 0x150F00
     public static final int REQUEST_MESSAGE_TYPE = 1380096;

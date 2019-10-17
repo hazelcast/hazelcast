@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns current lock ownership status of the given FencedLock instance.
  */
-@Generated("0c99af5e0c2abc518522e92c68790b80")
+@Generated("b30ecb7f6604400b351ec65294f3e926")
 public final class FencedLockGetLockOwnershipCodec {
     //hex: 0x070400
     public static final int REQUEST_MESSAGE_TYPE = 459776;

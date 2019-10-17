@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("87bbc87fd8e3883d5ce56f5637da6256")
+@Generated("b88e27a300eb6dc0c0916d550dce851b")
 public final class ContinuousQueryMadePublishableCodec {
     //hex: 0x180300
     public static final int REQUEST_MESSAGE_TYPE = 1573632;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * specified key. If the cache is configured for write-through operation mode, the underlying configured
  * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
  */
-@Generated("93a2d54f35dfc55f291cb0f04c53859e")
+@Generated("8eef474a5c63b85932b46a566db9bcf0")
 public final class CachePutIfAbsentCodec {
     //hex: 0x151300
     public static final int REQUEST_MESSAGE_TYPE = 1381120;
@@ -72,7 +74,7 @@ public final class CachePutIfAbsentCodec {
          * The custom expiry policy for this operation.
          * A null value is equivalent to put(Object, Object).
          */
-        public com.hazelcast.nio.serialization.Data expiryPolicy;
+        public @Nullable com.hazelcast.nio.serialization.Data expiryPolicy;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -81,7 +83,7 @@ public final class CachePutIfAbsentCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

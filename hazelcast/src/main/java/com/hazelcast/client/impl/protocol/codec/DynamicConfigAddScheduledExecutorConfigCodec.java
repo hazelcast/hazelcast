@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a scheduled executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("2f41858eb75a79e3a382a41984232540")
+@Generated("e801cae804b8fec74ccb137e6e7909de")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1E0B00
     public static final int REQUEST_MESSAGE_TYPE = 1968896;
@@ -80,7 +82,7 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
          * required in the cluster for the lock to remain functional. When {@code null}, split brain protection does not
          * apply to this lock configuration's operations.
          */
-        public java.lang.String splitBrainProtectionName;
+        public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
          * TODO DOC
@@ -93,7 +95,7 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         public int mergeBatchSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

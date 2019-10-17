@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified item listener. Returns silently if the specified listener was not added before.
  */
-@Generated("109a8393de0e87a7648b51d19ccd9637")
+@Generated("e5f61af933e30953b76e62811cb5621c")
 public final class SetRemoveListenerCodec {
     //hex: 0x060C00
     public static final int REQUEST_MESSAGE_TYPE = 396288;

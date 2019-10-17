@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * are NOT reflected in the set, and vice-versa. This method is always executed by a distributed query, so it may throw
  * a QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("49044994356b8699f258ae97856cb5ae")
+@Generated("a24d18a3f808b4f2b9dbbddbc321c58c")
 public final class TransactionalMapKeySetCodec {
     //hex: 0x100E00
     public static final int REQUEST_MESSAGE_TYPE = 1052160;

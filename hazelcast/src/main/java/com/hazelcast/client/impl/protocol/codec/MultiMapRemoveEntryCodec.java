@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all the entries with the given key. The collection is NOT backed by the map, so changes to the map are
  * NOT reflected in the collection, and vice-versa.
  */
-@Generated("df7bc50cce713b5a31151902ee5b68ae")
+@Generated("ebe4acbbb2a1ab2552fa426a15299c7a")
 public final class MultiMapRemoveEntryCodec {
     //hex: 0x021500
     public static final int REQUEST_MESSAGE_TYPE = 136448;

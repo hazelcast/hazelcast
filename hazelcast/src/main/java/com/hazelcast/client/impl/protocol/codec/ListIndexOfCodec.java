@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the index of the first occurrence of the specified element in this list, or -1 if this list does not
  * contain the element.
  */
-@Generated("25d1b7f4fa5bf2f7efdaebef5f78f7a5")
+@Generated("5e90e27315a42728db24787d0d7a18f7")
 public final class ListIndexOfCodec {
     //hex: 0x051400
     public static final int REQUEST_MESSAGE_TYPE = 332800;

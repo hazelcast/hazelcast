@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * asymmetric set difference of the two sets.
  */
-@Generated("4c110ff124fd574d50710356b41c8e53")
+@Generated("c47a462b781b75c777361c625766db20")
 public final class SetCompareAndRemoveAllCodec {
     //hex: 0x060700
     public static final int REQUEST_MESSAGE_TYPE = 395008;

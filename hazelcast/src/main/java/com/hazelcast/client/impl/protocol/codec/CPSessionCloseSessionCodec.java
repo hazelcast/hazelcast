@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the given session on the given CP group
  */
-@Generated("c44e3f354bb8d2a4e53cc28522237dc8")
+@Generated("b040e6333d163b67e204649da305b307")
 public final class CPSessionCloseSessionCodec {
     //hex: 0x220200
     public static final int REQUEST_MESSAGE_TYPE = 2228736;

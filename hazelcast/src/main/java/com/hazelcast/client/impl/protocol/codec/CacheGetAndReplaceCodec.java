@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * write-through operation mode, the underlying configured javax.cache.integration.CacheWriter might be called to
  * store the value of the key to any kind of external resource.
  */
-@Generated("970344c93db4e7d3c43f0b3dbdd1e5d2")
+@Generated("58a3711c095c970cd71ccf482267d97b")
 public final class CacheGetAndReplaceCodec {
     //hex: 0x150C00
     public static final int REQUEST_MESSAGE_TYPE = 1379328;
@@ -72,7 +74,7 @@ public final class CacheGetAndReplaceCodec {
          * Expiry policy for the entry. Byte-array which is serialized from an object implementing
          * javax.cache.expiry.ExpiryPolicy interface.
          */
-        public com.hazelcast.nio.serialization.Data expiryPolicy;
+        public @Nullable com.hazelcast.nio.serialization.Data expiryPolicy;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -81,7 +83,7 @@ public final class CacheGetAndReplaceCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -115,10 +117,10 @@ public final class CacheGetAndReplaceCodec {
         /**
          * The old value previously assigned to the given key.
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.nio.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

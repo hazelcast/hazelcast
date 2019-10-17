@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initializes the ISemaphore instance with the given permit number, if not
  * initialized before.
  */
-@Generated("109f76457918770cea2b0bde214bbfb0")
+@Generated("99e2141047631e6c828301f156b4eae0")
 public final class SemaphoreInitCodec {
     //hex: 0x0D0100
     public static final int REQUEST_MESSAGE_TYPE = 852224;

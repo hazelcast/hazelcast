@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this list contains no elements
  */
-@Generated("86d46ad7d3038d823f563e8d85df4538")
+@Generated("c1885436408f5e2ffdda0c41feba0936")
 public final class ListIsEmptyCodec {
     //hex: 0x050D00
     public static final int REQUEST_MESSAGE_TYPE = 331008;

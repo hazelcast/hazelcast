@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks whether a task is done.
  * @see {@link java.util.concurrent.Future#cancel(boolean)}
  */
-@Generated("2d922148e5c2fb20fb47c0e4c60fd8a4")
+@Generated("e5ec9e9cfc05d4872a86582ac656d435")
 public final class ScheduledExecutorIsDoneFromAddressCodec {
     //hex: 0x1D0E00
     public static final int REQUEST_MESSAGE_TYPE = 1904128;

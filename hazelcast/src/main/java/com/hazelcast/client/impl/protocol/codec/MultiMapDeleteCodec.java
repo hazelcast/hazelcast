@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all the entries with the given key.
  */
-@Generated("1583a04c795b73a48cb10c8a6c05c6dc")
+@Generated("8f0a1b16a4498ec635f750dbfe2a1f4b")
 public final class MultiMapDeleteCodec {
     //hex: 0x021600
     public static final int REQUEST_MESSAGE_TYPE = 136704;

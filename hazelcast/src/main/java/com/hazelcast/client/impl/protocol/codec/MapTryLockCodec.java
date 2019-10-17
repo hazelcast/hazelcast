@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
  * the specified waiting time elapses.
  */
-@Generated("85de0ae86e5998151d4508575ce1f8fc")
+@Generated("881d1f8bfd52599e8695cf596a8e3f8c")
 public final class MapTryLockCodec {
     //hex: 0x011400
     public static final int REQUEST_MESSAGE_TYPE = 70656;

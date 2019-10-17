@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -37,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-@Generated("f0257fbcd9114f233592ece316d9777a")
+@Generated("6f03e144e6ec00e90d906a02ceedee74")
 public final class ListAddAllCodec {
     //hex: 0x050600
     public static final int REQUEST_MESSAGE_TYPE = 329216;

@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("d74c6ed89c038d34a4fe65871efb8bcd")
+@Generated("179d99a71e0f01bb94ac0d1c01370f07")
 public final class ScheduledExecutorGetStatsFromPartitionCodec {
     //hex: 0x1D0500
     public static final int REQUEST_MESSAGE_TYPE = 1901824;

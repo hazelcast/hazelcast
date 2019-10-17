@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
  */
-@Generated("2c1a226a31fff0cd7877dafcdca4d73c")
+@Generated("fd03b2dc7b8eb9292b6bcf83565119f6")
 public final class TopicRemoveMessageListenerCodec {
     //hex: 0x040300
     public static final int REQUEST_MESSAGE_TYPE = 262912;

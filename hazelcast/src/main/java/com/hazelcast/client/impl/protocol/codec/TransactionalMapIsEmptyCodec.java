@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no entries.
  */
-@Generated("2b80d41ac1c3602aa2c8186016ab2b05")
+@Generated("65c083a078335d1c6547bc7283b31fc0")
 public final class TransactionalMapIsEmptyCodec {
     //hex: 0x100500
     public static final int REQUEST_MESSAGE_TYPE = 1049856;

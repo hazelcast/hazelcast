@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value
  */
-@Generated("251bc536de483b871721ccc0f9af4b25")
+@Generated("5c7fd7c1b5971ca09d94aa22982aaa8f")
 public final class AtomicRefSetCodec {
     //hex: 0x0B0600
     public static final int REQUEST_MESSAGE_TYPE = 722432;
@@ -63,7 +65,7 @@ public final class AtomicRefSetCodec {
         /**
          * The value to set
          */
-        public com.hazelcast.nio.serialization.Data newValue;
+        public @Nullable com.hazelcast.nio.serialization.Data newValue;
 
         /**
          * Denotes whether the old value is returned or not
@@ -71,7 +73,7 @@ public final class AtomicRefSetCodec {
         public boolean returnOldValue;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, com.hazelcast.nio.serialization.Data newValue, boolean returnOldValue) {
+    public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, @Nullable com.hazelcast.nio.serialization.Data newValue, boolean returnOldValue) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -104,10 +106,10 @@ public final class AtomicRefSetCodec {
          * the old value or null, depending on
          * the {
          */
-        public com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.nio.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

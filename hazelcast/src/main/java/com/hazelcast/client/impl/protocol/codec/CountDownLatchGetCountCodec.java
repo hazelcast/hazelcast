@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current count.
  */
-@Generated("6f42c2982186a8d771970c991c0c81e7")
+@Generated("d85c405eb098af9d2377d782123d1935")
 public final class CountDownLatchGetCountCodec {
     //hex: 0x0C0400
     public static final int REQUEST_MESSAGE_TYPE = 787456;

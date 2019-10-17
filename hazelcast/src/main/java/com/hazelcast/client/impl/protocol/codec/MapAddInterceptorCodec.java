@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an interceptor for this map. Added interceptor will intercept operations
  * and execute user defined methods and will cancel operations if user defined method throw exception.
  */
-@Generated("ac16b4edfeaf7a34e69f11a5f1d94716")
+@Generated("ff9386875905ab1adcd1d5bdfe34baa5")
 public final class MapAddInterceptorCodec {
     //hex: 0x011700
     public static final int REQUEST_MESSAGE_TYPE = 71424;

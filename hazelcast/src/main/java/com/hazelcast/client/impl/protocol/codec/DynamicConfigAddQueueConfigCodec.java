@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -36,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("82b53d90843c15fd7399597d7c4b7628")
+@Generated("4ab3c9005033b3012996fcb035a8bff0")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1E0D00
     public static final int REQUEST_MESSAGE_TYPE = 1969408;
@@ -65,7 +67,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         /**
          * item listeners configuration
          */
-        public java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs;
+        public @Nullable java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs;
 
         /**
          * number of synchronous backups
@@ -97,12 +99,12 @@ public final class DynamicConfigAddQueueConfigCodec {
          * required in the cluster for the queue to remain functional. When {@code null}, split brain protection does not
          * apply to this queue configuration's operations.
          */
-        public java.lang.String splitBrainProtectionName;
+        public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
          * backing queue store configuration
          */
-        public com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig;
+        public @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig;
 
         /**
          * TODO DOC
@@ -115,7 +117,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         public int mergeBatchSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, java.lang.String splitBrainProtectionName, com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
