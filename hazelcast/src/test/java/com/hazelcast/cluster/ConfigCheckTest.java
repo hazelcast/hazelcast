@@ -94,20 +94,6 @@ public class ConfigCheckTest {
     }
 
     @Test
-    public void whenDifferentApplicationValidationToken_thenConfigurationMismatchException() {
-        Config config1 = new Config();
-        config1.setProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN.getName(), "foo");
-
-        Config config2 = new Config();
-        config2.setProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN.getName(), "bar");
-
-        ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
-        ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");
-
-        assertIsCompatibleThrowsConfigMismatchException(configCheck1, configCheck2);
-    }
-
-    @Test
     public void whenGroupPartitionEnabledMismatch_thenConfigurationMismatchException() {
         Config config1 = new Config();
         config1.getPartitionGroupConfig().setEnabled(false);
