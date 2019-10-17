@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 
 /**
  * Factory methods for several common functions.
+ *
+ * @since 4.0
  */
 public final class Functions {
 

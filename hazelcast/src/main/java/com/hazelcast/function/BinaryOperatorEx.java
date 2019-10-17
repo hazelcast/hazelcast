@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
 
@@ -29,6 +29,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * java.util.function.BinaryOperator} which declares checked exception.
  *
  * @param <T> the type of the operands and result of the operator
+ *
+ * @since 4.0
  */
 @FunctionalInterface
 public interface BinaryOperatorEx<T> extends BinaryOperator<T>, Serializable {

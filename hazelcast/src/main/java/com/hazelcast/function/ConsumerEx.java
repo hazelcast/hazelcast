@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
 
@@ -28,6 +28,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * which declares checked exception.
  *
  * @param <T> the type of the input to the operation
+ *
+ * @since 4.0
  */
 @FunctionalInterface
 public interface ConsumerEx<T> extends Consumer<T>, Serializable {

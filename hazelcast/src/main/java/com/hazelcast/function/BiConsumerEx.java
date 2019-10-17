@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
 
@@ -29,6 +29,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @param <T> the type of the first argument to the operation
  * @param <U> the type of the second argument to the operation
+ *
+ * @since 4.0
  */
 @FunctionalInterface
 public interface BiConsumerEx<T, U> extends BiConsumer<T, U>, Serializable {
