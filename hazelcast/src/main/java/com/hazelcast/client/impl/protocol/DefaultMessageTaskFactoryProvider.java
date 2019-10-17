@@ -78,6 +78,12 @@ import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableEx
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetMemberConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetSystemPropertiesMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetThreadDumpMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.PromoteMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.RunGcMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ShutdownMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
@@ -2199,6 +2205,42 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 new MessageTaskFactory() {
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new UpdateMapConfigMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new GetMemberConfigMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCRunGcCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new RunGcMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new GetThreadDumpMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new ShutdownMemberMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCPromoteMemberCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new PromoteMemberMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new GetSystemPropertiesMessageTask(clientMessage, node, connection);
                     }
                 });
     }
