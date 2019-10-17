@@ -311,7 +311,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
-        ProbeLevel probeLevel = config.getMetricsConfig().getMinimumLevel();
+        ProbeLevel probeLevel = config.getMetricsConfig().getLevel();
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, probeLevel);
         return metricsRegistry;

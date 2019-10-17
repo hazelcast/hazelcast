@@ -60,6 +60,7 @@ import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -196,6 +197,7 @@ public class Node {
     @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:methodlength"})
     public Node(HazelcastInstanceImpl hazelcastInstance, Config staticConfig, NodeContext nodeContext) {
         this.properties = new HazelcastProperties(staticConfig);
+        MetricsConfigHelper.overrideMetricsConfig(staticConfig);
         DynamicConfigurationAwareConfig config = new DynamicConfigurationAwareConfig(staticConfig, this.properties);
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;

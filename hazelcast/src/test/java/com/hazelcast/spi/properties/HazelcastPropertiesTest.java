@@ -264,16 +264,16 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getEnum() {
-        config.getMetricsConfig().setMinimumLevel(ProbeLevel.DEBUG);
+        config.getMetricsConfig().setLevel(ProbeLevel.DEBUG);
 
-        ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
+        ProbeLevel level = config.getMetricsConfig().getLevel();
 
         assertEquals(ProbeLevel.DEBUG, level);
     }
 
     @Test
     public void getEnum_default() {
-        ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
+        ProbeLevel level = config.getMetricsConfig().getLevel();
 
         assertEquals(ProbeLevel.INFO, level);
     }

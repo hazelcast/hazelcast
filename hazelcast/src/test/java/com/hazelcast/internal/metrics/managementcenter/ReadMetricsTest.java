@@ -68,7 +68,7 @@ public class ReadMetricsTest extends HazelcastTestSupport {
         Config conf = getConfig();
         conf.getMetricsConfig()
             .setEnabled(true)
-            .setCollectionIntervalSeconds(1);
+            .setCollectionFrequencySeconds(1);
 
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(conf);
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());

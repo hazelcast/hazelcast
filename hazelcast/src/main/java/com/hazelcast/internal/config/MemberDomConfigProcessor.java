@@ -16,108 +16,10 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.config.AliasedDiscoveryConfig;
-import com.hazelcast.config.AttributeConfig;
-import com.hazelcast.config.CRDTReplicationConfig;
-import com.hazelcast.config.CacheDeserializedValues;
-import com.hazelcast.config.CachePartitionLostListenerConfig;
-import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import com.hazelcast.config.CacheSimpleEntryListenerConfig;
-import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ConsistencyCheckStrategy;
-import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.CustomWanPublisherConfig;
-import com.hazelcast.config.DiscoveryConfig;
-import com.hazelcast.config.DiscoveryStrategyConfig;
-import com.hazelcast.config.DurableExecutorConfig;
-import com.hazelcast.config.EncryptionAtRestConfig;
-import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
-import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
-import com.hazelcast.config.HotRestartConfig;
-import com.hazelcast.config.HotRestartPersistenceConfig;
-import com.hazelcast.config.IcmpFailureDetectorConfig;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.InterfacesConfig;
-import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.ItemListenerConfig;
-import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LoginModuleConfig;
-import com.hazelcast.config.MCMutualAuthConfig;
-import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapPartitionLostListenerConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizePolicy;
-import com.hazelcast.config.MemberAddressProviderConfig;
-import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.config.MemcacheProtocolConfig;
-import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.MerkleTreeConfig;
-import com.hazelcast.config.MetadataPolicy;
-import com.hazelcast.config.MetricsConfig;
-import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.OnJoinPermissionOperationName;
-import com.hazelcast.config.PNCounterConfig;
-import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
-import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.PermissionPolicyConfig;
-import com.hazelcast.config.PredicateConfig;
-import com.hazelcast.config.ProbabilisticSplitBrainProtectionConfigBuilder;
-import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.config.RecentlyActiveSplitBrainProtectionConfigBuilder;
-import com.hazelcast.config.ReliableTopicConfig;
-import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.config.RestApiConfig;
-import com.hazelcast.config.RestEndpointGroup;
-import com.hazelcast.config.RestServerEndpointConfig;
-import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.config.RingbufferStoreConfig;
-import com.hazelcast.config.SSLConfig;
-import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.SecureStoreConfig;
-import com.hazelcast.config.SecurityConfig;
-import com.hazelcast.config.SecurityInterceptorConfig;
-import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
-import com.hazelcast.config.SetConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.config.SplitBrainProtectionConfig;
-import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
-import com.hazelcast.config.SplitBrainProtectionListenerConfig;
-import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.UserCodeDeploymentConfig;
-import com.hazelcast.config.VaultSecureStoreConfig;
-import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
-import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.config.WanQueueFullBehavior;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -3035,26 +2937,56 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("enabled".equals(att.getNodeName())) {
                 boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
                 metricsConfig.setEnabled(enabled);
-            } else if ("mc-enabled".equals(att.getNodeName())) {
-                boolean enabled = getBooleanValue(getAttribute(node, "mc-enabled"));
-                metricsConfig.setMcEnabled(enabled);
-            } else if ("jmx-enabled".equals(att.getNodeName())) {
-                boolean enabled = getBooleanValue(getAttribute(node, "jmx-enabled"));
-                metricsConfig.setJmxEnabled(enabled);
             }
         }
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("collection-interval-seconds".equals(nodeName)) {
-                metricsConfig.setCollectionIntervalSeconds(Integer.parseInt(value));
-            } else if ("retention-seconds".equals(nodeName)) {
-                metricsConfig.setRetentionSeconds(Integer.parseInt(value));
-            } else if ("metrics-for-data-structures".equals(nodeName)) {
-                metricsConfig.setMetricsForDataStructuresEnabled(Boolean.parseBoolean(value));
-            } else if ("minimum-level".equals(nodeName)) {
-                metricsConfig.setMinimumLevel(ProbeLevel.valueOf(value));
+            if ("management-center".equals(nodeName)) {
+                handleMetricsManagementCenter(child);
+            } else if ("jmx".equals(nodeName)) {
+                handleMetricsJmx(child);
+            } else if ("collection-frequency-seconds".equals(nodeName)) {
+                metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(value));
+            } else if ("data-structure-metrics-enabled".equals(nodeName)) {
+                metricsConfig.setDataStructureMetricsEnabled(Boolean.parseBoolean(value));
+            } else if ("level".equals(nodeName)) {
+                metricsConfig.setLevel(ProbeLevel.valueOf(value));
+            }
+        }
+    }
+
+    private void handleMetricsManagementCenter(Node node) {
+        MetricsManagementCenterConfig managementCenterConfig = config.getMetricsConfig().getManagementCenterConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                managementCenterConfig.setEnabled(enabled);
+            }
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                String value = getTextContent(child).trim();
+                if ("retention-seconds".equals(nodeName)) {
+                    managementCenterConfig.setRetentionSeconds(Integer.parseInt(value));
+                }
+            }
+        }
+    }
+
+    private void handleMetricsJmx(Node node) {
+        MetricsJmxConfig jmxConfig = config.getMetricsConfig().getJmxConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                jmxConfig.setEnabled(enabled);
             }
         }
     }

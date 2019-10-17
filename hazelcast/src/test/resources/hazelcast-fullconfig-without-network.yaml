@@ -808,3 +808,14 @@ hazelcast:
         lock-acquire-limit: 1
       lock2:
         lock-acquire-limit: 2
+
+  metrics:
+    enabled: false
+    management-center:
+      enabled: false
+      retention-seconds: 42
+    jmx:
+      enabled: false
+    collection-frequency-seconds: 24
+    data-structure-metrics-enabled: true
+    level: DEBUG

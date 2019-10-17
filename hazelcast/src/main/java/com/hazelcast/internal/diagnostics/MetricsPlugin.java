@@ -40,7 +40,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
      * The MetricsPlugin periodically writes the contents of the MetricsRegistry
      * to the logfile. For debugging purposes make sure the minimum metrics
      * level is set to {@link com.hazelcast.internal.metrics.ProbeLevel#DEBUG}
-     * with {@link com.hazelcast.config.MetricsConfig#setMinimumLevel(ProbeLevel)}.
+     * with {@link com.hazelcast.config.MetricsConfig#setLevel(ProbeLevel)}.
      * <p>
      * This plugin is very cheap to use.
      * <p>

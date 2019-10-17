@@ -3463,21 +3463,24 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  metrics:\n"
                 + "    enabled: false\n"
-                + "    mc-enabled: false\n"
-                + "    jmx-enabled: false\n"
-                + "    collection-interval-seconds: 10\n"
-                + "    retention-seconds: 11\n"
-                + "    metrics-for-data-structures: true\n"
-                + "    minimum-level: DEBUG";
+                + "    management-center:\n"
+                + "      enabled: false\n"
+                + "      retention-seconds: 11\n"
+                + "    jmx:\n"
+                + "      enabled: false\n"
+                + "    collection-frequency-seconds: 10\n"
+                + "    data-structure-metrics-enabled: true\n"
+                + "    level: DEBUG";
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isMcEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
-        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
-        assertEquals(11, metricsConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
-        assertEquals(DEBUG, metricsConfig.getMinimumLevel());
+        MetricsManagementCenterConfig metricsMcConfig = metricsConfig.getManagementCenterConfig();
+        assertFalse(metricsMcConfig.isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+        assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
+        assertEquals(11, metricsMcConfig.getRetentionSeconds());
+        assertTrue(metricsConfig.isDataStructureMetricsEnabled());
+        assertEquals(DEBUG, metricsConfig.getLevel());
     }
 
     @Override
@@ -3490,8 +3493,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
-        assertTrue(metricsConfig.isMcEnabled());
-        assertTrue(metricsConfig.isJmxEnabled());
+        assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
     }
 
     @Override
@@ -3500,12 +3503,13 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  metrics:\n"
-                + "    mc-enabled: false";
+                + "    management-center:\n"
+                + "      enabled: false";
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isMcEnabled());
-        assertTrue(metricsConfig.isJmxEnabled());
+        assertFalse(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
     }
 
     @Override
@@ -3514,12 +3518,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  metrics:\n"
-                + "    jmx-enabled: false";
+                + "    jmx:\n"
+                + "      enabled: false";
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
-        assertTrue(metricsConfig.isMcEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
-
+        assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
     }
 }

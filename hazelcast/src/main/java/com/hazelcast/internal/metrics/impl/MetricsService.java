@@ -97,11 +97,11 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     public void init(NodeEngine nodeEngine, Properties properties) {
         if (config.isEnabled()) {
 
-            if (config.isMcEnabled()) {
+            if (config.getManagementCenterConfig().isEnabled()) {
                 publishers.add(createMcPublisher());
             }
 
-            if (config.isJmxEnabled()) {
+            if (config.getJmxConfig().isEnabled()) {
                 publishers.add(createJmxPublisher());
             }
 
@@ -135,15 +135,20 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
 
     private void scheduleMetricsCollectorIfNeeded() {
         if (!collectorScheduled && !publishers.isEmpty()) {
-            logger.fine("Configuring metrics collection, collection interval=" + config.getCollectionIntervalSeconds()
-                    + " seconds, retention=" + config.getRetentionSeconds() + " seconds, publishers="
+            logger.fine("Configuring metrics collection, collection interval=" + config.getCollectionFrequencySeconds()
+                    + " seconds, retention=" + config.getManagementCenterConfig().getRetentionSeconds() + " seconds, publishers="
                     + publishers.stream().map(MetricsPublisher::name).collect(joining(", ", "[", "]")));
 
             ExecutionService executionService = nodeEngine.getExecutionService();
             scheduledFuture = executionService.scheduleWithRepetition("MetricsPublisher", this::collectMetrics, 1,
-                    config.getCollectionIntervalSeconds(), TimeUnit.SECONDS);
+                    config.getCollectionFrequencySeconds(), TimeUnit.SECONDS);
             collectorScheduled = true;
         }
+    }
+
+    // visible for testing
+    MetricsConfig getConfig() {
+        return config;
     }
 
     // visible for testing
@@ -226,9 +231,9 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     }
 
     private ManagementCenterPublisher createMcPublisher() {
-        int journalSize = Math.max(
-                1, (int) Math.ceil((double) config.getRetentionSeconds() / config.getCollectionIntervalSeconds())
-        );
+        int retentionSeconds = config.getManagementCenterConfig().getRetentionSeconds();
+        int frequency = config.getCollectionFrequencySeconds();
+        int journalSize = Math.max(1, (int) Math.ceil((double) retentionSeconds / frequency));
         metricsJournal = new ConcurrentArrayRingbuffer<>(journalSize);
         return new ManagementCenterPublisher(this.nodeEngine.getLoggingService(),
                 (blob, ts) -> {

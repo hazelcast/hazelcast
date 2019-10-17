@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -65,13 +66,13 @@ public class MetricsCollectionBenchmark {
     public void setup() {
         Config config = new Config();
         config.setProperty(GroupProperty.LOGGING_TYPE.getName(), "none");
-        config.getMetricsConfig()
-              .setMcEnabled(true)
-              .setMetricsForDataStructuresEnabled(true)
-              // we disable scheduled collection
-              .setCollectionIntervalSeconds(Integer.MAX_VALUE)
-              .setJmxEnabled(false)
-              .setMinimumLevel(DEBUG);
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        metricsConfig
+                .setDataStructureMetricsEnabled(true)
+                // we disable scheduled collection
+                .setCollectionFrequencySeconds(Integer.MAX_VALUE)
+                .setLevel(DEBUG);
+        metricsConfig.getJmxConfig().setEnabled(false);
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         metricsService = getNodeEngineImpl(hazelcastInstance).getService(MetricsService.SERVICE_NAME);

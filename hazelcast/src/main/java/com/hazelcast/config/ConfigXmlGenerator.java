@@ -56,10 +56,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.config.PermissionConfig.PermissionType.ALL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
+import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -1550,15 +1550,16 @@ public class ConfigXmlGenerator {
 
     private static void metricsConfig(XmlGenerator gen, Config config) {
         MetricsConfig metricsConfig = config.getMetricsConfig();
-        gen.open("metrics",
-                "enabled", metricsConfig.isEnabled(),
-                "mc-enabled", metricsConfig.isMcEnabled(),
-                "jmx-enabled", metricsConfig.isJmxEnabled())
-                .node("collection-interval-seconds", metricsConfig.getCollectionIntervalSeconds())
-                .node("retention-seconds", metricsConfig.getRetentionSeconds())
-                .node("metrics-for-data-structures", metricsConfig.isMetricsForDataStructuresEnabled())
-                .node("minimum-level", metricsConfig.getMinimumLevel())
-                .close();
+        gen.open("metrics", "enabled", metricsConfig.isEnabled())
+           .open("management-center", "enabled", metricsConfig.getManagementCenterConfig().isEnabled())
+           .node("retention-seconds", metricsConfig.getManagementCenterConfig().getRetentionSeconds())
+           .close()
+           .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
+           .close()
+           .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
+           .node("data-structure-metrics-enabled", metricsConfig.isDataStructureMetricsEnabled())
+           .node("level", metricsConfig.getLevel())
+           .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,12 +30,12 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MetricsConfigTest {
+public class MetricsJmxConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
-        EqualsVerifier.forClass(MetricsConfig.class)
+        EqualsVerifier.forClass(MetricsJmxConfig.class)
                       .allFieldsShouldBeUsed()
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
@@ -44,21 +43,11 @@ public class MetricsConfigTest {
 
     @Test
     public void testCloneEquals() {
-        // create MetricsConfig with non-defaults
-        MetricsConfig original = new MetricsConfig()
-                .setEnabled(false)
-                .setCollectionFrequencySeconds(1)
-                .setDataStructureMetricsEnabled(true)
-                .setLevel(ProbeLevel.DEBUG);
-
-        original.getManagementCenterConfig()
-                .setEnabled(false)
-                .setRetentionSeconds(1);
-
-        original.getJmxConfig()
+        // create MetricsJmxConfig with non-defaults
+        MetricsJmxConfig original = new MetricsJmxConfig()
                 .setEnabled(false);
 
-        MetricsConfig clone = new MetricsConfig(original);
+        MetricsJmxConfig clone = new MetricsJmxConfig(original);
 
         assertEquals(original.hashCode(), clone.hashCode());
         assertEquals(original, clone);

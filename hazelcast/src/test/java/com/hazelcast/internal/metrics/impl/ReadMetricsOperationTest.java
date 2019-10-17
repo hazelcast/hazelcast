@@ -50,7 +50,7 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getMetricsConfig()
               .setEnabled(true)
-              .setMetricsForDataStructuresEnabled(true);
+              .setDataStructureMetricsEnabled(true);
 
         HazelcastInstance hzInstance = createHazelcastInstance(config);
         IMap<Object, Object> map = hzInstance.getMap("map");

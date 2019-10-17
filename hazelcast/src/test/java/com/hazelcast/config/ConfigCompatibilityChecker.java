@@ -630,12 +630,13 @@ public class ConfigCompatibilityChecker {
             }
 
             return c1.isEnabled() == c2.isEnabled()
-                    && c1.isMcEnabled() == c2.isMcEnabled()
-                    && c1.isJmxEnabled() == c2.isJmxEnabled()
-                    && c1.getCollectionIntervalSeconds() == c2.getCollectionIntervalSeconds()
-                    && c1.getRetentionSeconds() == c2.getRetentionSeconds()
-                    && c1.isMetricsForDataStructuresEnabled() == c2.isMetricsForDataStructuresEnabled()
-                    && c1.getMinimumLevel() == c2.getMinimumLevel();
+                    && c1.getManagementCenterConfig().isEnabled() == c2.getManagementCenterConfig().isEnabled()
+                    && c1.getManagementCenterConfig().getRetentionSeconds() == c2.getManagementCenterConfig()
+                                                                                 .getRetentionSeconds()
+                    && c1.getJmxConfig().isEnabled() == c2.getJmxConfig().isEnabled()
+                    && c1.getCollectionFrequencySeconds() == c2.getCollectionFrequencySeconds()
+                    && c1.isDataStructureMetricsEnabled() == c2.isDataStructureMetricsEnabled()
+                    && c1.getLevel() == c2.getLevel();
         }
 
         @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MetricsConfig;
@@ -50,7 +51,6 @@ import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
@@ -182,7 +182,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
-        ProbeLevel minimumLevel = node.getConfig().getMetricsConfig().getMinimumLevel();
+        ProbeLevel minimumLevel = node.getConfig().getMetricsConfig().getLevel();
         return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class), minimumLevel);
     }
 
@@ -215,7 +215,7 @@ public class NodeEngineImpl implements NodeEngine {
         FileMetricSet.register(metricsRegistry);
 
         MetricsConfig metricsConfig = node.getConfig().getMetricsConfig();
-        if (metricsConfig.isEnabled() && metricsConfig.isMetricsForDataStructuresEnabled()) {
+        if (metricsConfig.isEnabled() && metricsConfig.isDataStructureMetricsEnabled()) {
             StatisticsAwareMetricsSet.register(serviceManager, metricsRegistry);
         }
 

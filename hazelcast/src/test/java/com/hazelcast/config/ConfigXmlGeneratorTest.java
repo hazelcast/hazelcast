@@ -1457,13 +1457,17 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config();
 
         config.getMetricsConfig()
-                .setEnabled(false)
-                .setMcEnabled(false)
-                .setJmxEnabled(false)
-                .setCollectionIntervalSeconds(10)
-                .setRetentionSeconds(11)
-                .setMetricsForDataStructuresEnabled(true)
-                .setMinimumLevel(DEBUG);
+              .setEnabled(false)
+              .setCollectionFrequencySeconds(10)
+              .setDataStructureMetricsEnabled(true)
+              .setLevel(DEBUG);
+
+        config.getMetricsConfig().getManagementCenterConfig()
+              .setEnabled(false)
+              .setRetentionSeconds(11);
+
+        config.getMetricsConfig().getJmxConfig()
+              .setEnabled(false);
 
         MetricsConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMetricsConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getMetricsConfig(),
