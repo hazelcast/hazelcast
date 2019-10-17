@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.management.MCMapConfig;
 import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.impl.management.UpdateMapConfigParameters;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,6 +41,9 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
+import static com.hazelcast.config.MapConfig.DEFAULT_MAX_IDLE_SECONDS;
+import static com.hazelcast.config.MapConfig.DEFAULT_TTL_SECONDS;
+import static com.hazelcast.config.MaxSizeConfig.DEFAULT_MAX_SIZE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static org.junit.Assert.assertEquals;
 
@@ -93,24 +97,34 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getMapConfig() throws Exception {
+    public void getMapConfig_randomMember() throws Exception {
         CompletableFuture<MCMapConfig> future = managementCenterService.getMapConfig("map-1");
         MCMapConfig mapConfig = future.get();
         assertEquals(1, mapConfig.getBackupCount());
     }
 
     @Test
-    public void updateMapConfig() {
+    public void updateMapConfig() throws Exception {
         hazelcastInstances[0].getMap("map-1").put(1, 1);
-        managementCenterService.updateMapConfig(
-                new UpdateMapConfigParameters("map-1", 27, 29, EvictionPolicy.LRU, false, 35, PER_NODE));
+
+        Member member1 = hazelcastInstances[0].getCluster().getLocalMember();
+        Member member2 = hazelcastInstances[1].getCluster().getLocalMember();
+
+        UpdateMapConfigParameters parameters = new UpdateMapConfigParameters(
+                "map-1", 27, 29, EvictionPolicy.LRU, false, 35, PER_NODE);
+        managementCenterService.updateMapConfig(member1, parameters);
 
         assertTrueEventually(() -> {
-            MCMapConfig retrievedConfig = managementCenterService.getMapConfig("map-1").get();
-            assertEquals(27, retrievedConfig.getTimeToLiveSeconds());
-            assertEquals(29, retrievedConfig.getMaxIdleSeconds());
-            assertEquals(35, retrievedConfig.getMaxSize());
-            assertEquals(PER_NODE, retrievedConfig.getMaxSizePolicy());
+            MCMapConfig retrievedConfig1 = managementCenterService.getMapConfig(member1, "map-1").get();
+            assertEquals(27, retrievedConfig1.getTimeToLiveSeconds());
+            assertEquals(29, retrievedConfig1.getMaxIdleSeconds());
+            assertEquals(35, retrievedConfig1.getMaxSize());
+            assertEquals(PER_NODE, retrievedConfig1.getMaxSizePolicy());
         });
+
+        MCMapConfig retrievedConfig2 = managementCenterService.getMapConfig(member2, "map-1").get();
+        assertEquals(DEFAULT_TTL_SECONDS, retrievedConfig2.getTimeToLiveSeconds());
+        assertEquals(DEFAULT_MAX_IDLE_SECONDS, retrievedConfig2.getMaxIdleSeconds());
+        assertEquals(DEFAULT_MAX_SIZE, retrievedConfig2.getMaxSize());
     }
 }
