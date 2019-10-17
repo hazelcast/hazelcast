@@ -89,7 +89,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         final ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
 
-        assertTrueEventually(() -> assertEquals(2, connectionManager.getActiveConnections().size()));
+        makeSureConnectedToServers(client, 2);
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         connectionManager.addConnectionListener(new ConnectionListener() {
@@ -100,7 +100,6 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
             @Override
             public void connectionRemoved(Connection connection) {
-                ClientConnection clientConnection = (ClientConnection) connection;
                 countDownLatch.countDown();
             }
         });
@@ -115,28 +114,15 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
-        // Make sure that the partitions are updated as expected with the new member
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                Member instance2Member = instance2.getCluster().getLocalMember();
-                Set<Partition> partitions = client.getPartitionService().getPartitions();
-                boolean found = false;
-                for (Partition p : partitions) {
-                    if (p.getOwner().equals(instance2Member)) {
-                        found = true;
-                        break;
-                    }
-                }
-                assertTrue(found);
-            }
-        });
-
         // make sure client is connected to instance2
         String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
+
+        // Verify that the client received partition update for instance2
+        waitClientPartitionUpdateForKeyOwner(client, instance2, keyOwnedByInstance2);
+
         IMap<String, String> map = client.getMap(randomString());
         map.put(keyOwnedByInstance2, randomString());
+
         blockMessagesFromInstance(instance2, client);
 
         expectedException.expect(TargetDisconnectedException.class);
@@ -152,7 +138,15 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         // make sure client is connected to instance2
         IMap<String, String> map = client.getMap(randomString());
         String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
+
+        // Verify that the client received partition update for instance2
+        waitClientPartitionUpdateForKeyOwner(client, instance2, keyOwnedByInstance2);
+
+        // Make sure that client connects to instance2
         map.put(keyOwnedByInstance2, randomString());
+
+        // double check that the connection to both servers is alive
+        makeSureConnectedToServers(client, 2);
 
         blockMessagesFromInstance(instance2, client);
 
@@ -173,6 +167,8 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
         // make sure client is connected to instance2
         String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
+        waitClientPartitionUpdateForKeyOwner(client, instance2, keyOwnedByInstance2);
+
         IMap<String, String> map = client.getMap(randomString());
         map.put(keyOwnedByInstance2, randomString());
 
@@ -181,6 +177,19 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         unblockMessagesFromInstance(instance2, client);
 
         map.put(keyOwnedByInstance2, randomString());
+    }
+
+    private void waitClientPartitionUpdateForKeyOwner(HazelcastInstance client, HazelcastInstance instance2,
+                                                      String keyOwnedByInstance2) {
+        // Verify that the client received partition update for instance2
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(instance2.getCluster().getLocalMember(),
+                        client.getPartitionService().getPartition(keyOwnedByInstance2).getOwner());
+            }
+        });
     }
 
     private static ClientConfig getClientConfig() {
