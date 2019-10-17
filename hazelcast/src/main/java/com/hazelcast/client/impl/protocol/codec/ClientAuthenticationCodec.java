@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("a3808dbca9a7d760dd0ae1f5342896b3")
+@Generated("15fa7bbbc1c0257e01b97438dcf15ba7")
 public final class ClientAuthenticationCodec {
     //hex: 0x000200
     public static final int REQUEST_MESSAGE_TYPE = 512;
@@ -61,14 +61,21 @@ public final class ClientAuthenticationCodec {
     public static class RequestParameters {
 
         /**
-         * Name of the user for authentication.
+         * Cluster name that will client connect to.
          */
-        public java.lang.String username;
+        public java.lang.String clusterName;
+
+        /**
+         * Name of the user for authentication.
+         * Used in case Client Identity Config, otherwise it should be passed null.
+         */
+        public @Nullable java.lang.String username;
 
         /**
          * Password for the user.
+         * Used in case Client Identity Config, otherwise it should be passed null.
          */
-        public java.lang.String password;
+        public @Nullable java.lang.String password;
 
         /**
          * Unique string identifying the connected client uniquely.
@@ -113,7 +120,7 @@ public final class ClientAuthenticationCodec {
         public @Nullable java.util.UUID clusterId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String username, java.lang.String password, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, @Nullable java.util.UUID clusterId) {
+    public static ClientMessage encodeRequest(java.lang.String clusterName, @Nullable java.lang.String username, @Nullable java.lang.String password, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, @Nullable java.util.UUID clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -125,8 +132,9 @@ public final class ClientAuthenticationCodec {
         encodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
         encodeUUID(initialFrame.content, REQUEST_CLUSTER_ID_FIELD_OFFSET, clusterId);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, username);
-        StringCodec.encode(clientMessage, password);
+        StringCodec.encode(clientMessage, clusterName);
+        CodecUtil.encodeNullable(clientMessage, username, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, password, StringCodec::encode);
         StringCodec.encode(clientMessage, clientType);
         StringCodec.encode(clientMessage, clientHazelcastVersion);
         StringCodec.encode(clientMessage, clientName);
@@ -142,8 +150,9 @@ public final class ClientAuthenticationCodec {
         request.serializationVersion = decodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET);
         request.partitionCount = decodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET);
         request.clusterId = decodeUUID(initialFrame.content, REQUEST_CLUSTER_ID_FIELD_OFFSET);
-        request.username = StringCodec.decode(iterator);
-        request.password = StringCodec.decode(iterator);
+        request.clusterName = StringCodec.decode(iterator);
+        request.username = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.password = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.clientType = StringCodec.decode(iterator);
         request.clientHazelcastVersion = StringCodec.decode(iterator);
         request.clientName = StringCodec.decode(iterator);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("396b5adfabb358c9516498784e6ef3bc")
+@Generated("8b039de7195bcd0e4871ba040d3626d5")
 public final class ClientAuthenticationCustomCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -59,6 +59,11 @@ public final class ClientAuthenticationCustomCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
+
+        /**
+         * Cluster name that will client connect to.
+         */
+        public java.lang.String clusterName;
 
         /**
          * Secret byte array for authentication.
@@ -108,7 +113,7 @@ public final class ClientAuthenticationCustomCodec {
         public @Nullable java.util.UUID clusterId;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.nio.serialization.Data credentials, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, @Nullable java.util.UUID clusterId) {
+    public static ClientMessage encodeRequest(java.lang.String clusterName, com.hazelcast.nio.serialization.Data credentials, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, @Nullable java.util.UUID clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -120,6 +125,7 @@ public final class ClientAuthenticationCustomCodec {
         encodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
         encodeUUID(initialFrame.content, REQUEST_CLUSTER_ID_FIELD_OFFSET, clusterId);
         clientMessage.add(initialFrame);
+        StringCodec.encode(clientMessage, clusterName);
         DataCodec.encode(clientMessage, credentials);
         StringCodec.encode(clientMessage, clientType);
         StringCodec.encode(clientMessage, clientHazelcastVersion);
@@ -136,6 +142,7 @@ public final class ClientAuthenticationCustomCodec {
         request.serializationVersion = decodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET);
         request.partitionCount = decodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET);
         request.clusterId = decodeUUID(initialFrame.content, REQUEST_CLUSTER_ID_FIELD_OFFSET);
+        request.clusterName = StringCodec.decode(iterator);
         request.credentials = DataCodec.decode(iterator);
         request.clientType = StringCodec.decode(iterator);
         request.clientHazelcastVersion = StringCodec.decode(iterator);
