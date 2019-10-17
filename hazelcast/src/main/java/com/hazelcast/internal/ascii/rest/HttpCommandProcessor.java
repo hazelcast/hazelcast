@@ -69,7 +69,7 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
 
     // CP Subsystem
     public static final String URI_CP_SUBSYSTEM_BASE_URL = "/hazelcast/rest/cp-subsystem";
-    public static final String URI_RESTART_CP_SUBSYSTEM_URL = URI_CP_SUBSYSTEM_BASE_URL + "/restart";
+    public static final String URI_RESET_CP_SUBSYSTEM_URL = URI_CP_SUBSYSTEM_BASE_URL + "/reset";
     public static final String URI_CP_GROUPS_URL = URI_CP_SUBSYSTEM_BASE_URL + "/groups";
     public static final String URI_CP_SESSIONS_SUFFIX = "/sessions";
     public static final String URI_REMOVE_SUFFIX = "/remove";

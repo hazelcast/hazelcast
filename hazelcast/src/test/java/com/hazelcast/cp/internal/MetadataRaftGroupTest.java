@@ -24,7 +24,7 @@ import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.operation.ResetCPMemberOp;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
@@ -665,7 +665,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         for (HazelcastInstance instance : Arrays.copyOf(instances, nodeCount - 1)) {
             Address address = instance.getCluster().getLocalMember().getAddress();
             getNodeEngineImpl(instance).getOperationService()
-                                       .invokeOnTarget(RaftService.SERVICE_NAME, new RestartCPMemberOp(seed), address).get();
+                                       .invokeOnTarget(RaftService.SERVICE_NAME, new ResetCPMemberOp(seed), address).get();
         }
 
         // wait for the cp discovery process to start

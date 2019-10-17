@@ -33,14 +33,14 @@ import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EX
 /**
  * Resets CP state of a member and restarts CP Subsystem initialization process
  */
-public class RestartCPMemberOp extends Operation implements RaftSystemOperation, IdentifiedDataSerializable {
+public class ResetCPMemberOp extends Operation implements RaftSystemOperation, IdentifiedDataSerializable {
 
     private long seed;
 
-    public RestartCPMemberOp() {
+    public ResetCPMemberOp() {
     }
 
-    public RestartCPMemberOp(long seed) {
+    public ResetCPMemberOp(long seed) {
         this.seed = seed;
     }
 
@@ -51,21 +51,21 @@ public class RestartCPMemberOp extends Operation implements RaftSystemOperation,
 
     private final class OffloadImpl extends Offload {
         private OffloadImpl() {
-            super(RestartCPMemberOp.this);
+            super(ResetCPMemberOp.this);
         }
 
         @Override
         public void start() {
-            getNodeEngine().getExecutionService().execute(SYSTEM_EXECUTOR, new RestartLocalTask());
+            getNodeEngine().getExecutionService().execute(SYSTEM_EXECUTOR, new ResetLocalTask());
         }
     }
 
-    private class RestartLocalTask implements Runnable {
+    private class ResetLocalTask implements Runnable {
         @Override
         public void run() {
             RaftService service = getService();
             try {
-                service.restartLocal(seed);
+                service.resetLocal(seed);
                 sendResponse(null);
             } catch (Exception e) {
                 sendResponse(e);
@@ -90,7 +90,7 @@ public class RestartCPMemberOp extends Operation implements RaftSystemOperation,
 
     @Override
     public int getClassId() {
-        return RaftServiceDataSerializerHook.RESTART_CP_MEMBER_OP;
+        return RaftServiceDataSerializerHook.RESET_CP_MEMBER_OP;
     }
 
     @Override

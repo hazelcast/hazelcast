@@ -353,7 +353,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse restart(String clusterName, String groupPassword) throws IOException {
-        String url = address + "cp-subsystem/restart";
+        String url = address + "cp-subsystem/reset";
         return doPost(url, clusterName, groupPassword);
     }
 

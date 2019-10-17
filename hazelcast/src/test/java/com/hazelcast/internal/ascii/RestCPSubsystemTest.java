@@ -35,7 +35,6 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -446,12 +445,9 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         waitUntilCPDiscoveryCompleted(instance1, instance2, instance3, instance4);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                ConnectionResponse response = new HTTPCommunicator(instance4).promoteCPMember(clusterName, null);
-                assertEquals(200, response.responseCode);
-            }
+        assertTrueEventually(() -> {
+            ConnectionResponse response = new HTTPCommunicator(instance4).promoteCPMember(clusterName, null);
+            assertEquals(200, response.responseCode);
         });
 
         Collection<CPMember> cpMembers = instance1.getCPSubsystem().getCPSubsystemManagementService().getCPMembers()
@@ -494,7 +490,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_resetAndInit() throws ExecutionException, InterruptedException, IOException {
+    public void test_reset() throws ExecutionException, InterruptedException, IOException {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
@@ -527,7 +523,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_resetAndInit_withInvalidCredentials() throws IOException {
+    public void test_reset_withInvalidCredentials() throws IOException {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);

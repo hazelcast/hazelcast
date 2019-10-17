@@ -120,8 +120,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else if (uri.startsWith(URI_CP_GROUPS_URL)) {
                 handleCPGroup(command);
                 sendResponse = false;
-            } else if (uri.startsWith(URI_RESTART_CP_SUBSYSTEM_URL)) {
-                handleResetAndInitCPSubsystem(command);
+            } else if (uri.startsWith(URI_RESET_CP_SUBSYSTEM_URL)) {
+                handleResetCPSubsystem(command);
                 sendResponse = false;
             } else if (uri.startsWith(URI_LICENSE_INFO)) {
                 handleSetLicense(command);
@@ -743,10 +743,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         });
     }
 
-    private void handleResetAndInitCPSubsystem(final HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleResetCPSubsystem(final HttpPostCommand command) throws UnsupportedEncodingException {
         if (checkCredentials(command)) {
             getCpSubsystem().getCPSubsystemManagementService()
-                            .restart()
+                            .reset()
                             .whenCompleteAsync((response, t) -> {
                                 if (t == null) {
                                     command.send200();

@@ -23,12 +23,11 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
-import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.operation.ResetCPMemberOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeStateReplicationOp;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
@@ -138,8 +137,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class RaftService implements ManagedService, SnapshotAwareService<MetadataRaftGroupSnapshot>, GracefulShutdownAwareService,
-                                    MembershipAwareService, CPSubsystemManagementService, PreJoinAwareService,
-                                    RaftNodeLifecycleAwareService, MigrationAwareService, DynamicMetricsProvider {
+                                    MembershipAwareService, PreJoinAwareService, RaftNodeLifecycleAwareService,
+                                    MigrationAwareService, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:raft";
 
@@ -241,7 +240,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return invocationManager.query(getMetadataGroupId(), new GetRaftGroupIdsOp(), LINEARIZABLE);
     }
 
-    @Override
     public InternalCompletableFuture<Collection<CPGroupId>> getCPGroupIds() {
         return invocationManager.query(getMetadataGroupId(), new GetActiveRaftGroupIdsOp(), LINEARIZABLE);
     }
@@ -250,13 +248,11 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return invocationManager.query(getMetadataGroupId(), new GetRaftGroupOp(groupId), LINEARIZABLE);
     }
 
-    @Override
     public InternalCompletableFuture<CPGroup> getCPGroup(String name) {
         return invocationManager.query(getMetadataGroupId(), new GetActiveRaftGroupByNameOp(name), LINEARIZABLE);
     }
 
-    @Override
-    public InternalCompletableFuture<Void> restart() {
+    InternalCompletableFuture<Void> resetCPSubsystem() {
         checkState(cpSubsystemEnabled, "CP Subsystem is not enabled!");
 
         InternalCompletableFuture<Void> future = newCompletableFuture();
@@ -264,11 +260,11 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         Collection<Member> members = clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
 
         if (!clusterService.isMaster()) {
-            return complete(future, new IllegalStateException("Only master can restart CP Subsystem!"));
+            return complete(future, new IllegalStateException("Only master can reset CP Subsystem!"));
         }
 
         if (config.getCPMemberCount() > members.size() + 1) {
-            return complete(future, new IllegalStateException("Not enough cluster members to restart CP Subsystem! "
+            return complete(future, new IllegalStateException("Not enough cluster members to reset CP Subsystem! "
                     + "Required: " + config.getCPMemberCount() + ", available: " + (members.size() + 1)));
         }
 
@@ -297,11 +293,11 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         long seed = newSeed();
         logger.warning("Resetting CP Subsystem with groupId seed: " + seed);
-        restartLocal(seed);
+        resetLocal(seed);
 
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         for (Member member : members) {
-            Operation op = new RestartCPMemberOp(seed);
+            Operation op = new ResetCPMemberOp(seed);
             operationService.<Void>invokeOnTarget(SERVICE_NAME, op, member.getAddress()).whenCompleteAsync(callback);
         }
 
@@ -317,13 +313,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return seed;
     }
 
-    public void restartLocal(long seed) {
+    public void resetLocal(long seed) {
         if (seed == 0L) {
             throw new IllegalArgumentException("Seed cannot be zero!");
         }
         if (seed == metadataGroupManager.getGroupIdSeed()) {
             // we have already seen this seed
-            logger.severe("Ignoring restart request. Current groupId seed is already equal to " + seed);
+            logger.severe("Ignoring reset request. Current groupId seed is already equal to " + seed);
             return;
         }
 
@@ -373,7 +369,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         invocationManager.reset();
     }
 
-    @Override
     public InternalCompletableFuture<Void> promoteToCPMember() {
         InternalCompletableFuture<Void> future = newCompletableFuture();
 
@@ -415,7 +410,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return InternalCompletableFuture.withExecutor(executor);
     }
 
-    @Override
     public InternalCompletableFuture<Void> removeCPMember(UUID cpMemberUuid) {
         ClusterService clusterService = nodeEngine.getClusterService();
         InternalCompletableFuture<Void> future = newCompletableFuture();
@@ -463,22 +457,18 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     /**
      * this method is idempotent
      */
-    @Override
     public InternalCompletableFuture<Void> forceDestroyCPGroup(String groupName) {
         return invocationManager.invoke(getMetadataGroupId(), new ForceDestroyRaftGroupOp(groupName));
     }
 
-    @Override
     public InternalCompletableFuture<Collection<CPMember>> getCPMembers() {
         return invocationManager.query(getMetadataGroupId(), new GetActiveCPMembersOp(), LINEARIZABLE);
     }
 
-    @Override
     public boolean isDiscoveryCompleted() {
         return metadataGroupManager.isDiscoveryCompleted();
     }
 
-    @Override
     public boolean awaitUntilDiscoveryCompleted(long timeout, TimeUnit timeUnit) throws InterruptedException {
         long timeoutMillis = timeUnit.toMillis(timeout);
         while (timeoutMillis > 0 && !metadataGroupManager.isDiscoveryCompleted()) {
@@ -722,7 +712,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return config;
     }
 
-    @Override
     public CPMemberInfo getLocalCPMember() {
         return metadataGroupManager.getLocalCPMember();
     }

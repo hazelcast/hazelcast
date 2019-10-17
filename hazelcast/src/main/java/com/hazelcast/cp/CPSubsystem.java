@@ -321,7 +321,7 @@ import java.util.UUID;
  * Otherwise, it means that CP Subsystem has lost its majority irrevocably.
  * </strong> In this case, the only solution is to wipe-out the whole CP
  * Subsystem state by performing a force-reset via
- * {@link CPSubsystemManagementService#restart()}.</li>
+ * {@link CPSubsystemManagementService#reset()}.</li>
  * </ul>
  * <p>
  * <strong>When {@link CPSubsystemConfig#getCPMemberCount()} is greater than
@@ -355,7 +355,7 @@ import java.util.UUID;
  * management tasks can be performed on CP Subsystem. For instance, a new CP
  * group cannot be created. The only solution is to perform a force-reset
  * which wipes-out the whole CP Subsystem state via
- * {@link CPSubsystemManagementService#restart()}.</li>
+ * {@link CPSubsystemManagementService#reset()}.</li>
  * </ul>
  *
  * @see CPSubsystemConfig
