@@ -96,8 +96,70 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     protected void process(Node root) throws Exception {
+        replaceVariables(root);
+        replaceImports(root);
         traverseChildrenAndReplaceVariables(root);
-        replaceImportElementsWithActualFileContents(root);
+//        replaceImportElementsWithActualFileContents(root);
+    }
+
+    private void replaceVariables(Node root) throws Exception {
+        // if no config-replacer is defined, use backward compatible default behavior for missing properties
+        boolean failFast = false;
+
+        List<ConfigReplacer> replacers = new ArrayList<ConfigReplacer>();
+
+        // Always use the Property replacer first.
+        PropertyReplacer propertyReplacer = new PropertyReplacer();
+        propertyReplacer.init(getProperties());
+        replacers.add(propertyReplacer);
+
+        // Add other replacers defined in the XML
+        Node node = (Node) xpath.evaluate(format("/hz:%s/hz:%s", getConfigType().name, CONFIG_REPLACERS.name), root,
+                                          XPathConstants.NODE);
+        if (node != null) {
+            String failFastAttr = getAttribute(node, "fail-if-value-missing");
+            failFast = isNullOrEmpty(failFastAttr) || Boolean.parseBoolean(failFastAttr);
+            for (Node n : childElements(node)) {
+                String value = cleanNodeName(n);
+                if ("replacer".equals(value)) {
+                    replacers.add(createReplacer(n));
+                }
+            }
+        }
+        ConfigReplacerHelper.traverseChildrenAndReplaceVariables(root, replacers, failFast, new XmlDomVariableReplacer());
+    }
+
+    private void replaceImports(Node root) throws Exception {
+        Document document = root.getOwnerDocument();
+        NodeList misplacedImports = (NodeList) xpath.evaluate(
+            format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.name, getConfigType().name), document,
+            XPathConstants.NODESET);
+        if (misplacedImports.getLength() > 0) {
+            throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
+        }
+        NodeList importTags = (NodeList) xpath.evaluate(
+            format("/hz:%s/hz:%s", getConfigType().name, IMPORT.name), document, XPathConstants.NODESET);
+        for (Node node : asElementIterable(importTags)) {
+            NamedNodeMap attributes = node.getAttributes();
+            Node resourceAttribute = attributes.getNamedItem("resource");
+            String resource = resourceAttribute.getTextContent();
+            URL url = ConfigLoader.locateConfig(resource);
+            if (url == null) {
+                throw new InvalidConfigurationException("Failed to load resource: " + resource);
+            }
+            if (!currentlyImportedFiles.add(url.getPath())) {
+                throw new InvalidConfigurationException("Resource '" + url.getPath() + "' is already loaded! This can be due to"
+                                                            + " duplicate or cyclic imports.");
+            }
+            Document doc = parse(url.openStream());
+            Element importedRoot = doc.getDocumentElement();
+            for (Node fromImportedDoc : childElements(importedRoot)) {
+                replaceImports(importedRoot);
+                Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
+                root.insertBefore(importedNode, node);
+            }
+            root.removeChild(node);
+        }
     }
 
     private void replaceImportElementsWithActualFileContents(Node root) throws Exception {

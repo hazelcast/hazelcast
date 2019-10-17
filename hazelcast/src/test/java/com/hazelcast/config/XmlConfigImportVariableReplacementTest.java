@@ -24,7 +24,6 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -98,7 +97,6 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     }
 
     @Test
-    @Ignore
     public void testImportResourceWithConfigReplacers() throws Exception {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
@@ -111,16 +109,13 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
 
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
-                + "    <group>\n"
-                + "        <name>${java.version} $ID{dev}</name>\n"
-                + "    </group>\n"
+                + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
                 + HAZELCAST_END_TAG;
-        Config groupConfig = buildConfig(
-                xml,
-                "config.location",
-                file.getAbsolutePath()
-        );
-        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getInstanceName());
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", file.getAbsolutePath());
+        Config groupConfig = buildConfig(xml, properties);
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
 
     @Override
