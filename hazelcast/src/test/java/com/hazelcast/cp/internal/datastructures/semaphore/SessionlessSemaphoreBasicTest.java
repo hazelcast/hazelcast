@@ -51,7 +51,7 @@ public class SessionlessSemaphoreBasicTest extends AbstractSessionlessSemaphoreB
     protected Config createConfig(int cpNodeCount, int groupSize) {
         Config config = super.createConfig(cpNodeCount, groupSize);
 
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, true);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, true, 0);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return config;
     }

@@ -1439,8 +1439,8 @@ public class ConfigXmlGeneratorTest {
                 .setAppendRequestBackoffTimeoutInMillis(50);
 
         config.getCPSubsystemConfig()
-                .addSemaphoreConfig(new SemaphoreConfig("sem1", true))
-                .addSemaphoreConfig(new SemaphoreConfig("sem2", false));
+                .addSemaphoreConfig(new SemaphoreConfig("sem1", true, 1))
+                .addSemaphoreConfig(new SemaphoreConfig("sem2", false, 2));
 
         config.getCPSubsystemConfig()
                 .addLockConfig(new FencedLockConfig("lock1", 1))

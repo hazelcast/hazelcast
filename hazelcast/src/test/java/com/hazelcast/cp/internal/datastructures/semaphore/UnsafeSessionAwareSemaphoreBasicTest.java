@@ -60,7 +60,8 @@ public class UnsafeSessionAwareSemaphoreBasicTest extends AbstractSessionAwareSe
     @Override
     protected HazelcastInstance[] createInstances() {
         Config config = new Config();
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, false);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName);
+        semaphoreConfig.setName(objectName);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return factory.newInstances(config, 2);
     }

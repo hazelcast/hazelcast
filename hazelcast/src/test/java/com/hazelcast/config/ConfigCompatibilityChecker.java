@@ -586,6 +586,10 @@ public class ConfigCompatibilityChecker {
                 if (e.getValue().isJDKCompatible() != s2.isJDKCompatible()) {
                     return false;
                 }
+
+                if (e.getValue().getInitialPermits() != s2.getInitialPermits()) {
+                    return false;
+                }
             }
 
             Map<String, FencedLockConfig> locks1 = c1.getLockConfigs();

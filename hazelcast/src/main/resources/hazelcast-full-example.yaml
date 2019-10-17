@@ -3224,8 +3224,10 @@ hazelcast:
     semaphores:
       sem1:
         jdk-compatible: true
+        initial-permits: 1
       sem2:
         jdk-compatible: false
+        initial-permits: 2
     locks:
       lock1:
         lock-acquire-limit: 1

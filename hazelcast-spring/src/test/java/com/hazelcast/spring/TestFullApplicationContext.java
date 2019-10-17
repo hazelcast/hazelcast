@@ -1403,6 +1403,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());
         assertFalse(semaphoreConfig2.isJDKCompatible());
+        assertEquals(1, semaphoreConfig1.getInitialPermits());
+        assertEquals(2, semaphoreConfig2.getInitialPermits());
         FencedLockConfig lockConfig1 = cpSubsystemConfig.findLockConfig("lock1");
         FencedLockConfig lockConfig2 = cpSubsystemConfig.findLockConfig("lock2");
         assertNotNull(lockConfig1);

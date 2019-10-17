@@ -4678,6 +4678,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="initial-permits" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"
+                        default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of permits to initialize the Semaphore. If a positive value is
+                        set, the Semaphore is initialized with the given number of permits.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 

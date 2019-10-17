@@ -3118,10 +3118,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <semaphore>\n"
                 + "      <name>sem1</name>\n"
                 + "      <jdk-compatible>true</jdk-compatible>\n"
+                + "      <initial-permits>1</initial-permits>\n"
                 + "    </semaphore>\n"
                 + "    <semaphore>\n"
                 + "      <name>sem2</name>\n"
                 + "      <jdk-compatible>false</jdk-compatible>\n"
+                + "      <initial-permits>2</initial-permits>\n"
                 + "    </semaphore>\n"
                 + "  </semaphores>\n"
                 + "  <locks>\n"
@@ -3161,6 +3163,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());
         assertFalse(semaphoreConfig2.isJDKCompatible());
+        assertEquals(1, semaphoreConfig1.getInitialPermits());
+        assertEquals(2, semaphoreConfig2.getInitialPermits());
         FencedLockConfig lockConfig1 = cpSubsystemConfig.findLockConfig("lock1");
         FencedLockConfig lockConfig2 = cpSubsystemConfig.findLockConfig("lock2");
         assertNotNull(lockConfig1);

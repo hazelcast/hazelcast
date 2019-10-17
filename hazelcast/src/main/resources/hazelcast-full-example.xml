@@ -3293,10 +3293,12 @@
             <semaphore>
                 <name>sem1</name>
                 <jdk-compatible>true</jdk-compatible>
+                <initial-permits>1</initial-permits>
             </semaphore>
             <semaphore>
                 <name>sem2</name>
                 <jdk-compatible>false</jdk-compatible>
+                <initial-permits>2</initial-permits>
             </semaphore>
         </semaphores>
         <locks>

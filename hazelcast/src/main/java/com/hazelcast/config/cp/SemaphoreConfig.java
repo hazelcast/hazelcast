@@ -21,6 +21,8 @@ import com.hazelcast.cp.ISemaphore;
 
 import java.util.concurrent.Semaphore;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+
 /**
  * Contains configuration options for CP {@link ISemaphore}
  */
@@ -31,6 +33,11 @@ public class SemaphoreConfig {
      * of CP {@link ISemaphore}
      */
     public static final boolean DEFAULT_SEMAPHORE_JDK_COMPATIBILITY = false;
+
+    /**
+     * Default value for the initial permit count of Semaphores.
+     */
+    public static final int DEFAULT_INITIAL_PERMITS = 0;
 
 
     /**
@@ -59,6 +66,12 @@ public class SemaphoreConfig {
      */
     private boolean jdkCompatible = DEFAULT_SEMAPHORE_JDK_COMPATIBILITY;
 
+    /**
+     * Number of permits to initialize the Semaphore. If a positive value is
+     * set, the Semaphore is initialized with the given number of permits.
+     */
+    private int initialPermits = DEFAULT_INITIAL_PERMITS;
+
     public SemaphoreConfig() {
         super();
     }
@@ -67,14 +80,16 @@ public class SemaphoreConfig {
         this.name = name;
     }
 
-    public SemaphoreConfig(String name, boolean jdkCompatible) {
+    public SemaphoreConfig(String name, boolean jdkCompatible, int initialPermits) {
         this.name = name;
         this.jdkCompatible = jdkCompatible;
+        this.initialPermits = initialPermits;
     }
 
     SemaphoreConfig(SemaphoreConfig config) {
         this.name = config.name;
         this.jdkCompatible = config.jdkCompatible;
+        this.initialPermits = config.initialPermits;
     }
 
     /**
@@ -108,8 +123,25 @@ public class SemaphoreConfig {
         return this;
     }
 
+    /**
+     * Returns initial permit count of the Semaphore
+     */
+    public int getInitialPermits() {
+        return initialPermits;
+    }
+
+    /**
+     * Sets initial permit count of the Semaphore
+     */
+    public SemaphoreConfig setInitialPermits(int initialPermits) {
+        checkNotNegative(initialPermits, "initial permits cannot be negative");
+        this.initialPermits = initialPermits;
+        return this;
+    }
+
     @Override
     public String toString() {
-        return "SemaphoreConfig{" + "name='" + name + ", jdkCompatible=" + jdkCompatible + '\'' + '}';
+        return "SemaphoreConfig{" + "name='" + name + '\'' + ", jdkCompatible=" + jdkCompatible + ", initialPermits="
+                + initialPermits + '}';
     }
 }

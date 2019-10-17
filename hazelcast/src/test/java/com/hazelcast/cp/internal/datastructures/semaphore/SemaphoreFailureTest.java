@@ -42,7 +42,7 @@ public abstract class SemaphoreFailureTest extends AbstractSemaphoreFailureTest 
     protected Config createConfig(int cpNodeCount, int groupSize) {
         Config config = super.createConfig(cpNodeCount, groupSize);
 
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, isJDKCompatible());
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, isJDKCompatible(), 0);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return config;
     }

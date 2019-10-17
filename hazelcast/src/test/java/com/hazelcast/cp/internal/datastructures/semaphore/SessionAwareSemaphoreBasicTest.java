@@ -57,7 +57,8 @@ public class SessionAwareSemaphoreBasicTest extends AbstractSessionAwareSemaphor
     protected Config createConfig(int cpNodeCount, int groupSize) {
         Config config = super.createConfig(cpNodeCount, groupSize);
 
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, false);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+        semaphoreConfig.setName(objectName);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return config;
     }

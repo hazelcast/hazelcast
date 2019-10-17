@@ -898,10 +898,12 @@
                     <hz:semaphore>
                         <hz:name>sem1</hz:name>
                         <hz:jdk-compatible>true</hz:jdk-compatible>
+                        <hz:initial-permits>1</hz:initial-permits>
                     </hz:semaphore>
                     <hz:semaphore>
                         <hz:name>sem2</hz:name>
                         <hz:jdk-compatible>false</hz:jdk-compatible>
+                        <hz:initial-permits>2</hz:initial-permits>
                     </hz:semaphore>
                 </hz:semaphores>
                 <hz:locks>
