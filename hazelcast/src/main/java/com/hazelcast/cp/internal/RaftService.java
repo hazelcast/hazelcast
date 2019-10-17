@@ -750,6 +750,11 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             return;
         }
 
+        if (getLocalCPMember() == null) {
+            logger.warning("Not creating Raft node for " + groupId + " because local CP member is not initialized yet.");
+            return;
+        }
+
         nodeLock.readLock().lock();
         try {
             if (destroyedGroupIds.contains(groupId)) {
