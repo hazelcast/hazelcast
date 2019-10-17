@@ -109,6 +109,66 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
 
+    @Test
+    public void testImportResourceWithNestedImports() throws Exception {
+        String configReplacer = HAZELCAST_START_TAG
+            + "    <config-replacers>\n"
+            + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
+            + "    </config-replacers>\n"
+            + HAZELCAST_END_TAG;
+        String configReplacerLocation = createFileWithContent("config-replacer", "xml", configReplacer);
+
+        String clusterName = HAZELCAST_START_TAG
+            + "    <import resource=\""+ "file:///" + configReplacerLocation +"\"/>\n"
+            + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
+            + HAZELCAST_END_TAG;
+
+        String clusterNameLocation = createFileWithContent("cluster-name", "xml", clusterName);
+
+        String xml = HAZELCAST_START_TAG
+            + "    <import resource=\"${config.location}\"/>\n"
+            + HAZELCAST_END_TAG;
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", clusterNameLocation);
+        Config groupConfig = buildConfig(xml, properties);
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
+    }
+
+    @Test
+    public void testImportResourceWithNestedImportsAndProperties() throws Exception {
+        String configReplacer = HAZELCAST_START_TAG
+            + "    <config-replacers fail-if-value-missing='false'>\n"
+            + "        <replacer class-name='" + TestReplacer.class.getName() + "'>\n"
+            + "            <properties>\n"
+            + "                <property name='p1'>${p1}</property>\n"
+            + "                <property name='p2'/>\n"
+            + "                <property name='p3'>another property</property>\n"
+            + "                <property name='p4'>&lt;test/&gt;</property>\n"
+            + "            </properties>\n"
+            + "        </replacer>\n"
+            + "    </config-replacers>\n"
+            + HAZELCAST_END_TAG;
+        String configReplacerLocation = createFileWithContent("config-replacer", "xml", configReplacer);
+
+        String clusterName = HAZELCAST_START_TAG
+            + "    <import resource=\""+ "file:///" + configReplacerLocation +"\"/>\n"
+            + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
+            + HAZELCAST_END_TAG;
+
+        String clusterNameLocation = createFileWithContent("cluster-name", "xml", clusterName);
+
+        String xml = HAZELCAST_START_TAG
+            + "    <import resource=\"${config.location}\"/>\n"
+            + HAZELCAST_END_TAG;
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", clusterNameLocation);
+        properties.put("p1", "a property");
+        Config config = buildConfig(xml, properties);
+        assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
+    }
+
     @Override
     @Test
     public void testImportConfigFromResourceVariables() throws Exception {

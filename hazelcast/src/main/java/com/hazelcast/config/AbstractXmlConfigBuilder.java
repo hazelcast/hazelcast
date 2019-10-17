@@ -96,10 +96,8 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     protected void process(Node root) throws Exception {
-        replaceVariables(root);
         replaceImports(root);
         traverseChildrenAndReplaceVariables(root);
-//        replaceImportElementsWithActualFileContents(root);
     }
 
     private void replaceVariables(Node root) throws Exception {
@@ -114,7 +112,7 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
         replacers.add(propertyReplacer);
 
         // Add other replacers defined in the XML
-        Node node = (Node) xpath.evaluate(format("/hz:%s/hz:%s", getConfigType().name, CONFIG_REPLACERS.name), root,
+        Node node = (Node) xpath.evaluate(format("/hz:%s/hz:%s", getConfigType().name, CONFIG_REPLACERS.getName()), root,
                                           XPathConstants.NODE);
         if (node != null) {
             String failFastAttr = getAttribute(node, "fail-if-value-missing");
@@ -130,15 +128,16 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private void replaceImports(Node root) throws Exception {
+        replaceVariables(root);
         Document document = root.getOwnerDocument();
         NodeList misplacedImports = (NodeList) xpath.evaluate(
-            format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.name, getConfigType().name), document,
+            format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.getName(), getConfigType().name), document,
             XPathConstants.NODESET);
         if (misplacedImports.getLength() > 0) {
             throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         }
         NodeList importTags = (NodeList) xpath.evaluate(
-            format("/hz:%s/hz:%s", getConfigType().name, IMPORT.name), document, XPathConstants.NODESET);
+            format("/hz:%s/hz:%s", getConfigType().name, IMPORT.getName()), document, XPathConstants.NODESET);
         for (Node node : asElementIterable(importTags)) {
             NamedNodeMap attributes = node.getAttributes();
             Node resourceAttribute = attributes.getNamedItem("resource");
@@ -153,8 +152,8 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
             }
             Document doc = parse(url.openStream());
             Element importedRoot = doc.getDocumentElement();
+            replaceImports(importedRoot);
             for (Node fromImportedDoc : childElements(importedRoot)) {
-                replaceImports(importedRoot);
                 Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
                 root.insertBefore(importedNode, node);
             }
