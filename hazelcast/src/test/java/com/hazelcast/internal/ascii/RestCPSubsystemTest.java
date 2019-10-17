@@ -459,7 +459,8 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
             }
         });
 
-        Collection<CPMember> cpMembers = instance1.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().get();
+        Collection<CPMember> cpMembers = instance1.getCPSubsystem().getCPSubsystemManagementService().getCPMembers()
+                                                  .toCompletableFuture().get();
         assertEquals(4, cpMembers.size());
         assertNotNull(instance4.getCPSubsystem().getLocalCPMember());
     }
@@ -475,7 +476,8 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         assertEquals(403, response.responseCode);
 
-        Collection<CPMember> cpMembers = instance1.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().get();
+        Collection<CPMember> cpMembers = instance1.getCPSubsystem().getCPSubsystemManagementService().getCPMembers()
+                                                  .toCompletableFuture().get();
         assertEquals(3, cpMembers.size());
     }
 
@@ -491,7 +493,8 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         assertEquals(200, response.responseCode);
 
-        Collection<CPMember> cpMembers = instance1.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().get();
+        Collection<CPMember> cpMembers = instance1.getCPSubsystem().getCPSubsystemManagementService().getCPMembers()
+                                                  .toCompletableFuture().get();
         assertEquals(3, cpMembers.size());
     }
 
@@ -506,6 +509,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         CPGroup cpGroup1 = instance1.getCPSubsystem()
                                     .getCPSubsystemManagementService()
                                     .getCPGroup(DEFAULT_GROUP_NAME)
+                                    .toCompletableFuture()
                                     .get();
 
         sleepAtLeastMillis(10);
@@ -518,6 +522,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         CPGroup cpGroup2 = instance1.getCPSubsystem()
                                     .getCPSubsystemManagementService()
                                     .getCPGroup(DEFAULT_GROUP_NAME)
+                                    .toCompletableFuture()
                                     .get();
 
         RaftGroupId id1 = (RaftGroupId) cpGroup1.id();
@@ -573,7 +578,8 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Collection<CPSession> sessions1 = instance1.getCPSubsystem()
                                                   .getCPSessionManagementService()
                                                   .getAllSessions(DEFAULT_GROUP_NAME)
-                                                  .get();
+                                                   .toCompletableFuture()
+                                                   .get();
 
         assertEquals(1, sessions1.size());
 
@@ -586,6 +592,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Collection<CPSession> sessions2 = instance1.getCPSubsystem()
                                                    .getCPSessionManagementService()
                                                    .getAllSessions(DEFAULT_GROUP_NAME)
+                                                   .toCompletableFuture()
                                                    .get();
 
         assertEquals(0, sessions2.size());
@@ -603,6 +610,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Collection<CPSession> sessions1 = instance1.getCPSubsystem()
                                                    .getCPSessionManagementService()
                                                    .getAllSessions(DEFAULT_GROUP_NAME)
+                                                   .toCompletableFuture()
                                                    .get();
 
         assertEquals(1, sessions1.size());
@@ -616,6 +624,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Collection<CPSession> sessions2 = instance1.getCPSubsystem()
                                                    .getCPSessionManagementService()
                                                    .getAllSessions(DEFAULT_GROUP_NAME)
+                                                   .toCompletableFuture()
                                                    .get();
 
         assertEquals(1, sessions2.size());
