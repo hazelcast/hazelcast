@@ -88,18 +88,18 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
 
         CPGroupId groupId = this.lock.getGroupId();
 
-        spawn(() -> {
-            for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
-                lock.isLocked();
-            }
-        });
-
         assertTrueEventually(() -> {
             HazelcastInstance leader = getLeaderInstance(instances, groupId);
             LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
             ResourceRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
+        });
+
+        spawn(() -> {
+            for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
+                lock.isLocked();
+            }
         });
 
         assertTrueEventually(() -> {
