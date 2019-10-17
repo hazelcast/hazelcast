@@ -5,7 +5,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 1. Enhancements
 
 * The Hot Restart feature was persisting only the entry keys and values. Now, it has been
-improved to preserve the metadata as well such as the creation time, access time, access count and expiry.
+improved to optionally preserve the metadata as well such as the creation time, access time, access count and expiry.
 
 ==== 3.12.3 ====
 
