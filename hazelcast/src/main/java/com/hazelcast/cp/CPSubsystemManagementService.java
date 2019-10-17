@@ -19,10 +19,10 @@ package com.hazelcast.cp;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -105,13 +105,13 @@ public interface CPSubsystemManagementService {
     /**
      * Returns all active CP group ids.
      */
-    InternalCompletableFuture<Collection<CPGroupId>> getCPGroupIds();
+    CompletionStage<Collection<CPGroupId>> getCPGroupIds();
 
     /**
      * Returns the active CP group with the given name.
      * There can be at most one active CP group with a given name.
      */
-    InternalCompletableFuture<CPGroup> getCPGroup(String name);
+    CompletionStage<CPGroup> getCPGroup(String name);
 
     /**
      * Unconditionally destroys the given active CP group without using
@@ -133,12 +133,12 @@ public interface CPSubsystemManagementService {
      * This method is idempotent. It has no effect if the given CP group is
      * already destroyed.
      */
-    InternalCompletableFuture<Void> forceDestroyCPGroup(String groupName);
+    CompletionStage<Void> forceDestroyCPGroup(String groupName);
 
     /**
      * Returns the current list of CP members
      */
-    InternalCompletableFuture<Collection<CPMember>> getCPMembers();
+    CompletionStage<Collection<CPMember>> getCPMembers();
 
     /**
      * Promotes the local Hazelcast member to the CP role.
@@ -169,7 +169,7 @@ public interface CPSubsystemManagementService {
      * If the local member is a lite member, the returned {@code Future} object
      * throws {@link IllegalStateException}.
      */
-    InternalCompletableFuture<Void> promoteToCPMember();
+    CompletionStage<Void> promoteToCPMember();
 
     /**
      * Removes the given unreachable CP member from the active CP members list
@@ -188,7 +188,7 @@ public interface CPSubsystemManagementService {
      * @throws IllegalArgumentException if the given CP member is already
      *         removed from CP Subsystem
      */
-    InternalCompletableFuture<Void> removeCPMember(UUID cpMemberUuid);
+    CompletionStage<Void> removeCPMember(UUID cpMemberUuid);
 
     /**
      * Wipes and resets the whole CP Subsystem state and initializes it
@@ -236,7 +236,7 @@ public interface CPSubsystemManagementService {
      *         is smaller than {@link CPSubsystemConfig#getCPMemberCount()}
      *
      */
-    InternalCompletableFuture<Void> restart();
+    CompletionStage<Void> restart();
 
     /**
      * Returns whether the CP discovery process is completed or not.

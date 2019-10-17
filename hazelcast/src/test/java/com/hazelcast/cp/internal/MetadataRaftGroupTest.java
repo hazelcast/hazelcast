@@ -288,7 +288,8 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = createNewRaftGroup(instances[0], "id", cpNodeCount);
 
-        CPGroup group = instances[0].getCPSubsystem().getCPSubsystemManagementService().getCPGroup("id").get();
+        CPGroup group = instances[0].getCPSubsystem().getCPSubsystemManagementService().getCPGroup("id")
+                                    .toCompletableFuture().get();
         assertNotNull(group);
         assertEquals(groupId, group.id());
 
@@ -343,7 +344,8 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = createNewRaftGroup(instances[0], "id", 3);
 
-        CPGroup group = instances[0].getCPSubsystem().getCPSubsystemManagementService().getCPGroup("id").get();
+        CPGroup group = instances[0].getCPSubsystem().getCPSubsystemManagementService().getCPGroup("id")
+                                    .toCompletableFuture().get();
         assertNotNull(group);
         assertEquals(groupId, group.id());
 
@@ -376,7 +378,8 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = createNewRaftGroup(instances[0], "id", 3);
 
-        CPGroup group = instances[0].getCPSubsystem().getCPSubsystemManagementService().getCPGroup("id").get();
+        CPGroup group = instances[0].getCPSubsystem().getCPSubsystemManagementService().getCPGroup("id")
+                                    .toCompletableFuture().get();
         assertNotNull(group);
         assertEquals(groupId, group.id());
 
@@ -699,8 +702,10 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
     private CPMember findCommonEndpoint(HazelcastInstance instance, CPGroupId groupId1, CPGroupId groupId2)
             throws ExecutionException, InterruptedException {
-        CPGroup group1 = instance.getCPSubsystem().getCPSubsystemManagementService().getCPGroup(groupId1.getName()).get();
-        CPGroup group2 = instance.getCPSubsystem().getCPSubsystemManagementService().getCPGroup(groupId2.getName()).get();
+        CPGroup group1 = instance.getCPSubsystem().getCPSubsystemManagementService().getCPGroup(groupId1.getName())
+                                 .toCompletableFuture().get();
+        CPGroup group2 = instance.getCPSubsystem().getCPSubsystemManagementService().getCPGroup(groupId2.getName())
+                                 .toCompletableFuture().get();
 
         Set<CPMember> members = new HashSet<>(group1.members());
         members.retainAll(group2.members());

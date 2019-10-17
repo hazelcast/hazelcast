@@ -92,6 +92,7 @@ public class FencedLockBasicTest extends AbstractFencedLockBasicTest {
         instances[0].getCPSubsystem()
                     .getCPSubsystemManagementService()
                     .forceDestroyCPGroup(lock.getGroupId().getName())
+                    .toCompletableFuture()
                     .get();
 
         try {

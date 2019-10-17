@@ -124,7 +124,8 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
         instanceToShutdown.shutdown();
 
         HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
-        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
+                   .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
             RaftNodeImpl raftNode = getRaftNode(newInstance, groupId);
