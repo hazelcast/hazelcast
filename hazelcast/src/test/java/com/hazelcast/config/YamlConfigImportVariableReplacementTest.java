@@ -41,12 +41,11 @@ import static org.junit.Assert.assertTrue;
 public class YamlConfigImportVariableReplacementTest extends AbstractConfigImportVariableReplacementTest {
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastElementOnlyAppearsOnce() {
         String yaml = ""
                 + "hazelcast:\n{}"
                 + "hazelcast:";
-        expectInvalid();
         buildConfig(yaml, null);
     }
 
@@ -125,7 +124,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", "yaml");
         File config2 = createConfigFile("hz2", "yaml");
@@ -141,12 +140,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - file:///" + config1.getAbsolutePath();
         writeStringToStreamAndClose(os1, config1Yaml);
         writeStringToStreamAndClose(os2, config2Yaml);
-        expectInvalid();
         buildConfig(config1Yaml, null);
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
         String template = ""
                 + "hazelcast:\n"
@@ -161,12 +159,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         writeStringToStreamAndClose(new FileOutputStream(config1), config1Yaml);
         writeStringToStreamAndClose(new FileOutputStream(config2), config2Yaml);
         writeStringToStreamAndClose(new FileOutputStream(config3), config3Yaml);
-        expectInvalid();
         buildConfig(config1Yaml, null);
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
         File config1 = createConfigFile("hz1", "yaml");
         FileOutputStream os1 = new FileOutputStream(config1);
@@ -175,25 +172,22 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  import:\n"
                 + "    - file:///" + config1.getAbsolutePath();
         writeStringToStreamAndClose(os1, "%invalid-yaml");
-        expectInvalid();
         buildConfig(config1Yaml, null);
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - \"\"";
-        expectInvalid();
         buildConfig(yaml, null);
     }
 
     @Override
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() {
-        expectInvalid();
         String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
@@ -583,7 +577,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         assertEquals("foobar", config.getProperty("prop"));
     }
 
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportRedefinesSameConfigScalarThrows() throws Exception {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
@@ -597,8 +591,6 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  import:\n"
                 + "    - ${config.location}\n"
                 + "  cluster-name: name2";
-
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -622,7 +614,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         assertEquals("name", config.getClusterName());
     }
 
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportNodeScalarVsSequenceThrows() throws Exception {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
@@ -638,12 +630,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  cluster-name:\n"
                 + "    - seqName: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
-
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
 
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportNodeScalarVsMappingThrows() throws Exception {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
@@ -658,12 +648,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - ${config.location}\n"
                 + "  cluster-name: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
-
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
 
-    @Test
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportNodeSequenceVsMappingThrows() throws Exception {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
@@ -678,8 +666,6 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  import:\n"
                 + "    - ${config.location}\n"
                 + "  cluster-name: {}";
-
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
