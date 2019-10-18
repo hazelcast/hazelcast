@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.ICacheJet;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 
@@ -35,7 +35,7 @@ public class JetCacheManagerImpl implements JetCacheManager {
     }
 
     @Override
-    public <K, V> ICacheJet<K, V> getCache(String name) {
+    public <K, V> ICache<K, V> getCache(String name) {
         return CacheGetter.getCache(jetInstance, name);
     }
 
@@ -44,7 +44,7 @@ public class JetCacheManagerImpl implements JetCacheManager {
      */
     private static class CacheGetter {
 
-        private static <K, V> ICacheJet<K, V> getCache(JetInstance jetInstance, String name) {
+        private static <K, V> ICache<K, V> getCache(JetInstance jetInstance, String name) {
             return new ICacheDecorator<>(
                     jetInstance.getHazelcastInstance().getCacheManager().getCache(name), jetInstance
             );

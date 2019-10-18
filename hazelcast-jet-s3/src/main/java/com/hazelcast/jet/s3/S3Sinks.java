@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.s3;
 
-import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.StringUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;

@@ -17,29 +17,28 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.proxy.ClientMapProxy;
-import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.function.BiFunctionEx;
-import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.CheckReturnValue;
@@ -55,9 +54,9 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-public final class UpdateMapP<T, K, V> extends AsyncHazelcastWriterP {
+public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
 
     private static final int PENDING_ITEM_COUNT_LIMIT = 1024;
 
@@ -144,7 +143,7 @@ public final class UpdateMapP<T, K, V> extends AsyncHazelcastWriterP {
             }
 
             Map<Data, Object> buffer = tmpMaps[currentPartitionId];
-            ApplyFnEntryProcessor<K, V, T> entryProcessor = new ApplyFnEntryProcessor<>(buffer, updateFn);
+            ApplyFnEntryProcessor<K, V, T, R> entryProcessor = new ApplyFnEntryProcessor<>(buffer, updateFn);
             setCallback(submitToKeys(map, buffer.keySet(), entryProcessor));
             pendingItemCount -= tmpCounts[currentPartitionId];
             tmpCounts[currentPartitionId] = 0;
@@ -180,8 +179,8 @@ public final class UpdateMapP<T, K, V> extends AsyncHazelcastWriterP {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> ICompletableFuture<Map<K, V>> submitToKeys(
-        IMap<K, V> map, Set<Data> keys, EntryProcessor<K, V> entryProcessor) {
+    private static <K, V, R> InternalCompletableFuture<Map<K, V>> submitToKeys(
+            IMap<K, V> map, Set<Data> keys, EntryProcessor<K, V, R> entryProcessor) {
         // TODO remove this method once submitToKeys is public API
         // we force Set<Data> instead of Set<K> to avoid re-serialization of keys
         // this relies on an implementation detail of submitToKeys method.
@@ -235,8 +234,8 @@ public final class UpdateMapP<T, K, V> extends AsyncHazelcastWriterP {
 
     @SuppressFBWarnings(value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
         justification = "the class is never java-serialized")
-    public static class ApplyFnEntryProcessor<K, V, T>
-            implements EntryProcessor<K, V>, EntryBackupProcessor<K, V>, IdentifiedDataSerializable,
+    public static class ApplyFnEntryProcessor<K, V, T, R>
+            implements EntryProcessor<K, V, R>, IdentifiedDataSerializable,
             SerializationServiceAware {
         private Map<Data, Object> keysToUpdate;
         private BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
@@ -254,7 +253,7 @@ public final class UpdateMapP<T, K, V> extends AsyncHazelcastWriterP {
         }
 
         @Override
-        public Object process(Entry<K, V> entry) {
+        public R process(Entry<K, V> entry) {
             // it should not matter that we don't take the PartitionStrategy here into account
             Data keyData = serializationService.toData(entry.getKey());
             Object item = keysToUpdate.get(keyData);
@@ -282,16 +281,6 @@ public final class UpdateMapP<T, K, V> extends AsyncHazelcastWriterP {
             V oldValue = entry.getValue();
             V newValue = updateFn.apply(oldValue, item);
             entry.setValue(newValue);
-        }
-
-        @Override
-        public EntryBackupProcessor<K, V> getBackupProcessor() {
-            return this;
-        }
-
-        @Override
-        public void processBackup(Entry<K, V> entry) {
-            process(entry);
         }
 
         @Override
@@ -350,7 +339,7 @@ public final class UpdateMapP<T, K, V> extends AsyncHazelcastWriterP {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return JetDataSerializerHook.APPLY_FN_ENTRY_PROCESSOR;
         }
 

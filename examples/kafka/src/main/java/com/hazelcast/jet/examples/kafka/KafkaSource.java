@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.examples.kafka;
 
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.map.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -88,7 +88,7 @@ public class KafkaSource {
             fillTopics();
 
             JetInstance instance = Jet.newJetInstance();
-            IMapJet<String, Integer> sinkMap = instance.getMap(SINK_NAME);
+            IMap<String, Integer> sinkMap = instance.getMap(SINK_NAME);
 
             Pipeline p = buildPipeline();
 

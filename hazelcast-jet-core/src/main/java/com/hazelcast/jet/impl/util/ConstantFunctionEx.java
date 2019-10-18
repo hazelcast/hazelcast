@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.function.FunctionEx;
 
 /**
  * A function returning a constant.

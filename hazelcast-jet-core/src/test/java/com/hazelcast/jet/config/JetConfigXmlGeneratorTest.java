@@ -47,7 +47,6 @@ public class JetConfigXmlGeneratorTest {
         JetConfig generatedConfig = jetConfig(xml);
         assertInstanceConfig(jetConfig.getInstanceConfig(), generatedConfig.getInstanceConfig());
         assertEdgeConfig(jetConfig.getDefaultEdgeConfig(), generatedConfig.getDefaultEdgeConfig());
-        assertMetricsConfig(jetConfig.getMetricsConfig(), generatedConfig.getMetricsConfig());
         assertProperties(jetConfig.getProperties(), generatedConfig.getProperties());
     }
 
@@ -96,34 +95,9 @@ public class JetConfigXmlGeneratorTest {
         assertEdgeConfig(defaultEdgeConfig, generatedConfig.getDefaultEdgeConfig());
     }
 
-    @Test
-    public void metricsConfig() {
-        // When
-        JetConfig jetConfig = new JetConfig();
-        MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
-        metricsConfig.setCollectionIntervalSeconds(randomInt())
-                     .setRetentionSeconds(randomInt())
-                     .setEnabled(false)
-                     .setMetricsForDataStructuresEnabled(true)
-                     .setJmxEnabled(false);
-        String xml = generate(jetConfig);
-
-        // Then
-        JetConfig generatedConfig = jetConfig(xml);
-        assertMetricsConfig(metricsConfig, generatedConfig.getMetricsConfig());
-    }
-
     private static void assertProperties(Properties expected, Properties actual) {
         assertEquals(expected.size(), actual.size());
         expected.forEach((key, value) -> assertEquals(value, actual.get(key)));
-    }
-
-    private static void assertMetricsConfig(MetricsConfig expected, MetricsConfig actual) {
-        assertEquals(expected.getCollectionIntervalSeconds(), actual.getCollectionIntervalSeconds());
-        assertEquals(expected.getRetentionSeconds(), actual.getRetentionSeconds());
-        assertEquals(expected.isEnabled(), actual.isEnabled());
-        assertEquals(expected.isMetricsForDataStructuresEnabled(), actual.isMetricsForDataStructuresEnabled());
-        assertEquals(expected.isJmxEnabled(), actual.isJmxEnabled());
     }
 
     private static void assertEdgeConfig(EdgeConfig expected, EdgeConfig actual) {

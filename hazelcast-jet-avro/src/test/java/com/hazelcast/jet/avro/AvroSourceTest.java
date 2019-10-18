@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.avro;
 
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.collection.IList;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.avro.model.SpecificUser;
 import com.hazelcast.jet.avro.model.User;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -47,7 +47,7 @@ public class AvroSourceTest extends JetTestSupport {
     private static File directory;
 
     private JetInstance jet;
-    private IListJet<? extends User> list;
+    private IList<? extends User> list;
 
     @BeforeClass
     public static void createDirectory() throws Exception {

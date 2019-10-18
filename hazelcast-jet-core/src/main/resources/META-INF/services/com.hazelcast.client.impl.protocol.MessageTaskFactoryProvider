@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.impl.client.JetMessageTaskFactoryProvider
+com.hazelcast.jet.impl.client.protocol.task.JetMessageTaskFactoryProvider

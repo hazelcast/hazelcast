@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.examples.imdg;
 
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
+import com.hazelcast.collection.IList;
+import com.hazelcast.map.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.pipeline.GenericPredicates;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -30,6 +29,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.projection.Projections;
+import com.hazelcast.query.Predicates;
 
 import java.io.IOException;
 
@@ -69,7 +69,7 @@ public class MapPredicateAndProjection {
             Pipeline p1 = Pipeline.create();
             p1.<String>drawFrom(Sources.map(
                     SOURCE_NAME,
-                    GenericPredicates.lessThan("price", 10),
+                    Predicates.lessThan("price", 10),
                     Projections.singleAttribute("ticker"))
             ).drainTo(Sinks.list(SINK_NAME));
             System.out.println("\n\nExecuting job 1...\n");

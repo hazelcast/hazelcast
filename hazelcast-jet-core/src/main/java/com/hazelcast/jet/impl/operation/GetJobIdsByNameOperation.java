@@ -45,7 +45,7 @@ public class GetJobIdsByNameOperation
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.GET_JOB_IDS_BY_NAME_OP;
     }
 

@@ -17,9 +17,9 @@
 package com.hazelcast.jet.hadoop;
 
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.function.FunctionEx;
 import org.apache.hadoop.mapred.JobConf;
 
 import javax.annotation.Nonnull;

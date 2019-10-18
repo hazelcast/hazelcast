@@ -17,13 +17,13 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.BiConsumerEx;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation2Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation3Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperationImpl;
+import com.hazelcast.function.BiConsumerEx;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

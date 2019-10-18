@@ -20,9 +20,9 @@ import org.junit.Test;
 
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Traversers.empty;
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseItems;
-import static com.hazelcast.jet.Traversers.empty;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;

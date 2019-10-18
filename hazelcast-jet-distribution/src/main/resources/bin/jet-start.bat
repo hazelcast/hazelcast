@@ -36,7 +36,7 @@ ECHO # CLASSPATH=%CLASSPATH%
 ECHO # starting now....
 ECHO ########################################
 
-start "hazelcast-jet" "%RUN_JAVA%" %JAVA_OPTS% -cp %CLASSPATH% com.hazelcast.jet.server.StartServer"
+start "hazelcast-jet" "%RUN_JAVA%" %JAVA_OPTS% -cp %CLASSPATH% com.hazelcast.jet.server.JetMemberStarter"
 goto endofscript
 
 :error

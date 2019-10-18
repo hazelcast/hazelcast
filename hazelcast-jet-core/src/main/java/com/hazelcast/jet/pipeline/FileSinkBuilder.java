@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.Charset;

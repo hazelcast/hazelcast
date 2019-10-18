@@ -17,8 +17,8 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.datamodel.ItemsByTag;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.pipeline.StreamStageImpl;
+import com.hazelcast.function.BiFunctionEx;
 
 /**
  * Offers a step-by-step fluent API to build a hash-join pipeline stage.

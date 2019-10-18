@@ -30,15 +30,12 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import static com.hazelcast.jet.config.InstanceConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS;
-import static com.hazelcast.jet.config.MetricsConfig.DEFAULT_METRICS_COLLECTION_SECONDS;
-import static com.hazelcast.jet.config.MetricsConfig.DEFAULT_METRICS_RETENTION_SECONDS;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class XmlConfigTest {
@@ -56,12 +53,6 @@ public class XmlConfigTest {
         assertEquals(Runtime.getRuntime().availableProcessors(),
                 jetConfig.getInstanceConfig().getCooperativeThreadCount());
         assertEquals(DEFAULT_FLOW_CONTROL_PERIOD_MS, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
-
-        assertTrue(jetConfig.getMetricsConfig().isEnabled());
-        assertTrue(jetConfig.getMetricsConfig().isJmxEnabled());
-        assertEquals(DEFAULT_METRICS_RETENTION_SECONDS, jetConfig.getMetricsConfig().getRetentionSeconds());
-        assertEquals(DEFAULT_METRICS_COLLECTION_SECONDS, jetConfig.getMetricsConfig().getCollectionIntervalSeconds());
-        assertFalse(jetConfig.getMetricsConfig().isMetricsForDataStructuresEnabled());
 
         assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
     }
@@ -136,18 +127,11 @@ public class XmlConfigTest {
 
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));
-
-        MetricsConfig metricsCfg = jetConfig.getMetricsConfig();
-        assertFalse("isEnabled", metricsCfg.isEnabled());
-        assertFalse("isJmxEnabled", metricsCfg.isJmxEnabled());
-        assertEquals("metricsRetentionSeconds", 124, metricsCfg.getRetentionSeconds());
-        assertEquals("metricsCollectionInterval", 123, metricsCfg.getCollectionIntervalSeconds());
-        assertTrue("metricsForDataStructures", metricsCfg.isMetricsForDataStructuresEnabled());
     }
 
     private static void assertDefaultMemberConfig(Config config) {
         assertThat(config, not(nullValue()));
-        assertThat(config.getGroupConfig().getName(), not(equalTo(TEST_XML_2_GROUP_NAME)));
+        assertThat(config.getClusterName(), not(equalTo(TEST_XML_2_GROUP_NAME)));
     }
 
 }

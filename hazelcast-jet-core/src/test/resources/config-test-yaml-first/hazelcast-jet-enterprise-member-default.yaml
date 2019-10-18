@@ -1,5 +1,3 @@
 hazelcast:
-  group:
-    name: enterprise-member-default
-    password: ${enterprise-member-default.pass}
+  cluster-name: enterprise-member-default
   instance-name: ${enterprise-member-default.instance.name}

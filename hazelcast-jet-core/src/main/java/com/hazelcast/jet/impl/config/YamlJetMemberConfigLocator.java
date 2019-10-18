@@ -18,24 +18,31 @@ package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
 
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
+
 /**
  * A support class for the {@link XmlJetConfigBuilder} to locate the member
  * yaml configuration.
  */
 public final class YamlJetMemberConfigLocator extends AbstractConfigLocator {
 
-    private static final String HAZELCAST_MEMBER_CONFIG_PROPERTY = "hazelcast.config";
     private static final String HAZELCAST_MEMBER_YAML = "hazelcast.yaml";
     private static final String HAZELCAST_MEMBER_DEFAULT_YAML = "hazelcast-jet-member-default.yaml";
     private static final String HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_YAML = "hazelcast-jet-enterprise-member-default.yaml";
 
     public YamlJetMemberConfigLocator() {
-        super(false);
     }
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "yaml", "yml");
+        return loadFromSystemProperty(SYSPROP_MEMBER_CONFIG, YAML_ACCEPTED_SUFFIXES);
+    }
+
+    @Override
+    protected boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_MEMBER_CONFIG, YAML_ACCEPTED_SUFFIXES);
+
     }
 
     @Override

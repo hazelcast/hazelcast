@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static java.lang.Math.max;
 
 /**

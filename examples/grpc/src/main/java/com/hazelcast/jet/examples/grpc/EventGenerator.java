@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.examples.grpc;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.examples.grpc.datamodel.Trade;
+import com.hazelcast.map.IMap;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;

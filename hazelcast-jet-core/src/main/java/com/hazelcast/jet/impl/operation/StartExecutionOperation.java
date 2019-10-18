@@ -47,7 +47,7 @@ public class StartExecutionOperation extends AsyncJobOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.START_EXECUTION_OP;
     }
 

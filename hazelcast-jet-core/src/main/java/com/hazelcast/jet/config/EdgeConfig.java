@@ -20,7 +20,7 @@ import com.hazelcast.jet.core.Edge;
 
 import java.io.Serializable;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * A configuration object for a DAG {@link Edge} that holds fine-tuning

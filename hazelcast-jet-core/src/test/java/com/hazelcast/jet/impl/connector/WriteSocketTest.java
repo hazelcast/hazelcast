@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Outbox;
@@ -26,14 +25,16 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
 import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
@@ -96,7 +97,7 @@ public class WriteSocketTest extends JetTestSupport {
 
         JetInstance jetInstance = createJetMember();
         createJetMember();
-        IMapJet<Integer, String> map = jetInstance.getMap("map");
+        IMap<Integer, String> map = jetInstance.getMap("map");
         range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 
         Pipeline p = Pipeline.create();

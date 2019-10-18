@@ -27,7 +27,7 @@ import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
 
-public class AggregateOpAggregator<T, A, R> extends Aggregator<T, R> implements IdentifiedDataSerializable {
+public class AggregateOpAggregator<T, A, R> implements Aggregator<T, R>, IdentifiedDataSerializable {
 
     private AggregateOperation1<? super T, A, ? extends R> aggrOp;
     private A accumulator;
@@ -65,7 +65,7 @@ public class AggregateOpAggregator<T, A, R> extends Aggregator<T, R> implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.AGGREGATE_OP_AGGREGATOR;
     }
 

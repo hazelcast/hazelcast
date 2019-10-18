@@ -67,17 +67,6 @@ public class JetConfigTest {
     }
 
     @Test
-    public void when_setMetricsConfig_thenReturnsMetricsConfig() {
-        // When
-        JetConfig jetConfig = new JetConfig();
-        MetricsConfig metricsConfig = new MetricsConfig();
-        jetConfig.setMetricsConfig(metricsConfig);
-
-        // Then
-        assertEquals(metricsConfig, jetConfig.getMetricsConfig());
-    }
-
-    @Test
     public void when_setProperties_thenReturnsProperties() {
         // When
         JetConfig jetConfig = new JetConfig();

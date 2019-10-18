@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.LiveOperations;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.operationservice.LiveOperations;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -50,17 +50,3 @@ hazelcast-jet:
     packet-size-limit: 16384
     # receive window size multiplier, only applies to distributed edges
     receive-window-multiplier: 3
-
-  metrics:
-    # whether metrics collection is enabled
-    enabled: true
-    # whether jmx mbean metrics collection is enabled
-    jmx-enabled: true
-    # the number of seconds the metrics will be retained on the instance
-    retention-seconds: 120
-    # the metrics collection interval in seconds
-    collection-interval-seconds: 5
-    # whether metrics should be collected for data structures. Metrics
-    # collection can have some overhead if there is a large number of data
-    # structures
-    metrics-for-data-structures: false

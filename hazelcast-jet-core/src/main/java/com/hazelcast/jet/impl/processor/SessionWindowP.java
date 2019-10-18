@@ -30,7 +30,7 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.QuickMath;
+import com.hazelcast.internal.util.QuickMath;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -61,7 +61,7 @@ import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Math.min;
 import static java.lang.System.arraycopy;
 import static java.util.Collections.emptyList;
@@ -427,7 +427,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return JetInitDataSerializerHook.SESSION_WINDOW_P_WINDOWS;
         }
 

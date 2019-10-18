@@ -28,6 +28,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Properties;
 
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
+import static com.hazelcast.jet.impl.config.JetDeclarativeConfigUtil.SYSPROP_JET_CONFIG;
+
 /**
  * Locates and loads Jet or Jet Client configurations from various locations.
  *
@@ -40,7 +45,14 @@ public final class ConfigProvider {
     }
 
     @Nonnull
+    public static JetConfig locateAndGetJetConfig() {
+        return locateAndGetJetConfig(null);
+    }
+
+    @Nonnull
     public static JetConfig locateAndGetJetConfig(@Nullable Properties properties) {
+        validateSuffixInSystemProperty(SYSPROP_JET_CONFIG);
+
         XmlJetConfigLocator xmlConfigLocator = new XmlJetConfigLocator();
         YamlJetConfigLocator yamlConfigLocator = new YamlJetConfigLocator();
         JetConfig config;
@@ -71,12 +83,9 @@ public final class ConfigProvider {
     }
 
     @Nonnull
-    public static JetConfig locateAndGetJetConfig() {
-        return locateAndGetJetConfig(null);
-    }
-
-    @Nonnull
     public static ClientConfig locateAndGetClientConfig() {
+        validateSuffixInSystemProperty(SYSPROP_CLIENT_CONFIG);
+
         ClientConfig config;
         XmlJetClientConfigLocator xmlConfigLocator = new XmlJetClientConfigLocator();
         YamlJetClientConfigLocator yamlConfigLocator = new YamlJetClientConfigLocator();
@@ -108,6 +117,8 @@ public final class ConfigProvider {
 
     @Nonnull
     public static Config locateAndGetMemberConfig(@Nullable Properties properties) {
+        validateSuffixInSystemProperty(SYSPROP_MEMBER_CONFIG);
+
         Config config;
         XmlJetMemberConfigLocator xmlConfigLocator = new XmlJetMemberConfigLocator();
         YamlJetMemberConfigLocator yamlConfigLocator = new YamlJetMemberConfigLocator();

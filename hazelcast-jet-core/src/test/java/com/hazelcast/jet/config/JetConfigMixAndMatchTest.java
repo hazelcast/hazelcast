@@ -25,6 +25,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.jet.impl.config.JetDeclarativeConfigUtil.SYSPROP_JET_CONFIG;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -35,25 +37,22 @@ import static org.junit.Assert.assertThat;
 @RunWith(HazelcastSerialClassRunner.class)
 public class JetConfigMixAndMatchTest {
 
-    protected static final String HAZELCAST_JET_CONFIG_PROPERTY = "hazelcast.jet.config";
-    protected static final String HAZELCAST_MEMBER_CONFIG_PROPERTY = "hazelcast.config";
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     @After
     public void beforeAndAfter() {
-        System.clearProperty(HAZELCAST_JET_CONFIG_PROPERTY);
-        System.clearProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY);
+        System.clearProperty(SYSPROP_JET_CONFIG);
+        System.clearProperty(SYSPROP_MEMBER_CONFIG);
     }
 
 
     @Test
     public void when_XmlJetConfig_and_XmlMemberConfigSet_thenLoadsConfigCorrectly() {
         // Given
-        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-test.xml");
-        System.setProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:hazelcast-jet-member-test.xml");
+        System.setProperty(SYSPROP_JET_CONFIG, "classpath:hazelcast-jet-test.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:hazelcast-jet-member-test.xml");
 
         // When
         JetConfig jetConfig = JetConfig.loadDefault();
@@ -66,8 +65,8 @@ public class JetConfigMixAndMatchTest {
     @Test
     public void when_YamlJetConfig_and_YamlMemberConfigSet_thenLoadsConfigCorrectly() {
         // Given
-        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-test.yaml");
-        System.setProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:hazelcast-jet-member-test.yaml");
+        System.setProperty(SYSPROP_JET_CONFIG, "classpath:hazelcast-jet-test.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:hazelcast-jet-member-test.yaml");
 
         // When
         JetConfig jetConfig = JetConfig.loadDefault();
@@ -80,8 +79,8 @@ public class JetConfigMixAndMatchTest {
     @Test
     public void when_XmlJetConfig_and_YamlMemberConfigSet_thenLoadsConfigCorrectly() {
         // Given
-        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-test.xml");
-        System.setProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:hazelcast-jet-member-test.yaml");
+        System.setProperty(SYSPROP_JET_CONFIG, "classpath:hazelcast-jet-test.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:hazelcast-jet-member-test.yaml");
 
         // When
         JetConfig jetConfig = JetConfig.loadDefault();
@@ -94,8 +93,8 @@ public class JetConfigMixAndMatchTest {
     @Test
     public void when_YamlJetConfig_and_XmlMemberConfigSet_thenLoadsConfigCorrectly() {
         // Given
-        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-test.yaml");
-        System.setProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:hazelcast-jet-member-test.xml");
+        System.setProperty(SYSPROP_JET_CONFIG, "classpath:hazelcast-jet-test.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:hazelcast-jet-member-test.xml");
 
         // When
         JetConfig jetConfig = JetConfig.loadDefault();
@@ -113,7 +112,7 @@ public class JetConfigMixAndMatchTest {
         assertEquals("scaleUpDelayMillis", 1234, jetConfig.getInstanceConfig().getScaleUpDelayMillis());
         assertFalse("losslessRestartEnabled", jetConfig.getInstanceConfig().isLosslessRestartEnabled());
         assertThat(hzConfig, not(nullValue()));
-        assertThat(hzConfig.getGroupConfig().getName(), equalTo("imdg"));
+        assertThat(hzConfig.getClusterName(), equalTo("imdg"));
     }
 
 }

@@ -19,7 +19,6 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.jet.impl.util.ConstantFunctionEx;
@@ -27,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.core.Partitioner.defaultPartitioner;
-import static com.hazelcast.jet.function.Functions.wholeItem;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.function.Functions.wholeItem;
 
 /**
  * Represents an edge between two {@link Vertex vertices} in a {@link DAG}.
@@ -497,7 +497,7 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetDataSerializerHook.EDGE;
     }
 

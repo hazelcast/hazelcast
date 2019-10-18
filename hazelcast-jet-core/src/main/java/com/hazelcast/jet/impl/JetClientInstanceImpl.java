@@ -17,39 +17,31 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
-import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec.ResponseParameters;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetMemberXmlConfigurationCodec;
-import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec;
-import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryXmlConfig;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
-import com.hazelcast.jet.impl.metrics.management.MetricsResultSet;
+import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetClusterMetadataCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetClusterMetadataCodec.ResponseParameters;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsByNameCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetMemberXmlConfigurationCodec;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -63,15 +55,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     private final HazelcastClientInstanceImpl client;
     private final SerializationService serializationService;
 
-    private final ClientMessageDecoder decodeMetricsResponse = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage msg) {
-            RingbufferSlice<Map.Entry<Long, byte[]>> deserialized =
-                    serializationService.toObject(JetReadMetricsCodec.decodeResponse(msg).response);
-            return (T) new MetricsResultSet(deserialized);
-        }
-    };
-
     public JetClientInstanceImpl(HazelcastClientInstanceImpl hazelcastInstance) {
         super(hazelcastInstance);
         this.client = hazelcastInstance;
@@ -80,12 +63,14 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         ExceptionUtil.registerJetExceptions(hazelcastInstance.getClientExceptionFactory());
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JetConfig getConfig() {
         throw new UnsupportedOperationException("Jet Configuration is not available on the client");
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<Job> getJobs() {
         ClientInvocation invocation = new ClientInvocation(
                 client, JetGetJobIdsCodec.encodeRequest(), null, masterAddress(client.getCluster())
@@ -98,18 +83,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         } catch (Throwable t) {
             throw rethrow(t);
         }
-    }
-
-    /**
-     * Reads the metrics journal for a given number starting from a specific sequence.
-     */
-    @Nonnull
-    public ICompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
-        ClientMessage request = JetReadMetricsCodec.encodeRequest(member.getUuid(), startSequence);
-        ClientInvocation invocation = new ClientInvocation(client, request, null, member.getAddress());
-        return new ClientDelegatingFuture<>(
-                invocation.invoke(), serializationService, decodeMetricsResponse, false
-        );
     }
 
     /**

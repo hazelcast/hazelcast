@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.test;
 
-import com.hazelcast.util.FilteringClassLoader;
+import com.hazelcast.internal.util.FilteringClassLoader;
 
 import java.io.InputStream;
 import java.net.URL;

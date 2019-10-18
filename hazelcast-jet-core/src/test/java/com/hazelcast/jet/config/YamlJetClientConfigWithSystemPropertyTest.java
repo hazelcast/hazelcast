@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -57,7 +58,7 @@ public class YamlJetClientConfigWithSystemPropertyTest extends AbstractJetConfig
         // Given
         File file = File.createTempFile("foo", ".yaml");
         file.delete();
-        System.setProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY, file.getAbsolutePath());
+        System.setProperty(SYSPROP_CLIENT_CONFIG, file.getAbsolutePath());
 
         // When
         YamlJetClientConfigLocator locator = new YamlJetClientConfigLocator();
@@ -74,7 +75,7 @@ public class YamlJetClientConfigWithSystemPropertyTest extends AbstractJetConfig
             InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(JET_CLIENT_YAML);
             os.write(Util.readFully(resourceAsStream));
         }
-        System.setProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY, tempFile.getAbsolutePath());
+        System.setProperty(SYSPROP_CLIENT_CONFIG, tempFile.getAbsolutePath());
 
         //When
         YamlJetClientConfigLocator locator = new YamlJetClientConfigLocator();
@@ -91,7 +92,7 @@ public class YamlJetClientConfigWithSystemPropertyTest extends AbstractJetConfig
     @Test(expected = HazelcastException.class)
     public void when_classpathSpecifiedNonExistingFile_thenThrowsException() {
         // Given
-        System.setProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY, "classpath:non-existing.yaml");
+        System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:non-existing.yaml");
 
         //When
         YamlJetClientConfigLocator locator = new YamlJetClientConfigLocator();
@@ -102,7 +103,7 @@ public class YamlJetClientConfigWithSystemPropertyTest extends AbstractJetConfig
     @Test
     public void when_classpathSpecified_usesSpecifiedResource() {
         // Given
-        System.setProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY, "classpath:" + JET_CLIENT_YAML);
+        System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:" + JET_CLIENT_YAML);
 
         //When
         YamlJetClientConfigLocator locator = new YamlJetClientConfigLocator();
@@ -118,10 +119,9 @@ public class YamlJetClientConfigWithSystemPropertyTest extends AbstractJetConfig
     @Test
     public void when_configHasVariable_variablesAreReplaced() {
         // Given
-        System.setProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY, "classpath:" + JET_CLIENT_WITH_VARIABLES_YAML);
+        System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:" + JET_CLIENT_WITH_VARIABLES_YAML);
         Properties properties = new Properties();
         properties.setProperty("group.name", "test");
-        properties.setProperty("group.pass", String.valueOf(1234));
         properties.setProperty("member", "19.0.0.2:5670");
 
         // When
@@ -133,8 +133,7 @@ public class YamlJetClientConfigWithSystemPropertyTest extends AbstractJetConfig
 
 
         // Then
-        assertEquals("group.name", "test", config.getGroupConfig().getName());
-        assertEquals("group.pass", "1234", config.getGroupConfig().getPassword());
+        assertEquals("group.name", "test", config.getClientName());
         assertEquals("member", "19.0.0.2:5670", config.getNetworkConfig().getAddresses().iterator().next());
     }
 

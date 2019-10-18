@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -51,7 +51,9 @@ public class JobSummaryTest extends JetTestSupport {
     @Before
     public void setup() {
         JetConfig config = new JetConfig();
-        config.getHazelcastConfig().addEventJournalConfig(new EventJournalConfig().setMapName(SOURCE_NAME));
+        MapConfig mapConfig = new MapConfig(SOURCE_NAME);
+        mapConfig.getEventJournalConfig().setEnabled(true);
+        config.getHazelcastConfig().addMapConfig(mapConfig);
         instance = createJetMembers(config, 2)[0];
         client = (JetClientInstanceImpl) createJetClient();
     }

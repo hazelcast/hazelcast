@@ -16,23 +16,29 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.jet.RestartableException;
+import com.hazelcast.jet.core.metrics.MetricNames;
+import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 
 import static com.hazelcast.jet.impl.Networking.createStreamPacketHeader;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
@@ -53,7 +59,16 @@ public class SenderTasklet implements Tasklet {
     private final BufferObjectDataOutput outputBuffer;
     private final int bufPosPastHeader;
     private final int packetSizeLimit;
+
+    /* Used for metrics */
+    private final String destinationAddressString;
+    private final String sourceOrdinalString;
+    private final String sourceVertexName;
+
+    @Probe(name = MetricNames.DISTRIBUTED_ITEMS_OUT)
     private final AtomicLong itemsOutCounter = new AtomicLong();
+
+    @Probe(name = MetricNames.DISTRIBUTED_BYTES_OUT, unit = ProbeUnit.BYTES)
     private final AtomicLong bytesOutCounter = new AtomicLong();
 
     private boolean instreamExhausted;
@@ -64,9 +79,17 @@ public class SenderTasklet implements Tasklet {
     private volatile int sendSeqLimitCompressed;
     private Predicate<Object> addToInboxFunction = inbox::add;
 
-    public SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, Address destinationAddress,
-                         long executionId, int destinationVertexId, int packetSizeLimit) {
+    public SenderTasklet(
+            InboundEdgeStream inboundEdgeStream,
+            NodeEngine nodeEngine,
+            Address destinationAddress,
+            int destinationVertexId, int packetSizeLimit, long executionId,
+            String sourceVertexName, int sourceOrdinal
+    ) {
         this.inboundEdgeStream = inboundEdgeStream;
+        this.destinationAddressString = destinationAddress.toString();
+        this.sourceVertexName = sourceVertexName;
+        this.sourceOrdinalString = "" + sourceOrdinal;
         this.packetSizeLimit = packetSizeLimit;
         // we use Connection directly because we rely on packets not being transparently skipped or reordered
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
@@ -150,7 +173,11 @@ public class SenderTasklet implements Tasklet {
 
     @Override
     public String toString() {
-        return "SenderTasklet " + connection.getEndPoint();
+        return "SenderTasklet{" +
+                "ordinal=" + inboundEdgeStream.ordinal() +
+                ", destinationAddress=" + destinationAddressString +
+                ", sourceVertexName='" + sourceVertexName + '\'' +
+                '}';
     }
 
     /**
@@ -163,11 +190,12 @@ public class SenderTasklet implements Tasklet {
         return compressSeq(sentSeq) - sendSeqLimitCompressed <= 0;
     }
 
-    public AtomicLong getItemsOutCounter() {
-        return itemsOutCounter;
-    }
+    @Override
+    public void collectMetrics(MetricTagger tagger, MetricsCollectionContext context) {
+        tagger = tagger.withTag(MetricTags.VERTEX, sourceVertexName)
+                        .withTag(MetricTags.ORDINAL, sourceOrdinalString)
+                        .withTag(MetricTags.DESTINATION_ADDRESS, destinationAddressString);
 
-    public AtomicLong getBytesOutCounter() {
-        return bytesOutCounter;
+        context.collect(tagger, this);
     }
 }

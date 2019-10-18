@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.s3;
 
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.test.Assertions;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.map.IMap;
+import com.hazelcast.function.SupplierEx;
 import org.junit.Before;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.pipeline.GenericPredicates.alwaysTrue;
+import static com.hazelcast.query.Predicates.alwaysTrue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -69,7 +69,7 @@ abstract class S3TestBase extends JetTestSupport {
     }
 
     void testSink(String bucketName, String prefix, int itemCount, String payload) {
-        IMapJet<Integer, String> map = jet.getMap("map");
+        IMap<Integer, String> map = jet.getMap("map");
 
         for (int i = 0; i < itemCount; i++) {
             map.put(i, payload);

@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.examples.eventjournal;
 
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +54,7 @@ public class MapJournalSource {
 
             jet.newJob(p);
 
-            IMapJet<Integer, Integer> map = jet.getMap(MAP_NAME);
+            IMap<Integer, Integer> map = jet.getMap(MAP_NAME);
             for (int i = 0; i < 1000; i++) {
                 map.set(i, i);
             }
@@ -70,7 +70,8 @@ public class MapJournalSource {
         // Add an event journal config for map which has custom capacity of 1000 (default 10_000)
         // and time to live seconds as 10 seconds (default 0 which means infinite)
         cfg.getHazelcastConfig()
-           .getMapEventJournalConfig(MAP_NAME)
+           .getMapConfig(MAP_NAME)
+           .getEventJournalConfig()
            .setEnabled(true)
            .setCapacity(1000)
            .setTimeToLiveSeconds(10);

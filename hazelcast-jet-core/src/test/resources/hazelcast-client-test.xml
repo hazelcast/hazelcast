@@ -15,13 +15,10 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.12.xsd"
+<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-4.0.xsd"
                   xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <group>
-        <name>imdg</name>
-        <password>PASSWORD</password>
-    </group>
+    <client-name>imdg</client-name>
     <network>
         <cluster-members>
             <address>127.0.59.1:5701</address>

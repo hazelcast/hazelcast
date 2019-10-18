@@ -96,7 +96,7 @@ public class SnapshotOperation extends AsyncJobOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.SNAPSHOT_OPERATION;
     }
 
@@ -183,7 +183,7 @@ public class SnapshotOperation extends AsyncJobOperation {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return JetInitDataSerializerHook.SNAPSHOT_OPERATION_RESULT;
         }
 

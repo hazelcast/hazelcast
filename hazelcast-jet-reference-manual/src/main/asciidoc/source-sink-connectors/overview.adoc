@@ -157,7 +157,7 @@ Sink image:cross-mark.png[X,16,16]
 
 
 |<<connector-imdg-journal, ICache's Event Journal>>
-|{jet-javadoc}/pipeline/Sources.html#cacheJournal-java.lang.String-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
+|{jet-javadoc}/pipeline/Sources.html#cacheJournal-java.lang.String-com.hazelcast.function.PredicateEx-com.hazelcast.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
 |
 |image:check-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
@@ -175,7 +175,7 @@ Sink image:cross-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
 |Event Journal of ICache in another cluster
-|{jet-javadoc}/pipeline/Sources.html#remoteCacheJournal-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
+|{jet-javadoc}/pipeline/Sources.html#remoteCacheJournal-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.function.PredicateEx-com.hazelcast.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
 |
 |image:check-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
@@ -280,8 +280,8 @@ Sink image:cross-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
 |<<jms>>
-|{jet-javadoc}/pipeline/Sources.html#jmsQueue-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Queue Source]
-{jet-javadoc}/pipeline/Sources.html#jmsTopic-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Topic Source]
+|{jet-javadoc}/pipeline/Sources.html#jmsQueue-com.hazelcast.function.SupplierEx-java.lang.String-[Queue Source]
+{jet-javadoc}/pipeline/Sources.html#jmsTopic-com.hazelcast.function.SupplierEx-java.lang.String-[Topic Source]
 
 {jet-javadoc}/pipeline/Sinks.html#jmsQueue-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Queue Sink]
 {jet-javadoc}/pipeline/Sinks.html#jmsTopic-com.hazelcast.jet.function.SupplierEx-java.lang.String-[Topic Sink]
@@ -301,7 +301,7 @@ Topic Sink image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
 |<<jdbc>>
-|{jet-javadoc}/pipeline/Sources.html#jdbc-com.hazelcast.jet.function.SupplierEx-com.hazelcast.jet.function.ToResultSetFunction-com.hazelcast.jet.function.FunctionEx-[Source]
+|{jet-javadoc}/pipeline/Sources.html#jdbc-com.hazelcast.function.SupplierEx-com.hazelcast.function.ToResultSetFunction-com.hazelcast.function.FunctionEx-[Source]
 
 {jet-javadoc}/pipeline/Sinks.html#jdbc-java.lang.String-com.hazelcast.jet.function.SupplierEx-com.hazelcast.jet.function.BiConsumerEx-[Sink]
 |{jet-examples}/jdbc/src/main/java/com/hazelcast/jet/examples/jdbc/JdbcSource.java[Source Sample]

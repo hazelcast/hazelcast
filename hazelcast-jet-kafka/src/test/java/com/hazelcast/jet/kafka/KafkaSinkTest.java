@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.kafka;
 
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
@@ -28,6 +27,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -58,7 +58,7 @@ public class KafkaSinkTest extends KafkaTestSupport {
     private String brokerConnectionString;
     private JetInstance instance;
     private String topic;
-    private IMapJet<String, String> sourceIMap;
+    private IMap<String, String> sourceIMap;
 
     @Before
     public void setup() throws IOException {

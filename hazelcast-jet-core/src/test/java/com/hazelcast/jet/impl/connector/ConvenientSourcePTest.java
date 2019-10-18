@@ -20,7 +20,7 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.util.MutableInteger;
+import com.hazelcast.internal.util.MutableInteger;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

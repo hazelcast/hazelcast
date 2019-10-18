@@ -16,30 +16,32 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.metrics.managementcenter.MetricsCompressor;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobMetricsUtil;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.metrics.MetricsCompressor;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
-import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 public class CompleteExecutionOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -75,8 +77,9 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
 
         JobExecutionService jobExecutionService = service.getJobExecutionService();
         if (collectMetrics) {
-            JobMetricsRenderer metricsRenderer = new JobMetricsRenderer(executionId, nodeEngine.getLocalMember(), logger);
-            nodeEngine.getMetricsRegistry().render(metricsRenderer);
+            JobMetricsCollector metricsRenderer = new JobMetricsCollector(executionId, nodeEngine.getLocalMember(),
+                    logger);
+            nodeEngine.getMetricsRegistry().collect(metricsRenderer);
             metricsRenderer.whenComplete();
             response = metricsRenderer.getJobMetrics();
         } else {
@@ -102,7 +105,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.COMPLETE_EXECUTION_OP;
     }
 
@@ -122,7 +125,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         error = in.readObject();
     }
 
-    private static class JobMetricsRenderer implements ProbeRenderer {
+    private static class JobMetricsCollector implements MetricsCollector {
 
         private final Long executionIdOfInterest;
         private final String namePrefix;
@@ -131,7 +134,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
 
         private RawJobMetrics jobMetrics = RawJobMetrics.empty();
 
-        JobMetricsRenderer(long executionId, @Nonnull Member member, @Nonnull ILogger logger) {
+        JobMetricsCollector(long executionId, @Nonnull Member member, @Nonnull ILogger logger) {
             Objects.requireNonNull(member, "member");
             this.logger = Objects.requireNonNull(logger, "logger");
 
@@ -141,7 +144,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         }
 
         @Override
-        public void renderLong(String name, long value) {
+        public void collectLong(String name, long value, Set<MetricTarget> excludedTargets) {
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
             if (executionIdOfInterest.equals(executionId)) {
                 String prefixedName = JobMetricsUtil.addPrefixToDescriptor(name, namePrefix);
@@ -150,7 +153,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         }
 
         @Override
-        public void renderDouble(String name, double value) {
+        public void collectDouble(String name, double value, Set<MetricTarget> excludedTargets) {
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
             if (executionIdOfInterest.equals(executionId)) {
                 String prefixedName = JobMetricsUtil.addPrefixToDescriptor(name, namePrefix);
@@ -159,7 +162,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         }
 
         @Override
-        public void renderException(String name, Exception e) {
+        public void collectException(String name, Exception e, Set<MetricTarget> excludedTargets) {
             Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
             if (executionIdOfInterest.equals(executionId)) {
                 logger.warning("Exception when rendering job metrics: " + e, e);
@@ -167,7 +170,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         }
 
         @Override
-        public void renderNoValue(String name) {
+        public void collectNoValue(String name, Set<MetricTarget> excludedTargets) {
         }
 
         public void whenComplete() {

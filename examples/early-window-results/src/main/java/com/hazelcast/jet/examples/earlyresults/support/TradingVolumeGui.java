@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.examples.earlyresults.support;
 
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.jet.datamodel.WindowResult;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;

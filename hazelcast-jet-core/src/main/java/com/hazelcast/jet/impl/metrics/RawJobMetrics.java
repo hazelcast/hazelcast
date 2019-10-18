@@ -60,7 +60,7 @@ public final class RawJobMetrics implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetMetricsDataSerializerHook.RAW_JOB_METRICS;
     }
 

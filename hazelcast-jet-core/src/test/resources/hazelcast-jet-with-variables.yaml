@@ -8,9 +8,3 @@ hazelcast-jet:
   properties:
     property1: value1
     property2: value2
-  metrics:
-    enabled: ${metrics.enabled}
-    jmx-enabled: ${metrics.jmxEnabled}
-    collection-interval-seconds: ${metrics.collection-interval}
-    retention-seconds: ${metrics.retention}
-    metrics-for-data-structures: ${metrics.enabled-for-data-structures}

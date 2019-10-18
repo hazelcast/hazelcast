@@ -15,12 +15,9 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.12.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-4.0.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <group>
-        <name>enterprise-member-default</name>
-        <password>${enterprise-member-default.pass}</password>
-    </group>
+    <cluster-name>enterprise-member-default</cluster-name>
     <instance-name>${enterprise-member-default.instance.name}</instance-name>
 </hazelcast>

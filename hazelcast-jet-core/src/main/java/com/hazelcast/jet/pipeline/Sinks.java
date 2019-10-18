@@ -17,18 +17,18 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
+import com.hazelcast.collection.IList;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.function.BiConsumerEx;
-import com.hazelcast.jet.function.BiFunctionEx;
-import com.hazelcast.jet.function.BinaryOperatorEx;
-import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.function.BiConsumerEx;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BinaryOperatorEx;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
@@ -54,8 +54,8 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
-import static com.hazelcast.jet.function.Functions.entryKey;
-import static com.hazelcast.jet.function.Functions.entryValue;
+import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.function.Functions.entryValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -504,10 +504,10 @@ public final class Sinks {
      * @param <V> value type
      */
     @Nonnull
-    public static <E, K, V> Sink<E> mapWithEntryProcessor(
+    public static <E, K, V, R> Sink<E> mapWithEntryProcessor(
             @Nonnull String mapName,
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V>> toEntryProcessorFn
+            @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return fromProcessor("mapWithEntryProcessorSink(" + mapName + ')',
                 updateMapP(mapName, toKeyFn, toEntryProcessorFn));
@@ -556,10 +556,10 @@ public final class Sinks {
      * @param <V>                value type
      */
     @Nonnull
-    public static <T, K, V> Sink<T> mapWithEntryProcessor(
+    public static <T, K, V, R> Sink<T> mapWithEntryProcessor(
             @Nonnull IMap<? super K, ? super V> map,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return mapWithEntryProcessor(map.getName(), toKeyFn, toEntryProcessorFn);
     }
@@ -570,11 +570,11 @@ public final class Sinks {
      * ClientConfig}.
      */
     @Nonnull
-    public static <E, K, V> Sink<E> remoteMapWithEntryProcessor(
+    public static <E, K, V, R> Sink<E> remoteMapWithEntryProcessor(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull FunctionEx<? super E, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V>> toEntryProcessorFn
+            @Nonnull FunctionEx<? super E, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         return fromProcessor("remoteMapWithEntryProcessorSink(" + mapName + ')',
                 updateRemoteMapP(mapName, clientConfig, toKeyFn, toEntryProcessorFn));

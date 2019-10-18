@@ -17,7 +17,8 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.impl.util.ProgressState;
-import com.hazelcast.util.function.Predicate;
+
+import java.util.function.Predicate;
 
 /**
  * The inbound side of a data stream corresponding to a single DAG edge identified by its ordinal. In the

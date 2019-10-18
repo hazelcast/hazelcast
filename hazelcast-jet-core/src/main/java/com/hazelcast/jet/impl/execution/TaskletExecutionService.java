@@ -16,7 +16,11 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
@@ -27,8 +31,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.concurrent.BackoffIdleStrategy;
-import com.hazelcast.util.concurrent.IdleStrategy;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -93,20 +95,22 @@ public class TaskletExecutionService {
             properties, JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS, JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
         );
 
-        nodeEngine.getMetricsRegistry().newProbeBuilder()
-                       .withTag(MetricTags.MODULE, "jet")
-                       .scanAndRegister(this);
-
         Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker());
         Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
         Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
 
+        // register metrics
+        MetricsRegistry registry = nodeEngine.getMetricsRegistry();
+        MetricTagger tagger = registry.newMetricTagger()
+                                        .withTag(MetricTags.MODULE, "jet");
+
+        registry.registerStaticMetrics(tagger, this);
         for (int i = 0; i < cooperativeWorkers.length; i++) {
-            nodeEngine.getMetricsRegistry().newProbeBuilder()
-                           .withTag(MetricTags.MODULE, "jet")
-                           .withTag(MetricTags.COOPERATIVE_WORKER, String.valueOf(i))
-                           .scanAndRegister(cooperativeWorkers[i]);
+            registry.registerStaticMetrics(
+                    tagger.withIdTag(MetricTags.COOPERATIVE_WORKER, String.valueOf(i)),
+                    cooperativeWorkers[i]
+            );
         }
     }
 

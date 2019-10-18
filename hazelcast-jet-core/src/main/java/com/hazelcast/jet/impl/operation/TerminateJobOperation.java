@@ -47,7 +47,7 @@ public class TerminateJobOperation extends AsyncJobOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.TERMINATE_JOB_OP;
     }
 

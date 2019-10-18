@@ -32,6 +32,6 @@ public class JetClientConfig extends ClientConfig {
      * Creates a new config instance with default group name for Jet
      */
     public JetClientConfig() {
-        getGroupConfig().setName(JetConfig.DEFAULT_GROUP_NAME);
+        setClientName(JetConfig.DEFAULT_CLUSTER_NAME);
     }
 }

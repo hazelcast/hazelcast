@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -43,7 +43,6 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
         this.state = cluster.getClusterState().ordinal();
         this.clusterTime = cluster.getClusterTime();
     }
-
 
     @Nonnull
     public String getName() {
@@ -74,7 +73,7 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.CLUSTER_METADATA;
     }
 

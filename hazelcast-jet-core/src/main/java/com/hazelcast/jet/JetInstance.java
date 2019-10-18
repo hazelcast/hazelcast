@@ -16,20 +16,25 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.function.BiFunctionEx;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.pipeline.GeneralStage;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -225,7 +230,7 @@ public interface JetInstance {
         if (!((AbstractJetInstance) this).existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
             return null;
         }
-        IMapJet<Object, Object> map = getMap(mapName);
+        IMap<Object, Object> map = getMap(mapName);
         Object validationRecord = map.get(SnapshotValidationRecord.KEY);
         if (validationRecord instanceof SnapshotValidationRecord) {
             // update the cache - for robustness. For example after the map was copied
@@ -251,12 +256,17 @@ public interface JetInstance {
 
     /**
      * Returns the distributed map instance with the specified name.
+     * <p>
+     * It's possible to use the map as a data source or sink in a Jet {@link
+     * Pipeline}, using {@link Sources#map(String)} or {@link
+     * Sinks#map(String)} and the change stream of the map can be read using
+     * {@link Sources#mapJournal(String, JournalInitialPosition)}.
      *
      * @param name name of the distributed map
      * @return distributed map instance with the specified name
      */
     @Nonnull
-    <K, V> IMapJet<K, V> getMap(@Nonnull String name);
+    <K, V> IMap<K, V> getMap(@Nonnull String name);
 
     /**
      * Returns the replicated map instance with the specified name.
@@ -273,12 +283,16 @@ public interface JetInstance {
 
     /**
      * Returns the distributed list instance with the specified name.
+     * <p>
+     * It's possible to use the link as a data source or sink in a Jet {@link
+     * Pipeline}, using {@link Sources#list(String)} or {@link
+     * Sinks#list(String)}.
      *
      * @param name name of the distributed list
      * @return distributed list instance with the specified name
      */
     @Nonnull
-    <E> IListJet<E> getList(@Nonnull String name);
+    <E> IList<E> getList(@Nonnull String name);
 
     /**
      * Obtain the {@link JetCacheManager} that provides access to JSR-107 (JCache) caches

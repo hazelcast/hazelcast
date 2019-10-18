@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.examples.files;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperations;
@@ -23,7 +24,6 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.WindowDefinition;
-import com.hazelcast.nio.IOUtil;
 
 import java.io.BufferedWriter;
 import java.io.Serializable;

@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class TimestampTransform<T> extends AbstractTransform {
     @Nonnull

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.examples.sourcebuilder.support;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -31,6 +31,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.UUID;
 
 import static java.lang.Math.max;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
@@ -50,7 +51,7 @@ public class SystemMonitorGui {
     private static final int Y_RANGE_UPPER_INITIAL = 200;
 
     private final IMap<Long, Double> hzMap;
-    private String entryListenerId;
+    private UUID entryListenerId;
 
     public SystemMonitorGui(IMap<Long, Double> hzMap) {
         this.hzMap = hzMap;

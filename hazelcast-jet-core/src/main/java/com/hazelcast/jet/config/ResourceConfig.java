@@ -20,8 +20,8 @@ import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.net.URL;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Describes a single resource to deploy to the Jet cluster.

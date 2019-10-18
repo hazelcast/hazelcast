@@ -18,16 +18,16 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.nio.Address;
+import com.hazelcast.map.IMap;
+import com.hazelcast.cluster.Address;
 import org.junit.Before;
 
 import javax.annotation.Nonnull;
@@ -212,7 +212,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         ClientConfig clientConfig = new ClientConfig();
         Address address = instance.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
-        clientConfig.getGroupConfig().setName(instance.getConfig().getGroupConfig().getName());
+        clientConfig.setClientName(instance.getConfig().getClusterName());
         return clientConfig;
     }
 }

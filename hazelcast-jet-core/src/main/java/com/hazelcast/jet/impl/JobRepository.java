@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
@@ -33,15 +32,15 @@ import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -494,8 +493,7 @@ public class JobRepository {
     }
 
     public static final class UpdateJobExecutionRecordEntryProcessor implements
-                    EntryProcessor<Long, JobExecutionRecord>,
-                    EntryBackupProcessor<Long, JobExecutionRecord>,
+                    EntryProcessor<Long, JobExecutionRecord, Object>,
                     IdentifiedDataSerializable {
 
         private long jobId;
@@ -532,22 +530,12 @@ public class JobRepository {
         }
 
         @Override
-        public EntryBackupProcessor<Long, JobExecutionRecord> getBackupProcessor() {
-            return this;
-        }
-
-        @Override
-        public void processBackup(Entry<Long, JobExecutionRecord> entry) {
-            process(entry);
-        }
-
-        @Override
         public int getFactoryId() {
             return JetInitDataSerializerHook.FACTORY_ID;
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return JetInitDataSerializerHook.UPDATE_JOB_EXECUTION_RECORD_EP;
         }
 
@@ -589,7 +577,7 @@ public class JobRepository {
         }
 
         @Override
-        public int getId() {
+        public int getClassId() {
             return JetInitDataSerializerHook.FILTER_JOB_RESULT_BY_NAME;
         }
 

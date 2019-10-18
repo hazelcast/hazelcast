@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.examples.faulttolerance;
 
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -28,6 +27,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.WindowDefinition;
+import com.hazelcast.map.IMap;
 
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -126,7 +126,7 @@ public class FaultTolerance {
     }
 
     private static void updatePrices(JetInstance jet) {
-        IMapJet<String, Tuple2<Integer, Long>> prices = jet.getMap(PRICES_MAP_NAME);
+        IMap<String, Tuple2<Integer, Long>> prices = jet.getMap(PRICES_MAP_NAME);
         int price = 100;
         long timestamp = 0;
         while (true) {

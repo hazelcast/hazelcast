@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 
 import javax.annotation.Nonnull;
 import java.io.File;

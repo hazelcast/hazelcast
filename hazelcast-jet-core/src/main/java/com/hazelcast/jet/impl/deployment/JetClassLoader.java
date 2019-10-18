@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

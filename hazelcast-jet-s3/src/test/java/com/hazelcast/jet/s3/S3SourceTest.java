@@ -16,14 +16,15 @@
 
 package com.hazelcast.jet.s3;
 
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.annotation.NightlyTest;
-import java.util.ArrayList;
-import java.util.List;
+import com.hazelcast.function.SupplierEx;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Category(NightlyTest.class)
 public class S3SourceTest extends S3TestBase {

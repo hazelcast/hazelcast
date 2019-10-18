@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.aggregation.Aggregators;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
+import com.hazelcast.map.IMap;
 
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 

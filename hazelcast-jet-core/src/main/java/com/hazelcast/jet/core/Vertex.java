@@ -16,19 +16,19 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Math.min;
 
 /**
@@ -226,7 +226,7 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetDataSerializerHook.VERTEX;
     }
 

@@ -21,9 +21,9 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 import java.util.BitSet;

@@ -18,12 +18,11 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,7 +37,6 @@ import java.util.Properties;
 import static com.hazelcast.jet.config.XmlJetConfigBuilderTest.JET_END_TAG;
 import static com.hazelcast.jet.config.XmlJetConfigBuilderTest.JET_START_TAG;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -69,25 +67,20 @@ public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfig
     @Override
     public void readVariables() {
         //Given
-        String xml = JET_START_TAG +
-                "   <metrics enabled=\"${metrics.enabled}\" jmxEnabled=\"${jmx.enabled}\">\n" +
-                "        <collection-interval-seconds>${metrics.collection}</collection-interval-seconds>\n" +
-                "    </metrics>\n\n" +
-                JET_END_TAG;
+        String instanceConfigXml = JET_START_TAG +
+                "   <instance>\n" +
+                "        <backup-count>${backup.count}</backup-count>\n" +
+                "    </instance>\n"
+                + JET_END_TAG;
 
         Properties properties = new Properties();
-        properties.setProperty("metrics.enabled", "false");
-        properties.setProperty("jmx.enabled", "false");
-        properties.setProperty("metrics.collection", "6");
+        properties.setProperty("backup.count", "5");
 
         //When
-        JetConfig jetConfig = JetConfig.loadXmlFromString(xml, properties);
+        JetConfig jetConfig = JetConfig.loadXmlFromString(instanceConfigXml, properties);
 
         //Then
-        MetricsConfig metricsCfg = jetConfig.getMetricsConfig();
-        assertFalse("isEnabled", metricsCfg.isEnabled());
-        assertFalse("isJmxEnabled", metricsCfg.isJmxEnabled());
-        assertEquals("metricsCollectionInterval", 6, metricsCfg.getCollectionIntervalSeconds());
+        assertEquals("backup.count", 5, jetConfig.getInstanceConfig().getBackupCount());
     }
 
     @Override
@@ -95,12 +88,12 @@ public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfig
         //Given
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
-        String metricsConfigXml = JET_START_TAG +
-                "   <metrics enabled=\"true\" jmxEnabled=\"false\">\n" +
-                "        <collection-interval-seconds>122</collection-interval-seconds>\n" +
-                "    </metrics>\n"
+        String instanceConfigXml = JET_START_TAG +
+                "   <instance>\n" +
+                "        <backup-count>5</backup-count>\n" +
+                "    </instance>\n"
                 + JET_END_TAG;
-        writeStringToStreamAndClose(os, metricsConfigXml);
+        writeStringToStreamAndClose(os, instanceConfigXml);
 
         String xml = JET_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
@@ -109,10 +102,7 @@ public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfig
         JetConfig jetConfig = buildConfig(xml, "config.location", file.getAbsolutePath());
 
         //Then
-        MetricsConfig metricsCfg = jetConfig.getMetricsConfig();
-        assertTrue("isEnabled", metricsCfg.isEnabled());
-        assertFalse("isJmxEnabled", metricsCfg.isJmxEnabled());
-        assertEquals("metricsCollectionInterval", 122, metricsCfg.getCollectionIntervalSeconds());
+        assertEquals("backup.count", 5, jetConfig.getInstanceConfig().getBackupCount());
     }
 
 
@@ -121,12 +111,12 @@ public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfig
         //Given
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
-        String metricsConfigXml = JET_START_TAG +
-                "   <metrics enabled=\"true\" jmxEnabled=\"false\">\n" +
-                "        <collection-interval-seconds>${metrics.collection}</collection-interval-seconds>\n" +
-                "    </metrics>\n"
+        String instanceConfigXml = JET_START_TAG +
+                "   <instance>\n" +
+                "        <backup-count>${backup.count}</backup-count>\n" +
+                "    </instance>\n"
                 + JET_END_TAG;
-        writeStringToStreamAndClose(os, metricsConfigXml);
+        writeStringToStreamAndClose(os, instanceConfigXml);
 
         String xml = JET_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
@@ -134,15 +124,12 @@ public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfig
         //When
         Properties properties = new Properties();
         properties.setProperty("config.location", file.getAbsolutePath());
-        properties.setProperty("metrics.collection", "222");
+        properties.setProperty("backup.count", "4");
 
         JetConfig jetConfig = JetConfig.loadXmlFromString(xml, properties);
 
         //Then
-        MetricsConfig metricsCfg = jetConfig.getMetricsConfig();
-        assertTrue("isEnabled", metricsCfg.isEnabled());
-        assertFalse("isJmxEnabled", metricsCfg.isJmxEnabled());
-        assertEquals("metricsCollectionInterval", 222, metricsCfg.getCollectionIntervalSeconds());
+        assertEquals("backup.count", 4, jetConfig.getInstanceConfig().getBackupCount());
     }
 
     @Override
@@ -211,7 +198,6 @@ public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfig
         JetConfig.loadXmlFromString(xml);
     }
 
-    @Override
     @Test(expected = HazelcastException.class)
     public void testImportFromNonHazelcastJetConfigThrowsException() throws Exception {
         //Given
@@ -228,35 +214,6 @@ public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfig
                 + "</non-hazelcast-jet>";
         //When
         JetConfig.loadXmlFromString(xml);
-    }
-
-    @Override
-    public void testImportMetricsConfigFromFile() throws Exception {
-        //Given
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
-        String metricsConfigXml = JET_START_TAG +
-                "   <metrics enabled=\"false\" jmxEnabled=\"false\">\n" +
-                "        <collection-interval-seconds>123</collection-interval-seconds>\n" +
-                "        <retention-seconds>124</retention-seconds>\n" +
-                "        <metrics-for-data-structures>true</metrics-for-data-structures>\n" +
-                "    </metrics>\n\n"
-                + JET_END_TAG;
-        writeStringToStreamAndClose(os, metricsConfigXml);
-
-        String xml = JET_START_TAG
-                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
-                + JET_END_TAG;
-        //When
-        JetConfig jetConfig = JetConfig.loadXmlFromString(xml);
-
-        //Then
-        MetricsConfig metricsCfg = jetConfig.getMetricsConfig();
-        assertFalse("isEnabled", metricsCfg.isEnabled());
-        assertFalse("isJmxEnabled", metricsCfg.isJmxEnabled());
-        assertEquals("metricsRetentionSeconds", 124, metricsCfg.getRetentionSeconds());
-        assertEquals("metricsCollectionInterval", 123, metricsCfg.getCollectionIntervalSeconds());
-        assertTrue("metricsForDataStructures", metricsCfg.isMetricsForDataStructuresEnabled());
     }
 
     @Override
@@ -357,7 +314,7 @@ public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfig
     }
 
     @Override
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMissingReplacement() throws Exception {
         String xml = JET_START_TAG
                 + "    <config-replacers>\n"

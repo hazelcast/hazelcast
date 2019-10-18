@@ -17,27 +17,27 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public final class UpdateMapWithEntryProcessorP<T, K, V> extends AsyncHazelcastWriterP {
+public final class UpdateMapWithEntryProcessorP<T, K, V, R> extends AsyncHazelcastWriterP {
 
-    private final IMap<? super K, ? extends V> map;
+    private final IMap<K, V> map;
     private final FunctionEx<? super T, ? extends K> toKeyFn;
-    private final FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn;
+    private final FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn;
 
     UpdateMapWithEntryProcessorP(
         @Nonnull HazelcastInstance instance,
         int maxParallelAsyncOps,
         @Nonnull String name,
         @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-        @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
+        @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
         super(instance, maxParallelAsyncOps);
         this.map = instance.getMap(name);
@@ -51,26 +51,26 @@ public final class UpdateMapWithEntryProcessorP<T, K, V> extends AsyncHazelcastW
         for (Object object; permits > 0 && (object = inbox.peek()) != null; permits--) {
             @SuppressWarnings("unchecked")
             T item = (T) object;
-            EntryProcessor<K, V> entryProcessor = toEntryProcessorFn.apply(item);
+            EntryProcessor<K, V, R> entryProcessor = toEntryProcessorFn.apply(item);
             K key = toKeyFn.apply(item);
-            setCallback(map.submitToKey(key, entryProcessor));
+            setCallback(map.submitToKey(key, entryProcessor).toCompletableFuture());
             inbox.remove();
         }
     }
 
-    static final class Supplier<T, K, V> extends AbstractHazelcastConnectorSupplier {
+    static final class Supplier<T, K, V, R> extends AbstractHazelcastConnectorSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final String name;
         private final FunctionEx<? super T, ? extends K> toKeyFn;
-        private final FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn;
+        private final FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn;
 
         Supplier(
             @Nonnull String name,
             @Nullable String clientXml,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
         ) {
             super(clientXml);
             this.name = name;

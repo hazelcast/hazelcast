@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.function.BiFunctionEx;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

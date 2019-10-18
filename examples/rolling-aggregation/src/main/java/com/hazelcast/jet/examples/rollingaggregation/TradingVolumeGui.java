@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.examples.rollingaggregation;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -31,6 +31,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.UUID;
 
 import static java.lang.Math.max;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
@@ -47,7 +48,7 @@ public class TradingVolumeGui {
     private static final int INITIAL_TOP_Y = 5_000_000;
 
     private final IMap<String, Long> hzMap;
-    private String entryListenerId;
+    private UUID entryListenerId;
 
     public TradingVolumeGui(IMap<String, Long> hzMap) {
         this.hzMap = hzMap;

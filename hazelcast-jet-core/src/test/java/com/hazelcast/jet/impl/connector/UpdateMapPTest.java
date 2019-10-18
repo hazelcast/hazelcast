@@ -19,14 +19,14 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.function.SupplierEx;
-import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.function.SupplierEx;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,7 +43,7 @@ import static com.hazelcast.jet.impl.connector.AsyncHazelcastWriterP.MAX_PARALLE
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class UpdateMapPTest extends JetTestSupport {
 
     private static final int COUNT_PER_KEY = 16;
@@ -56,7 +56,7 @@ public class UpdateMapPTest extends JetTestSupport {
 
     private JetInstance jet;
     private HazelcastInstance client;
-    private IMapJet<String, Integer> sinkMap;
+    private IMap<String, Integer> sinkMap;
 
     @Parameterized.Parameters(name = "asyncLimit: {0}, keyRange: {1}")
     public static Collection<Object[]> parameters() {
@@ -98,7 +98,7 @@ public class UpdateMapPTest extends JetTestSupport {
     }
 
     private SupplierEx<Processor> updateMap(HazelcastInstance instance) {
-        return () -> new UpdateMapP<Integer, String, Integer>(
+        return () -> new UpdateMapP<Integer, String, Integer, Void>(
             instance,
             asyncLimit,
             sinkMap.getName(),
@@ -112,7 +112,7 @@ public class UpdateMapPTest extends JetTestSupport {
     }
 
     private SupplierEx<Processor> updateMapWithEP(HazelcastInstance instance) {
-        return () -> new UpdateMapWithEntryProcessorP<Integer, String, Integer>(
+        return () -> new UpdateMapWithEntryProcessorP<Integer, String, Integer, Void>(
                     instance,
                     asyncLimit,
                     sinkMap.getName(),
@@ -141,10 +141,10 @@ public class UpdateMapPTest extends JetTestSupport {
             });
     }
 
-    private static class IncrementEntryProcessor extends AbstractEntryProcessor<String, Integer> {
+    private static class IncrementEntryProcessor implements EntryProcessor<String, Integer, Void> {
 
         @Override
-        public Object process(Entry<String, Integer> entry) {
+        public Void process(Entry<String, Integer> entry) {
             Integer val = entry.getValue();
             entry.setValue(val == null ? 1 : val + 1);
             return null;

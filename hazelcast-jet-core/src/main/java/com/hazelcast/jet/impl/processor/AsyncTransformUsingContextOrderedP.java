@@ -25,8 +25,8 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.function.BiFunctionEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

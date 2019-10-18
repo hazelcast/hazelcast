@@ -16,11 +16,9 @@
 
 package com.hazelcast.jet.server;
 
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.jet.IListJet;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetException;
@@ -32,6 +30,8 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -234,7 +234,7 @@ public final class JetBootstrap {
         }
 
         @Nonnull @Override
-        public <K, V> IMapJet<K, V> getMap(@Nonnull String name) {
+        public <K, V> IMap<K, V> getMap(@Nonnull String name) {
             return instance.getMap(name);
         }
 
@@ -249,7 +249,7 @@ public final class JetBootstrap {
         }
 
         @Nonnull @Override
-        public <E> IListJet<E> getList(@Nonnull String name) {
+        public <E> IList<E> getList(@Nonnull String name) {
             return instance.getList(name);
         }
 

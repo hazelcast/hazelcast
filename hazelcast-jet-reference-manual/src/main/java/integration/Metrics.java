@@ -35,7 +35,7 @@ public class Metrics {
     static void s1() {
         //tag::s1[]
         JetConfig jetConfig = new JetConfig();
-        jetConfig.getMetricsConfig()
+        jetConfig.getHazelcastConfig().getMetricsConfig()
                  .setEnabled(true)
                  .setJmxEnabled(true)
                 .setRetentionSeconds(5)

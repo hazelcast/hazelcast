@@ -17,10 +17,9 @@
 package com.hazelcast.jet.server;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.core.IList;
-import com.hazelcast.jet.IListJet;
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.collection.IList;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -30,8 +29,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -79,8 +77,8 @@ public class JetCommandLineTest extends JetTestSupport {
     private PrintStream out;
     private PrintStream err;
     private JetInstance jet;
-    private IMapJet<Integer, Integer> sourceMap;
-    private IListJet<Integer> sinkList;
+    private IMap<Integer, Integer> sourceMap;
+    private IList<Integer> sinkList;
     private JetInstance client;
 
     @BeforeClass
@@ -99,18 +97,18 @@ public class JetCommandLineTest extends JetTestSupport {
     @Before
     public void before() {
         JetConfig cfg = new JetConfig();
-        cfg.getHazelcastConfig().addEventJournalConfig(new EventJournalConfig().setMapName(SOURCE_NAME));
-        String groupName = randomName();
-        cfg.getHazelcastConfig().getGroupConfig().setName(groupName);
+        cfg.getHazelcastConfig().getMapConfig(SOURCE_NAME).getEventJournalConfig().setEnabled(true);
+        String clusterName = randomName();
+        cfg.getHazelcastConfig().setClusterName(clusterName);
         jet = createJetMember(cfg);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName(groupName);
+        clientConfig.setClientName(clusterName);
         client = createJetClient(clientConfig);
         resetOut();
 
         Address address = jet.getCluster().getLocalMember().getAddress();
         System.setProperty("member", address.getHost() + ":" + address.getPort());
-        System.setProperty("group", groupName);
+        System.setProperty("group", clusterName);
         sourceMap = jet.getMap(SOURCE_NAME);
         IntStream.range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, i));
         sinkList = jet.getList(SINK_NAME);
@@ -394,7 +392,7 @@ public class JetCommandLineTest extends JetTestSupport {
 
         // Then
         String actual = captureOut();
-        assertContains(actual, jet.getCluster().getLocalMember().getUuid());
+        assertContains(actual, jet.getCluster().getLocalMember().getUuid().toString());
         assertContains(actual, "ACTIVE");
     }
 
@@ -470,7 +468,7 @@ public class JetCommandLineTest extends JetTestSupport {
         run(this::createJetClient, "-f", configFile, "cluster");
 
         String actual = captureOut();
-        assertContains(actual, jet.getCluster().getLocalMember().getUuid());
+        assertContains(actual, jet.getCluster().getLocalMember().getUuid().toString());
         assertContains(actual, "ACTIVE");
     }
 

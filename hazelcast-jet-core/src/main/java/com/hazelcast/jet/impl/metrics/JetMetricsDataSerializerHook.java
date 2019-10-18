@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.metrics;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -27,9 +26,7 @@ import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_METRICS_DS_FACTORY_I
 
 public final class JetMetricsDataSerializerHook implements DataSerializerHook {
 
-    public static final int RINGBUFFER_SLICE = 1;
-
-    public static final int RAW_JOB_METRICS = 2;
+    public static final int RAW_JOB_METRICS = 1;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_METRICS_DS_FACTORY, JET_METRICS_DS_FACTORY_ID);
 
@@ -47,8 +44,6 @@ public final class JetMetricsDataSerializerHook implements DataSerializerHook {
         @Override
         public IdentifiedDataSerializable create(int typeId) {
             switch (typeId) {
-                case RINGBUFFER_SLICE:
-                    return new ConcurrentArrayRingbuffer.RingbufferSlice<>();
                 case RAW_JOB_METRICS:
                     return new RawJobMetrics();
                 default:

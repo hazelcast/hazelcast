@@ -59,7 +59,7 @@ public final class MetricNames {
      * identified based on the {@link MetricTags#VERTEX} and
      * {@link MetricTags#PROCESSOR} tags of the metric.
      */
-    public static final String QUEUE_SIZES = "queuesSize";
+    public static final String QUEUES_SIZE = "queuesSize";
 
     /**
      * Tracks the total capacity of all input queues of a particular
@@ -67,7 +67,7 @@ public final class MetricNames {
      * identified based on the {@link MetricTags#VERTEX} and
      * {@link MetricTags#PROCESSOR} tags of the metric.
      */
-    public static final String QUEUE_CAPACITY = "queuesCapacity";
+    public static final String QUEUES_CAPACITY = "queuesCapacity";
 
     /**
      * Counts the data items emitted on outgoing {@link Edge}s of particular

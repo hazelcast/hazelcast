@@ -16,20 +16,20 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
 public class GetClusterMetadataOperation extends Operation implements
         IdentifiedDataSerializable,
-        ReadonlyOperation {
+    ReadonlyOperation {
 
     private ClusterMetadata response;
 
@@ -41,7 +41,7 @@ public class GetClusterMetadataOperation extends Operation implements
         JetService service = getService();
         HazelcastInstance instance = service.getJetInstance().getHazelcastInstance();
         Cluster cluster = instance.getCluster();
-        String name = instance.getConfig().getGroupConfig().getName();
+        String name = instance.getConfig().getClusterName();
         response = new ClusterMetadata(name, cluster);
     }
 
@@ -56,7 +56,7 @@ public class GetClusterMetadataOperation extends Operation implements
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.GET_CLUSTER_METADATA_OP;
     }
 

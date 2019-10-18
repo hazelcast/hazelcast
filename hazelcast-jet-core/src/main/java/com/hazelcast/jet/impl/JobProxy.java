@@ -16,7 +16,8 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -33,14 +34,13 @@ import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -79,17 +79,17 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     @Override
-    protected ICompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
+    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config)));
     }
 
     @Override
-    protected ICompletableFuture<Void> invokeJoinJob() {
+    protected CompletableFuture<Void> invokeJoinJob() {
         return invokeOp(new JoinSubmittedJobOperation(getId()));
     }
 
     @Override
-    protected ICompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
+    protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
         return invokeOp(new TerminateJobOperation(getId(), mode));
     }
 
@@ -160,7 +160,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
         return container().getLoggingService();
     }
 
-    private <T> ICompletableFuture<T> invokeOp(Operation op) {
+    private <T> CompletableFuture<T> invokeOp(Operation op) {
         return container()
                 .getOperationService()
                 .createInvocationBuilder(JetService.SERVICE_NAME, op, masterAddress())

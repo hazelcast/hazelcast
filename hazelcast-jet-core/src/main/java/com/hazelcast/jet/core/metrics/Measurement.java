@@ -107,7 +107,7 @@ public class Measurement implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return MetricsDataSerializerHook.MEASUREMENT;
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.Arrays;
 import java.util.List;

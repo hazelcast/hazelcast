@@ -24,7 +24,7 @@ import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.datamodel.WindowResult;
-import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import org.junit.Test;
 
 import java.util.List;

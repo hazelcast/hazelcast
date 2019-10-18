@@ -17,19 +17,18 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.client.map.helpers.AMapStore;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGeneratorP;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.function.SupplierEx;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,10 +66,8 @@ public class SnapshotFailureTest extends JetTestSupport {
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new FailingMapStore());
+        mapConfig.getEventJournalConfig().setEnabled(true);
         config.getHazelcastConfig().addMapConfig(mapConfig);
-
-        config.getHazelcastConfig().addEventJournalConfig(new EventJournalConfig()
-                .setMapName(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*'));
 
         JetInstance[] instances = createJetMembers(config, 2);
         instance1 = instances[0];
@@ -80,7 +77,7 @@ public class SnapshotFailureTest extends JetTestSupport {
     public void when_snapshotFails_then_jobShouldNotFail() {
         int numPartitions = 2;
         int numElements = 10;
-        IMapJet<Object, Object> results = instance1.getMap("results");
+        IMap<Object, Object> results = instance1.getMap("results");
 
         DAG dag = new DAG();
         SupplierEx<Processor> sup = () -> new SequencesInPartitionsGeneratorP(numPartitions, numElements, false);

@@ -268,7 +268,7 @@ public class ProcessorTaskletTest_Watermarks {
         SnapshotContext snapshotContext = new SnapshotContext(mock(ILogger.class), "test job", -1, EXACTLY_ONCE);
         snapshotContext.initTaskletCount(1, 0);
         final ProcessorTasklet t = new ProcessorTasklet(context, new DefaultSerializationServiceBuilder().build(),
-                processor, instreams, outstreams, snapshotContext, snapshotCollector, null);
+                processor, instreams, outstreams, snapshotContext, snapshotCollector);
         t.init();
         return t;
     }

@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.spring;
 
-import com.hazelcast.jet.IListJet;
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.spring.context.SpringAware;
 import org.junit.AfterClass;
@@ -65,7 +65,7 @@ public class TestCustomProcessor {
     private static class CustomSourceP extends AbstractProcessor {
 
         @Resource(name = "my-list-bean")
-        private IListJet list;
+        private IList list;
 
         @Override
         protected void init(@Nonnull Context context) {
@@ -82,7 +82,7 @@ public class TestCustomProcessor {
     private static class CustomSinkP extends AbstractProcessor {
 
         @Resource(name = "my-map-bean")
-        private IMapJet map;
+        private IMap map;
 
         @Override
         protected void init(@Nonnull Context context) {

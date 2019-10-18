@@ -16,14 +16,20 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
@@ -31,7 +37,6 @@ import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -58,7 +63,7 @@ import static java.util.stream.Collectors.toSet;
  * Service to handle ExecutionContexts on all cluster members. Job-control
  * operations from coordinator are handled here.
  */
-public class JobExecutionService {
+public class JobExecutionService implements DynamicMetricsProvider {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -355,5 +360,14 @@ public class JobExecutionService {
 
     int numberOfExecutions() {
         return executionContexts.size();
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+        MetricTagger tagger = taggerSupplier.getMetricTagger()
+                                            .withTag(MetricTags.MODULE, "jet");
+        executionContexts.forEach((id, ctx) -> {
+            ctx.collectMetrics(tagger, context);
+        });
     }
 }

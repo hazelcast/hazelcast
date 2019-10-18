@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.pipeline;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Represents the definition of a sliding window.

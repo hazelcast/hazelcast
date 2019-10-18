@@ -18,10 +18,10 @@ package com.hazelcast.jet.kafka;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
+import com.hazelcast.function.FunctionEx;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
@@ -32,7 +32,7 @@ import java.util.Properties;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.kafka.KafkaProcessors.streamKafkaP;
 import static com.hazelcast.jet.pipeline.Sources.streamFromProcessorWithWatermarks;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Contains factory methods for Apache Kafka sources.

@@ -17,17 +17,17 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -40,9 +40,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapPutEvents;
-import static com.hazelcast.jet.function.Functions.entryValue;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
@@ -58,10 +58,10 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     @BeforeClass
     public static void setUp() {
         Config config = new Config();
-        config.getGroupConfig().setName(randomName());
+        config.setClusterName(randomName());
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        config.getMapEventJournalConfig(JOURNALED_MAP_PREFIX + '*').setEnabled(true);
-        config.getCacheEventJournalConfig(JOURNALED_CACHE_PREFIX + '*').setEnabled(true);
+        config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+        config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
 
         remoteHz = createRemoteCluster(config, 2).get(0);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);
@@ -216,7 +216,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Then
         p.drawFrom(source).withoutTimestamps().drainTo(sink);
         jet().newJob(p);
-        IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        IList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
 
@@ -246,7 +246,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Then
         p.drawFrom(source).withoutTimestamps().drainTo(sink);
         jet().newJob(p);
-        IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        IList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
 

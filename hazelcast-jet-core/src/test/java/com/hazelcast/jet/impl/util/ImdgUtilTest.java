@@ -19,8 +19,7 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.IMap;
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.map.IMap;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -63,7 +62,7 @@ public class ImdgUtilTest extends SimpleTestInClusterSupport {
     @Test
     public void test_copyMap() throws Exception {
         logger.info("Populating source map...");
-        IMapJet<Object, Object> srcMap = instance().getMap("src");
+        IMap<Object, Object> srcMap = instance().getMap("src");
         Map<Integer, Integer> testData = IntStream.range(0, 100_000).boxed().collect(toMap(e -> e, e -> e));
         srcMap.putAll(testData);
 

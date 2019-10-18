@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.function.Predicate;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Represents a predicate which accepts three arguments. This

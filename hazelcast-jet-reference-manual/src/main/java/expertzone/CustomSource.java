@@ -28,7 +28,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;

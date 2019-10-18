@@ -35,7 +35,7 @@ public class JoinSubmittedJobOperation extends AsyncJobOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.JOIN_SUBMITTED_JOB;
     }
 }

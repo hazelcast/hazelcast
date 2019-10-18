@@ -27,7 +27,7 @@ an xml file too. Here you have 2 choices:
     create/configure Hazelcast Jet Instance and Hazelcast Jet 
     Client respectively. You will have other bean definitions like
     `<jet:map>`, `<jet:list>` and `<jet:hazelcast>` to obtain 
-    `IMapJet`, `IListJet` and the underlying `HazelcastInstance` 
+    `IMap`, `IListJet` and the underlying `HazelcastInstance` 
     as a spring bean.
 
 

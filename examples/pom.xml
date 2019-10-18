@@ -30,12 +30,11 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-root</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>4.0-SNAPSHOT</version>
     </parent>
 
     <modules>
         <module>co-group</module>
-        <module>configuration</module>
         <module>early-window-results</module>
         <module>enrichment</module>
         <module>event-journal</module>

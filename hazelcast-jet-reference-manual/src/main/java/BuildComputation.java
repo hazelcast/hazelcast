@@ -15,10 +15,10 @@
  */
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
@@ -40,7 +40,6 @@ import com.hazelcast.jet.examples.enrichment.datamodel.Product;
 import com.hazelcast.jet.examples.enrichment.datamodel.StockInfo;
 import com.hazelcast.jet.examples.enrichment.datamodel.Trade;
 import com.hazelcast.jet.examples.enrichment.datamodel.Tweet;
-import com.hazelcast.jet.function.ComparatorEx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.BatchStageWithKey;
@@ -52,23 +51,23 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamHashJoinBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.map.IMap;
 
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
+import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapEventNewValue;
 import static com.hazelcast.jet.Util.mapPutEvents;
-import static com.hazelcast.jet.Util.toCompletableFuture;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toList;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.function.Functions.wholeItem;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
@@ -463,7 +462,7 @@ class BuildComputation {
          .withoutTimestamps()
          .groupingKey(Trade::ticker)
          .mapUsingContextAsync(ctxFac,
-                 (map, key, trade) -> toCompletableFuture(map.getAsync(key))
+                 (map, key, trade) -> map.getAsync(key).toCompletableFuture()
                          .thenApply(trade::setStockInfo))
          .drainTo(Sinks.list("result"));
         //end::s16a[]

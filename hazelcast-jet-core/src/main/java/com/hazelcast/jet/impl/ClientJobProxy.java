@@ -17,37 +17,32 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec.ResponseParameters;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
-import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
-import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.Member;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.impl.client.protocol.codec.JetExportSnapshotCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobConfigCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobMetricsCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobStatusCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobStatusCodec.ResponseParameters;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSubmissionTimeCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetResumeJobCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -65,7 +60,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         super(client, jobId, dag, config);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JobStatus getStatus() {
         ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
         try {
@@ -77,7 +73,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         }
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JobMetrics getMetrics() {
         ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
         try {
@@ -90,32 +87,32 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     }
 
     @Override
-    protected ICompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
+    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
         ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData);
-        return new CancellableFuture<>(invocation(request, masterAddress()).invoke());
+        return invocation(request, masterAddress()).invoke().thenApply(c -> null);
     }
 
     @Override
-    protected ICompletableFuture<Void> invokeJoinJob() {
+    protected CompletableFuture<Void> invokeJoinJob() {
         ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId());
         ClientInvocation invocation = invocation(request, masterAddress());
         // this invocation should never time out, as the job may be running for a long time
         invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
-        return new CancellableFuture<>(invocation.invoke());
+        return invocation.invoke().thenApply(c -> null);
     }
 
     @Override
-    protected ICompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
+    protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
         ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal());
-        return new CancellableFuture<>(invocation(request, masterAddress()).invoke());
+        return invocation(request, masterAddress()).invoke().thenApply(c -> null);
     }
 
     @Override
     public void resume() {
         ClientMessage request = JetResumeJobCodec.encodeRequest(getId());
         try {
-            new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
+            invocation(request, masterAddress()).invoke().get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -134,7 +131,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, cancelJob);
         try {
-            new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
+            invocation(request, masterAddress()).invoke().get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -186,73 +183,4 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         );
     }
 
-    /**
-     * Decorator for execution future which makes it cancellable
-     */
-    private static class CancellableFuture<T> implements ICompletableFuture<Void> {
-
-        private final ICompletableFuture<T> future;
-
-        CancellableFuture(ICompletableFuture<T> future) {
-            this.future = future;
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return future.cancel(mayInterruptIfRunning);
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return future.isCancelled();
-        }
-
-        @Override
-        public boolean isDone() {
-            return future.isDone();
-        }
-
-        @Override
-        public Void get() throws InterruptedException, ExecutionException {
-            future.get();
-            return null;
-        }
-
-        @Override
-        public Void get(long timeout, @Nonnull TimeUnit unit)
-                throws InterruptedException, ExecutionException, TimeoutException {
-            future.get(timeout, unit);
-            return null;
-        }
-
-        @Override
-        public void andThen(ExecutionCallback<Void> callback) {
-            future.andThen(new ExecutionCallback<T>() {
-                @Override
-                public void onResponse(T response) {
-                    callback.onResponse(null);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    callback.onFailure(t);
-                }
-            });
-        }
-
-        @Override
-        public void andThen(ExecutionCallback<Void> callback, Executor executor) {
-            future.andThen(new ExecutionCallback<T>() {
-                @Override
-                public void onResponse(T response) {
-                    callback.onResponse(null);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    callback.onFailure(t);
-                }
-            }, executor);
-        }
-    }
 }

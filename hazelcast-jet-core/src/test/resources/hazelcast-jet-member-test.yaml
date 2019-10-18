@@ -1,5 +1,3 @@
 hazelcast:
-  group:
-    name: imdg
-    password: ${imdg.pass}
+  cluster-name: imdg
   instance-name: ${imdg.instance.name}

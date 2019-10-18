@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.examples.imdg;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.function.Functions.entryKey;
+import static com.hazelcast.function.Functions.entryKey;
 
 /**
  * Demonstrates the usage of Hazelcast IMap as source and sink with the Pipeline API.
@@ -200,7 +200,7 @@ public class MapSourceAndSinks {
         }
     }
 
-    static class IncrementEntryProcessor implements EntryProcessor<Integer, Integer> {
+    static class IncrementEntryProcessor implements EntryProcessor<Integer, Integer, Integer> {
 
         private int incrementBy;
 
@@ -209,14 +209,10 @@ public class MapSourceAndSinks {
         }
 
         @Override
-        public Object process(Entry<Integer, Integer> entry) {
+        public Integer process(Entry<Integer, Integer> entry) {
             return entry.setValue(entry.getValue() + incrementBy);
         }
 
-        @Override
-        public EntryBackupProcessor<Integer, Integer> getBackupProcessor() {
-            return null;
-        }
     }
 
 }

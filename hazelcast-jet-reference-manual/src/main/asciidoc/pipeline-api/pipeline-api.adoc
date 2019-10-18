@@ -71,8 +71,8 @@ You can access most of these via the
 {jet-javadoc}/s3/S3Sources.html[S3] and
 {jet-javadoc}/avro/AvroSources.html[Avro] connectors are in their
 separate modules. The
-{jet-javadoc}/pipeline/SourceBuilder.html#batch-java.lang.String-com.hazelcast.jet.function.FunctionEx-[source]
-and {jet-javadoc}/pipeline/SinkBuilder.html#sinkBuilder-java.lang.String-com.hazelcast.jet.function.FunctionEx-[sink]
+{jet-javadoc}/pipeline/SourceBuilder.html#batch-java.lang.String-com.hazelcast.function.FunctionEx-[source]
+and {jet-javadoc}/pipeline/SinkBuilder.html#sinkBuilder-java.lang.String-com.hazelcast.function.FunctionEx-[sink]
 builder factories are in their respective classes.
 
 There's a <<source-sink-connectors, dedicated chapter>> that discusses
@@ -85,7 +85,7 @@ individually and independent of other items. These are
 {jet-javadoc}/pipeline/BatchStage.html#map-com.hazelcast.jet.function.FunctionEx-[`map`],
 {jet-javadoc}/pipeline/BatchStage.html#filter-com.hazelcast.jet.function.PredicateEx-[`filter`]
 and
-{jet-javadoc}/pipeline/BatchStage.html#flatMap-com.hazelcast.jet.function.FunctionEx-[`flatMap`].
+{jet-javadoc}/pipeline/BatchStage.html#flatMap-com.hazelcast.function.FunctionEx-[`flatMap`].
 We already saw them in use in the previous examples. `map` transforms
 each item to another item; `filter` discards items that don't match its
 predicate; and `flatMap` transforms each item into zero or more output
@@ -208,7 +208,7 @@ you should use this approach.
 [[hash-join]]
 = Hash-Join
 
-{jet-javadoc}/pipeline/BatchStage.html#hashJoin-com.hazelcast.jet.pipeline.BatchStage-com.hazelcast.jet.pipeline.JoinClause-com.hazelcast.jet.function.BiFunctionEx-[Hash-join]
+{jet-javadoc}/pipeline/BatchStage.html#hashJoin-com.hazelcast.jet.pipeline.BatchStage-com.hazelcast.jet.pipeline.JoinClause-com.hazelcast.function.BiFunctionEx-[Hash-join]
 is a kind of join operation optimized for the use case of data
 enrichment. It is like a many-to-one SQL JOIN that matches a foreign key
 in the stream-to-be-enriched with the primary key in the enriching
@@ -402,7 +402,7 @@ only CPU-bound and doesn't do any IO.
 
 You can also specify a function that extracts a key from your items
 using
-{jet-javadoc}/pipeline/GeneralStage.html#groupingKey-com.hazelcast.jet.function.FunctionEx-[`groupingKey()`].
+{jet-javadoc}/pipeline/GeneralStage.html#groupingKey-com.hazelcast.function.FunctionEx-[`groupingKey()`].
 Even though Jet won't do any lookup or grouping by that key, it will set
 up the job so that all the items with the same key get paired with the
 same context object.
@@ -670,7 +670,7 @@ declares that the stream will use source's native timestamps. This
 typically refers to the timestamps that the external source system sets
 on each event.
 
-- {jet-javadoc}/pipeline/StreamSourceStage.html#withTimestamps-com.hazelcast.jet.function.ToLongFunctionEx-long-[`withTimestamps(timestampFn)`]
+- {jet-javadoc}/pipeline/StreamSourceStage.html#withTimestamps-com.hazelcast.function.ToLongFunctionEx-long-[`withTimestamps(timestampFn)`]
 provides a function to the source that determines the timestamp of
 each event.
 

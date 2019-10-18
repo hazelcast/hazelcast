@@ -60,7 +60,7 @@ public class GetLocalJobMetricsOperation extends AbstractJobOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.GET_LOCAL_JOB_METRICS_OP;
     }
 

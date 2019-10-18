@@ -1,6 +1,5 @@
 hazelcast:
-  group:
-    name: jet
+  cluster-name: jet
   network:
     join:
       multicast:

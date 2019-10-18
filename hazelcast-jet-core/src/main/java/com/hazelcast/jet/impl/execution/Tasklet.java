@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
@@ -33,6 +35,9 @@ public interface Tasklet {
     }
 
     default void close() {
+    }
+
+    default void collectMetrics(MetricTagger tagger, MetricsCollectionContext context) {
     }
 
 }

@@ -23,8 +23,8 @@ import com.hazelcast.jet.core.Watermark;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**

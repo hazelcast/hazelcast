@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.jet.IMapJet;
-import com.hazelcast.jet.function.BiFunctionEx;
-import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.map.IMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 
@@ -68,7 +67,7 @@ public final class ContextFactories {
     }
 
     /**
-     * Returns a factory that provides an {@link IMapJet} as the context. This
+     * Returns a factory that provides an {@link IMap} as the context. This
      * is useful if you are enriching an event stream with the data stored in
      * the Hazelcast Jet cluster. Unlike in a {@code hashJoin} transformation,
      * the data in the map can change while the job is running so you can keep
@@ -89,7 +88,7 @@ public final class ContextFactories {
      * @since 3.0
      */
     @Nonnull
-    public static <K, V> ContextFactory<IMapJet<K, V>> iMapContext(@Nonnull String mapName) {
+    public static <K, V> ContextFactory<IMap<K, V>> iMapContext(@Nonnull String mapName) {
         return ContextFactory
                 .withCreateFn(jet -> jet.<K, V>getMap(mapName))
                 .withLocalSharing();

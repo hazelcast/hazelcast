@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.s3;
 
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.function.BiFunctionEx;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
-import com.hazelcast.nio.IOUtil;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;

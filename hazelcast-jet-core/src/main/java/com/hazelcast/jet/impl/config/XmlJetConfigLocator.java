@@ -18,23 +18,29 @@ package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
 
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES;
+import static com.hazelcast.jet.impl.config.JetDeclarativeConfigUtil.SYSPROP_JET_CONFIG;
+
 /**
  * A support class for the {@link XmlJetConfigBuilder} to locate the
  * xml configuration.
  */
 public final class XmlJetConfigLocator extends AbstractConfigLocator {
 
-    private static final String HAZELCAST_JET_CONFIG_PROPERTY = "hazelcast.jet.config";
     private static final String HAZELCAST_JET_XML = "hazelcast-jet.xml";
     private static final String HAZELCAST_JET_DEFAULT_XML = "hazelcast-jet-default.xml";
 
     public XmlJetConfigLocator() {
-        super(false);
     }
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_JET_CONFIG_PROPERTY);
+        return loadFromSystemProperty(SYSPROP_JET_CONFIG, XML_ACCEPTED_SUFFIXES);
+    }
+
+    @Override
+    protected boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_JET_CONFIG, XML_ACCEPTED_SUFFIXES);
     }
 
     @Override

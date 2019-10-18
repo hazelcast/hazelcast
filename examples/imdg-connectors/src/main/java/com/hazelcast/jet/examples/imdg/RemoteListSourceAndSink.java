@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -84,7 +84,7 @@ public class RemoteListSourceAndSink {
     private static ClientConfig clientConfigForExternalHazelcast() {
         ClientConfig cfg = new ClientConfig();
         cfg.getNetworkConfig().addAddress("localhost:6701");
-        cfg.getGroupConfig().setName("dev").setPassword("dev-pass");
+        cfg.setClientName("dev");
         return cfg;
     }
 }

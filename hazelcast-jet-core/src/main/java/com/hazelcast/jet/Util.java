@@ -18,12 +18,10 @@ package com.hazelcast.jet;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.journal.CacheEventJournalFunctions;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.impl.journal.MapEventJournalFunctions;
 import com.hazelcast.map.journal.EventJournalMapEvent;
@@ -31,7 +29,6 @@ import com.hazelcast.map.journal.EventJournalMapEvent;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Map.Entry;
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.impl.util.ImdgUtil.wrapImdgFunction;
@@ -155,28 +152,5 @@ public final class Util {
         }
         str = str.replaceAll("-", "");
         return Long.parseUnsignedLong(str, 16);
-    }
-
-    /**
-     * Wraps Hazelcast IMDG's {@link ICompletableFuture} into Java's standard
-     * {@link CompletableFuture}.
-     *
-     * @param future the future to wrap
-     * @return a new {@link CompletableFuture} wrapping the given one
-     */
-    public static <T> CompletableFuture<T> toCompletableFuture(ICompletableFuture<T> future) {
-        CompletableFuture<T> f = new CompletableFuture<>();
-        future.andThen(new ExecutionCallback<T>() {
-            @Override
-            public void onResponse(T response) {
-                f.complete(response);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                f.completeExceptionally(t);
-            }
-        });
-        return f;
     }
 }

@@ -118,7 +118,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.EDGE_DEF;
     }
 

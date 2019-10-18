@@ -18,12 +18,13 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.jet.kafka.impl.StreamKafkaP.KafkaPartitionAssigner;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import java.util.HashSet;
-import java.util.List;
-import java.util.stream.IntStream;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.IntStream;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;

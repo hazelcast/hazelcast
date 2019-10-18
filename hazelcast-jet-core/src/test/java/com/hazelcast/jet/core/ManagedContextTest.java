@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.collection.IList;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -55,7 +55,7 @@ public class ManagedContextTest extends JetTestSupport {
         jet.newJob(dag).join();
 
         // Then
-        IListJet<Object> list = jet.getList("sink");
+        IList<Object> list = jet.getList("sink");
         assertEquals(singletonList(INJECTED_VALUE), list.subList(0, list.size()));
     }
 

@@ -36,7 +36,7 @@ public class GetJobSubmissionTimeOperation extends AsyncJobOperation implements 
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.GET_JOB_SUBMISSION_TIME_OP;
     }
 }

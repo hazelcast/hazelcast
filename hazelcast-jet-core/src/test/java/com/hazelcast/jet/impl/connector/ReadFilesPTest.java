@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
@@ -46,7 +46,7 @@ public class ReadFilesPTest extends JetTestSupport {
 
     private JetInstance instance;
     private File directory;
-    private IListJet<Entry<String, String>> list;
+    private IList<Entry<String, String>> list;
 
     @Before
     public void setup() throws Exception {

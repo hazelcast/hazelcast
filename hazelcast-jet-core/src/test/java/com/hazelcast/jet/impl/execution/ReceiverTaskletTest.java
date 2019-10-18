@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,7 @@ public class ReceiverTaskletTest {
     @Before
     public void before() {
         collector = new MockOutboundCollector(2);
-        t = new ReceiverTasklet(collector, 3, 100, mock(LoggingService.class), "");
+        t = new ReceiverTasklet(collector, 3, 100, mock(LoggingService.class), new Address(), 0, "");
         serService = new DefaultSerializationServiceBuilder().build();
     }
 

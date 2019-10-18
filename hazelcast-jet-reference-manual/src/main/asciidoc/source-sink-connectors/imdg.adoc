@@ -163,7 +163,7 @@ code against a map entry, in a data-local manner.
 
 The updating sinks come in three variants:
 
-1. {jet-javadoc}/pipeline/Sinks.html#mapWithMerging-java.lang.String-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.BinaryOperatorEx-[`mapWithMerging`],
+1. {jet-javadoc}/pipeline/Sinks.html#mapWithMerging-java.lang.String-com.hazelcast.function.FunctionEx-com.hazelcast.function.FunctionEx-com.hazelcast.function.BinaryOperatorEx-[`mapWithMerging`],
 where you provide a function that computes the map value from the
 stream item and a merging function that gets called if a value already
 exists in the map. Here's an example that concatenates string values:
@@ -179,7 +179,7 @@ performance by applying the update function in batches, but this
 operation doesn't respect the locks. If you use this method on locked
 entries, it will break the mutual exclusion contract. Use
 `mapWithEntryProcessor` if you need the proper locking behavior.
-2. {jet-javadoc}/pipeline/Sinks.html#mapWithUpdating-java.lang.String-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.BiFunctionEx-[`mapWithUpdating`],
+2. {jet-javadoc}/pipeline/Sinks.html#mapWithUpdating-java.lang.String-com.hazelcast.function.FunctionEx-com.hazelcast.function.BiFunctionEx-[`mapWithUpdating`],
 where you provide a single updating function that combines the roles of
 the two functions in `mapWithMerging`. It will be called on the stream
 item and the existing value, if any. Here's an example that concatenates
@@ -197,7 +197,7 @@ operation doesn't respect the locks. If you use this method on locked
 entries, it will break the mutual exclusion contract. Use
 `mapWithEntryProcessor` if you need the proper locking behavior.
 +
-3. {jet-javadoc}/pipeline/Sinks.html#mapWithEntryProcessor-java.lang.String-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.FunctionEx-[`mapWithEntryProcessor`],
+3. {jet-javadoc}/pipeline/Sinks.html#mapWithEntryProcessor-java.lang.String-com.hazelcast.function.FunctionEx-com.hazelcast.function.FunctionEx-[`mapWithEntryProcessor`],
 where you provide a function that returns a full-blown `EntryProcessor`
 instance that will be submitted to the map. This is the most general
 variant, but can't use batching that the other variants do and thus has

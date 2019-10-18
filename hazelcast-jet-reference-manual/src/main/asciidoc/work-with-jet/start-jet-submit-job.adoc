@@ -64,7 +64,7 @@ instance that can serialize itself.
 
 None of the functional interfaces in the JDK extend `Serializable`, so
 we had to mirror the entire `java.util.function` package in our own
-`com.hazelcast.jet.function` with all the interfaces subtyped and made
+`com.hazelcast.function` with all the interfaces subtyped and made
 `Serializable`. Each subtype has the name of the original with
 `Ex` appended. For example, a `FunctionEx` is just
 like `Function`, but implements `Serializable`. We use these types
@@ -235,7 +235,7 @@ may get a quite confusing exception:
 java.lang.ClassCastException:
 cannot assign instance of java.lang.invoke.SerializedLambda
 to field com.hazelcast.jet.core.ProcessorMetaSupplier$1.val$addressToSupplier
-of type com.hazelcast.jet.function.FunctionEx
+of type com.hazelcast.function.FunctionEx
 in instance of com.hazelcast.jet.core.ProcessorMetaSupplier$1
 ----
 

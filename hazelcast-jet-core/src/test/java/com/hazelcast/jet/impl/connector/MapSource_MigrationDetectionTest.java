@@ -18,18 +18,17 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.util.UuidUtil;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -80,13 +79,12 @@ public class MapSource_MigrationDetectionTest extends JetTestSupport {
         Config remoteMemberConfig;
         if (remote) {
             remoteMemberConfig = new Config();
-            GroupConfig groupConfig = remoteMemberConfig.getGroupConfig();
-            groupConfig.setName(UuidUtil.newUnsecureUuidString());
+            remoteMemberConfig.setClusterName(UuidUtil.newUnsecureUuidString());
             mapInstance = Hazelcast.newHazelcastInstance(remoteMemberConfig);
             remoteInstances.add(mapInstance);
 
             clientConfig = new ClientConfig();
-            clientConfig.getGroupConfig().setName(groupConfig.getName());
+            clientConfig.setClientName(remoteMemberConfig.getClusterName());
         } else {
             mapInstance = jobInstance.getHazelcastInstance();
             clientConfig = null;

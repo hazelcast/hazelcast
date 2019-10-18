@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.examples.files.avro;
 
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.map.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
@@ -56,7 +56,7 @@ public class AvroSource {
             setup();
             jet.newJob(buildPipeline()).join();
 
-            IMapJet<String, User> map = jet.getMap(AvroSink.MAP_NAME);
+            IMap<String, User> map = jet.getMap(AvroSink.MAP_NAME);
             System.out.println("Map Size: " + map.size());
             map.forEach((key, value) -> System.out.println(key + " - " + value));
         } finally {

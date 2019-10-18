@@ -21,8 +21,8 @@ import com.hazelcast.jet.JetException;
 import java.util.Arrays;
 
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * A stream's <i>skew</i> is defined on a set of its substreams that are

@@ -22,9 +22,9 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.hadoop.HdfsProcessors;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.function.FunctionEx;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContextImpl;
 import org.apache.hadoop.mapred.JobID;
@@ -167,7 +167,7 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         public List<Processor> get(int count) {
             return range(0, count).mapToObj(i -> {
                 try {
-                    String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
+                    String uuid = context.jetInstance().getCluster().getLocalMember().getUuid().toString();
                     TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobContext.getJobID().getId(),
                             JOB_SETUP, i, 0);
 

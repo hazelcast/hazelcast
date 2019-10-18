@@ -16,9 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.jet.IListJet;
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -29,15 +27,16 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.function.BiFunctionEx;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.journal.EventJournalMapEvent;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,9 +63,9 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextAsyncP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
-import static com.hazelcast.jet.function.FunctionEx.identity;
-import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
+import static com.hazelcast.function.FunctionEx.identity;
+import static com.hazelcast.function.PredicateEx.alwaysTrue;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -75,7 +74,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClusterSupport {
 
     private static final int NUM_ITEMS = 100;
@@ -83,9 +82,9 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
     @Parameter
     public boolean ordered;
 
-    private IMapJet<Integer, Integer> journaledMap;
+    private IMap<Integer, Integer> journaledMap;
     private ContextFactory<ExecutorService> contextFactory;
-    private IListJet<Object> sinkList;
+    private IList<Object> sinkList;
     private JobConfig jobConfig;
 
     @Parameters(name = "ordered={0}")
@@ -96,9 +95,11 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
     @BeforeClass
     public static void beforeClass() {
         JetConfig config = new JetConfig();
-        config.getHazelcastConfig().addEventJournalConfig(new EventJournalConfig()
-                .setMapName("journaledMap*")
-                .setCapacity(100_000));
+        config.getHazelcastConfig()
+              .getMapConfig("journaledMap*")
+              .getEventJournalConfig()
+              .setEnabled(true)
+              .setCapacity(100_000);
 
         initialize(1, config);
     }
@@ -147,7 +148,7 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
         Vertex map = dag.newVertex("map",
                 flatMapUsingContextAsyncP(contextFactory, identity(), transformNotPartitionedFn(
                         item -> traverseItems(item + "-1", item + "-2", item + "-3", item + "-4", item + "-5"))))
-                .localParallelism(2);
+                        .localParallelism(2);
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP(sinkList.getName()));
 
         // Use a shorter queue to not block the barrier from the source for too long due to
@@ -295,10 +296,10 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
 
     private void assertResult(Function<Integer, Stream<? extends String>> transformFn, int numItems) {
         String expected = IntStream.range(0, numItems)
-                                         .boxed()
-                                         .flatMap(transformFn)
-                                         .sorted()
-                                         .collect(joining("\n"));
+                                   .boxed()
+                                   .flatMap(transformFn)
+                                   .sorted()
+                                   .collect(joining("\n"));
         assertTrueEventually(() -> assertEquals(expected, sinkList.stream().map(Object::toString).sorted()
                                                                   .collect(joining("\n"))));
     }

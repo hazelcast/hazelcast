@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.examples.kafka;
 
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.map.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -97,7 +97,7 @@ public class KafkaSink {
             JetInstance instance = Jet.newJetInstance(cfg);
             Jet.newJetInstance(cfg);
 
-            IMapJet<String, Integer> sourceMap = instance.getMap(SOURCE_NAME);
+            IMap<String, Integer> sourceMap = instance.getMap(SOURCE_NAME);
             fillIMap(sourceMap);
 
 
@@ -156,7 +156,7 @@ public class KafkaSink {
         kafkaServer = TestUtils.createServer(config, mock);
     }
 
-    private void fillIMap(IMapJet<String, Integer> sourceMap) {
+    private void fillIMap(IMap<String, Integer> sourceMap) {
         System.out.println("Filling IMap");
         for (int i = 1; i <= MESSAGE_COUNT; i++) {
             sourceMap.put("t1-" + i, i);

@@ -18,16 +18,15 @@ package com.hazelcast.jet.examples.eventjournal;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.nio.Address;
+import com.hazelcast.map.IMap;
+import com.hazelcast.cluster.Address;
 
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +54,7 @@ public class RemoteMapJournalSource {
             ClientConfig clientConfig = new ClientConfig();
 
             clientConfig.getNetworkConfig().addAddress(getAddress(remoteHz));
-            clientConfig.setGroupConfig(hzConfig.getGroupConfig());
+            clientConfig.setClientName(hzConfig.getClusterName());
 
             Pipeline p = Pipeline.create();
             p.drawFrom(Sources.<Integer, Integer>remoteMapJournal(
@@ -101,10 +100,11 @@ public class RemoteMapJournalSource {
         Config config = new Config();
         // Add an event journal config for map which has custom capacity of 1000 (default 10_000)
         // and time to live seconds as 10 seconds (default 0 which means infinite)
-        config.addEventJournalConfig(new EventJournalConfig().setEnabled(true)
-                                                             .setMapName(MAP_NAME)
-                                                             .setCapacity(1000)
-                                                             .setTimeToLiveSeconds(10));
+        config.getMapConfig(MAP_NAME)
+              .getEventJournalConfig()
+              .setEnabled(true)
+              .setCapacity(1000)
+              .setTimeToLiveSeconds(10);
         return config;
     }
 

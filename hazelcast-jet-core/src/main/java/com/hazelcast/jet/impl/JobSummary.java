@@ -124,7 +124,7 @@ public class JobSummary implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.JOB_SUMMARY;
     }
 

@@ -18,24 +18,30 @@ package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
 
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES;
+
 /**
  * A support class for the {@link XmlJetConfigBuilder} to locate the
  * xml configuration.
  */
 public final class XmlJetMemberConfigLocator extends AbstractConfigLocator {
 
-    private static final String HAZELCAST_MEMBER_CONFIG_PROPERTY = "hazelcast.config";
     private static final String HAZELCAST_MEMBER_XML = "hazelcast.xml";
     private static final String HAZELCAST_MEMBER_DEFAULT_XML = "hazelcast-jet-member-default.xml";
     private static final String HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_XML = "hazelcast-jet-enterprise-member-default.xml";
 
     public XmlJetMemberConfigLocator() {
-        super(false);
     }
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY);
+        return loadFromSystemProperty(SYSPROP_MEMBER_CONFIG, XML_ACCEPTED_SUFFIXES);
+    }
+
+    @Override
+    protected boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_MEMBER_CONFIG, XML_ACCEPTED_SUFFIXES);
     }
 
     @Override

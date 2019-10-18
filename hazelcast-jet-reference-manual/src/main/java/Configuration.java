@@ -31,7 +31,7 @@ public class Configuration {
     static void s2() {
         //tag::s2[]
         JetConfig jetConfig = new JetConfig();
-        jetConfig.getHazelcastConfig().getGroupConfig().setName("test");
+        jetConfig.getHazelcastConfig().setClusterName("test");
         JetInstance jet = Jet.newJetInstance(jetConfig);
         //end::s2[]
     }
@@ -39,7 +39,7 @@ public class Configuration {
     static void s3() {
         //tag::s3[]
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("test");
+        clientConfig.setClientName("test");
         JetInstance jet = Jet.newJetClient(clientConfig);
         //end::s3[]
     }

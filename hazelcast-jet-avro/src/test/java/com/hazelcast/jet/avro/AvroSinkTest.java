@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.avro;
 
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.avro.model.SpecificUser;
 import com.hazelcast.jet.avro.model.User;
@@ -47,7 +47,7 @@ public class AvroSinkTest extends JetTestSupport {
 
     private JetInstance jet;
     private File directory;
-    private IListJet<SpecificUser> list;
+    private IList<SpecificUser> list;
 
     @Before
     public void setup() throws Exception {

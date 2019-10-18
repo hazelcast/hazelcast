@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -26,7 +25,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.impl.util.Util.RunnableExc;
+import com.hazelcast.test.AssertTask;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -69,9 +68,9 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
     @BeforeClass
     public static void beforeClass() {
         JetConfig config = new JetConfig();
-        config.getHazelcastConfig().addEventJournalConfig(new EventJournalConfig()
-                .setMapName(JOURNALED_MAP_NAME)
-                .setEnabled(true));
+        config.getHazelcastConfig().
+            getMapConfig(JOURNALED_MAP_NAME)
+              .getEventJournalConfig().setEnabled(true);
         // use 1 partition for the map journal to have an item in each ption
         config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), "1");
         instance = factory.newMember(config);
@@ -114,7 +113,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
                 );
         Job job = instance.newJob(p);
 
-        RunnableExc assertTask = () -> assertEquals(expectedWms, WatermarkCollector.watermarks);
+        AssertTask assertTask = () -> assertEquals(expectedWms, WatermarkCollector.watermarks);
         assertTrueEventually(assertTask, 24);
         assertTrueAllTheTime(assertTask, 1);
         assertTrueEventually(() -> assertEquals(RUNNING, job.getStatus()));

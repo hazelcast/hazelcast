@@ -102,12 +102,6 @@ samples using the Core API.
   - hash-join an unbounded stream with two batch streams in one step
   - print the results on the console
 
-## Configuration
-
-- [XML Configuration](configuration/configure-xml)
-- [YAML Configuration](configuration/configure-yaml)
-- [Logging Configuration](configuration/configure-logging)
-
 ## Job Management
 
 - [Suspend/Resume a Job](job-management/src/main/java/com/hazelcast/jet/examples/jobmanagement/JobSuspendResume.java)

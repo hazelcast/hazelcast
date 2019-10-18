@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-jet xsi:schemaLocation="http://www.hazelcast.com/schema/jet-config hazelcast-jet-config-3.3.xsd"
+<hazelcast-jet xsi:schemaLocation="http://www.hazelcast.com/schema/jet-config hazelcast-jet-config-4.0.xsd"
                xmlns="http://www.hazelcast.com/schema/jet-config"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <instance>
@@ -32,9 +32,4 @@
        <property name="property2">value2</property>
     </properties>
 
-    <metrics enabled="${metrics.enabled}" jmxEnabled="${metrics.jmxEnabled}">
-        <retention-seconds>${metrics.retention}</retention-seconds>
-        <collection-interval-seconds>${metrics.collection-interval}</collection-interval-seconds>
-        <metrics-for-data-structures>${metrics.enabled-for-data-structures}</metrics-for-data-structures>
-    </metrics>
 </hazelcast-jet>

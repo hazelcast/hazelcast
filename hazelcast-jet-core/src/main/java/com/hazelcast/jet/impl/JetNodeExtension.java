@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.instance.DefaultNodeExtension;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
 
 import java.util.Map;

@@ -19,9 +19,9 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.function.BiFunctionEx;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;

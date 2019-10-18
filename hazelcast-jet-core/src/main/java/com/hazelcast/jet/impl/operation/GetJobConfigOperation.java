@@ -44,7 +44,7 @@ public class GetJobConfigOperation extends AbstractJobOperation implements Allow
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.GET_JOB_CONFIG_OP;
     }
 

@@ -27,6 +27,9 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.jet.impl.config.JetDeclarativeConfigUtil.SYSPROP_JET_CONFIG;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
@@ -34,7 +37,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Abstract test class defining the common test cases for loading XML and YAML
@@ -48,19 +50,15 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractJetConfigWithSystemPropertyTest {
 
-    protected static final String HAZELCAST_JET_CONFIG_PROPERTY = "hazelcast.jet.config";
-    protected static final String HAZELCAST_MEMBER_CONFIG_PROPERTY = "hazelcast.config";
-    protected static final String HAZELCAST_CLIENT_CONFIG_PROPERTY = "hazelcast.client.config";
     protected static final String TEST_GROUP_NAME = "imdg";
-    protected static final String PASSWORD = "PASSWORD";
     protected static final String INSTANCE_NAME = "my-instance";
 
     @Before
     @After
     public void beforeAndAfter() {
-        System.clearProperty(HAZELCAST_JET_CONFIG_PROPERTY);
-        System.clearProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY);
-        System.clearProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY);
+        System.clearProperty(SYSPROP_JET_CONFIG);
+        System.clearProperty(SYSPROP_CLIENT_CONFIG);
+        System.clearProperty(SYSPROP_MEMBER_CONFIG);
     }
 
     @Test(expected = HazelcastException.class)
@@ -87,36 +85,28 @@ public abstract class AbstractJetConfigWithSystemPropertyTest {
 
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));
-
-        MetricsConfig metricsCfg = jetConfig.getMetricsConfig();
-        assertFalse("isEnabled", metricsCfg.isEnabled());
-        assertFalse("isJmxEnabled", metricsCfg.isJmxEnabled());
-        assertEquals("metricsRetentionSeconds", 124, metricsCfg.getRetentionSeconds());
-        assertEquals("metricsCollectionInterval", 123, metricsCfg.getCollectionIntervalSeconds());
-        assertTrue("metricsForDataStructures", metricsCfg.isMetricsForDataStructuresEnabled());
     }
 
     protected static void assertDefaultMemberConfig(Config config) {
         assertThat(config, not(nullValue()));
-        assertThat(config.getGroupConfig().getName(), not(equalTo(TEST_GROUP_NAME)));
+        assertThat(config.getClusterName(), not(equalTo(TEST_GROUP_NAME)));
     }
 
     protected static void assertMemberConfig(Config config) {
         assertThat(config, not(nullValue()));
-        assertThat(config.getGroupConfig().getName(), equalTo(TEST_GROUP_NAME));
+        assertThat(config.getClusterName(), equalTo(TEST_GROUP_NAME));
     }
 
 
     protected static void assertClientConfig(ClientConfig config) {
         assertThat(config, not(nullValue()));
-        assertThat(config.getGroupConfig().getName(), equalTo(TEST_GROUP_NAME));
-        assertThat(config.getGroupConfig().getPassword(), equalTo(PASSWORD));
+        assertThat(config.getClientName(), equalTo(TEST_GROUP_NAME));
         assertThat(config.getNetworkConfig().getAddresses(), hasItem("127.0.59.1:5701"));
     }
 
     protected static void assertDefaultClientConfig(ClientConfig config) {
         assertThat(config, not(nullValue()));
-        assertThat(config.getGroupConfig().getName(), equalTo("jet"));
+        assertThat(config.getClientName(), equalTo("jet"));
     }
 
 }

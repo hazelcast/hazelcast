@@ -17,9 +17,9 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.jet.impl.config.YamlJetConfigBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -39,17 +38,6 @@ public class YamlJetConfigBuilderTest extends AbstractJetConfigBuilderTest {
         new YamlJetConfigBuilder((InputStream) null);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testInvalidRootElement() {
-        //Given
-        String yaml = ""
-                + "hazelcast-jet1:\n"
-                + "  test:\n"
-                + "    name: dev\n";
-
-        //When
-        buildConfig(yaml);
-    }
 
     @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastJetTagAppearsTwice() {
@@ -60,30 +48,6 @@ public class YamlJetConfigBuilderTest extends AbstractJetConfigBuilderTest {
 
         //When
         buildConfig(yaml);
-    }
-
-    @Test
-    public void readMetricsConfig() {
-        //Given
-        String yaml = ""
-                + "hazelcast-jet:\n"
-                + "  metrics:\n"
-                + "    enabled: false\n"
-                + "    jmx-enabled: true\n"
-                + "    retention-seconds: 124\n"
-                + "    metrics-for-data-structures: true\n"
-                + "    collection-interval-seconds: 123\n";
-
-        //When
-        JetConfig jetConfig = buildConfig(yaml);
-
-        //Then
-        MetricsConfig metricsCfg = jetConfig.getMetricsConfig();
-        assertFalse("isEnabled", metricsCfg.isEnabled());
-        assertTrue("isJmxEnabled", metricsCfg.isJmxEnabled());
-        assertEquals("metricsRetentionSeconds", 124, metricsCfg.getRetentionSeconds());
-        assertEquals("metricsCollectionInterval", 123, metricsCfg.getCollectionIntervalSeconds());
-        assertTrue("metricsForDataStructures", metricsCfg.isMetricsForDataStructuresEnabled());
     }
 
     @Test
@@ -151,6 +115,32 @@ public class YamlJetConfigBuilderTest extends AbstractJetConfigBuilderTest {
     }
 
     @Test
+    public void testWithoutRootHazelcastJetNode() {
+        //Given
+        String yaml = ""
+                + "properties:\n"
+                + "  property1: value1\n"
+                + "  property2: value2\n"
+                + "edge-defaults:\n"
+                + "  queue-size: 999\n"
+                + "  packet-size-limit: 997\n"
+                + "  receive-window-multiplier: 996\n";
+
+        //When
+        JetConfig jetConfig = buildConfig(yaml);
+
+        //Then
+        Properties properties = jetConfig.getProperties();
+        assertEquals("value1", properties.getProperty("property1"));
+        assertEquals("value2", properties.getProperty("property2"));
+        EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
+        assertEquals("queueSize", 999, edgeConfig.getQueueSize());
+        assertEquals("packetSizeLimit", 997, edgeConfig.getPacketSizeLimit());
+        assertEquals("receiveWindowMultiplier", 996, edgeConfig.getReceiveWindowMultiplier());
+
+    }
+
+        @Test
     public void testNullInMapThrows() {
         //Given
         String yaml = ""

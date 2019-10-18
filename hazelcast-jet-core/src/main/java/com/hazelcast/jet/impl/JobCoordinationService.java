@@ -17,16 +17,16 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -43,9 +43,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -59,6 +58,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -73,6 +73,7 @@ import java.util.function.Function;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JetProperties.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
@@ -86,7 +87,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
-import static com.hazelcast.util.executor.ExecutorType.CACHED;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -116,14 +116,14 @@ public class JobCoordinationService {
     private final ILogger logger;
     private final JobRepository jobRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, CompletableFuture<Void>> membersShuttingDown = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, CompletableFuture<Void>> membersShuttingDown = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
      *
      * A collection of UUIDs of members which left the cluster and for which we
      * didn't receive {@link NotifyMemberShutdownOperation}.
      */
-    private final Map<String, Long> removedMembers = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> removedMembers = new ConcurrentHashMap<>();
     private final Object lock = new Object();
     private volatile boolean isClusterEnteringPassiveState;
     private volatile boolean jobsScanned;
@@ -138,7 +138,7 @@ public class JobCoordinationService {
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
-        InternalExecutionService executionService = nodeEngine.getExecutionService();
+        ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.register(COORDINATOR_EXECUTOR_NAME, COORDINATOR_THREADS_POOL_SIZE, Integer.MAX_VALUE, CACHED);
     }
 
@@ -147,7 +147,7 @@ public class JobCoordinationService {
     }
 
     void startScanningForJobs() {
-        InternalExecutionService executionService = nodeEngine.getExecutionService();
+        ExecutionService executionService = nodeEngine.getExecutionService();
         HazelcastProperties properties = new HazelcastProperties(config.getProperties());
         long jobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
         executionService.scheduleWithRepetition(COORDINATOR_EXECUTOR_NAME, this::scanJobs,
@@ -462,7 +462,7 @@ public class JobCoordinationService {
      * which calls it can be retried.
      */
     @Nonnull
-    public CompletableFuture<Void> addShuttingDownMember(String uuid) {
+    public CompletableFuture<Void> addShuttingDownMember(UUID uuid) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         CompletableFuture<Void> oldFuture = membersShuttingDown.putIfAbsent(uuid, future);
         if (oldFuture != null) {
@@ -653,7 +653,7 @@ public class JobCoordinationService {
         scheduleScaleUp(config.getInstanceConfig().getScaleUpDelayMillis());
     }
 
-    void onMemberRemoved(String uuid) {
+    void onMemberRemoved(UUID uuid) {
         if (membersShuttingDown.remove(uuid) != null) {
             logFine(logger, "Removed a shutting-down member: %s, now shuttingDownMembers=%s",
                     uuid, membersShuttingDown.keySet());
@@ -682,8 +682,8 @@ public class JobCoordinationService {
                     masterContext.jobConfig().isStoreMetricsAfterJobCompletion()
                             ? masterContext.jobContext().jobMetrics()
                             : null;
-            String coordinator = nodeEngine.getNode().getThisUuid();
-            jobRepository.completeJob(jobId, jobMetrics, coordinator, completionTime, error);
+            UUID coordinator = nodeEngine.getNode().getThisUuid();
+            jobRepository.completeJob(jobId, jobMetrics, coordinator.toString(), completionTime, error);
             if (masterContexts.remove(masterContext.jobId(), masterContext)) {
                 logger.fine(masterContext.jobIdString() + " is completed");
             } else {
@@ -714,7 +714,7 @@ public class JobCoordinationService {
 
     void scheduleSnapshot(MasterContext mc, long executionId) {
         long snapshotInterval = mc.jobConfig().getSnapshotIntervalMillis();
-        InternalExecutionService executionService = nodeEngine.getExecutionService();
+        ExecutionService executionService = nodeEngine.getExecutionService();
         if (logger.isFineEnabled()) {
             logger.fine(mc.jobIdString() + " snapshot is scheduled in " + snapshotInterval + "ms");
         }
@@ -992,7 +992,7 @@ public class JobCoordinationService {
                 IS_JOB_COORDINATOR_THREAD.set(false);
             }
         });
-        return Util.toCompletableFuture(nodeEngine.getExecutionService().asCompletableFuture(future));
+        return nodeEngine.getExecutionService().asCompletableFuture(future);
     }
 
     void assertOnCoordinatorThread() {

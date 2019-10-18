@@ -99,7 +99,7 @@ writer and schema suppliers. The sink always overwrites the existing
 files, does not append.
 
 Here is an example with a
-{jet-javadoc}/avro/AvroSinks.html#files-java.lang.String-com.hazelcast.jet.function.SupplierEx-[generic datum writer]:
+{jet-javadoc}/avro/AvroSinks.html#files-java.lang.String-com.hazelcast.function.SupplierEx-[generic datum writer]:
 
 [source]
 ----

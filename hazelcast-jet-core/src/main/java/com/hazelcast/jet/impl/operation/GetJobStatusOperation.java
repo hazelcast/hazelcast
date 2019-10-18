@@ -37,7 +37,7 @@ public class GetJobStatusOperation extends AsyncJobOperation implements AllowedD
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.GET_JOB_STATUS_OP;
     }
 }

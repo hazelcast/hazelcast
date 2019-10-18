@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.config.MetricsConfig;
+import com.hazelcast.config.MetricsConfig;
 import org.w3c.dom.Node;
 
 import java.util.Optional;
@@ -144,7 +144,7 @@ public class JetDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void parseMetrics(Node metricsNode, JetConfig config) {
-        MetricsConfig metricsConfig = config.getMetricsConfig();
+        MetricsConfig metricsConfig = config.getHazelcastConfig().getMetricsConfig();
         getBooleanAttribute(metricsNode, "enabled").ifPresent(metricsConfig::setEnabled);
         getBooleanAttribute(metricsNode, "jmxEnabled").ifPresent(metricsConfig::setJmxEnabled);
         handleMetricsNode(metricsNode, metricsConfig);

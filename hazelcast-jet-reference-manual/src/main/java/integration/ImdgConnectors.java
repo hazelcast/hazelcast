@@ -16,27 +16,26 @@
 
 package integration;
 
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.IList;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.examples.enrichment.datamodel.Person;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.journal.EventJournalMapEvent;
-import com.hazelcast.jet.examples.enrichment.datamodel.Person;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.function.FunctionEx.identity;
-import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
+import static com.hazelcast.function.FunctionEx.identity;
+import static com.hazelcast.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 
 public class ImdgConnectors {
@@ -93,7 +92,7 @@ public class ImdgConnectors {
 
     static
     //tag::s6[]
-    class IncrementEntryProcessor implements EntryProcessor<String, Integer> {
+    class IncrementEntryProcessor implements EntryProcessor<String, Integer, Integer> {
 
         private int incrementBy;
 
@@ -102,21 +101,17 @@ public class ImdgConnectors {
         }
 
         @Override
-        public Object process(Entry<String, Integer> entry) {
+        public Integer process(Entry<String, Integer> entry) {
             return entry.setValue(entry.getValue() + incrementBy);
         }
 
-        @Override
-        public EntryBackupProcessor<String, Integer> getBackupProcessor() {
-            return null;
-        }
     }
     //end::s6[]
 
     static void s7() {
         //tag::s7[]
         ClientConfig cfg = new ClientConfig();
-        cfg.getGroupConfig().setName("myGroup");
+        cfg.setClientName("myGroup");
         cfg.getNetworkConfig().addAddress("node1.mydomain.com", "node2.mydomain.com");
 
         Pipeline p = Pipeline.create();
@@ -144,7 +139,8 @@ public class ImdgConnectors {
         //tag::s9[]
         JetConfig cfg = new JetConfig();
         cfg.getHazelcastConfig()
-           .getMapEventJournalConfig("inputMap")
+           .getMapConfig("inputMap")
+           .getEventJournalConfig()
            .setEnabled(true)
            .setCapacity(1000)         // how many events to keep before evicting
            .setTimeToLiveSeconds(10); // evict events older than this
@@ -153,7 +149,8 @@ public class ImdgConnectors {
 
         //tag::s10[]
         cfg.getHazelcastConfig()
-           .getCacheEventJournalConfig("inputCache")
+           .getCacheConfig("inputCache")
+           .getEventJournalConfig()
            .setEnabled(true)
            .setCapacity(1000)
            .setTimeToLiveSeconds(10);
@@ -218,8 +215,7 @@ public class ImdgConnectors {
     static void s15() {
         //tag::s15[]
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig()
-                    .setName("myGroup");
+        clientConfig.setClientName("myGroup");
         clientConfig.getNetworkConfig()
                     .addAddress("node1.mydomain.com", "node2.mydomain.com");
 

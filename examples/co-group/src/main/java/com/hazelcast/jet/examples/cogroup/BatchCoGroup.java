@@ -16,22 +16,22 @@
 
 package com.hazelcast.jet.examples.cogroup;
 
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.examples.cogroup.datamodel.AddToCart;
+import com.hazelcast.jet.examples.cogroup.datamodel.PageVisit;
+import com.hazelcast.jet.examples.cogroup.datamodel.Payment;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.BatchStageWithKey;
 import com.hazelcast.jet.pipeline.GroupAggregateBuilder;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.jet.examples.cogroup.datamodel.AddToCart;
-import com.hazelcast.jet.examples.cogroup.datamodel.PageVisit;
-import com.hazelcast.jet.examples.cogroup.datamodel.Payment;
+import com.hazelcast.map.IMap;
 
 import java.util.Collection;
 import java.util.HashMap;

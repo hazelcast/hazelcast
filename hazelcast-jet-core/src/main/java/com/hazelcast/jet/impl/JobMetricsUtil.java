@@ -16,14 +16,15 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.metrics.MetricsUtil;
+import com.hazelcast.internal.metrics.managementcenter.Metric;
+import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
+import com.hazelcast.internal.metrics.managementcenter.MetricsCompressor;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.core.metrics.Measurement;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.metrics.Metric;
-import com.hazelcast.jet.impl.metrics.MetricsCompressor;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 
 import javax.annotation.Nonnull;
@@ -71,17 +72,18 @@ public final class JobMetricsUtil {
     public static String getMemberPrefix(@Nonnull Member member) {
         Objects.requireNonNull(member, "member");
 
-        String uuid = member.getUuid();
+        String uuid = member.getUuid().toString();
         String address = member.getAddress().toString();
         return MetricTags.MEMBER + "=" + MetricsUtil.escapeMetricNamePart(uuid) + "," +
                 MetricTags.ADDRESS + "=" + MetricsUtil.escapeMetricNamePart(address) + ",";
     }
 
     static JobMetrics toJobMetrics(List<RawJobMetrics> rawJobMetrics) {
-        return JobMetrics.of(
-                rawJobMetrics.stream()
-                         .filter(r -> r.getBlob() != null)
-                         .flatMap(r -> metricStream(r).map(metric -> toMeasurement(r.getTimestamp(), metric)))
+        MetricKeyValueConsumer consumer = new MetricKeyValueConsumer();
+        return JobMetrics.of(rawJobMetrics.stream()
+                                          .filter(r -> r.getBlob() != null)
+                                          .flatMap(r -> metricStream(r).map(metric ->
+                                                  toMeasurement(r.getTimestamp(), metric, consumer)))
         );
     }
 
@@ -94,11 +96,31 @@ public final class JobMetricsUtil {
         );
     }
 
-    private static Measurement toMeasurement(long timestamp, Metric metric) {
-        String descriptor = metric.key();
+    private static Measurement toMeasurement(long timestamp, Metric metric, MetricKeyValueConsumer kvConsumer) {
+        metric.provide(kvConsumer);
+        String descriptor = kvConsumer.key;
         Map<String, String> tags = MetricsUtil.parseMetricName(descriptor).stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return Measurement.of(metric.value(), timestamp, tags);
+                                              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return Measurement.of(kvConsumer.value, timestamp, tags);
     }
+
+    private static class MetricKeyValueConsumer implements MetricConsumer {
+
+        String key;
+        long value;
+
+        @Override
+        public void consumeLong(String key, long value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        @Override
+        public void consumeDouble(String key, double value) {
+            this.key = key;
+            this.value = (long) value;
+        }
+    }
+
 
 }

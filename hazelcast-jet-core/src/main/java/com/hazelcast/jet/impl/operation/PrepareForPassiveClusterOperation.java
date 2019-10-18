@@ -35,7 +35,7 @@ public class PrepareForPassiveClusterOperation extends AsyncOperation {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.PREPARE_FOR_PASSIVE_CLUSTER_OP;
     }
 }

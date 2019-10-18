@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.pipeline.test;
 
-import com.hazelcast.jet.function.BiConsumerEx;
-import com.hazelcast.jet.function.ConsumerEx;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.impl.pipeline.test.AssertionP;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.spi.annotation.Beta;
-import com.hazelcast.util.Preconditions;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.function.BiConsumerEx;
+import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 

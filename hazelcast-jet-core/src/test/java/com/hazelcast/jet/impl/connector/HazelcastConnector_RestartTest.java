@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.core.IList;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -29,11 +29,10 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.spi.CoreService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.PartitionReplicationEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,8 +60,9 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
     public void setup() {
         JetConfig config = new JetConfig();
         Config hazelcastConfig = config.getHazelcastConfig();
-        hazelcastConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        hazelcastConfig.addEventJournalConfig(new EventJournalConfig().setCacheName("stream*").setMapName("stream*"));
+        CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
+        cacheConfig.getEventJournalConfig().setEnabled(true);
+        hazelcastConfig.addCacheConfig(cacheConfig);
         config.getHazelcastConfig().getServicesConfig().addServiceConfig(
                 new ServiceConfig()
                         .setName("MigrationBlockingService")

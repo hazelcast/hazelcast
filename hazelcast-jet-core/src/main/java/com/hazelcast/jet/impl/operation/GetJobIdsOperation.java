@@ -33,7 +33,7 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.GET_JOB_IDS;
     }
 }

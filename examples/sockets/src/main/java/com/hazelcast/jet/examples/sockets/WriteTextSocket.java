@@ -18,11 +18,11 @@ package com.hazelcast.jet.examples.sockets;
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.function.ConsumerEx;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.map.IMap;
+import com.hazelcast.function.ConsumerEx;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -52,7 +52,7 @@ public class WriteTextSocket {
 
         try {
             System.out.println("Populating map...");
-            IMapJet<Integer, Integer> map = jet.getMap(SOURCE_NAME);
+            IMap<Integer, Integer> map = jet.getMap(SOURCE_NAME);
             IntStream.range(0, SOURCE_ITEM_COUNT).parallel().forEach(i -> map.put(i, i));
 
             Pipeline p = Pipeline.create();

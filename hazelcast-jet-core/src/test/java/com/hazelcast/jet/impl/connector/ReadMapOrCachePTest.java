@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.function.FunctionEx;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -95,7 +95,8 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
     private static <I, O> Projection<I, O> toProjection(FunctionEx<I, O> projectionFn) {
         return new Projection<I, O>() {
-            @Override public O transform(I input) {
+            @Override
+            public O transform(I input) {
                 return projectionFn.apply(input);
             }
         };

@@ -148,7 +148,7 @@ public class JobResult implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.JOB_RESULT;
     }
 

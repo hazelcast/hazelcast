@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
@@ -32,6 +31,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.WindowDefinition;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.GroupProperty;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,7 +62,6 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
     public void setUp() {
         JetConfig config = new JetConfig();
         EventJournalConfig journalConfig = new EventJournalConfig()
-                .setMapName("*")
                 .setCapacity(1_000_000)
                 .setEnabled(true);
 
@@ -70,7 +69,7 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
         // to work correctly
         config.getHazelcastConfig().setProperty(
                 GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
-        config.getHazelcastConfig().addEventJournalConfig(journalConfig);
+        config.getHazelcastConfig().getMapConfig("*").setEventJournalConfig(journalConfig);
         instance = createJetMember(config);
         sourceMap = instance.getMap("test");
     }

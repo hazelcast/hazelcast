@@ -19,7 +19,7 @@ package com.hazelcast.jet.server;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.config.YamlClientConfigBuilder;
-import com.hazelcast.core.Cluster;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetException;
@@ -110,14 +110,14 @@ public class JetCommandLine implements Runnable {
     )
     private List<String> addresses;
 
-    @Option(names = {"-g", "--group"},
-            description = "The group name to use when connecting to the cluster " +
+    @Option(names = {"-n", "--cluster-name"},
+            description = "The cluster name to use when connecting to the cluster " +
                     "specified by the <addresses> parameter. ",
             defaultValue = "jet",
             showDefaultValue = Visibility.ALWAYS,
             order = 2
     )
-    private String groupName;
+    private String clusterName;
 
     @Mixin(name = "verbosity")
     private Verbosity verbosity;
@@ -437,7 +437,7 @@ public class JetCommandLine implements Runnable {
         if (addresses != null) {
             ClientConfig config = new ClientConfig();
             config.getNetworkConfig().addAddress(addresses.toArray(new String[0]));
-            config.getGroupConfig().setName(groupName);
+            config.setClientName(clusterName);
             return config;
         }
         return ConfigProvider.locateAndGetClientConfig();
@@ -453,7 +453,7 @@ public class JetCommandLine implements Runnable {
     }
 
     private void configureLogging() throws IOException {
-        StartServer.configureLogging();
+        JetMemberStarter.configureLogging();
         Level logLevel = Level.WARNING;
         if (verbosity.isVerbose) {
             println("Verbose mode is on, setting logging level to INFO");

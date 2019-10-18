@@ -25,8 +25,8 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.function.SupplierEx;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,7 +61,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
         IncrementingProcessor.completeCount.set(0);
 
         JetConfig config = new JetConfig();
-        config.getMetricsConfig().setCollectionIntervalSeconds(1);
+        config.getHazelcastConfig().getMetricsConfig().setCollectionIntervalSeconds(1);
         instance = createJetMember(config);
     }
 

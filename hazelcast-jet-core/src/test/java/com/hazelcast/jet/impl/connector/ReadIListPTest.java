@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -51,7 +51,7 @@ public class ReadIListPTest extends JetTestSupport {
     }
 
     private void testReader(int listLength) {
-        IListJet<Object> list = instance.getList(randomName());
+        IList<Object> list = instance.getList(randomName());
         List<Object> data = IntStream.range(0, listLength).boxed().collect(toList());
         list.addAll(data);
         TestSupport

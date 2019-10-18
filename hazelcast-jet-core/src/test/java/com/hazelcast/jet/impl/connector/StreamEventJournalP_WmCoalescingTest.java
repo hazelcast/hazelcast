@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -24,10 +24,10 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.function.SupplierEx;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,16 +65,18 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
     public void setUp() {
         JetConfig config = new JetConfig();
 
-        EventJournalConfig journalConfig = new EventJournalConfig()
-                .setMapName("*")
-                .setCapacity(JOURNAL_CAPACITY)
-                .setEnabled(true);
+        String mapName = randomMapName();
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(mapName);
+        mapConfig.getEventJournalConfig()
+                 .setCapacity(JOURNAL_CAPACITY)
+                 .setEnabled(true);
 
         config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), "2");
-        config.getHazelcastConfig().addEventJournalConfig(journalConfig);
+        config.getHazelcastConfig().addMapConfig(mapConfig);
         instance = this.createJetMember(config);
 
-        map = (MapProxyImpl<Integer, Integer>) instance.getHazelcastInstance().<Integer, Integer>getMap("test");
+        map = (MapProxyImpl<Integer, Integer>) instance.getHazelcastInstance().<Integer, Integer>getMap(mapName);
 
         partitionKeys = new int[2];
         for (int i = 1; IntStream.of(partitionKeys).anyMatch(val -> val == 0); i++) {
@@ -142,7 +144,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
         Thread updatingThread = new Thread(() -> uncheckRun(() -> {
             // We will start after a delay so that the source will first become idle and then recover.
             latch.await();
-            for (;;) {
+            for (; ; ) {
                 map.put(partitionKeys[0], 12);
                 Thread.sleep(100);
             }

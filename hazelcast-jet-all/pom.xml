@@ -25,7 +25,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-root</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>4.0-SNAPSHOT</version>
     </parent>
 
     <build>
@@ -45,7 +45,7 @@
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
-                            <mainClass>com.hazelcast.jet.server.StartServer</mainClass>
+                            <mainClass>com.hazelcast.jet.server.JetMemberStarter</mainClass>
                         </manifest>
                         <manifestEntries>
                             <Automatic-Module-Name>com.hazelcast.jet</Automatic-Module-Name>
@@ -80,18 +80,8 @@
                     <includeDependencySources>true</includeDependencySources>
                     <dependencySourceIncludes>
                         <dependencySourceInclude>com.hazelcast:hazelcast</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast:hazelcast-client</dependencySourceInclude>
                         <dependencySourceInclude>com.hazelcast.jet:hazelcast-jet-core</dependencySourceInclude>
                     </dependencySourceIncludes>
-                    <additionalDependencies>
-                        <!-- This dependency is only referenced from some internal packages and not used during runtime
-                        but JDK9 seems to try to resolve the dependency anyway when building javadoc -->
-                        <additionalDependency>
-                            <groupId>com.hazelcast</groupId>
-                            <artifactId>hazelcast-code-generator</artifactId>
-                            <version>${hazelcast.protocol.version}</version>
-                        </additionalDependency>
-                    </additionalDependencies>
                 </configuration>
             </plugin>
         </plugins>
@@ -109,7 +99,6 @@
                             <artifactSet>
                                 <excludes>
                                     <exclude>com.hazelcast:hazelcast:*</exclude>
-                                    <exclude>com.hazelcast:hazelcast-client:*</exclude>
                                 </excludes>
                             </artifactSet>
                         </configuration>
@@ -149,13 +138,6 @@
             <artifactId>hazelcast-jet-core</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
-            <classifier>tests</classifier>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client</artifactId>
-            <scope>test</scope>
-            <version>${hazelcast.version}</version>
             <classifier>tests</classifier>
         </dependency>
 

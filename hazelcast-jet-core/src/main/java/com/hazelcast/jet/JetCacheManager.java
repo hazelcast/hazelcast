@@ -16,6 +16,11 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.cache.ICache;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 
 /**
  * {@code JetCacheManager} is the entry point to access JSR-107 (JCache) caches
@@ -40,6 +45,11 @@ public interface JetCacheManager {
      *      <prefixed_cache_name> = [<uri_prefix>/][<cl_prefix>/]<simple_cache_name>
      * }</pre>
      * where {@code <simple_cache_name>} is the cache name without any prefix.
+     * <p>
+     * It's possible to use the cache as a data source or sink in a Jet {@link
+     * Pipeline}, using {@link Sources#cache(String)} or {@link
+     * Sinks#cache(String)} and the change stream of the cache can be read
+     * using {@link Sources#cacheJournal(String, JournalInitialPosition)}.
      *
      * @see com.hazelcast.cache.CacheUtil#getPrefixedCacheName(String, java.net.URI, ClassLoader)
      *
@@ -51,5 +61,5 @@ public interface JetCacheManager {
      * @throws java.lang.IllegalStateException              if a valid JCache library does not exist in the classpath
      *                                                      ({@code 1.0.0-PFD} or {@code 0.x} versions are not valid)
      */
-    <K, V> ICacheJet<K, V> getCache(String name);
+    <K, V> ICache<K, V> getCache(String name);
 }

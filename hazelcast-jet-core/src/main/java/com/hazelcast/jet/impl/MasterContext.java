@@ -22,10 +22,10 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,7 +45,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ImdgUtil.callbackOf;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 
 /**
@@ -261,7 +260,7 @@ public class MasterContext {
                 .createInvocationBuilder(JetService.SERVICE_NAME, op, memberInfo.getAddress())
                 .invoke();
 
-        future.andThen(callbackOf((r, throwable) -> {
+        future.whenCompleteAsync((r, throwable) -> {
             Object response = r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT;
             if (retryOnTimeoutException && throwable instanceof OperationTimeoutException) {
                 logger.warning("Retrying " + op.getClass().getSimpleName() + " that failed with "
@@ -281,6 +280,6 @@ public class MasterContext {
                         .map(e -> e.getValue() == NULL_OBJECT ? entry(e.getKey(), null) : e)
                         .collect(Collectors.toList()));
             }
-        }));
+        });
     }
 }

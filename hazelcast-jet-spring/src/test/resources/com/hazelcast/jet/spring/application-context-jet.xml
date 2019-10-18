@@ -21,14 +21,14 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/jet-spring
-		http://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-3.3.xsd
+		http://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-4.0.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <jet:instance id="jet-instance">
         <hz:config>
             <hz:spring-aware/>
-            <hz:group name="jet-spring" password="jet-spring-pass"/>
+            <hz:cluster-name>jet-spring</hz:cluster-name>
             <hz:network port="5707" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -46,16 +46,10 @@
         <jet:properties>
             <hz:property name="foo">bar</hz:property>
         </jet:properties>
-        <jet:metrics-config enabled="false"
-                            jmxEnabled="false"
-                            retention-seconds="123"
-                            metrics-for-data-structures-enabled="true"
-                            collection-interval-seconds="10"
-        />
     </jet:instance>
 
     <jet:client id="jet-client" depends-on="jet-instance">
-        <jet:group name="jet-spring" password="jet-spring-pass"/>
+        <jet:client-name>jet-spring</jet:client-name>
         <jet:network>
             <hz:member>127.0.0.1:5707</hz:member>
         </jet:network>

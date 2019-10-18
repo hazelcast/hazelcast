@@ -19,8 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.ICacheJet;
 import com.hazelcast.jet.JetInstance;
 
 import javax.cache.CacheManager;
@@ -35,10 +33,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Spliterator;
+import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 @SuppressWarnings({"checkstyle:methodcount", "deprecation"})
-public class ICacheDecorator<K, V> implements ICacheJet<K, V> {
+public class ICacheDecorator<K, V> implements ICache<K, V> {
 
     private final ICache<K, V> cache;
     private final JetInstance instance;
@@ -65,87 +65,87 @@ public class ICacheDecorator<K, V> implements ICacheJet<K, V> {
     }
 
     @Override
-    public ICompletableFuture<V> getAsync(K key) {
+    public CompletionStage<V> getAsync(K key) {
         return cache.getAsync(key);
     }
 
     @Override
-    public ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         return cache.getAsync(key, expiryPolicy);
     }
 
     @Override
-    public ICompletableFuture<Void> putAsync(K key, V value) {
+    public CompletionStage<Void> putAsync(K key, V value) {
         return cache.putAsync(key, value);
     }
 
     @Override
-    public ICompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return cache.putAsync(key, value, expiryPolicy);
     }
 
     @Override
-    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+    public CompletionStage<Boolean> putIfAbsentAsync(K key, V value) {
         return cache.putIfAbsentAsync(key, value);
     }
 
     @Override
-    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return cache.putIfAbsentAsync(key, value, expiryPolicy);
     }
 
     @Override
-    public ICompletableFuture<V> getAndPutAsync(K key, V value) {
+    public CompletionStage<V> getAndPutAsync(K key, V value) {
         return cache.getAndPutAsync(key, value);
     }
 
     @Override
-    public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return cache.getAndPutAsync(key, value, expiryPolicy);
     }
 
     @Override
-    public ICompletableFuture<Boolean> removeAsync(K key) {
+    public CompletionStage<Boolean> removeAsync(K key) {
         return cache.removeAsync(key);
     }
 
     @Override
-    public ICompletableFuture<Boolean> removeAsync(K key, V oldValue) {
+    public CompletionStage<Boolean> removeAsync(K key, V oldValue) {
         return cache.removeAsync(key, oldValue);
     }
 
     @Override
-    public ICompletableFuture<V> getAndRemoveAsync(K key) {
+    public CompletionStage<V> getAndRemoveAsync(K key) {
         return cache.getAndRemoveAsync(key);
     }
 
     @Override
-    public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
+    public CompletionStage<Boolean> replaceAsync(K key, V value) {
         return cache.replaceAsync(key, value);
     }
 
     @Override
-    public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return cache.replaceAsync(key, value, expiryPolicy);
     }
 
     @Override
-    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
+    public CompletionStage<Boolean> replaceAsync(K key, V oldValue, V newValue) {
         return cache.replaceAsync(key, oldValue, newValue);
     }
 
     @Override
-    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         return cache.replaceAsync(key, oldValue, newValue, expiryPolicy);
     }
 
     @Override
-    public ICompletableFuture<V> getAndReplaceAsync(K key, V value) {
+    public CompletionStage<V> getAndReplaceAsync(K key, V value) {
         return cache.getAndReplaceAsync(key, value);
     }
 
     @Override
-    public ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public CompletionStage<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return cache.getAndReplaceAsync(key, value, expiryPolicy);
     }
 
@@ -215,13 +215,13 @@ public class ICacheDecorator<K, V> implements ICacheJet<K, V> {
     }
 
     @Override
-    public String addPartitionLostListener(CachePartitionLostListener listener) {
+    public UUID addPartitionLostListener(CachePartitionLostListener listener) {
         return cache.addPartitionLostListener(listener);
     }
 
     @Override
-    public boolean removePartitionLostListener(String id) {
-        return cache.removePartitionLostListener(id);
+    public boolean removePartitionLostListener(UUID uuid) {
+        return cache.removePartitionLostListener(uuid);
     }
 
     @Override

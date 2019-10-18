@@ -72,7 +72,8 @@ public class CacheJournalSource {
         // Add an event journal config for cache which has custom capacity of 1000 (default 10_000)
         // and time to live seconds as 10 seconds (default 0 which means infinite)
         cfg.getHazelcastConfig()
-           .getCacheEventJournalConfig(CACHE_NAME)
+           .getCacheConfig(CACHE_NAME)
+           .getEventJournalConfig()
            .setEnabled(true)
            .setCapacity(1000)
            .setTimeToLiveSeconds(10);

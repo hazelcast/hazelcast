@@ -40,7 +40,7 @@ public class GetJobMetricsOperation extends AsyncJobOperation implements Allowed
     }
 
     @Override
-    public int getId() {
+    public int getClassId() {
         return JetInitDataSerializerHook.GET_JOB_METRICS_OP;
     }
 }

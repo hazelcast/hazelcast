@@ -16,12 +16,14 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.jet.Util;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
+
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,18 +31,19 @@ public class JobMetricsUtilTest {
 
     @Test
     public void prefixNameWithMemberTags() throws Throwable {
+        UUID uuid = UuidUtil.newUnsecureUUID();
         Member member = new MemberImpl(
                 new Address("127.0.0.1", 12345),
                 MemberVersion.UNKNOWN,
                 true,
-                Util.idToString(1834287L)
+                uuid
         );
 
         String memberPrefix = JobMetricsUtil.getMemberPrefix(member);
         String prefixedName = JobMetricsUtil.addPrefixToDescriptor("[tag1=val1,tag2=val2]", memberPrefix);
 
         assertEquals(
-                "[member=0000-0000-001b-fd2f,address=[127.0.0.1]:12345,tag1=val1,tag2=val2]",
+                "[member=" + uuid.toString() + ",address=[127.0.0.1]:12345,tag1=val1,tag2=val2]",
                 prefixedName
         );
     }

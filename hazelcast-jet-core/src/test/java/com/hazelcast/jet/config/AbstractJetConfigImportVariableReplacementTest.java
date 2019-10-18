@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.config.ConfigurationException;
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.config.InvalidConfigurationException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -28,7 +27,6 @@ import java.io.FileOutputStream;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -84,12 +82,6 @@ public abstract class AbstractJetConfigImportVariableReplacementTest {
     @Test
     public abstract void testImportNotExistingResourceThrowsException();
 
-    @Test(expected = HazelcastException.class)
-    public abstract void testImportFromNonHazelcastJetConfigThrowsException() throws Exception;
-
-    @Test
-    public abstract void testImportMetricsConfigFromFile() throws Exception;
-
     @Test
     public abstract void testImportInstanceConfigFromFile() throws Exception;
 
@@ -99,7 +91,7 @@ public abstract class AbstractJetConfigImportVariableReplacementTest {
     @Test
     public abstract void testReplacers() throws Exception;
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public abstract void testMissingReplacement() throws Exception;
 
     @Test
@@ -144,13 +136,6 @@ public abstract class AbstractJetConfigImportVariableReplacementTest {
         assertEquals(6, config.getInstanceConfig().getBackupCount());
         assertEquals(1234, config.getInstanceConfig().getScaleUpDelayMillis());
         assertTrue(config.getInstanceConfig().isLosslessRestartEnabled());
-
-        MetricsConfig metricsConfig = config.getMetricsConfig();
-        assertFalse(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
-        assertEquals(123, metricsConfig.getCollectionIntervalSeconds());
-        assertEquals(124, metricsConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
     }
 
     protected Properties getProperties() {
@@ -160,12 +145,6 @@ public abstract class AbstractJetConfigImportVariableReplacementTest {
         properties.setProperty("backup.count", "6");
         properties.setProperty("scale.up.delay.millis", "1234");
         properties.setProperty("lossless.restart.enabled", "true");
-
-        properties.setProperty("metrics.enabled", "false");
-        properties.setProperty("metrics.jmxEnabled", "false");
-        properties.setProperty("metrics.retention", "124");
-        properties.setProperty("metrics.collection-interval", "123");
-        properties.setProperty("metrics.enabled-for-data-structures", "true");
         return properties;
     }
 

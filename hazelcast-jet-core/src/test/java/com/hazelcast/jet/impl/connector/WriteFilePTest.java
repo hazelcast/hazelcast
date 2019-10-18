@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.collection.IList;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.After;
 import org.junit.Before;
@@ -60,7 +60,7 @@ public class WriteFilePTest extends JetTestSupport {
     private JetInstance instance;
     private Path directory;
     private Path file;
-    private IListJet<String> list;
+    private IList<String> list;
 
     @Before
     public void setup() throws IOException {

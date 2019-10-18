@@ -26,14 +26,16 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
-import com.hazelcast.client.proxy.ClientMapProxy;
-import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.Partition;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.ToIntFunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -41,8 +43,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.ToIntFunctionEx;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.MigrationWatcher;
 import com.hazelcast.jet.impl.util.Util;
@@ -56,15 +56,14 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.IterationType;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -74,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
@@ -96,7 +96,7 @@ import static java.util.stream.Collectors.toList;
  * {@code localParallelism * clusterSize}, otherwise some processors will
  * have no partitions assigned to them.
  */
-public final class ReadMapOrCacheP<F extends ICompletableFuture, B, R> extends AbstractProcessor {
+public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends AbstractProcessor {
 
     private static final int MAX_FETCH_SIZE = 16384;
 
@@ -141,7 +141,7 @@ public final class ReadMapOrCacheP<F extends ICompletableFuture, B, R> extends A
 
     @SuppressWarnings("unchecked")
     private void initialRead() {
-        readFutures = (F[]) new ICompletableFuture[partitionIds.length];
+        readFutures = (F[]) new CompletableFuture[partitionIds.length];
         for (int i = 0; i < readFutures.length; i++) {
             readFutures[i] = reader.readBatch(partitionIds[i], Integer.MAX_VALUE);
         }
@@ -225,7 +225,7 @@ public final class ReadMapOrCacheP<F extends ICompletableFuture, B, R> extends A
         }
     }
 
-    static class LocalProcessorMetaSupplier<F extends ICompletableFuture, B, R> implements ProcessorMetaSupplier {
+    static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
 
         private static final long serialVersionUID = 1L;
         private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
@@ -251,7 +251,7 @@ public final class ReadMapOrCacheP<F extends ICompletableFuture, B, R> extends A
         }
     }
 
-    private static final class LocalProcessorSupplier<F extends ICompletableFuture, B, R> implements ProcessorSupplier {
+    private static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -284,7 +284,7 @@ public final class ReadMapOrCacheP<F extends ICompletableFuture, B, R> extends A
         }
     }
 
-    static class RemoteProcessorSupplier<F extends ICompletableFuture, B, R> implements ProcessorSupplier {
+    static class RemoteProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -343,7 +343,7 @@ public final class ReadMapOrCacheP<F extends ICompletableFuture, B, R> extends A
      * @param <B> type of the batch object
      * @param <R> type of the record
      */
-    abstract static class Reader<F extends ICompletableFuture, B, R> {
+    abstract static class Reader<F extends CompletableFuture, B, R> {
 
         protected final String objectName;
         protected InternalSerializationService serializationService;
@@ -434,7 +434,7 @@ public final class ReadMapOrCacheP<F extends ICompletableFuture, B, R> extends A
         @Nonnull @Override
         public ClientInvocationFuture readBatch(int partitionId, int offset) {
             String name = clientCacheProxy.getPrefixedName();
-            ClientMessage request = CacheIterateEntriesCodec.encodeRequest(name, partitionId, offset, MAX_FETCH_SIZE);
+            ClientMessage request = CacheIterateEntriesCodec.encodeRequest(name, offset, MAX_FETCH_SIZE);
             HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientCacheProxy.getContext()
                     .getHazelcastInstance();
             return new ClientInvocation(client, request, name, partitionId).invoke();
@@ -548,7 +548,7 @@ public final class ReadMapOrCacheP<F extends ICompletableFuture, B, R> extends A
 
         @Nonnull @Override
         public ClientInvocationFuture readBatch(int partitionId, int offset) {
-            ClientMessage request = MapFetchEntriesCodec.encodeRequest(objectName, partitionId, offset, MAX_FETCH_SIZE);
+            ClientMessage request = MapFetchEntriesCodec.encodeRequest(objectName, offset, MAX_FETCH_SIZE);
             ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientMapProxy.getContext().getHazelcastInstance(),
                     request,
