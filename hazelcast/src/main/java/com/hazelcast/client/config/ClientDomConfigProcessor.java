@@ -191,7 +191,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (maxBackoffMillis.equals(nodeName)) {
                 connectionRetryConfig.setMaxBackoffMillis(getIntegerValue(maxBackoffMillis, value));
             } else if (multiplier.equals(nodeName)) {
-                connectionRetryConfig.setMultiplier(getIntegerValue(multiplier, value));
+                connectionRetryConfig.setMultiplier(getDoubleValue(multiplier, value));
             } else if ("fail-on-max-backoff".equals(nodeName)) {
                 connectionRetryConfig.setFailOnMaxBackoff(getBooleanValue(value));
             } else if (jitter.equals(nodeName)) {
