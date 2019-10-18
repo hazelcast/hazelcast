@@ -19,11 +19,13 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
@@ -216,8 +218,13 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         return (RaftNodeImpl) getRaftService(instance).getRaftNode(groupId);
     }
 
-    public static CPGroupSummary getRaftGroupLocally(HazelcastInstance instance, CPGroupId groupId) {
-        return getRaftService(instance).getMetadataGroupManager().getGroup(groupId);
+    public static CPGroupSummary queryRaftGroupLocally(HazelcastInstance instance, CPGroupId groupId) {
+        RaftNodeImpl raftNode = getRaftNode(instance, getMetadataGroupId(instance));
+        if (raftNode == null) {
+            return null;
+        }
+
+        return (CPGroupSummary) raftNode.query(new GetRaftGroupOp(groupId), QueryPolicy.ANY_LOCAL).joinInternal();
     }
 
     public static RaftGroupId getMetadataGroupId(HazelcastInstance instance) {
