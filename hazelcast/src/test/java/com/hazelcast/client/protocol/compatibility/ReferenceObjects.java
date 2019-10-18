@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
+import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
 import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
 import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
@@ -33,13 +34,11 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
@@ -66,7 +65,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 public class ReferenceObjects {
 
@@ -612,6 +610,7 @@ public class ReferenceObjects {
     public static boolean aBoolean = true;
     public static byte aByte = 113;
     public static int anInt = 25;
+    public static int anEnum = 1;
     public static long aLong = -50992225L;
     public static UUID aUUID = new UUID(123456789, 987654321);
     public static byte[] aByteArray = new byte[] {aByte};
@@ -640,7 +639,7 @@ public class ReferenceObjects {
     public static StackTraceElement aStackTraceElement = new StackTraceElement(aString, aString, aString, anInt);
     public static List<StackTraceElement> aListOfStackTraceElements = Collections.singletonList(aStackTraceElement);
     public static CacheEventData aCacheEventData
-            = new CacheEventDataImpl(aString, CacheEventType.getByType(1), aData, aData, aData, aBoolean);
+            = CustomTypeFactory.createCacheEventData(aString, anEnum, aData, aData, aData, aBoolean);
     public static DistributedObjectInfo aDistributedObjectInfo = new DistributedObjectInfo(aString, aString);
     public static Member aMember = new MemberImpl(anAddress, aUUID, aMapOfStringToString, aBoolean);
     public static DefaultQueryCacheEventData aQueryCacheEventData;
@@ -693,8 +692,7 @@ public class ReferenceObjects {
     }
     public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
-    public static IndexType anIndexType = IndexConfig.DEFAULT_TYPE;
-    public static IndexConfig anIndexConfig = new IndexConfig().setName(aString).setType(anIndexType).setAttributes(aListOfStrings);
+    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings);
     public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
     public static MerkleTreeConfig aMerkleTreeConfig; static {
@@ -710,12 +708,12 @@ public class ReferenceObjects {
     public static NearCacheConfigHolder aNearCacheConfigHolder = new NearCacheConfigHolder(aString, aString, aBoolean, aBoolean, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aNearCachePreloaderConfig);
     public static PredicateConfigHolder aPredicateConfigHolder = new PredicateConfigHolder(aString, aString, aData);
     public static List<ListenerConfigHolder> aListOfListenerConfigHolders = Collections.singletonList(aListenerConfigHolder);
-    public static List<IndexConfig> aListOfMapIndexConfigs = Collections.singletonList(anIndexConfig);
-    public static QueryCacheConfigHolder aQueryCacheConfigHolder = new QueryCacheConfigHolder(anInt, anInt, anInt, aBoolean, aBoolean, aBoolean, aString, aString, aPredicateConfigHolder, anEvictionConfigHolder, aListOfListenerConfigHolders, aListOfMapIndexConfigs);
+    public static List<IndexConfig> aListOfIndexConfigs = Collections.singletonList(anIndexConfig);
+    public static QueryCacheConfigHolder aQueryCacheConfigHolder = new QueryCacheConfigHolder(anInt, anInt, anInt, aBoolean, aBoolean, aBoolean, aString, aString, aPredicateConfigHolder, anEvictionConfigHolder, aListOfListenerConfigHolders, aListOfIndexConfigs);
     public static QueueStoreConfigHolder aQueueStoreConfigHolder = new QueueStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
     public static RingbufferStoreConfigHolder aRingbufferStoreConfigHolder = new RingbufferStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
-    public static DurationConfig aDurationConfig = new DurationConfig(aLong, TimeUnit.SECONDS);
-    public static TimedExpiryPolicyFactoryConfig aTimedExpiryPolicyFactoryConfig = new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.CREATED, aDurationConfig);
+    public static DurationConfig aDurationConfig = CustomTypeFactory.createDurationConfig(aLong, anEnum);
+    public static TimedExpiryPolicyFactoryConfig aTimedExpiryPolicyFactoryConfig = CustomTypeFactory.createTimedExpiryPolicyFactoryConfig(anEnum, aDurationConfig);
     public static List<Map.Entry<String, String>> aListOfStringToString
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aString, aString));
     public static List<Map.Entry<String, byte[]>> aListOfStringToByteArray
