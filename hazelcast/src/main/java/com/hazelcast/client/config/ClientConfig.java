@@ -733,7 +733,7 @@ public class ClientConfig {
     }
 
     /**
-     * Returns the configured cluster name. The name is send as part of client authentication message and may be verified on the
+     * Returns the configured cluster name. The name is sent as part of client authentication message and may be verified on the
      * member.
      *
      * @return the configured cluster name

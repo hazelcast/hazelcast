@@ -43,7 +43,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,6 +53,7 @@ import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -213,7 +213,7 @@ public class ClientMessageProtectionTest {
 
     private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String clientName) {
         return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), null, null, UUID.randomUUID(), "FOO",
-                (byte) 1, clientName, "xxx", new ArrayList<>(), -1, null);
+                (byte) 1, clientName, "xxx", emptyList(), -1, null);
     }
 
     private ClientMessage readResponse(InputStream is) throws IOException, EOFException {

@@ -36,7 +36,7 @@ public interface SecurityContext {
 
     /**
      * Creates member {@link LoginContext}.
-     * @param clusterName TODO
+     * @param clusterName cluster name received from the connecting member
      * @param credentials member credentials
      * @param connection member connection
      *

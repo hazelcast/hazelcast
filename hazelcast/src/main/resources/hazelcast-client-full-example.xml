@@ -79,7 +79,7 @@
     </config-replacers>
 
     <!--
-        Specifies the cluster name. It's send as part of the client authentication message to Hazelcast
+        Specifies the cluster name. It's sent as part of the client authentication message to Hazelcast
         member(s).
     -->
     <cluster-name>dev</cluster-name>
