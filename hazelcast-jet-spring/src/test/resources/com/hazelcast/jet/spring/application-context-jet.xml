@@ -49,7 +49,7 @@
     </jet:instance>
 
     <jet:client id="jet-client" depends-on="jet-instance">
-        <jet:client-name>jet-spring</jet:client-name>
+        <jet:cluster-name>jet-spring</jet:cluster-name>
         <jet:network>
             <hz:member>127.0.0.1:5707</hz:member>
         </jet:network>

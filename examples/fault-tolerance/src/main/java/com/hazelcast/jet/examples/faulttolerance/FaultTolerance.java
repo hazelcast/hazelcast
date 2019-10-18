@@ -112,9 +112,8 @@ public class FaultTolerance {
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.<PriceUpdateEvent, String, Tuple2<Integer, Long>>mapJournal(
                 "prices",
-                mapPutEvents(),
-                e -> new PriceUpdateEvent(e.getKey(), e.getNewValue().f0(), e.getNewValue().f1()),
-                START_FROM_CURRENT
+                START_FROM_CURRENT,
+                e -> new PriceUpdateEvent(e.getKey(), e.getNewValue().f0(), e.getNewValue().f1()), mapPutEvents()
         ))
          .withTimestamps(PriceUpdateEvent::timestamp, LAG_SECONDS * 1000)
          .setLocalParallelism(1)

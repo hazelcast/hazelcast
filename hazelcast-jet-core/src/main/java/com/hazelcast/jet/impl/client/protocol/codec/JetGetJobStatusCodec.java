@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -32,9 +34,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO doc
  */
-@Generated("efdc8dfd04b42529707ae1f7af3cd5bb")
+@Generated("001ad82dad7c69981fa08dfb8d56fc02")
 public final class JetGetJobStatusCodec {
     //hex: 0xFE0300
     public static final int REQUEST_MESSAGE_TYPE = 16646912;
@@ -52,7 +53,6 @@ public final class JetGetJobStatusCodec {
     public static class RequestParameters {
 
         /**
-         * TODO doc
          */
         public long jobId;
     }
@@ -81,7 +81,6 @@ public final class JetGetJobStatusCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO doc
          */
         public int response;
     }

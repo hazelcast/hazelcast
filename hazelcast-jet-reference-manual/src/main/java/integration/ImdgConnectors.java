@@ -111,7 +111,7 @@ public class ImdgConnectors {
     static void s7() {
         //tag::s7[]
         ClientConfig cfg = new ClientConfig();
-        cfg.setClientName("myGroup");
+        cfg.setClusterName("myGroup");
         cfg.getNetworkConfig().addAddress("node1.mydomain.com", "node2.mydomain.com");
 
         Pipeline p = Pipeline.create();
@@ -172,10 +172,10 @@ public class ImdgConnectors {
         Pipeline p = Pipeline.create();
         StreamSourceStage<EventJournalMapEvent<String, Long>> allFromMap = p.drawFrom(
             Sources.mapJournal("inputMap",
-                    alwaysTrue(), identity(), START_FROM_CURRENT));
+                    START_FROM_CURRENT, identity(), alwaysTrue()));
         StreamSourceStage<EventJournalCacheEvent<String, Long>> allFromCache = p.drawFrom(
             Sources.cacheJournal("inputMap",
-                    alwaysTrue(), identity(), START_FROM_CURRENT));
+                    START_FROM_CURRENT, identity(), alwaysTrue()));
         //end::s12[]
     }
 
@@ -215,7 +215,7 @@ public class ImdgConnectors {
     static void s15() {
         //tag::s15[]
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClientName("myGroup");
+        clientConfig.setClusterName("myGroup");
         clientConfig.getNetworkConfig()
                     .addAddress("node1.mydomain.com", "node2.mydomain.com");
 

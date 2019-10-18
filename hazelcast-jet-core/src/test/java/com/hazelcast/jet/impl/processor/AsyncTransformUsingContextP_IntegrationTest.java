@@ -181,7 +181,7 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_flatMapNotPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, alwaysTrue(), EventJournalMapEvent::getNewValue, START_FROM_OLDEST))
+        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .flatMapUsingContextAsync(contextFactory,
                  transformNotPartitionedFn(i -> traverseItems(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5")))
@@ -195,7 +195,7 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_mapNotPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, alwaysTrue(), EventJournalMapEvent::getNewValue, START_FROM_OLDEST))
+        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .mapUsingContextAsync(contextFactory,
                  transformNotPartitionedFn(i -> i + "-1"))
@@ -209,7 +209,7 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_filterNotPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, alwaysTrue(), EventJournalMapEvent::getNewValue, START_FROM_OLDEST))
+        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .filterUsingContextAsync(contextFactory,
                  transformNotPartitionedFn(i -> i % 2 == 0))
@@ -223,7 +223,7 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_flatMapPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, alwaysTrue(), EventJournalMapEvent::getNewValue, START_FROM_OLDEST))
+        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .groupingKey(i -> i % 10)
          .flatMapUsingContextAsync(contextFactory,
@@ -238,7 +238,7 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_mapPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, alwaysTrue(), EventJournalMapEvent::getNewValue, START_FROM_OLDEST))
+        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .groupingKey(i -> i % 10)
          .mapUsingContextAsync(contextFactory,
@@ -253,7 +253,7 @@ public class AsyncTransformUsingContextP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_filterPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, alwaysTrue(), EventJournalMapEvent::getNewValue, START_FROM_OLDEST))
+        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .groupingKey(i -> i % 10)
          .filterUsingContextAsync(contextFactory,

@@ -50,8 +50,9 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
     }
 
     private static StreamSource<Integer> createSourceJournal() {
-        return Sources.<Integer, Integer, Integer>mapJournal(JOURNALED_MAP_NAME, alwaysTrue(),
-                EventJournalMapEvent::getKey, START_FROM_OLDEST);
+        return Sources.<Integer, Integer, Integer>mapJournal(
+                JOURNALED_MAP_NAME, START_FROM_OLDEST, EventJournalMapEvent::getKey, alwaysTrue()
+        );
     }
 
     private static StreamSource<Integer> createTimestampedSourceBuilder() {

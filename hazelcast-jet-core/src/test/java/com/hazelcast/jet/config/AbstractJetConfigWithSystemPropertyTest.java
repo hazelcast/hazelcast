@@ -100,13 +100,13 @@ public abstract class AbstractJetConfigWithSystemPropertyTest {
 
     protected static void assertClientConfig(ClientConfig config) {
         assertThat(config, not(nullValue()));
-        assertThat(config.getClientName(), equalTo(TEST_GROUP_NAME));
+        assertThat(config.getClusterName(), equalTo(TEST_GROUP_NAME));
         assertThat(config.getNetworkConfig().getAddresses(), hasItem("127.0.59.1:5701"));
     }
 
     protected static void assertDefaultClientConfig(ClientConfig config) {
         assertThat(config, not(nullValue()));
-        assertThat(config.getClientName(), equalTo("jet"));
+        assertThat(config.getClusterName(), equalTo("jet"));
     }
 
 }

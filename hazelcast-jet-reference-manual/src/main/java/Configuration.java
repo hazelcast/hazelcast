@@ -39,7 +39,7 @@ public class Configuration {
     static void s3() {
         //tag::s3[]
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClientName("test");
+        clientConfig.setClusterName("test");
         JetInstance jet = Jet.newJetClient(clientConfig);
         //end::s3[]
     }

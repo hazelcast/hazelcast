@@ -4,8 +4,7 @@ methods:
   - id: 1
     name: submitJob
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: false
       acquiresResource: false
@@ -15,26 +14,22 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: dag
           type: Data
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: jobConfig
           type: Data
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response: {}
   - id: 2
     name: terminateJob
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: false
       acquiresResource: false
@@ -44,20 +39,17 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: terminateMode
           type: int
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response: {}
   - id: 3
     name: getJobStatus
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -67,21 +59,18 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response:
       params:
         - name: response
           type: int
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
   - id: 4
     name: getJobIds
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -93,13 +82,11 @@ methods:
           type: List_Long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
   - id: 5
     name: joinSubmittedJob
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -109,14 +96,12 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response: {}
   - id: 6
     name: getJobIdsByName
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -126,21 +111,19 @@ methods:
           type: String
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response:
       params:
         - name: response
           type: List_Long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
+            
   - id: 7
     name: getJobSubmissionTime
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -150,21 +133,18 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response:
       params:
         - name: response
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
   - id: 8
     name: getJobConfig
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -174,21 +154,18 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response:
       params:
         - name: response
           type: Data
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
   - id: 9
     name: resumeJob
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: false
       acquiresResource: false
@@ -198,14 +175,12 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response: {}
   - id: 10
     name: exportSnapshot
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: false
       acquiresResource: false
@@ -215,26 +190,22 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: name
           type: String
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: cancelJob
           type: boolean
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response: {}
   - id: 11
     name: getJobSummaryList
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -246,13 +217,11 @@ methods:
           type: Data
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
   - id: 12
     name: existsDistributedObject
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -262,27 +231,23 @@ methods:
           type: String
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: objectName
           type: String
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response:
       params:
         - name: response
           type: boolean
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
   - id: 13
     name: getClusterMetadata
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -294,31 +259,26 @@ methods:
           type: String
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: version
           type: String
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: clusterTime
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
         - name: state
           type: int
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
   - id: 14
     name: getMemberXmlConfiguration
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -330,13 +290,11 @@ methods:
           type: String
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
   - id: 15
     name: getJobMetrics
     since: 2.0
-    doc: |
-      TODO doc
+    doc: ''
     request:
       retryable: true
       acquiresResource: false
@@ -346,13 +304,11 @@ methods:
           type: long
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''
     response:
       params:
         - name: response
           type: Data
           nullable: false
           since: 2.0
-          doc: |
-            TODO doc
+          doc: ''

@@ -101,7 +101,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
 
         clientConfig = new ClientConfig();
-        clientConfig.setClientName(config.getClusterName());
+        clientConfig.setClusterName(config.getClusterName());
         Address address = hz.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
 

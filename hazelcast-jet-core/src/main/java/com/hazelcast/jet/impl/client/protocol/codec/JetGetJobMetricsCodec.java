@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -32,14 +34,13 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO doc
  */
-@Generated("413c17303695a4621db2500dbecdb19a")
+@Generated("e61fab9bad0468d9855ba12de483a114")
 public final class JetGetJobMetricsCodec {
-    //hex: 0xFE1000
-    public static final int REQUEST_MESSAGE_TYPE = 16650240;
-    //hex: 0xFE1001
-    public static final int RESPONSE_MESSAGE_TYPE = 16650241;
+    //hex: 0xFE0F00
+    public static final int REQUEST_MESSAGE_TYPE = 16649984;
+    //hex: 0xFE0F01
+    public static final int RESPONSE_MESSAGE_TYPE = 16649985;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -51,7 +52,6 @@ public final class JetGetJobMetricsCodec {
     public static class RequestParameters {
 
         /**
-         * TODO doc
          */
         public long jobId;
     }
@@ -80,7 +80,6 @@ public final class JetGetJobMetricsCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO doc
          */
         public com.hazelcast.nio.serialization.Data response;
     }

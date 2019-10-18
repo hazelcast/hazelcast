@@ -55,7 +55,7 @@ public class RemoteCacheJournalSource {
             ClientConfig clientConfig = new ClientConfig();
 
             clientConfig.getNetworkConfig().addAddress(getAddress(remoteHz));
-            clientConfig.setClientName(hzConfig.getClusterName());
+            clientConfig.setClusterName(hzConfig.getClusterName());
 
             Pipeline p = Pipeline.create();
             p.drawFrom(Sources.<Integer, Integer>remoteCacheJournal(

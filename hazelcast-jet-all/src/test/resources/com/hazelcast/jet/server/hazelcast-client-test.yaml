@@ -13,7 +13,7 @@
 # limitations under the License.
 
 hazelcast-client:
-  client-name: ${group}
+  cluster-name: ${group}
 
   network:
     cluster-members:

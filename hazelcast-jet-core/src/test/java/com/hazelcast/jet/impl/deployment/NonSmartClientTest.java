@@ -57,7 +57,7 @@ public class NonSmartClientTest extends JetTestSupport {
         Address address = jetInstance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
-        clientConfig.setClientName(jetConfig.getHazelcastConfig().getClusterName());
+        clientConfig.setClusterName(jetConfig.getHazelcastConfig().getClusterName());
         clientConfig.getNetworkConfig().getAddresses().clear();
         clientConfig.getNetworkConfig().getAddresses().add(address.getHost() + ":" + address.getPort());
         client = createJetClient(clientConfig);

@@ -69,7 +69,7 @@
                 <xs:extension base="hz:hazelcast-bean">
                     <xs:choice minOccurs="0" maxOccurs="unbounded">
                         <xs:element name="spring-aware" type="xs:string" minOccurs="0"/>
-                        <xs:element name="client-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="cluster-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="hz:properties" minOccurs="0"/>
                         <xs:element name="network" type="hz:network-client" minOccurs="0"/>
                         <xs:element name="security" type="hz:client-security" minOccurs="0"/>

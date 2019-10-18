@@ -121,7 +121,7 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#mapJournal(String, PredicateEx, FunctionEx, JournalInitialPosition)}.
+     * {@link Sources#mapJournal(String, JournalInitialPosition, FunctionEx, PredicateEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamMapP(
@@ -174,8 +174,7 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link
-     * Sources#remoteMapJournal(String, ClientConfig, PredicateEx,
-     * FunctionEx, JournalInitialPosition)}.
+     * Sources#remoteMapJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamRemoteMapP(
@@ -214,8 +213,7 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#cacheJournal(String,
-     * PredicateEx, FunctionEx, JournalInitialPosition)}.
+     * {@link Sources#cacheJournal(String, JournalInitialPosition, FunctionEx, PredicateEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamCacheP(
@@ -257,8 +255,7 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link
-     * Sources#remoteCacheJournal(String, ClientConfig,
-     * PredicateEx, FunctionEx, JournalInitialPosition)}.
+     * Sources#remoteCacheJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamRemoteCacheP(

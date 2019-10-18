@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -32,9 +34,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO doc
  */
-@Generated("f3d4ddf62165447ec92976b993f2cbc6")
+@Generated("1044a56cc054ca782cfc57aa7320e08c")
 public final class JetTerminateJobCodec {
     //hex: 0xFE0200
     public static final int REQUEST_MESSAGE_TYPE = 16646656;
@@ -52,12 +53,10 @@ public final class JetTerminateJobCodec {
     public static class RequestParameters {
 
         /**
-         * TODO doc
          */
         public long jobId;
 
         /**
-         * TODO doc
          */
         public int terminateMode;
     }

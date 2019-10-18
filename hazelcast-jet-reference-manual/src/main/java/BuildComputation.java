@@ -290,8 +290,8 @@ class BuildComputation {
         // The primary stream (stream to be enriched): trades
         IMap<Long, Trade> tradesMap = instance.getMap("trades");
         StreamStage<Trade> trades = p.drawFrom(
-                Sources.mapJournal(tradesMap, mapPutEvents(),
-                        mapEventNewValue(), START_FROM_CURRENT))
+                Sources.mapJournal(tradesMap, START_FROM_CURRENT, mapEventNewValue(), mapPutEvents()
+                ))
                 .withoutTimestamps();
 
         // The enriching streams: products and brokers
@@ -334,8 +334,8 @@ class BuildComputation {
         // The stream to be enriched: trades
         IMap<Long, Trade> tradesMap = instance.getMap("trades");
         StreamStage<Trade> trades = p.drawFrom(
-                Sources.mapJournal(tradesMap, mapPutEvents(),
-                        mapEventNewValue(), START_FROM_CURRENT))
+                Sources.mapJournal(tradesMap, START_FROM_CURRENT, mapEventNewValue(), mapPutEvents()
+                ))
                 .withoutTimestamps();
 
         // The enriching streams: products, brokers and markets
@@ -431,7 +431,7 @@ class BuildComputation {
         //tag::s16[]
         IMap<String, StockInfo> stockMap = jet.getMap("stock-info"); //<1>
         StreamSource<Trade> tradesSource = Sources.mapJournal("trades",
-                mapPutEvents(), mapEventNewValue(), START_FROM_CURRENT);
+                START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
 
         Pipeline p = Pipeline.create();
         p.drawFrom(tradesSource)
@@ -455,7 +455,7 @@ class BuildComputation {
                 })
                 .withLocalSharing();
         StreamSource<Trade> tradesSource = Sources.mapJournal("trades",
-                mapPutEvents(), mapEventNewValue(), START_FROM_CURRENT);
+                START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
 
         Pipeline p = Pipeline.create();
         p.drawFrom(tradesSource)
@@ -486,12 +486,12 @@ class BuildComputation {
         IMap<Long, Trade> tradesNewYorkMap = instance.getMap("trades-newyork");
         IMap<Long, Trade> tradesTokyoMap = instance.getMap("trades-tokyo");
         StreamStage<Trade> tradesNewYork = p.drawFrom(
-                Sources.mapJournal(tradesNewYorkMap, mapPutEvents(),
-                        mapEventNewValue(), START_FROM_CURRENT))
+                Sources.mapJournal(tradesNewYorkMap, START_FROM_CURRENT, mapEventNewValue(), mapPutEvents()
+                ))
                 .withNativeTimestamps(5_000);
         StreamStage<Trade> tradesTokyo = p.drawFrom(
-                Sources.mapJournal(tradesTokyoMap, mapPutEvents(),
-                        mapEventNewValue(), START_FROM_CURRENT))
+                Sources.mapJournal(tradesTokyoMap, START_FROM_CURRENT, mapEventNewValue(), mapPutEvents()
+                ))
                 .withNativeTimestamps(5_000);
         StreamStage<Trade> merged = tradesNewYork.merge(tradesTokyo);
         //end::s18[]
@@ -501,7 +501,7 @@ class BuildComputation {
         //tag::s19[]
         Pipeline p = Pipeline.create();
         StreamSource<Trade> tradesSource = Sources.mapJournal("trades",
-                mapPutEvents(), mapEventNewValue(), START_FROM_CURRENT);
+                START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
         StreamStage<Trade> currLargestTrade =
                 p.drawFrom(tradesSource)
                  .withoutTimestamps()

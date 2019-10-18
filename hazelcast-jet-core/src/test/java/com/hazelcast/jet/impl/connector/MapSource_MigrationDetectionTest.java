@@ -84,7 +84,7 @@ public class MapSource_MigrationDetectionTest extends JetTestSupport {
             remoteInstances.add(mapInstance);
 
             clientConfig = new ClientConfig();
-            clientConfig.setClientName(remoteMemberConfig.getClusterName());
+            clientConfig.setClusterName(remoteMemberConfig.getClusterName());
         } else {
             mapInstance = jobInstance.getHazelcastInstance();
             clientConfig = null;

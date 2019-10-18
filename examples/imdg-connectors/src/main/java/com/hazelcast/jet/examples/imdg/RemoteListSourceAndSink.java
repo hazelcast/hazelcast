@@ -84,7 +84,7 @@ public class RemoteListSourceAndSink {
     private static ClientConfig clientConfigForExternalHazelcast() {
         ClientConfig cfg = new ClientConfig();
         cfg.getNetworkConfig().addAddress("localhost:6701");
-        cfg.setClientName("dev");
+        cfg.setClusterName("dev");
         return cfg;
     }
 }

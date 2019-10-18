@@ -133,7 +133,7 @@ public class YamlJetClientConfigWithSystemPropertyTest extends AbstractJetConfig
 
 
         // Then
-        assertEquals("group.name", "test", config.getClientName());
+        assertEquals("group.name", "test", config.getClusterName());
         assertEquals("member", "19.0.0.2:5670", config.getNetworkConfig().getAddresses().iterator().next());
     }
 

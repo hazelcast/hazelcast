@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -32,14 +34,13 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO doc
  */
-@Generated("b2b8d509de7eb7e4c71345c94ffc98e4")
+@Generated("0e7ded84408203c587a5fcc92c3ccc9a")
 public final class JetExportSnapshotCodec {
-    //hex: 0xFE0B00
-    public static final int REQUEST_MESSAGE_TYPE = 16648960;
-    //hex: 0xFE0B01
-    public static final int RESPONSE_MESSAGE_TYPE = 16648961;
+    //hex: 0xFE0A00
+    public static final int REQUEST_MESSAGE_TYPE = 16648704;
+    //hex: 0xFE0A01
+    public static final int RESPONSE_MESSAGE_TYPE = 16648705;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_CANCEL_JOB_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CANCEL_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -52,17 +53,14 @@ public final class JetExportSnapshotCodec {
     public static class RequestParameters {
 
         /**
-         * TODO doc
          */
         public long jobId;
 
         /**
-         * TODO doc
          */
         public java.lang.String name;
 
         /**
-         * TODO doc
          */
         public boolean cancelJob;
     }

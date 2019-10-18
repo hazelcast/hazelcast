@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -32,14 +34,13 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO doc
  */
-@Generated("a347df378ff9497d28b87ab4f42e2e2c")
+@Generated("4ed8c1cd8482d4d44fd3fe786cdbb15a")
 public final class JetGetMemberXmlConfigurationCodec {
-    //hex: 0xFE0F00
-    public static final int REQUEST_MESSAGE_TYPE = 16649984;
-    //hex: 0xFE0F01
-    public static final int RESPONSE_MESSAGE_TYPE = 16649985;
+    //hex: 0xFE0E00
+    public static final int REQUEST_MESSAGE_TYPE = 16649728;
+    //hex: 0xFE0E01
+    public static final int RESPONSE_MESSAGE_TYPE = 16649729;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -73,7 +74,6 @@ public final class JetGetMemberXmlConfigurationCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO doc
          */
         public java.lang.String response;
     }

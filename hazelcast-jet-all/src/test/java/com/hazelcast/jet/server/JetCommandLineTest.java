@@ -102,7 +102,7 @@ public class JetCommandLineTest extends JetTestSupport {
         cfg.getHazelcastConfig().setClusterName(clusterName);
         jet = createJetMember(cfg);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClientName(clusterName);
+        clientConfig.setClusterName(clusterName);
         client = createJetClient(clientConfig);
         resetOut();
 

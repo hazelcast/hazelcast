@@ -13,7 +13,7 @@
 # limitations under the License.
 
 hazelcast-client:
-  client-name: imdg
+  cluster-name: imdg
 
   network:
     cluster-members:

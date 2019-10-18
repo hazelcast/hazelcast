@@ -437,7 +437,7 @@ public class JetCommandLine implements Runnable {
         if (addresses != null) {
             ClientConfig config = new ClientConfig();
             config.getNetworkConfig().addAddress(addresses.toArray(new String[0]));
-            config.setClientName(clusterName);
+            config.setClusterName(clusterName);
             return config;
         }
         return ConfigProvider.locateAndGetClientConfig();

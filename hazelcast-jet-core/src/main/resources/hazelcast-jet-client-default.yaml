@@ -13,4 +13,4 @@
 # limitations under the License.
 
 hazelcast-client:
-  client-name: jet
+  cluster-name: jet

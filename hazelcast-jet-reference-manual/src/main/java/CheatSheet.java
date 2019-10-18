@@ -175,13 +175,13 @@ public class CheatSheet {
 
     private static StreamStage<Payment> paymentsStream() {
         return p.<Payment>drawFrom(Sources.mapJournal("payments",
-            mapPutEvents(), mapEventNewValue(), START_FROM_OLDEST))
+                START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
             .withTimestamps(Payment::timestamp, 1000);
     }
 
     private static StreamStage<PageVisit> pageVisitsStream() {
         return p.<PageVisit>drawFrom(
-            Sources.mapJournal("pageVisits", mapPutEvents(), mapEventNewValue(), START_FROM_OLDEST)
+            Sources.mapJournal("pageVisits", START_FROM_OLDEST, mapEventNewValue(), mapPutEvents())
         ).withTimestamps(PageVisit::timestamp, 1000);
     }
 
@@ -197,7 +197,7 @@ public class CheatSheet {
 
     private static StreamSource<Trade> tradesSource() {
         return Sources.mapJournal("tradeStream",
-            mapPutEvents(), mapEventNewValue(), START_FROM_CURRENT);
+                START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
     }
 
     static void s11() {

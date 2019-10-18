@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -32,14 +34,13 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO doc
  */
-@Generated("4a0f2eb77cc79b75fc9917a7975dc323")
+@Generated("82ac7ce5c99b5b1b578609a70d0497bd")
 public final class JetExistsDistributedObjectCodec {
-    //hex: 0xFE0D00
-    public static final int REQUEST_MESSAGE_TYPE = 16649472;
-    //hex: 0xFE0D01
-    public static final int RESPONSE_MESSAGE_TYPE = 16649473;
+    //hex: 0xFE0C00
+    public static final int REQUEST_MESSAGE_TYPE = 16649216;
+    //hex: 0xFE0C01
+    public static final int RESPONSE_MESSAGE_TYPE = 16649217;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -51,12 +52,10 @@ public final class JetExistsDistributedObjectCodec {
     public static class RequestParameters {
 
         /**
-         * TODO doc
          */
         public java.lang.String serviceName;
 
         /**
-         * TODO doc
          */
         public java.lang.String objectName;
     }
@@ -88,7 +87,6 @@ public final class JetExistsDistributedObjectCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO doc
          */
         public boolean response;
     }
