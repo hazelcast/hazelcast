@@ -16,11 +16,11 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.function.Consumer;
@@ -73,7 +73,6 @@ public final class PacketDispatcher implements Consumer<Packet> {
                     eventService.accept(packet);
                     break;
                 case BIND:
-                case EXTENDED_BIND:
                     Connection connection = packet.getConn();
                     EndpointManager endpointManager = connection.getEndpointManager();
                     endpointManager.accept(packet);

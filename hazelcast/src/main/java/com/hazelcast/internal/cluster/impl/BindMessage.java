@@ -32,29 +32,30 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCo
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 
 /**
- * Extended bind message, conveying information about all kinds of public
+ * Bind message, conveying information about all kinds of public
  * addresses per protocol type.
  * It is the first message exchanged on a new connection
  * so {@link com.hazelcast.nio.serialization.impl.Versioned Versioned}
  * serialization cannot be used as there may be no cluster version
- * established yet. The {@code ExtendedBindMessage} itself includes a
+ * established yet. The {@code BindMessage} itself includes a
  * schema version so it can be extended in future versions without having
  * to use another packet type.
  *
  * @since 3.12
  */
-public class ExtendedBindMessage implements IdentifiedDataSerializable {
+public class BindMessage
+        implements IdentifiedDataSerializable {
 
     private byte schemaVersion;
     private Map<ProtocolType, Collection<Address>> localAddresses;
     private Address targetAddress;
     private boolean reply;
 
-    public ExtendedBindMessage() {
+    public BindMessage() {
     }
 
-    public ExtendedBindMessage(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
-                               Address targetAddress, boolean reply) {
+    public BindMessage(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
+                       Address targetAddress, boolean reply) {
         this.schemaVersion = schemaVersion;
         this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
@@ -84,7 +85,7 @@ public class ExtendedBindMessage implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return ClusterDataSerializerHook.EXTENDED_BIND_MESSAGE;
+        return ClusterDataSerializerHook.BIND_MESSAGE;
     }
 
     @Override
@@ -124,7 +125,7 @@ public class ExtendedBindMessage implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "ExtendedBindMessage{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
+        return "BindMessage{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
                 + ", targetAddress=" + targetAddress + ", reply=" + reply + '}';
     }
 }

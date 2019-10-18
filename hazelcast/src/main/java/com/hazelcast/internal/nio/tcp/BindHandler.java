@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
+import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.IOService;
@@ -58,8 +58,8 @@ final class BindHandler {
         Object bind = ioService.getSerializationService().toObject(packet);
         TcpIpConnection connection = (TcpIpConnection) packet.getConn();
         if (connection.setBinding()) {
-            ExtendedBindMessage extendedBindMessage = (ExtendedBindMessage) bind;
-            bind(connection, extendedBindMessage);
+            BindMessage bindMessage = (BindMessage) bind;
+            bind(connection, bindMessage);
         } else {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection " + connection + " is already bound, ignoring incoming " + bind);
@@ -67,9 +67,9 @@ final class BindHandler {
         }
     }
 
-    private synchronized boolean bind(TcpIpConnection connection, ExtendedBindMessage bindMessage) {
+    private synchronized boolean bind(TcpIpConnection connection, BindMessage bindMessage) {
         if (logger.isFinestEnabled()) {
-            logger.finest("Extended binding " + connection + ", complete message is " + bindMessage);
+            logger.finest("Binding " + connection + ", complete message is " + bindMessage);
         }
 
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = bindMessage.getLocalAddresses();
