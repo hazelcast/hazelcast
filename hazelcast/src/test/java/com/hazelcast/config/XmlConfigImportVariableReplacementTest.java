@@ -262,6 +262,11 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         buildConfig(xmlContentWithImportResource(pathToEmptyFile), null);
     }
 
+    @Override
+    String contentWithImportResource(String url) {
+        return xmlContentWithImportResource(url);
+    }
+
     private String xmlContentWithImportResource(String importPath) {
         return HAZELCAST_START_TAG
                 + "    <import resource=\"" + importPath + "\"/>\n"

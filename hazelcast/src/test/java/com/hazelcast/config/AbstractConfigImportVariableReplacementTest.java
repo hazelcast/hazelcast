@@ -54,6 +54,23 @@ public abstract class AbstractConfigImportVariableReplacementTest {
         return file.getAbsolutePath();
     }
 
+    String createFilesWithCycleImports(String... paths) throws Exception {
+        for (int i = 1; i < paths.length; i++) {
+            createFileWithDependencyImport(paths[i - 1], paths[i]);
+        }
+        return createFileWithDependencyImport(paths[0], paths[1]);
+    }
+
+    private String createFileWithDependencyImport(
+        String dependent,
+        String pathToDependency) throws Exception {
+        final String xmlContent = contentWithImportResource(pathToDependency);
+        writeStringToStreamAndClose(new FileOutputStream(dependent), xmlContent);
+        return xmlContent;
+    }
+
+    abstract String contentWithImportResource(String url);
+
     @Test
     public abstract void testHazelcastElementOnlyAppearsOnce();
 
