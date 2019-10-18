@@ -17,7 +17,8 @@
 package com.hazelcast.config.cp;
 
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.internal.util.Preconditions;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
 /**
  * Contains configuration options for {@link FencedLock}
@@ -99,7 +100,7 @@ public class FencedLockConfig {
      * Sets the number of lock acquires a lock holder can perform.
      */
     public FencedLockConfig setLockAcquireLimit(int lockAcquireLimit) {
-        Preconditions.checkTrue(lockAcquireLimit >= 0, "reentrant lock acquire limit cannot be negative");
+        checkNotNegative(lockAcquireLimit, "reentrant lock acquire limit cannot be negative");
         this.lockAcquireLimit = lockAcquireLimit;
         return this;
     }

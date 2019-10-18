@@ -42,7 +42,7 @@ public abstract class UnsafeSemaphoreFailureTest extends AbstractSemaphoreFailur
     @Override
     protected HazelcastInstance[] createInstances() {
         Config config = new Config();
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, isJDKCompatible());
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, isJDKCompatible(), 0);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return factory.newInstances(config, 2);
     }

@@ -44,6 +44,7 @@ import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.A
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 
@@ -60,8 +61,12 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
     Semaphore() {
     }
 
-    Semaphore(CPGroupId groupId, String name) {
+    Semaphore(CPGroupId groupId, String name, int available) {
         super(groupId, name);
+        checkNotNegative(available, "Initial permit count cannot be negative: " + available + " for Semaphore: "
+                + name);
+        this.available = available;
+        this.initialized = available > 0;
     }
 
     Collection<AcquireInvocationKey> init(int permits) {
@@ -107,7 +112,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
             Integer acquired = state.getInvocationResponse(endpoint.threadId(), key.invocationUid());
             if (acquired != null) {
                 AcquireStatus status = acquired > 0 ? SUCCESSFUL : FAILED;
-                return new AcquireResult(status, acquired, Collections.<AcquireInvocationKey>emptyList());
+                return new AcquireResult(status, acquired, Collections.emptyList());
             }
         }
 

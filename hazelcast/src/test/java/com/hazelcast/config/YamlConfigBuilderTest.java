@@ -3393,8 +3393,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    semaphores:\n"
                 + "      sem1:\n"
                 + "        jdk-compatible: true\n"
+                + "        initial-permits: 1\n"
                 + "      sem2:\n"
                 + "        jdk-compatible: false\n"
+                + "        initial-permits: 2\n"
                 + "    locks:\n"
                 + "      lock1:\n"
                 + "        lock-acquire-limit: 1\n"
@@ -3425,6 +3427,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());
         assertFalse(semaphoreConfig2.isJDKCompatible());
+        assertEquals(1, semaphoreConfig1.getInitialPermits());
+        assertEquals(2, semaphoreConfig2.getInitialPermits());
         FencedLockConfig lockConfig1 = cpSubsystemConfig.findLockConfig("lock1");
         FencedLockConfig lockConfig2 = cpSubsystemConfig.findLockConfig("lock2");
         assertNotNull(lockConfig1);

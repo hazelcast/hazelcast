@@ -470,6 +470,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         semaphoreConfigBuilder.addPropertyValue("name", value);
                     } else if ("jdk-compatible".equals(nodeName)) {
                         semaphoreConfigBuilder.addPropertyValue("JDKCompatible", getBooleanValue(value));
+                    } else if ("initial-permits".equals(nodeName)) {
+                        semaphoreConfigBuilder.addPropertyValue("initialPermits", getIntegerValue("initial-permits", value));
                     }
                 }
                 AbstractBeanDefinition beanDefinition = semaphoreConfigBuilder.getBeanDefinition();

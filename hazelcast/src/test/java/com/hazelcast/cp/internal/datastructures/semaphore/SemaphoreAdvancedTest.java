@@ -142,7 +142,8 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
         cpSubsystemConfig.setSessionTimeToLiveSeconds(10);
         cpSubsystemConfig.setSessionHeartbeatIntervalSeconds(1);
 
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, false);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+        semaphoreConfig.setName(objectName);
         cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
         return config;
     }

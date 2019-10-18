@@ -1532,6 +1532,7 @@ public class ConfigXmlGenerator {
             gen.open("semaphore")
                     .node("name", semaphoreConfig.getName())
                     .node("jdk-compatible", semaphoreConfig.isJDKCompatible())
+                    .node("initial-permits", semaphoreConfig.getInitialPermits())
                     .close();
         }
 

@@ -842,6 +842,8 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 String value = getTextContent(subChild).trim();
                 if ("jdk-compatible".equals(nodeName)) {
                     semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
+                } else if ("initial-permits".equals(nodeName)) {
+                    semaphoreConfig.setInitialPermits(Integer.parseInt(value));
                 }
             }
             cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
