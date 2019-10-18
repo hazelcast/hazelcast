@@ -16,20 +16,17 @@
 
 package com.hazelcast.internal.nio.tcp;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -61,14 +58,8 @@ final class BindHandler {
         Object bind = ioService.getSerializationService().toObject(packet);
         TcpIpConnection connection = (TcpIpConnection) packet.getConn();
         if (connection.setBinding()) {
-            if (bind instanceof ExtendedBindMessage) {
-                // incoming connection from a member >= 3.12
-                ExtendedBindMessage extendedBindMessage = (ExtendedBindMessage) bind;
-                bind(connection, extendedBindMessage);
-            } else {
-                BindMessage bindMessage = (BindMessage) bind;
-                bind(connection, bindMessage.getLocalAddress(), bindMessage.getTargetAddress(), bindMessage.shouldReply());
-            }
+            ExtendedBindMessage extendedBindMessage = (ExtendedBindMessage) bind;
+            bind(connection, extendedBindMessage);
         } else {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection " + connection + " is already bound, ignoring incoming " + bind);
@@ -118,32 +109,6 @@ final class BindHandler {
                 remoteEndpoint,
                 allAliases,
                 bindMessage.isReply());
-    }
-
-    /**
-     * Binding completes the connection and makes it available to be used with the ConnectionManager.
-     */
-    private synchronized void bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
-        }
-
-        final Address thisAddress = ioService.getThisAddress();
-
-        // Some simple spoofing attack prevention
-        // Prevent BINDs from src that doesn't match the BIND local address
-        // Prevent BINDs from src that match us (same host & port)
-        if (spoofingChecks && (!ensureValidBindSource(connection, remoteEndPoint) || !ensureBindNotFromSelf(connection,
-                remoteEndPoint, thisAddress))) {
-            return;
-        }
-
-        // Prevent BINDs that don't have this node as the destination
-        if (!ensureValidBindTarget(connection, remoteEndPoint, localEndpoint, thisAddress)) {
-            return;
-        }
-
-        bind0(connection, remoteEndPoint, null, reply);
     }
 
     /**
@@ -201,47 +166,6 @@ final class BindHandler {
         }
 
         return returnValue;
-    }
-
-    private boolean ensureValidBindSource(TcpIpConnection connection, Address remoteEndPoint) {
-        try {
-            InetAddress originalRemoteAddr = connection.getRemoteSocketAddress().getAddress();
-            InetAddress presentedRemoteAddr = remoteEndPoint.getInetAddress();
-            if (!originalRemoteAddr.equals(presentedRemoteAddr)) {
-                String msg = "Wrong bind request from " + originalRemoteAddr + ", identified as " + presentedRemoteAddr;
-                logger.warning(msg);
-                connection.close(msg, null);
-                return false;
-            }
-        } catch (UnknownHostException e) {
-            String msg = e.getMessage();
-            logger.warning(msg);
-            connection.close(msg, e);
-            return false;
-        }
-        return true;
-    }
-
-    private boolean ensureBindNotFromSelf(TcpIpConnection connection, Address remoteEndPoint, Address thisAddress) {
-        if (thisAddress.equals(remoteEndPoint)) {
-            String msg = "Wrong bind request. Remote endpoint is same to this endpoint.";
-            logger.warning(msg);
-            connection.close(msg, null);
-            return false;
-        }
-        return true;
-    }
-
-    private boolean ensureValidBindTarget(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint,
-                                          Address thisAddress) {
-        if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
-            String msg =
-                    "Wrong bind request from " + remoteEndPoint + "! This node is not the requested endpoint: " + localEndpoint;
-            logger.warning(msg);
-            connection.close(msg, null);
-            return false;
-        }
-        return true;
     }
 
     private boolean checkAlreadyConnected(TcpIpConnection connection, Address remoteEndPoint) {

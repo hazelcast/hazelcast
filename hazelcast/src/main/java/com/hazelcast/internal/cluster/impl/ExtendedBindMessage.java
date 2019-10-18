@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -33,8 +33,8 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
 
 /**
  * Extended bind message, conveying information about all kinds of public
- * addresses per protocol type. Used as a replacement of the older
- * {@link BindMessage}. It is the first message exchanged on a new connection
+ * addresses per protocol type.
+ * It is the first message exchanged on a new connection
  * so {@link com.hazelcast.nio.serialization.impl.Versioned Versioned}
  * serialization cannot be used as there may be no cluster version
  * established yet. The {@code ExtendedBindMessage} itself includes a
@@ -42,7 +42,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
  * to use another packet type.
  *
  * @since 3.12
- * @see BindMessage
  */
 public class ExtendedBindMessage implements IdentifiedDataSerializable {
 

@@ -120,7 +120,8 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[MEMBER] = arg -> new MemberImpl();
         constructors[HEARTBEAT] = arg -> new HeartbeatOp();
         constructors[CONFIG_CHECK] = arg -> new ConfigCheck();
-        constructors[BIND_MESSAGE] = arg -> new BindMessage();
+        // will be reused for ExtendedBindMessage
+        constructors[BIND_MESSAGE] = arg -> null;
         constructors[MEMBER_INFO_UPDATE] = arg -> new MembersUpdateOp();
         constructors[FINALIZE_JOIN] = arg -> new FinalizeJoinOp();
         constructors[BEFORE_JOIN_CHECK_FAILURE] = arg -> new BeforeJoinCheckFailureOp();
