@@ -88,8 +88,13 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      */
     public static final MetadataPolicy DEFAULT_METADATA_POLICY = MetadataPolicy.CREATE_ON_UPDATE;
 
+    /**
+     * Default value of whether statistics are enabled or not
+     */
+    public static final boolean DEFAULT_STATISTICS_ENABLED = true;
+
     private boolean readBackupData;
-    private boolean statisticsEnabled = true;
+    private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
