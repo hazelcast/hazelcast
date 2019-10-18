@@ -26,7 +26,7 @@ import com.hazelcast.cp.internal.raft.impl.persistence.NopRaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateLoader;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.persistence.RestoredRaftState;
-import com.hazelcast.internal.util.function.BiFunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import org.junit.Assert;
 
 import java.util.Arrays;

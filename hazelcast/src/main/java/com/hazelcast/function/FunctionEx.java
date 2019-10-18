@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
 
@@ -29,6 +29,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @param <T> the type of the input to the function
  * @param <R> the type of the result of the function
+ *
+ * @since 4.0
  */
 @FunctionalInterface
 public interface FunctionEx<T, R> extends Function<T, R>, Serializable {

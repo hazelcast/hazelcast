@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
 
@@ -29,6 +29,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @param <T> the type of the first argument to the predicate
  * @param <U> the type of the second argument the predicate
+ *
+ * @since 4.0
  */
 @FunctionalInterface
 public interface BiPredicateEx<T, U> extends BiPredicate<T, U>, Serializable {

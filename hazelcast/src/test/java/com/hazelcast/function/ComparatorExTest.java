@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -23,11 +23,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.function.ComparatorEx.nullsFirst;
+import static com.hazelcast.function.ComparatorEx.nullsLast;
+import static com.hazelcast.function.ComparatorsEx.NATURAL_ORDER;
+import static com.hazelcast.function.ComparatorsEx.REVERSE_ORDER;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
-import static com.hazelcast.internal.util.function.ComparatorEx.nullsFirst;
-import static com.hazelcast.internal.util.function.ComparatorEx.nullsLast;
-import static com.hazelcast.internal.util.function.ComparatorsEx.NATURAL_ORDER;
-import static com.hazelcast.internal.util.function.ComparatorsEx.REVERSE_ORDER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 

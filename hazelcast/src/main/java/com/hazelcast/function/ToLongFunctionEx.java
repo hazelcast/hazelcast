@@ -14,34 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.io.Serializable;
-import java.util.function.Supplier;
+import java.util.function.ToLongFunction;
 
 /**
- * {@code Serializable} variant of {@link Supplier java.util.function.Supplier}
- * which declares checked exception.
+ * {@code Serializable} variant of {@link ToLongFunction
+ * java.util.function.ToLongFunction} which declares checked exception.
  *
- * @param <T> the type of results supplied by this supplier
+ * @param <T> the type of the input to the function
+ *
+ * @since 4.0
  */
 @FunctionalInterface
-public interface SupplierEx<T> extends Supplier<T>, Serializable {
+public interface ToLongFunctionEx<T> extends ToLongFunction<T>, Serializable {
 
     /**
-     * Exception-declaring version of {@link Supplier#get}.
+     * Exception-declaring version of {@link ToLongFunction#applyAsLong}.
      */
-    T getEx() throws Exception;
+    long applyAsLongEx(T value) throws Exception;
 
     @Override
-    default T get() {
+    default long applyAsLong(T value) {
         try {
-            return getEx();
+            return applyAsLongEx(value);
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
     }
-
 }

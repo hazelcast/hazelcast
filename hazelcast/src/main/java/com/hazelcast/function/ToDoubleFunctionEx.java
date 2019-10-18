@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
 
@@ -26,6 +26,8 @@ import java.util.function.ToDoubleFunction;
  * java.util.function.ToDoubleFunction} which declares checked exception.
  *
  * @param <T> the type of the input to the function
+ *
+ * @since 4.0
  */
 @FunctionalInterface
 public interface ToDoubleFunctionEx<T> extends ToDoubleFunction<T>, Serializable {

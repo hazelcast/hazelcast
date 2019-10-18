@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.function.ComparatorsEx.NullComparator;
+import com.hazelcast.function.ComparatorsEx.NullComparator;
 
 import java.io.Serializable;
 import java.util.Comparator;
@@ -34,6 +34,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * which declares checked exception.
  *
  * @param <T> the type of objects that may be compared by this comparator
+ *
+ * @since 4.0
  */
 @FunctionalInterface
 @SuppressWarnings("checkstyle:methodcount")

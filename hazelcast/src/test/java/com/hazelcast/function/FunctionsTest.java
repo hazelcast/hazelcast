@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.function;
+package com.hazelcast.function;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -24,18 +24,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.function.Functions.entryValue;
+import static com.hazelcast.function.Functions.wholeItem;
+import static com.hazelcast.function.PredicateEx.alwaysFalse;
+import static com.hazelcast.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
-import static com.hazelcast.internal.util.function.Functions.entryKey;
-import static com.hazelcast.internal.util.function.Functions.entryValue;
-import static com.hazelcast.internal.util.function.Functions.wholeItem;
-import static com.hazelcast.internal.util.function.PredicateEx.alwaysFalse;
-import static com.hazelcast.internal.util.function.PredicateEx.alwaysTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastParallelClassRunner.class)
-public class FunctionsTestS extends HazelcastTestSupport {
+public class FunctionsTest extends HazelcastTestSupport {
 
     @Test
     public void constructor() {
