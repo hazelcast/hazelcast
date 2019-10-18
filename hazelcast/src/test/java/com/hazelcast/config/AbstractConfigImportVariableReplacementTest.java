@@ -39,8 +39,12 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    protected static File createConfigFile(String filename, String suffix) throws Exception {
-        return IOUtils.createConfigFile(filename, suffix);
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private static File createConfigFile(String filename, String suffix) throws Exception {
+        File file = File.createTempFile(filename, suffix);
+        file.setWritable(true);
+        file.deleteOnExit();
+        return file;
     }
 
     protected static void writeStringToStreamAndClose(FileOutputStream os, String string) throws Exception {
@@ -61,9 +65,7 @@ public abstract class AbstractConfigImportVariableReplacementTest {
         return createFileWithDependencyImport(paths[0], paths[1]);
     }
 
-    private String createFileWithDependencyImport(
-        String dependent,
-        String pathToDependency) throws Exception {
+    private String createFileWithDependencyImport(String dependent, String pathToDependency) throws Exception {
         final String xmlContent = contentWithImportResource(pathToDependency);
         writeStringToStreamAndClose(new FileOutputStream(dependent), xmlContent);
         return xmlContent;
