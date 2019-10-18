@@ -38,7 +38,6 @@ import static com.hazelcast.config.MapConfig.DEFAULT_METADATA_POLICY;
 import static com.hazelcast.config.MapConfig.DEFAULT_STATISTICS_ENABLED;
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
-import static com.hazelcast.internal.util.JsonUtil.getObject;
 import static com.hazelcast.internal.util.JsonUtil.getString;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
