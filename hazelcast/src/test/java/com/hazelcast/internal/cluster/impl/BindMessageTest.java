@@ -43,9 +43,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ExtendedBindMessageTest {
+public class BindMessageTest {
 
-    private ExtendedBindMessage bindMessage;
+    private BindMessage bindMessage;
     private SerializationService serializationService;
     private Address targetAddress;
 
@@ -57,9 +57,9 @@ public class ExtendedBindMessageTest {
 
     @Test
     public void testSerialization_withMultipleLocalAddresses() throws Exception {
-        bindMessage = new ExtendedBindMessage((byte) 1, localAddresses(), targetAddress, true);
+        bindMessage = new BindMessage((byte) 1, localAddresses(), targetAddress, true);
         Data serialized = serializationService.toData(bindMessage);
-        ExtendedBindMessage deserialized = serializationService.toObject(serialized);
+        BindMessage deserialized = serializationService.toObject(serialized);
         assertEquals(1, deserialized.getSchemaVersion());
         assertEquals(localAddresses(), deserialized.getLocalAddresses());
         assertEquals(targetAddress, deserialized.getTargetAddress());
@@ -68,9 +68,9 @@ public class ExtendedBindMessageTest {
 
     @Test
     public void testSerialization_whenBindMessageEmpty() {
-        bindMessage = new ExtendedBindMessage();
+        bindMessage = new BindMessage();
         Data serialized = serializationService.toData(bindMessage);
-        ExtendedBindMessage deserialized = serializationService.toObject(serialized);
+        BindMessage deserialized = serializationService.toObject(serialized);
         assertEquals(0, deserialized.getSchemaVersion());
         assertTrue(deserialized.getLocalAddresses().isEmpty());
         assertNull(null, deserialized.getTargetAddress());

@@ -101,8 +101,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int HEARTBEAT_COMPLAINT = 38;
     public static final int PROMOTE_LITE_MEMBER = 39;
     public static final int VECTOR_CLOCK = 40;
-    public static final int EXTENDED_BIND_MESSAGE = 41;
-    public static final int ENDPOINT_QUALIFIER = 42;
+    public static final int ENDPOINT_QUALIFIER = 41;
 
     static final int LEN = ENDPOINT_QUALIFIER + 1;
 
@@ -120,8 +119,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[MEMBER] = arg -> new MemberImpl();
         constructors[HEARTBEAT] = arg -> new HeartbeatOp();
         constructors[CONFIG_CHECK] = arg -> new ConfigCheck();
-        // will be reused for ExtendedBindMessage
-        constructors[BIND_MESSAGE] = arg -> null;
+        constructors[BIND_MESSAGE] = arg -> new BindMessage();
         constructors[MEMBER_INFO_UPDATE] = arg -> new MembersUpdateOp();
         constructors[FINALIZE_JOIN] = arg -> new FinalizeJoinOp();
         constructors[BEFORE_JOIN_CHECK_FAILURE] = arg -> new BeforeJoinCheckFailureOp();
@@ -157,7 +155,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[HEARTBEAT_COMPLAINT] = arg -> new HeartbeatComplaintOp();
         constructors[PROMOTE_LITE_MEMBER] = arg -> new PromoteLiteMemberOp();
         constructors[VECTOR_CLOCK] = arg -> new VectorClock();
-        constructors[EXTENDED_BIND_MESSAGE] = arg -> new ExtendedBindMessage();
         constructors[ENDPOINT_QUALIFIER] = arg -> new EndpointQualifier();
         return new ArrayDataSerializableFactory(constructors);
     }

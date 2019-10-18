@@ -308,11 +308,11 @@ public final class Packet extends HeapData implements OutboundFrame {
          */
         BIND,
         /**
-         * The type of Extended Bind packet, since Hazelcast 3.12.
+         * Unused packet type. Available for future use.
          * <p>
          * {@code ordinal = 5}
          */
-        EXTENDED_BIND,
+        UNDEFINED5,
         /**
          * Unused packet type. Available for future use.
          * <p>

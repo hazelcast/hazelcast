@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
+import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.logging.ILogger;
@@ -54,9 +54,9 @@ public class BindRequest {
         if (logger.isFinestEnabled()) {
             logger.finest("Sending bind packet to " + remoteEndPoint);
         }
-        ExtendedBindMessage bind = new ExtendedBindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply);
+        BindMessage bind = new BindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
-        Packet packet = new Packet(bytes).setPacketType(Packet.Type.EXTENDED_BIND);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
         connection.write(packet);
         //now you can send anything...
     }
