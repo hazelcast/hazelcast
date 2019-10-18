@@ -36,23 +36,27 @@ public interface SecurityContext {
 
     /**
      * Creates member {@link LoginContext}.
-     *
+     * @param clusterName cluster name received from the connecting member
      * @param credentials member credentials
      * @param connection member connection
+     *
      * @return {@link LoginContext}
      * @throws LoginException
      */
-    LoginContext createMemberLoginContext(Credentials credentials, Connection connection) throws LoginException;
+    LoginContext createMemberLoginContext(String clusterName, Credentials credentials, Connection connection)
+            throws LoginException;
 
     /**
      * Creates client {@link LoginContext}.
      *
+     * @param clusterName cluster name reported on the client protocol
      * @param credentials client credentials
      * @param connection client connection
      * @return {@link LoginContext}
      * @throws LoginException
      */
-    LoginContext createClientLoginContext(Credentials credentials, Connection connection) throws LoginException;
+    LoginContext createClientLoginContext(String clusterName, Credentials credentials, Connection connection)
+            throws LoginException;
 
     /**
      * Returns current {@link ICredentialsFactory}.

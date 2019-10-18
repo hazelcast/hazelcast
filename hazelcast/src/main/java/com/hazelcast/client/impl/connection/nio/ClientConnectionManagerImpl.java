@@ -539,12 +539,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 resolvedClusterId = clusterId;
             }
 
+            String clusterName = currentClusterContext.getClusterName();
             if (credentials instanceof PasswordCredentials) {
                 PasswordCredentials cr = (PasswordCredentials) credentials;
-                return ClientAuthenticationCodec
-                        .encodeRequest(cr.getName(), cr.getPassword(), clientUuid, ClientTypes.JAVA,
-                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                                labels, clusterPartitionCount, resolvedClusterId);
+                return ClientAuthenticationCodec.encodeRequest(clusterName, cr.getName(),
+                        cr.getPassword(), clientUuid, ClientTypes.JAVA, serializationVersion,
+                        BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels, clusterPartitionCount,
+                        resolvedClusterId);
             } else {
                 Data data;
                 if (credentials instanceof TokenCredentials) {
@@ -552,9 +553,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 } else {
                     data = ss.toData(credentials);
                 }
-                return ClientAuthenticationCustomCodec.encodeRequest(data, clientUuid, ClientTypes.JAVA, serializationVersion,
-                        BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                        labels, clusterPartitionCount, resolvedClusterId);
+                return ClientAuthenticationCustomCodec.encodeRequest(clusterName, data,
+                        clientUuid, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
+                        client.getName(), labels, clusterPartitionCount, resolvedClusterId);
             }
         }
 

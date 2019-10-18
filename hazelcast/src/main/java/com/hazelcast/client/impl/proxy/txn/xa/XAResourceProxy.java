@@ -188,12 +188,12 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
         }
         String otherClusterName = null;
         if (xaResource instanceof XAResourceProxy) {
-            otherClusterName = ((XAResourceProxy) xaResource).getClientName();
+            otherClusterName = ((XAResourceProxy) xaResource).getClusterName();
         }
         if (xaResource instanceof XAResourceImpl) {
             otherClusterName = ((XAResourceImpl) xaResource).getClusterName();
         }
-        return getClientName().equals(otherClusterName);
+        return getClusterName().equals(otherClusterName);
     }
 
     @Override
@@ -229,13 +229,13 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
         return Thread.currentThread().getId();
     }
 
-    private String getClientName() {
+    private String getClusterName() {
         ClientTransactionManagerService transactionManager = getContext().getTransactionManager();
-        return transactionManager.getClientName();
+        return transactionManager.getClusterName();
     }
 
     @Override
     public String toString() {
-        return "HazelcastXaResource{" + getClientName() + '}';
+        return "HazelcastXaResource{" + getClusterName() + '}';
     }
 }

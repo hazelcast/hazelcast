@@ -829,28 +829,27 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     /**
-     * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given cluster name is compared to
-     * configuration. Otherwise member JAAS authentication (member login module stack) is used to authenticate the command.
+     * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given user name is compared to
+     * cluster name in node configuration. Otherwise member JAAS authentication (member login module stack) is used to
+     * authenticate the command.
      */
-    protected boolean authenticate(HttpPostCommand command, String clusterName, String pass)
+    protected boolean authenticate(HttpPostCommand command, String userName, String pass)
             throws UnsupportedEncodingException {
-        String decodedName = URLDecoder.decode(clusterName, "UTF-8");
-        SecurityContext securityContext = textCommandService.getNode().getNodeExtension().getSecurityContext();
+        String decodedName = userName != null ? URLDecoder.decode(userName, "UTF-8") : null;
+        Node node = textCommandService.getNode();
+        SecurityContext securityContext = node.getNodeExtension().getSecurityContext();
+        String clusterName = node.getConfig().getClusterName();
         if (securityContext == null) {
             if (pass != null && !pass.isEmpty()) {
                 logger.fine("Password was provided but the Hazelcast Security is disabled.");
             }
-            String expectedName = textCommandService.getNode().getConfig().getClusterName();
-            return expectedName.equals(decodedName);
+            return clusterName.equals(decodedName);
         }
-        if (pass == null) {
-            logger.fine("Empty password is not allowed when the Hazelcast Security is enabled.");
-            return false;
-        }
-        String decodedPass = URLDecoder.decode(pass, "UTF-8");
+        String decodedPass = pass != null ? URLDecoder.decode(pass, "UTF-8") : null;
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(decodedName, decodedPass);
         try {
-            LoginContext lc = securityContext.createMemberLoginContext(credentials, command.getConnection());
+            // we don't have an argument for clusterName in HTTP request, so let's reuse the "username" here
+            LoginContext lc = securityContext.createMemberLoginContext(decodedName, credentials, command.getConnection());
             lc.login();
         } catch (LoginException e) {
             return false;

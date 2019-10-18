@@ -110,7 +110,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * clusterConnectionTimestamp
      * credentials.principal
      * clientAddress
-     * clientName
+     * clusterName
      * enterprise
      * lastStatisticsCollectionTime
      * nearcache.&lt;example\.fastmap&gt;.creationTime

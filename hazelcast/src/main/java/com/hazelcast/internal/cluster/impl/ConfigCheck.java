@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -61,7 +60,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
         // Copying all properties relevant for checking
         properties.put(PARTITION_COUNT.getName(), config.getProperty(PARTITION_COUNT.getName()));
-        properties.put(APPLICATION_VALIDATION_TOKEN.getName(), config.getProperty(APPLICATION_VALIDATION_TOKEN.getName()));
 
         // Copying cluster settings
         this.clusterName = config.getClusterName();
@@ -95,7 +93,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         verifyJoiner(found);
         verifyPartitionGroup(found);
         verifyPartitionCount(found);
-        verifyApplicationValidationToken(found);
         return true;
     }
 
@@ -103,13 +100,11 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         return equals(clusterName, found.clusterName);
     }
 
-    private void verifyApplicationValidationToken(ConfigCheck found) {
-        String expectedValidationToken = properties.get(APPLICATION_VALIDATION_TOKEN.getName());
-        String foundValidationToken = found.properties.get(APPLICATION_VALIDATION_TOKEN.getName());
-        if (!equals(expectedValidationToken, foundValidationToken)) {
-            throw new ConfigMismatchException("Incompatible '" + APPLICATION_VALIDATION_TOKEN + "'! expected: "
-                    + expectedValidationToken + ", found: " + foundValidationToken);
-        }
+    /**
+     * @return the clusterName
+     */
+    public String getClusterName() {
+        return clusterName;
     }
 
     private void verifyPartitionCount(ConfigCheck found) {

@@ -133,7 +133,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID uuid = UUID.randomUUID();
         UUID ownerUuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
-        ClientMessage message = ClientAuthenticationCodec.encodeRequest("user", "pass",
+        ClientMessage message = ClientAuthenticationCodec.encodeRequest("cluster", "user", "pass",
                 uuid, "JAVA", (byte) 1,
                 "1.0", "name", labels, 271, clusterId);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
@@ -166,6 +166,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
 
         ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(resultingMessage.get());
 
+        assertEquals("cluster", parameters.clusterName);
         assertEquals("user", parameters.username);
         assertEquals("pass", parameters.password);
         assertEquals(uuid, parameters.uuid);

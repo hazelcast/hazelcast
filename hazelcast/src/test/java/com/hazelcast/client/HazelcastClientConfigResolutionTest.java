@@ -319,7 +319,7 @@ public class HazelcastClientConfigResolutionTest {
             instance = HazelcastClient.newHazelcastClient();
             ClientConfig config = getClientConfig(instance);
 
-            assertEquals("dev", config.getClientName());
+            assertEquals("dev", config.getClusterName());
         } finally {
             member.shutdown();
         }

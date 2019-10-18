@@ -53,29 +53,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class GroupProperty {
 
     /**
-     * Use this property to verify that Hazelcast nodes only join the cluster
-     * when their 'application' level configuration is the same.
-     * <p>
-     * If you have multiple machines, you want to make sure that each machine
-     * that joins the cluster has exactly the same 'application level' settings
-     * (such as settings that are not part of the Hazelcast configuration, maybe
-     * some file path). To prevent the machines with potentially different
-     * application level configuration from forming a cluster, you can set this
-     * property.
-     * <p>
-     * You could use actual values, such as string paths, but you can also use
-     * an md5 hash. We make a guarantee that nodes will form a cluster (become a
-     * member) only if the token is an exact match. If this token is different,
-     * the member can't be started and therefore you will get the guarantee that
-     * all members in the cluster will have exactly the same application validation
-     * token.
-     * <p>
-     * This validation token will be checked before a member joins the cluster.
-     */
-    public static final HazelcastProperty APPLICATION_VALIDATION_TOKEN
-            = new HazelcastProperty("hazelcast.application.validation.token");
-
-    /**
      * Total number of partitions in the Hazelcast cluster.
      */
     public static final HazelcastProperty PARTITION_COUNT

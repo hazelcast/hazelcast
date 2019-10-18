@@ -14,7 +14,7 @@
 
 hazelcast-client:
 
-  client-name: cluster2
+  cluster-name: cluster2
 
   network:
     cluster-members:

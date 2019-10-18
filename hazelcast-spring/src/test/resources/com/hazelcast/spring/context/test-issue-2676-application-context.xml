@@ -49,7 +49,7 @@
     </hz:hazelcast>
 
     <hz:client id="client" lazy-init="true" scope="prototype">
-        <hz:client-name>${cluster.name}</hz:client-name>
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network connection-timeout="1000">
         </hz:network>
     </hz:client>

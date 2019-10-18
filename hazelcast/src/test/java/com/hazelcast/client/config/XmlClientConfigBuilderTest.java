@@ -92,7 +92,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidRootElement() {
         String xml = "<hazelcast>"
-                + "<client-name>dev</client-name>"
+                + "<cluster-name>dev</cluster-name>"
                 + "</hazelcast>";
         buildConfig(xml);
     }
@@ -111,7 +111,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     @Test
     public void loadingThroughSystemProperty_existingFile() throws IOException {
         String xml = HAZELCAST_CLIENT_START_TAG
-                + "    <client-name>foobar</client-name>\n"
+                + "    <cluster-name>foobar</cluster-name>\n"
                 + "</hazelcast-client>";
 
         File file = File.createTempFile("foo", ".xml");
@@ -124,7 +124,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar", config.getClientName());
+        assertEquals("foobar", config.getClusterName());
     }
 
     @Override
@@ -141,7 +141,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar-xml", config.getClientName());
+        assertEquals("foobar-xml", config.getClusterName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", config.getNetworkConfig().getSSLConfig().getFactoryClassName());
         assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());
         assertFalse(config.getNetworkConfig().getSocketOptions().isKeepAlive());

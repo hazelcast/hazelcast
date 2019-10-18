@@ -66,6 +66,7 @@
     </hz:hazelcast>
 
     <hz:client id="client">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
@@ -144,10 +145,6 @@
                                class-name="com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer"/>
             </hz:serializers>
         </hz:serialization>
-
-        <hz:security>
-            <hz:credentials-ref>credentials</hz:credentials-ref>
-        </hz:security>
 
         <hz:proxy-factories>
             <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService"/>

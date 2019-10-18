@@ -86,6 +86,9 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                 int flags = firstFrame.flags;
                 if (ClientMessage.isFlagSet(flags, UNFRAGMENTED_MESSAGE)) {
                     handleMessage(activeReader.getClientMessage());
+                } else if (!trusted) {
+                    throw new IllegalStateException(
+                            "Fragmented client messages are not allowed before the client is authenticated.");
                 } else {
                     ClientMessage.ForwardFrameIterator frameIterator = activeReader.getClientMessage().frameIterator();
                     //ignore the fragmentationFrame

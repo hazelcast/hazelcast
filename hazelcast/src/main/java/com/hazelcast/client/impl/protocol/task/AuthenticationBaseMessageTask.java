@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -45,6 +46,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         implements BlockingMessageTask, UrgentMessageTask {
 
     protected transient UUID clientUuid;
+    protected transient String clusterName;
     protected transient String clientName;
     protected transient Set<String> labels;
     protected transient Credentials credentials;
@@ -113,14 +115,16 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
                     + ", Member partition count:" + clientEngine.getClusterService().getClusterId());
             return NOT_ALLOWED_IN_CLUSTER;
         } else if (clientEngine.getSecurityContext() != null) {
+            // security is enabled, let's do full JAAS authentication
             return authenticate(clientEngine.getSecurityContext());
         } else if (credentials instanceof UsernamePasswordCredentials) {
-            UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-            return verifyClusterName(usernamePasswordCredentials);
+            // security is disabled let's verify that the username and password are null and the cluster names match
+            return verifyEmptyCredentialsAndClusterName((PasswordCredentials) credentials);
         } else {
-            logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster-name "
-                    + "should be used for authentication!\n" + "Current credentials type is: "
-                    + credentials.getClass().getName());
+            logger.severe("Hazelcast security is disabled.\n"
+                    + "Null username and password values are expected.\n"
+                    + "Only the cluster name is verified in this case!\n"
+                    + "Current credentials type is: " + credentials.getClass().getName());
             return CREDENTIALS_FAILED;
         }
     }
@@ -128,7 +132,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     private AuthenticationStatus authenticate(SecurityContext securityContext) {
         Connection connection = endpoint.getConnection();
         try {
-            LoginContext lc = securityContext.createClientLoginContext(credentials, connection);
+            LoginContext lc = securityContext.createClientLoginContext(clusterName, credentials, connection);
             lc.login();
             endpoint.setLoginContext(lc);
             return AUTHENTICATED;
@@ -138,10 +142,16 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         }
     }
 
-    private AuthenticationStatus verifyClusterName(UsernamePasswordCredentials credentials) {
+    private AuthenticationStatus verifyEmptyCredentialsAndClusterName(PasswordCredentials passwordCredentials) {
+        if (passwordCredentials.getName() != null || passwordCredentials.getPassword() != null) {
+            logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
+                    + ",  authentication rejected because security is disabled on the member, "
+                    + "and client sends not-null username or password.");
+            return CREDENTIALS_FAILED;
+        }
         String nodeClusterName = nodeEngine.getConfig().getClusterName();
-        boolean usernameMatch = nodeClusterName.equals(credentials.getName());
-        return usernameMatch ? AUTHENTICATED : CREDENTIALS_FAILED;
+        boolean clusternameMatch = nodeClusterName.equals(clusterName);
+        return clusternameMatch ? AUTHENTICATED : CREDENTIALS_FAILED;
     }
 
     private ClientMessage prepareUnauthenticatedClientMessage() {

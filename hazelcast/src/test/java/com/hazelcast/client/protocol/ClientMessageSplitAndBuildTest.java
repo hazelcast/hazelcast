@@ -54,6 +54,7 @@ public class ClientMessageSplitAndBuildTest {
     private ClientMessage clientMessage2;
 
     private ClientMessage createMessage() {
+        String clusterName = generateRandomString(1000);
         String username = generateRandomString(1000);
         String password = generateRandomString(1000);
         UUID uuid = UuidUtil.newUnsecureUUID();
@@ -68,7 +69,7 @@ public class ClientMessageSplitAndBuildTest {
             labels.add(generateRandomString(1000));
         }
 
-        return ClientAuthenticationCodec.encodeRequest(username, password, uuid, clientType,
+        return ClientAuthenticationCodec.encodeRequest(clusterName, username, password, uuid, clientType,
                 (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
     }
 

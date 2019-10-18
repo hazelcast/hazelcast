@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientNameTest {
+public class ClusterNameTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -46,7 +46,7 @@ public class ClientNameTest {
     }
 
     @Test
-    public void test_clientName_overClientInstance() {
+    public void test_clusterName_overClientInstance() {
         hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
@@ -58,7 +58,7 @@ public class ClientNameTest {
     }
 
     @Test
-    public void test_clientName_overGetConnectedClients() {
+    public void test_clusterName_overGetConnectedClients() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
@@ -72,15 +72,15 @@ public class ClientNameTest {
     }
 
     @Test
-    public void test_clientName_overClientConnectedEvent() {
+    public void test_clusterName_overClientConnectedEvent() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch clientConnected = new CountDownLatch(1);
 
-        final AtomicReference<String> clientName = new AtomicReference<String>();
+        final AtomicReference<String> clusterName = new AtomicReference<String>();
         instance.getClientService().addClientListener(new ClientListener() {
             @Override
             public void clientConnected(Client client) {
-                clientName.set(client.getName());
+                clusterName.set(client.getName());
                 clientConnected.countDown();
             }
 
@@ -96,15 +96,15 @@ public class ClientNameTest {
         hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertOpenEventually(clientConnected);
-        assertEquals(name, clientName.get());
+        assertEquals(name, clusterName.get());
     }
 
     @Test
-    public void test_clientName_overClientDisconnectedEvent() {
+    public void test_clusterName_overClientDisconnectedEvent() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch clientDisconnected = new CountDownLatch(1);
 
-        final AtomicReference<String> clientName = new AtomicReference<String>();
+        final AtomicReference<String> clusterName = new AtomicReference<String>();
         instance.getClientService().addClientListener(new ClientListener() {
             @Override
             public void clientConnected(Client client) {
@@ -113,7 +113,7 @@ public class ClientNameTest {
 
             @Override
             public void clientDisconnected(Client client) {
-                clientName.set(client.getName());
+                clusterName.set(client.getName());
                 clientDisconnected.countDown();
             }
         });
@@ -125,6 +125,6 @@ public class ClientNameTest {
         client.shutdown();
 
         assertOpenEventually(clientDisconnected);
-        assertEquals(name, clientName.get());
+        assertEquals(name, clusterName.get());
     }
 }

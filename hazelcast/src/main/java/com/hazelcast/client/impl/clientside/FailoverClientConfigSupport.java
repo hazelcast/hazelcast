@@ -194,8 +194,8 @@ public final class FailoverClientConfigSupport {
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private static void checkValidAlternative(ClientConfig mainConfig, ClientConfig alternativeConfig) {
-        String mainClusterName = mainConfig.getClientName();
-        String alterNativeClusterName = alternativeConfig.getClientName();
+        String mainClusterName = mainConfig.getClusterName();
+        String alterNativeClusterName = alternativeConfig.getClusterName();
 
         checkValidAlternativeForNetwork(mainConfig, alternativeConfig);
 
@@ -266,8 +266,8 @@ public final class FailoverClientConfigSupport {
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private static void checkValidAlternativeForNetwork(ClientConfig mainConfig, ClientConfig alternativeConfig) {
-        String mainClusterName = mainConfig.getClientName();
-        String alterNativeClusterName = alternativeConfig.getClientName();
+        String mainClusterName = mainConfig.getClusterName();
+        String alterNativeClusterName = alternativeConfig.getClusterName();
 
         ClientNetworkConfig mainNetworkConfig = mainConfig.getNetworkConfig();
         ClientNetworkConfig alternativeNetworkConfig = alternativeConfig.getNetworkConfig();

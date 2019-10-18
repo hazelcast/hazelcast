@@ -49,7 +49,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         ClientConfig clientConfig = null;
         if (hzConfig != null) {
             clientConfig = new ClientConfig();
-            clientConfig.setClientName(hzConfig.getClusterName());
+            clientConfig.setClusterName(hzConfig.getClusterName());
             clientConfig.getNetworkConfig().setAddresses(singletonList("127.0.0.1"));
         }
         return HazelcastClientCachingProvider.createCachingProvider(HazelcastClient.newHazelcastClient(clientConfig));

@@ -52,7 +52,7 @@ public class ClientEntryListenerDisconnectTest {
         Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClientName("test");
+        clientConfig.setClusterName("test");
         clientConfig.getNetworkConfig()
                 .addAddress("localhost:6701", "localhost:6702")
                 .setSmartRouting(false);

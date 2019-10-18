@@ -103,8 +103,8 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     }
 
     @Override
-    public String getClientName() {
-        return client.getClientConfig().getClientName();
+    public String getClusterName() {
+        return client.getClientConfig().getClusterName();
     }
 
     public ClientConnection connect() throws Exception {
