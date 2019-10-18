@@ -84,40 +84,29 @@ public final class GroupProperty {
     /**
      * For more detail see {@link #PARTITION_OPERATION_THREAD_COUNT}.
      *
-     * If this property is set to false, Hazelcast will default to 3.x style
+     * If this property is set to true (default), Hazelcast will default to 3.x style
      * operation thread configuration whereby the sum of the number of partition
-     * threads and IO threads exceeds the number of cores.
+     * threads and IO threads exceeds the number of cores (so it will be overcommitting)
      *
-     * If this property is set to true (default) Hazelcast will subtract the
+     * If this property is set to false Hazelcast will subtract the
      * number of IO threads from the number of available processors and that will
-     * be the number of partition threads.
+     * be the number of partition threads. So there will not be an overcommit.
      *
      * If explicit number of partition threads is configured, this property is
-     * irrelevant.
+     * ignored.
      *
      * This property favors the typical get/set type of application. Application
      * that are number crunching or query heavy, will get a performance hit
      * because not all cores will be busy with processing operations since there
      * are less operation threads than processors. So for such applications it
      * is best to explicitly disable this property.
+     *
+     * The performance implications of this property are very environment specific.
+     * Some environments benefit greatly, while other environments run into a significant
+     * performance degradation.
      */
-    public static final HazelcastProperty PARTITION_OPERATION_THREAD_ISOLATED
-            = new HazelcastProperty("hazelcast.operation.thread.isolated", new Function<HazelcastProperties, Boolean>() {
-        @Override
-        public Boolean apply(HazelcastProperties properties) {
-            int availableProcessors = RuntimeAvailableProcessors.get();
-            if (availableProcessors < 20) {
-                return false;
-            }
-
-            int ioThreads = properties.getInteger(IO_INPUT_THREAD_COUNT) + properties.getInteger(IO_OUTPUT_THREAD_COUNT);
-            if (ioThreads > 8) {
-                return false;
-            }
-
-            return true;
-        }
-    });
+    public static final HazelcastProperty PARTITION_OPERATION_THREAD_OVERCOMMIT
+            = new HazelcastProperty("hazelcast.operation.thread.overcommit", true);
 
     /**
      * The number of partition operation handler threads per member.
@@ -125,10 +114,10 @@ public final class GroupProperty {
      * If this is less than the number of partitions on a member, partition operations
      * will queue behind other operations of different partitions.
      *
-     * If the JVM detects 20 or more cores, and 'hazelcast.operation.thread.isolated' is set to true,
+     * If the JVM detects 20 or more cores, and 'hazelcast.operation.thread.overcommit' is set to false,
      * it will prevent creating more threads than available cores by
      * determining the number of operation threads as corecount-iothreadcount.
-     * This will prevent that IO threads and partition threads will contend for cores and this leads to
+     * This will prevent that IO threads and partition threads will contend for cores and this can leads to
      * increases throughput and less jitter.
      *
      * If explicit number of partition threads is configured, than the magic where we try to determine optimal
@@ -139,15 +128,16 @@ public final class GroupProperty {
         @Override
         public Integer apply(HazelcastProperties properties) {
             int availableProcessors = RuntimeAvailableProcessors.get();
-            boolean isolated = properties.getBoolean(PARTITION_OPERATION_THREAD_ISOLATED);
 
-            if (isolated) {
+            if (properties.getBoolean(PARTITION_OPERATION_THREAD_OVERCOMMIT)) {
+                // the old way of determining the number of partition threads.
+                return max(2, availableProcessors);
+            } else {
                 int ioThreads = properties.getInteger(IO_INPUT_THREAD_COUNT) + properties.getInteger(IO_OUTPUT_THREAD_COUNT);
                 int partitionThreadCount = availableProcessors - ioThreads;
                 return checkPositive(partitionThreadCount, "partitionThreadCount must be positive,"
                         + " but was " + partitionThreadCount);
-            } else {
-                return max(2, availableProcessors);
+
             }
         }
     });
