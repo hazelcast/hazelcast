@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
@@ -50,6 +51,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -952,6 +954,35 @@ public class QueryBasicTest extends HazelcastTestSupport {
         testQueryUsingPortableObject(config, name);
     }
 
+    @Test
+    public void testIndexesOnKeyAttributes() {
+        String name = randomMapName();
+        Config config = smallInstanceConfig();
+        config.getMapConfig(name)
+                .addMapIndexConfig(new MapIndexConfig("__key.a", false))
+                .addMapIndexConfig(new MapIndexConfig("__key#b", true));
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<CompositeKey, Integer> map = instance.getMap(name);
+        map.addIndex("__key.c", true);
+        map.addIndex("__key#d", false);
+
+        for (int i = 0; i < 10; i++) {
+            map.put(new CompositeKey(i), i);
+        }
+
+        map.values(Predicates.equal("__key.a", 5));
+        map.values(Predicates.equal("__key#b", 5));
+        map.values(Predicates.equal("__key#c", 5));
+        map.values(Predicates.equal("__key.d", 5));
+
+        Map<String, LocalIndexStats> stats = map.getLocalMapStats().getIndexStats();
+        assertEquals(1, stats.get("__key.a").getQueryCount());
+        assertEquals(1, stats.get("__key.b").getQueryCount());
+        assertEquals(1, stats.get("__key.c").getQueryCount());
+        assertEquals(1, stats.get("__key.d").getQueryCount());
+    }
+
     private void testQueryUsingNestedPortableObject(Config config, String name) {
         addPortableFactories(config);
 
@@ -971,4 +1002,34 @@ public class QueryBasicTest extends HazelcastTestSupport {
         values = map.values(new SqlPredicate("child.child.timestamp > 0"));
         assertEquals(1, values.size());
     }
+
+    public static class CompositeKey implements Serializable {
+
+        private int a;
+        private int b;
+        private int c;
+        private int d;
+
+        public CompositeKey(int value) {
+            a = b = c = d = value;
+        }
+
+        public int getA() {
+            return a;
+        }
+
+        public int getB() {
+            return b;
+        }
+
+        public int getC() {
+            return c;
+        }
+
+        public int getD() {
+            return d;
+        }
+
+    }
+
 }
