@@ -227,7 +227,7 @@ public interface CPSubsystemManagementService {
      * <strong>Use with caution:
      * This method is NOT idempotent and multiple invocations can break
      * the whole system! After calling this API, you must observe the system
-     * to see if the restart process is successfully completed or failed
+     * to see if the reset process is successfully completed or failed
      * before making another call.</strong>
      *
      * @throws IllegalStateException When this method is called on
@@ -236,7 +236,7 @@ public interface CPSubsystemManagementService {
      *         is smaller than {@link CPSubsystemConfig#getCPMemberCount()}
      *
      */
-    CompletionStage<Void> restart();
+    CompletionStage<Void> reset();
 
     /**
      * Returns whether the CP discovery process is completed or not.

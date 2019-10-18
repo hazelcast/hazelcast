@@ -18,6 +18,8 @@ package com.hazelcast.cp.internal;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.cp.CPGroup;
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
@@ -36,6 +38,11 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+
+import java.util.Collection;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -46,6 +53,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     private final HazelcastInstanceImpl instance;
     private final boolean cpSubsystemEnabled;
+    private volatile CPSubsystemManagementService cpSubsystemManagementService;
 
     public CPSubsystemImpl(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -100,7 +108,14 @@ public class CPSubsystemImpl implements CPSubsystem {
         if (!cpSubsystemEnabled) {
             throw new HazelcastException("CP Subsystem is not enabled!");
         }
-        return getService(RaftService.SERVICE_NAME);
+
+        if (cpSubsystemManagementService != null) {
+            return cpSubsystemManagementService;
+        }
+
+        RaftService raftService = getService(RaftService.SERVICE_NAME);
+        cpSubsystemManagementService = new CPSubsystemManagementServiceImpl(raftService);
+        return cpSubsystemManagementService;
     }
 
     @Override
@@ -118,6 +133,64 @@ public class CPSubsystemImpl implements CPSubsystem {
     private <T extends DistributedObject> T createProxy(String serviceName, String name) {
         RaftRemoteService service = getService(serviceName);
         return service.createProxy(name);
+    }
+
+    private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {
+        private final RaftService raftService;
+
+        CPSubsystemManagementServiceImpl(RaftService raftService) {
+            this.raftService = raftService;
+        }
+
+        @Override
+        public CPMember getLocalCPMember() {
+            return raftService.getLocalCPMember();
+        }
+
+        @Override
+        public InternalCompletableFuture<Collection<CPGroupId>> getCPGroupIds() {
+            return raftService.getCPGroupIds();
+        }
+
+        @Override
+        public InternalCompletableFuture<CPGroup> getCPGroup(String name) {
+            return raftService.getCPGroup(name);
+        }
+
+        @Override
+        public InternalCompletableFuture<Void> forceDestroyCPGroup(String groupName) {
+            return raftService.forceDestroyCPGroup(groupName);
+        }
+
+        @Override
+        public InternalCompletableFuture<Collection<CPMember>> getCPMembers() {
+            return raftService.getCPMembers();
+        }
+
+        @Override
+        public InternalCompletableFuture<Void> promoteToCPMember() {
+            return raftService.promoteToCPMember();
+        }
+
+        @Override
+        public InternalCompletableFuture<Void> removeCPMember(UUID cpMemberUuid) {
+            return raftService.removeCPMember(cpMemberUuid);
+        }
+
+        @Override
+        public InternalCompletableFuture<Void> reset() {
+            return raftService.resetCPSubsystem();
+        }
+
+        @Override
+        public boolean isDiscoveryCompleted() {
+            return raftService.isDiscoveryCompleted();
+        }
+
+        @Override
+        public boolean awaitUntilDiscoveryCompleted(long timeout, TimeUnit timeUnit) throws InterruptedException {
+            return raftService.awaitUntilDiscoveryCompleted(timeout, timeUnit);
+        }
     }
 
 }

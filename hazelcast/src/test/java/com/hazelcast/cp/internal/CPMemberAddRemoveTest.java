@@ -298,8 +298,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         newInstances[2] = factory.newHazelcastInstance(config);
 
         assertClusterSizeEventually(3, newInstances);
-        newInstances[0].getCPSubsystem().getCPSubsystemManagementService().restart()
-                       .toCompletableFuture().get();
+        newInstances[0].getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
         waitUntilCPDiscoveryCompleted(newInstances);
 
         long newGroupIdSeed = getRaftService(newInstances[0]).getMetadataGroupManager().getGroupIdSeed();
@@ -347,8 +346,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         instances[1] = factory.newHazelcastInstance(config);
         instances[2] = factory.newHazelcastInstance(config);
 
-        instance.getCPSubsystem().getCPSubsystemManagementService().restart()
-                .toCompletableFuture().get();
+        instance.getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
 
         List<CPMemberInfo> newEndpoints = getRaftInvocationManager(instance).<List<CPMemberInfo>>query(getMetadataGroupId(instance),
                 new GetActiveCPMembersOp(), LINEARIZABLE).get();
@@ -367,8 +365,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         Config config = createConfig(3, 3);
         instances[0] = factory.newHazelcastInstance(config);
 
-        instances[1].getCPSubsystem().getCPSubsystemManagementService().restart()
-                    .toCompletableFuture().get();
+        instances[1].getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
 
         List<CPMemberInfo> newEndpoints = invocationManager.<List<CPMemberInfo>>query(getMetadataGroupId(instances[2]),
                 new GetActiveCPMembersOp(), LINEARIZABLE).get();
@@ -556,8 +553,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         FencedLock lock = instances[3].getCPSubsystem().getLock("lock");
         lock.lock();
 
-        instances[0].getCPSubsystem().getCPSubsystemManagementService().restart()
-                    .toCompletableFuture().get();
+        instances[0].getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
 
         assertTrueEventually(() -> {
             ProxySessionManagerService service = getNodeEngineImpl(instances[3]).getService(ProxySessionManagerService.SERVICE_NAME);
@@ -723,7 +719,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         assertClusterSizeEventually(3, instances[0], newInstance1, newInstance2);
 
-        instances[0].getCPSubsystem().getCPSubsystemManagementService().restart().toCompletableFuture().get();
+        instances[0].getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
 
         RaftGroupId newMetadataGroupId = getRaftService(instances[0]).getMetadataGroupId();
         assertTrue(newMetadataGroupId.getSeed() > INITIAL_METADATA_GROUP_ID.getSeed());
@@ -811,8 +807,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         assertClusterSizeEventually(3, instances[0], newInstance1, newInstance2);
 
-        instances[0].getCPSubsystem().getCPSubsystemManagementService().restart()
-                    .toCompletableFuture().get();
+        instances[0].getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
 
         RaftGroupId newMetadataGroupId = getRaftService(instances[0]).getMetadataGroupId();
         assertTrue(newMetadataGroupId.getSeed() > INITIAL_METADATA_GROUP_ID.getSeed());

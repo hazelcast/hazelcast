@@ -22,7 +22,7 @@ import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
 import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
-import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.operation.ResetCPMemberOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftBackupOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftQueryOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
@@ -111,7 +111,7 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int GET_RAFT_GROUP_IDS_OP = 37;
     public static final int GET_ACTIVE_RAFT_GROUP_IDS_OP = 38;
     public static final int RAFT_PRE_JOIN_OP = 39;
-    public static final int RESTART_CP_MEMBER_OP = 40;
+    public static final int RESET_CP_MEMBER_OP = 40;
     public static final int GROUP_MEMBERSHIP_CHANGE = 41;
     public static final int UNSAFE_RAFT_REPLICATE_OP = 42;
     public static final int UNSAFE_RAFT_QUERY_OP = 43;
@@ -212,8 +212,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new GetActiveRaftGroupIdsOp();
                 case RAFT_PRE_JOIN_OP:
                     return new RaftServicePreJoinOp();
-                case RESTART_CP_MEMBER_OP:
-                    return new RestartCPMemberOp();
+                case RESET_CP_MEMBER_OP:
+                    return new ResetCPMemberOp();
                 case GROUP_MEMBERSHIP_CHANGE:
                     return new CPGroupMembershipChange();
                 case UNSAFE_RAFT_REPLICATE_OP:
