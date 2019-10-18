@@ -122,6 +122,7 @@ public abstract class AbstractYamlConfigBuilder {
             // YAML documents define mappings where the name of the nodes should be unique
             merge(imdgRootLoaded, imdgRoot);
         }
+        replaceVariables(asW3cNode(imdgRoot));
 
         ((MutableYamlMapping) rootAsMapping).removeChild(ConfigSections.IMPORT.getName());
     }

@@ -75,6 +75,93 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         assertEquals(0, mapConfig.getAsyncBackupCount());
     }
 
+    @Test
+    public void testImportResourceWithConfigReplacers() throws Exception {
+        String configReplacer = ""
+            + "hazelcast:\n"
+            + "  config-replacers:\n"
+            + "    replacers:\n"
+            + "      - class-name: " + IdentityReplacer.class.getName() + "\n";
+
+        String configLocation = createFileWithContent("config-replacer", "yaml", configReplacer);
+
+        String clusterName = ""
+            + "hazelcast:\n"
+            + "  import:\n"
+            + "    - file:///" + "${config.location}\n"
+            + "  cluster-name: ${java.version} $ID{dev}\n";
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", configLocation);
+        Config groupConfig = buildConfig(clusterName, properties);
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
+    }
+
+    @Test
+    public void testImportResourceWithNestedImports() throws Exception {
+        String configReplacer = ""
+            + "hazelcast:\n"
+            + "  config-replacers:\n"
+            + "    replacers:\n"
+            + "      - class-name: " + IdentityReplacer.class.getName() + "\n";
+
+        String configReplacerLocation = createFileWithContent("config-replacer", "yaml", configReplacer);
+
+        String clusterName = ""
+            + "hazelcast:\n"
+            + "  import:\n"
+            + "    - file:///" + configReplacerLocation + "\n"
+            + "  cluster-name: ${java.version} $ID{dev}\n";
+
+        String clusterNameLocation = createFileWithContent("cluster-name", "yaml", clusterName);
+
+        String yaml = ""
+            + "hazelcast:\n"
+            + "  import:\n"
+            + "    - file:///" + "${config.location}\n";
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", clusterNameLocation);
+        Config groupConfig = buildConfig(yaml, properties);
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
+    }
+
+    @Test
+    public void testImportResourceWithNestedImportsAndProperties() throws Exception {
+        String configReplacer = ""
+            + "hazelcast:\n"
+            + "  config-replacers:\n"
+            + "    fail-if-value-missing: false\n"
+            + "    replacers:\n"
+            + "      - class-name: " + TestReplacer.class.getName() + "\n"
+            + "        properties:\n"
+            + "          p1: ${p1}\n"
+            + "          p2: \"\"\n"
+            + "          p3: another property\n"
+            + "          p4: <test/>\n";
+
+        String configReplacerLocation = createFileWithContent("config-replacer", "yaml", configReplacer);
+
+        String clusterName = ""
+            + "hazelcast:\n"
+            + "  import:\n"
+            + "    - file:///" + configReplacerLocation + "\n"
+            + "  cluster-name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}\n";
+
+        String clusterNameLocation = createFileWithContent("cluster-name", "yaml", clusterName);
+
+        String yaml = ""
+            + "hazelcast:\n"
+            + "  import:\n"
+            + "    - file:///" + "${config.location}\n";
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", clusterNameLocation);
+        properties.put("p1", "a property");
+        Config config = buildConfig(yaml, properties);
+        assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
+    }
+
     @Override
     @Test
     public void testImportConfigFromResourceVariables() throws Exception {
