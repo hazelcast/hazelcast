@@ -58,7 +58,10 @@ class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
 
     @Override
     MetricValueCatcher getCatcherOrNull() {
-        return gaugeSource instanceof DoubleMetricValueCatcher ? (DoubleMetricValueCatcher) gaugeSource : null;
+        // we take a defensive copy, since this.gaugeSource might be changed
+        // between the instanceof and the casting
+        DoubleGaugeSource gaugeSourceCopy = this.gaugeSource;
+        return gaugeSourceCopy instanceof DoubleMetricValueCatcher ? (DoubleMetricValueCatcher) gaugeSourceCopy : null;
     }
 
     @Override

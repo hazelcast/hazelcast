@@ -77,7 +77,10 @@ class LongGaugeImpl extends AbstractGauge implements LongGauge {
 
     @Override
     LongMetricValueCatcher getCatcherOrNull() {
-        return gaugeSource instanceof LongMetricValueCatcher ? (LongMetricValueCatcher) gaugeSource : null;
+        // we take a defensive copy, since this.gaugeSource might be changed
+        // between the instanceof and the casting
+        LongGaugeSource gaugeSourceCopy = this.gaugeSource;
+        return gaugeSourceCopy instanceof LongMetricValueCatcher ? (LongMetricValueCatcher) gaugeSourceCopy : null;
     }
 
     @Override
