@@ -27,11 +27,11 @@ import java.util.concurrent.CompletionStage;
  * to the {@link java.util.concurrent.atomic.AtomicReference}.
  * <p>
  * Asynchronous variants have been introduced in version 3.7.
- * Async methods immediately return an {@link ICompletableFuture} from which
+ * Async methods immediately return an {@link CompletionStage} from which
  * the operation's result can be obtained either in a blocking manner or by
  * registering a callback to be executed upon completion. For example:
  * <pre>
- * ICompletableFuture&lt;E&gt; future = atomicRef.getAsync();
+ * CompletionStage&lt;E&gt; future = atomicRef.getAsync();
  * future.andThen(new ExecutionCallback&lt;E&gt;() {
  *     void onResponse(Long response) {
  *         // do something with the result

@@ -57,7 +57,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * The Pipelining isn't threadsafe. So only a single thread should add requests to
  * the Pipelining and wait for results.
  *
- * Currently all {@link ICompletableFuture} and their responses are stored in the
+ * Currently all {@link CompletionStage} and their responses are stored in the
  * Pipelining. So be careful executing a huge number of request with a single Pipelining
  * because it can lead to a huge memory bubble. In this cases it is better to
  * periodically, after waiting for completion, to replace the Pipelining by a new one.
@@ -107,7 +107,7 @@ public class Pipelining<E> {
      * @throws Exception is something fails getting the results.
      */
     public List<E> results() throws Exception {
-        List<E> result = new ArrayList<E>(futures.size());
+        List<E> result = new ArrayList<>(futures.size());
         for (CompletionStage<E> f : futures) {
             result.add(f.toCompletableFuture().get());
         }
@@ -118,7 +118,7 @@ public class Pipelining<E> {
      * Adds a future to this Pipelining or blocks until there is capacity to add the future to the Pipelining.
      * <p>
      * This call blocks until there is space in the Pipelining, but it doesn't mean that the invocation that
-     * returned the ICompletableFuture got blocked.
+     * returned the CompletionStage got blocked.
      *
      * @param future the future to add.
      * @return the future added.
