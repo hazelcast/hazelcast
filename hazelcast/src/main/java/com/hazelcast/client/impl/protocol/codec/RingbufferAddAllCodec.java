@@ -19,6 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -101,7 +104,7 @@ public final class RingbufferAddAllCodec {
     public static class ResponseParameters {
 
         /**
-         * the CompletionStage to synchronize on completion.
+         * the ICompletableFuture to synchronize on completion.
          */
         public long response;
     }
