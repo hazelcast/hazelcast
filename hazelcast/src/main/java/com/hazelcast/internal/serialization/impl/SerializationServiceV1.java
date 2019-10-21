@@ -16,26 +16,26 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
-import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.internal.nio.BufferObjectDataInput;
-import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -83,8 +83,8 @@ import static com.hazelcast.internal.serialization.impl.ConstantSerializers.Long
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortArraySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
-import static com.hazelcast.internal.serialization.impl.ConstantSerializers.UuidSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
+import static com.hazelcast.internal.serialization.impl.ConstantSerializers.UuidSerializer;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.isFlagSet;
@@ -92,9 +92,8 @@ import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.B
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.BigIntegerSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.ClassSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.DateSerializer;
-import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.EnumSerializer;
-import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.HazelcastJsonValueSerializer;
+import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
@@ -196,7 +195,6 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(Date.class, new DateSerializer());
         registerConstant(BigInteger.class, new BigIntegerSerializer());
         registerConstant(BigDecimal.class, new BigDecimalSerializer());
-        registerConstant(Enum.class, new EnumSerializer());
 
         registerConstant(Object[].class, new ArrayStreamSerializer());
 
