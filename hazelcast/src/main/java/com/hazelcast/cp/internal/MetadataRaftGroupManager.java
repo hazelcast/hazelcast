@@ -34,9 +34,9 @@ import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
 import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -68,11 +68,12 @@ import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
+import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
+import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableCollection;
@@ -162,7 +163,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     private void scheduleGroupMembershipManagementTasks() {
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleWithRepetition(new BroadcastActiveCPMembersTask(), 0,
+        executionService.scheduleWithRepetition(CP_SUBSYSTEM_MANAGEMENT_EXECUTOR, new BroadcastActiveCPMembersTask(), 0,
                 BROADCAST_ACTIVE_CP_MEMBERS_TASK_PERIOD_SECONDS, SECONDS);
 
         membershipManager.init();
@@ -248,6 +249,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         initializationStatus = snapshot.getInitializationStatus();
         initializationCommitIndices.clear();
         initializationCommitIndices.addAll(snapshot.getInitializationCommitIndices());
+
+        for (CPGroupInfo group : snapshot.getGroups()) {
+            if (group.status() == DESTROYED) {
+                destroyRaftNodeAsync(group.id());
+            }
+        }
 
         if (logger.isFineEnabled()) {
             logger.fine("Restored snapshot at commit-index: " + commitIndex);
@@ -540,7 +547,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     private void createRaftNodeAsync(CPGroupInfo group) {
-        nodeEngine.getExecutionService().execute(ASYNC_EXECUTOR, () -> raftService.createRaftNode(group.id(), group.members()));
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.execute(CP_SUBSYSTEM_EXECUTOR, () -> raftService.createRaftNode(group.id(), group.members()));
     }
 
     private Map<UUID, CPMemberInfo> getActiveMembersMap() {
@@ -663,11 +671,15 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         Operation op = new DestroyRaftNodesOp(Collections.singleton(group.id()));
         for (RaftEndpoint endpoint : group.members())  {
             if (endpoint.equals(localEndpoint)) {
-                raftService.destroyRaftNode(group.id());
+                destroyRaftNodeAsync(group.id());
             } else {
                 operationService.send(op, activeMembersMap.get(endpoint.getUuid()).getAddress());
             }
         }
+    }
+
+    private void destroyRaftNodeAsync(CPGroupId groupId) {
+        nodeEngine.getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> raftService.destroyRaftNode(groupId));
     }
 
     /**
@@ -1132,7 +1144,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         DiscoverInitialCPMembersTask task = new DiscoverInitialCPMembersTask(terminateOnDiscoveryFailure);
         currentDiscoveryTask = task;
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.schedule(task, DISCOVER_INITIAL_CP_MEMBERS_TASK_DELAY_MILLIS, MILLISECONDS);
+        executionService.schedule(CP_SUBSYSTEM_MANAGEMENT_EXECUTOR, task,
+                DISCOVER_INITIAL_CP_MEMBERS_TASK_DELAY_MILLIS, MILLISECONDS);
     }
 
     private class BroadcastActiveCPMembersTask implements Runnable {
@@ -1273,8 +1286,9 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         private void scheduleSelf() {
             state = DiscoveryTaskState.SCHEDULED;
-            nodeEngine.getExecutionService()
-                      .schedule(this, DISCOVER_INITIAL_CP_MEMBERS_TASK_DELAY_MILLIS, MILLISECONDS);
+            ExecutionService executionService = nodeEngine.getExecutionService();
+            executionService.schedule(CP_SUBSYSTEM_MANAGEMENT_EXECUTOR, this,
+                    DISCOVER_INITIAL_CP_MEMBERS_TASK_DELAY_MILLIS, MILLISECONDS);
         }
 
         private List<CPMemberInfo> getDiscoveredCPMembers(Collection<Member> members) {
