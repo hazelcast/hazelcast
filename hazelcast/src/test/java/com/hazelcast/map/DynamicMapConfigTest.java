@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
@@ -44,6 +45,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -77,34 +79,52 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
     }
 
     private void updateMapConfig(String mapName, HazelcastInstance node) throws InterruptedException, ExecutionException {
-        Operation updateMapConfigOperation = new UpdateMapConfigOperation(mapName, 100, 22, 111,
-                MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE.getId(), false,
-                EvictionPolicy.LRU.getId());
+        MapConfig mapConfig = createMapConfig();
+        Operation updateMapConfigOperation = new UpdateMapConfigOperation(
+                mapName,
+                mapConfig.getTimeToLiveSeconds(),
+                mapConfig.getMaxIdleSeconds(),
+                mapConfig.getMaxSizeConfig().getSize(),
+                mapConfig.getMaxSizeConfig().getMaxSizePolicy().getId(),
+                mapConfig.isReadBackupData(),
+                mapConfig.getEvictionPolicy().getId());
         executeOperation(node, updateMapConfigOperation);
     }
 
     private boolean isRecordStoreExpirable(IMap map) {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapService mapService = (MapService) mapProxy.getService();
-        MapServiceContext mapServiceContext = (MapServiceContext) mapService.getMapServiceContext();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         PartitionContainer container = mapServiceContext.getPartitionContainer(0);
         RecordStore recordStore = container.getExistingRecordStore(map.getName());
-        return recordStore.isExpirable();
+        return requireNonNull(recordStore).isExpirable();
     }
 
     private boolean isEvictionEnabled(IMap map) {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapService mapService = (MapService) mapProxy.getService();
-        MapServiceContext mapServiceContext = (MapServiceContext) mapService.getMapServiceContext();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
         EvictionPolicy evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
         return evictionPolicy != NONE;
     }
 
-    private Object executeOperation(HazelcastInstance node, Operation op) throws InterruptedException, ExecutionException {
+    private MapConfig createMapConfig() {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setTimeToLiveSeconds(100);
+        mapConfig.setMaxIdleSeconds(22);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
+        mapConfig.setReadBackupData(false);
+        mapConfig.setBackupCount(3);
+        mapConfig.setAsyncBackupCount(2);
+        mapConfig.setMaxSizeConfig(new MaxSizeConfig(111, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE));
+        return mapConfig;
+    }
+
+    private void executeOperation(HazelcastInstance node, Operation op) throws InterruptedException, ExecutionException {
         OperationServiceImpl operationService = getOperationService(node);
         Address address = getAddress(node);
         InternalCompletableFuture future = operationService.invokeOnTarget(MapService.SERVICE_NAME, op, address);
-        return future.get();
+        future.get();
     }
 }

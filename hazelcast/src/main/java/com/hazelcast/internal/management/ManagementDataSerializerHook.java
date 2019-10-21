@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.dto.PermissionConfigDTO;
 import com.hazelcast.internal.management.operation.ChangeClusterStateOperation;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
@@ -26,9 +27,9 @@ import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperati
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MANAGEMENT_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MANAGEMENT_DS_FACTORY_ID;
@@ -62,6 +63,7 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
         constructors[SCRIPT_EXECUTOR] = arg -> new ScriptExecutorOperation();
         constructors[UPDATE_MANAGEMENT_CENTER_URL] = arg -> new UpdateManagementCenterUrlOperation();
         constructors[UPDATE_MAP_CONFIG] = arg -> new UpdateMapConfigOperation();
+        constructors[MAP_CONFIG_DTO] = arg -> new MapConfigDTO();
         constructors[UPDATE_PERMISSION_CONFIG_OPERATION] = arg -> new UpdatePermissionConfigOperation();
         constructors[PERMISSION_CONFIG_DTO] = arg -> new PermissionConfigDTO();
         constructors[SET_LICENSE] = arg -> new SetLicenseOperation();
