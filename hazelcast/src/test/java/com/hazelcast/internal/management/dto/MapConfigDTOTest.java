@@ -32,6 +32,7 @@ import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapConfigDTOTest {
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter()
     public MapConfig mapConfig;
 
     @Parameterized.Parameters(name = "{0}")
@@ -62,11 +63,11 @@ public class MapConfigDTOTest {
     private static final ConfigCompatibilityChecker.MapConfigChecker MAP_CONFIG_CHECKER
             = new ConfigCompatibilityChecker.MapConfigChecker();
 
-    static MapConfig defaultMapConfig() {
+    private static MapConfig defaultMapConfig() {
         return new MapConfig(MAP_NAME);
     }
 
-    static MapConfig fullMapConfig() {
+    private static MapConfig fullMapConfig() {
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setBackupCount(2)
                 .setAsyncBackupCount(3)
@@ -95,13 +96,6 @@ public class MapConfigDTOTest {
 
     @Test
     public void cloned_config_with_json_serialization_equals_given_config() {
-        MapConfig clonedConfig = cloneWithJsonSerialization(mapConfig);
-        assertTrue("Expected: " + mapConfig + ", got:" + clonedConfig,
-                MAP_CONFIG_CHECKER.check(mapConfig, clonedConfig));
-    }
-
-    @Test
-    public void cloned_config_with_json_serialization_equals_default_config() {
         MapConfig clonedConfig = cloneWithJsonSerialization(mapConfig);
         assertTrue("Expected: " + mapConfig + ", got:" + clonedConfig,
                 MAP_CONFIG_CHECKER.check(mapConfig, clonedConfig));
