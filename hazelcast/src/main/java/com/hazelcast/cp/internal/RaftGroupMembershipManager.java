@@ -61,6 +61,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -82,7 +83,6 @@ class RaftGroupMembershipManager {
     private final ILogger logger;
     private final RaftInvocationManager invocationManager;
     private final AtomicBoolean initialized = new AtomicBoolean();
-    private final AtomicBoolean rebalanceTaskRunning = new AtomicBoolean();
 
     RaftGroupMembershipManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = nodeEngine;
@@ -98,19 +98,20 @@ class RaftGroupMembershipManager {
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         // scheduleWithRepetition skips subsequent execution if one is already running.
-        executionService.scheduleWithRepetition(new RaftGroupDestroyHandlerTask(), MANAGEMENT_TASK_PERIOD_IN_MILLIS,
-                MANAGEMENT_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
-        executionService.scheduleWithRepetition(new RaftGroupMembershipChangeHandlerTask(), MANAGEMENT_TASK_PERIOD_IN_MILLIS,
-                MANAGEMENT_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
-        executionService.scheduleWithRepetition(new CheckLocalRaftNodesTask(), CHECK_LOCAL_RAFT_NODES_TASK_PERIOD,
-                CHECK_LOCAL_RAFT_NODES_TASK_PERIOD, SECONDS);
+        executionService.scheduleWithRepetition(CP_SUBSYSTEM_MANAGEMENT_EXECUTOR, new RaftGroupDestroyHandlerTask(),
+                MANAGEMENT_TASK_PERIOD_IN_MILLIS, MANAGEMENT_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
+        executionService.scheduleWithRepetition(CP_SUBSYSTEM_MANAGEMENT_EXECUTOR, new RaftGroupMembershipChangeHandlerTask(),
+                MANAGEMENT_TASK_PERIOD_IN_MILLIS, MANAGEMENT_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
+        executionService.scheduleWithRepetition(CP_SUBSYSTEM_MANAGEMENT_EXECUTOR, new CheckLocalRaftNodesTask(),
+                CHECK_LOCAL_RAFT_NODES_TASK_PERIOD, CHECK_LOCAL_RAFT_NODES_TASK_PERIOD, SECONDS);
         int leadershipRebalancePeriod = nodeEngine.getProperties().getInteger(LEADERSHIP_BALANCE_TASK_PERIOD);
-        executionService.scheduleWithRepetition(new RaftGroupLeadershipBalanceTask(), leadershipRebalancePeriod,
-                leadershipRebalancePeriod, SECONDS);
+        executionService.scheduleWithRepetition(CP_SUBSYSTEM_MANAGEMENT_EXECUTOR, new RaftGroupLeadershipBalanceTask(),
+                leadershipRebalancePeriod, leadershipRebalancePeriod, SECONDS);
     }
 
     private boolean skipRunningTask() {
-        return !raftService.getMetadataGroupManager().isMetadataGroupLeader();
+        return !(raftService.isDiscoveryCompleted() && raftService.isStartCompleted()
+                && raftService.getMetadataGroupManager().isMetadataGroupLeader());
     }
 
     void rebalanceGroupLeaderships() {
@@ -120,6 +121,10 @@ class RaftGroupMembershipManager {
     private class CheckLocalRaftNodesTask implements Runnable {
 
         public void run() {
+            if (skipRunningTask()) {
+                return;
+            }
+
             for (RaftNode raftNode : raftService.getAllRaftNodes()) {
                 CPGroupId groupId = raftNode.getGroupId();
                 if (groupId.equals(raftService.getMetadataGroupId())) {
@@ -459,10 +464,6 @@ class RaftGroupMembershipManager {
                 return;
             }
 
-            if (!rebalanceTaskRunning.compareAndSet(false, true)) {
-                throw new IllegalStateException(getClass().getSimpleName() + " is already running!");
-            }
-
             try {
                 rebalanceLeaderships();
             } catch (Exception e) {
@@ -472,8 +473,6 @@ class RaftGroupMembershipManager {
                     logger.info("Cannot execute leadership rebalance at the moment: "
                             + e.getClass().getName() + ": " + e.getMessage());
                 }
-            } finally {
-                rebalanceTaskRunning.set(false);
             }
         }
 

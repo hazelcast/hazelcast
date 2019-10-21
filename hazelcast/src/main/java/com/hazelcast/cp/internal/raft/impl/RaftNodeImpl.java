@@ -277,6 +277,10 @@ public final class RaftNodeImpl implements RaftNode {
                 if (isTerminatedOrSteppedDown()) {
                     resultFuture.complete(null);
                     return;
+                } else if (status == INITIAL) {
+                    setStatus(TERMINATED);
+                    resultFuture.complete(null);
+                    return;
                 }
 
                 invalidateFuturesFrom(state.commitIndex() + 1);
@@ -304,6 +308,11 @@ public final class RaftNodeImpl implements RaftNode {
      * Starts the periodic tasks, such as voting, leader failure-detection, snapshot handling.
      */
     public void start() {
+        if (status == TERMINATED) {
+            logger.warning("Not starting since already terminated...");
+            return;
+        }
+
         if (status != INITIAL) {
             throw new IllegalStateException("Cannot start RaftNode when " + status);
         }
@@ -313,12 +322,15 @@ public final class RaftNodeImpl implements RaftNode {
             return;
         }
 
-        if (logger.isFineEnabled()) {
-            logger.fine("Starting Raft node: " + state.localEndpoint() + " for " + groupId + " with " + state.memberCount()
-                    + " members: " + state.members());
-        }
+        logger.fine("Starting Raft node: " + state.localEndpoint() + " for " + groupId + " with " + state.memberCount()
+                + " members: " + state.members());
 
         execute(() -> {
+            if (status == TERMINATED) {
+                logger.warning("Not starting since already terminated...");
+                return;
+            }
+
             if (status != INITIAL) {
                 throw new IllegalStateException("Cannot start RaftNode when " + status);
             }
@@ -327,15 +339,19 @@ public final class RaftNodeImpl implements RaftNode {
             try {
                 state.init();
             } catch (IOException e) {
-                logger.severe(e);
+                logger.severe("Raft node start failed!", e);
+                setStatus(TERMINATED);
+                return;
             }
 
             new PreVoteTask(RaftNodeImpl.this, 0).run();
             scheduleLeaderFailureDetection();
+
+            // status could be UPDATING_GROUP_MEMBER_LIST after restoring Raft state
+            // so we only switch to ACTIVE only if status is INITIAL
             if (status == INITIAL) {
                 setStatus(ACTIVE);
             }
-
         });
     }
 
