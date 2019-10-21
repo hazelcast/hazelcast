@@ -43,7 +43,7 @@ import com.hazelcast.jet.examples.enrichment.datamodel.Tweet;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.BatchStageWithKey;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.GroupAggregateBuilder;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -444,7 +444,7 @@ class BuildComputation {
 
     static void s16a() {
         //tag::s16a[]
-        ContextFactory<IMap<String, StockInfo>> ctxFac = ContextFactory
+        ServiceFactory<IMap<String, StockInfo>> ctxFac = ServiceFactory
                 .withCreateFn(x -> {
                     ClientConfig cc = new ClientConfig();
                     cc.getNearCacheConfigMap().put("stock-info",
@@ -461,7 +461,7 @@ class BuildComputation {
         p.drawFrom(tradesSource)
          .withoutTimestamps()
          .groupingKey(Trade::ticker)
-         .mapUsingContextAsync(ctxFac,
+         .mapUsingServiceAsync(ctxFac,
                  (map, key, trade) -> map.getAsync(key).toCompletableFuture()
                          .thenApply(trade::setStockInfo))
          .drainTo(Sinks.list("result"));

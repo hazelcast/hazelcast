@@ -24,17 +24,17 @@ import com.hazelcast.function.FunctionEx;
 import javax.annotation.Nonnull;
 
 /**
- * Utility class with methods that create several useful {@link ContextFactory
- * context factories}.
+ * Utility class with methods that create several useful {@link ServiceFactory
+ * service factories}.
  *
  * @since 3.0
  */
-public final class ContextFactories {
+public final class ServiceFactories {
 
-    private ContextFactories() { }
+    private ServiceFactories() { }
 
     /**
-     * Returns a factory that provides a {@link ReplicatedMap} as the context
+     * Returns a factory that provides a {@link ReplicatedMap} as the service
      * object. A replicated map is a particularly good choice if you are
      * enriching an event stream with the data stored in the Hazelcast Jet
      * cluster. Unlike in a {@code hashJoin} transformation, the data in the
@@ -49,25 +49,25 @@ public final class ContextFactories {
      * Example usage (without destroyFn):
      * <pre>
      * p.drawFrom( /* a batch or streaming source &#42;/ )
-     *  .mapUsingContext(replicatedMapContext("fooMapName"),
+     *  .mapUsingService(replicatedMapService("fooMapName"),
      *      (map, item) -> tuple2(item, map.get(item.getKey())))
      *  .destroyFn(ReplicatedMap::destroy);
      * </pre>
      *
-     * @param mapName name of the {@link ReplicatedMap} to use as the context
+     * @param mapName name of the {@link ReplicatedMap} to use as the service
      * @param <K> type of the map key
      * @param <V> type of the map value
      *
      * @since 3.0
      */
     @Nonnull
-    public static <K, V> ContextFactory<ReplicatedMap<K, V>> replicatedMapContext(@Nonnull String mapName) {
-        return ContextFactory
+    public static <K, V> ServiceFactory<ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
+        return ServiceFactory
                 .withCreateFn(jet -> jet.getHazelcastInstance().getReplicatedMap(mapName));
     }
 
     /**
-     * Returns a factory that provides an {@link IMap} as the context. This
+     * Returns a factory that provides an {@link IMap} as the service. This
      * is useful if you are enriching an event stream with the data stored in
      * the Hazelcast Jet cluster. Unlike in a {@code hashJoin} transformation,
      * the data in the map can change while the job is running so you can keep
@@ -78,18 +78,18 @@ public final class ContextFactories {
      * GeneralStageWithKey#mapUsingIMap(IMap, BiFunctionEx)}.
      * <p>
      * If you plan to use a sync method on the map, call {@link
-     * ContextFactory#toNonCooperative()} on the returned factory.
+     * ServiceFactory#toNonCooperative()} on the returned factory.
      *
-     * @param mapName name of the map used as context
+     * @param mapName name of the map used as service
      * @param <K> key type
      * @param <V> value type
-     * @return the context factory
+     * @return the service factory
      *
      * @since 3.0
      */
     @Nonnull
-    public static <K, V> ContextFactory<IMap<K, V>> iMapContext(@Nonnull String mapName) {
-        return ContextFactory
+    public static <K, V> ServiceFactory<IMap<K, V>> iMapService(@Nonnull String mapName) {
+        return ServiceFactory
                 .withCreateFn(jet -> jet.<K, V>getMap(mapName))
                 .withLocalSharing();
     }

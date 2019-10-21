@@ -91,38 +91,38 @@ public interface BatchStage<T> extends GeneralStage<T> {
     }
 
     @Nonnull @Override
-    <C, R> BatchStage<R> mapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    <C, R> BatchStage<R> mapUsingService(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     );
 
     @Nonnull @Override
-    <C, R> BatchStage<R> mapUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
+    <C, R> BatchStage<R> mapUsingServiceAsync(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
     );
 
     @Nonnull @Override
-    <C> BatchStage<T> filterUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    <C> BatchStage<T> filterUsingService(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     );
 
     @Nonnull @Override
-    <C> BatchStage<T> filterUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
+    <C> BatchStage<T> filterUsingServiceAsync(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     );
 
     @Nonnull @Override
-    <C, R> BatchStage<R> flatMapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    <C, R> BatchStage<R> flatMapUsingService(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<R>> flatMapFn
     );
 
     @Nonnull @Override
-    <C, R> BatchStage<R> flatMapUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
+    <C, R> BatchStage<R> flatMapUsingServiceAsync(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     );

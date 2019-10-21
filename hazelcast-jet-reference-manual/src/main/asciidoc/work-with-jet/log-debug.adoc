@@ -230,8 +230,8 @@ written to state snapshot.
 |**numInFlightOps**: The number of pending (in flight) operations when using
 asynchronous flat-mapping processors. +
 See
-`{jet-javadoc}/core/processor/Processors.html#flatMapUsingContextAsyncP-com.hazelcast.jet.pipeline.ContextFactory-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.BiFunctionEx-[
-Processors.flatMapUsingContextAsyncP]`.
+`{jet-javadoc}/core/processor/Processors.html#flatMapUsingServiceAsyncP-com.hazelcast.jet.pipeline.ServiceFactory-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.BiFunctionEx-[
+Processors.flatMapUsingServiceAsyncP]`.
 
 ** totalKeys **: The number of active keys being tracked by a session window
 processor. +

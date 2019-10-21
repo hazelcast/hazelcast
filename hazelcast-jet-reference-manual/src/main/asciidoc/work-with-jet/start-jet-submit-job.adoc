@@ -141,7 +141,7 @@ on the target machine.
 This refers to a `static final` field in the JDK, so the instance is
 available on any JVM. If this is not available, you may create a
 static final field in your own class, but you can also use
-`mapUsingContext()`. In this case you provide a serializable factory
+`mapUsingService()`. In this case you provide a serializable factory
 that Jet will ask to create an object on the target member. The object
 it returns doesn't have to be serializable. Here's an example of that:
 
@@ -150,8 +150,8 @@ it returns doesn't have to be serializable. Here's an example of that:
 include::{javasource}/PerformanceConsiderations.java[tag=s8]
 ----
 
-<1> Create a `ContextFactory`.
-<2> Supply it to `mapUsingContext()`.
+<1> Create a `ServiceFactory`.
+<2> Supply it to `mapUsingService()`.
 <3> Your mapping function now gets the object the factory created.
 
 [[job]]

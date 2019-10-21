@@ -28,7 +28,7 @@ import com.hazelcast.jet.impl.pipeline.transform.AggregateTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.BatchStageWithKey;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.JoinClause;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
@@ -105,53 +105,53 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
     }
 
     @Nonnull @Override
-    public <C, R> BatchStage<R> mapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    public <C, R> BatchStage<R> mapUsingService(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
-        return attachMapUsingContext(contextFactory, mapFn);
+        return attachMapUsingService(serviceFactory, mapFn);
     }
 
     @Nonnull @Override
-    public <C, R> BatchStage<R> mapUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
+    public <C, R> BatchStage<R> mapUsingServiceAsync(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
     ) {
-        return attachFlatMapUsingContextAsync("map", contextFactory,
+        return attachFlatMapUsingServiceAsync("map", serviceFactory,
                 (c, t) -> mapAsyncFn.apply(c, t).thenApply(Traversers::singleton));
     }
 
     @Nonnull @Override
-    public <C> BatchStage<T> filterUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    public <C> BatchStage<T> filterUsingService(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     ) {
-        return attachFilterUsingContext(contextFactory, filterFn);
+        return attachFilterUsingService(serviceFactory, filterFn);
     }
 
     @Nonnull @Override
-    public <C> BatchStage<T> filterUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
+    public <C> BatchStage<T> filterUsingServiceAsync(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     ) {
-        return attachFlatMapUsingContextAsync("filter", contextFactory,
+        return attachFlatMapUsingServiceAsync("filter", serviceFactory,
                 (c, t) -> filterAsyncFn.apply(c, t).thenApply(passed -> passed ? Traversers.singleton(t) : null));
     }
 
     @Nonnull @Override
-    public <C, R> BatchStage<R> flatMapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    public <C, R> BatchStage<R> flatMapUsingService(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
-        return attachFlatMapUsingContext(contextFactory, flatMapFn);
+        return attachFlatMapUsingService(serviceFactory, flatMapFn);
     }
 
     @Nonnull @Override
-    public <C, R> BatchStage<R> flatMapUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
+    public <C, R> BatchStage<R> flatMapUsingServiceAsync(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
-        return attachFlatMapUsingContextAsync("flatMap", contextFactory, flatMapAsyncFn);
+        return attachFlatMapUsingServiceAsync("flatMap", serviceFactory, flatMapAsyncFn);
     }
 
     @Nonnull @Override

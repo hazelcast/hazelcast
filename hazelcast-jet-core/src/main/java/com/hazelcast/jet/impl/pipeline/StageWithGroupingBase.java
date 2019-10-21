@@ -20,7 +20,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.GeneralStageWithKey;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -71,53 +71,53 @@ class StageWithGroupingBase<T, K> {
     }
 
     @Nonnull
-    <C, R, RET> RET attachMapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
+    <S, R, RET> RET attachMapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     ) {
         FunctionEx<? super T, ? extends K> keyFn = keyFn();
-        return computeStage.attachMapUsingPartitionedContext(contextFactory, keyFn, (c, t) -> {
+        return computeStage.attachMapUsingPartitionedService(serviceFactory, keyFn, (s, t) -> {
             K k = keyFn.apply(t);
-            return mapFn.apply(c, k, t);
+            return mapFn.apply(s, k, t);
         });
     }
 
     @Nonnull
-    <C, RET> RET attachFilterUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriPredicate<? super C, ? super K, ? super T> filterFn
+    <S, RET> RET attachFilterUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
     ) {
         FunctionEx<? super T, ? extends K> keyFn = keyFn();
-        return computeStage.attachFilterUsingPartitionedContext(contextFactory, keyFn, (c, t) -> {
+        return computeStage.attachFilterUsingPartitionedService(serviceFactory, keyFn, (s, t) -> {
             K k = keyFn.apply(t);
-            return filterFn.test(c, k, t);
+            return filterFn.test(s, k, t);
         });
     }
 
     @Nonnull
-    <C, R, RET> RET attachFlatMapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    <S, R, RET> RET attachFlatMapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         FunctionEx<? super T, ? extends K> keyFn = keyFn();
-        return computeStage.attachFlatMapUsingPartitionedContext(contextFactory, keyFn, (c, t) -> {
+        return computeStage.attachFlatMapUsingPartitionedService(serviceFactory, keyFn, (s, t) -> {
             K k = keyFn.apply(t);
-            return flatMapFn.apply(c, k, t);
+            return flatMapFn.apply(s, k, t);
         });
     }
 
     @Nonnull
-    <C, R, RET> RET attachTransformUsingContextAsync(
+    <S, R, RET> RET attachTransformUsingServiceAsync(
             @Nonnull String operationName,
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     ) {
         FunctionEx<? super T, ? extends K> keyFn = keyFn();
-        return computeStage.attachTransformUsingPartitionedContextAsync(operationName, contextFactory, keyFn,
-                (c, t) -> {
+        return computeStage.attachTransformUsingPartitionedServiceAsync(operationName, serviceFactory, keyFn,
+                (s, t) -> {
                     K k = keyFn.apply(t);
-                    return flatMapAsyncFn.apply(c, k, t);
+                    return flatMapAsyncFn.apply(s, k, t);
                 });
     }
 

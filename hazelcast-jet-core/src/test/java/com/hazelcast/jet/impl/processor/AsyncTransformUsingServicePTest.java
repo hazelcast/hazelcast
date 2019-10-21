@@ -21,7 +21,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
@@ -38,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.core.JetTestSupport.wm;
-import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextAsyncP;
+import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceAsyncP;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -47,7 +47,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-public class AsyncTransformUsingContextPTest {
+public class AsyncTransformUsingServicePTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -63,11 +63,11 @@ public class AsyncTransformUsingContextPTest {
     private ProcessorSupplier getSupplier(BiFunctionEx<? super String, ? super String,
                             CompletableFuture<Traverser<String>>> mapFn
     ) {
-        ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "foo");
+        ServiceFactory<String> serviceFactory = ServiceFactory.withCreateFn(jet -> "foo");
         if (!ordered) {
-            contextFactory = contextFactory.withUnorderedAsyncResponses();
+            serviceFactory = serviceFactory.withUnorderedAsyncResponses();
         }
-        return flatMapUsingContextAsyncP(contextFactory, FunctionEx.identity(), mapFn);
+        return flatMapUsingServiceAsyncP(serviceFactory, FunctionEx.identity(), mapFn);
     }
 
     @Test

@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.function.BiFunctionEx;
 
 import javax.annotation.Nonnull;
@@ -35,26 +35,26 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithContext.supplierWithContext;
+import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supplierWithService;
 
 /**
  * Processor which, for each received item, emits all the items from the
  * traverser returned by the given async item-to-traverser function, using a
- * context object.
+ * service.
  * <p>
  * This processor keeps the order of input items: a stalling call for one item
  * will stall all subsequent items.
  *
- * @param <C> context object type
+ * @param <S> context object type
  * @param <T> received item type
  * @param <R> emitted item type
  */
-public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractProcessor {
+public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractProcessor {
 
-    private final ContextFactory<C> contextFactory;
-    private final BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
+    private final ServiceFactory<S> serviceFactory;
+    private final BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
 
-    private C contextObject;
+    private S service;
     // on the queue there is either:
     // - tuple2(originalItem, future)
     // - watermark
@@ -70,31 +70,31 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
     /**
      * Constructs a processor with the given mapping function.
      */
-    private AsyncTransformUsingContextOrderedP(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nullable C contextObject,
-            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
+    private AsyncTransformUsingServiceOrderedP(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nullable S service,
+            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
-        this.contextFactory = contextFactory;
+        this.serviceFactory = serviceFactory;
         this.callAsyncFn = callAsyncFn;
-        this.contextObject = contextObject;
+        this.service = service;
 
-        assert contextObject == null ^ contextFactory.hasLocalSharing()
-                : "if contextObject is shared, it must be non-null, or vice versa";
+        assert service == null ^ serviceFactory.hasLocalSharing()
+                : "if service is shared, it must be non-null, or vice versa";
     }
 
     @Override
     public boolean isCooperative() {
-        return contextFactory.isCooperative();
+        return serviceFactory.isCooperative();
     }
 
     @Override
     protected void init(@Nonnull Context context) {
-        if (!contextFactory.hasLocalSharing()) {
-            assert contextObject == null : "contextObject is not null: " + contextObject;
-            contextObject = contextFactory.createFn().apply(context.jetInstance());
+        if (!serviceFactory.hasLocalSharing()) {
+            assert service == null : "service is not null: " + service;
+            service = serviceFactory.createFn().apply(context.jetInstance());
         }
-        maxAsyncOps = contextFactory.maxPendingCallsPerProcessor();
+        maxAsyncOps = serviceFactory.maxPendingCallsPerProcessor();
         queue = new ArrayDeque<>(maxAsyncOps);
     }
 
@@ -107,7 +107,7 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
         }
         @SuppressWarnings("unchecked")
         T castedItem = (T) item;
-        CompletableFuture<? extends Traverser<R>> future = callAsyncFn.apply(contextObject, castedItem);
+        CompletableFuture<? extends Traverser<R>> future = callAsyncFn.apply(service, castedItem);
         if (future != null) {
             queue.add(tuple2(castedItem, future));
         }
@@ -149,11 +149,11 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
     @Override
     public void close() {
         // close() might be called even if init() was not called.
-        // Only destroy the context if is not shared (i.e. it is our own).
-        if (contextObject != null && !contextFactory.hasLocalSharing()) {
-            contextFactory.destroyFn().accept(contextObject);
+        // Only destroy the service if is not shared (i.e. it is our own).
+        if (service != null && !serviceFactory.hasLocalSharing()) {
+            serviceFactory.destroyFn().accept(service);
         }
-        contextObject = null;
+        service = null;
     }
 
     /**
@@ -207,11 +207,11 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
      * {@code callAsyncFn}, it can be used if needed.
      */
     public static <C, T, R> ProcessorSupplier supplier(
-            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
-        return supplierWithContext(contextFactory,
-                (ctxF, ctxO) -> new AsyncTransformUsingContextOrderedP<>(ctxF, ctxO, callAsyncFn)
+        return supplierWithService(serviceFactory,
+                (serviceFn, service) -> new AsyncTransformUsingServiceOrderedP<>(serviceFn, service, callAsyncFn)
         );
     }
 }

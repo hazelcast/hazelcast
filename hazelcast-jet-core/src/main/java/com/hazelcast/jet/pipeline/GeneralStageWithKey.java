@@ -204,14 +204,14 @@ public interface GeneralStageWithKey<T, K> {
     /**
      * Attaches a mapping stage which applies the given function to each input
      * item independently and emits the function's result as the output item.
-     * The mapping function receives another parameter, the context object,
-     * which Jet will create using the supplied {@code contextFactory}. If the
+     * The mapping function receives another parameter, the service object,
+     * which Jet will create using the supplied {@code serviceFactory}. If the
      * mapping result is {@code null}, it emits nothing. Therefore this stage
      * can be used to implement filtering semantics as well.
      * <p>
      * Jet uses the {@linkplain #keyFn() key-extracting function} specified on
      * this stage for partitioning: all the items with the same key will see
-     * the same context instance (but note that the same instance serves many
+     * the same service instance (but note that the same instance serves many
      * keys). One case where this is useful is fetching data from an external
      * system because you can use a near-cache without duplicating the cached
      * data.
@@ -219,34 +219,34 @@ public interface GeneralStageWithKey<T, K> {
      * Sample usage:
      * <pre>{@code
      * items.groupingKey(Item::getDetailId)
-     *      .mapUsingContext(
-     *          ContextFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *      .mapUsingService(
+     *          ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry()),
      *          (reg, key, item) -> item.setDetail(reg.fetchDetail(key))
      *      );
      * }</pre>
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
-     * that any state the context object maintains doesn't participate in Jet's
+     * that any state the service object maintains doesn't participate in Jet's
      * fault tolerance protocol. If the state is local, it will be lost after a
      * job restart; if it is saved to some durable storage, the state of that
      * storage won't be rewound to the last checkpoint, so you'll perform
      * duplicate updates.
      *
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <R> the result type of the mapping function
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param mapFn a stateless mapping function
      * @return the newly attached stage
      */
     @Nonnull
-    <C, R> GeneralStage<R> mapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
+    <S, R> GeneralStage<R> mapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     );
 
     /**
-     * Asynchronous version of {@link #mapUsingContext}: the {@code mapAsyncFn}
+     * Asynchronous version of {@link #mapUsingService}: the {@code mapAsyncFn}
      * returns a {@code CompletableFuture<R>} instead of just {@code R}.
      * <p>
      * The function can return a null future or the future can return a null
@@ -255,8 +255,8 @@ public interface GeneralStageWithKey<T, K> {
      * Sample usage:
      * <pre>{@code
      * items.groupingKey(Item::getDetailId)
-     *      .mapUsingContextAsync(
-     *          ContextFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *      .mapUsingServiceAsync(
+     *          ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry()),
      *          (reg, key, item) -> reg.fetchDetailAsync(key)
      *                                 .thenApply(detail -> item.setDetail(detail))
      *      );
@@ -264,29 +264,29 @@ public interface GeneralStageWithKey<T, K> {
      * The latency of the async call will add to the total latency of the
      * output.
      *
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <R> the future's result type of the mapping function
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param mapAsyncFn a stateless mapping function. Can map to null (return
      *      a null future)
      * @return the newly attached stage
      */
     @Nonnull
-    <C, R> GeneralStage<R> mapUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
+    <S, R> GeneralStage<R> mapUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     );
 
     /**
      * Attaches a filtering stage which applies the provided predicate function
      * to each input item to decide whether to pass the item to the output or
      * to discard it. The predicate function receives another parameter, the
-     * context object, which Jet will create using the supplied {@code
-     * contextFactory}.
+     * service object, which Jet will create using the supplied {@code
+     * serviceFactory}.
      * <p>
      * Jet uses the {@linkplain #keyFn() key-extracting function} specified on
      * this stage for partitioning: all the items with the same key will see
-     * the same context instance (but note that the same instance serves many
+     * the same service instance (but note that the same instance serves many
      * keys). One case where this is useful is fetching data from an external
      * system because you can use a near-cache without duplicating the cached
      * data.
@@ -294,33 +294,33 @@ public interface GeneralStageWithKey<T, K> {
      * Sample usage:
      * <pre>{@code
      * items.groupingKey(Item::getDetailId)
-     *      .filterUsingContext(
-     *          ContextFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *      .filterUsingService(
+     *          ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry()),
      *          (reg, key, item) -> reg.fetchDetail(key).contains("blade")
      *      );
      * }</pre>
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
-     * that any state the context object maintains doesn't participate in Jet's
+     * that any state the service object maintains doesn't participate in Jet's
      * fault tolerance protocol. If the state is local, it will be lost after a
      * job restart; if it is saved to some durable storage, the state of that
      * storage won't be rewound to the last checkpoint, so you'll perform
      * duplicate updates.
      *
-     * @param <C> type of context object
-     * @param contextFactory the context factory
+     * @param <S> type of service object
+     * @param serviceFactory the service factory
      * @param filterFn a stateless filter predicate function
      * @return the newly attached stage
      */
     @Nonnull
-    <C> GeneralStage<T> filterUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriPredicate<? super C, ? super K, ? super T> filterFn
+    <S> GeneralStage<T> filterUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
     );
 
     /**
-     * Asynchronous version of {@link #filterUsingContext}: the {@code
+     * Asynchronous version of {@link #filterUsingService}: the {@code
      * filterAsyncFn} returns a {@code CompletableFuture<Boolean>} instead of
      * just a {@code boolean}.
      * <p>
@@ -329,8 +329,8 @@ public interface GeneralStageWithKey<T, K> {
      * Sample usage:
      * <pre>{@code
      * items.groupingKey(Item::getDetailId)
-     *      .filterUsingContextAsync(
-     *          ContextFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *      .filterUsingServiceAsync(
+     *          ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry()),
      *          (reg, key, item) -> reg.fetchDetailAsync(key)
      *                                 .thenApply(detail -> detail.contains("blade"))
      *      );
@@ -339,15 +339,15 @@ public interface GeneralStageWithKey<T, K> {
      * The latency of the async call will add to the total latency of the
      * output.
      *
-     * @param <C> type of context object
-     * @param contextFactory the context factory
+     * @param <S> type of service object
+     * @param serviceFactory the service factory
      * @param filterAsyncFn a stateless filtering function
      * @return the newly attached stage
      */
     @Nonnull
-    <C> GeneralStage<T> filterUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+    <S> GeneralStage<T> filterUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     );
 
     /**
@@ -355,12 +355,12 @@ public interface GeneralStageWithKey<T, K> {
      * each input item independently and emits all the items from the
      * {@link Traverser} it returns as the output items. The traverser must
      * be <em>null-terminated</em>. The mapping function receives another
-     * parameter, the context object, which Jet will create using the supplied
-     * {@code contextFactory}.
+     * parameter, the service object, which Jet will create using the supplied
+     * {@code serviceFactory}.
      * <p>
      * Jet uses the {@linkplain #keyFn() key-extracting function} specified on
      * this stage for partitioning: all the items with the same key will see
-     * the same context instance (but note that the same instance serves many
+     * the same service instance (but note that the same instance serves many
      * keys). One case where this is useful is fetching data from an external
      * system because you can use a near-cache without duplicating the cached
      * data.
@@ -369,8 +369,8 @@ public interface GeneralStageWithKey<T, K> {
      * <pre>{@code
      * StreamStage<Part> parts = products
      *     .groupingKey(Product::getId)
-     *     .flatMapUsingContext(
-     *         ContextFactory.withCreateFn(jet -> new PartRegistry()),
+     *     .flatMapUsingService(
+     *         ServiceFactory.withCreateFn(jet -> new PartRegistry()),
      *         (registry, productId, product) -> Traversers.traverseIterable(
      *                 registry.fetchParts(productId))
      *     );
@@ -378,28 +378,28 @@ public interface GeneralStageWithKey<T, K> {
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
-     * that any state the context object maintains doesn't participate in Jet's
+     * that any state the service object maintains doesn't participate in Jet's
      * fault tolerance protocol. If the state is local, it will be lost after a
      * job restart; if it is saved to some durable storage, the state of that
      * storage won't be rewound to the last checkpoint, so you'll perform
      * duplicate updates.
      *
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <R> type of the output items
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param flatMapFn a stateless flatmapping function. It must not return
      *                 null traverser, but can return an {@linkplain
      *                 Traversers#empty() empty traverser}.
      * @return the newly attached stage
      */
     @Nonnull
-    <C, R> GeneralStage<R> flatMapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    <S, R> GeneralStage<R> flatMapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
 
     /**
-     * Asynchronous version of {@link #flatMapUsingContext}: the {@code
+     * Asynchronous version of {@link #flatMapUsingService}: the {@code
      * flatMapAsyncFn} returns a {@code CompletableFuture<Traverser<R>>}
      * instead of just {@code Traverser<R>}.
      * <p>
@@ -410,8 +410,8 @@ public interface GeneralStageWithKey<T, K> {
      * <pre>{@code
      * StreamStage<Part> productParts = products
      *     .groupingKey(Product::getId)
-     *     .flatMapUsingContextAsync(
-     *         ContextFactory.withCreateFn(jet -> new PartRegistry()),
+     *     .flatMapUsingServiceAsync(
+     *         ServiceFactory.withCreateFn(jet -> new PartRegistry()),
      *         (registry, productId, product) -> registry
      *                 .fetchPartsAsync(productId)
      *                 .thenApply(parts -> Traversers.traverseIterable(parts))
@@ -420,9 +420,9 @@ public interface GeneralStageWithKey<T, K> {
      * <p>
      * The latency of the async call will add to the latency of the items.
      *
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <R> the type of the returned stage
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param flatMapAsyncFn a stateless flatmapping function. Can map to null
      *                      (return a null future), but the future must not
      *                      return null traverser, but can return an {@linkplain
@@ -430,9 +430,9 @@ public interface GeneralStageWithKey<T, K> {
      * @return the newly attached stage
      */
     @Nonnull
-    <C, R> GeneralStage<R> flatMapUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
+    <S, R> GeneralStage<R> flatMapUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     );
 
@@ -477,7 +477,7 @@ public interface GeneralStageWithKey<T, K> {
             @Nonnull String mapName,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingContextAsync(ContextFactories.<K, V>iMapContext(mapName),
+        return mapUsingServiceAsync(ServiceFactories.<K, V>iMapService(mapName),
                 (map, key, item) -> map.getAsync(key).toCompletableFuture()
                                        .thenApply(value -> mapFn.apply(item, value)));
     }
@@ -510,7 +510,7 @@ public interface GeneralStageWithKey<T, K> {
      * place. However, if the map doesn't use the default partitioning strategy,
      * data locality will be broken.
      *
-     * @param iMap the {@code IMap} to use as the context
+     * @param iMap the {@code IMap} to use as the service
      * @param mapFn the mapping function
      * @param <V> type of the value in the {@code IMap}
      * @param <R> type of the output item

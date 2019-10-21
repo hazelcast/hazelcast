@@ -27,9 +27,8 @@ import com.hazelcast.jet.examples.grpc.ProductServiceGrpc.ProductServiceFutureSt
 import com.hazelcast.jet.examples.grpc.datamodel.Broker;
 import com.hazelcast.jet.examples.grpc.datamodel.Product;
 import com.hazelcast.jet.examples.grpc.datamodel.Trade;
-import com.hazelcast.jet.pipeline.ContextFactory;
-import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -48,11 +47,11 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
+import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
-import static com.hazelcast.function.Functions.entryValue;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toMap;
 
@@ -85,7 +84,7 @@ public final class GRPCEnrichment {
      * It starts a gRPC server that will provide product and broker names based
      * on an ID. The job then enriches incoming trades using the service. This
      * sample demonstrates a way to call external service with an async API
-     * using the {@link GeneralStage#mapUsingContextAsync mapUsingContextAsync}
+     * using the {@link StreamStage#mapUsingServiceAsync}
      * method.
      */
     private static Pipeline enrichUsingGRPC() throws Exception {
@@ -108,23 +107,23 @@ public final class GRPCEnrichment {
                 .withoutTimestamps()
                 .map(entryValue());
 
-        ContextFactory<ProductServiceFutureStub> productService = ContextFactory
+        ServiceFactory<ProductServiceFutureStub> productService = ServiceFactory
                 .withCreateFn(x -> ProductServiceGrpc.newFutureStub(getLocalChannel()))
                 .withDestroyFn(stub -> shutdownClient(stub));
 
-        ContextFactory<BrokerServiceFutureStub> brokerService = ContextFactory
+        ServiceFactory<BrokerServiceFutureStub> brokerService = ServiceFactory
                 .withCreateFn(x -> BrokerServiceGrpc.newFutureStub(getLocalChannel()))
                 .withDestroyFn(stub -> shutdownClient(stub));
 
         // Enrich the trade by querying the product and broker name from the gRPC services
-        trades.mapUsingContextAsync(productService,
+        trades.mapUsingServiceAsync(productService,
                 (service, trade) -> {
                     ProductInfoRequest request = ProductInfoRequest.newBuilder().setId(trade.productId()).build();
                     return toCompletableFuture(service.productInfo(request))
                             .thenApply(productReply -> tuple2(trade, productReply.getProductName()));
                 })
               // input is (trade, product)
-              .mapUsingContextAsync(brokerService,
+              .mapUsingServiceAsync(brokerService,
                       (stub, t) -> {
                           BrokerInfoRequest request = BrokerInfoRequest.newBuilder().setId(t.f0().brokerId()).build();
                           return toCompletableFuture(stub.brokerInfo(request))

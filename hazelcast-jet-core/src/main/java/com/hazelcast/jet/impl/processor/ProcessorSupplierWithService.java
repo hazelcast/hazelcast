@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.function.BiFunctionEx;
 
 import javax.annotation.Nonnull;
@@ -29,51 +29,51 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Common processor supplier for transform-using-context processors
+ * Common processor supplier for transform-using-service processors
  */
-public final class ProcessorSupplierWithContext<C> implements ProcessorSupplier {
+public final class ProcessorSupplierWithService<S> implements ProcessorSupplier {
 
     static final long serialVersionUID = 1L;
 
-    private final ContextFactory<C> contextFactory;
-    private BiFunction<ContextFactory<C>, C, Processor> createProcessorFn;
-    private transient C contextObject;
+    private final ServiceFactory<S> serviceFactory;
+    private BiFunction<ServiceFactory<S>, S, Processor> createProcessorFn;
+    private transient S service;
 
-    private ProcessorSupplierWithContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunction<ContextFactory<C>, C, Processor> createProcessorFn
+    private ProcessorSupplierWithService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunction<ServiceFactory<S>, S, Processor> createProcessorFn
     ) {
-        this.contextFactory = contextFactory;
+        this.serviceFactory = serviceFactory;
         this.createProcessorFn = createProcessorFn;
     }
 
     @Override
     public void init(@Nonnull Context context) {
-        if (contextFactory.hasLocalSharing()) {
-            contextObject = contextFactory.createFn().apply(context.jetInstance());
+        if (serviceFactory.hasLocalSharing()) {
+            service = serviceFactory.createFn().apply(context.jetInstance());
         }
     }
 
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
-        return Stream.generate(() -> createProcessorFn.apply(contextFactory, contextObject))
+        return Stream.generate(() -> createProcessorFn.apply(serviceFactory, service))
                 .limit(count)
                 .collect(toList());
     }
 
     @Override
     public void close(Throwable error) {
-        if (contextObject != null) {
-            contextFactory.destroyFn().accept(contextObject);
+        if (service != null) {
+            serviceFactory.destroyFn().accept(service);
         }
     }
 
     @Nonnull
-    public static <C> ProcessorSupplier supplierWithContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<ContextFactory<C>, C, Processor> createProcessorFn
+    public static <C> ProcessorSupplier supplierWithService(
+            @Nonnull ServiceFactory<C> serviceFactory,
+            @Nonnull BiFunctionEx<ServiceFactory<C>, C, Processor> createProcessorFn
     ) {
-        return new ProcessorSupplierWithContext<>(contextFactory, createProcessorFn);
+        return new ProcessorSupplierWithService<>(serviceFactory, createProcessorFn);
     }
 }

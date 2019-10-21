@@ -103,21 +103,21 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    <C, T, R> BiFunctionEx<? super C, ?, ?> adaptMapUsingContextFn(
+    <C, T, R> BiFunctionEx<? super C, ?, ?> adaptMapUsingServiceFn(
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
         return mapFn;
     }
 
     @Nonnull
-    <C, T> BiPredicateEx<? super C, ?> adaptFilterUsingContextFn(
+    <C, T> BiPredicateEx<? super C, ?> adaptFilterUsingServiceFn(
             @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     ) {
         return filterFn;
     }
 
     @Nonnull
-    <C, T, R> BiFunctionEx<? super C, ?, ? extends Traverser<?>> adaptFlatMapUsingContextFn(
+    <C, T, R> BiFunctionEx<? super C, ?, ? extends Traverser<?>> adaptFlatMapUsingServiceFn(
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return flatMapFn;
@@ -125,7 +125,7 @@ public class FunctionAdapter {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, T, R> BiFunctionEx<? super C, ?, ? extends CompletableFuture<Traverser<?>>> adaptFlatMapUsingContextAsyncFn(
+    <C, T, R> BiFunctionEx<? super C, ?, ? extends CompletableFuture<Traverser<?>>> adaptFlatMapUsingServiceAsyncFn(
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return (BiFunctionEx) flatMapAsyncFn;
@@ -301,34 +301,34 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull @Override
-    <C, T, R> BiFunctionEx<? super C, ? super JetEvent<T>, ? extends JetEvent<R>> adaptMapUsingContextFn(
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
+    <S, T, R> BiFunctionEx<? super S, ? super JetEvent<T>, ? extends JetEvent<R>> adaptMapUsingServiceFn(
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
-        return (context, e) -> jetEvent(e.timestamp(), mapFn.apply(context, e.payload()));
+        return (s, e) -> jetEvent(e.timestamp(), mapFn.apply(s, e.payload()));
     }
 
     @Nonnull @Override
-    <C, T> BiPredicateEx<? super C, ? super JetEvent<T>> adaptFilterUsingContextFn(
-            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
+    <S, T> BiPredicateEx<? super S, ? super JetEvent<T>> adaptFilterUsingServiceFn(
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
-        return (context, e) -> filterFn.test(context, e.payload());
+        return (s, e) -> filterFn.test(s, e.payload());
     }
 
     @Nonnull @Override
-    <C, T, R> BiFunctionEx<? super C, ? super JetEvent<T>, ? extends Traverser<JetEvent<R>>>
-    adaptFlatMapUsingContextFn(
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    <S, T, R> BiFunctionEx<? super S, ? super JetEvent<T>, ? extends Traverser<JetEvent<R>>>
+    adaptFlatMapUsingServiceFn(
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return (context, e) -> flatMapFn.apply(context, e.payload()).map(r -> jetEvent(e.timestamp(), r));
+        return (s, e) -> flatMapFn.apply(s, e.payload()).map(r -> jetEvent(e.timestamp(), r));
     }
 
     @Nonnull @Override
-    <C, T, R> BiFunctionEx<? super C, ?, ? extends CompletableFuture<Traverser<?>>>
-    adaptFlatMapUsingContextAsyncFn(
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    <S, T, R> BiFunctionEx<? super S, ?, ? extends CompletableFuture<Traverser<?>>>
+    adaptFlatMapUsingServiceAsyncFn(
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
-        return (C context, JetEvent<T> e) ->
-                flatMapAsyncFn.apply(context, e.payload()).thenApply(trav -> trav.map(re -> jetEvent(e.timestamp(), re)));
+        return (S s, JetEvent<T> e) ->
+                flatMapAsyncFn.apply(s, e.payload()).thenApply(trav -> trav.map(re -> jetEvent(e.timestamp(), re)));
     }
 
     @Nonnull @Override

@@ -346,15 +346,15 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void mapUsingContext() {
+    public void mapUsingService() {
         // Given
         List<Integer> input = sequence(itemCount);
         BiFunctionEx<String, Integer, String> formatFn = (suffix, i) -> String.format("%04d%s", i, suffix);
         String suffix = "-context";
 
         // When
-        StreamStage<String> mapped = streamStageFromList(input).mapUsingContext(
-                ContextFactory.withCreateFn(x -> suffix),
+        StreamStage<String> mapped = streamStageFromList(input).mapUsingService(
+                ServiceFactory.withCreateFn(x -> suffix),
                 formatFn);
 
         // Then
@@ -366,7 +366,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void mapUsingContext_keyed() {
+    public void mapUsingService_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
         BiFunctionEx<String, Integer, String> formatFn = (suffix, i) -> String.format("%04d%s", i, suffix);
@@ -375,7 +375,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<String> mapped = streamStageFromList(input)
                 .groupingKey(i -> i)
-                .mapUsingContext(ContextFactory.withCreateFn(i -> suffix), (suff, k, i) -> formatFn.apply(suff, i));
+                .mapUsingService(ServiceFactory.withCreateFn(i -> suffix), (suff, k, i) -> formatFn.apply(suff, i));
 
         // Then
         mapped.drainTo(sink);
@@ -386,7 +386,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void filterUsingContext() {
+    public void filterUsingService() {
         // Given
         List<Integer> input = sequence(itemCount);
         int acceptedRemainder = 1;
@@ -394,7 +394,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Integer> mapped = streamStageFromList(input)
-                .filterUsingContext(ContextFactory.withCreateFn(i -> acceptedRemainder), (rem, i) -> i % 2 == rem);
+                .filterUsingService(ServiceFactory.withCreateFn(i -> acceptedRemainder), (rem, i) -> i % 2 == rem);
 
         // Then
         mapped.drainTo(sink);
@@ -405,7 +405,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void filterUsingContext_keyed() {
+    public void filterUsingService_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
@@ -414,8 +414,8 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<Integer> mapped = streamStageFromList(input)
                 .groupingKey(i -> i)
-                .filterUsingContext(
-                        ContextFactory.withCreateFn(i -> acceptedRemainder),
+                .filterUsingService(
+                        ServiceFactory.withCreateFn(i -> acceptedRemainder),
                         (rem, k, i) -> i % 2 == rem);
 
         // Then
@@ -427,7 +427,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void flatMapUsingContext() {
+    public void flatMapUsingService() {
         // Given
         List<Integer> input = sequence(itemCount);
         FunctionEx<Integer, Stream<String>> flatMapFn =
@@ -435,8 +435,8 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<String> flatMapped = streamStageFromList(input)
-                .flatMapUsingContext(
-                        ContextFactory.withCreateFn(x -> flatMapFn),
+                .flatMapUsingService(
+                        ServiceFactory.withCreateFn(x -> flatMapFn),
                         (fn, i) -> traverseStream(fn.apply(i))
                 );
 
@@ -449,7 +449,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void flatMapUsingContext_keyed() {
+    public void flatMapUsingService_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
         FunctionEx<Integer, Stream<String>> flatMapFn =
@@ -458,8 +458,8 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<String> flatMapped = streamStageFromList(input)
                 .groupingKey(i -> i)
-                .flatMapUsingContext(
-                        ContextFactory.withCreateFn(x -> flatMapFn),
+                .flatMapUsingService(
+                        ServiceFactory.withCreateFn(x -> flatMapFn),
                         (fn, k, i) -> traverseStream(fn.apply(i))
                 );
 
@@ -1064,8 +1064,8 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<Object> custom = streamStageFromList(input)
                 .groupingKey(extractKeyFn)
-                .customTransform("map", Processors.mapUsingContextP(
-                        ContextFactory.withCreateFn(jet -> new HashSet<>()),
+                .customTransform("map", Processors.mapUsingServiceP(
+                        ServiceFactory.withCreateFn(jet -> new HashSet<>()),
                         (Set<Integer> seen, JetEvent<Integer> jetEvent) -> {
                             Integer key = extractKeyFn.apply(jetEvent.payload());
                             return seen.add(key) ? jetEvent(jetEvent.timestamp(), key) : null;

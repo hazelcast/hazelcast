@@ -23,16 +23,16 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.function.TriFunction;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.impl.processor.TransformUsingContextP.supplier;
+import static com.hazelcast.jet.impl.processor.TransformUsingServiceP.supplier;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class TransformUsingContextPTest {
+public class TransformUsingServicePTest {
 
     @Test
     public void when_sharedLocally_then_oneContextInstance() throws Exception {
@@ -47,12 +47,12 @@ public class TransformUsingContextPTest {
     private void testSharing(boolean share) throws Exception {
         int[] createCounter = {0};
         int[] destroyCounter = {0};
-        ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "context-" + createCounter[0]++)
+        ServiceFactory<String> serviceFactory = ServiceFactory.withCreateFn(jet -> "context-" + createCounter[0]++)
                                                               .withDestroyFn(ctx -> destroyCounter[0]++);
         if (share) {
-            contextFactory = contextFactory.withLocalSharing();
+            serviceFactory = serviceFactory.withLocalSharing();
         }
-        ProcessorSupplier supplier = supplier(contextFactory, mapToContext());
+        ProcessorSupplier supplier = supplier(serviceFactory, mapToContext());
 
         TestOutbox outbox1 = new TestOutbox(1);
         TestOutbox outbox2 = new TestOutbox(1);
@@ -60,12 +60,12 @@ public class TransformUsingContextPTest {
         supplier.init(new TestProcessorSupplierContext());
         assertEquals(share ? 1 : 0, createCounter[0]);
         //noinspection SuspiciousToArrayCall
-        TransformUsingContextP[] processors = supplier.get(2).toArray(new TransformUsingContextP[0]);
+        TransformUsingServiceP[] processors = supplier.get(2).toArray(new TransformUsingServiceP[0]);
         processors[0].init(outbox1, new TestProcessorContext());
         assertEquals(1, createCounter[0]);
         processors[1].init(outbox2, new TestProcessorContext());
         assertEquals(share ? 1 : 2, createCounter[0]);
-        assertEquals(share, processors[0].contextObject == processors[1].contextObject);
+        assertEquals(share, processors[0].service == processors[1].service);
 
         processors[0].tryProcess(0, "foo");
         processors[1].tryProcess(0, "foo");
@@ -82,22 +82,22 @@ public class TransformUsingContextPTest {
     }
 
     @Test
-    public void when_nonCooperativeContextFactory_then_nonCooperativeProcessor() throws Exception {
+    public void when_nonCooperativeServiceFactory_then_nonCooperativeProcessor() throws Exception {
         testEqualCooperativity(false);
     }
 
     @Test
-    public void when_cooperativeContextFactory_then_cooperativeProcessor() throws Exception {
+    public void when_cooperativeServiceFactory_then_cooperativeProcessor() throws Exception {
         testEqualCooperativity(true);
     }
 
     private void testEqualCooperativity(boolean cooperative) throws Exception {
-        ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "foo");
+        ServiceFactory<String> serviceFactory = ServiceFactory.withCreateFn(jet -> "foo");
         if (!cooperative) {
-            contextFactory = contextFactory.toNonCooperative();
+            serviceFactory = serviceFactory.toNonCooperative();
         }
 
-        ProcessorSupplier supplier = supplier(contextFactory, mapToContext());
+        ProcessorSupplier supplier = supplier(serviceFactory, mapToContext());
         supplier.init(new TestProcessorSupplierContext());
         assertEquals(cooperative, supplier.get(1).iterator().next().isCooperative());
     }

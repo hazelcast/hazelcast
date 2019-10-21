@@ -33,16 +33,16 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.TriFunction;
-import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextOrderedP;
-import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextUnorderedP;
+import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
+import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
 import com.hazelcast.jet.impl.processor.GroupP;
 import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.processor.TransformStatefulP;
-import com.hazelcast.jet.impl.processor.TransformUsingContextP;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.impl.processor.TransformUsingServiceP;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ConsumerEx;
@@ -846,39 +846,39 @@ public final class Processors {
     /**
      * Returns a supplier of processors for a vertex which, for each received
      * item, emits the result of applying the given mapping function to it. The
-     * mapping function receives another parameter, the context object which
-     * Jet will create using the supplied {@code contextFactory}.
+     * mapping function receives another parameter, the service object which
+     * Jet will create using the supplied {@code serviceFactory}.
      * <p>
      * If the mapping result is {@code null}, the vertex emits nothing.
      * Therefore it can be used to implement filtering semantics as well.
      * <p>
      * Unlike {@link #mapStatefulP} (with the "{@code Keyed}" part),
-     * this method creates one context object per processor (or per member, if
-     * {@linkplain ContextFactory#withLocalSharing() shared}).
+     * this method creates one service object per processor (or per member, if
+     * {@linkplain ServiceFactory#withLocalSharing() shared}).
      * <p>
-     * While it's allowed to store some local state in the context object, it
+     * While it's allowed to store some local state in the service object, it
      * won't be saved to the snapshot and will misbehave in a fault-tolerant
      * stream processing job.
      *
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param mapFn a stateless mapping function
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <T> type of received item
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <C, T, R> ProcessorSupplier mapUsingContextP(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
+    public static <S, T, R> ProcessorSupplier mapUsingServiceP(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
-        return TransformUsingContextP.<C, T, R>supplier(contextFactory, (singletonTraverser, context, item) -> {
+        return TransformUsingServiceP.<S, T, R>supplier(serviceFactory, (singletonTraverser, context, item) -> {
             singletonTraverser.accept(mapFn.apply(context, item));
             return singletonTraverser;
         });
     }
 
     /**
-     * Asynchronous version of {@link #mapUsingContextP}: the {@code
+     * Asynchronous version of {@link #mapUsingServiceP}: the {@code
      * mapAsyncFn} returns a {@code CompletableFuture<R>} instead of just
      * {@code R}.
      * <p>
@@ -890,50 +890,50 @@ public final class Processors {
      * a partitioned edge, you should use the same key. If it's a round-robin
      * edge, you can use any key, for example {@code Object::hashCode}.
      *
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param extractKeyFn a function to extract snapshot keys
      * @param mapAsyncFn a stateless mapping function
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <T> type of received item
      */
     @Nonnull
-    public static <C, T, K, R> ProcessorSupplier mapUsingContextAsyncP(
-            @Nonnull ContextFactory<C> contextFactory,
+    public static <S, T, K, R> ProcessorSupplier mapUsingServiceAsyncP(
+            @Nonnull ServiceFactory<S> serviceFactory,
             @Nonnull FunctionEx<T, K> extractKeyFn,
-            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<R>> mapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
-        return flatMapUsingContextAsyncP(contextFactory, extractKeyFn,
-                (c, t) -> mapAsyncFn.apply(c, t).thenApply(Traversers::singleton));
+        return flatMapUsingServiceAsyncP(serviceFactory, extractKeyFn,
+                (s, t) -> mapAsyncFn.apply(s, t).thenApply(Traversers::singleton));
     }
 
     /**
      * Returns a supplier of processors for a vertex that emits the same items
      * it receives, but only those that pass the given predicate. The predicate
-     * function receives another parameter, the context object which Jet will
-     * create using the supplied {@code contextFactory}.
+     * function receives another parameter, the service object which Jet will
+     * create using the supplied {@code serviceFactory}.
      * <p>
-     * While it's allowed to store some local state in the context object, it
+     * While it's allowed to store some local state in the service object, it
      * won't be saved to the snapshot and will misbehave in a fault-tolerant
      * stream processing job.
      *
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param filterFn a stateless predicate to test each received item against
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <T> type of received item
      */
     @Nonnull
-    public static <C, T> ProcessorSupplier filterUsingContextP(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
+    public static <S, T> ProcessorSupplier filterUsingServiceP(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
-        return TransformUsingContextP.<C, T, T>supplier(contextFactory, (singletonTraverser, context, item) -> {
+        return TransformUsingServiceP.<S, T, T>supplier(serviceFactory, (singletonTraverser, context, item) -> {
             singletonTraverser.accept(filterFn.test(context, item) ? item : null);
             return singletonTraverser;
         });
     }
 
     /**
-     * Asynchronous version of {@link #filterUsingContextP}: the {@code
+     * Asynchronous version of {@link #mapUsingServiceP}: the {@code
      * filterAsyncFn} returns a {@code CompletableFuture<Boolean>} instead of
      * just a {@code boolean}.
      * <p>
@@ -945,20 +945,20 @@ public final class Processors {
      * a partitioned edge, you should use the same key. If it's a round-robin
      * edge, you can use any key, for example {@code Object::hashCode}.
      *
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param extractKeyFn a function to extract snapshot keys
      * @param filterAsyncFn a stateless predicate to test each received item against
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <T> type of received item
      */
     @Nonnull
-    public static <C, T, K> ProcessorSupplier filterUsingContextAsyncP(
-            @Nonnull ContextFactory<C> contextFactory,
+    public static <S, T, K> ProcessorSupplier filterUsingServiceAsyncP(
+            @Nonnull ServiceFactory<S> serviceFactory,
             @Nonnull FunctionEx<T, K> extractKeyFn,
-            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     ) {
-        return flatMapUsingContextAsyncP(contextFactory, extractKeyFn,
-                (c, t) -> filterAsyncFn.apply(c, t).thenApply(passed -> passed ? Traversers.singleton(t) : null));
+        return flatMapUsingServiceAsyncP(serviceFactory, extractKeyFn,
+                (s, t) -> filterAsyncFn.apply(s, t).thenApply(passed -> passed ? Traversers.singleton(t) : null));
     }
 
     /**
@@ -966,31 +966,31 @@ public final class Processors {
      * item-to-traverser mapping function to each received item and emits all
      * the items from the resulting traverser. The traverser must be
      * <em>null-terminated</em>. The mapping function receives another parameter,
-     * the context object which Jet will create using the supplied {@code
-     * contextFactory}.
+     * the service object which Jet will create using the supplied {@code
+     * serviceFactory}.
      * <p>
-     * While it's allowed to store some local state in the context object, it
+     * While it's allowed to store some local state in the service object, it
      * won't be saved to the snapshot and will misbehave in a fault-tolerant
      * stream processing job.
      *
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param flatMapFn a stateless function that maps the received item to a traverser over
      *                  the output items
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <T> received item type
      * @param <R> emitted item type
      */
     @Nonnull
-    public static <C, T, R> ProcessorSupplier flatMapUsingContextP(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    public static <S, T, R> ProcessorSupplier flatMapUsingServiceP(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return TransformUsingContextP.<C, T, R>supplier(contextFactory,
+        return TransformUsingServiceP.<S, T, R>supplier(serviceFactory,
                 (singletonTraverser, context, item) -> flatMapFn.apply(context, item));
     }
 
     /**
-     * Asynchronous version of {@link #flatMapUsingContextP}: the {@code
+     * Asynchronous version of {@link #flatMapUsingServiceP}: the {@code
      * flatMapAsyncFn} returns a {@code CompletableFuture<Traverser<R>>}
      * instead of just a {@code Traverser<R>}.
      * <p>
@@ -1004,22 +1004,22 @@ public final class Processors {
      * a partitioned edge, you should use the same key. If it's a round-robin
      * edge, you can use any key, for example {@code Object::hashCode}.
      *
-     * @param contextFactory the context factory
+     * @param serviceFactory the service factory
      * @param extractKeyFn a function to extract snapshot keys
      * @param flatMapAsyncFn  a stateless function that maps the received item
      *      to a future returning a traverser over the output items
-     * @param <C> type of context object
+     * @param <S> type of service object
      * @param <T> type of received item
      */
     @Nonnull
-    public static <C, T, K, R> ProcessorSupplier flatMapUsingContextAsyncP(
-            @Nonnull ContextFactory<C> contextFactory,
+    public static <S, T, K, R> ProcessorSupplier flatMapUsingServiceAsyncP(
+            @Nonnull ServiceFactory<S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn,
-            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
-        return contextFactory.hasOrderedAsyncResponses()
-                ? AsyncTransformUsingContextOrderedP.supplier(contextFactory, flatMapAsyncFn)
-                : AsyncTransformUsingContextUnorderedP.supplier(contextFactory, flatMapAsyncFn, extractKeyFn);
+        return serviceFactory.hasOrderedAsyncResponses()
+                ? AsyncTransformUsingServiceOrderedP.supplier(serviceFactory, flatMapAsyncFn)
+                : AsyncTransformUsingServiceUnorderedP.supplier(serviceFactory, flatMapAsyncFn, extractKeyFn);
     }
 
     /**

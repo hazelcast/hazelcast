@@ -185,15 +185,15 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapUsingContext() {
+    public void mapUsingService() {
         // Given
         List<Integer> input = sequence(itemCount);
         BiFunctionEx<String, Integer, String> formatFn = (s, i) -> String.format("%04d-%s", i, s);
         String suffix = "-context";
 
         // When
-        BatchStage<String> mapped = batchStageFromList(input).mapUsingContext(
-                ContextFactory.withCreateFn(i -> suffix),
+        BatchStage<String> mapped = batchStageFromList(input).mapUsingService(
+                ServiceFactory.withCreateFn(i -> suffix),
                 formatFn
         );
 
@@ -206,7 +206,7 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapUsingContext_keyed() {
+    public void mapUsingService_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
         BiFunctionEx<Integer, String, String> formatFn = (i, s) -> String.format("%04d-%s", i, s);
@@ -215,9 +215,9 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<String> mapped = batchStageFromList(input)
                 .groupingKey(i -> i)
-                .mapUsingContext(
-                        ContextFactory.withCreateFn(i -> suffix),
-                        (context, k, i) -> formatFn.apply(i, context)
+                .mapUsingService(
+                        ServiceFactory.withCreateFn(i -> suffix),
+                        (service, k, i) -> formatFn.apply(i, service)
                 );
 
         // Then
@@ -229,13 +229,13 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void filterUsingContext() {
+    public void filterUsingService() {
         // Given
         List<Integer> input = sequence(itemCount);
 
         // When
-        BatchStage<Integer> mapped = batchStageFromList(input).filterUsingContext(
-                ContextFactory.withCreateFn(i -> 1),
+        BatchStage<Integer> mapped = batchStageFromList(input).filterUsingService(
+                ServiceFactory.withCreateFn(i -> 1),
                 (ctx, i) -> i % 2 == ctx);
 
         // Then
@@ -248,15 +248,15 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void filterUsingContext_keyed() {
+    public void filterUsingService_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
 
         // When
         BatchStage<Integer> mapped = batchStageFromList(input)
                 .groupingKey(i -> i)
-                .filterUsingContext(
-                        ContextFactory.withCreateFn(i -> 1),
+                .filterUsingService(
+                        ServiceFactory.withCreateFn(i -> 1),
                         (ctx, k, r) -> r % 2 == ctx);
 
         // Then
@@ -269,13 +269,13 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void flatMapUsingContext() {
+    public void flatMapUsingService() {
         // Given
         List<Integer> input = sequence(itemCount);
 
         // When
-        BatchStage<Entry<Integer, String>> flatMapped = batchStageFromList(input).flatMapUsingContext(
-                ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
+        BatchStage<Entry<Integer, String>> flatMapped = batchStageFromList(input).flatMapUsingService(
+                ServiceFactory.withCreateFn(procCtx -> asList("A", "B")),
                 (ctx, i) -> traverseItems(entry(i, ctx.get(0)), entry(i, ctx.get(1))));
 
         // Then
@@ -288,15 +288,15 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void flatMapUsingContext_keyed() {
+    public void flatMapUsingService_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
 
         // When
         BatchStage<Entry<Integer, String>> flatMapped = batchStageFromList(input)
                 .groupingKey(i -> i)
-                .flatMapUsingContext(
-                        ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
+                .flatMapUsingService(
+                        ServiceFactory.withCreateFn(procCtx -> asList("A", "B")),
                         (ctx, k, i) -> traverseItems(entry(i, ctx.get(0)), entry(i, ctx.get(1))));
 
         // Then
@@ -901,8 +901,8 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<Object> custom = batchStageFromList(input)
                 .groupingKey(extractKeyFn)
-                .customTransform("map", Processors.mapUsingContextP(
-                        ContextFactory.withCreateFn(jet -> new HashSet<>()),
+                .customTransform("map", Processors.mapUsingServiceP(
+                        ServiceFactory.withCreateFn(jet -> new HashSet<>()),
                         (Set<Integer> ctx, Integer item) -> {
                             Integer key = extractKeyFn.apply(item);
                             return ctx.add(key) ? key : null;

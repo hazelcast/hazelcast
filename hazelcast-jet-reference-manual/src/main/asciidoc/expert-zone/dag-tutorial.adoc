@@ -163,7 +163,7 @@ updates. Due to watermark coalescing this could stall the entire stream,
 but with this setting a partition will be marked as idle after 3 seconds
 of inactivity and then the rest of the system behaves as if it didn't
 exist.
-<7> Here we use `mapUsingContextP` which allows us to create an object
+<7> Here we use `mapUsingServiceP` which allows us to create an object
 available to the processor at a late point, after all the job
 serialization-deserialization is done. In this case we need it because
 the Java 8 `DateTimeFormatter` isn't serializable.

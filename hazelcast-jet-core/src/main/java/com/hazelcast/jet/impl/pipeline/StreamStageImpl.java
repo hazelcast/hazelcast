@@ -23,7 +23,7 @@ import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.pipeline.BatchStage;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.JoinClause;
 import com.hazelcast.jet.pipeline.StageWithWindow;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -104,53 +104,53 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     }
 
     @Nonnull @Override
-    public <C, R> StreamStage<R> mapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    public <C, R> StreamStage<R> mapUsingService(
+            @Nonnull ServiceFactory<C> serviceFactory,
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
-        return attachMapUsingContext(contextFactory, mapFn);
+        return attachMapUsingService(serviceFactory, mapFn);
     }
 
     @Nonnull @Override
-    public <C, R> StreamStage<R> mapUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
+    public <S, R> StreamStage<R> mapUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
     ) {
-        return attachFlatMapUsingContextAsync("map", contextFactory,
-                (c, t) -> mapAsyncFn.apply(c, t).thenApply(Traversers::singleton));
+        return attachFlatMapUsingServiceAsync("map", serviceFactory,
+                (s, t) -> mapAsyncFn.apply(s, t).thenApply(Traversers::singleton));
     }
 
     @Nonnull @Override
-    public <C> StreamStage<T> filterUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
+    public <S> StreamStage<T> filterUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
-        return attachFilterUsingContext(contextFactory, filterFn);
+        return attachFilterUsingService(serviceFactory, filterFn);
     }
 
     @Nonnull @Override
-    public <C> StreamStage<T> filterUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
+    public <S> StreamStage<T> filterUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     ) {
-        return attachFlatMapUsingContextAsync("filter", contextFactory,
-                (c, t) -> filterAsyncFn.apply(c, t).thenApply(passed -> passed ? singleton(t) : null));
+        return attachFlatMapUsingServiceAsync("filter", serviceFactory,
+                (s, t) -> filterAsyncFn.apply(s, t).thenApply(passed -> passed ? singleton(t) : null));
     }
 
     @Nonnull @Override
-    public <C, R> StreamStage<R> flatMapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<R>> flatMapFn
+    public <S, R> StreamStage<R> flatMapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
-        return attachFlatMapUsingContext(contextFactory, flatMapFn);
+        return attachFlatMapUsingService(serviceFactory, flatMapFn);
     }
 
     @Nonnull @Override
-    public <C, R> StreamStage<R> flatMapUsingContextAsync(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    public <S, R> StreamStage<R> flatMapUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
-        return attachFlatMapUsingContextAsync("flatMap", contextFactory, flatMapAsyncFn);
+        return attachFlatMapUsingServiceAsync("flatMap", serviceFactory, flatMapAsyncFn);
     }
 
     @Nonnull @Override

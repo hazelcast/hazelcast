@@ -320,8 +320,8 @@ basically takes a snapshot of the enriching dataset at the beginning of
 the job. You may also encounter RAM shortage if your enriching dataset
 is very large.
 
-The `xUsingY` transforms (such as <<map-using-context,
-`filterUsingContext`>> or <<map-using-imap, `mapUsingIMap`>>) can
+The `xUsingY` transforms (such as <<map-using-service,
+`filterUsingService`>> or <<map-using-imap, `mapUsingIMap`>>) can
 enrich a stream by looking up from the original data source each time.
 There's direct support for <<map-using-imap, Hazelcast maps>> and Jet
 <<map-using-context, exposes the underlying machinery>> as well so you

@@ -33,7 +33,7 @@ import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
 import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.pipeline.BatchStage;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.JoinClause;
 import com.hazelcast.jet.pipeline.Sink;
@@ -54,16 +54,16 @@ import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
-import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.filterUsingPartitionedContextTransform;
-import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.flatMapUsingPartitionedContextAsyncTransform;
-import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.flatMapUsingPartitionedContextTransform;
-import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.mapUsingContextPartitionedTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.filterUsingServicePartitionedTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.flatMapUsingServiceAsyncPartitionedTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.flatMapUsingServicePartitionedTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.mapUsingServicePartitionedTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.partitionedCustomProcessorTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.customProcessorTransform;
-import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.filterUsingContextTransform;
-import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingContextAsyncTransform;
-import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingContextTransform;
-import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.mapUsingContextTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.filterUsingServiceTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingServiceAsyncTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingServiceTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.mapUsingServiceTransform;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.util.Arrays.asList;
@@ -214,122 +214,122 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, R, RET> RET attachMapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
+    <S, R, RET> RET attachMapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
         checkSerializable(mapFn, "mapFn");
-        BiFunctionEx adaptedMapFn = fnAdapter.adaptMapUsingContextFn(mapFn);
+        BiFunctionEx adaptedMapFn = fnAdapter.adaptMapUsingServiceFn(mapFn);
         return (RET) attach(
-                mapUsingContextTransform(transform, contextFactory, adaptedMapFn),
+                mapUsingServiceTransform(transform, serviceFactory, adaptedMapFn),
                 fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, RET> RET attachFilterUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
+    <S, RET> RET attachFilterUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
         checkSerializable(filterFn, "filterFn");
-        BiPredicateEx adaptedFilterFn = fnAdapter.adaptFilterUsingContextFn(filterFn);
+        BiPredicateEx adaptedFilterFn = fnAdapter.adaptFilterUsingServiceFn(filterFn);
         return (RET) attach(
-                filterUsingContextTransform(transform, contextFactory, adaptedFilterFn),
+                filterUsingServiceTransform(transform, serviceFactory, adaptedFilterFn),
                 fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, R, RET> RET attachFlatMapUsingContext(
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    <S, R, RET> RET attachFlatMapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
-        BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingContextFn(flatMapFn);
+        BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceFn(flatMapFn);
         return (RET) attach(
-                flatMapUsingContextTransform(transform, contextFactory, adaptedFlatMapFn),
+                flatMapUsingServiceTransform(transform, serviceFactory, adaptedFlatMapFn),
                 fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, R, RET> RET attachFlatMapUsingContextAsync(
+    <S, R, RET> RET attachFlatMapUsingServiceAsync(
             @Nonnull String operationName,
-            @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
-        BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingContextAsyncFn(flatMapAsyncFn);
+        BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceAsyncFn(flatMapAsyncFn);
         return (RET) attach(
-                flatMapUsingContextAsyncTransform(transform, operationName, contextFactory, adaptedFlatMapFn),
+                flatMapUsingServiceAsyncTransform(transform, operationName, serviceFactory, adaptedFlatMapFn),
                 fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, K, R, RET> RET attachMapUsingPartitionedContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    <S, K, R, RET> RET attachMapUsingPartitionedService(
+            @Nonnull ServiceFactory<S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
         checkSerializable(mapFn, "mapFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");
-        BiFunctionEx adaptedMapFn = fnAdapter.adaptMapUsingContextFn(mapFn);
+        BiFunctionEx adaptedMapFn = fnAdapter.adaptMapUsingServiceFn(mapFn);
         FunctionEx adaptedPartitionKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
         return (RET) attach(
-                mapUsingContextPartitionedTransform(transform, contextFactory, adaptedMapFn, adaptedPartitionKeyFn),
+                mapUsingServicePartitionedTransform(transform, serviceFactory, adaptedMapFn, adaptedPartitionKeyFn),
                 fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, K, RET> RET attachFilterUsingPartitionedContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    <S, K, RET> RET attachFilterUsingPartitionedService(
+            @Nonnull ServiceFactory<S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
-            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
         checkSerializable(filterFn, "filterFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");
-        BiPredicateEx adaptedFilterFn = fnAdapter.adaptFilterUsingContextFn(filterFn);
+        BiPredicateEx adaptedFilterFn = fnAdapter.adaptFilterUsingServiceFn(filterFn);
         FunctionEx adaptedPartitionKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
         return (RET) attach(
-                filterUsingPartitionedContextTransform(
-                        transform, contextFactory, adaptedFilterFn, adaptedPartitionKeyFn),
+                filterUsingServicePartitionedTransform(
+                        transform, serviceFactory, adaptedFilterFn, adaptedPartitionKeyFn),
                 fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, K, R, RET> RET attachFlatMapUsingPartitionedContext(
-            @Nonnull ContextFactory<C> contextFactory,
+    <S, K, R, RET> RET attachFlatMapUsingPartitionedService(
+            @Nonnull ServiceFactory<S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");
-        BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingContextFn(flatMapFn);
+        BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceFn(flatMapFn);
         FunctionEx adaptedPartitionKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
         return (RET) attach(
-                flatMapUsingPartitionedContextTransform(
-                        transform, contextFactory, adaptedFlatMapFn, adaptedPartitionKeyFn),
+                flatMapUsingServicePartitionedTransform(
+                        transform, serviceFactory, adaptedFlatMapFn, adaptedPartitionKeyFn),
                 fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, K, R, RET> RET attachTransformUsingPartitionedContextAsync(
+    <S, K, R, RET> RET attachTransformUsingPartitionedServiceAsync(
             @Nonnull String operationName,
-            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull ServiceFactory<S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
-            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");
-        BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingContextAsyncFn(flatMapAsyncFn);
+        BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceAsyncFn(flatMapAsyncFn);
         FunctionEx adaptedPartitionKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
         return (RET) attach(
-                flatMapUsingPartitionedContextAsyncTransform(
-                        transform, operationName, contextFactory, adaptedFlatMapFn, adaptedPartitionKeyFn),
+                flatMapUsingServiceAsyncPartitionedTransform(
+                        transform, operationName, serviceFactory, adaptedFlatMapFn, adaptedPartitionKeyFn),
                 fnAdapter);
     }
 

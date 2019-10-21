@@ -21,7 +21,7 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.pipeline.BatchStage;
-import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -102,10 +102,10 @@ public class PerformanceConsiderations {
         //tag::s8[]
         Pipeline p = Pipeline.create();
         BatchStage<Long> src = p.drawFrom(Sources.list("input"));
-        ContextFactory<DateTimeFormatter> contextFactory = ContextFactory.withCreateFn( // <1>
+        ServiceFactory<DateTimeFormatter> serviceFactory = ServiceFactory.withCreateFn( // <1>
                 x -> DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
                                       .withZone(ZoneId.systemDefault()));
-        src.mapUsingContext(contextFactory, // <2>
+        src.mapUsingService(serviceFactory, // <2>
                 (formatter, tstamp) -> formatter.format(Instant.ofEpochMilli(tstamp))); // <3>
         //end::s8[]
     }

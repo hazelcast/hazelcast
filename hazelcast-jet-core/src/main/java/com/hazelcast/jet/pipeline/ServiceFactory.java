@@ -28,29 +28,29 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * A holder of functions needed to create and destroy a context object.
+ * A holder of functions needed to create and destroy a service object.
  * <p>
- * You can use the context factory from these Pipeline API methods:
+ * You can use the service factory from these Pipeline API methods:
  * <ul>
- *     <li>{@link GeneralStage#mapUsingContext}
- *     <li>{@link GeneralStage#filterUsingContext}
- *     <li>{@link GeneralStage#flatMapUsingContext}
- *     <li>{@link GeneralStage#mapUsingContextAsync}
- *     <li>{@link GeneralStage#filterUsingContextAsync}
- *     <li>{@link GeneralStage#flatMapUsingContextAsync}
- *     <li>{@link GeneralStageWithKey#mapUsingContext}
- *     <li>{@link GeneralStageWithKey#filterUsingContext}
- *     <li>{@link GeneralStageWithKey#flatMapUsingContext}
- *     <li>{@link GeneralStageWithKey#mapUsingContextAsync}
- *     <li>{@link GeneralStageWithKey#filterUsingContextAsync}
- *     <li>{@link GeneralStageWithKey#flatMapUsingContextAsync}
+ *     <li>{@link GeneralStage#mapUsingService}
+ *     <li>{@link GeneralStage#filterUsingService}
+ *     <li>{@link GeneralStage#flatMapUsingService}
+ *     <li>{@link GeneralStage#mapUsingServiceAsync}
+ *     <li>{@link GeneralStage#filterUsingServiceAsync}
+ *     <li>{@link GeneralStage#flatMapUsingServiceAsync}
+ *     <li>{@link GeneralStageWithKey#mapUsingservice}
+ *     <li>{@link GeneralStageWithKey#filterUsingservice}
+ *     <li>{@link GeneralStageWithKey#flatMapUsingservice}
+ *     <li>{@link GeneralStageWithKey#mapUsingserviceAsync}
+ *     <li>{@link GeneralStageWithKey#filterUsingserviceAsync}
+ *     <li>{@link GeneralStageWithKey#flatMapUsingserviceAsync}
  * </ul>
  *
- * @param <C> the user-defined context object type
+ * @param <S> the user-defined service object type
  *
  * @since 3.0
  */
-public final class ContextFactory<C> implements Serializable {
+public final class ServiceFactory<S> implements Serializable {
 
     /**
      * Default value for {@link #maxPendingCallsPerProcessor}.
@@ -72,16 +72,16 @@ public final class ContextFactory<C> implements Serializable {
      */
     public static final boolean ORDERED_ASYNC_RESPONSES_DEFAULT = true;
 
-    private final FunctionEx<JetInstance, ? extends C> createFn;
-    private final ConsumerEx<? super C> destroyFn;
+    private final FunctionEx<JetInstance, ? extends S> createFn;
+    private final ConsumerEx<? super S> destroyFn;
     private final boolean isCooperative;
     private final boolean hasLocalSharing;
     private final int maxPendingCallsPerProcessor;
     private final boolean orderedAsyncResponses;
 
-    private ContextFactory(
-            FunctionEx<JetInstance, ? extends C> createFn,
-            ConsumerEx<? super C> destroyFn,
+    private ServiceFactory(
+            FunctionEx<JetInstance, ? extends S> createFn,
+            ConsumerEx<? super S> destroyFn,
             boolean isCooperative,
             boolean hasLocalSharing,
             int maxPendingCallsPerProcessor,
@@ -96,45 +96,45 @@ public final class ContextFactory<C> implements Serializable {
     }
 
     /**
-     * Creates a new {@link ContextFactory} with the given create-function.
+     * Creates a new {@link ServiceFactory} with the given create-function.
      *
-     * @param createContextFn the function to create new context object, given
+     * @param createServiceFn the function to create new service object, given
      *                        a JetInstance
-     * @param <C> the user-defined context object type
+     * @param <S> the user-defined service object type
      * @return a new factory instance
      *
      * @since 3.0
      */
     @Nonnull
-    public static <C> ContextFactory<C> withCreateFn(
-            @Nonnull FunctionEx<JetInstance, ? extends C> createContextFn
+    public static <S> ServiceFactory<S> withCreateFn(
+            @Nonnull FunctionEx<JetInstance, ? extends S> createServiceFn
     ) {
-        checkSerializable(createContextFn, "createContextFn");
-        return new ContextFactory<>(
-                createContextFn, ConsumerEx.noop(), COOPERATIVE_DEFAULT, SHARE_LOCALLY_DEFAULT,
+        checkSerializable(createServiceFn, "createServiceFn");
+        return new ServiceFactory<>(
+                createServiceFn, ConsumerEx.noop(), COOPERATIVE_DEFAULT, SHARE_LOCALLY_DEFAULT,
                 MAX_PENDING_CALLS_DEFAULT, ORDERED_ASYNC_RESPONSES_DEFAULT);
     }
 
     /**
-     * Returns a copy of this {@link ContextFactory} with the destroy-function
+     * Returns a copy of this {@link ServiceFactory} with the destroy-function
      * replaced with the given function.
      * <p>
      * The destroy function is called at the end of the job to destroy all
-     * created context objects.
+     * created service objects.
      *
-     * @param destroyFn the function to destroy user-defined context
+     * @param destroyFn the function to destroy user-defined service
      * @return a copy of this factory with the supplied destroy-function
      */
     @Nonnull
-    public ContextFactory<C> withDestroyFn(@Nonnull ConsumerEx<? super C> destroyFn) {
+    public ServiceFactory<S> withDestroyFn(@Nonnull ConsumerEx<? super S> destroyFn) {
         checkSerializable(destroyFn, "destroyFn");
-        return new ContextFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
+        return new ServiceFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
 
     /**
-     * Returns a copy of this {@link ContextFactory} with the
-     * <em>isCooperative</em> flag set to {@code false}. The context factory is
+     * Returns a copy of this {@link ServiceFactory} with the
+     * <em>isCooperative</em> flag set to {@code false}. The service factory is
      * cooperative by default. Call this method if your transform function
      * doesn't follow the {@linkplain Processor#isCooperative() cooperative
      * processor contract}, that is if it waits for IO, blocks for
@@ -146,40 +146,40 @@ public final class ContextFactory<C> implements Serializable {
      * to {@code false}.
      */
     @Nonnull
-    public ContextFactory<C> toNonCooperative() {
-        return new ContextFactory<>(createFn, destroyFn, false, hasLocalSharing,
+    public ServiceFactory<S> toNonCooperative() {
+        return new ServiceFactory<>(createFn, destroyFn, false, hasLocalSharing,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
 
     /**
-     * Returns a copy of this {@link ContextFactory} with the
+     * Returns a copy of this {@link ServiceFactory} with the
      * <em>localSharing</em> flag set. If the pipeline doesn't have grouping,
      * there will be:
      * <ul>
-     *     <li>one context object per local processor, if flag is disabled
-     *     <li>one context object per member, if flag is enabled. Make
-     *     sure the context object is <em>thread-safe</em> in this case.
+     *     <li>one service object per local processor, if flag is disabled
+     *     <li>one service object per member, if flag is enabled. Make
+     *     sure the service object is <em>thread-safe</em> in this case.
      * </ul>
      *
      * @return a copy of this factory with the {@code hasLocalSharing} flag
      * set.
      */
     @Nonnull
-    public ContextFactory<C> withLocalSharing() {
-        return new ContextFactory<>(createFn, destroyFn, isCooperative, true,
+    public ServiceFactory<S> withLocalSharing() {
+        return new ServiceFactory<>(createFn, destroyFn, isCooperative, true,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
 
     /**
-     * Returns a copy of this {@link ContextFactory} with the
+     * Returns a copy of this {@link ServiceFactory} with the
      * <em>maxPendingCallsPerProcessor</em> property set to the given value. Jet
      * will execute at most this many concurrent async operations per processor
      * and will apply backpressure to the upstream.
      * <p>
-     * If you use the same context factory on multiple pipeline stages, each
+     * If you use the same service factory on multiple pipeline stages, each
      * stage will count the pending calls independently.
      * <p>
-     * This value is ignored when the {@code ContextFactory} is used in a
+     * This value is ignored when the {@code ServiceFactory} is used in a
      * synchronous transformation.
      * <p>
      * Default value is {@value #MAX_PENDING_CALLS_DEFAULT}.
@@ -188,14 +188,14 @@ public final class ContextFactory<C> implements Serializable {
      *      property set.
      */
     @Nonnull
-    public ContextFactory<C> withMaxPendingCallsPerProcessor(int maxPendingCallsPerProcessor) {
+    public ServiceFactory<S> withMaxPendingCallsPerProcessor(int maxPendingCallsPerProcessor) {
         checkPositive(maxPendingCallsPerProcessor, "maxPendingCallsPerProcessor must be >= 1");
-        return new ContextFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
+        return new ServiceFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
 
     /**
-     * Returns a copy of this {@link ContextFactory} with the
+     * Returns a copy of this {@link ServiceFactory} with the
      * <em>unorderedAsyncResponses</em> flag set to true.
      * <p>
      * Jet can process asynchronous responses in two modes:
@@ -223,14 +223,14 @@ public final class ContextFactory<C> implements Serializable {
      * to emit early results, they will be more correct with the unordered
      * approach.
      * <p>
-     * This value is ignored when the {@code ContextFactory} is used in a
+     * This value is ignored when the {@code ServiceFactory} is used in a
      * synchronous transformation: the output is always ordered in this case.
      *
      * @return a copy of this factory with the {@code unorderedAsyncResponses} flag set.
      */
     @Nonnull
-    public ContextFactory<C> withUnorderedAsyncResponses() {
-        return new ContextFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
+    public ServiceFactory<S> withUnorderedAsyncResponses() {
+        return new ServiceFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
                 maxPendingCallsPerProcessor, false);
     }
 
@@ -238,7 +238,7 @@ public final class ContextFactory<C> implements Serializable {
      * Returns the create-function.
      */
     @Nonnull
-    public FunctionEx<JetInstance, ? extends C> createFn() {
+    public FunctionEx<JetInstance, ? extends S> createFn() {
         return createFn;
     }
 
@@ -246,7 +246,7 @@ public final class ContextFactory<C> implements Serializable {
      * Returns the destroy-function.
      */
     @Nonnull
-    public ConsumerEx<? super C> destroyFn() {
+    public ConsumerEx<? super S> destroyFn() {
         return destroyFn;
     }
 

@@ -16,11 +16,9 @@
 
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.BatchStage;
-import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 
 import java.util.ArrayList;
-import java.util.List;
 
 
 public class Serialization {
