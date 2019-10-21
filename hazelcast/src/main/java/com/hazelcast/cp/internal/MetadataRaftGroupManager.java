@@ -104,7 +104,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private final RaftGroupMembershipManager membershipManager;
     private final ILogger logger;
     private final CPSubsystemConfig config;
-    private final CPMetadataStore metadataStore;
 
     // these fields are related to the local CP member but they are not maintained within the Metadata CP group
     private final AtomicReference<CPMemberInfo> localCPMember = new AtomicReference<>();
@@ -135,7 +134,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         this.logger = nodeEngine.getLogger(getClass());
         this.config = config;
         this.cpSubsystemEnabled = raftService.isCpSubsystemEnabled();
-        this.metadataStore = raftService.getCPPersistenceService().getCPMetadataStore();
     }
 
     boolean init() {
@@ -153,7 +151,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             return;
         }
         try {
-            metadataStore.persistLocalCPMember(member);
+            getCpMetadataStore().persistLocalCPMember(member);
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
@@ -196,7 +194,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         logger.fine("New METADATA groupId: " + newMetadataGroupId);
         metadataGroupIdRef.set(newMetadataGroupId);
         try {
-            metadataStore.persistMetadataGroupId(newMetadataGroupId);
+            getCpMetadataStore().persistMetadataGroupId(newMetadataGroupId);
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
@@ -911,6 +909,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         // So, during pre-join we skip the update.
         // If this member does not have any persisted CP data,
         // then it's ok to process the update even though persistence is enabled.
+        CPMetadataStore metadataStore = getCpMetadataStore();
         if (!raftService.isStartCompleted() && metadataStore.containsLocalMemberFile()) {
             if (!metadataGroupId.equals(newMetadataGroupId)) {
                 logger.severe("Restored METADATA groupId: " + metadataGroupId + " is different than received METADATA groupId: "
@@ -1052,6 +1051,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         // it has read is at least up to date as the commit index
         activeMembers = unmodifiableCollection(members);
         activeMembersCommitIndex = commitIndex;
+        try {
+            getCpMetadataStore().persistActiveCPMembers(activeMembers, activeMembersCommitIndex);
+        } catch (IOException e) {
+            throw new HazelcastException(e);
+        }
+
         raftService.updateInvocationManagerMembers(getMetadataGroupId().getSeed(), commitIndex, activeMembers);
         raftService.updateMissingMembers();
         broadcastActiveCPMembers();
@@ -1122,7 +1127,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         discoveryCompleted.set(true);
         try {
-            metadataStore.tryMarkAPMember();
+            getCpMetadataStore().tryMarkAPMember();
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
@@ -1148,7 +1153,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     private class DiscoverInitialCPMembersTask implements Runnable {
 
-        private final boolean markedAPMember;
         private Collection<Member> latestMembers = Collections.emptySet();
         private final boolean terminateOnDiscoveryFailure;
         private long lastLoggingTime;
@@ -1158,11 +1162,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         DiscoverInitialCPMembersTask(boolean terminateOnDiscoveryFailure) {
             this.terminateOnDiscoveryFailure = terminateOnDiscoveryFailure;
             state = DiscoveryTaskState.SCHEDULED;
-            try {
-                this.markedAPMember = metadataStore.isMarkedAPMember();
-            } catch (Exception e) {
-                throw new HazelcastException(e);
-            }
         }
 
         @Override
@@ -1184,6 +1183,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
 
             // runs after CP restore procedure is completed...
+
+            boolean markedAPMember = getCpMetadataStore().isMarkedAPMember();
 
             if (!markedAPMember && localCPMember.get() == null) {
                 logger.fine("Starting CP discovery...");
@@ -1295,7 +1296,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             if (!cpMembers.contains(localCPMemberCandidate)) {
                 logger.info("I am not a CP member! I'll serve as an AP member.");
                 try {
-                    boolean marked = metadataStore.tryMarkAPMember();
+                    boolean marked = getCpMetadataStore().tryMarkAPMember();
                     assert marked;
                     discoveryCompleted.set(true);
                 } catch (IOException e) {
@@ -1317,7 +1318,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 // - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
                 // but instead generates a new UUID.
                 localCPMember.set(localCPMemberCandidate);
-                metadataStore.persistLocalCPMember(localCPMemberCandidate);
+                getCpMetadataStore().persistLocalCPMember(localCPMemberCandidate);
 
                 if (metadataMembers.contains(localCPMemberCandidate)) {
                     List<RaftEndpoint> metadataEndpoints = new ArrayList<>();
@@ -1363,6 +1364,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 }
             }
         }
+    }
+
+    private CPMetadataStore getCpMetadataStore() {
+        return raftService.getCPPersistenceService().getCPMetadataStore();
     }
 
     @SuppressFBWarnings("SE_COMPARATOR_SHOULD_BE_SERIALIZABLE")

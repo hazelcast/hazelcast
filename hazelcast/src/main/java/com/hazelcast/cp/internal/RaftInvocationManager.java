@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.exception.CannotCreateRaftGroupException;
 import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
@@ -223,7 +224,7 @@ public class RaftInvocationManager {
         return raftInvocationContext;
     }
 
-    public CPMemberInfo getCPMember(RaftEndpoint endpoint) {
+    CPMember getCPMember(RaftEndpoint endpoint) {
         return endpoint != null ? raftInvocationContext.getCPMember(endpoint.getUuid()) : null;
     }
 

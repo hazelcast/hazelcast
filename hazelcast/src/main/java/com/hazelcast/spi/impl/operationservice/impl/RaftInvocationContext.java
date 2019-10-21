@@ -64,13 +64,13 @@ public class RaftInvocationContext {
         knownLeaders.clear();
     }
 
-    public boolean setMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
+    public boolean setMembers(long groupIdSeed, long membersCommitIndex, Collection<? extends CPMember> members) {
         if (members.size() < 2) {
             return false;
         }
 
         CPMembersVersion version = new CPMembersVersion(groupIdSeed, membersCommitIndex);
-        CPMembersContainer newContainer =  new CPMembersContainer(version, members.toArray(new CPMemberInfo[0]));
+        CPMembersContainer newContainer =  new CPMembersContainer(version, members.toArray(new CPMember[0]));
         while (true) {
             CPMembersContainer currentContainer = membersContainer.get();
             if (newContainer.version.compareTo(currentContainer.version) > 0) {
@@ -83,25 +83,25 @@ public class RaftInvocationContext {
         }
     }
 
-    public void updateMember(CPMemberInfo member) {
+    public void updateMember(CPMember member) {
         while (true) {
             // Put the given member into the current member list,
             // even if the given member does not exist with another address.
             // In addition, remove any other member that has the address of the given member.
             CPMembersContainer currentContainer = membersContainer.get();
-            CPMemberInfo otherMember = null;
-            for (CPMemberInfo m : currentContainer.members) {
+            CPMember otherMember = null;
+            for (CPMember m : currentContainer.members) {
                 if (m.getAddress().equals(member.getAddress()) && !m.getUuid().equals(member.getUuid())) {
                     otherMember = m;
                     break;
                 }
             }
-            CPMemberInfo existingMember = currentContainer.membersMap.get(member.getUuid());
+            CPMember existingMember = currentContainer.membersMap.get(member.getUuid());
             if (otherMember == null && existingMember != null && existingMember.getAddress().equals(member.getAddress())) {
                 return;
             }
 
-            Map<UUID, CPMemberInfo> newMembers = new HashMap<UUID, CPMemberInfo>(currentContainer.membersMap);
+            Map<UUID, CPMember> newMembers = new HashMap<>(currentContainer.membersMap);
             newMembers.put(member.getUuid(), member);
             if (otherMember != null) {
                 newMembers.remove(otherMember.getUuid());
@@ -119,7 +119,7 @@ public class RaftInvocationContext {
         return raftService.getCPGroupPartitionId(groupId);
     }
 
-    public CPMemberInfo getCPMember(UUID memberUid) {
+    public CPMember getCPMember(UUID memberUid) {
         return membersContainer.get().membersMap.get(memberUid);
     }
 
@@ -183,21 +183,21 @@ public class RaftInvocationContext {
 
     private static class CPMembersContainer {
         final CPMembersVersion version;
-        final CPMemberInfo[] members;
-        final Map<UUID, CPMemberInfo> membersMap;
+        final CPMember[] members;
+        final Map<UUID, CPMember> membersMap;
 
-        CPMembersContainer(CPMembersVersion version, CPMemberInfo[] members) {
+        CPMembersContainer(CPMembersVersion version, CPMember[] members) {
             this.version = version;
             this.members = members;
-            membersMap = new HashMap<UUID, CPMemberInfo>(members.length);
-            for (CPMemberInfo member : members) {
+            membersMap = new HashMap<>(members.length);
+            for (CPMember member : members) {
                 membersMap.put(member.getUuid(), member);
             }
         }
 
-        CPMembersContainer(CPMembersVersion version, Map<UUID, CPMemberInfo> members) {
+        CPMembersContainer(CPMembersVersion version, Map<UUID, CPMember> members) {
             this.version = version;
-            this.members = members.values().toArray(new CPMemberInfo[0]);
+            this.members = members.values().toArray(new CPMember[0]);
             this.membersMap = members;
         }
     }
