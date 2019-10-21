@@ -77,8 +77,7 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static java.util.Collections.emptyList;
 
@@ -186,7 +185,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Record putBackup(Data key, Object value, CallerProvenance provenance) {
-        return putBackupInternal(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE,
+        return putBackupInternal(key, value, UNSET, UNSET,
                 false, provenance, null);
     }
 
@@ -348,7 +347,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Record loadRecordOrNull(Data key, boolean backup, Address callerAddress) {
         Record record;
-        long ttl = DEFAULT_TTL;
+        long ttl = UNSET;
         Object value = mapDataStore.load(key);
         if (value == null) {
             return null;
@@ -362,8 +361,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = loaderEntry.getValue();
             ttl = proposedTtl;
         }
-        record = createRecord(key, value, ttl, DEFAULT_MAX_IDLE, getNow());
-        markRecordStoreExpirable(ttl, DEFAULT_MAX_IDLE);
+        record = createRecord(key, value, ttl, UNSET, getNow());
+        markRecordStoreExpirable(ttl, UNSET);
         storage.put(key, record);
         mutationObserver.onLoadRecord(key, record);
         if (!backup) {
@@ -744,12 +743,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return false;
         }
         if (record == null) {
-            createRecord(key, existingValue, ttl, DEFAULT_MAX_IDLE, now);
+            createRecord(key, existingValue, ttl, UNSET, now);
         } else {
             updateRecord(key, record, existingValue, now, true, ttl,
-                    DEFAULT_MAX_IDLE, true, null);
+                    UNSET, true, null);
         }
-        markRecordStoreExpirable(ttl, DEFAULT_MAX_IDLE);
+        markRecordStoreExpirable(ttl, UNSET);
         return true;
     }
 
@@ -817,7 +816,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 return false;
             }
 
-            record = createRecord(key, newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            record = createRecord(key, newValue, UNSET, UNSET, now);
             mergeRecordExpiration(record, mergingEntry);
             newValue = persistenceEnabledFor(provenance)
                     ? mapDataStore.add(key, newValue, record.getExpirationTime(), now, null) : newValue;
@@ -872,10 +871,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         update = mapServiceContext.interceptPut(interceptorRegistry, oldValue, update);
         if (record == null) {
-            record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now, null);
+            record = putNewRecord(key, update, UNSET, UNSET, now, null);
         } else {
             updateRecord(key, record, update, now, true,
-                    DEFAULT_TTL, DEFAULT_MAX_IDLE, true, null);
+                    UNSET, UNSET, true, null);
         }
         onStore(record);
         saveIndex(record, oldValue);
@@ -902,10 +901,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         update = mapServiceContext.interceptPut(interceptorRegistry, current, update);
         if (record == null) {
-            record = putNewRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now, null);
+            record = putNewRecord(key, update, UNSET, UNSET, now, null);
         } else {
             updateRecord(key, record, update, now, true,
-                    DEFAULT_TTL, DEFAULT_MAX_IDLE, true, null);
+                    UNSET, UNSET, true, null);
         }
         onStore(record);
         setExpirationTimes(record.getTtl(), record.getMaxIdle(), record,
@@ -930,8 +929,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(interceptorRegistry, oldValue, value);
-            updateRecord(key, record, value, now, true, DEFAULT_TTL,
-                    DEFAULT_MAX_IDLE, false, null);
+            updateRecord(key, record, value, now, true, UNSET,
+                    UNSET, false, null);
             setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), false);
         }
         saveIndex(record, oldValue);
@@ -941,7 +940,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object putFromLoad(Data key, Object value, Address callerAddress) {
-        return putFromLoadInternal(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE, false, callerAddress);
+        return putFromLoadInternal(key, value, UNSET, UNSET, false, callerAddress);
     }
 
     @Override
@@ -953,12 +952,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (ttl < 0) {
             return null;
         }
-        return putFromLoadInternal(key, value, ttl, DEFAULT_MAX_IDLE, false, callerAddress);
+        return putFromLoadInternal(key, value, ttl, UNSET, false, callerAddress);
     }
 
     @Override
     public Object putFromLoadBackup(Data key, Object value) {
-        return putFromLoadInternal(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE, true, null);
+        return putFromLoadInternal(key, value, UNSET, UNSET, true, null);
     }
 
     @Override
@@ -970,7 +969,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (ttl < 0) {
             return null;
         }
-        return putFromLoadInternal(key, value, ttl, DEFAULT_MAX_IDLE, true, null);
+        return putFromLoadInternal(key, value, ttl, UNSET, true, null);
     }
 
     private Object putFromLoadInternal(Data key, Object value, long ttl, long maxIdle, boolean backup, Address callerAddress) {
@@ -1047,7 +1046,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             oldValue = mapDataStore.load(key);
             if (oldValue != null) {
-                record = createRecord(key, oldValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+                record = createRecord(key, oldValue, UNSET, UNSET, now);
                 storage.put(key, record);
 
                 mutationObserver.onPutRecord(key, record);

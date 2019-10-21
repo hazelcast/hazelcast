@@ -127,9 +127,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Record fromRecord, long nowInMillis) {
-        Record newRecord = recordFactory.newRecord(fromRecord.getKey(), fromRecord.getValue());
-        Records.copyMetadataFrom(fromRecord, newRecord);
+    public Record createRecord(Record sourceRecord, long nowInMillis) {
+        Record newRecord = recordFactory.newRecord(sourceRecord.getKey(), sourceRecord.getValue());
+        Records.copyMetadataFrom(sourceRecord, newRecord);
         updateStatsOnPut(false, nowInMillis);
         return newRecord;
     }

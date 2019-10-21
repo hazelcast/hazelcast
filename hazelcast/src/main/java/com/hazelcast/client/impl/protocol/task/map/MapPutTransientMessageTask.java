@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class MapPutTransientMessageTask
         extends AbstractMapPutMessageTask<MapPutTransientCodec.RequestParameters> {
@@ -46,7 +46,7 @@ public class MapPutTransientMessageTask
 
     private MapOperation newOperation(String name, Data keyData, Data valueData, long ttl) {
         MapOperationProvider operationProvider = getMapOperationProvider(name);
-        return operationProvider.createPutTransientOperation(name, keyData, valueData, ttl, DEFAULT_MAX_IDLE);
+        return operationProvider.createPutTransientOperation(name, keyData, valueData, ttl, UNSET);
     }
 
     @Override

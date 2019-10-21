@@ -48,7 +48,7 @@ import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.impl.tx.TransactionalMapProxy}
@@ -237,7 +237,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         }
 
         MapOperation operation = operationProvider.createTxnSetOperation(name, key, value,
-                versionedValue.version, DEFAULT_TTL);
+                versionedValue.version, UNSET);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
                 operation, tx.getOwnerUuid(), tx.getTxnId()));
         return versionedValue.value;
@@ -255,7 +255,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return null;
         }
         MapOperation operation = operationProvider.createTxnSetOperation(name, key, value,
-                versionedValue.version, DEFAULT_TTL);
+                versionedValue.version, UNSET);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation,
                 tx.getOwnerUuid(), tx.getTxnId()));
         return versionedValue.value;
@@ -273,7 +273,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return false;
         }
         MapOperation operation = operationProvider.createTxnSetOperation(name, key, newValue,
-                versionedValue.version, DEFAULT_TTL);
+                versionedValue.version, UNSET);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation,
                 tx.getOwnerUuid(), tx.getTxnId()));
         return true;

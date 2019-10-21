@@ -24,8 +24,8 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_
  */
 abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
-    private int lastStoredTime = NOT_AVAILABLE;
-    private int expirationTime = NOT_AVAILABLE;
+    private int lastStoredTime = UNSET;
+    private int expirationTime = UNSET;
 
     AbstractRecordWithStats() {
     }
@@ -38,7 +38,7 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
     @Override
     public long getExpirationTime() {
-        if (expirationTime == NOT_AVAILABLE) {
+        if (expirationTime == UNSET) {
             return 0L;
         }
 
@@ -58,7 +58,7 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
     @Override
     public long getLastStoredTime() {
-        if (lastStoredTime == NOT_AVAILABLE) {
+        if (lastStoredTime == UNSET) {
             return 0L;
         }
 

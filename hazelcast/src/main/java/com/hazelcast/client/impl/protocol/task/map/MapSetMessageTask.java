@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class MapSetMessageTask
         extends AbstractMapSetMessageTask<MapSetCodec.RequestParameters> {
@@ -39,7 +39,7 @@ public class MapSetMessageTask
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         MapOperation op = operationProvider.createSetOperation(parameters.name, parameters.key,
-                parameters.value, parameters.ttl, DEFAULT_MAX_IDLE);
+                parameters.value, parameters.ttl, UNSET);
         op.setThreadId(parameters.threadId);
         return op;
     }

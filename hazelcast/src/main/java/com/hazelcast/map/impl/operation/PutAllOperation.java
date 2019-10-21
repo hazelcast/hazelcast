@@ -36,8 +36,7 @@ import java.util.Map;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * Inserts the {@link MapEntries} for a single partition to the
@@ -134,9 +133,9 @@ public class PutAllOperation extends MapOperation
      */
     private Object putToRecordStore(Data dataKey, Data dataValue) {
         if (hasMapListener) {
-            return recordStore.put(dataKey, dataValue, DEFAULT_TTL, DEFAULT_MAX_IDLE);
+            return recordStore.put(dataKey, dataValue, UNSET, UNSET);
         }
-        recordStore.set(dataKey, dataValue, DEFAULT_TTL, DEFAULT_MAX_IDLE);
+        recordStore.set(dataKey, dataValue, UNSET, UNSET);
         return null;
     }
 

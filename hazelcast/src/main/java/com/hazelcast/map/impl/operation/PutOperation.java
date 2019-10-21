@@ -20,8 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class PutOperation extends BasePutOperation implements MutatingOperation {
 
@@ -39,12 +38,12 @@ public class PutOperation extends BasePutOperation implements MutatingOperation 
 
     // overridden in extension classes
     protected long getTtl() {
-        return DEFAULT_TTL;
+        return UNSET;
     }
 
     // overridden in extension classes
     protected long getMaxIdle() {
-        return DEFAULT_MAX_IDLE;
+        return UNSET;
     }
 
     @Override

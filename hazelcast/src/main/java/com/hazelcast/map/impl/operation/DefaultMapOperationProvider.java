@@ -35,8 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.util.Collections.singletonList;
 
 /**
@@ -67,7 +66,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     private static boolean hasNoExpiry(long ttl, long maxIdle) {
-        return ttl == DEFAULT_TTL && maxIdle == DEFAULT_MAX_IDLE;
+        return ttl == UNSET && maxIdle == UNSET;
     }
 
     @Override
