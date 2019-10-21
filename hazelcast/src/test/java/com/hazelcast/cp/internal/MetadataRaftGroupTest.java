@@ -383,7 +383,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         assertNotNull(group);
         assertEquals(groupId, group.id());
 
-        final CPMember[] groupMembers = group.members().toArray(new CPMember[0]);
+        CPMember[] groupMembers = group.members().toArray(new CPMember[0]);
 
         assertTrueEventually(() -> {
             for (CPMember member : groupMembers) {
@@ -447,10 +447,9 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         unblockCommunicationBetween(leader, follower);
 
-        HazelcastInstance f = follower;
         assertTrueEventually(() -> {
             for (CPGroupId groupId : groupIds) {
-                assertNotNull(getRaftNode(f, groupId));
+                assertNotNull(getRaftNode(follower, groupId));
             }
         });
     }
@@ -596,11 +595,11 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         RaftNodeImpl leaderNode = waitAllForLeaderElection(Arrays.copyOf(instances, 3), INITIAL_METADATA_GROUP_ID);
         HazelcastInstance leader = getInstance(leaderNode.getLocalMember());
-        CPGroup g3Group = getRaftGroupLocally(leader, g3);
+        CPGroup g3Group = queryRaftGroupLocally(leader, g3);
         assertThat(g3Group.members(), not(hasItem(endpoint3)));
         assertThat(g3Group.members(), not(hasItem(endpoint4)));
 
-        CPGroup g4Group = getRaftGroupLocally(leader, g4);
+        CPGroup g4Group = queryRaftGroupLocally(leader, g4);
         boolean b3 = g4Group.members().contains(endpoint3);
         boolean b4 = g4Group.members().contains(endpoint4);
         assertTrue(b3 ^ b4);
