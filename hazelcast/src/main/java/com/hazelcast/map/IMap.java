@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Offloadable;
@@ -1915,29 +1914,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     UUID addLocalEntryListener(@Nonnull MapListener listener);
 
     /**
-     * Adds a local entry listener for this map. The added listener will only be
-     * listening for the events (add/remove/update/evict) of the locally owned entries.
-     * <p>
-     * Note that entries in distributed map are partitioned across
-     * the cluster members; each member owns and manages the some portion of the
-     * entries. Owned entries are called local entries. This
-     * listener will be listening for the events of local entries. Let's say
-     * your cluster has member1 and member2. On member2 you added a local listener and from
-     * member1, you call {@code map.put(key2, value2)}.
-     * If the key2 is owned by member2 then the local listener will be
-     * notified for the add/update event. Also note that entries can migrate to
-     * other nodes for load balancing and/or membership change.
-     *
-     * @param listener entry listener
-     * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws UnsupportedOperationException if this operation isn't supported, for example on a Hazelcast client
-     * @throws NullPointerException          if the listener is {@code null}
-     * @see #localKeySet()
-     * @deprecated please use {@link #addLocalEntryListener(MapListener)} instead
-     */
-    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
-
-    /**
      * Adds a {@link MapListener} for this map.
      * <p>
      * To receive an event, you should implement a corresponding {@link MapListener}
@@ -1964,26 +1940,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * The listener will get notified for map add/remove/update/evict events
      * filtered by the given predicate.
      *
-     * @param listener     entry listener
-     * @param predicate    predicate for filtering entries
-     * @param includeValue {@code true} if {@code EntryEvent} should contain the value
-     * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the listener is {@code null}
-     * @throws NullPointerException if the predicate is {@code null}
-     * @deprecated please use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
-     */
-    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 boolean includeValue);
-
-    /**
-     * Adds a local entry listener for this map.
-     * <p>
-     * The added listener will only be listening for the events
-     * (add/remove/update/evict) of the locally owned entries.
-     * The listener will get notified for map add/remove/update/evict events
-     * filtered by the given predicate.
-     *
      * @param listener     {@link MapListener} for this map
      * @param predicate    predicate for filtering entries
      * @param key          key to listen for
@@ -1994,28 +1950,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 @Nullable K key,
-                                 boolean includeValue);
-
-    /**
-     * Adds a local entry listener for this map.
-     * <p>
-     * The added listener will only be listening for the events
-     * (add/remove/update/evict) of the locally owned entries.
-     * The listener will get notified for map add/remove/update/evict events
-     * filtered by the given predicate.
-     *
-     * @param listener     entry listener
-     * @param predicate    predicate for filtering entries
-     * @param key          key to listen fo
-     * @param includeValue {@code true} if {@code EntryEvent} should contain the value
-     * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the listener is {@code null}
-     * @throws NullPointerException if the predicate is {@code null}
-     * @deprecated please use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
-     */
-    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  @Nullable K key,
                                  boolean includeValue);
@@ -2053,20 +1987,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addEntryListener(@Nonnull MapListener listener, boolean includeValue);
-
-    /**
-     * Adds an entry listener for this map.
-     * <p>
-     * The listener will get notified for all map add/remove/update/evict events.
-     *
-     * @param listener     the added entry listener for this map
-     * @param includeValue {@code true} if {@code EntryEvent} should contain the value
-     * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is {@code null}
-     * @deprecated please use {@link #addEntryListener(MapListener, boolean)} instead
-     */
-    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                            boolean includeValue);
 
     /**
      * Removes the specified entry listener.
@@ -2137,30 +2057,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     UUID addEntryListener(@Nonnull MapListener listener, @Nonnull K key, boolean includeValue);
 
     /**
-     * Adds the specified entry listener for the specified key.
-     * <p>
-     * The listener will get notified for all add/remove/update/evict events of
-     * the specified key only.
-     * <p>
-     * <b>Warning:</b>
-     * <p>
-     * This method uses {@code hashCode} and {@code equals} of the binary form of
-     * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
-     * defined in the {@code key}'s class.
-     *
-     * @param listener     specified entry listener
-     * @param key          key to listen for
-     * @param includeValue {@code true} if {@code EntryEvent} should contain the value
-     * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified listener is {@code null}
-     * @throws NullPointerException if the specified key is {@code null}
-     * @deprecated please use {@link #addEntryListener(MapListener, Object, boolean)} instead
-     */
-    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                            @Nonnull K key,
-                            boolean includeValue);
-
-    /**
      * Adds a {@link MapListener} for this map.
      * <p>
      * To receive an event, you should implement a corresponding {@link MapListener}
@@ -2179,22 +2075,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
                             boolean includeValue);
 
     /**
-     * Adds an continuous entry listener for this map.
-     * <p>
-     * The listener will get notified for map add/remove/update/evict events filtered by the given predicate.
-     *
-     * @param listener     the added continuous entry listener for this map
-     * @param predicate    predicate for filtering entries
-     * @param includeValue {@code true} if {@code EntryEvent} should contain the value
-     * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
-     * @deprecated please use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
-     */
-    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                            @Nonnull Predicate<K, V> predicate,
-                            boolean includeValue);
-
-    /**
      * Adds a {@link MapListener} for this map.
      * <p>
      * To receive an event, you should implement a corresponding {@link MapListener} sub-interface for that event.
@@ -2208,24 +2088,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addEntryListener(@Nonnull MapListener listener,
-                            @Nonnull Predicate<K, V> predicate,
-                            @Nullable K key,
-                            boolean includeValue);
-
-    /**
-     * Adds an continuous entry listener for this map.
-     * <p>
-     * The listener will get notified for map add/remove/update/evict events filtered by the given predicate.
-     *
-     * @param listener     the continuous entry listener for this map
-     * @param predicate    predicate for filtering entries
-     * @param key          key to listen for
-     * @param includeValue {@code true} if {@code EntryEvent} should contain the value
-     * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
-     * @deprecated please use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
-     */
-    UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                             @Nonnull Predicate<K, V> predicate,
                             @Nullable K key,
                             boolean includeValue);

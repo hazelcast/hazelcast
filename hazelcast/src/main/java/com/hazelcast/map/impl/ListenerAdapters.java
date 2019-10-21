@@ -16,16 +16,13 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.listener.MapListener;
 
-import static com.hazelcast.map.impl.EntryListenerAdaptors.createEntryListenerAdaptor;
 import static com.hazelcast.map.impl.MapListenerAdaptors.createMapListenerAdaptor;
 
 /**
  * Contains support methods for creating various {@link com.hazelcast.map.impl.ListenerAdapter ListenerAdapter}
  *
- * @see com.hazelcast.map.impl.EntryListenerAdaptors
  * @see com.hazelcast.map.impl.MapListenerAdaptors
  */
 public final class ListenerAdapters {
@@ -40,11 +37,6 @@ public final class ListenerAdapters {
 
         if (listener instanceof MapListener) {
             return createMapListenerAdaptor((MapListener) listener);
-        }
-
-        // this if only works when we need binary compatibility
-        if (listener instanceof EntryListener) {
-            return createEntryListenerAdaptor((EntryListener) listener);
         }
 
         throw new IllegalArgumentException("Not a valid type to create a listener: " + listener.getClass().getSimpleName());

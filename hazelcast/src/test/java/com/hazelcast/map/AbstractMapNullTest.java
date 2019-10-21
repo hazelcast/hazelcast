@@ -18,8 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.aggregation.impl.CountAggregator;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapListener;
@@ -44,7 +42,6 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
     public void testNullability() {
         EntryAddedListener sampleMapListener = event -> {
         };
-        EntryAdapter sampleEntryListener = new EntryAdapter();
         Predicate<Object, Object> samplePredicate = Predicates.alwaysTrue();
         TimeUnit sampleTimeUnit = TimeUnit.SECONDS;
 
@@ -138,27 +135,15 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.unlock(null));
         assertThrowsNPE(m -> m.forceUnlock(null));
         if (isNotClient()) {
-            assertThrowsNPE(m -> m.addLocalEntryListener((EntryListener) null));
-            assertThrowsNPE(m -> m.addLocalEntryListener((EntryListener) null, samplePredicate, true));
-            assertThrowsNPE(m -> m.addLocalEntryListener(sampleEntryListener, null, true));
-            assertThrowsNPE(m -> m.addLocalEntryListener((EntryListener) null, samplePredicate, "", true));
-            assertThrowsNPE(m -> m.addLocalEntryListener(sampleEntryListener, null, "", true));
             assertThrowsNPE(m -> m.addLocalEntryListener((MapListener) null));
             assertThrowsNPE(m -> m.addLocalEntryListener((MapListener) null, samplePredicate, true));
             assertThrowsNPE(m -> m.addLocalEntryListener(sampleMapListener, null, true));
-            assertThrowsNPE(m -> m.addLocalEntryListener(null, samplePredicate, "", true));
             assertThrowsNPE(m -> m.addLocalEntryListener(sampleMapListener, null, "", true));
             assertThrowsNPE(m -> m.localKeySet(null));
         }
 
         assertThrowsNPE(m -> m.addInterceptor(null));
         assertThrowsNPE(m -> m.removeInterceptor(null));
-        assertThrowsNPE(m -> m.addEntryListener((EntryListener) null, "", true));
-        assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, (Object) null, true));
-        assertThrowsNPE(m -> m.addEntryListener((EntryListener) null, samplePredicate, true));
-        assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, null, true));
-        assertThrowsNPE(m -> m.addEntryListener((EntryListener) null, samplePredicate, "", true));
-        assertThrowsNPE(m -> m.addEntryListener(sampleEntryListener, null, "", true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, "", true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, (Object) null, true));
         assertThrowsNPE(m -> m.addEntryListener((MapListener) null, samplePredicate, true));

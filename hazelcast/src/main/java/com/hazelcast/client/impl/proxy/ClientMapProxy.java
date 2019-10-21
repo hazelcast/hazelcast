@@ -101,7 +101,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ReadOnly;
@@ -789,11 +788,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!");
-    }
-
-    @Override
     public UUID addLocalEntryListener(@Nonnull MapListener listener,
                                       @Nonnull Predicate<K, V> predicate,
                                       boolean includeValue) {
@@ -801,22 +795,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
-                                      @Nonnull Predicate<K, V> predicate,
-                                      boolean includeValue) {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!");
-    }
-
-    @Override
     public UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                      @Nonnull Predicate<K, V> predicate,
-                                      @Nullable K key,
-                                      boolean includeValue) {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!");
-    }
-
-    @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
                                       @Nonnull Predicate<K, V> predicate,
                                       @Nullable K key,
                                       boolean includeValue) {
@@ -844,14 +823,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public UUID addEntryListener(@Nonnull MapListener listener, boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return addEntryListenerInternal(listenerAdaptor, includeValue);
-    }
-
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                 boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, includeValue);
@@ -938,16 +909,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return addEntryListenerInternal(listenerAdaptor, key, includeValue);
     }
 
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                 @Nonnull K key,
-                                 boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return addEntryListenerInternal(listenerAdaptor, key, includeValue);
-    }
-
     private UUID addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, K key, boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         Data keyData = toData(key);
@@ -982,19 +943,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public UUID addEntryListener(@Nonnull MapListener listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 @Nullable K key,
-                                 boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return key == null
-                ? addEntryListenerInternal(listenerAdaptor, predicate, includeValue)
-                : addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
-    }
-
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  @Nullable K key,
                                  boolean includeValue) {
@@ -1047,16 +995,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public UUID addEntryListener(@Nonnull MapListener listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
-    }
-
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
                                  @Nonnull Predicate<K, V> predicate,
                                  boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
