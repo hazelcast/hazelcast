@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertBetween;
@@ -33,7 +34,7 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
 
     private static final long NO_TIME = -1;
 
-    private Map<K, Record> records = new ConcurrentHashMap<>();
+    private ConcurrentMap<K, Record> records = new ConcurrentHashMap<>();
     private AtomicInteger loadedEntryCount = new AtomicInteger();
     private AtomicInteger loadAllCallCount = new AtomicInteger();
     private AtomicInteger loadCallCount = new AtomicInteger();
@@ -167,7 +168,8 @@ public class TestEntryStore<K, V> implements EntryStore<K, V> {
         Record record = records.get(key);
         assertNotNull(record);
         assertEquals(value, record.value);
-        assertBetween("expirationTime", record.expirationTime, expectedExpirationTime - delta, expectedExpirationTime + delta);
+        assertBetween("expirationTime", record.expirationTime,
+                expectedExpirationTime - delta, expectedExpirationTime + delta);
     }
 
     public void assertRecordNotStored(K key) {

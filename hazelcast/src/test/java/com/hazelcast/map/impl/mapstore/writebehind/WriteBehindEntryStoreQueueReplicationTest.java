@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryStore;
@@ -26,50 +27,55 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupport {
 
     @Test
-    public void testWriteBehindQueueIsReplicatedWithExpirationTimes() {
+    public void queued_entries_with_expiration_times_are_not_lost_when_cluster_scaled_down() {
         final int entryCount = 1000;
-        final int ttlSec = 30;
+        final int ttlSec = 10;
+        final int writeDelaySec = 5;
+        final int backupCount = 1;
         final String mapName = randomMapName();
+
         TestEntryStore<Integer, Integer> testEntryStore = new TestEntryStore<>();
+        Config config = getConfigWithEntryStore(testEntryStore, writeDelaySec, backupCount);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances(getConfigWithEntryStore(testEntryStore));
+        HazelcastInstance[] instances = factory.newInstances(config);
+
         IMap<Integer, Integer> map = instances[0].getMap(mapName);
         long expectedExpirationTime = System.currentTimeMillis() + ttlSec * 1000;
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, ttlSec, TimeUnit.SECONDS);
         }
-        factory.terminate(instances[0]);
-        waitAllForSafeState(instances);
-        factory.terminate(instances[1]);
-        waitAllForSafeState(instances);
+
+        // scale down
+        instances[0].shutdown();
+        instances[1].shutdown();
 
         IMap<Integer, Integer> mapFromSurvivingInstance = instances[2].getMap(mapName);
 
-        // assert that entries are still stored in the entry store after original nodes crash
+        // assert that entries are still stored in
+        // the entry store after original nodes crash
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
                 testEntryStore.assertRecordStored(i, i, expectedExpirationTime, 2000);
-                assertEquals(i, (int) mapFromSurvivingInstance.get(i));
             }
         });
 
-        // assert that entries still had expiration times and expired accordingly
+        // assert that entries still had
+        // expiration times and expired accordingly
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
                 assertNull(mapFromSurvivingInstance.get(i));
@@ -78,41 +84,41 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
     }
 
     @Test
-    public void testWriteBehindQueueIsReplicatedToNewInstancesWithExpirationTimes() {
+    public void queued_entries_with_expirationTimes_are_replicated_when_cluster_scaled_up() {
         final int entryCount = 1000;
-        final int ttlSec = 30;
+        final int ttlSec = 10;
+        final int writeDelaySec = 5;
+        final int backupCount = 1;
         final String mapName = randomMapName();
+
         TestEntryStore<Integer, Integer> testEntryStore = new TestEntryStore<>();
+        Config config = getConfigWithEntryStore(testEntryStore, writeDelaySec, backupCount);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance[] instances = new HazelcastInstance[3];
-        instances[0] = factory.newHazelcastInstance(getConfigWithEntryStore(testEntryStore));
-        instances[1] = factory.newHazelcastInstance(getConfigWithEntryStore(testEntryStore));
-        instances[2] = factory.newHazelcastInstance(getConfigWithEntryStore(testEntryStore));
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = node1.getMap(mapName);
         long expectedExpirationTime = System.currentTimeMillis() + ttlSec * 1000;
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, ttlSec, TimeUnit.SECONDS);
         }
-        factory.terminate(instances[0]);
-        waitAllForSafeState(instances);
-        factory.terminate(instances[1]);
-        waitAllForSafeState(instances);
 
-        instances[0] = factory.newHazelcastInstance(getConfigWithEntryStore(testEntryStore));
-        instances[1] = factory.newHazelcastInstance(getConfigWithEntryStore(testEntryStore));
+        // scale up
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        HazelcastInstance node3 = factory.newHazelcastInstance(config);
 
-        IMap<Integer, Integer> mapFromNewInstance = instances[2].getMap(mapName);
+        IMap<Integer, Integer> mapFromNewInstance = node3.getMap(mapName);
 
-        // assert that entries are still stored in the entry store after original nodes crash
+        // assert that entries are still stored in
+        // the entry store after original nodes crash
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
                 testEntryStore.assertRecordStored(i, i, expectedExpirationTime, 2000);
-                assertEquals(i, (int) mapFromNewInstance.get(i));
             }
         });
 
-        // assert that entries still had expiration times and expired accordingly
+        // assert that entries still had
+        // expiration times and expired accordingly
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
                 assertNull(mapFromNewInstance.get(i));
@@ -120,11 +126,17 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         });
     }
 
-    private Config getConfigWithEntryStore(EntryStore entryStore) {
-        Config config = new Config();
+    private Config getConfigWithEntryStore(EntryStore entryStore,
+                                           int writeDelaySeconds, int backupCount) {
+        Config config = getConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setWriteDelaySeconds(20).setImplementation(entryStore).setEnabled(true);
-        config.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        mapStoreConfig
+                .setEnabled(true)
+                .setWriteDelaySeconds(writeDelaySeconds)
+                .setImplementation(entryStore);
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setBackupCount(backupCount);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
         return config;
     }
 }
