@@ -35,12 +35,13 @@ import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
-    private final List<HazelcastClientInstanceImpl> clients = new ArrayList<HazelcastClientInstanceImpl>(10);
+    private final List<HazelcastClientInstanceImpl> clients = Collections.synchronizedList(new ArrayList<>(10));
     private final TestClientRegistry clientRegistry = new TestClientRegistry(getRegistry());
 
     public TestHazelcastFactory(int initialPort, String... addresses) {

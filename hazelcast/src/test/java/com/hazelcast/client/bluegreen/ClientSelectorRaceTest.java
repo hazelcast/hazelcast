@@ -16,13 +16,11 @@
 
 package com.hazelcast.client.bluegreen;
 
-
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.ClientSelectors;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -57,32 +55,22 @@ public class ClientSelectorRaceTest extends HazelcastTestSupport {
         LinkedList<Thread> threads = new LinkedList<Thread>();
         int numberOfClients = 100;
         for (int i = 0; i < numberOfClients; i++) {
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    hazelcastFactory.newHazelcastClient();
-                }
-            });
+            Thread thread = new Thread(hazelcastFactory::newHazelcastClient);
             thread.start();
             threads.add(thread);
 
         }
 
-        Thread.sleep(10);
         clientEngineImpl.applySelector(ClientSelectors.none());
 
         for (Thread thread : threads) {
             thread.join();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<ClientEndpoint> endpoints = clientEngineImpl.getEndpointManager().getEndpoints();
-                assertEquals(0, endpoints.size());
-            }
+        assertTrueEventually(() -> {
+            Collection<ClientEndpoint> endpoints = clientEngineImpl.getEndpointManager().getEndpoints();
+            assertEquals(0, endpoints.size());
         });
-
 
     }
 
