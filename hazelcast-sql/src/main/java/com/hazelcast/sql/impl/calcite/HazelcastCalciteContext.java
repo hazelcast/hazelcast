@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.spi.impl.NodeEngine;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -61,6 +62,8 @@ public final class HazelcastCalciteContext {
      */
     public static void clear() {
         CTX.remove();
+
+        RelMetadataQuery.THREAD_PROVIDERS.remove();
     }
 
     @SuppressWarnings("unchecked")

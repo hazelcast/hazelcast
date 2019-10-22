@@ -27,6 +27,8 @@ import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
+import com.hazelcast.sql.impl.calcite.cost.CostFactory;
+import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
 import com.hazelcast.sql.impl.calcite.logical.LogicalJoinRules;
 import com.hazelcast.sql.impl.calcite.logical.LogicalProjectFilterRules;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
@@ -64,6 +66,7 @@ import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
@@ -169,7 +172,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private VolcanoPlanner preparePlanner(CalciteConnectionConfig config) {
         VolcanoPlanner planner = new VolcanoPlanner(
-            null,
+            CostFactory.INSTANCE,
             Contexts.of(config)
         );
 
@@ -193,11 +196,16 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             .withExplain(false)
             .withConvertTableAccess(false);
 
+        JaninoRelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(MetadataProvider.INSTANCE);
+
+        RelOptCluster cluster = RelOptCluster.create(planner, new RexBuilder(typeFactory));
+        cluster.setMetadataProvider(relMetadataProvider);
+
         return new SqlToRelConverter(
             null,
             validator,
             catalogReader,
-            RelOptCluster.create(planner, new RexBuilder(typeFactory)),
+            cluster,
             StandardConvertletTable.INSTANCE,
             sqlToRelConfigBuilder.build()
         );

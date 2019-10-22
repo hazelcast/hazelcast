@@ -50,7 +50,7 @@ public class SqlTest extends SqlTestSupport {
     public void testJoin() {
         List<SqlRow> res = getQueryRows(
             member,
-            "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
+            "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key WHERE p.name = 'test'"
         );
 
         Assert.assertEquals(ModelGenerator.PERSON_CNT, res.size());
