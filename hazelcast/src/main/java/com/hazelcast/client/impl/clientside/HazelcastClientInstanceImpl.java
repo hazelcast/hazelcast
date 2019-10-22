@@ -585,6 +585,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public TransactionContext newTransactionContext(@Nonnull TransactionOptions options) {
+        checkNotNull(options, "TransactionOptions must not be null!");
         return transactionManager.newTransactionContext(options);
     }
 

@@ -201,7 +201,7 @@ public class ClientExecutorServiceExecuteTest {
         assertSizeEventually(CLUSTER_SIZE, map);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testExecuteOnMembers_whenSelectorNull() {
         IExecutorService service = client.getExecutorService(randomString());
         MemberSelector selector = null;

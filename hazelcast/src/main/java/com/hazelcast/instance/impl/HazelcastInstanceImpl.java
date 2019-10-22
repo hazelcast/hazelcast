@@ -241,6 +241,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public TransactionContext newTransactionContext(@Nonnull TransactionOptions options) {
+        checkNotNull(options, "TransactionOptions must not be null!");
         TransactionManagerService transactionManagerService = node.getNodeEngine().getTransactionManagerService();
         return transactionManagerService.newTransactionContext(options);
     }
