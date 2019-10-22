@@ -90,16 +90,6 @@ public class LocalJoinExec extends AbstractUpstreamAwareExec {
                 for (Row rightRow : rightState) {
                     JoinRow row = new JoinRow(leftRow, rightRow);
 
-                    // TODO: This evaluation is very inefficient. Consider the query:
-                    // TODO: "FROM A INNER JOIN B on A.a = B.b AND A.a = 10 AND B.b = 20"
-                    // TODO: If the filters "A.a = 10" and "B.b = 20" are not pushed down in advance, then we
-                    // TODO: will do a lot of unnecessary scans. So it is extremely important to make sure that
-                    // TODO: the conjunctive component of the join condition is pushed down. E.g.:
-                    // TODO: "filter A && filter B <- join <- scan A && scan B" should be converted to
-                    // TODO: "join <- (filter A <- scan A) && (filter B <- scan B)".
-                    // TODO: Calcite candidates: JoinPushTransitivePredicatesRule, JoinPushExpressionsRule,
-                    // TODO: JoinPushThroughJoinRule
-
                     // Evaluate the condition.
                     if (filter.eval(ctx, row)) {
                         curRow = row;

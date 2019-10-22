@@ -19,13 +19,13 @@ package com.hazelcast.sql.impl.calcite.physical.rule;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 
-import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait.SINGLETON;
+import static com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait.SINGLETON_DIST;
 
 /**
  * Rule to convert the logical root node to physical root node.
@@ -45,11 +45,11 @@ public final class RootPhysicalRule extends RelOptRule {
         RootLogicalRel logicalRoot = call.rel(0);
         RelNode input = call.rel(1);
 
-        RelNode convertedInput = RuleUtils.toPhysicalInput(input, SINGLETON);
+        RelNode convertedInput = RuleUtils.toPhysicalInput(input, SINGLETON_DIST);
 
         RootPhysicalRel transformedRoot = new RootPhysicalRel(
             logicalRoot.getCluster(),
-            convertedInput.getTraitSet().plus(PhysicalDistributionTrait.SINGLETON),
+            convertedInput.getTraitSet().plus(DistributionTrait.SINGLETON_DIST),
             convertedInput
         );
 

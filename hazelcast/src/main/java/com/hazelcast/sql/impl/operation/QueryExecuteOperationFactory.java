@@ -25,9 +25,7 @@ import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -49,9 +47,6 @@ public class QueryExecuteOperationFactory {
 
     /** Deployment offset. */
     private final int baseDeploymentOffset;
-
-    /** Map from fragment position to the member where it should be executed. */
-    private Map<QueryFragment, UUID> replicatedMappedMemberIds;
 
     public QueryExecuteOperationFactory(QueryPlan plan, List<Object> args, QueryId queryId, UUID localMemberId) {
         this.plan = plan;
@@ -87,20 +82,12 @@ public class QueryExecuteOperationFactory {
 
                     break;
 
-                case DATA_MEMBERS:
+                default:
+                    assert mapping == QueryFragmentMapping.DATA_MEMBERS;
+
                     // Fragment is only deployed on data node. Member IDs will be derived from partition mapping.
                     node = plan.getPartitionMap().containsKey(targetMemberId) ? fragment.getNode() : null;
                     mappedMemberIds = null;
-
-                    break;
-
-                default:
-                    assert mapping == QueryFragmentMapping.REPLICATED;
-
-                    UUID memberId = getMemberForReplicatedFragment(fragment);
-
-                    node = targetMemberId.equals(memberId) ? fragment.getNode() : null;
-                    mappedMemberIds = Collections.singletonList(memberId);
             }
 
             // At the moment we try to deploy all fragments to a single stripe for NUMA locality.
@@ -121,33 +108,5 @@ public class QueryExecuteOperationFactory {
             args,
             baseDeploymentOffset
         );
-    }
-
-    /**
-     * Get member ID for the replicated fragment.
-     *
-     * @param fragment Fragment.
-     * @return Member ID.
-     */
-    private UUID getMemberForReplicatedFragment(QueryFragment fragment) {
-        assert fragment.getMapping() == QueryFragmentMapping.REPLICATED;
-
-        if (replicatedMappedMemberIds == null) {
-            replicatedMappedMemberIds = new IdentityHashMap<>();
-        } else {
-            UUID res = replicatedMappedMemberIds.get(fragment);
-
-            if (res != null) {
-                return res;
-            }
-        }
-
-        List<UUID> dataMemberIds = plan.getDataMemberIds();
-
-        UUID res = dataMemberIds.get(ThreadLocalRandom.current().nextInt(dataMemberIds.size()));
-
-        replicatedMappedMemberIds.put(fragment, res);
-
-        return res;
     }
 }

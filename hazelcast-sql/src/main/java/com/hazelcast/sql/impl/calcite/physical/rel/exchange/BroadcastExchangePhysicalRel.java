@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.physical.rel;
+package com.hazelcast.sql.impl.calcite.physical.rel.exchange;
 
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -24,28 +26,22 @@ import org.apache.calcite.rel.SingleRel;
 import java.util.List;
 
 /**
- * Exchange which takes data from several nodes and merges them into unsorted stream on a single node.
- * <p>
- * Traits:
- * <ul>
- *     <li><b>Collation</b>: empty, as resulting input consists of unordered batches from different nodes</li>
- *     <li><b>Distribution</b>: SINGLETON</li>
- * </ul>
+ * Broadcast exchange operator which spreads tuple content to all other nodes.
  */
-public class SingletonExchangePhysicalRel extends SingleRel implements PhysicalRel {
-    public SingletonExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+public class BroadcastExchangePhysicalRel extends SingleRel implements PhysicalRel {
+    public BroadcastExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new SingletonExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
+        return new BroadcastExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
     }
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel) input).visit(visitor);
 
-        visitor.onSingletonExchange(this);
+        visitor.onBroadcastExchange(this);
     }
 }

@@ -18,70 +18,60 @@ package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.physical.hash.HashFunction;
 
 import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Node which sends data to remote stripes.
+ * Converts replicated input into partitioned.
  */
-public class SendPhysicalNode implements PhysicalNode {
-    /** Edge ID. */
-    private int edgeId;
-
-    /** Upstream. */
+public class ReplicatedToPartitionedPhysicalNode implements PhysicalNode {
+    /** Upstream node. */
     private PhysicalNode upstream;
 
-    /** Partition hasher (get partition hash from row). */
-    private Expression<Integer> partitionHasher;
+    /** Function which should be used for hashing. */
+    private HashFunction hashFunction;
 
-    public SendPhysicalNode() {
+    public ReplicatedToPartitionedPhysicalNode() {
         // No-op.
     }
 
-    public SendPhysicalNode(int edgeId, PhysicalNode upstream, Expression<Integer> partitionHasher) {
-        this.edgeId = edgeId;
+    public ReplicatedToPartitionedPhysicalNode(PhysicalNode upstream, HashFunction hashFunction) {
         this.upstream = upstream;
-        this.partitionHasher = partitionHasher;
-    }
-
-    public int getEdgeId() {
-        return edgeId;
+        this.hashFunction = hashFunction;
     }
 
     public PhysicalNode getUpstream() {
         return upstream;
     }
 
-    public Expression<Integer> getPartitionHasher() {
-        return partitionHasher;
+    public HashFunction getHashFunction() {
+        return hashFunction;
     }
 
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         upstream.visit(visitor);
 
-        visitor.onSendNode(this);
+        visitor.onReplicatedToPartitionedNode(this);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(edgeId);
         out.writeObject(upstream);
-        out.writeObject(partitionHasher);
+        out.writeObject(hashFunction);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        edgeId = in.readInt();
         upstream = in.readObject();
-        partitionHasher = in.readObject();
+        hashFunction = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(edgeId, upstream, partitionHasher);
+        return Objects.hash(upstream, hashFunction);
     }
 
     @Override
@@ -94,15 +84,13 @@ public class SendPhysicalNode implements PhysicalNode {
             return false;
         }
 
-        SendPhysicalNode that = (SendPhysicalNode) o;
+        ReplicatedToPartitionedPhysicalNode that = (ReplicatedToPartitionedPhysicalNode) o;
 
-        return edgeId == that.edgeId && upstream.equals(that.upstream)
-            && Objects.equals(partitionHasher, that.partitionHasher);
+        return upstream.equals(that.upstream) && hashFunction.equals(that.hashFunction);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{edgeId=" + edgeId + ", partitionHasher=" + partitionHasher
-            + ", upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{hashFunction=" + hashFunction + ", upstream=" + upstream + '}';
     }
 }

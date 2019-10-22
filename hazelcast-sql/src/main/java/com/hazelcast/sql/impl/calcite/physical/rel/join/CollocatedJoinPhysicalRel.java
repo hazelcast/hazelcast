@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.physical.rel;
+package com.hazelcast.sql.impl.calcite.physical.rel.join;
 
-import com.hazelcast.sql.impl.calcite.common.AbstractJoinRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
-/**
- * Common class for all physical joins.
- */
-public abstract class AbstractJoinPhysicalRel extends AbstractJoinRel implements PhysicalRel {
-    public AbstractJoinPhysicalRel(
+// TODO: JavaDoc: describe traits propagation
+public class CollocatedJoinPhysicalRel extends AbstractJoinPhysicalRel implements PhysicalRel {
+    public CollocatedJoinPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelNode left,
@@ -43,18 +43,28 @@ public abstract class AbstractJoinPhysicalRel extends AbstractJoinRel implements
     }
 
     @Override
-    public void visit(PhysicalRelVisitor visitor) {
-        // Visit inputs in right-left order, so that they are retrieved later from the stack in left-right order.
-        ((PhysicalRel) right).visit(visitor);
-        ((PhysicalRel) left).visit(visitor);
-
-        visitAfterInputs(visitor);
+    public Join copy(
+        RelTraitSet traitSet,
+        RexNode conditionExpr,
+        RelNode left,
+        RelNode right,
+        JoinRelType joinType,
+        boolean semiJoinDone
+    ) {
+        return new CollocatedJoinPhysicalRel(
+            getCluster(),
+            traitSet,
+            left,
+            right,
+            condition,
+            joinType,
+            leftKeys,
+            rightKeys
+        );
     }
 
-    /**
-     * Visit the join after the inputs are processed.
-     *
-     * @param visitor Visitor.
-     */
-    protected abstract void visitAfterInputs(PhysicalRelVisitor visitor);
+    @Override
+    protected void visitAfterInputs(PhysicalRelVisitor visitor) {
+        visitor.onCollocatedJoin(this);
+    }
 }

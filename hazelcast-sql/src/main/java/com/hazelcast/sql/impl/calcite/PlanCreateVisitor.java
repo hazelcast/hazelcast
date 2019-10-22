@@ -16,55 +16,64 @@
 
 package com.hazelcast.sql.impl.calcite;
 
- import com.hazelcast.internal.util.collection.PartitionIdSet;
- import com.hazelcast.nio.Address;
- import com.hazelcast.sql.HazelcastSqlException;
- import com.hazelcast.sql.impl.QueryFragment;
- import com.hazelcast.sql.impl.QueryFragmentMapping;
- import com.hazelcast.sql.impl.QueryPlan;
- import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
- import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionType;
- import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedJoinPhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
- import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.SingletonExchangePhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.SortMergeExchangePhysicalRel;
- import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
- import com.hazelcast.sql.impl.expression.ColumnExpression;
- import com.hazelcast.sql.impl.expression.ConstantExpression;
- import com.hazelcast.sql.impl.expression.Expression;
-  import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
- import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
- import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
- import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
- import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
- import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
- import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
- import com.hazelcast.sql.impl.physical.PhysicalNode;
- import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
- import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
- import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
- import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
- import com.hazelcast.sql.impl.physical.RootPhysicalNode;
- import com.hazelcast.sql.impl.physical.SendPhysicalNode;
- import com.hazelcast.sql.impl.physical.SortPhysicalNode;
- import org.apache.calcite.rel.RelFieldCollation;
- import org.apache.calcite.rel.core.AggregateCall;
- import org.apache.calcite.rex.RexNode;
- import org.apache.calcite.sql.SqlAggFunction;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.nio.Address;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.QueryFragmentMapping;
+import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.MaterializedInputPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
+import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedToDistributedPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.exchange.BroadcastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.exchange.SingletonSortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.exchange.UnicastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.join.CollocatedJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.join.HashJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.join.NestedLoopJoinPhysicalRel;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
+import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
+import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
+import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
+import com.hazelcast.sql.impl.physical.RootPhysicalNode;
+import com.hazelcast.sql.impl.physical.SortPhysicalNode;
+import com.hazelcast.sql.impl.physical.hash.AllFieldsHashFunction;
+import com.hazelcast.sql.impl.physical.hash.FieldHashFunction;
+import com.hazelcast.sql.impl.physical.io.BroadcastSendPhysicalNode;
+import com.hazelcast.sql.impl.physical.io.ReceivePhysicalNode;
+import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
+import com.hazelcast.sql.impl.physical.io.UnicastSendPhysicalNode;
+import com.hazelcast.sql.impl.physical.join.HashJoinPhysicalNode;
+import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
+import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlAggFunction;
 
- import java.util.ArrayDeque;
- import java.util.ArrayList;
- import java.util.Deque;
- import java.util.HashMap;
- import java.util.List;
- import java.util.Map;
- import java.util.UUID;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
  /**
  * Visitor which produces query plan.
@@ -193,24 +202,22 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     @Override
-    public void onSingletonExchange(SingletonExchangePhysicalRel rel) {
+    public void onUnicastExchange(UnicastExchangePhysicalRel rel) {
         // Get upstream node.
         PhysicalNode upstreamNode = pollSingleUpstream();
-
-        // Calculate mapping.
-        PhysicalDistributionTrait distTrait = RuleUtils.getPhysicalDistribution(rel);
-
-        QueryFragmentMapping mapping = distTrait.getType() == PhysicalDistributionType.REPLICATED
-            ? QueryFragmentMapping.REPLICATED : QueryFragmentMapping.DATA_MEMBERS;
 
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
         addOutboundEdge(edge);
 
-        SendPhysicalNode sendNode = new SendPhysicalNode(edge, upstreamNode, new ConstantExpression<>(1));
+        UnicastSendPhysicalNode sendNode = new UnicastSendPhysicalNode(
+            edge,
+            upstreamNode,
+            new FieldHashFunction(rel.getHashFields())
+        );
 
-        addFragment(sendNode, mapping);
+        addFragment(sendNode,  QueryFragmentMapping.DATA_MEMBERS);
 
         // Create receiver.
         addInboundEdge(edge);
@@ -221,7 +228,32 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     @Override
-    public void onSortMergeExchange(SortMergeExchangePhysicalRel rel) {
+    public void onBroadcastExchange(BroadcastExchangePhysicalRel rel) {
+        // Get upstream node.
+        PhysicalNode upstreamNode = pollSingleUpstream();
+
+        // Create sender and push it as a fragment.
+        int edge = nextEdge();
+
+        addOutboundEdge(edge);
+
+        BroadcastSendPhysicalNode sendNode = new BroadcastSendPhysicalNode(
+            edge,
+            upstreamNode
+        );
+
+        addFragment(sendNode,  QueryFragmentMapping.DATA_MEMBERS);
+
+        // Create receiver.
+        addInboundEdge(edge);
+
+        ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(edge);
+
+        pushUpstream(receiveNode);
+    }
+
+    @Override
+    public void onSingletonSortMergeExchange(SingletonSortMergeExchangePhysicalRel rel) {
         // Get upstream node. It should be sort node.
         PhysicalNode upstreamNode = pollSingleUpstream();
 
@@ -229,20 +261,18 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         SortPhysicalNode sortNode = (SortPhysicalNode) upstreamNode;
 
-        // Calculate mapping.
-        PhysicalDistributionTrait distTrait = RuleUtils.getPhysicalDistribution(rel);
-
-        QueryFragmentMapping mapping = distTrait.getType() == PhysicalDistributionType.REPLICATED
-            ? QueryFragmentMapping.REPLICATED : QueryFragmentMapping.DATA_MEMBERS;
-
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
         addOutboundEdge(edge);
 
-        SendPhysicalNode sendNode = new SendPhysicalNode(edge, sortNode, new ConstantExpression<>(1));
+        UnicastSendPhysicalNode sendNode = new UnicastSendPhysicalNode(
+            edge,
+            sortNode,
+            AllFieldsHashFunction.INSTANCE
+        );
 
-        addFragment(sendNode, mapping);
+        addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
 
         // Create a receiver and push it to stack.
         addInboundEdge(edge);
@@ -256,7 +286,19 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(receiveNode);
     }
 
-    @Override
+     @Override
+     public void onReplicatedToDistributed(ReplicatedToDistributedPhysicalRel rel) {
+         PhysicalNode upstreamNode = pollSingleUpstream();
+
+         ReplicatedToPartitionedPhysicalNode replicatedToPartitionedNode = new ReplicatedToPartitionedPhysicalNode(
+             upstreamNode,
+             new FieldHashFunction(rel.getHashFields())
+         );
+
+         pushUpstream(replicatedToPartitionedNode);
+     }
+
+     @Override
     public void onProject(ProjectPhysicalRel rel) {
         PhysicalNode upstreamNode = pollSingleUpstream();
 
@@ -326,7 +368,50 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         pushUpstream(joinNode);
     }
 
-    private static AggregateExpression convertAggregateCall(AggregateCall aggCall) {
+     @SuppressWarnings("unchecked")
+     @Override
+     public void onNestedLoopJoin(NestedLoopJoinPhysicalRel rel) {
+         PhysicalNode leftInput = pollSingleUpstream();
+         PhysicalNode rightInput = pollSingleUpstream();
+
+         RexNode condition = rel.getCondition();
+         Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
+
+         NestedLoopJoinPhysicalNode joinNode = new NestedLoopJoinPhysicalNode(leftInput, rightInput, convertedCondition);
+
+         pushUpstream(joinNode);
+     }
+
+     @SuppressWarnings("unchecked")
+     @Override
+     public void onHashJoin(HashJoinPhysicalRel rel) {
+         PhysicalNode leftInput = pollSingleUpstream();
+         PhysicalNode rightInput = pollSingleUpstream();
+
+         RexNode condition = rel.getCondition();
+         Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
+
+         HashJoinPhysicalNode joinNode = new HashJoinPhysicalNode(
+             leftInput,
+             rightInput,
+             convertedCondition,
+             rel.getLeftHashKeys(),
+             rel.getRightHashKeys()
+         );
+
+         pushUpstream(joinNode);
+     }
+
+     @Override
+     public void onMaterializedInput(MaterializedInputPhysicalRel rel) {
+         PhysicalNode input = pollSingleUpstream();
+
+         MaterializedInputPhysicalNode node = new MaterializedInputPhysicalNode(input);
+
+         pushUpstream(node);
+     }
+
+     private static AggregateExpression convertAggregateCall(AggregateCall aggCall) {
         SqlAggFunction aggFunc = aggCall.getAggregation();
         List<Integer> argList = aggCall.getArgList();
 

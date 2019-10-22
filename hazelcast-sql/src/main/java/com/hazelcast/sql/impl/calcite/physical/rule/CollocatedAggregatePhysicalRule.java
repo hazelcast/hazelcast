@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.calcite.physical.rule;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.AggregateLogicalRel;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionField;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionField;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -77,11 +77,11 @@ public final class CollocatedAggregatePhysicalRule extends AbstractAggregatePhys
         AggregateLogicalRel logicalAgg,
         RelNode input
     ) {
-        PhysicalDistributionTrait inputDist = RuleUtils.getPhysicalDistribution(input);
+        DistributionTrait inputDist = RuleUtils.getDistribution(input);
 
         switch (inputDist.getType()) {
-            case DISTRIBUTED_PARTITIONED:
-                boolean collocated = isCollocatedPartitioned(logicalAgg.getGroupSet(), inputDist.getFields());
+            case DISTRIBUTED:
+                boolean collocated = isCollocatedPartitioned(logicalAgg.getGroupSet(), inputDist.getFieldGroups());
 
                 if (!collocated) {
                     break;
@@ -126,27 +126,46 @@ public final class CollocatedAggregatePhysicalRule extends AbstractAggregatePhys
      * partitioned input. This is the case iff input distribution fields are a prefix of the group set.
      *
      * @param groupSet Group set of original aggregate.
-     * @param inputDistFields Distribution fields of an input.
+     * @param fieldGroups Field groups.
      * @return {@code True} if this aggregate could be processed in collocated mode.
      */
-    private static boolean isCollocatedPartitioned(
-        ImmutableBitSet groupSet,
-        List<PhysicalDistributionField> inputDistFields
-    ) {
+    private static boolean isCollocatedPartitioned(ImmutableBitSet groupSet, List<List<DistributionField>> fieldGroups) {
+        for (List<DistributionField> fieldGroup : fieldGroups) {
+            if (isCollocatedPartitioned0(groupSet, fieldGroup)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check whether the given group set could be executed in collocated mode for the given distribution fields of
+     * partitioned input. This is the case iff input distribution fields are a prefix of the group set.
+     *
+     * @param groupSet Group set of original aggregate.
+     * @param fieldGroup Field group.
+     * @return {@code True} if this aggregate could be processed in collocated mode.
+     */
+    private static boolean isCollocatedPartitioned0(ImmutableBitSet groupSet, List<DistributionField> fieldGroup) {
         // If group set size is less than the number of input distribution fields, then dist fields could not be a
-        // prefix of group se tby definition.
-        if (groupSet.length() < inputDistFields.size()) {
+        // prefix of group by definition.
+        if (groupSet.length() < fieldGroup.size()) {
+            // GROUP BY has less attributes than the number of distribution fields. It means that at least one distribution field
+            // will be lost, no need to continue.
             return false;
         }
 
-        for (int i = 0; i < inputDistFields.size(); i++) {
-            PhysicalDistributionField inputField = inputDistFields.get(i);
+        for (int i = 0; i < fieldGroup.size(); i++) {
+            DistributionField field = fieldGroup.get(i);
 
-            if (inputField.getNestedField() != null) {
+            if (field.getNestedField() != null) {
+                // Input is distributed by the inner field of a field used in GROUP BY. We cannot use it.
                 return false;
             }
 
             if (!groupSet.get(i)) {
+                // GROUP BY doesn't contain input distribution field. Distribution is lost.
                 return false;
             }
         }

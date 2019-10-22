@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.exec.io;
 
+import com.hazelcast.sql.impl.exec.AbstractExec;
+import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;

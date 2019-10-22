@@ -49,6 +49,17 @@ public class JoinSqlTest extends SqlTestSupport {
     }
 
     @Test
+    public void testEquiPartitionedPartitionedNonCollocated() {
+        QueryPlan plan = getPlan(
+            member,
+            "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
+        );
+
+        // TODO: Assert!
+        System.out.println(plan);
+    }
+
+    @Test
     public void testJoinConditionOn() {
         List<SqlRow> res = getQueryRows(
             member,

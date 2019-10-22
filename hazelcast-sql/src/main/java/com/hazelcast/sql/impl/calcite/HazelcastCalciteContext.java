@@ -63,14 +63,6 @@ public final class HazelcastCalciteContext {
         CTX.remove();
     }
 
-    /**
-     * @return {@code True} if the given node stores data. Provided that the optimizer can only run on members,
-     * lite member check is enough.
-     */
-    public boolean isDataMember() {
-        return !nodeEngine.getLocalMember().isLiteMember();
-    }
-
     @SuppressWarnings("unchecked")
     public <T> T getData(Key key) {
         return (T) data.get(key);

@@ -19,9 +19,9 @@ package com.hazelcast.sql.impl.calcite.physical.rule;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionField;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionType;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionField;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionType.DISTRIBUTED_PARTITIONED;
+import static com.hazelcast.sql.impl.calcite.physical.distribution.DistributionType.DISTRIBUTED;
 
 /**
  * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
@@ -87,13 +87,12 @@ public final class ProjectPhysicalRule extends RelOptRule {
      * @param convertedInput Input.
      * @return Conversions (converted input + trait set).
      */
-    private static Collection<InputAndTraitSet> getTransforms(ProjectLogicalRel logicalProject,
-        RelNode convertedInput) {
+    private static Collection<InputAndTraitSet> getTransforms(ProjectLogicalRel logicalProject, RelNode convertedInput) {
         // TODO: Handle collation properly.
-        List<InputAndTraitSet> res = new ArrayList<>();
+        List<InputAndTraitSet> res = new ArrayList<>(1);
 
         // Get mapping of project input fields to an index of related expression in the projection.
-        Map<PhysicalDistributionField, Integer> candDistFields = getCandidateDistributionFields(logicalProject);
+        Map<DistributionField, Integer> candDistFields = getCandidateDistributionFields(logicalProject);
         Map<Integer, Integer> candCollationFields = getCandidateCollationFields(logicalProject);
 
         Collection<RelNode> physicalInputs = RuleUtils.getPhysicalRelsFromSubset(convertedInput);
@@ -101,15 +100,17 @@ public final class ProjectPhysicalRule extends RelOptRule {
         for (RelNode physicalInput : physicalInputs) {
             RelTraitSet finalTraitSet = createPhysicalTraitSet(physicalInput, candDistFields, candCollationFields);
 
-            res.add(new InputAndTraitSet(physicalInput, finalTraitSet));
+            if (finalTraitSet != null) {
+                res.add(new InputAndTraitSet(physicalInput, finalTraitSet));
+            }
         }
 
-        if (res.isEmpty()) {
-            // If there were no physical inputs, then just propagate the default distribution.
-            RelTraitSet finalTraitSet = createPhysicalTraitSet(convertedInput, candDistFields, candCollationFields);
-
-            res.add(new InputAndTraitSet(convertedInput, finalTraitSet));
-        }
+//        if (res.isEmpty()) {
+//            // If there were no physical inputs, then just propagate the default distribution.
+//            RelTraitSet finalTraitSet = createPhysicalTraitSet(convertedInput, candDistFields, candCollationFields);
+//
+//            res.add(new InputAndTraitSet(convertedInput, finalTraitSet));
+//        }
 
         return res;
     }
@@ -124,10 +125,10 @@ public final class ProjectPhysicalRule extends RelOptRule {
      */
     private static RelTraitSet createPhysicalTraitSet(
         RelNode physicalInput,
-        Map<PhysicalDistributionField, Integer> candDistFields,
+        Map<DistributionField, Integer> candDistFields,
         Map<Integer, Integer> candCollationFields
     ) {
-        PhysicalDistributionTrait finalDist = deriveDistribution(physicalInput, candDistFields);
+        DistributionTrait finalDist = deriveDistribution(physicalInput, candDistFields);
         RelCollation finalCollation = deriveCollation(physicalInput, candCollationFields);
 
         return RuleUtils.traitPlus(physicalInput.getTraitSet(), finalDist, finalCollation);
@@ -140,29 +141,33 @@ public final class ProjectPhysicalRule extends RelOptRule {
      * @param projectFieldMap Project field map.
      * @return Distribution which should be used by project.
      */
-    private static PhysicalDistributionTrait deriveDistribution(RelNode physicalInput,
-        Map<PhysicalDistributionField, Integer> projectFieldMap) {
-        PhysicalDistributionTrait physicalInputDist = RuleUtils.getPhysicalDistribution(physicalInput);
+    @SuppressWarnings("checkstyle:RegexpSingleline")
+    private static DistributionTrait deriveDistribution(RelNode physicalInput,
+        Map<DistributionField, Integer> projectFieldMap) {
+        DistributionTrait physicalInputDist = RuleUtils.getDistribution(physicalInput);
 
-        PhysicalDistributionType type = physicalInputDist.getType();
+        DistributionType type = physicalInputDist.getType();
 
         switch (type) {
             case SINGLETON:
-                // Singleton remains singleton. Fall-through.
-
-            case DISTRIBUTED:
-                // Arbitrary distribution remains arbitrary. Fall-through.
+                // Singleton remains singleton.
+                return physicalInputDist;
 
             case REPLICATED:
-                // Replicated distribution is still replicated anyway.
+                // Replicated remains replicated.
                 return physicalInputDist;
 
             case ANY:
-                // Unknown distribution -> convert to arbitrary.
-                return PhysicalDistributionTrait.DISTRIBUTED;
+                // Unknown distribution -> do not convert.
+                return null;
 
             default:
-                assert type == DISTRIBUTED_PARTITIONED;
+                assert type == DISTRIBUTED;
+        }
+
+        // If DISTRIBUTED distribution doesn't have distribution fields, then do early exit, since there is nothing to loose.
+        if (!physicalInputDist.hasFieldGroups()) {
+            return physicalInputDist;
         }
 
         // Partitioned distribution has partition fields. We need to check whether they are preserved after the
@@ -170,24 +175,33 @@ public final class ProjectPhysicalRule extends RelOptRule {
         // Consider the following tree: scan(a,b,c) -> group by (a,b) -> project (a). After the GROUP BY is performed
         // an input is partitioned by fields [a, b]. However, when one of this fields are lost during projection,
         // the input is no longer partitioned on any attribute. E.g MEMBER_1([a1, b1]), MEMBER_2([a1, b2]) becomes
-        // MEMBER_1([a1]), MEMBER_2([a1]) after projection, so both members may containt the same value.
-        List<PhysicalDistributionField> inputDistFields = physicalInputDist.getFields();
-        List<PhysicalDistributionField> projectDistFields = new ArrayList<>();
+        // MEMBER_1([a1]), MEMBER_2([a1]) after projection, so both members may contains the same value.
+        DistributionTrait.Builder builder = DistributionTrait.Builder.ofType(DISTRIBUTED);
 
-        for (PhysicalDistributionField inputDistField : inputDistFields) {
-            Integer idx = projectFieldMap.get(inputDistField);
+        for (List<DistributionField> fieldGroup : physicalInputDist.getFieldGroups()) {
+            boolean valid = true;
+            List<DistributionField> newFieldGroup = new ArrayList<>(fieldGroup.size());
 
-            if (idx != null) {
-                // Input distribution field mapped to project field. Continue.
-                projectDistFields.add(new PhysicalDistributionField(idx));
-            } else {
-                // Input distribution column is lost during project. Fallback to arbitrary distribution.
-                return PhysicalDistributionTrait.DISTRIBUTED;
+            for (DistributionField field : fieldGroup) {
+                Integer idx = projectFieldMap.get(field);
+
+                if (idx != null) {
+                    // The field is still in the project, continue.
+                    newFieldGroup.add(new DistributionField(idx));
+                } else {
+                    // Distribution field is not in the project. We cannot use this field group any more.
+                    valid = false;
+
+                    break;
+                }
+            }
+
+            if (valid) {
+                builder.addFieldGroup(newFieldGroup);
             }
         }
 
-        // All input distribution fields have been mapped to project fields. Propagate input distribution to project.
-        return new PhysicalDistributionTrait(physicalInputDist.getType(), projectDistFields);
+        return builder.build();
     }
 
     /**
@@ -268,8 +282,8 @@ public final class ProjectPhysicalRule extends RelOptRule {
      * @param project Projection.
      * @return Result.
      */
-    private static Map<PhysicalDistributionField, Integer> getCandidateDistributionFields(ProjectLogicalRel project) {
-        Map<PhysicalDistributionField, Integer> res = new HashMap<>();
+    private static Map<DistributionField, Integer> getCandidateDistributionFields(ProjectLogicalRel project) {
+        Map<DistributionField, Integer> res = new HashMap<>();
 
         int idx = 0;
 
@@ -277,7 +291,7 @@ public final class ProjectPhysicalRule extends RelOptRule {
             if (node instanceof RexInputRef) {
                 RexInputRef node0 = (RexInputRef) node;
 
-                res.put(new PhysicalDistributionField(node0.getIndex()), idx);
+                res.put(new DistributionField(node0.getIndex()), idx);
             } else if (node instanceof RexFieldAccess) {
                 RexFieldAccess node0 = (RexFieldAccess) node;
 
@@ -286,7 +300,7 @@ public final class ProjectPhysicalRule extends RelOptRule {
 
                     String nestedFieldName = node0.getField().getName();
 
-                    res.put(new PhysicalDistributionField(nestedNode.getIndex(), nestedFieldName), idx);
+                    res.put(new DistributionField(nestedNode.getIndex(), nestedFieldName), idx);
                 }
             }
 

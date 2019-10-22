@@ -25,16 +25,18 @@ public class Person implements Serializable {
     private int age;
     private long salary;
     private long cityId;
+    private String deptTitle;
 
     public Person() {
         // No-op.
     }
 
-    public Person(String name, int age, long salary, long cityId) {
+    public Person(String name, int age, long salary, long cityId, String deptTitle) {
         this.name = name;
         this.age = age;
         this.salary = salary;
         this.cityId = cityId;
+        this.deptTitle = deptTitle;
     }
 
     public String getName() {
@@ -51,5 +53,9 @@ public class Person implements Serializable {
 
     public long getCityId() {
         return cityId;
+    }
+
+    public String getDepartmentTitle() {
+        return deptTitle;
     }
 }

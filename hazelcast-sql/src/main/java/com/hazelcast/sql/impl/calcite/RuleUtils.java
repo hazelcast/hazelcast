@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTraitDef;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptRule;
@@ -25,6 +25,8 @@ import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.RelSubset;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 
 import java.util.Collection;
@@ -142,8 +144,13 @@ public final class RuleUtils {
      * @param distribution Distribution.
      * @return New trait set with physical convention and provided distribution.
      */
-    public static RelTraitSet toPhysicalConvention(RelTraitSet traitSet, PhysicalDistributionTrait distribution) {
+    public static RelTraitSet toPhysicalConvention(RelTraitSet traitSet, DistributionTrait distribution) {
         return traitPlus(traitSet, HazelcastConventions.PHYSICAL, distribution);
+    }
+
+    public static RelTraitSet toPhysicalConvention(RelTraitSet traitSet, DistributionTrait distribution,
+        RelCollation collation) {
+        return traitPlus(traitSet, HazelcastConventions.PHYSICAL, distribution, collation);
     }
 
     /**
@@ -163,7 +170,7 @@ public final class RuleUtils {
      * @param distribution Distribution.
      * @return Logical input.
      */
-    public static RelNode toPhysicalInput(RelNode input, PhysicalDistributionTrait distribution) {
+    public static RelNode toPhysicalInput(RelNode input, DistributionTrait distribution) {
         return convert(input, toPhysicalConvention(input.getTraitSet(), distribution));
     }
 
@@ -231,7 +238,17 @@ public final class RuleUtils {
      * @param rel Rel node.
      * @return Physical distribution.
      */
-    public static PhysicalDistributionTrait getPhysicalDistribution(RelNode rel) {
-        return rel.getTraitSet().getTrait(PhysicalDistributionTraitDef.INSTANCE);
+    public static DistributionTrait getDistribution(RelNode rel) {
+        return rel.getTraitSet().getTrait(DistributionTraitDef.INSTANCE);
+    }
+
+    /**
+     * Get collation of the given node.
+     *
+     * @param rel Rel node.
+     * @return Physical distribution.
+     */
+    public static RelCollation getCollation(RelNode rel) {
+        return rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
     }
 }

@@ -16,13 +16,21 @@
 
 package com.hazelcast.sql.impl.physical;
 
+import com.hazelcast.sql.impl.physical.io.BroadcastSendPhysicalNode;
+import com.hazelcast.sql.impl.physical.io.ReceivePhysicalNode;
+import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
+import com.hazelcast.sql.impl.physical.io.UnicastSendPhysicalNode;
+import com.hazelcast.sql.impl.physical.join.HashJoinPhysicalNode;
+import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
+
 /**
  * Physical node visitor.
  */
 public interface PhysicalNodeVisitor {
     void onRootNode(RootPhysicalNode node);
     void onReceiveNode(ReceivePhysicalNode node);
-    void onSendNode(SendPhysicalNode node);
+    void onUnicastSendNode(UnicastSendPhysicalNode node);
+    void onBroadcastSendNode(BroadcastSendPhysicalNode node);
     void onMapScanNode(MapScanPhysicalNode node);
     void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node);
     void onSortNode(SortPhysicalNode node);
@@ -31,4 +39,8 @@ public interface PhysicalNodeVisitor {
     void onFilterNode(FilterPhysicalNode node);
     void onCollocatedAggregateNode(CollocatedAggregatePhysicalNode node);
     void onCollocatedJoinNode(CollocatedJoinPhysicalNode node);
+    void onNestedLoopJoinNode(NestedLoopJoinPhysicalNode node);
+    void onHashJoinNode(HashJoinPhysicalNode node);
+    void onMaterializedInputNode(MaterializedInputPhysicalNode node);
+    void onReplicatedToPartitionedNode(ReplicatedToPartitionedPhysicalNode node);
 }

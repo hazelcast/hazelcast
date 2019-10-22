@@ -51,6 +51,16 @@ public class ProjectFilterPlanningTest extends SqlTestSupport {
         ModelGenerator.generatePerson(member);
     }
 
+    @Test
+    public void testProjectDistributionField() {
+        QueryFragment fragment = getSingleFragmentFromPlan(
+            member,
+            "SELECT p.deptId FROM person p"
+        );
+
+        System.out.println(fragment);
+    }
+
     /**
      * Make sure that Project <- Filter <- Scan gets merged into Scan
      */

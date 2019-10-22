@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
+import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -24,12 +25,9 @@ import com.hazelcast.sql.impl.row.RowBatch;
 /**
  * Filter executor.
  */
-public class FilterExec extends AbstractUpstreamAwareExec {
+public class FilterExec extends AbstractFilterExec {
     /** Filter. */
     private final Expression<Boolean> filter;
-
-    /** Current row. */
-    private RowBatch curRow;
 
     public FilterExec(Exec upstream, Expression<Boolean> filter) {
         super(upstream);
@@ -38,37 +36,12 @@ public class FilterExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public IterationResult advance() {
-        while (true) {
-            if (!state.advance()) {
-                return IterationResult.WAIT;
-            }
-
-            for (Row upstreamRow : state) {
-                boolean matches = filter.eval(ctx, upstreamRow);
-
-                if (matches) {
-                    curRow = upstreamRow;
-
-                    return state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
-                }
-            }
-
-            if (state.isDone()) {
-                curRow = EmptyRowBatch.INSTANCE;
-
-                return IterationResult.FETCHED_DONE;
-            }
-        }
+    protected boolean eval(QueryContext ctx, Row row) {
+        return filter.eval(ctx, row);
     }
 
     @Override
-    public RowBatch currentBatch() {
-        return curRow;
-    }
-
-    @Override
-    protected void reset1() {
-        curRow = null;
+    public String toString() {
+        return getClass().getSimpleName() + "{filter=" + filter + ", upstreamState=" + state + '}';
     }
 }

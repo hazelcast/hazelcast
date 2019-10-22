@@ -18,49 +18,28 @@ package com.hazelcast.sql.impl.calcite.physical.rel;
 
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
 /**
- * Exchange which marge sorted input streams from several nodes into a a single sorted stream on a single node.
- * <p>
- * Traits:
- * <ul>
- *     <li><b>Collation</b>: derived from the input, never empty</li>
- *     <li><b>Distribution</b>: SINGLETON</li>
- * </ul>
+ * Operator which meterializes the underlying input.
  */
-public class SortMergeExchangePhysicalRel extends SingleRel implements PhysicalRel {
-    /** Collation. */
-    private final RelCollation collation;
-
-    public SortMergeExchangePhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelNode input,
-        RelCollation collation
-    ) {
-        super(cluster, traitSet, input);
-
-        this.collation = collation;
-    }
-
-    public RelCollation getCollation() {
-        return collation;
+public class MaterializedInputPhysicalRel extends SingleRel implements PhysicalRel {
+    public MaterializedInputPhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+        super(cluster, traits, input);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new SortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
+        return new MaterializedInputPhysicalRel(getCluster(), traitSet, sole(inputs));
     }
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel) input).visit(visitor);
 
-        visitor.onSortMergeExchange(this);
+        visitor.onMaterializedInput(this);
     }
 }

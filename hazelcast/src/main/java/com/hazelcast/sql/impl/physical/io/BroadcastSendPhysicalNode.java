@@ -14,51 +14,65 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.physical.io;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Physical node which receives from remote stripes.
+ * Broadcast send node.
  */
-public class ReceivePhysicalNode implements PhysicalNode {
+public class BroadcastSendPhysicalNode implements PhysicalNode {
     /** Edge ID. */
     private int edgeId;
 
-    public ReceivePhysicalNode() {
+    /** Upstream node. */
+    private PhysicalNode upstream;
+
+    public BroadcastSendPhysicalNode() {
         // No-op.
     }
 
-    public ReceivePhysicalNode(int edgeId) {
+    public BroadcastSendPhysicalNode(int edgeId, PhysicalNode upstream) {
         this.edgeId = edgeId;
+        this.upstream = upstream;
     }
 
     public int getEdgeId() {
         return edgeId;
     }
 
+    public PhysicalNode getUpstream() {
+        return upstream;
+    }
+
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
-        visitor.onReceiveNode(this);
+        upstream.visit(visitor);
+
+        visitor.onBroadcastSendNode(this);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
+        out.writeObject(upstream);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
+        upstream = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(edgeId);
+        return Objects.hash(edgeId, upstream);
     }
 
     @Override
@@ -71,13 +85,13 @@ public class ReceivePhysicalNode implements PhysicalNode {
             return false;
         }
 
-        ReceivePhysicalNode that = (ReceivePhysicalNode) o;
+        BroadcastSendPhysicalNode that = (BroadcastSendPhysicalNode) o;
 
-        return edgeId == that.edgeId;
+        return edgeId == that.edgeId && upstream.equals(that.upstream);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{edgeId=" + edgeId + '}';
+        return getClass().getSimpleName() + "{edgeId=" + edgeId + ", upstream=" + upstream + '}';
     }
 }

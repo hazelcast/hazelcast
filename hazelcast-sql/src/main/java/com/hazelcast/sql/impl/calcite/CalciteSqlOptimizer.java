@@ -37,16 +37,16 @@ import com.hazelcast.sql.impl.calcite.logical.rule.JoinLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.MapScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.ProjectLogicalRule;
 import com.hazelcast.sql.impl.calcite.logical.rule.SortLogicalRule;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rule.CollocatedAggregatePhysicalRule;
-import com.hazelcast.sql.impl.calcite.physical.rule.CollocatedJoinPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.FilterPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.MapScanPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.ProjectPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.SortPhysicalRule;
+import com.hazelcast.sql.impl.calcite.physical.rule.join.JoinPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRootSchema;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
@@ -175,7 +175,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         planner.clearRelTraitDefs();
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
-        planner.addRelTraitDef(PhysicalDistributionTraitDef.INSTANCE);
+        planner.addRelTraitDef(DistributionTraitDef.INSTANCE);
         planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
 
         return planner;
@@ -291,7 +291,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
             CollocatedAggregatePhysicalRule.INSTANCE,
-            CollocatedJoinPhysicalRule.INSTANCE,
+            JoinPhysicalRule.INSTANCE,
+
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
 
@@ -300,7 +301,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         RelNode res = program.run(
             planner,
             logicalRel,
-            RuleUtils.toPhysicalConvention(logicalRel.getTraitSet(), PhysicalDistributionTrait.SINGLETON),
+            RuleUtils.toPhysicalConvention(logicalRel.getTraitSet(), DistributionTrait.SINGLETON_DIST),
             ImmutableList.of(),
             ImmutableList.of()
         );

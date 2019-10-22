@@ -16,36 +16,48 @@
 
 package com.hazelcast.sql.impl.exec;
 
- import com.hazelcast.internal.util.collection.PartitionIdSet;
- import com.hazelcast.map.impl.proxy.MapProxyImpl;
- import com.hazelcast.spi.impl.NodeEngine;
- import com.hazelcast.sql.HazelcastSqlException;
- import com.hazelcast.sql.impl.QueryFragmentDescriptor;
- import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
- import com.hazelcast.sql.impl.exec.join.LocalJoinExec;
- import com.hazelcast.sql.impl.mailbox.AbstractInbox;
- import com.hazelcast.sql.impl.mailbox.Outbox;
- import com.hazelcast.sql.impl.mailbox.SingleInbox;
- import com.hazelcast.sql.impl.mailbox.StripedInbox;
- import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
- import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
- import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
- import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
- import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
- import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
- import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
- import com.hazelcast.sql.impl.physical.ReceivePhysicalNode;
- import com.hazelcast.sql.impl.physical.ReceiveSortMergePhysicalNode;
- import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
- import com.hazelcast.sql.impl.physical.RootPhysicalNode;
- import com.hazelcast.sql.impl.physical.SendPhysicalNode;
- import com.hazelcast.sql.impl.physical.SortPhysicalNode;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryFragmentDescriptor;
+import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
+import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
+import com.hazelcast.sql.impl.exec.io.ReceiveExec;
+import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
+import com.hazelcast.sql.impl.exec.io.UnicastSendExec;
+import com.hazelcast.sql.impl.exec.join.HashJoinExec;
+import com.hazelcast.sql.impl.exec.join.LocalJoinExec;
+import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
+import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+import com.hazelcast.sql.impl.mailbox.Outbox;
+import com.hazelcast.sql.impl.mailbox.SingleInbox;
+import com.hazelcast.sql.impl.mailbox.StripedInbox;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
+import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
+import com.hazelcast.sql.impl.physical.RootPhysicalNode;
+import com.hazelcast.sql.impl.physical.SortPhysicalNode;
+import com.hazelcast.sql.impl.physical.io.BroadcastSendPhysicalNode;
+import com.hazelcast.sql.impl.physical.io.ReceivePhysicalNode;
+import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
+import com.hazelcast.sql.impl.physical.io.UnicastSendPhysicalNode;
+import com.hazelcast.sql.impl.physical.join.HashJoinPhysicalNode;
+import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
 
- import java.util.ArrayList;
- import java.util.Collection;
- import java.util.Collections;
- import java.util.List;
- import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
  /**
  * Visitor which builds an executor for every observed physical node.
@@ -69,6 +81,9 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
 
+    /** Partition map. */
+    private final Map<UUID, PartitionIdSet> partitionMap;
+
     /** Stack of elements to be merged. */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
 
@@ -83,13 +98,15 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         QueryExecuteOperation operation,
         QueryFragmentDescriptor currentFragment,
         Collection<UUID> dataMemberIds,
-        PartitionIdSet localParts
+        PartitionIdSet localParts,
+        Map<UUID, PartitionIdSet> partitionMap
     ) {
         this.nodeEngine = nodeEngine;
         this.operation = operation;
         this.currentFragment = currentFragment;
         this.dataMemberIds = dataMemberIds;
         this.localParts = localParts;
+        this.partitionMap = partitionMap;
     }
 
     @Override
@@ -152,38 +169,69 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     }
 
     @Override
-    public void onSendNode(SendPhysicalNode node) {
-        assert stack.size() == 1;
+    public void onUnicastSendNode(UnicastSendPhysicalNode node) {
+        Outbox[] outboxes = prepareOutboxes(node.getEdgeId());
 
-        Outbox[] sendOutboxes;
+        int[] partitionOutboxIndexes = new int[localParts.getPartitionCount()];
 
-        int senderFragmentDeploymentOffset = currentFragment.getAbsoluteDeploymentOffset(operation);
+        for (int outboxIndex = 0; outboxIndex < outboxes.length; outboxIndex++) {
+            final int outboxIndex0 = outboxIndex;
 
-        int receiveFragmentPos = operation.getInboundEdgeMap().get(node.getEdgeId());
-        QueryFragmentDescriptor receiveFragment = operation.getFragmentDescriptors().get(receiveFragmentPos);
-        Collection<UUID> receiveFragmentMemberIds = receiveFragment.getFragmentMembers(dataMemberIds);
-        int receiveFragmentDeploymentOffset = receiveFragment.getAbsoluteDeploymentOffset(operation);
+            Outbox outbox = outboxes[outboxIndex0];
 
-        sendOutboxes = new Outbox[receiveFragmentMemberIds.size()];
+            UUID outboxMemberId = outbox.getTargetMemberId();
 
-        int idx = 0;
+            PartitionIdSet partitions = partitionMap.get(outboxMemberId);
 
-        for (UUID receiveMemberId : receiveFragmentMemberIds) {
-            Outbox outbox = new Outbox(
-                nodeEngine,
-                operation.getQueryId(),
-                node.getEdgeId(),
-                senderFragmentDeploymentOffset,
-                receiveMemberId,
-                receiveFragmentDeploymentOffset,
-                OUTBOX_BATCH_SIZE
-            );
-
-            sendOutboxes[idx++] = outbox;
+            partitions.forEach((part) -> {
+                partitionOutboxIndexes[part] = outboxIndex0;
+            });
         }
 
-        exec = new SendExec(pop(), node.getPartitionHasher(), sendOutboxes);
+        exec = new UnicastSendExec(pop(), outboxes, node.getHashFunction(), partitionOutboxIndexes);
     }
+
+    @Override
+    public void onBroadcastSendNode(BroadcastSendPhysicalNode node) {
+        Outbox[] outboxes = prepareOutboxes(node.getEdgeId());
+
+        exec = new BroadcastSendExec(pop(), outboxes);
+    }
+
+     /**
+      * Prepare outboxes for the given edge ID.
+      *
+      * @param edgeId Edge ID.
+      * @return Outboxes.
+      */
+     private Outbox[] prepareOutboxes(int edgeId) {
+         int senderFragmentDeploymentOffset = currentFragment.getAbsoluteDeploymentOffset(operation);
+
+         int receiveFragmentPos = operation.getInboundEdgeMap().get(edgeId);
+         QueryFragmentDescriptor receiveFragment = operation.getFragmentDescriptors().get(receiveFragmentPos);
+         Collection<UUID> receiveFragmentMemberIds = receiveFragment.getFragmentMembers(dataMemberIds);
+         int receiveFragmentDeploymentOffset = receiveFragment.getAbsoluteDeploymentOffset(operation);
+
+         Outbox[] outboxes = new Outbox[receiveFragmentMemberIds.size()];
+
+         int idx = 0;
+
+         for (UUID receiveMemberId : receiveFragmentMemberIds) {
+             Outbox outbox = new Outbox(
+                 nodeEngine,
+                 operation.getQueryId(),
+                 edgeId,
+                 senderFragmentDeploymentOffset,
+                 receiveMemberId,
+                 receiveFragmentDeploymentOffset,
+                 OUTBOX_BATCH_SIZE
+             );
+
+             outboxes[idx++] = outbox;
+         }
+
+         return outboxes;
+     }
 
     @Override
     public void onMapScanNode(MapScanPhysicalNode node) {
@@ -259,6 +307,48 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
             pop(),
             node.getCondition()
         );
+
+        push(res);
+    }
+
+    @Override
+    public void onNestedLoopJoinNode(NestedLoopJoinPhysicalNode node) {
+        Exec res = new NestedLoopJoinExec(
+            pop(),
+            pop(),
+            node.getCondition()
+        );
+
+        push(res);
+    }
+
+    @Override
+    public void onHashJoinNode(HashJoinPhysicalNode node) {
+        Exec res = new HashJoinExec(
+            pop(),
+            pop(),
+            node.getCondition(),
+            node.getLeftHashKeys(),
+            node.getRightHashKeys()
+        );
+
+        push(res);
+    }
+
+    @Override
+    public void onMaterializedInputNode(MaterializedInputPhysicalNode node) {
+        Exec upstream = pop();
+
+        MaterializedInputExec res = new MaterializedInputExec(upstream);
+
+        push(res);
+    }
+
+    @Override
+    public void onReplicatedToPartitionedNode(ReplicatedToPartitionedPhysicalNode node) {
+        Exec upstream = pop();
+
+        ReplicatedToPartitionedExec res = new ReplicatedToPartitionedExec(upstream, node.getHashFunction(), localParts);
 
         push(res);
     }

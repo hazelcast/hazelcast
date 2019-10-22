@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.exec.io;
 
+import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
+import com.hazelcast.sql.impl.exec.Exec;
+import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
- * Executor which sends results to remote stripes.
+ * Abstract sender
  */
-// TODO: Consider multiplexing.
-public class SendExec extends AbstractUpstreamAwareExec {
-    /** Expression to get the hash of the stripe. */
-    private final Expression<Integer> partitionHasher;
-
-    /** Outboxes. */
-    private final Outbox[] outboxes;
+public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
+    /** Registered outboxes. */
+    protected final Outbox[] outboxes;
 
     /** Row which pending send. */
     private Row pendingRow;
 
-    public SendExec(Exec upstream, Expression<Integer> partitionHasher, Outbox[] outboxes) {
+    public AbstractSendExec(Exec upstream, Outbox[] outboxes) {
         super(upstream);
 
-        this.partitionHasher = partitionHasher;
         this.outboxes = outboxes;
     }
 
@@ -81,12 +79,7 @@ public class SendExec extends AbstractUpstreamAwareExec {
      * @param row Row.
      * @return {@code True} if pushed successfully, {@code false}
      */
-    private boolean pushRow(Row row) {
-        int part = partitionHasher.eval(ctx, row);
-        int idx =  part % outboxes.length;
-
-        return outboxes[idx].onRow(row);
-    }
+    protected abstract boolean pushRow(Row row);
 
     @Override
     public RowBatch currentBatch() {
@@ -95,9 +88,6 @@ public class SendExec extends AbstractUpstreamAwareExec {
 
     @Override
     public boolean canReset() {
-        // TODO: Sender is a top-level operator (similar to root), so currently no operator can initiate a reset on it.
-        // TODO: However, in more complex operations, e.g. distributed joins, there is a chance that we will send
-        // TODO: reset requests from receivers to their senders.
         return false;
     }
 }

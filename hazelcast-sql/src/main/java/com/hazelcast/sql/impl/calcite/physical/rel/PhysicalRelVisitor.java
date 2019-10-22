@@ -16,6 +16,13 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
+import com.hazelcast.sql.impl.calcite.physical.rel.exchange.BroadcastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.exchange.SingletonSortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.exchange.UnicastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.join.CollocatedJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.join.HashJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.join.NestedLoopJoinPhysicalRel;
+
 /**
  * Visitor over physical relations.
  */
@@ -23,11 +30,16 @@ public interface PhysicalRelVisitor {
     void onRoot(RootPhysicalRel root);
     void onMapScan(MapScanPhysicalRel rel);
     void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel);
-    void onSingletonExchange(SingletonExchangePhysicalRel rel);
-    void onSortMergeExchange(SortMergeExchangePhysicalRel rel);
+    void onUnicastExchange(UnicastExchangePhysicalRel rel);
+    void onBroadcastExchange(BroadcastExchangePhysicalRel rel);
+    void onSingletonSortMergeExchange(SingletonSortMergeExchangePhysicalRel rel);
+    void onReplicatedToDistributed(ReplicatedToDistributedPhysicalRel rel);
     void onSort(SortPhysicalRel rel);
     void onProject(ProjectPhysicalRel rel);
     void onFilter(FilterPhysicalRel rel);
     void onCollocatedAggregate(CollocatedAggregatePhysicalRel rel);
     void onCollocatedJoin(CollocatedJoinPhysicalRel rel);
+    void onNestedLoopJoin(NestedLoopJoinPhysicalRel rel);
+    void onHashJoin(HashJoinPhysicalRel rel);
+    void onMaterializedInput(MaterializedInputPhysicalRel rel);
 }

@@ -24,8 +24,8 @@ import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionField;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionField;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
@@ -35,8 +35,11 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.type.RelDataTypeField;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static com.hazelcast.sql.impl.calcite.physical.distribution.DistributionType.DISTRIBUTED;
 
 /**
  * Convert logical map scan to either replicated or partitioned physical scan.
@@ -64,13 +67,13 @@ public final class MapScanPhysicalRule extends RelOptRule {
         if (hazelcastTable.isReplicated()) {
             newScan = new ReplicatedMapScanPhysicalRel(
                 scan.getCluster(),
-                RuleUtils.toPhysicalConvention(scan.getTraitSet(), PhysicalDistributionTrait.REPLICATED),
+                RuleUtils.toPhysicalConvention(scan.getTraitSet(), DistributionTrait.REPLICATED_DIST),
                 table,
                 scan.getProjects(),
                 scan.getFilter()
             );
         } else {
-            PhysicalDistributionTrait distributionTrait = getDistributionTrait(hazelcastTable);
+            DistributionTrait distributionTrait = getDistributionTrait(hazelcastTable, scan.getProjects());
 
             newScan = new MapScanPhysicalRel(
                 scan.getCluster(),
@@ -88,15 +91,31 @@ public final class MapScanPhysicalRule extends RelOptRule {
      * Get distribution trait for the given table.
      *
      * @param hazelcastTable Table.
+     * @param projects Projects.
      * @return Distribution trait.
      */
-    private static PhysicalDistributionTrait getDistributionTrait(HazelcastTable hazelcastTable) {
-        List<PhysicalDistributionField> distributionFields = getDistributionFields(hazelcastTable);
+    private static DistributionTrait getDistributionTrait(HazelcastTable hazelcastTable, List<Integer> projects) {
+        List<DistributionField> distributionFields = getDistributionFields(hazelcastTable);
 
         if (distributionFields.isEmpty()) {
-            return PhysicalDistributionTrait.DISTRIBUTED;
+            return DistributionTrait.DISTRIBUTED_DIST;
         } else {
-            return PhysicalDistributionTrait.distributedPartitioned(distributionFields);
+            // Remap internal scan distribution fields to projected fields.
+            List<DistributionField> res = new ArrayList<>(distributionFields.size());
+
+            for (DistributionField distributionField : distributionFields) {
+                int distributionFieldIndex = distributionField.getIndex();
+
+                int projectIndex = projects.indexOf(distributionFieldIndex);
+
+                if (projectIndex == -1) {
+                    return DistributionTrait.DISTRIBUTED_DIST;
+                }
+
+                res.add(new DistributionField(projectIndex, distributionField.getNestedField()));
+            }
+
+            return DistributionTrait.Builder.ofType(DISTRIBUTED).addFieldGroup(res).build();
         }
     }
 
@@ -106,7 +125,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
      * @param hazelcastTable Table.
      * @return Distribution field wrapped into a list or an empty list if no distribution field could be determined.
      */
-    private static List<PhysicalDistributionField> getDistributionFields(HazelcastTable hazelcastTable) {
+    private static List<DistributionField> getDistributionFields(HazelcastTable hazelcastTable) {
         if (hazelcastTable.isReplicated()) {
             return Collections.emptyList();
         }
@@ -123,17 +142,18 @@ public final class MapScanPhysicalRule extends RelOptRule {
             if (path.equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
                 // If there is no distribution field, use the whole key.
                 if (distributionField == null) {
-                    return Collections.singletonList(new PhysicalDistributionField(index));
+                    return Collections.singletonList(new DistributionField(index));
                 }
 
-                // Otherwise try to find desired field as a nested field of the key.
-                for (RelDataTypeField nestedField : field.getType().getFieldList()) {
-                    String nestedFieldName = nestedField.getName();
-
-                    if (nestedField.getName().equals(distributionField)) {
-                        return Collections.singletonList(new PhysicalDistributionField(index, nestedFieldName));
-                    }
-                }
+                // TODO: Enable this for nested field support.
+//                // Otherwise try to find desired field as a nested field of the key.
+//                for (RelDataTypeField nestedField : field.getType().getFieldList()) {
+//                    String nestedFieldName = nestedField.getName();
+//
+//                    if (nestedField.getName().equals(distributionField)) {
+//                        return Collections.singletonList(new DistributionField(index, nestedFieldName));
+//                    }
+//                }
             } else {
                 // Try extracting the field from the key-based path and check if it is the distribution field.
                 // E.g. "field" -> (attribute) -> "__key.distField" -> (strategy) -> "distField".
@@ -141,7 +161,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
                 if (keyPath != null) {
                     if (keyPath.equals(distributionField)) {
-                        return Collections.singletonList(new PhysicalDistributionField(index));
+                        return Collections.singletonList(new DistributionField(index));
                     }
                 }
             }

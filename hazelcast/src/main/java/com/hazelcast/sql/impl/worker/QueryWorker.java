@@ -160,7 +160,8 @@ public class QueryWorker implements Runnable {
             operation,
             fragmentDescriptor,
             operation.getPartitionMapping().keySet(),
-            operation.getPartitionMapping().get(nodeEngine.getLocalMember().getUuid())
+            operation.getPartitionMapping().get(nodeEngine.getLocalMember().getUuid()),
+            operation.getPartitionMapping()
         );
 
         fragmentDescriptor.getNode().visit(visitor);

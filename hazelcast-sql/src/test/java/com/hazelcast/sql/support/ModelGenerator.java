@@ -83,13 +83,16 @@ public class ModelGenerator {
         long salary = 1000;
 
         for (int i = 0; i < PERSON_CNT; i++) {
-            PersonKey key = new PersonKey(i, i % DEPARTMENT_CNT);
+            int deptId = i % DEPARTMENT_CNT;
+
+            PersonKey key = new PersonKey(i, deptId);
 
             Person val = new Person(
                 "person-" + i,
                 age++ % 80,
                 salary * (i + 1),
-                i % CITY_CNT
+                i % CITY_CNT,
+                "department-" + deptId
             );
 
             personMap.put(key, val);

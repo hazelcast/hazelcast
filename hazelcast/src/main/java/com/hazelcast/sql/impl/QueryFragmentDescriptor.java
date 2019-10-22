@@ -122,7 +122,7 @@ public class QueryFragmentDescriptor implements DataSerializable {
      * @return Members participating in the given fragment.
      */
     public Collection<UUID> getFragmentMembers(Collection<UUID> dataMemberIds) {
-        if (mapping == QueryFragmentMapping.ROOT || mapping == QueryFragmentMapping.REPLICATED) {
+        if (mapping == QueryFragmentMapping.ROOT) {
             return getMappedMemberIds();
         } else {
             assert mapping == QueryFragmentMapping.DATA_MEMBERS;

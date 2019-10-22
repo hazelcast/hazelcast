@@ -51,7 +51,7 @@ public abstract class AbstractUpstreamAwareExec extends AbstractExec {
     }
 
     @Override
-    protected final void reset0() {
+    protected void reset0() {
         state.reset();
 
         reset1();

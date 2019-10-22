@@ -46,6 +46,8 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
     ) {
         super(cluster, traitSet, table);
 
+        assert projects != null;
+
         this.projects = projects;
         this.filter = filter;
     }

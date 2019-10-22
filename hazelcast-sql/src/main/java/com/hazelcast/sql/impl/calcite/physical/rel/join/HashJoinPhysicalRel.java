@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.physical.rel;
+package com.hazelcast.sql.impl.calcite.physical.rel.join;
 
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -25,9 +27,17 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
-// TODO: JavaDoc: describe traits propagation
-public class CollocatedJoinPhysicalRel extends AbstractJoinPhysicalRel implements PhysicalRel {
-    public CollocatedJoinPhysicalRel(
+/**
+ * Hash join.
+ */
+public class HashJoinPhysicalRel extends AbstractJoinPhysicalRel implements PhysicalRel {
+    /** Left hash keys.. */
+    private final List<Integer> leftHashKeys;
+
+    /** Right hash keys. */
+    private final List<Integer> rightHashKeys;
+
+    public HashJoinPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelNode left,
@@ -35,9 +45,14 @@ public class CollocatedJoinPhysicalRel extends AbstractJoinPhysicalRel implement
         RexNode condition,
         JoinRelType joinType,
         List<Integer> leftKeys,
-        List<Integer> rightKeys
+        List<Integer> rightKeys,
+        List<Integer> leftHashKeys,
+        List<Integer> rightHashKeys
     ) {
         super(cluster, traitSet, left, right, condition, joinType, leftKeys, rightKeys);
+
+        this.leftHashKeys = leftHashKeys;
+        this.rightHashKeys = rightHashKeys;
     }
 
     @Override
@@ -49,7 +64,7 @@ public class CollocatedJoinPhysicalRel extends AbstractJoinPhysicalRel implement
         JoinRelType joinType,
         boolean semiJoinDone
     ) {
-        return new CollocatedJoinPhysicalRel(
+        return new HashJoinPhysicalRel(
             getCluster(),
             traitSet,
             left,
@@ -57,12 +72,22 @@ public class CollocatedJoinPhysicalRel extends AbstractJoinPhysicalRel implement
             condition,
             joinType,
             leftKeys,
-            rightKeys
+            rightKeys,
+            leftHashKeys,
+            rightHashKeys
         );
+    }
+
+    public List<Integer> getLeftHashKeys() {
+        return leftHashKeys;
+    }
+
+    public List<Integer> getRightHashKeys() {
+        return rightHashKeys;
     }
 
     @Override
     protected void visitAfterInputs(PhysicalRelVisitor visitor) {
-        visitor.onCollocatedJoin(this);
+        visitor.onHashJoin(this);
     }
 }

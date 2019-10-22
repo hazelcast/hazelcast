@@ -24,10 +24,7 @@ public enum QueryFragmentMapping {
     DATA_MEMBERS(0),
 
     /** Fragment should be executed only on a root member. */
-    ROOT(1),
-
-    /** Fragment should be executed only on a single random data member. */
-    REPLICATED(2);
+    ROOT(1);
 
     private final int id;
 

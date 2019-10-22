@@ -72,6 +72,10 @@ public class Outbox extends AbstractMailbox {
         this.batchSize = batchSize;
     }
 
+    public UUID getTargetMemberId() {
+        return targetMemberId;
+    }
+
     /**
      * Accept a row.
      *

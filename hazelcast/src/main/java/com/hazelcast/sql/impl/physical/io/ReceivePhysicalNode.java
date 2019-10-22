@@ -14,73 +14,53 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.physical.io;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
 
 /**
- * Physical node which receives from remote stripes and performs sort-merge.
+ * Physical node which receives from remote stripes.
  */
-public class ReceiveSortMergePhysicalNode implements PhysicalNode {
-    /** Edge iD. */
+public class ReceivePhysicalNode implements PhysicalNode {
+    /** Edge ID. */
     private int edgeId;
 
-    /** Expressions to be used for sorting. */
-    private List<Expression> expressions;
-
-    /** Sort directions. */
-    private List<Boolean> ascs;
-
-    public ReceiveSortMergePhysicalNode() {
+    public ReceivePhysicalNode() {
         // No-op.
     }
 
-    public ReceiveSortMergePhysicalNode(int edgeId, List<Expression> expressions, List<Boolean> ascs) {
+    public ReceivePhysicalNode(int edgeId) {
         this.edgeId = edgeId;
-        this.expressions = expressions;
-        this.ascs = ascs;
     }
 
     public int getEdgeId() {
         return edgeId;
     }
 
-    public List<Expression> getExpressions() {
-        return expressions;
-    }
-
-    public List<Boolean> getAscs() {
-        return ascs;
-    }
-
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
-        visitor.onReceiveSortMergeNode(this);
+        visitor.onReceiveNode(this);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
-        out.writeObject(expressions);
-        out.writeObject(ascs);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
-        expressions = in.readObject();
-        ascs = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(edgeId, expressions, ascs);
+        return Objects.hash(edgeId);
     }
 
     @Override
@@ -93,14 +73,13 @@ public class ReceiveSortMergePhysicalNode implements PhysicalNode {
             return false;
         }
 
-        ReceiveSortMergePhysicalNode that = (ReceiveSortMergePhysicalNode) o;
+        ReceivePhysicalNode that = (ReceivePhysicalNode) o;
 
-        return edgeId == that.edgeId && expressions.equals(that.expressions) && ascs.equals(that.ascs);
+        return edgeId == that.edgeId;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{edgeId=" + edgeId + ", expressions=" + expressions
-            + ", ascs=" + ascs + '}';
+        return getClass().getSimpleName() + "{edgeId=" + edgeId + '}';
     }
 }

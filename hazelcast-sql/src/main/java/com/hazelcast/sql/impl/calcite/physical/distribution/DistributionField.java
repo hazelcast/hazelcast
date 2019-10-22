@@ -18,16 +18,16 @@ package com.hazelcast.sql.impl.calcite.physical.distribution;
 
 import java.util.Objects;
 
-public class PhysicalDistributionField {
+public class DistributionField {
 
     private final int index;
     private final String nestedField;
 
-    public PhysicalDistributionField(int index) {
+    public DistributionField(int index) {
         this(index, null);
     }
 
-    public PhysicalDistributionField(int index, String nestedField) {
+    public DistributionField(int index, String nestedField) {
         this.index = index;
         this.nestedField = nestedField;
     }
@@ -51,8 +51,8 @@ public class PhysicalDistributionField {
             return true;
         }
 
-        if (obj instanceof PhysicalDistributionField) {
-            PhysicalDistributionField other = (PhysicalDistributionField) obj;
+        if (obj instanceof DistributionField) {
+            DistributionField other = (DistributionField) obj;
 
             return index == other.index && Objects.equals(nestedField, other.nestedField);
         }

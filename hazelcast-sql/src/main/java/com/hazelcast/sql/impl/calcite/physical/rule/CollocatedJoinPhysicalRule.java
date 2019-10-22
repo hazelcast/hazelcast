@@ -17,14 +17,12 @@
 package com.hazelcast.sql.impl.calcite.physical.rule;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.calcite.HazelcastCalciteContext;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.JoinLogicalRel;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionField;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionType;
-import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionField;
+import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.physical.rel.join.CollocatedJoinPhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
@@ -35,9 +33,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait.DISTRIBUTED;
-import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.physical.distribution.PhysicalDistributionTrait.SINGLETON;
+import static com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait.DISTRIBUTED_DIST;
+import static com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait.REPLICATED_DIST;
+import static com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait.SINGLETON_DIST;
+import static com.hazelcast.sql.impl.calcite.physical.distribution.DistributionType.DISTRIBUTED;
 
 /**
  * The rule that tries to created a collocated join.
@@ -106,8 +105,8 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
             throw new HazelcastSqlException(-1, "RIGHT JOIN is not supported at the moment.");
         }
 
-        PhysicalDistributionTrait leftDist = RuleUtils.getPhysicalDistribution(left);
-        PhysicalDistributionTrait rightDist = RuleUtils.getPhysicalDistribution(right);
+        DistributionTrait leftDist = RuleUtils.getDistribution(left);
+        DistributionTrait rightDist = RuleUtils.getDistribution(right);
 
         // If two REPLICATED or SINGLETON sources are joined, the operation is always collocated.
         if (leftDist.isComplete() && rightDist.isComplete()) {
@@ -115,7 +114,7 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
         }
 
         // Singletons are not compatible with any other input types.
-        if (leftDist == SINGLETON || rightDist == SINGLETON) {
+        if (leftDist == SINGLETON_DIST || rightDist == SINGLETON_DIST) {
             return null;
         }
 
@@ -123,9 +122,9 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
         switch (joinType) {
             case INNER:
                 // In case of inner join if any side is REPLICATED, we are safe to do a collocated join.
-                if (leftDist == REPLICATED || rightDist == REPLICATED) {
+                if (leftDist == REPLICATED_DIST || rightDist == REPLICATED_DIST) {
                     // Use distribution of the other input.
-                    PhysicalDistributionTrait joinDist = leftDist == REPLICATED ? rightDist : leftDist;
+                    DistributionTrait joinDist = leftDist == REPLICATED_DIST ? rightDist : leftDist;
 
                     return createCollocatedJoin(logicalJoin, joinDist, left, right);
                 }
@@ -138,13 +137,13 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
                 // "replicated LEFT JOIN distributed" is a tricky case because we need to check that a tuple from
                 // the replicated input has no matching tuples from the partitioned input on *ALL* data nodes. Hence,
                 // this is not a collocated operation.
-                if (leftDist == REPLICATED) {
+                if (leftDist == REPLICATED_DIST) {
                     break;
                 }
 
                 // To contrast, "partitioned LEFT JOIN replicated" qualifies for collocated join because any tuple of
                 // partitioned input exists only on a single node, so local check is enough.
-                if (rightDist == REPLICATED) {
+                if (rightDist == REPLICATED_DIST) {
                     return createCollocatedJoin(logicalJoin, leftDist, left, right);
                 }
 
@@ -172,19 +171,11 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
         RelNode left,
         RelNode right
     ) {
-        PhysicalDistributionTrait leftDist = RuleUtils.getPhysicalDistribution(left);
-        PhysicalDistributionTrait rightDist = RuleUtils.getPhysicalDistribution(right);
+        DistributionTrait leftDist = RuleUtils.getDistribution(left);
+        DistributionTrait rightDist = RuleUtils.getDistribution(right);
 
         // Distribution of the result is SINGLETON if at least one input is singleton.
-        PhysicalDistributionTrait joinDist = leftDist == SINGLETON || rightDist == SINGLETON ? SINGLETON : REPLICATED;
-
-        if (joinDist == REPLICATED) {
-            // TODO: What if an owner of a SINGLETON input is not a data member? In this case we need another variation
-            // TODO: of join when non-SINGLETON source is moved to the SINGLETON (or vice versa?). Return null for now.
-            if ((leftDist == SINGLETON || rightDist == SINGLETON) && !HazelcastCalciteContext.get().isDataMember()) {
-                return null;
-            }
-        }
+        DistributionTrait joinDist = leftDist == SINGLETON_DIST || rightDist == SINGLETON_DIST ? SINGLETON_DIST : REPLICATED_DIST;
 
         return createCollocatedJoin(logicalJoin, joinDist, left, right);
     }
@@ -203,15 +194,15 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
         RelNode left,
         RelNode right
     ) {
-        PhysicalDistributionTrait leftDist = RuleUtils.getPhysicalDistribution(left);
-        PhysicalDistributionTrait rightDist = RuleUtils.getPhysicalDistribution(right);
+        DistributionTrait leftDist = RuleUtils.getDistribution(left);
+        DistributionTrait rightDist = RuleUtils.getDistribution(right);
 
-        assert leftDist.isDistributed();
-        assert rightDist.isDistributed();
+        assert leftDist.getType() == DISTRIBUTED;
+        assert rightDist.getType() == DISTRIBUTED;
 
         // If we do not have information about distribution columns of at least one input, it is impossible to
         // do the collocated join.
-        if (leftDist == DISTRIBUTED || rightDist == DISTRIBUTED) {
+        if (leftDist == DISTRIBUTED_DIST || rightDist == DISTRIBUTED_DIST) {
             return null;
         }
 
@@ -226,7 +217,7 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
         List<Integer> leftDistFields = getDistributionFields(leftDist);
         List<Integer> rightDistFields = getDistributionFields(rightDist);
 
-        List<PhysicalDistributionField> joinDistFields = new ArrayList<>(1);
+        List<DistributionField> joinDistFields = new ArrayList<>(1);
 
         // Iterate over distribution fields of inputs.
         for (int i = 0; i < Math.min(leftDistFields.size(), rightDistFields.size()); i++) {
@@ -254,7 +245,7 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
 
             // TODO: BOTTOM LINE: Looks like it should be possible to maintain equivalent distribution fields! In this
             // TODO: example it will be {A.a}{B.b} (not to confuse with {A.a, B.b}).
-            PhysicalDistributionField joinDistField = new PhysicalDistributionField(leftDistField);
+            DistributionField joinDistField = new DistributionField(leftDistField);
 
             joinDistFields.add(joinDistField);
         }
@@ -265,7 +256,7 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
         }
 
         // Otherwise create collocated join with the given distribution fields.
-        PhysicalDistributionTrait joinDist = PhysicalDistributionTrait.distributedPartitioned(joinDistFields);
+        DistributionTrait joinDist = DistributionTrait.Builder.ofType(DISTRIBUTED).addFieldGroup(joinDistFields).build();
 
         return createCollocatedJoin(logicalJoin, joinDist, left, right);
     }
@@ -276,16 +267,17 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
      * @param dist Distribution.
      * @return Field indexes.
      */
-    private static List<Integer> getDistributionFields(PhysicalDistributionTrait dist) {
-        assert dist.getType() == PhysicalDistributionType.DISTRIBUTED_PARTITIONED;
+    private static List<Integer> getDistributionFields(DistributionTrait dist) {
+        assert dist.getType() == DISTRIBUTED;
 
-        List<PhysicalDistributionField> distFields = dist.getFields();
+        // TODO: FIx me as a part of join refactoring.
+        List<DistributionField> distFields = dist.getFieldGroups().get(0);
 
         assert !distFields.isEmpty();
 
         List<Integer> res = new ArrayList<>(distFields.size());
 
-        for (PhysicalDistributionField distField : distFields) {
+        for (DistributionField distField : distFields) {
             if (distField.getNestedField() != null) {
                 break;
             }
@@ -307,7 +299,7 @@ public final class CollocatedJoinPhysicalRule extends RelOptRule {
      */
     private CollocatedJoinPhysicalRel createCollocatedJoin(
         JoinLogicalRel logicalJoin,
-        PhysicalDistributionTrait joinDist,
+        DistributionTrait joinDist,
         RelNode left,
         RelNode right
     ) {

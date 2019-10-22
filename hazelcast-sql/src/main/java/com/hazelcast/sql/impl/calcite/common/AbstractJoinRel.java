@@ -59,4 +59,8 @@ public abstract class AbstractJoinRel extends Join {
     public List<Integer> getRightKeys() {
         return rightKeys;
     }
+
+    public boolean hasEquiJoinKeys() {
+        return !leftKeys.isEmpty();
+    }
 }

@@ -55,7 +55,7 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
         if (scan instanceof MapScanLogicalRel) {
             MapScanLogicalRel scan0 = (MapScanLogicalRel) scan;
 
-            projects =  scan0.getProjects();
+            projects = scan0.getProjects();
             oldFilter = scan0.getFilter();
         } else {
             projects = scan.identity();
