@@ -310,7 +310,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * responsibility of the store.
      *
      * @param collection the batch of items to add.
-     * @return the ICompletableFuture to synchronize on completion.
+     * @return the CompletionStage to synchronize on completion.
      * @throws NullPointerException     if batch is null, or if an item in this
      *                                  batch is null or if overflowPolicy is null
      * @throws IllegalArgumentException if collection is empty

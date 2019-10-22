@@ -106,7 +106,7 @@ public interface OperationService {
      * taskFactory.
      *
      * For more info see the
-     * {@link OperationExecutor#executeOnPartitions(PartitionTaskFactory, BitSet)}
+     * {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor#executeOnPartitions(PartitionTaskFactory, BitSet)}
      *
      * @param taskFactory the PartitionTaskFactory used to create
      *                    operations.
@@ -155,8 +155,8 @@ public interface OperationService {
     /**
      * Invokes a set of operations on selected set of all partitions in an async way.
      * <p>
-     * If the operations have sync backups, the returned {@link ICompletableFuture} does <b>not</b>
-     * wait for their completion. Instead, the {@link ICompletableFuture} is completed once the
+     * If the operations have sync backups, the returned {@link CompletableFuture} does <b>not</b>
+     * wait for their completion. Instead, the {@link CompletableFuture} is completed once the
      * operations are completed on primary replicas of the given {@code partitions}.
      *
      * @param serviceName      the name of the service
@@ -190,8 +190,8 @@ public interface OperationService {
     /**
      * Invokes a set of operations on selected set of partitions in an async way.
      * <p>
-     * If the operations have sync backups, the returned {@link ICompletableFuture} does <b>not</b>
-     * wait for their completion. Instead, the {@link ICompletableFuture} is completed once the
+     * If the operations have sync backups, the returned {@link CompletableFuture} does <b>not</b>
+     * wait for their completion. Instead, the {@link CompletableFuture} is completed once the
      * operations are completed on primary replicas of the given {@code partitions}.
      *
      * @param serviceName      the name of the service
@@ -207,8 +207,8 @@ public interface OperationService {
     /**
      * Invokes a set of operations on selected set of partitions in an async way.
      * <p>
-     * If the operations have sync backups, the returned {@link ICompletableFuture} does <b>not</b>
-     * wait for their completion. Instead, the {@link ICompletableFuture} is completed once the
+     * If the operations have sync backups, the returned {@link CompletableFuture} does <b>not</b>
+     * wait for their completion. Instead, the {@link CompletableFuture} is completed once the
      * operations are completed on primary replicas of the given {@code partitions}.
      *
      * @param serviceName      the name of the service
