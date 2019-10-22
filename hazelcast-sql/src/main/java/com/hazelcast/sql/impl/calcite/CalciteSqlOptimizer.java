@@ -199,6 +199,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         JaninoRelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(MetadataProvider.INSTANCE);
 
         RelOptCluster cluster = RelOptCluster.create(planner, new RexBuilder(typeFactory));
+
         cluster.setMetadataProvider(relMetadataProvider);
 
         return new SqlToRelConverter(

@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.spi.impl.NodeEngine;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -29,15 +28,8 @@ public final class HazelcastCalciteContext {
     /** Thread-local context. */
     private static final ThreadLocal<HazelcastCalciteContext> CTX = new ThreadLocal<>();
 
-    /** Node engine. */
-    private final NodeEngine nodeEngine;
-
     /** Cached data. */
     private final Map<Key, Object> data = new EnumMap<>(Key.class);
-
-    private HazelcastCalciteContext(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
-    }
 
     /**
      * @return Current context.
@@ -54,7 +46,7 @@ public final class HazelcastCalciteContext {
     public static void initialize(NodeEngine nodeEngine) {
         assert CTX.get() == null;
 
-        CTX.set(new HazelcastCalciteContext(nodeEngine));
+        CTX.set(new HazelcastCalciteContext());
     }
 
     /**
@@ -62,8 +54,6 @@ public final class HazelcastCalciteContext {
      */
     public static void clear() {
         CTX.remove();
-
-        RelMetadataQuery.THREAD_PROVIDERS.remove();
     }
 
     @SuppressWarnings("unchecked")
