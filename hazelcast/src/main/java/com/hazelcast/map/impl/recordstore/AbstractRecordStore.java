@@ -16,13 +16,16 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.internal.locksupport.LockStore;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.impl.EntryCostEstimator;
+import com.hazelcast.map.impl.JsonMetadataInitializer;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -65,7 +68,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final MapDataStore<Data, Object> mapDataStore;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
-    protected final RecordStoreMutationObserver<Record> mutationObserver;
+    protected final CompositeMutationObserver<Record> mutationObserver;
 
     protected Storage<Data, Record> storage;
     private final StoreAdapter storeAdapter;
@@ -83,10 +86,35 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
-        Collection<RecordStoreMutationObserver<Record>> mutationObservers = mapServiceContext
-                .createRecordStoreMutationObservers(getName(), partitionId);
-        this.mutationObserver = new CompositeRecordStoreMutationObserver<>(mutationObservers);
+        this.mutationObserver = new CompositeMutationObserver<>();
         this.storeAdapter = new RecordStoreAdapter(this);
+    }
+
+    @Override
+    public void init() {
+        this.storage = createStorage(recordFactory, inMemoryFormat);
+        addMutationObservers();
+    }
+
+    // Overridden in EE.
+    protected void addMutationObservers() {
+        // Add observer for event journal
+        EventJournalConfig eventJournalConfig = mapContainer.getEventJournalConfig();
+        if (eventJournalConfig != null && eventJournalConfig.isEnabled()) {
+            mutationObserver.add(new EventJournalWriterMutationObserver(mapServiceContext.getEventJournal(),
+                    mapContainer, partitionId));
+        }
+
+        // Add observer for json metadata
+        if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
+            addJsonMetadataMutationObserver();
+        }
+    }
+
+    // Overridden in EE.
+    protected void addJsonMetadataMutationObserver() {
+        mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
+                JsonMetadataInitializer.INSTANCE));
     }
 
     @Override
@@ -108,11 +136,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     @Override
     public LocalRecordStoreStats getLocalRecordStoreStats() {
         return stats;
-    }
-
-    @Override
-    public void init() {
-        this.storage = createStorage(recordFactory, inMemoryFormat);
     }
 
     @Override

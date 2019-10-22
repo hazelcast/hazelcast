@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.DataType;
@@ -68,12 +67,8 @@ import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
-import com.hazelcast.map.impl.recordstore.EventJournalWriterRecordStoreMutationObserver;
-import com.hazelcast.map.impl.recordstore.JsonMetadataRecordStoreMutationObserver;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -94,7 +89,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -810,33 +804,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public IndexCopyBehavior getIndexCopyBehavior() {
         return nodeEngine.getProperties().getEnum(INDEX_COPY_BEHAVIOR, IndexCopyBehavior.class);
-    }
-
-    @Override
-    public Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId) {
-        Collection<RecordStoreMutationObserver<Record>> observers = new LinkedList<>();
-        addEventJournalUpdaterObserver(observers, mapName, partitionId);
-        addMetadataInitializerObserver(observers, mapName, partitionId);
-
-        return observers;
-    }
-
-    protected void addMetadataInitializerObserver(Collection<RecordStoreMutationObserver<Record>> observers,
-                                                  String mapName, int partitionId) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        MetadataPolicy policy = mapContainer.getMapConfig().getMetadataPolicy();
-        if (policy == MetadataPolicy.CREATE_ON_UPDATE) {
-            RecordStoreMutationObserver<Record> observer = new JsonMetadataRecordStoreMutationObserver(serializationService,
-                    JsonMetadataInitializer.INSTANCE);
-            observers.add(observer);
-        }
-    }
-
-    private void addEventJournalUpdaterObserver(Collection<RecordStoreMutationObserver<Record>> observers, String mapName, int
-            partitionId) {
-        RecordStoreMutationObserver<Record> observer = new EventJournalWriterRecordStoreMutationObserver(getEventJournal(),
-                getMapContainer(mapName), partitionId);
-        observers.add(observer);
     }
 
     @Override

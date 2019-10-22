@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
@@ -34,13 +34,13 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  * no need for removing metadata on remove events because metadata is
  * stored inside record. It is removed with the record.
  */
-public class JsonMetadataRecordStoreMutationObserver implements RecordStoreMutationObserver<Record> {
+public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
-    private InternalSerializationService serializationService;
+    private SerializationService serializationService;
     private MetadataInitializer metadataInitializer;
 
-    public JsonMetadataRecordStoreMutationObserver(InternalSerializationService serializationService,
-                                                   MetadataInitializer metadataInitializer) {
+    public JsonMetadataMutationObserver(SerializationService serializationService,
+                                        MetadataInitializer metadataInitializer) {
         this.serializationService = serializationService;
         this.metadataInitializer = metadataInitializer;
     }
