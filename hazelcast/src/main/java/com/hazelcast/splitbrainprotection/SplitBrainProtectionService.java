@@ -16,6 +16,9 @@
 
 package com.hazelcast.splitbrainprotection;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Split brain protection service can be used to trigger cluster split brain protections at any time.
  * Normally split brain protections are done when any change happens on the member list.
@@ -30,7 +33,8 @@ public interface SplitBrainProtectionService {
      * @throws IllegalArgumentException if no split brain protection found for given name
      * @throws NullPointerException     if splitBrainProtectionName is null
      */
-    SplitBrainProtection getSplitBrainProtection(String splitBrainProtectionName) throws IllegalArgumentException;
+    @Nonnull
+    SplitBrainProtection getSplitBrainProtection(@Nonnull String splitBrainProtectionName) throws IllegalArgumentException;
 
     /**
      * Ensures that the split brain protection with the given name is present.
@@ -48,7 +52,7 @@ public interface SplitBrainProtectionService {
      * @param requiredSplitBrainProtectionPermissionType type of split brain protection required
      * @throws SplitBrainProtectionException if split brain protection defined and not present
      */
-    void ensureNoSplitBrain(String splitBrainProtectionName,
-                            SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType)
+    void ensureNoSplitBrain(@Nullable String splitBrainProtectionName,
+                            @Nonnull SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType)
             throws SplitBrainProtectionException;
 }

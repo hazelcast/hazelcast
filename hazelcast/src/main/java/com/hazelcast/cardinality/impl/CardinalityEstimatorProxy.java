@@ -25,6 +25,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorProxy
@@ -55,7 +57,7 @@ public class CardinalityEstimatorProxy
     }
 
     @Override
-    public void add(Object obj) {
+    public void add(@Nonnull Object obj) {
         addAsync(obj).joinInternal();
     }
 
@@ -65,8 +67,8 @@ public class CardinalityEstimatorProxy
     }
 
     @Override
-    public InvocationFuture<Void> addAsync(Object obj) {
-        checkNotNull(obj, "Object is null.");
+    public InvocationFuture<Void> addAsync(@Nonnull Object obj) {
+        checkNotNull(obj, "Object must not be null");
         Data data = getNodeEngine().getSerializationService().toData(obj);
         Operation operation = new AggregateOperation(name, data.hash64())
                 .setPartitionId(partitionId);

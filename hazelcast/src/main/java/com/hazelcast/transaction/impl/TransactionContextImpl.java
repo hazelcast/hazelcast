@@ -35,6 +35,8 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionImpl.SuspendedTransactionImpl;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -46,10 +48,13 @@ final class TransactionContextImpl implements TransactionContext {
     private final NodeEngineImpl nodeEngine;
     private final TransactionWrapper transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
-            = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+            = new HashMap<>(2);
 
-    TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
-                           TransactionOptions options, UUID ownerUuid, boolean originatedFromClient) {
+    TransactionContextImpl(@Nonnull TransactionManagerServiceImpl transactionManagerService,
+                           @Nonnull NodeEngineImpl nodeEngine,
+                           @Nonnull TransactionOptions options,
+                           @Nullable UUID ownerUuid,
+                           boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
         this.transaction = new TransactionWrapper(
                 new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient));

@@ -31,6 +31,8 @@ import com.hazelcast.internal.util.ThreadUtil;
 
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
@@ -55,7 +57,8 @@ final class TransactionProxy {
     private State state = NO_TXN;
     private long startTime;
 
-    TransactionProxy(HazelcastClientInstanceImpl client, TransactionOptions options, ClientConnection connection) {
+    TransactionProxy(HazelcastClientInstanceImpl client,
+                     @Nonnull TransactionOptions options, ClientConnection connection) {
         this.options = options;
         this.client = client;
         this.connection = connection;

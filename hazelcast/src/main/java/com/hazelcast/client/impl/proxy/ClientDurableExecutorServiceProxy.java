@@ -38,16 +38,16 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.DeserializingCompletableFuture;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -99,76 +99,89 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
     }
 
     @Override
-    public void execute(Runnable task) {
+    public void execute(@Nonnull Runnable task) {
         int partitionId = getTaskPartitionId(task);
         Callable callable = createRunnableAdapter(task);
         submitToPartition(callable, partitionId, null);
     }
 
     @Override
-    public void executeOnKeyOwner(Runnable task, Object key) {
+    public void executeOnKeyOwner(@Nonnull Runnable task,
+                                  @Nonnull Object key) {
+        checkNotNull(key, "key must not be null");
         int partitionId = getPartitionId(key);
         Callable callable = createRunnableAdapter(task);
         submitToPartition(callable, partitionId, null);
     }
 
     @Override
-    public <T> DurableExecutorServiceFuture<T> submitToKeyOwner(Callable<T> task, Object key) {
+    public <T> DurableExecutorServiceFuture<T> submitToKeyOwner(@Nonnull Callable<T> task,
+                                                                @Nonnull Object key) {
+        checkNotNull(key, "key must not be null");
         int partitionId = getPartitionId(key);
         return submitToPartition(task, partitionId, null);
     }
 
     @Override
-    public DurableExecutorServiceFuture<?> submitToKeyOwner(Runnable task, Object key) {
+    public DurableExecutorServiceFuture<?> submitToKeyOwner(@Nonnull Runnable task,
+                                                            @Nonnull Object key) {
+        checkNotNull(key, "key must not be null");
         int partitionId = getPartitionId(key);
         Callable callable = createRunnableAdapter(task);
         return submitToPartition(callable, partitionId, null);
     }
 
+    @Nonnull
     @Override
-    public <T> DurableExecutorServiceFuture<T> submit(Callable<T> task) {
+    public <T> DurableExecutorServiceFuture<T> submit(@Nonnull Callable<T> task) {
         int partitionId = getTaskPartitionId(task);
         return submitToPartition(task, partitionId, null);
     }
 
+    @Nonnull
     @Override
-    public <T> DurableExecutorServiceFuture<T> submit(Runnable task, T result) {
+    public <T> DurableExecutorServiceFuture<T> submit(@Nonnull Runnable task, T result) {
         int partitionId = getTaskPartitionId(task);
         Callable<T> callable = createRunnableAdapter(task);
         return submitToPartition(callable, partitionId, result);
     }
 
+    @Nonnull
     @Override
-    public DurableExecutorServiceFuture<?> submit(Runnable task) {
+    public DurableExecutorServiceFuture<?> submit(@Nonnull Runnable task) {
         int partitionId = getTaskPartitionId(task);
         Callable callable = createRunnableAdapter(task);
         return submitToPartition(callable, partitionId, null);
     }
 
+    @Nonnull
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+    public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks,
+                                         long timeout, @Nonnull TimeUnit unit) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-            throws InterruptedException {
+    public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks,
+                           long timeout, @Nonnull TimeUnit unit) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit) {
+        checkNotNull(unit, "unit must not be null");
         return false;
     }
 
@@ -198,7 +211,9 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         return isShutdown();
     }
 
-    private <T> DurableExecutorServiceFuture<T> submitToPartition(Callable<T> task, int partitionId, T result) {
+    private <T> DurableExecutorServiceFuture<T> submitToPartition(@Nonnull Callable<T> task,
+                                                                  int partitionId,
+                                                                  @Nullable T result) {
         checkNotNull(task, "task should not be null");
 
         ClientMessage request = DurableExecutorSubmitToPartitionCodec.encodeRequest(name, toData(task));
@@ -212,7 +227,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
         long taskId = Bits.combineToLong(partitionId, sequence);
-        return new ClientDurableExecutorServiceDelegatingFuture<T>(future, getSerializationService(),
+        return new ClientDurableExecutorServiceDelegatingFuture<>(future, getSerializationService(),
                 message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response,
                 result, taskId);
     }
@@ -222,10 +237,8 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
     }
 
     private <T> RunnableAdapter<T> createRunnableAdapter(Runnable command) {
-        if (command == null) {
-            throw new NullPointerException();
-        }
-        return new RunnableAdapter<T>(command);
+        checkNotNull(command, "Command can't be null");
+        return new RunnableAdapter<>(command);
     }
 
     private int getTaskPartitionId(Object task) {
@@ -238,7 +251,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         return random.nextInt(partitionCount);
     }
 
-    private int getPartitionId(Object key) {
+    private int getPartitionId(@Nonnull Object key) {
         return getContext().getPartitionService().getPartitionId(key);
     }
 

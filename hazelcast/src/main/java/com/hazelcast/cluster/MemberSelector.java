@@ -31,6 +31,7 @@ package com.hazelcast.cluster;
  *     }
  * }</pre>
  */
+@FunctionalInterface
 public interface MemberSelector {
 
     /**

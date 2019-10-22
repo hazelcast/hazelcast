@@ -52,6 +52,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
@@ -73,53 +74,62 @@ class HazelcastOSGiInstanceImpl
         this.ownerService = ownerService;
     }
 
+    @Nonnull
     @Override
     public String getName() {
         return delegatedInstance.getName();
     }
 
+    @Nonnull
     @Override
-    public <E> IQueue<E> getQueue(String name) {
+    public <E> IQueue<E> getQueue(@Nonnull String name) {
         return delegatedInstance.getQueue(name);
     }
 
+    @Nonnull
     @Override
-    public <E> ITopic<E> getTopic(String name) {
+    public <E> ITopic<E> getTopic(@Nonnull String name) {
         return delegatedInstance.getTopic(name);
     }
 
+    @Nonnull
     @Override
-    public <E> ISet<E> getSet(String name) {
+    public <E> ISet<E> getSet(@Nonnull String name) {
         return delegatedInstance.getSet(name);
     }
 
+    @Nonnull
     @Override
-    public <E> IList<E> getList(String name) {
+    public <E> IList<E> getList(@Nonnull String name) {
         return delegatedInstance.getList(name);
     }
 
+    @Nonnull
     @Override
-    public <K, V> IMap<K, V> getMap(String name) {
+    public <K, V> IMap<K, V> getMap(@Nonnull String name) {
         return delegatedInstance.getMap(name);
     }
 
+    @Nonnull
     @Override
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
         return delegatedInstance.getReplicatedMap(name);
     }
 
+    @Nonnull
     @Override
-    public <K, V> MultiMap<K, V> getMultiMap(String name) {
+    public <K, V> MultiMap<K, V> getMultiMap(@Nonnull String name) {
         return delegatedInstance.getMultiMap(name);
     }
 
     @Override
-    public <E> Ringbuffer<E> getRingbuffer(String name) {
+    public <E> Ringbuffer<E> getRingbuffer(@Nonnull String name) {
         return delegatedInstance.getRingbuffer(name);
     }
 
+    @Nonnull
     @Override
-    public <E> ITopic<E> getReliableTopic(String name) {
+    public <E> ITopic<E> getReliableTopic(@Nonnull String name) {
         return delegatedInstance.getReliableTopic(name);
     }
 
@@ -128,33 +138,38 @@ class HazelcastOSGiInstanceImpl
         return delegatedInstance.getCacheManager();
     }
 
+    @Nonnull
     @Override
     public Cluster getCluster() {
         return delegatedInstance.getCluster();
     }
 
+    @Nonnull
     @Override
     public Endpoint getLocalEndpoint() {
         return delegatedInstance.getLocalEndpoint();
     }
 
+    @Nonnull
     @Override
-    public IExecutorService getExecutorService(String name) {
+    public IExecutorService getExecutorService(@Nonnull String name) {
         return delegatedInstance.getExecutorService(name);
     }
 
+    @Nonnull
     @Override
-    public DurableExecutorService getDurableExecutorService(String name) {
+    public DurableExecutorService getDurableExecutorService(@Nonnull String name) {
         return delegatedInstance.getDurableExecutorService(name);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(@Nonnull TransactionalTask<T> task) throws TransactionException {
         return delegatedInstance.executeTransaction(task);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(@Nonnull TransactionOptions options,
+                                    @Nonnull TransactionalTask<T> task) throws TransactionException {
         return delegatedInstance.executeTransaction(options, task);
     }
 
@@ -164,12 +179,12 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public TransactionContext newTransactionContext(TransactionOptions options) {
+    public TransactionContext newTransactionContext(@Nonnull TransactionOptions options) {
         return delegatedInstance.newTransactionContext(options);
     }
 
     @Override
-    public FlakeIdGenerator getFlakeIdGenerator(String name) {
+    public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
         return delegatedInstance.getFlakeIdGenerator(name);
     }
 
@@ -179,75 +194,88 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public UUID addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener distributedObjectListener) {
         return delegatedInstance.addDistributedObjectListener(distributedObjectListener);
     }
 
     @Override
-    public boolean removeDistributedObjectListener(UUID registrationId) {
+    public boolean removeDistributedObjectListener(@Nonnull UUID registrationId) {
         return delegatedInstance.removeDistributedObjectListener(registrationId);
     }
 
+    @Nonnull
     @Override
     public Config getConfig() {
         return delegatedInstance.getConfig();
     }
 
+    @Nonnull
     @Override
     public PartitionService getPartitionService() {
         return delegatedInstance.getPartitionService();
     }
 
+    @Nonnull
     @Override
     public SplitBrainProtectionService getSplitBrainProtectionService() {
         return delegatedInstance.getSplitBrainProtectionService();
     }
 
+    @Nonnull
     @Override
     public ClientService getClientService() {
         return delegatedInstance.getClientService();
     }
 
+    @Nonnull
     @Override
     public LoggingService getLoggingService() {
         return delegatedInstance.getLoggingService();
     }
 
+    @Nonnull
     @Override
     public LifecycleService getLifecycleService() {
         return delegatedInstance.getLifecycleService();
     }
 
+    @Nonnull
     @Override
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+    public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName, @Nonnull String name) {
         return delegatedInstance.getDistributedObject(serviceName, name);
     }
 
+    @Nonnull
     @Override
     public ConcurrentMap<String, Object> getUserContext() {
         return delegatedInstance.getUserContext();
     }
 
+    @Nonnull
     @Override
     public HazelcastXAResource getXAResource() {
         return delegatedInstance.getXAResource();
     }
 
+    @Nonnull
     @Override
-    public CardinalityEstimator getCardinalityEstimator(String name) {
+    public CardinalityEstimator getCardinalityEstimator(@Nonnull String name) {
         return delegatedInstance.getCardinalityEstimator(name);
     }
 
+    @Nonnull
     @Override
-    public PNCounter getPNCounter(String name) {
+    public PNCounter getPNCounter(@Nonnull String name) {
         return delegatedInstance.getPNCounter(name);
     }
 
+    @Nonnull
     @Override
-    public IScheduledExecutorService getScheduledExecutorService(String name) {
+    public IScheduledExecutorService getScheduledExecutorService(@Nonnull String name) {
         return delegatedInstance.getScheduledExecutorService(name);
     }
 
+    @Nonnull
     @Override
     public CPSubsystem getCPSubsystem() {
         return delegatedInstance.getCPSubsystem();

@@ -51,6 +51,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.impl.spi.impl.listener.LazyDistributedObjectEvent;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -74,7 +75,6 @@ import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -82,6 +82,7 @@ import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.AbstractMap;
@@ -96,6 +97,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ServiceLoader.classIterator;
 import static java.lang.Thread.currentThread;
 
@@ -111,9 +113,8 @@ public final class ProxyManager {
     private static final Class[] LEGACY_CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
     private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class, ClientContext.class};
 
-    private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
-    private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
-            = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
+    private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies = new ConcurrentHashMap<>();
 
     private final ListenerMessageCodec distributedObjectListenerCodec = new ListenerMessageCodec() {
         @Override
@@ -266,7 +267,11 @@ public final class ProxyManager {
         }
     }
 
-    public ClientProxy getOrCreateProxy(String service, String id) {
+    public ClientProxy getOrCreateProxy(@Nonnull String service,
+                                        @Nonnull String id) {
+        checkNotNull(service, "Service name is required!");
+        checkNotNull(id, "Object name is required!");
+
         final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
         ClientProxyFuture proxyFuture = proxies.get(ns);
         if (proxyFuture != null) {
@@ -421,7 +426,7 @@ public final class ProxyManager {
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects() {
-        Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
+        Collection<DistributedObject> objects = new LinkedList<>();
         for (ClientProxyFuture future : proxies.values()) {
             objects.add(future.get());
         }
@@ -435,17 +440,17 @@ public final class ProxyManager {
         proxies.clear();
     }
 
-    public UUID addDistributedObjectListener(final DistributedObjectListener listener) {
+    public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener listener) {
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
     }
 
     public void createDistributedObjectsOnCluster(Connection ownerConnection) {
-        List<Map.Entry<String, String>> proxyEntries = new LinkedList<Map.Entry<String, String>>();
+        List<Map.Entry<String, String>> proxyEntries = new LinkedList<>();
         for (ObjectNamespace objectNamespace : proxies.keySet()) {
             String name = objectNamespace.getObjectName();
             String serviceName = objectNamespace.getServiceName();
-            proxyEntries.add(new AbstractMap.SimpleEntry<String, String>(name, serviceName));
+            proxyEntries.add(new AbstractMap.SimpleEntry<>(name, serviceName));
         }
         if (proxyEntries.isEmpty()) {
             return;
@@ -468,7 +473,8 @@ public final class ProxyManager {
         private final DistributedObjectListener listener;
         private ProxyManager proxyManager;
 
-        private DistributedObjectEventHandler(DistributedObjectListener listener, ProxyManager proxyManager) {
+        private DistributedObjectEventHandler(@Nonnull DistributedObjectListener listener,
+                                              @Nonnull ProxyManager proxyManager) {
             this.listener = listener;
             this.proxyManager = proxyManager;
         }
@@ -497,7 +503,7 @@ public final class ProxyManager {
         }
     }
 
-    public boolean removeDistributedObjectListener(UUID id) {
+    public boolean removeDistributedObjectListener(@Nonnull UUID id) {
         return client.getListenerService().deregisterListener(id);
     }
 

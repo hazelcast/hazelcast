@@ -37,6 +37,7 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionalObjectKey;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -57,7 +58,8 @@ public class TransactionContextProxy implements ClientTransactionContext {
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
             new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
-    public TransactionContextProxy(ClientTransactionManagerServiceImpl transactionManager, TransactionOptions options) {
+    public TransactionContextProxy(@Nonnull ClientTransactionManagerServiceImpl transactionManager,
+                                   @Nonnull TransactionOptions options) {
         this.transactionManager = transactionManager;
         this.client = transactionManager.getClient();
         try {

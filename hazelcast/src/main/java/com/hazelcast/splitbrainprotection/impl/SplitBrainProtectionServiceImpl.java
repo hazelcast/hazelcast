@@ -16,16 +16,30 @@
 
 package com.hazelcast.splitbrainprotection.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.services.MemberAttributeServiceEvent;
+import com.hazelcast.internal.services.MembershipAwareService;
+import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.executor.ExecutorType;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.NamedOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.HeartbeatAware;
 import com.hazelcast.splitbrainprotection.PingAware;
 import com.hazelcast.splitbrainprotection.SplitBrainProtection;
@@ -33,33 +47,21 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionEvent;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionListener;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
-import com.hazelcast.internal.services.MembershipAwareService;
-import com.hazelcast.internal.services.MembershipServiceEvent;
-import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.services.ServiceNamespaceAware;
-import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.NamedOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.executor.ExecutorType;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ_WRITE;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Service containing logic for cluster split brain protection.
@@ -228,13 +230,18 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
         splitBrainProtection.ensureNoSplitBrain(op);
     }
 
-    public void ensureNoSplitBrain(String splitBrainProtectionName,
-                                   SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+    public void ensureNoSplitBrain(@Nullable String splitBrainProtectionName,
+                                   @Nonnull SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
+        checkNotNull(requiredSplitBrainProtectionPermissionType,
+                "requiredSplitBrainProtectionPermissionType cannot be null!");
         if (isInactive() || splitBrainProtectionName == null) {
             return;
         }
 
         SplitBrainProtectionImpl definedSplitBrainProtection = splitBrainProtections.get(splitBrainProtectionName);
+        if (definedSplitBrainProtection == null) {
+            return;
+        }
         SplitBrainProtectionOn definedSplitBrainProtectionOn = definedSplitBrainProtection.getConfig().getProtectOn();
         switch (requiredSplitBrainProtectionPermissionType) {
             case WRITE:
@@ -328,8 +335,9 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
         // They cannot change split brain protection state
     }
 
+    @Nonnull
     @Override
-    public SplitBrainProtection getSplitBrainProtection(String splitBrainProtectionName) {
+    public SplitBrainProtection getSplitBrainProtection(@Nonnull String splitBrainProtectionName) {
         checkNotNull(splitBrainProtectionName, "splitBrainProtectionName cannot be null!");
         SplitBrainProtection splitBrainProtection = splitBrainProtections.get(splitBrainProtectionName);
         if (splitBrainProtection == null) {
