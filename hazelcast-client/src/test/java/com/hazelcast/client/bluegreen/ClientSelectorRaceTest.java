@@ -68,7 +68,6 @@ public class ClientSelectorRaceTest extends HazelcastTestSupport {
 
         }
 
-        Thread.sleep(10);
         clientEngineImpl.applySelector(ClientSelectors.none());
 
         for (Thread thread : threads) {
