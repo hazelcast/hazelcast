@@ -106,39 +106,39 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     }
 
     @Nonnull @Override
-    <C, R> BatchStage<R> mapUsingService(
-            @Nonnull ServiceFactory<C> serviceFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
+    <S, R> BatchStage<R> mapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
     );
 
     @Nonnull @Override
-    <C, R> BatchStage<R> mapUsingServiceAsync(
-            @Nonnull ServiceFactory<C> serviceFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
+    <S, R> BatchStage<R> mapUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     );
 
     @Nonnull @Override
-    <C> BatchStage<T> filterUsingService(
-            @Nonnull ServiceFactory<C> serviceFactory,
-            @Nonnull TriPredicate<? super C, ? super K, ? super T> filterFn
+    <S> BatchStage<T> filterUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
     );
 
     @Nonnull @Override
-    <C> BatchStage<T> filterUsingServiceAsync(
-            @Nonnull ServiceFactory<C> serviceFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+    <S> BatchStage<T> filterUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     );
 
     @Nonnull @Override
-    <C, R> BatchStage<R> flatMapUsingService(
-            @Nonnull ServiceFactory<C> serviceFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    <S, R> BatchStage<R> flatMapUsingService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
 
     @Nonnull @Override
-    <C, R> BatchStage<R> flatMapUsingServiceAsync(
-            @Nonnull ServiceFactory<C> serviceFactory,
-            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
+    <S, R> BatchStage<R> flatMapUsingServiceAsync(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     );
 

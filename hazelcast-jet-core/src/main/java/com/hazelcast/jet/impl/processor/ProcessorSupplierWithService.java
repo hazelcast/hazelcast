@@ -70,9 +70,9 @@ public final class ProcessorSupplierWithService<S> implements ProcessorSupplier 
     }
 
     @Nonnull
-    public static <C> ProcessorSupplier supplierWithService(
-            @Nonnull ServiceFactory<C> serviceFactory,
-            @Nonnull BiFunctionEx<ServiceFactory<C>, C, Processor> createProcessorFn
+    public static <S> ProcessorSupplier supplierWithService(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull BiFunctionEx<ServiceFactory<S>, S, Processor> createProcessorFn
     ) {
         return new ProcessorSupplierWithService<>(serviceFactory, createProcessorFn);
     }

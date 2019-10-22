@@ -105,13 +105,13 @@ public final class TransformUsingServiceP<S, T, R> extends AbstractProcessor {
      * The {@link ResettableSingletonTraverser} is passed as a first argument to
      * {@code flatMapFn}, it can be used if needed.
      */
-    public static <C, T, R> ProcessorSupplier supplier(
-            @Nonnull ServiceFactory<C> serviceFactory,
-            @Nonnull TriFunction<ResettableSingletonTraverser<R>, ? super C, ? super T,
+    public static <S, T, R> ProcessorSupplier supplier(
+            @Nonnull ServiceFactory<S> serviceFactory,
+            @Nonnull TriFunction<ResettableSingletonTraverser<R>, ? super S, ? super T,
                                             ? extends Traverser<? extends R>> flatMapFn
     ) {
         return supplierWithService(serviceFactory,
-                (serviceFn, service) -> new TransformUsingServiceP<C, T, R>(serviceFn, service, flatMapFn)
+                (serviceFn, service) -> new TransformUsingServiceP<S, T, R>(serviceFn, service, flatMapFn)
         );
     }
 }
