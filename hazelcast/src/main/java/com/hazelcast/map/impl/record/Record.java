@@ -34,31 +34,27 @@ public interface Record<V> {
      * (int) rather than full blown epoch based vals (long)
      * This allows for a space in seconds, of roughly 68 years.
      *
-     * Reference value (1514764800000) - Monday, January 1, 2018 12:00:00 AM
+     * Reference value (1514764800000) -
+     * Monday, January 1, 2018 12:00:00 AM
      *
      * The fixed time in the past (instead of {@link
-     * System#currentTimeMillis()} prevents any time discrepancies among nodes,
-     * mis-translated as diffs of -1 ie. {@link Record#NOT_AVAILABLE} values.
-     * (see. https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
+     * System#currentTimeMillis()} prevents any time
+     * discrepancies among nodes, mis-translated as
+     * diffs of -1 ie. {@link Record#UNSET} values. (see.
+     * https://github.com/hazelcast/hazelcast-enterprise/issues/2527)
      */
     long EPOCH_TIME = zeroOutMs(1514764800000L);
 
     /**
-     * Default TTL value of a record.
+     * Represents an unset value. This is the default
+     * value of ttl, max-idle or anything unavailable.
      */
-    long DEFAULT_TTL = -1L;
-
-    /**
-     * Default Max Idle value of a record.
-     */
-    long DEFAULT_MAX_IDLE = -1L;
+    int UNSET = -1;
 
     /**
      * If not a {@link com.hazelcast.map.impl.record.CachedDataRecord}.
      */
     Object NOT_CACHED = new Object();
-
-    int NOT_AVAILABLE = -1;
 
     Data getKey();
 
@@ -96,8 +92,9 @@ public interface Record<V> {
      *
      * @param expectedValue the expected cached value
      * @param newValue      the new cached value
-     * @return {@code true} if successful. False return indicates that
-     * the actual cached value was not equal to the expected cached value.
+     * @return {@code true} if successful. False
+     * return indicates that the actual cached value
+     * was not equal to the expected cached value.
      */
     boolean casCachedValue(Object expectedValue, Object newValue);
 
@@ -128,7 +125,7 @@ public interface Record<V> {
     /**
      * Only used for Hot Restart, HDRecord
      *
-     * @return
+     * @return current sequence number
      */
     long getSequence();
 
@@ -142,7 +139,7 @@ public interface Record<V> {
     Metadata getMetadata();
 
     default long recomputeWithBaseTime(int value) {
-        if (value == NOT_AVAILABLE) {
+        if (value == UNSET) {
             return 0L;
         }
 
@@ -151,7 +148,7 @@ public interface Record<V> {
     }
 
     default int stripBaseTime(long value) {
-        int diff = NOT_AVAILABLE;
+        int diff = UNSET;
         if (value > 0) {
             diff = (int) MILLISECONDS.toSeconds(value - EPOCH_TIME);
         }
@@ -204,7 +201,6 @@ public interface Record<V> {
         setLastAccessTime(now);
     }
 
-
     default void onUpdate(long now) {
         setVersion(getVersion() + 1);
         setLastUpdateTime(now);
@@ -214,13 +210,13 @@ public interface Record<V> {
         setLastStoredTime(Clock.currentTimeMillis());
     }
 
-    // Below raw methods are used during serialization of a record.
-
     /**
-     * @return record reader writer id to be used
-     * when serializing/de-serializing this record object.
+     * @return record reader writer to be used when
+     * serializing/de-serializing this record instance.
      */
     RecordReaderWriter getMatchingRecordReaderWriter();
+
+    /* Below `raw` methods are used during serialization of a record. */
 
     int getRawTtl();
 

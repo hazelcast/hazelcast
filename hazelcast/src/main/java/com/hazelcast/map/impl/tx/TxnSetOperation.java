@@ -34,7 +34,7 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * An operation to unlock and set (key,value) on the partition .
@@ -84,7 +84,7 @@ public class TxnSetOperation extends BasePutOperation
                 oldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-            recordStore.setTxn(dataKey, dataValue, ttl, DEFAULT_MAX_IDLE, transactionId);
+            recordStore.setTxn(dataKey, dataValue, ttl, UNSET, transactionId);
             shouldBackup = true;
         }
     }

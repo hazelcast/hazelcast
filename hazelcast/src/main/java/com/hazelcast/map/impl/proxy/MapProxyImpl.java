@@ -82,8 +82,7 @@ import static com.hazelcast.internal.util.TimeUtil.timeInMsOrTimeIfNullUnit;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newDelegatingFuture;
 import static java.util.Collections.emptyMap;
@@ -110,7 +109,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V put(@Nonnull K key, @Nonnull V value) {
-        return put(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
+        return put(key, value, UNSET, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -120,7 +119,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        Data result = putInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS);
+        Data result = putInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
         return toObject(result);
     }
 
@@ -150,7 +149,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V putIfAbsent(@Nonnull K key, @Nonnull V value) {
-        return putIfAbsent(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
+        return putIfAbsent(key, value, UNSET, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -161,7 +160,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS);
+        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
         return toObject(result);
     }
 
@@ -186,7 +185,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        putTransientInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS);
+        putTransientInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -224,7 +223,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public void set(@Nonnull K key, @Nonnull V value) {
-        set(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
+        set(key, value, UNSET, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -234,7 +233,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(ttlUnit, NULL_TTL_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        setInternal(key, valueData, ttl, ttlUnit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS);
+        setInternal(key, valueData, ttl, ttlUnit, UNSET, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -347,7 +346,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public InternalCompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value) {
-        return putAsync(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
+        return putAsync(key, value, UNSET, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -360,7 +359,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         Data valueData = toData(value);
         return newDelegatingFuture(
                 serializationService,
-                putAsyncInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS));
+                putAsyncInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS));
     }
 
     @Override
@@ -380,7 +379,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public InternalCompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value) {
-        return setAsync(key, value, DEFAULT_TTL, TimeUnit.MILLISECONDS);
+        return setAsync(key, value, UNSET, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -392,7 +391,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         Data valueData = toData(value);
         return newDelegatingFuture(
                 serializationService,
-                setAsyncInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS));
+                setAsyncInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS));
     }
 
     @Override

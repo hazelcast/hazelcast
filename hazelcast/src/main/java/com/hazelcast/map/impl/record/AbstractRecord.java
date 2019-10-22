@@ -44,10 +44,10 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "Record can be accessed by only its own partition thread.")
     protected volatile int hits;
-    private volatile int lastAccessTime = NOT_AVAILABLE;
-    private volatile int lastUpdateTime = NOT_AVAILABLE;
+    private volatile int lastAccessTime = UNSET;
+    private volatile int lastUpdateTime = UNSET;
 
-    private int creationTime = NOT_AVAILABLE;
+    private int creationTime = UNSET;
     // TODO add cost of metadata to memory-cost calculations
     private transient Metadata metadata;
 
@@ -147,7 +147,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public final long getSequence() {
-        return NOT_AVAILABLE;
+        return UNSET;
     }
 
     @Override
@@ -156,7 +156,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getExpirationTime() {
-        return NOT_AVAILABLE;
+        return UNSET;
     }
 
     @Override
@@ -165,7 +165,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getLastStoredTime() {
-        return NOT_AVAILABLE;
+        return UNSET;
     }
 
     @Override

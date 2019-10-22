@@ -172,7 +172,7 @@ import static com.hazelcast.internal.util.TimeUtil.timeInMsOrTimeIfNullUnit;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -260,7 +260,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
+        return putInternal(UNSET, MILLISECONDS, null, null, key, value);
     }
 
     @Override
@@ -368,7 +368,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putAsyncInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
+        return putAsyncInternal(UNSET, MILLISECONDS, null, null, key, value);
     }
 
     @Override
@@ -415,7 +415,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public InternalCompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value) {
-        return setAsync(key, value, DEFAULT_TTL, MILLISECONDS);
+        return setAsync(key, value, UNSET, MILLISECONDS);
     }
 
     @Override
@@ -579,7 +579,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putIfAbsentInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
+        return putIfAbsentInternal(UNSET, MILLISECONDS, null, null, key, value);
     }
 
     @Override
@@ -695,7 +695,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public void lock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        lockInternal(key, timeInMsOrTimeIfNullUnit(DEFAULT_TTL, MILLISECONDS));
+        lockInternal(key, timeInMsOrTimeIfNullUnit(UNSET, MILLISECONDS));
     }
 
     @Override
@@ -1633,7 +1633,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void set(@Nonnull K key, @Nonnull V value) {
-        set(key, value, DEFAULT_TTL, MILLISECONDS);
+        set(key, value, UNSET, MILLISECONDS);
     }
 
     @Override

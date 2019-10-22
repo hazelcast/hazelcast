@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
@@ -25,7 +26,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -49,8 +49,7 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.record.Record.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * Contains eviction specific functionality.
@@ -281,7 +280,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private long getRecordMaxIdleOrConfig(Record record) {
-        if (record.getMaxIdle() != DEFAULT_MAX_IDLE) {
+        if (record.getMaxIdle() != UNSET) {
             return record.getMaxIdle();
         }
 
@@ -289,7 +288,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private long getRecordTTLOrConfig(Record record) {
-        if (record.getTtl() != DEFAULT_TTL) {
+        if (record.getTtl() != UNSET) {
             return record.getTtl();
         }
 
