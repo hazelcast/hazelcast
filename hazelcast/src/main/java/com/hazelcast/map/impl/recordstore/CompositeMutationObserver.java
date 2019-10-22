@@ -22,109 +22,117 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.Collection;
 import java.util.LinkedList;
 
-class CompositeRecordStoreMutationObserver<R extends Record> implements RecordStoreMutationObserver<R> {
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
-    private final Collection<RecordStoreMutationObserver<R>> mutationObservers = new LinkedList<>();
+class CompositeMutationObserver<R extends Record> implements MutationObserver<R> {
 
-    CompositeRecordStoreMutationObserver(Collection<RecordStoreMutationObserver<R>> mutationObservers) {
-        this.mutationObservers.addAll(mutationObservers);
+    private Collection<MutationObserver<R>> mutationObservers;
+
+    CompositeMutationObserver() {
+    }
+
+    void add(MutationObserver<R> mutationObserver) {
+        if (mutationObservers == null) {
+            mutationObservers = new LinkedList<>();
+        }
+        mutationObservers.add(mutationObserver);
     }
 
     @Override
     public void onClear() {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onClear();
         }
     }
 
     @Override
     public void onPutRecord(Data key, R record) {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onPutRecord(key, record);
         }
     }
 
     @Override
     public void onReplicationPutRecord(Data key, R record) {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onReplicationPutRecord(key, record);
         }
     }
 
     @Override
     public void onUpdateRecord(Data key, R record, Object newValue) {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onUpdateRecord(key, record, newValue);
         }
     }
 
     @Override
     public void onRemoveRecord(Data key, R record) {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onRemoveRecord(key, record);
         }
     }
 
     @Override
     public void onEvictRecord(Data key, R record) {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onEvictRecord(key, record);
         }
     }
 
     @Override
     public void onLoadRecord(Data key, R record) {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onLoadRecord(key, record);
         }
     }
 
     @Override
     public void onDestroy(boolean internal) {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onDestroy(internal);
         }
     }
 
     @Override
     public void onReset() {
-        if (mutationObservers.isEmpty()) {
+        if (isEmpty(mutationObservers)) {
             return;
         }
 
-        for (RecordStoreMutationObserver<R> mutationObserver : mutationObservers) {
+        for (MutationObserver<R> mutationObserver : mutationObservers) {
             mutationObserver.onReset();
         }
     }

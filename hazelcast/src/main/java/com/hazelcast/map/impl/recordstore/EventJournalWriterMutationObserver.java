@@ -23,14 +23,14 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 
-public class EventJournalWriterRecordStoreMutationObserver implements RecordStoreMutationObserver {
+public class EventJournalWriterMutationObserver implements MutationObserver {
     private final MapEventJournal eventJournal;
     private final int partitionId;
     private final EventJournalConfig eventJournalConfig;
     private final ObjectNamespace objectNamespace;
 
-    public EventJournalWriterRecordStoreMutationObserver(MapEventJournal eventJournal, MapContainer mapContainer,
-                                                         int partitionId) {
+    public EventJournalWriterMutationObserver(MapEventJournal eventJournal, MapContainer mapContainer,
+                                              int partitionId) {
         this.eventJournal = eventJournal;
         this.partitionId = partitionId;
         this.eventJournalConfig = mapContainer.getEventJournalConfig();

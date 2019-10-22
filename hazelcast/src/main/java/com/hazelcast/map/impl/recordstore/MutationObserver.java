@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
  *
  * @param <R> The type of the records in the observed {@link RecordStore}
  */
-public interface RecordStoreMutationObserver<R extends Record> {
+public interface MutationObserver<R extends Record> {
     /**
      * Called if the observed {@link RecordStore} is cleared
      */

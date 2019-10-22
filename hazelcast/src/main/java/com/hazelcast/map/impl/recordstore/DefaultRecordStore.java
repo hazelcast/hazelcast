@@ -1300,7 +1300,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * only releases internal resources of backing data structure.
      *
      * @param isDuringShutdown {@link Storage#clear(boolean)}
-     * @param internal         see {@link RecordStoreMutationObserver#onDestroy(boolean)}}
+     * @param internal         see {@link MutationObserver#onDestroy(boolean)}}
      */
     public void destroyStorageAfterClear(boolean isDuringShutdown, boolean internal) {
         clearStorage(isDuringShutdown);
