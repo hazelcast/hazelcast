@@ -93,8 +93,9 @@ public final class ThreadLeakTestUtils {
     private static Set<Thread> getNonSystemAndNonCommonPoolThreads(Map<Thread, StackTraceElement[]> stackTraces) {
         Set<Thread> nonSystemThreads = new HashSet<>();
         for (Thread thread : stackTraces.keySet()) {
-            if (thread.getThreadGroup().getParent() != null && !thread.getName().contains("ForkJoinPool.commonPool")) {
-                // non-system thread
+            ThreadGroup threadGroup = thread.getThreadGroup();
+            if (threadGroup != null && threadGroup.getParent() != null && !thread.getName().contains("ForkJoinPool.commonPool")) {
+                // non-system alive thread
                 nonSystemThreads.add(thread);
             }
         }
