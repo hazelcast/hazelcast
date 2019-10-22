@@ -34,7 +34,11 @@ public final class PredicateUtils {
 
     private static final int MAX_INDEX_COMPONENTS = 255;
 
-    private static final Pattern THIS_PATTERN = Pattern.compile("^this\\.");
+    private static final String THIS_DOT = "this.";
+
+    private static final String KEY_HASH = "__key#";
+
+    private static final String KEY_DOT = "__key.";
 
     private static final Pattern COMMA_PATTERN = Pattern.compile("\\s*,\\s*");
 
@@ -86,15 +90,25 @@ public final class PredicateUtils {
     }
 
     /**
-     * Produces canonical attribute representation by stripping an unnecessary
-     * "this." qualifier from the passed attribute, if any.
+     * Produces canonical attribute representation in the following way:
+     *
+     * <ol>
+     * <li>Strips an unnecessary "this." qualifier from the passed attribute.
+     * <li>Replaces "__key#" qualifier with "__key.".
+     * </ol>
      *
      * @param attribute the attribute to canonicalize.
      * @return the canonicalized attribute representation.
      * @see #constructCanonicalCompositeIndexName
      */
     public static String canonicalizeAttribute(String attribute) {
-        return THIS_PATTERN.matcher(attribute).replaceFirst("");
+        if (attribute.startsWith(THIS_DOT)) {
+            return attribute.substring(THIS_DOT.length());
+        }
+        if (attribute.startsWith(KEY_HASH)) {
+            return KEY_DOT + attribute.substring(KEY_HASH.length());
+        }
+        return attribute;
     }
 
     /**
