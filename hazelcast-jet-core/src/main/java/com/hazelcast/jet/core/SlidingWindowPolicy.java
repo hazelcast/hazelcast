@@ -20,12 +20,12 @@ import com.hazelcast.internal.util.Preconditions;
 
 import java.io.Serializable;
 
-import static com.hazelcast.jet.impl.util.Util.addClamped;
-import static com.hazelcast.jet.impl.util.Util.subtractClamped;
-import static com.hazelcast.jet.impl.util.Util.sumHadOverflow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.jet.impl.util.Util.addClamped;
+import static com.hazelcast.jet.impl.util.Util.subtractClamped;
+import static com.hazelcast.jet.impl.util.Util.sumHadOverflow;
 import static java.lang.Math.floorMod;
 
 /**

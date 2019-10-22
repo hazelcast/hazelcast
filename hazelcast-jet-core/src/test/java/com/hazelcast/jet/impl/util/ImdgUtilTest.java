@@ -19,10 +19,10 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.map.IMap;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.map.IMap;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

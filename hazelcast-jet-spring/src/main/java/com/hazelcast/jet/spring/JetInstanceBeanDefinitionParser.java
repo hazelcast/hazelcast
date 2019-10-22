@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.spring;
 
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.spring.AbstractHazelcastBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastConfigBeanDefinitionParser;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;

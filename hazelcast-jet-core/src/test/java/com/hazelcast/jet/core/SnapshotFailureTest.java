@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -28,7 +29,6 @@ import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGe
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.function.SupplierEx;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

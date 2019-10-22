@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.examples.jdbc;
 
-import com.hazelcast.map.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import org.h2.tools.DeleteDbFiles;
 
 import java.nio.file.Files;

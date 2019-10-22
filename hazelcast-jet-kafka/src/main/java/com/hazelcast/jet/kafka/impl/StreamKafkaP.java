@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.kafka.impl;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -24,9 +27,6 @@ import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.kafka.KafkaProcessors;
-import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;

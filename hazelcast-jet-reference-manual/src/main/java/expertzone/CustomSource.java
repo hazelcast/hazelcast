@@ -16,6 +16,7 @@
 
 package expertzone;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
@@ -28,7 +29,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
-import com.hazelcast.cluster.Address;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;

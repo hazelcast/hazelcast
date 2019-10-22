@@ -22,8 +22,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.function.Functions.wholeItem;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

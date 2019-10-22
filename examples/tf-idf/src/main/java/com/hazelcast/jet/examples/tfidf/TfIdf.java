@@ -39,12 +39,12 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toMap;
-import static com.hazelcast.function.Functions.entryKey;
-import static com.hazelcast.function.Functions.entryValue;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;

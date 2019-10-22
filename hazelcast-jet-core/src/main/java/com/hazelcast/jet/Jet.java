@@ -32,6 +32,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
@@ -41,7 +42,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

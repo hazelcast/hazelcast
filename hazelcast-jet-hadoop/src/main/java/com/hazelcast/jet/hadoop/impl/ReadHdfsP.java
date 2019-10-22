@@ -18,8 +18,8 @@ package com.hazelcast.jet.hadoop.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;

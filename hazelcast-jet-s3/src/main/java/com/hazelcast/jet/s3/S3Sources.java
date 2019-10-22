@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.s3;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;

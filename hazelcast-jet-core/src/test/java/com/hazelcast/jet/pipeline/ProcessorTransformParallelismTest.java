@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.function.FunctionEx;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.function.Functions.wholeItem;
+import static com.hazelcast.jet.core.Edge.from;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;

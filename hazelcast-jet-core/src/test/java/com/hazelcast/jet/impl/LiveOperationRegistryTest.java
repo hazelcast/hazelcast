@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.impl.operation.AsyncJobOperation;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.jet.impl.operation.AsyncJobOperation;
 import com.hazelcast.spi.impl.operationservice.CallsPerMember;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
@@ -24,7 +25,6 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
-import com.hazelcast.function.SupplierEx;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,10 +39,10 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
+import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
-import static com.hazelcast.function.Functions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;

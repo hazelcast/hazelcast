@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -31,8 +33,6 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JobRepository;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.function.SupplierEx;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

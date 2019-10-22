@@ -43,12 +43,12 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.stream.Stream;
 
+import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
-import static com.hazelcast.function.Functions.entryValue;
 
 /**
  * Demonstrates the usage of the Pipeline API to enrich a data stream. We

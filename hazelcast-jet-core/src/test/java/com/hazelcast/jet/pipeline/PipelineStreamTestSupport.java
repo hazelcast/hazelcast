@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.internal.util.Preconditions;
 
 import java.util.List;
 import java.util.Map.Entry;

@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
@@ -24,9 +27,6 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
-import com.hazelcast.function.ToLongFunctionEx;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

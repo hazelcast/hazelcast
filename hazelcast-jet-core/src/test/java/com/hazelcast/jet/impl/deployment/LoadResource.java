@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.cluster.Address;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;

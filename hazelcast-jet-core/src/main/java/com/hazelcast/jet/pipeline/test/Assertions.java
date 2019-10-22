@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.pipeline.test;
 
+import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.spi.annotation.Beta;
-import com.hazelcast.function.ConsumerEx;
-import com.hazelcast.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

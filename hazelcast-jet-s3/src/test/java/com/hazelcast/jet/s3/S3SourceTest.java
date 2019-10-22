@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.s3;
 
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import software.amazon.awssdk.regions.Region;

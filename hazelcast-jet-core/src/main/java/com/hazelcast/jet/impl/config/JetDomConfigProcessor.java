@@ -18,11 +18,11 @@ package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.AbstractDomConfigProcessor;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.config.MetricsConfig;
 import org.w3c.dom.Node;
 
 import java.util.Optional;

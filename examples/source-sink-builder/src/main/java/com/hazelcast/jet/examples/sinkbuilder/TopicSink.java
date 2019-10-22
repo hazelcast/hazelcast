@@ -16,19 +16,19 @@
 
 package com.hazelcast.jet.examples.sinkbuilder;
 
-import com.hazelcast.topic.ITopic;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.topic.ITopic;
 
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.function.Consumer;
 
-import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.pipeline.SinkBuilder.sinkBuilder;
 
 /**
  * Shows how to use the {@link com.hazelcast.jet.pipeline.SinkBuilder} to

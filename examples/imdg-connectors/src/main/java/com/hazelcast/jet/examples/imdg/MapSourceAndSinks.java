@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.examples.imdg;
 
-import com.hazelcast.map.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.jet.Util.entry;
 
 /**
  * Demonstrates the usage of Hazelcast IMap as source and sink with the Pipeline API.

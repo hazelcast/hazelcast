@@ -28,8 +28,8 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.function.Functions.wholeItem;
+import static com.hazelcast.jet.Traversers.traverseArray;
 
 public class WhatIsDistributedComputing {
     static void s1() {

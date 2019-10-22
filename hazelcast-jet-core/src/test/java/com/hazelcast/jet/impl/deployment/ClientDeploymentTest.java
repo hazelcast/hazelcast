@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.internal.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;

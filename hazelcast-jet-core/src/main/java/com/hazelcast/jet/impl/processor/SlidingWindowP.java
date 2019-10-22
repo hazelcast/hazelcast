@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -33,7 +34,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,6 +51,9 @@ import java.util.function.ToLongFunction;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.function.ComparatorEx.naturalOrder;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
@@ -61,9 +64,6 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.function.ComparatorEx.naturalOrder;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.emptyMap;

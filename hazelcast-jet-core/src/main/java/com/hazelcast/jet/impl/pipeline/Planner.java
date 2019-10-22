@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.DAG;
@@ -35,8 +37,6 @@ import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

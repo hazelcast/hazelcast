@@ -19,11 +19,11 @@ package com.hazelcast.jet.examples.spring.source;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.examples.spring.dao.UserDao;
+import com.hazelcast.jet.examples.spring.model.User;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.spring.context.SpringAware;
-import com.hazelcast.jet.examples.spring.dao.UserDao;
-import com.hazelcast.jet.examples.spring.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;

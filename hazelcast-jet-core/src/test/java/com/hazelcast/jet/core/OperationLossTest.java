@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -28,7 +29,6 @@ import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.ImdgUtil;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.Before;
@@ -37,6 +37,7 @@ import org.junit.Test;
 
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
@@ -45,7 +46,6 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
-import static com.hazelcast.function.FunctionEx.identity;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

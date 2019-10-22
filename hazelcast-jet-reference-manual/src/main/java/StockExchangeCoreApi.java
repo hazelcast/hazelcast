@@ -25,8 +25,8 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.examples.enrichment.datamodel.Trade;
-import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 
 import java.time.Instant;

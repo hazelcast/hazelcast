@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;

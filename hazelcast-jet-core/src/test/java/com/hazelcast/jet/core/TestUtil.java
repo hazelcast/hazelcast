@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.util.ThrottleWrappedP;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
-import com.hazelcast.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;

@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.s3;
 
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.s3.S3Sinks.S3SinkContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.function.SupplierEx;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

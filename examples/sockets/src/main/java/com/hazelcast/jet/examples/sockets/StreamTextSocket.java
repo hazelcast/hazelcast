@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.examples.sockets;
 
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.function.ConsumerEx;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -23,8 +25,6 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.FunctionEx;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

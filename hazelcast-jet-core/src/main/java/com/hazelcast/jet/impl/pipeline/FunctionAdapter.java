@@ -16,6 +16,12 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
+import com.hazelcast.function.BiConsumerEx;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.PredicateEx;
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
@@ -29,12 +35,6 @@ import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.JoinClause;
-import com.hazelcast.function.BiConsumerEx;
-import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.BiPredicateEx;
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.PredicateEx;
-import com.hazelcast.function.ToLongFunctionEx;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;

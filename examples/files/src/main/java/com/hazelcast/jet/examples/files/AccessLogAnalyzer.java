@@ -30,8 +30,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.function.Functions.wholeItem;
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 
 /**
  * Demonstrates the usage of the file {@link Sources#files sources} and

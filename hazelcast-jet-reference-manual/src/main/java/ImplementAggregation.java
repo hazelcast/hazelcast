@@ -19,12 +19,12 @@ import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
-import com.hazelcast.jet.pipeline.BatchStage;
-import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.examples.enrichment.datamodel.AddToCart;
 import com.hazelcast.jet.examples.enrichment.datamodel.PageVisit;
 import com.hazelcast.jet.examples.enrichment.datamodel.Payment;
+import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sources;
 
 import java.util.Map.Entry;
 

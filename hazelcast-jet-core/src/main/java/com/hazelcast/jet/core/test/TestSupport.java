@@ -18,10 +18,10 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Processor;
@@ -47,8 +47,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.function.FunctionEx.identity;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
 import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;

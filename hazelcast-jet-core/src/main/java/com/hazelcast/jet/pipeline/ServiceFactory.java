@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * A holder of functions needed to create and destroy a service object.

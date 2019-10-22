@@ -24,13 +24,13 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.pipeline.Pipeline;
 
+import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
-import static com.hazelcast.function.Functions.entryKey;
-import static com.hazelcast.function.Functions.wholeItem;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 class Dag {

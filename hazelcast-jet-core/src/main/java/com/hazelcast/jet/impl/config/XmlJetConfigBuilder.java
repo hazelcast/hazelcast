@@ -21,10 +21,10 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -34,10 +34,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetMemberConfig;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetMemberConfig;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Loads the {@link JetConfig} using XML.

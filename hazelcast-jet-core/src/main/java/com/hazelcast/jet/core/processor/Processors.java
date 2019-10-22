@@ -16,6 +16,13 @@
 
 package com.hazelcast.jet.core.processor;
 
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.PredicateEx;
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.Util;
@@ -43,13 +50,6 @@ import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.processor.TransformStatefulP;
 import com.hazelcast.jet.impl.processor.TransformUsingServiceP;
 import com.hazelcast.jet.pipeline.ServiceFactory;
-import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.BiPredicateEx;
-import com.hazelcast.function.ConsumerEx;
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.PredicateEx;
-import com.hazelcast.function.SupplierEx;
-import com.hazelcast.function.ToLongFunctionEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -58,8 +58,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.core.TimestampKind.EVENT;
 import static com.hazelcast.function.FunctionEx.identity;
+import static com.hazelcast.jet.core.TimestampKind.EVENT;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;

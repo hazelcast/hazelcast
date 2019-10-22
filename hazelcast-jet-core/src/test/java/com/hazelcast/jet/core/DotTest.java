@@ -29,11 +29,11 @@ import org.junit.runner.RunWith;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.function.Functions.wholeItem;
+import static com.hazelcast.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
-import static com.hazelcast.function.Functions.wholeItem;
-import static com.hazelcast.function.PredicateEx.alwaysTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

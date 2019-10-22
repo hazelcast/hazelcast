@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.function.SupplierEx;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

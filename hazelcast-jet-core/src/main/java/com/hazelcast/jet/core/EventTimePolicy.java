@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.core.function.ObjLongBiFunction;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
+import com.hazelcast.jet.core.function.ObjLongBiFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * A holder of functions and parameters Jet needs to handle event time and the

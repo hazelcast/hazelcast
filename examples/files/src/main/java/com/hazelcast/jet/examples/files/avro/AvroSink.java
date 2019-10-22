@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.examples.files.avro;
 
-import com.hazelcast.map.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.avro.AvroSinks;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.IMap;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 

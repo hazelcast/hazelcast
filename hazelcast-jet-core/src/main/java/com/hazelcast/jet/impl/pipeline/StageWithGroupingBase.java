@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
-import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.GeneralStageWithKey;
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

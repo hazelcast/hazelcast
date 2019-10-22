@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetClusterMetadataCodec;
 import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetGetClusterMetadataMessageTask

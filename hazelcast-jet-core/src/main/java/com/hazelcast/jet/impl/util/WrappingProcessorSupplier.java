@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

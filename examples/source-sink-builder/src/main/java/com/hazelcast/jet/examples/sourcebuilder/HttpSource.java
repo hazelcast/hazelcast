@@ -18,6 +18,9 @@ package com.hazelcast.jet.examples.sourcebuilder;
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.examples.sourcebuilder.support.MemoryUsageMetric;
+import com.hazelcast.jet.examples.sourcebuilder.support.SystemMonitorGui;
+import com.hazelcast.jet.examples.sourcebuilder.support.SystemMonitorHttpService;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SourceBuilder;
@@ -27,9 +30,6 @@ import io.undertow.Undertow;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import com.hazelcast.jet.examples.sourcebuilder.support.MemoryUsageMetric;
-import com.hazelcast.jet.examples.sourcebuilder.support.SystemMonitorGui;
-import com.hazelcast.jet.examples.sourcebuilder.support.SystemMonitorHttpService;
 
 import java.io.BufferedReader;
 import java.io.IOException;
