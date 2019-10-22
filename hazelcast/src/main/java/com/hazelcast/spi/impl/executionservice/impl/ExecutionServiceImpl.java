@@ -21,9 +21,8 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -51,6 +50,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
@@ -390,23 +390,30 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+        public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
+                                          MetricsCollectionContext context) {
             for (ManagedExecutorService executorService : executors.values()) {
-                MetricTagger tagger = taggerSupplier.getMetricTagger("internal-executor")
-                                                    .withIdTag("executor", executorService.getName());
-                context.collect(tagger, executorService);
+                MutableMetricDescriptor descriptor = descriptorSupplier
+                        .get()
+                        .withPrefix("internal-executor")
+                        .withDiscriminator("executor", executorService.getName());
+                context.collect(descriptor, executorService);
             }
 
             for (ManagedExecutorService executorService : durableExecutors.values()) {
-                MetricTagger tagger = taggerSupplier.getMetricTagger("durable-executor")
-                                                    .withIdTag("executor", executorService.getName());
-                context.collect(tagger, executorService);
+                MutableMetricDescriptor descriptor = descriptorSupplier
+                        .get()
+                        .withPrefix("durable-executor")
+                        .withDiscriminator("executor", executorService.getName());
+                context.collect(descriptor, executorService);
             }
 
             for (ManagedExecutorService executorService : scheduleDurableExecutors.values()) {
-                MetricTagger tagger = taggerSupplier.getMetricTagger("scheduled-durable-executor")
-                                                    .withIdTag("executor", executorService.getName());
-                context.collect(tagger, executorService);
+                MutableMetricDescriptor descriptor = descriptorSupplier
+                        .get()
+                        .withPrefix("scheduled-durable-executor")
+                        .withDiscriminator("executor", executorService.getName());
+                context.collect(descriptor, executorService);
             }
         }
     }

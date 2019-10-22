@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
@@ -30,6 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static java.util.Collections.EMPTY_SET;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -70,9 +72,14 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectLong("[metric=foo]", 10, EMPTY_SET);
-        verify(renderer).collectLong("[metric=bar]", 20, EMPTY_SET);
+        verify(renderer).collectLong(metricDescriptor("foo"), 10, EMPTY_SET);
+        verify(renderer).collectLong(metricDescriptor("bar"), 20, EMPTY_SET);
         verifyNoMoreInteractions(renderer);
+    }
+
+    private MetricDescriptor metricDescriptor(String metric) {
+        return DEFAULT_DESCRIPTOR_SUPPLIER.get()
+                                          .withMetric(metric);
     }
 
     @Test
@@ -84,8 +91,8 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectDouble("[metric=foo]", 10, EMPTY_SET);
-        verify(renderer).collectDouble("[metric=bar]", 20, EMPTY_SET);
+        verify(renderer).collectDouble(metricDescriptor("foo"), 10, EMPTY_SET);
+        verify(renderer).collectDouble(metricDescriptor("bar"), 20, EMPTY_SET);
         verifyNoMoreInteractions(renderer);
     }
 
@@ -102,7 +109,7 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectException("[metric=foo]", ex, EMPTY_SET);
+        verify(renderer).collectException(metricDescriptor("foo"), ex, EMPTY_SET);
         verifyNoMoreInteractions(renderer);
     }
 }

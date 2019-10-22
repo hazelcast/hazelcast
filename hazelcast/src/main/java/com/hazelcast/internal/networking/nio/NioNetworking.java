@@ -18,10 +18,9 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
@@ -47,6 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
@@ -326,39 +326,52 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+    public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
+                                      MetricsCollectionContext context) {
         for (Channel channel : channels) {
             String pipelineId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
 
-            MetricTagger taggerIn = taggerSupplier.getMetricTagger("tcp.connection.in")
-                                                  .withIdTag("pipelineId", pipelineId);
-            context.collect(taggerIn, channel.inboundPipeline());
+            MutableMetricDescriptor descriptorIn = descriptorSupplier
+                    .get()
+                    .withPrefix("tcp.connection.in")
+                    .withDiscriminator("pipelineId", pipelineId);
+            context.collect(descriptorIn, channel.inboundPipeline());
 
-            MetricTagger taggerOut = taggerSupplier.getMetricTagger("tcp.connection.out")
-                                                   .withIdTag("pipelineId", pipelineId);
-            context.collect(taggerOut, channel.outboundPipeline());
+            MutableMetricDescriptor descriptorOut = descriptorSupplier
+                    .get()
+                    .withPrefix("tcp.connection.out")
+                    .withDiscriminator("pipelineId", pipelineId);
+            context.collect(descriptorOut, channel.outboundPipeline());
         }
 
         for (NioThread nioThread : inputThreads) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.inputThread")
-                                                .withIdTag("thread", nioThread.getName());
-            context.collect(tagger, nioThread);
+            MutableMetricDescriptor discriminator = descriptorSupplier
+                    .get()
+                    .withPrefix("tcp.inputThread")
+                    .withDiscriminator("thread", nioThread.getName());
+            context.collect(discriminator, nioThread);
         }
 
         for (NioThread nioThread : outputThreads) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.outputThread")
-                                                .withIdTag("thread", nioThread.getName());
-            context.collect(tagger, nioThread);
+            MutableMetricDescriptor discriminator = descriptorSupplier
+                    .get()
+                    .withPrefix("tcp.outputThread")
+                    .withDiscriminator("thread", nioThread.getName());
+            context.collect(discriminator, nioThread);
         }
 
         IOBalancer ioBalancer = this.ioBalancer;
         if (ioBalancer != null) {
-            MetricTagger taggerBalancer = taggerSupplier.getMetricTagger("tcp.balancer");
-            context.collect(taggerBalancer, ioBalancer);
+            MutableMetricDescriptor descriptor = descriptorSupplier
+                    .get()
+                    .withPrefix("tcp.balancer");
+            context.collect(descriptor, ioBalancer);
         }
 
-        MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
-        context.collect(tagger, this);
+        MutableMetricDescriptor descriptor = descriptorSupplier
+                .get()
+                .withPrefix("tcp");
+        context.collect(descriptor, this);
     }
 
     private class ChannelCloseListenerImpl implements ChannelCloseListener {

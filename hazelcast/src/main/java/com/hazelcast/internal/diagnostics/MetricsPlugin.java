@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -53,7 +54,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     private final MetricsRegistry metricsRegistry;
     private final long periodMillis;
-    private final MetricsCollectorImpl probeRenderer = new MetricsCollectorImpl();
+    private final MetricsCollectorImpl metricCollector = new MetricsCollectorImpl();
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
@@ -77,12 +78,12 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
-        probeRenderer.writer = writer;
+        metricCollector.writer = writer;
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
-        probeRenderer.timeMillis = System.currentTimeMillis();
-        metricsRegistry.collect(probeRenderer);
-        probeRenderer.writer = null;
+        metricCollector.timeMillis = System.currentTimeMillis();
+        metricsRegistry.collect(metricCollector);
+        metricCollector.writer = null;
     }
 
     private static class MetricsCollectorImpl implements MetricsCollector {
@@ -92,30 +93,31 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         private long timeMillis;
 
         @Override
-        public void collectLong(String name, long value, Set<MetricTarget> excludedMetricTargets) {
+        public void collectLong(MetricDescriptor descriptor, long value, Set<MetricTarget> excludedMetricTargets) {
             if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
-                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), value);
             }
         }
 
         @Override
-        public void collectDouble(String name, double value, Set<MetricTarget> excludedMetricTargets) {
+        public void collectDouble(MetricDescriptor descriptor, double value, Set<MetricTarget> excludedMetricTargets) {
             if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
-                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), value);
             }
         }
 
         @Override
-        public void collectException(String name, Exception e, Set<MetricTarget> excludedMetricTargets) {
+        public void collectException(MetricDescriptor descriptor, Exception e, Set<MetricTarget> excludedMetricTargets) {
             if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
-                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, e.getClass().getName() + ':' + e.getMessage());
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(),
+                        e.getClass().getName() + ':' + e.getMessage());
             }
         }
 
         @Override
-        public void collectNoValue(String name, Set<MetricTarget> excludedMetricTargets) {
+        public void collectNoValue(MetricDescriptor descriptor, Set<MetricTarget> excludedMetricTargets) {
             if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
-                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, "NA");
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), "NA");
             }
         }
     }

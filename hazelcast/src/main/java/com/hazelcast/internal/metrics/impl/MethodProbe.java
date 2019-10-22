@@ -18,9 +18,8 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
 
@@ -50,36 +49,40 @@ abstract class MethodProbe implements ProbeFunction, ProbeAware {
     private static final Object[] EMPTY_ARGS = new Object[0];
 
     final Method method;
-    final Probe probe;
+    final CachedProbe probe;
     final int type;
+    final String methodOrProbeName;
 
     MethodProbe(Method method, Probe probe, int type) {
         this.method = method;
-        this.probe = probe;
+        this.probe = new CachedProbe(probe);
         this.type = type;
+        this.methodOrProbeName = probe.name().length() != 0
+                ? probe.name()
+                : getterIntoProperty(method.getName());
         method.setAccessible(true);
+
     }
 
     @Override
-    public Probe getProbe() {
+    public CachedProbe getProbe() {
         return probe;
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        MetricTagger tagger = metricsRegistry
-                .newMetricTagger(namePrefix)
-                .withMetricTag(getProbeOrMethodName());
-        metricsRegistry.registerInternal(source, tagger, probe.level(), this);
+        MetricDescriptorImpl descriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix(namePrefix)
+                .withMetric(getProbeOrMethodName());
+        metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, MetricTagger tagger, Object source) {
-        metricsRegistry.registerStaticProbe(source, tagger, getProbeOrMethodName(), probe.level(), probe.unit(), this);
+    void register(MetricsRegistryImpl metricsRegistry, MutableMetricDescriptor descriptor, Object source) {
+        metricsRegistry.registerStaticProbe(source, descriptor, getProbeOrMethodName(), probe.level(), probe.unit(), this);
     }
 
     String getProbeOrMethodName() {
-        return probe.name().length() != 0
-                ? probe.name()
-                : getterIntoProperty(method.getName());
+        return methodOrProbeName;
     }
 
     static <S> MethodProbe createMethodProbe(Method method, Probe probe) {

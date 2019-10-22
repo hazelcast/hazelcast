@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics;
 
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
 
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
@@ -30,12 +31,6 @@ import java.util.concurrent.TimeUnit;
  * A MetricsRegistry can contain many {@link Probe} instances. A probe is
  * registered under a name, and can be read by creating a {@link Gauge}, see
  * {@link #newLongGauge(String)}.
- * <p>
- * The name has this form:<pre>
- *     [tag1=foo,tag2=bar,...]
- * </pre>
- * Special characters in values must be escaped, use {@link MetricTagger} to
- * register metrics with properly escaped values.
  * <p>
  * The metrics registry doesn't interpret the name in any way, it is treated as
  * is. For example, {@code [tag1=foo,tag2=bar]} and {@code [tag2=bar,tag1=foo]}
@@ -155,13 +150,13 @@ public interface MetricsRegistry {
      * <p>
      * If an object has no @Probe annotations, the call is ignored.
      *
-     * @param tagger the tagger.
+     * @param descriptor the metric descriptor.
      * @param source the object to scan.
      * @throws NullPointerException     if namePrefix or source is null.
      * @throws IllegalArgumentException if the source contains a Probe
      *                                  annotation on a field/method of unsupported type.
      */
-    <S> void registerStaticMetrics(MetricTagger tagger, S source);
+    <S> void registerStaticMetrics(MutableMetricDescriptor descriptor, S source);
 
     /**
      * Registers dynamic metrics sources that collect metrics in each metrics
@@ -192,7 +187,7 @@ public interface MetricsRegistry {
      * @param function the probe function
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+    <S> void registerStaticProbe(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
                                  ProbeFunction function);
 
     /**
@@ -234,7 +229,7 @@ public interface MetricsRegistry {
      * @param probe  the probe
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+    <S> void registerStaticProbe(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
                                  LongProbeFunction<S> probe);
 
     /**
@@ -276,7 +271,7 @@ public interface MetricsRegistry {
      * @param probe  the probe
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+    <S> void registerStaticProbe(S source, MetricDescriptorImpl descriptor, String name, ProbeLevel level, ProbeUnit unit,
                                  DoubleProbeFunction<S> probe);
 
     /**
@@ -312,17 +307,8 @@ public interface MetricsRegistry {
     void provideMetrics(Object... providers);
 
     /**
-     * Creates a new {@link MetricTagger}.
+     * Creates a new {@link MetricDescriptorImpl}.
      */
-    MetricTagger newMetricTagger();
+    MutableMetricDescriptor newMetricDescriptor();
 
-    /**
-     * Creates a new {@link MetricTagger} with the given metric name prefix.
-     * This prefix will be appended to "metric" tag names for all metrics
-     * created with the MetricTagger.
-     *
-     * @param namePrefix the name prefix.
-     * @return the created builder.
-     */
-    MetricTagger newMetricTagger(String namePrefix);
 }

@@ -16,26 +16,28 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
+import com.hazelcast.internal.metrics.MetricDescriptor;
+
 import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.ValueType;
 
 /**
- * Represents a metric data point (key and value).
+ * Represents a metric data point (descriptor and value).
  */
 public final class Metric {
 
-    private final String key;
+    private final MetricDescriptor descriptor;
     private final ValueType type;
     private long longValue;
     private double doubleValue;
 
-    Metric(String key, ValueType type, long value) {
-        this.key = key;
+    Metric(MetricDescriptor descriptor, ValueType type, long value) {
+        this.descriptor = descriptor;
         this.type = type;
         this.longValue = value;
     }
 
-    Metric(String key, ValueType type, double value) {
-        this.key = key;
+    Metric(MetricDescriptor descriptor, ValueType type, double value) {
+        this.descriptor = descriptor;
         this.type = type;
         this.doubleValue = value;
     }
@@ -48,10 +50,10 @@ public final class Metric {
     public void provide(MetricConsumer consumer) {
         switch (type) {
             case LONG:
-                consumer.consumeLong(key, longValue);
+                consumer.consumeLong(descriptor, longValue);
                 break;
             case DOUBLE:
-                consumer.consumeDouble(key, doubleValue);
+                consumer.consumeDouble(descriptor, doubleValue);
                 break;
             default:
                 throw new IllegalStateException("Unexpected metric value type: " + type);

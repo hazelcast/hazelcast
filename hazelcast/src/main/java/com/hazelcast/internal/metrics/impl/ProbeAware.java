@@ -14,27 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics;
+package com.hazelcast.internal.metrics.impl;
 
 /**
- * Interface used to get a {@link MetricTagger} based on its namespace.
- *
- * @see DynamicMetricsProvider#provideDynamicMetrics(MetricTaggerSupplier, MetricsCollectionContext)
+ * Interface that can return a Probe instance.
  */
-public interface MetricTaggerSupplier {
-
+public interface ProbeAware {
     /**
-     * Gets the {@link MetricTagger} without {@code namespace}.
+     * Returns the probe.
      *
-     * @return The MetricTagger instance
+     * @return the probe
      */
-    MetricTagger getMetricTagger();
-
-    /**
-     * Gets the {@link MetricTagger} with the given {@code namespace}.
-     *
-     * @param namespace The namespace of the MetricTagger
-     * @return The MetricTagger instance
-     */
-    MetricTagger getMetricTagger(String namespace);
+    CachedProbe getProbe();
 }

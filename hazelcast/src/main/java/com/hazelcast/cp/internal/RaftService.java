@@ -63,10 +63,9 @@ import com.hazelcast.cp.internal.raftop.metadata.RemoveCPMemberOp;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
@@ -111,6 +110,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
@@ -809,13 +809,18 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-        MetricTagger rootTagger = taggerSupplier.getMetricTagger("raft.group");
+    public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
+                                      MetricsCollectionContext context) {
+        MutableMetricDescriptor rootDescriptor = descriptorSupplier
+                .get()
+                .withPrefix("raft.group");
         for (Entry<CPGroupId, RaftNodeMetrics> entry : nodeMetrics.entrySet()) {
             CPGroupId groupId = entry.getKey();
-            MetricTagger tagger = rootTagger.withIdTag("groupId", String.valueOf(groupId.getId()))
+            MutableMetricDescriptor descriptor = rootDescriptor
+                    .copy()
+                    .withDiscriminator("groupId", String.valueOf(groupId.getId()))
                     .withTag("name", groupId.getName());
-            context.collect(tagger, entry.getValue());
+            context.collect(descriptor, entry.getValue());
         }
     }
 

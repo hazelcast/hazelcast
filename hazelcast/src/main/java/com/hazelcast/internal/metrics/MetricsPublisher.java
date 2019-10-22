@@ -26,12 +26,12 @@ public interface MetricsPublisher {
     /**
      * Publish the given metric with a long value.
      */
-    void publishLong(String name, long value, Set<MetricTarget> excludedTargets);
+    void publishLong(MetricDescriptor descriptor, long value, Set<MetricTarget> excludedTargets);
 
     /**
      * Publish the given metric with a double value.
      */
-    void publishDouble(String name, double value, Set<MetricTarget> excludedTargets);
+    void publishDouble(MetricDescriptor descriptor, double value, Set<MetricTarget> excludedTargets);
 
     /**
      * Callback is called after all metrics are published for a given

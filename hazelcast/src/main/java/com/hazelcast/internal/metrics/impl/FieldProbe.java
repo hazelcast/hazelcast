@@ -18,9 +18,8 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
 
@@ -46,35 +45,38 @@ import static java.lang.String.format;
  */
 abstract class FieldProbe implements ProbeFunction, ProbeAware {
 
-    final Probe probe;
+    final CachedProbe probe;
     final Field field;
     final int type;
+    final String probeOrFieldName;
 
     FieldProbe(Field field, Probe probe, int type) {
         this.field = field;
-        this.probe = probe;
+        this.probe = new CachedProbe(probe);
         this.type = type;
+        this.probeOrFieldName = probe.name().length() != 0 ? probe.name() : field.getName();
         field.setAccessible(true);
     }
 
     @Override
-    public Probe getProbe() {
+    public CachedProbe getProbe() {
         return probe;
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        MetricTagger tagger = metricsRegistry
-                .newMetricTagger(namePrefix)
-                .withMetricTag(getProbeOrFieldName());
-        metricsRegistry.registerInternal(source, tagger, probe.level(), this);
+        MetricDescriptorImpl descriptor = metricsRegistry
+                .newMetricDescriptor()
+                .withPrefix(namePrefix)
+                .withMetric(getProbeOrFieldName());
+        metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, MetricTagger tagger, Object source) {
-        metricsRegistry.registerStaticProbe(source, tagger, getProbeOrFieldName(), probe.level(), probe.unit(), this);
+    void register(MetricsRegistryImpl metricsRegistry, MutableMetricDescriptor descriptor, Object source) {
+        metricsRegistry.registerStaticProbe(source, descriptor, getProbeOrFieldName(), probe.level(), probe.unit(), this);
     }
 
     String getProbeOrFieldName() {
-        return probe.name().length() != 0 ? probe.name() : field.getName();
+        return probeOrFieldName;
     }
 
     static <S> FieldProbe createFieldProbe(Field field, Probe probe) {

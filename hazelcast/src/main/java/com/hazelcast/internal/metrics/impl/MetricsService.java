@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -244,39 +245,40 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
      */
     private class PublisherMetricsCollector implements MetricsCollector {
         @Override
-        public void collectLong(String name, long value, Set<MetricTarget> excludedTargets) {
+        public void collectLong(MetricDescriptor descriptor, long value, Set<MetricTarget> excludedTargets) {
             for (MetricsPublisher publisher : publishers) {
                 try {
-                    publisher.publishLong(name, value, excludedTargets);
+                    publisher.publishLong(descriptor, value, excludedTargets);
                 } catch (Exception e) {
-                    logError(name, value, publisher, e);
+                    logError(descriptor, value, publisher, e);
                 }
             }
         }
 
         @Override
-        public void collectDouble(String name, double value, Set<MetricTarget> excludedTargets) {
+        public void collectDouble(MetricDescriptor descriptor, double value, Set<MetricTarget> excludedTargets) {
             for (MetricsPublisher publisher : publishers) {
                 try {
-                    publisher.publishDouble(name, value, excludedTargets);
+                    publisher.publishDouble(descriptor, value, excludedTargets);
                 } catch (Exception e) {
-                    logError(name, value, publisher, e);
+                    logError(descriptor, value, publisher, e);
                 }
             }
         }
 
         @Override
-        public void collectException(String name, Exception e, Set<MetricTarget> excludedTargets) {
-            logger.warning("Error when rendering '" + name + '\'', e);
+        public void collectException(MetricDescriptor descriptor, Exception e, Set<MetricTarget> excludedTargets) {
+            logger.warning("Error when rendering '" + descriptor.toString() + '\'', e);
         }
 
         @Override
-        public void collectNoValue(String name, Set<MetricTarget> excludedTargets) {
+        public void collectNoValue(MetricDescriptor descriptor, Set<MetricTarget> excludedTargets) {
             // noop
         }
 
-        private void logError(String name, Object value, MetricsPublisher publisher, Exception e) {
-            logger.fine("Error publishing metric to: " + publisher.name() + ", metric=" + name + ", value=" + value, e);
+        private void logError(MetricDescriptor descriptor, Object value, MetricsPublisher publisher, Exception e) {
+            logger.fine("Error publishing metric to: " + publisher.name() + ", metric=" + descriptor.toString()
+                    + ", value=" + value, e);
         }
     }
 }

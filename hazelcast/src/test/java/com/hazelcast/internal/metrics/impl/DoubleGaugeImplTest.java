@@ -20,9 +20,8 @@ import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
@@ -35,6 +34,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.ref.WeakReference;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -61,9 +61,9 @@ public class DoubleGaugeImplTest extends HazelcastTestSupport {
         double doubleField = 10.8;
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("foo");
-            context.collect(tagger, this);
+        public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
+                                          MetricsCollectionContext context) {
+            context.collect(descriptorSupplier.get().withPrefix("foo"), this);
         }
     }
 
@@ -71,13 +71,16 @@ public class DoubleGaugeImplTest extends HazelcastTestSupport {
         SomeObject someObject = new SomeObject();
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("foo");
+        public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> taggerSupplier,
+                                          MetricsCollectionContext context) {
+            MutableMetricDescriptor descriptor = taggerSupplier
+                    .get()
+                    .withPrefix("foo");
             if (someObject != null) {
-                context.collect(tagger, someObject);
+                context.collect(descriptor, someObject);
             } else {
-                context.collect(tagger, "longField", INFO, COUNT, 142);
-                context.collect(tagger, "doubleField", INFO, COUNT, 142.42D);
+                context.collect(descriptor, "longField", INFO, COUNT, 142);
+                context.collect(descriptor, "doubleField", INFO, COUNT, 142.42D);
             }
         }
     }
@@ -184,9 +187,8 @@ public class DoubleGaugeImplTest extends HazelcastTestSupport {
     public void whenCreatedForDynamicLongMetricWithProvidedValue() {
         DoubleGaugeImplTest.SomeObject someObject = new DoubleGaugeImplTest.SomeObject();
         someObject.longField = 42;
-        metricsRegistry.registerDynamicMetricsProvider(
-                (taggerSupplier, context) -> context
-                        .collect(taggerSupplier.getMetricTagger("foo"), "longField", INFO, BYTES, 42));
+        metricsRegistry.registerDynamicMetricsProvider((descriptorSupplier, context) ->
+                context.collect(descriptorSupplier.get().withPrefix("foo"), "longField", INFO, BYTES, 42));
         DoubleGauge doubleGauge = metricsRegistry.newDoubleGauge("foo.longField");
 
         // needed to collect dynamic metrics and update the gauge created from them
@@ -199,9 +201,8 @@ public class DoubleGaugeImplTest extends HazelcastTestSupport {
     public void whenCreatedForDynamicDoubleMetricWithProvidedValue() {
         DoubleGaugeImplTest.SomeObject someObject = new DoubleGaugeImplTest.SomeObject();
         someObject.longField = 42;
-        metricsRegistry.registerDynamicMetricsProvider(
-                (taggerSupplier, context) -> context
-                        .collect(taggerSupplier.getMetricTagger("foo"), "doubleField", INFO, BYTES, 41.65D));
+        metricsRegistry.registerDynamicMetricsProvider((descriptorSupplier, context) -> context
+                .collect(descriptorSupplier.get().withPrefix("foo"), "doubleField", INFO, BYTES, 41.65D));
         DoubleGauge doubleGauge = metricsRegistry.newDoubleGauge("foo.doubleField");
 
         // needed to collect dynamic metrics and update the gauge created from them
@@ -243,10 +244,8 @@ public class DoubleGaugeImplTest extends HazelcastTestSupport {
 
         metricsRegistry.deregisterDynamicMetricsProvider(someObject);
 
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("foo");
-            context.collect(tagger, "doubleField", INFO, COUNT, 142.42D);
-        });
+        metricsRegistry.registerDynamicMetricsProvider((descriptorSupplier, context) ->
+                context.collect(descriptorSupplier.get().withPrefix("foo"), "doubleField", INFO, COUNT, 142.42D));
         // needed to collect dynamic metrics and update the gauge created from them
         metricsRegistry.collect(mock(MetricsCollector.class));
 
@@ -258,10 +257,8 @@ public class DoubleGaugeImplTest extends HazelcastTestSupport {
         DoubleGauge doubleGauge = metricsRegistry.newDoubleGauge("foo.doubleField");
 
         // provide concrete value
-        DynamicMetricsProvider concreteProvider = (taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("foo");
-            context.collect(tagger, "doubleField", INFO, COUNT, 142.42D);
-        };
+        DynamicMetricsProvider concreteProvider = (descriptorSupplier, context) ->
+                context.collect(descriptorSupplier.get().withPrefix("foo"), "doubleField", INFO, COUNT, 142.42D);
         metricsRegistry.registerDynamicMetricsProvider(concreteProvider);
         // needed to collect dynamic metrics and update the gauge created from them
         metricsRegistry.collect(mock(MetricsCollector.class));
@@ -300,10 +297,8 @@ public class DoubleGaugeImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenNotVisitedWithCachedValueReadsDefault() {
-        DynamicMetricsProvider concreteProvider = (taggerSupplier, context) -> {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("foo");
-            context.collect(tagger, "doubleField", INFO, COUNT, 42.42D);
-        };
+        DynamicMetricsProvider concreteProvider = (descriptorSupplier, context) ->
+                context.collect(descriptorSupplier.get().withPrefix("foo"), "doubleField", INFO, COUNT, 42.42D);
         metricsRegistry.registerDynamicMetricsProvider(concreteProvider);
         DoubleGauge doubleGauge = metricsRegistry.newDoubleGauge("foo.doubleField");
 

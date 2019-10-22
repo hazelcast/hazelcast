@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.internal.metrics.managementcenter.Metric;
 import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
@@ -81,7 +82,8 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
                 while (metricIterator.hasNext()) {
                     Metric metric = metricIterator.next();
                     metric.provide(metricConsumer);
-                    mapMetric |= metricConsumer.key.contains("name=map") & metricConsumer.key.contains("map.");
+                    mapMetric |= metricConsumer.descriptor.metricName().contains("name=map")
+                            & metricConsumer.descriptor.metricName().contains("map.");
                 }
             }
             assertTrue(mapMetric);
@@ -90,16 +92,16 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
 
     private static class MetricKeyConsumer implements MetricConsumer {
 
-        String key;
+        MetricDescriptor descriptor;
 
         @Override
-        public void consumeLong(String key, long value) {
-            this.key = key;
+        public void consumeLong(MetricDescriptor descriptor, long value) {
+            this.descriptor = descriptor;
         }
 
         @Override
-        public void consumeDouble(String key, double value) {
-            this.key = key;
+        public void consumeDouble(MetricDescriptor descriptor, double value) {
+            this.descriptor = descriptor;
         }
     }
 }

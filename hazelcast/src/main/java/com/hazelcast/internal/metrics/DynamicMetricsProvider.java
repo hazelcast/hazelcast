@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.metrics;
 
+import java.util.function.Supplier;
+
 /**
  * Interface to be implemented by the classes that expose metrics in a
- * dynamic fashion. The {@link #provideDynamicMetrics(MetricTaggerSupplier, MetricsCollectionContext)}
+ * dynamic fashion. The {@link #provideDynamicMetrics(Supplier, MetricsCollectionContext)}
  * method is called in every metric collection cycle. For more on dynamic
  * metrics, please see the documentation of {@link MetricsRegistry}.
  * <p/>
@@ -32,7 +34,8 @@ public interface DynamicMetricsProvider {
      * cycle. The collected metrics should be passed to the
      * {@link MetricsCollectionContext} passed in argument.
      *
-     * @param context The context used to collect the metrics
+     * @param descriptorSupplier Used to supply MetricDescriptor
+     * @param context            The context used to collect the metrics
      */
-    void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context);
+    void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier, MetricsCollectionContext context);
 }

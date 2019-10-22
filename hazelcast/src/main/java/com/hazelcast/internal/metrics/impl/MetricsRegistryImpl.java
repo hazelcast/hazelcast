@@ -20,8 +20,9 @@ import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -59,16 +60,20 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     private final ProbeLevel minimumLevel;
 
     private final ScheduledExecutorService scheduler;
-    private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<>();
+    private final ConcurrentMap<MetricDescriptorImpl.LookupView, ProbeInstance> probeInstances = new ConcurrentHashMap<>();
 
     // use ConcurrentReferenceHashMap to allow unreferenced Class instances to be garbage collected
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
             = new ConcurrentReferenceHashMap<>();
 
-    private final ConcurrentMap<String, AbstractGauge> gauges = new ConcurrentReferenceHashMap<>(STRONG, WEAK);
+    private final ConcurrentMap<MetricDescriptorImpl.LookupView, AbstractGauge> gauges
+            = new ConcurrentReferenceHashMap<>(STRONG, WEAK);
 
     private final ConcurrentMap<DynamicMetricsProvider, Boolean> metricSourceMap
             = new ConcurrentReferenceHashMap<>(STRONG, STRONG, of(IDENTITY_COMPARISONS));
+
+    private final DefaultMetricDescriptorSupplier staticDescriptorSupplier = new DefaultMetricDescriptorSupplier();
+    private final PoolingMetricDescriptorSupplier dynamicDescriptorSupplier = new PoolingMetricDescriptorSupplier();
 
     /**
      * Creates a MetricsRegistryImpl instance.
@@ -110,7 +115,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     @Override
     public Set<String> getNames() {
         return unmodifiableSet(probeInstances.values().stream()
-                                             .map(probeInstance -> probeInstance.name)
+                                             .map(probeInstance -> probeInstance.descriptor.metricName())
                                              .collect(Collectors.toSet()));
     }
 
@@ -136,21 +141,21 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(source, "source can't be null");
         checkNotNull(namePrefix, "namePrefix can't be null");
 
-        registerStaticMetrics(newMetricTagger(namePrefix), source);
+        registerStaticMetrics(newMetricDescriptor().withPrefix(namePrefix), source);
     }
 
     @Override
-    public <S> void registerStaticMetrics(MetricTagger tagger, S source) {
-        checkNotNull(tagger, "tagger can't be null");
+    public <S> void registerStaticMetrics(MutableMetricDescriptor descriptor, S source) {
+        checkNotNull(descriptor, "descriptor can't be null");
         checkNotNull(source, "source can't be null");
 
         SourceMetadata metadata = loadSourceMetadata(source.getClass());
         for (FieldProbe field : metadata.fields()) {
-            field.register(this, tagger, source);
+            field.register(this, descriptor, source);
         }
 
         for (MethodProbe method : metadata.methods()) {
-            method.register(this, tagger, source);
+            method.register(this, descriptor, source);
         }
     }
 
@@ -165,9 +170,9 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
-                                        ProbeFunction function) {
-        registerStaticProbeWithUnit(source, tagger, name, level, unit, function);
+    public <S> void registerStaticProbe(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level,
+                                        ProbeUnit unit, ProbeFunction function) {
+        registerStaticProbeWithUnit(source, descriptor, name, level, unit, function);
     }
 
     @Override
@@ -177,13 +182,13 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public <S> void registerStaticProbe(S source, String name, ProbeLevel level, ProbeUnit unit, LongProbeFunction<S> function) {
-        registerStaticProbeWithUnit(source, newMetricTagger(), name, level, unit, function);
+        registerStaticProbeWithUnit(source, staticDescriptorSupplier.get(), name, level, unit, function);
     }
 
     @Override
-    public <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
-                                        LongProbeFunction<S> function) {
-        registerStaticProbeWithUnit(source, tagger, name, level, unit, function);
+    public <S> void registerStaticProbe(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level,
+                                        ProbeUnit unit, LongProbeFunction<S> function) {
+        registerStaticProbeWithUnit(source, descriptor, name, level, unit, function);
     }
 
     @Override
@@ -194,13 +199,13 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     @Override
     public <S> void registerStaticProbe(S source, String name, ProbeLevel level, ProbeUnit unit,
                                         DoubleProbeFunction<S> function) {
-        registerStaticProbeWithUnit(source, newMetricTagger(), name, level, unit, function);
+        registerStaticProbeWithUnit(source, staticDescriptorSupplier.get(), name, level, unit, function);
     }
 
     @Override
-    public <S> void registerStaticProbe(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+    public <S> void registerStaticProbe(S source, MetricDescriptorImpl descriptor, String name, ProbeLevel level, ProbeUnit unit,
                                         DoubleProbeFunction<S> function) {
-        registerStaticProbeWithUnit(source, tagger, name, level, unit, function);
+        registerStaticProbeWithUnit(source, descriptor, name, level, unit, function);
     }
 
     private <S> void registerStaticProbeWithoutUnit(S source, String name, ProbeLevel level, ProbeFunction function) {
@@ -209,36 +214,33 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(function, "function can't be null");
         checkNotNull(level, "level can't be null");
 
-        registerInternal(source, newMetricTagger().withMetricTag(name), level, function);
+        registerInternal(source, createDescriptor(name), level, function);
     }
 
-    private <S> void registerStaticProbeWithUnit(S source, MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit,
+    private <S> void registerStaticProbeWithUnit(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level,
+                                                 ProbeUnit unit,
                                                  ProbeFunction function) {
-        registerInternal(source, tagger.withTag("unit", unit.name().toLowerCase())
-                                       .withMetricTag(name),
-                level, function);
+        registerInternal(source, descriptor.copy().withUnit(unit).withMetric(name), level, function);
     }
 
     ProbeInstance getProbeInstance(String name) {
         checkNotNull(name, "name can't be null");
 
-        return probeInstances.get(name);
+        return probeInstances.get(createDescriptor(name).lookupView());
     }
 
-    <S> void registerInternal(S source, MetricTagger tagger, ProbeLevel probeLevel, ProbeFunction function) {
+    <S> void registerInternal(S source, MutableMetricDescriptor descriptor, ProbeLevel probeLevel, ProbeFunction function) {
         if (!probeLevel.isEnabled(minimumLevel)) {
             return;
         }
 
-        String metricId = tagger.metricId();
-        String metricName = tagger.metricName();
-
+        MetricDescriptorImpl.LookupView descriptorLookupView = ((MetricDescriptorImpl) descriptor).lookupView();
         ProbeInstance probeInstance = probeInstances
-                .computeIfAbsent(metricId, k -> new ProbeInstance<>(metricName, source, function));
+                .computeIfAbsent(descriptorLookupView, k -> new ProbeInstance<>(descriptor, source, function));
 
         if (probeInstance.source == source && probeInstance.function == function) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Registered probeInstance " + metricName);
+                logger.finest("Registered probeInstance " + descriptor.metricName());
             }
         } else {
             logOverwrite(probeInstance);
@@ -246,7 +248,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             probeInstance.function = function;
         }
 
-        AbstractGauge gauge = gauges.get(metricId);
+        AbstractGauge gauge = gauges.get(descriptorLookupView);
         if (gauge != null) {
             gauge.onProbeInstanceSet(probeInstance);
         }
@@ -254,7 +256,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     private void logOverwrite(ProbeInstance probeInstance) {
         if (probeInstance.function != null || probeInstance.source != null) {
-            logger.warning(format("Overwriting existing probe '%s'", probeInstance.name));
+            logger.warning(format("Overwriting existing probe '%s'", probeInstance.descriptor));
         }
     }
 
@@ -263,7 +265,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(name, "name can't be null");
 
         LongGaugeImpl gauge = new LongGaugeImpl(this, name);
-        gauges.put(name, gauge);
+        gauges.put(createDescriptor(name).lookupView(), gauge);
         return gauge;
     }
 
@@ -272,8 +274,34 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(name, "name can't be null");
 
         DoubleGaugeImpl gauge = new DoubleGaugeImpl(this, name);
-        gauges.put(name, gauge);
+        gauges.put(createDescriptor(name).lookupView(), gauge);
         return gauge;
+    }
+
+    private MetricDescriptorImpl createDescriptor(String name) {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(staticDescriptorSupplier);
+        int dotIdx = name.lastIndexOf('.');
+
+        if (dotIdx < 0) {
+            // simple metric name
+            descriptor.withMetric(name);
+            return descriptor;
+        }
+
+        descriptor.withMetric(name.substring(dotIdx + 1));
+
+        int bracketOpenIdx = name.indexOf('[');
+        if (bracketOpenIdx > 0) {
+            int bracketCloseIdx = name.indexOf(']');
+            String prefix = name.substring(0, bracketOpenIdx);
+            String discriminator = name.substring(bracketOpenIdx + 1, bracketCloseIdx);
+            descriptor.withPrefix(prefix)
+                      .withDiscriminator("ignored", discriminator);
+        } else {
+            descriptor.withPrefix(name.substring(0, dotIdx));
+        }
+
+        return descriptor;
     }
 
     @Override
@@ -286,10 +314,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         collectionCycle.collectStaticMetrics(probeInstances);
         collectionCycle.collectDynamicMetrics(metricSourceMap.keySet());
         collectionCycle.notifyAllGauges(gauges.values());
+        collectionCycle.cleanUp();
     }
 
-    MetricValueCatcher lookupMetricValueCatcher(String metricId) {
-        AbstractGauge gauge = gauges.get(metricId);
+    private MetricValueCatcher lookupMetricValueCatcher(MetricDescriptor descriptor) {
+        AbstractGauge gauge = gauges.get(((MetricDescriptorImpl) descriptor).lookupView());
         return gauge != null ? gauge.getCatcherOrNull() : null;
     }
 
@@ -316,12 +345,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public MetricTagger newMetricTagger() {
-        return new MetricTaggerImpl(null);
+    public MetricDescriptorImpl newMetricDescriptor() {
+        return staticDescriptorSupplier.get();
     }
 
-    @Override
-    public MetricTagger newMetricTagger(String namePrefix) {
-        return new MetricTaggerImpl(namePrefix);
-    }
 }

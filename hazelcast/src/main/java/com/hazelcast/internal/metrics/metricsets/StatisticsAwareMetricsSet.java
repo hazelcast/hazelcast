@@ -18,10 +18,9 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.instance.LocalInstanceStats;
@@ -31,6 +30,8 @@ import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
 import java.util.Map;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.util.StringUtil.lowerCaseFirstChar;
 
@@ -47,6 +48,7 @@ import static com.hazelcast.internal.util.StringUtil.lowerCaseFirstChar;
  * {@link MetricsRegistry}.
  */
 public final class StatisticsAwareMetricsSet {
+    private static final Pattern BASE_PATTERN = Pattern.compile("Stats|Local|Impl");
 
     private StatisticsAwareMetricsSet() {
     }
@@ -64,7 +66,8 @@ public final class StatisticsAwareMetricsSet {
         }
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+        public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
+                                          MetricsCollectionContext context) {
             for (StatisticsAwareService statisticsAwareService : serviceManager.getServices(StatisticsAwareService.class)) {
                 Map<String, LocalInstanceStats> stats = statisticsAwareService.getStats();
                 if (stats == null) {
@@ -77,30 +80,34 @@ public final class StatisticsAwareMetricsSet {
                     String name = entry.getKey();
 
                     NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
-                    String baseName = localInstanceStats.getClass().getSimpleName()
-                                                        .replace("Stats", "")
-                                                        .replace("Local", "")
-                                                        .replace("Impl", "");
+                    String baseName = BASE_PATTERN.matcher(localInstanceStats.getClass().getSimpleName()).replaceAll("");
+
                     baseName = lowerCaseFirstChar(baseName);
                     if (nearCacheStats != null) {
-                        MetricTagger tagger = taggerSupplier.getMetricTagger(baseName + ".nearcache")
-                                                            .withIdTag("name", name);
-                        context.collect(tagger, nearCacheStats);
+                        MutableMetricDescriptor descriptor = descriptorSupplier
+                                .get()
+                                .withPrefix(baseName + ".nearcache")
+                                .withDiscriminator("name", name);
+                        context.collect(descriptor, nearCacheStats);
                     }
 
                     if (localInstanceStats instanceof LocalMapStatsImpl) {
                         Map<String, LocalIndexStats> indexStats = ((LocalMapStatsImpl) localInstanceStats).getIndexStats();
                         for (Map.Entry<String, LocalIndexStats> indexEntry : indexStats.entrySet()) {
-                            MetricTagger tagger = taggerSupplier.getMetricTagger(baseName + ".index")
-                                                                .withIdTag("name", name)
-                                                                .withTag("index", indexEntry.getKey());
-                            context.collect(tagger, indexEntry.getValue());
+                            MutableMetricDescriptor descriptor = descriptorSupplier
+                                    .get()
+                                    .withPrefix(baseName + ".index")
+                                    .withDiscriminator("name", name)
+                                    .withTag("index", indexEntry.getKey());
+                            context.collect(descriptor, indexEntry.getValue());
                         }
                     }
 
-                    MetricTagger tagger = taggerSupplier.getMetricTagger(baseName)
-                                                        .withIdTag("name", name);
-                    context.collect(tagger, localInstanceStats);
+                    MutableMetricDescriptor descriptor = descriptorSupplier
+                            .get()
+                            .withPrefix(baseName)
+                            .withDiscriminator("name", name);
+                    context.collect(descriptor, localInstanceStats);
                 }
             }
         }

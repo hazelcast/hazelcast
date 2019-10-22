@@ -22,10 +22,9 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
@@ -51,6 +50,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -375,23 +375,26 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
         }
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
-            context.collect(tagger, this);
+        public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
+                                          MetricsCollectionContext context) {
+            MutableMetricDescriptor descriptor = descriptorSupplier
+                    .get()
+                    .withPrefix("tcp");
+            context.collect(descriptor, this);
 
             TcpIpAcceptor acceptor = this.acceptorRef.get();
             if (acceptor != null) {
-                acceptor.provideDynamicMetrics(taggerSupplier, context);
+                acceptor.provideDynamicMetrics(descriptorSupplier, context);
             }
 
             for (EndpointManager<TcpIpConnection> manager : this.endpointManagers.values()) {
                 if (manager instanceof DynamicMetricsProvider) {
-                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(taggerSupplier, context);
+                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(descriptorSupplier, context);
                 }
             }
 
             if (unifiedEndpointManager != null) {
-                unifiedEndpointManager.provideDynamicMetrics(taggerSupplier, context);
+                unifiedEndpointManager.provideDynamicMetrics(descriptorSupplier, context);
             }
         }
     }

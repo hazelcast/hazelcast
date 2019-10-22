@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.metrics;
 
+import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
+
 /**
  * An interface that extracts the metrics from the objects collected by
  * the {@link DynamicMetricsProvider} implementations.
@@ -24,32 +26,32 @@ public interface MetricsCollectionContext {
     /**
      * Extracts, tags and collects all metrics from the given source.
      *
-     * @param metricTagger The {@link MetricTagger} used to tag the metrics
-     *                     extracted from the {@code source} object
-     * @param source       The object that contains the metrics
+     * @param descriptor The {@link MetricDescriptorImpl} used to describe
+     *                   the metrics extracted from the {@code source} object
+     * @param source     The object that contains the metrics
      */
-    void collect(MetricTagger metricTagger, Object source);
+    void collect(MutableMetricDescriptor descriptor, Object source);
 
     /**
      * Collects the given metric.
      *
-     * @param tagger The {@link MetricTagger} used to provide the tags
-     *               for the collected metric
-     * @param name   The name of the metric
-     * @param level  The level
-     * @param value  The value of the collected metric
+     * @param descriptor The {@link MetricDescriptorImpl} used to describe
+     *                   the metrics extracted from the {@code source} object
+     * @param name       The name of the metric
+     * @param level      The level
+     * @param value      The value of the collected metric
      */
-    void collect(MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit, long value);
+    void collect(MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, long value);
 
     /**
      * Collects the given metric.
      *
-     * @param tagger The {@link MetricTagger} used to provide the tags
-     *               for the collected metric
-     * @param name   The name of the metric
-     * @param level  The level
-     * @param value  The value of the collected metric
+     * @param descriptor The {@link MetricDescriptorImpl} used to describe
+     *                   the metrics extracted from the {@code source} object
+     * @param name       The name of the metric
+     * @param level      The level
+     * @param value      The value of the collected metric
      */
-    void collect(MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit, double value);
+    void collect(MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value);
 
 }
