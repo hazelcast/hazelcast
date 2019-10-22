@@ -971,12 +971,18 @@ public class QueryBasicTest extends HazelcastTestSupport {
             map.put(new CompositeKey(i), i);
         }
 
+        Map<String, LocalIndexStats> stats = map.getLocalMapStats().getIndexStats();
+        assertEquals(0, stats.get("__key.a").getQueryCount());
+        assertEquals(0, stats.get("__key.b").getQueryCount());
+        assertEquals(0, stats.get("__key.c").getQueryCount());
+        assertEquals(0, stats.get("__key.d").getQueryCount());
+
         map.values(Predicates.equal("__key.a", 5));
         map.values(Predicates.equal("__key#b", 5));
         map.values(Predicates.equal("__key#c", 5));
         map.values(Predicates.equal("__key.d", 5));
 
-        Map<String, LocalIndexStats> stats = map.getLocalMapStats().getIndexStats();
+        stats = map.getLocalMapStats().getIndexStats();
         assertEquals(1, stats.get("__key.a").getQueryCount());
         assertEquals(1, stats.get("__key.b").getQueryCount());
         assertEquals(1, stats.get("__key.c").getQueryCount());
@@ -1005,10 +1011,10 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     public static class CompositeKey implements Serializable {
 
-        private int a;
-        private int b;
-        private int c;
-        private int d;
+        private final int a;
+        private final int b;
+        private final int c;
+        private final int d;
 
         public CompositeKey(int value) {
             a = b = c = d = value;
