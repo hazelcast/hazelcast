@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
@@ -86,6 +87,7 @@ public final class EntryOperator {
     private Object newValue;
     private EntryEventType eventType;
     private Data result;
+    private boolean didMatchPredicate;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     private EntryOperator(MapOperation mapOperation, Object processor, Predicate predicate, boolean collectWanEvents) {
@@ -141,6 +143,7 @@ public final class EntryOperator {
         this.newValue = newValue;
         this.eventType = eventType;
         this.result = result;
+        this.didMatchPredicate = true;
         return this;
     }
 
@@ -151,7 +154,7 @@ public final class EntryOperator {
             return this;
         }
 
-        oldValue = recordStore.get(dataKey, backup, callerAddress);
+        oldValue = recordStore.get(dataKey, backup, callerAddress, false);
         // predicated entry processors can only be applied to existing entries
         // so if we have a predicate and somehow(due to expiration or split-brain healing)
         // we found value null, we should skip that entry.
@@ -173,6 +176,7 @@ public final class EntryOperator {
 
         Entry entry = createMapEntry(dataKey, oldValue, locked);
         if (outOfPredicateScope(entry)) {
+            this.didMatchPredicate = false;
             return this;
         }
 
@@ -207,13 +211,20 @@ public final class EntryOperator {
     }
 
     public EntryOperator doPostOperateOps() {
+        if (!didMatchPredicate) {
+            return this;
+        }
         if (eventType == null) {
             // when event type is null, it means this is a read-only entry processor and not modified entry.
+            onTouched();
             return this;
         }
         switch (eventType) {
-            case ADDED:
             case UPDATED:
+                onTouched();
+                onAddedOrUpdated();
+                break;
+            case ADDED:
                 onAddedOrUpdated();
                 break;
             case REMOVED:
@@ -277,6 +288,14 @@ public final class EntryOperator {
         }
 
         eventType = oldValue == null ? ADDED : UPDATED;
+    }
+
+    private void onTouched() {
+        // updates access time if record exists
+        Record record = recordStore.getRecord(dataKey);
+        if (record != null) {
+            recordStore.accessRecord(record, Clock.currentTimeMillis());
+        }
     }
 
     private void onAddedOrUpdated() {
