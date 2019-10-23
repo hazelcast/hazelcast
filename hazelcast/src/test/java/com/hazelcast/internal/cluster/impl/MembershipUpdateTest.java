@@ -852,7 +852,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     @Test
     public void connectionsToRemovedMember_shouldBeClosed() {
         Config config = new Config()
-            .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10")
+            .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "20")
             .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
