@@ -56,8 +56,10 @@ public class PutAllBackupOperation extends MapOperation
             // has not been serialized/deserialized
             // and is running directly on caller node
             for (int i = 0; i < recordAndDataValuePairs.size(); i += 2) {
-                Record record = (Record) recordAndDataValuePairs.get(i);
-                putBackup(record);
+                Object obj = recordAndDataValuePairs.get(i);
+                if (obj != null) {
+                    putBackup((Record) obj);
+                }
             }
         } else {
             for (Record<Data> record : dataRecords) {
