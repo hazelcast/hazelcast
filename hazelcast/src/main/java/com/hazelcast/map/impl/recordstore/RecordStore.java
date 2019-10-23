@@ -144,10 +144,20 @@ public interface RecordStore<R extends Record> {
      * Loads missing keys from map store.
      *
      * @param dataKey key.
-     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
+     * @param touch   when {@code true}, if an existing record was found for the given key,
+     *                then its last access time is updated.
      * @return value of an entry in {@link RecordStore}
      */
-    Object get(Data dataKey, boolean backup, Address callerAddress);
+    Object get(Data dataKey, boolean backup, Address callerAddress, boolean touch);
+
+    /**
+     * Same as {@link #get(Data, boolean, Address, boolean)} with parameter {@code touch}
+     * set {@code true}.
+     */
+    default Object get(Data dataKey, boolean backup, Address callerAddress) {
+        return get(dataKey, backup, callerAddress, true);
+    }
 
     /**
      * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from

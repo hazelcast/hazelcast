@@ -567,7 +567,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Object get(Data key, boolean backup, Address callerAddress) {
+    public Object get(Data key, boolean backup, Address callerAddress, boolean touch) {
         checkIfLoaded();
         long now = getNow();
 
@@ -575,7 +575,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             record = loadRecordOrNull(key, backup, callerAddress);
             record = getOrNullIfExpired(record, now, backup);
-        } else {
+        } else if (touch) {
             accessRecord(record, now);
         }
         Object value = record == null ? null : record.getValue();
