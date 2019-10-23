@@ -225,21 +225,6 @@ public class SimpleEntryView<K, V>
         return this;
     }
 
-    /**
-     * Needed for client protocol compatibility.
-     */
-    @SuppressWarnings("unused")
-    public long getEvictionCriteriaNumber() {
-        return 0;
-    }
-
-    /**
-     * Needed for client protocol compatibility.
-     */
-    @SuppressWarnings("unused")
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeObject(out, key);
@@ -252,8 +237,6 @@ public class SimpleEntryView<K, V>
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
-        // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
-        out.writeLong(0);
         out.writeLong(ttl);
         out.writeLong(maxIdle);
     }
@@ -270,8 +253,6 @@ public class SimpleEntryView<K, V>
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         version = in.readLong();
-        // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
-        in.readLong();
         ttl = in.readLong();
         maxIdle = in.readLong();
     }
