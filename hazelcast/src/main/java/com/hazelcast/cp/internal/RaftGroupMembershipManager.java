@@ -31,7 +31,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteDestroyRaftGroupsOp;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteRaftGroupMembershipChangesOp;
-import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
+import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetDestroyingRaftGroupIdsOp;
@@ -132,7 +132,7 @@ class RaftGroupMembershipManager {
                 }
 
                 if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
-                    raftService.destroyRaftNode(groupId);
+                    raftService.terminateRaftNode(groupId, false);
                     continue;
                 } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
                     raftService.stepDownRaftNode(groupId);
@@ -146,7 +146,7 @@ class RaftGroupMembershipManager {
                         if (group == null) {
                             logger.severe("Could not find CP group for local raft node of " + groupId);
                         } else if (group.status() == CPGroupStatus.DESTROYED) {
-                            raftService.destroyRaftNode(groupId);
+                            raftService.terminateRaftNode(groupId, true);
                         }
                     } else {
                         logger.warning("Could not get CP group info of " + groupId, t);
@@ -174,13 +174,13 @@ class RaftGroupMembershipManager {
             }
 
             for (CPGroupId groupId : destroyedGroupIds) {
-                raftService.destroyRaftNode(groupId);
+                raftService.terminateRaftNode(groupId, true);
             }
 
             OperationService operationService = nodeEngine.getOperationService();
             for (CPMemberInfo member : raftService.getMetadataGroupManager().getActiveMembers()) {
                 if (!member.equals(raftService.getLocalCPMember())) {
-                    operationService.send(new DestroyRaftNodesOp(destroyedGroupIds), member.getAddress());
+                    operationService.send(new TerminateRaftNodesOp(destroyedGroupIds), member.getAddress());
                 }
             }
         }

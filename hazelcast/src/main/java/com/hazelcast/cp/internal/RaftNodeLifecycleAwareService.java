@@ -25,9 +25,9 @@ public interface RaftNodeLifecycleAwareService {
 
     /**
      * Called on the thread of the Raft group when the given Raft node is
-     * destroyed, either gracefully or forcefully.
+     * terminated, either gracefully via Raft group destroy or forcefully.
      */
-    void onRaftGroupDestroyed(CPGroupId groupId);
+    void onRaftNodeTerminated(CPGroupId groupId);
 
     /**
      * Called on the thread of the Raft group when the given Raft node is

@@ -30,8 +30,7 @@ import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
-import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
-import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
+import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
 import com.hazelcast.internal.metrics.Probe;
@@ -252,7 +251,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         for (CPGroupInfo group : snapshot.getGroups()) {
             if (group.status() == DESTROYED) {
-                destroyRaftNodeAsync(group.id());
+                terminateRaftNodeAsync(group.id());
             }
         }
 
@@ -479,7 +478,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         throw exception;
     }
 
-    public CPGroupId createRaftGroup(String groupName, Collection<RaftEndpoint> groupEndpoints, long commitIndex) {
+    public CPGroupSummary createRaftGroup(String groupName, Collection<RaftEndpoint> groupEndpoints, long commitIndex) {
         checkFalse(METADATA_CP_GROUP_NAME.equalsIgnoreCase(groupName), groupName + " is reserved for internal usage!");
         checkMetadataGroupInitSuccessful();
 
@@ -491,7 +490,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                     logger.fine("CP group " + groupName + " already exists.");
                 }
 
-                return group.id();
+                return group.toSummary(activeMembers);
             }
 
             String msg = group.id() + " already exists with a different size: " + group.memberCount();
@@ -517,7 +516,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         return createRaftGroup(new CPGroupInfo(new RaftGroupId(groupName, getGroupIdSeed(), commitIndex), groupEndpoints));
     }
 
-    private CPGroupId createRaftGroup(CPGroupInfo group) {
+    private CPGroupSummary createRaftGroup(CPGroupInfo group) {
         addRaftGroup(group);
 
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
@@ -528,22 +527,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
         logger.info("New " + group.id() + " is created with " + members);
 
-        RaftGroupId groupId = group.id();
-        if (group.containsMember(getLocalCPMember().toRaftEndpoint())) {
-            createRaftNodeAsync(group);
-        } else {
-            // Broadcast group-info to non-metadata group members
-            OperationService operationService = nodeEngine.getOperationService();
-            CPGroupInfo metadataGroup = groups.get(getMetadataGroupId());
-            for (RaftEndpoint member : group.memberImpls()) {
-                if (!metadataGroup.containsMember(member)) {
-                    Operation op = new CreateRaftNodeOp(group.id(), group.initialMembers());
-                    operationService.send(op, activeMembersMap.get(member.getUuid()).getAddress());
-                }
-            }
-        }
-
-        return groupId;
+        return group.toSummary(activeMembers);
     }
 
     private void createRaftNodeAsync(CPGroupInfo group) {
@@ -633,7 +617,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         CPGroupId groupId = group.id();
         if (group.setDestroyed()) {
             logger.info(groupId + " is destroyed.");
-            sendDestroyRaftNodeOps(group);
+            sendTerminateRaftNodeOpsForDestroyedGroup(group);
         } else if (logger.isFineEnabled()) {
             logger.fine(groupId + " is already destroyed.");
         }
@@ -650,7 +634,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             if (group.name().equals(groupName)) {
                 if (group.forceSetDestroyed()) {
                     logger.info(group.id() + " is force-destroyed.");
-                    sendDestroyRaftNodeOps(group);
+                    sendTerminateRaftNodeOpsForDestroyedGroup(group);
                 } else if (logger.isFineEnabled()) {
                     logger.fine(group.id() + " is already force-destroyed.");
                 }
@@ -664,22 +648,22 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         }
     }
 
-    private void sendDestroyRaftNodeOps(CPGroupInfo group) {
+    private void sendTerminateRaftNodeOpsForDestroyedGroup(CPGroupInfo group) {
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
         RaftEndpoint localEndpoint = getLocalCPMember().toRaftEndpoint();
         OperationService operationService = nodeEngine.getOperationService();
-        Operation op = new DestroyRaftNodesOp(Collections.singleton(group.id()));
+        Operation op = new TerminateRaftNodesOp(Collections.singleton(group.id()));
         for (RaftEndpoint endpoint : group.members())  {
             if (endpoint.equals(localEndpoint)) {
-                destroyRaftNodeAsync(group.id());
+                terminateRaftNodeAsync(group.id());
             } else {
                 operationService.send(op, activeMembersMap.get(endpoint.getUuid()).getAddress());
             }
         }
     }
 
-    private void destroyRaftNodeAsync(CPGroupId groupId) {
-        nodeEngine.getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> raftService.destroyRaftNode(groupId));
+    private void terminateRaftNodeAsync(CPGroupId groupId) {
+        nodeEngine.getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> raftService.terminateRaftNode(groupId, true));
     }
 
     /**
@@ -852,10 +836,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 logger.fine("Applied add-member: " + (addedMember != null ? addedMember : "-") + " and remove-member: "
                         + (removedMember != null ? removedMember : "-") + " in "  + group.id()
                         + " with new members commit index: " + newMembersCommitIndex);
-            }
-            if (getLocalCPMember().toRaftEndpoint().equals(addedMember)) {
-                // we are the added member to the group, we can try to create the local raft node if not created already
-                createRaftNodeAsync(group);
             }
 
             return true;
@@ -1345,7 +1325,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
                 raftService.getInvocationManager().invoke(metadataGroupId, op).get();
             } catch (Exception e) {
                 logger.severe("Could not initialize METADATA CP group with CP members: " + metadataMembers, e);
-                raftService.destroyRaftNode(metadataGroupId);
+                raftService.terminateRaftNode(metadataGroupId, true);
                 return false;
             }
             return true;

@@ -157,7 +157,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     @Probe
     private final Set<CPGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<>());
     @Probe
-    private final Set<CPGroupId> steppedDownGroupIds = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<CPGroupId> terminatedRaftNodeGroupIds = newSetFromMap(new ConcurrentHashMap<>());
     private final CPSubsystemConfig config;
     private final RaftInvocationManager invocationManager;
     private final MetadataRaftGroupManager metadataGroupManager;
@@ -677,7 +677,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     public RaftNode getOrInitRaftNode(CPGroupId groupId) {
         RaftNode node = nodes.get(groupId);
-        if (node == null && isStartCompleted() && isDiscoveryCompleted() && !isRaftGroupDestroyed(groupId)) {
+        if (node == null && isStartCompleted() && isDiscoveryCompleted() && !destroyedGroupIds.contains(groupId)
+                && !terminatedRaftNodeGroupIds.contains(groupId)) {
             logger.fine("RaftNode[" + groupId + "] does not exist. Asking to the METADATA CP group...");
             nodeEngine.getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, new InitializeRaftNodeTask(groupId));
         }
@@ -751,31 +752,29 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         nodeLock.readLock().lock();
         try {
             if (destroyedGroupIds.contains(groupId)) {
-                logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed");
+                logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed.");
                 return;
-            } else if (steppedDownGroupIds.contains(groupId)) {
+            } else if (terminatedRaftNodeGroupIds.contains(groupId)) {
                 if (!nodeEngine.isRunning()) {
-                    logger.fine("Not creating RaftNode[" + groupId + "] since the local CP member is already stepped down");
+                    logger.fine("Not creating RaftNode[" + groupId + "] since the local CP member is already terminated.");
                     return;
                 }
-                steppedDownGroupIds.remove(groupId);
             }
 
             int partitionId = getCPGroupPartitionId(groupId);
             RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember, partitionId);
             RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
-            RaftStateStore stateStore = getCPPersistenceService().createRaftStateStore((RaftGroupId) groupId, null);
+            CPPersistenceService persistenceService = getCPPersistenceService();
+            RaftStateStore stateStore = persistenceService.createRaftStateStore((RaftGroupId) groupId, null);
             RaftNodeImpl node = newRaftNode(groupId, localCPMember, members, raftAlgorithmConfig, integration, stateStore);
 
             registerNodeMetrics(groupId);
             if (nodes.putIfAbsent(groupId, node) == null) {
                 if (destroyedGroupIds.contains(groupId)) {
                     deregisterNodeMetrics(groupId);
+                    destroyRaftNode(node, true);
                     nodes.remove(groupId, node);
-                    node.forceSetTerminatedStatus().whenCompleteAsync((v, t) -> {
-                        logger.fine("RaftNode[" + groupId + "] force-terminated since the CP group is already destroyed.");
-                    });
-                    logger.warning("Not created RaftNode[" + groupId + "] since the CP group is already destroyed.");
+                    logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed.");
                     return;
                 }
 
@@ -836,10 +835,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return invocationManager.getRaftInvocationContext().setMembers(groupIdSeed, membersCommitIndex, members);
     }
 
-    public void destroyRaftNode(CPGroupId groupId) {
+    public void terminateRaftNode(CPGroupId groupId, boolean groupDestroyed) {
         if (destroyedGroupIds.contains(groupId) || !hasSameSeed(groupId)) {
             return;
         }
+
+        assert !(Thread.currentThread() instanceof PartitionOperationThread)
+                : "Cannot terminate RaftNode of " + groupId + " in a partition thread!";
 
         nodeLock.readLock().lock();
         try {
@@ -847,19 +849,20 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 return;
             }
 
-            destroyedGroupIds.add(groupId);
+            if (groupDestroyed) {
+                destroyedGroupIds.add(groupId);
+            }
+
+            terminatedRaftNodeGroupIds.add(groupId);
             RaftNode node = nodes.remove(groupId);
             deregisterNodeMetrics(groupId);
+            CPPersistenceService persistenceService = getCPPersistenceService();
             if (node != null) {
-                node.forceSetTerminatedStatus().whenCompleteAsync((v, t) -> {
-                    try {
-                        getCPPersistenceService().removeRaftStateStore((RaftGroupId) groupId);
-                        logger.fine("RaftStateStore of RaftNode[" + groupId + "] is removed.");
-                    } catch (Exception e) {
-                        logger.severe("Removal of RaftStateStore of RaftNode[" + groupId + "] failed.", e);
-                    }
-                });
-                logger.fine("RaftNode[" + groupId + "] is destroyed.");
+                destroyRaftNode(node, groupDestroyed);
+                logger.info("RaftNode[" + groupId + "] is destroyed.");
+            } else if (groupDestroyed && persistenceService.isEnabled()) {
+                persistenceService.removeRaftStateStore((RaftGroupId) groupId);
+                logger.info("RaftStateStore of RaftNode[" + groupId + "] is deleted.");
             }
         } finally {
             nodeLock.readLock().unlock();
@@ -867,25 +870,49 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     public void stepDownRaftNode(CPGroupId groupId) {
-        if (steppedDownGroupIds.contains(groupId) || !hasSameSeed(groupId)) {
+        if (terminatedRaftNodeGroupIds.contains(groupId) || !hasSameSeed(groupId)) {
             return;
         }
 
+        assert !(Thread.currentThread() instanceof PartitionOperationThread)
+                : "Cannot step down RaftNode of " + groupId + " in a partition thread!";
+
         nodeLock.readLock().lock();
         try {
-            if (steppedDownGroupIds.contains(groupId)) {
+            if (terminatedRaftNodeGroupIds.contains(groupId)) {
                 return;
             }
 
+            CPPersistenceService persistenceService = getCPPersistenceService();
             RaftNode node = nodes.get(groupId);
             if (node != null && node.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
-                steppedDownGroupIds.add(groupId);
+                terminatedRaftNodeGroupIds.add(groupId);
                 nodes.remove(groupId, node);
                 deregisterNodeMetrics(groupId);
+                destroyRaftNode(node, true);
+                logger.fine("RaftNode[" + groupId + "] has stepped down.");
+            } else if (node == null && persistenceService.isEnabled()) {
+                persistenceService.removeRaftStateStore((RaftGroupId) groupId);
+                logger.info("RaftStateStore of RaftNode[" + groupId + "] is deleted.");
             }
         } finally {
             nodeLock.readLock().unlock();
         }
+    }
+
+    private void destroyRaftNode(RaftNode node, boolean removeRaftStateStore) {
+        RaftGroupId groupId = (RaftGroupId) node.getGroupId();
+        node.forceSetTerminatedStatus().whenCompleteAsync((v, t) -> {
+            CPPersistenceService persistenceService = getCPPersistenceService();
+            try {
+                if (removeRaftStateStore && persistenceService.isEnabled()) {
+                    persistenceService.removeRaftStateStore(groupId);
+                    logger.info("RaftStateStore of RaftNode[" + groupId + "] is deleted.");
+                }
+            } catch (Exception e) {
+                logger.severe("Deletion of RaftStateStore of RaftNode[" + groupId + "] failed.", e);
+            }
+        });
     }
 
     public RaftGroupId createRaftGroupForProxy(String name) {
@@ -1122,13 +1149,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public void onRaftGroupDestroyed(CPGroupId groupId) {
-        nodeEngine.getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> destroyRaftNode(groupId));
+    public void onRaftNodeTerminated(CPGroupId groupId) {
+        nodeEngine.getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> terminateRaftNode(groupId, false));
     }
 
     @Override
     public void onRaftNodeSteppedDown(CPGroupId groupId) {
-        stepDownRaftNode(groupId);
+        nodeEngine.getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> stepDownRaftNode(groupId));
     }
 
     public Collection<CPGroupId> getLeadedGroups() {

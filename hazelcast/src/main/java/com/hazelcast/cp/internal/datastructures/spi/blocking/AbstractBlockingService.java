@@ -216,7 +216,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     }
 
     @Override
-    public final void onRaftGroupDestroyed(CPGroupId groupId) {
+    public final void onRaftNodeTerminated(CPGroupId groupId) {
         ResourceRegistry<W, R> registry = registries.get(groupId);
         if (registry != null) {
             Collection<Long> indices = registry.destroy();
