@@ -27,17 +27,22 @@ import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Executor for local join.
+ * Hash join implementation: build hash table from the right input, do lookups for the left one.
  */
-// TODO: Implement
 public class HashJoinExec extends AbstractUpstreamAwareExec {
     /** Right input. */
     private final UpstreamState rightState;
 
     /** Filter. */
+    // TODO: Currently this condition includes equality checks for hash keys. They are unnecessary. Remove during planning stage.
     private final Expression<Boolean> filter;
 
     /** Left hash keys. */
@@ -48,6 +53,12 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
 
     /** Current left row. */
     private Row leftRow;
+
+    /** Current matching right rows. */
+    private List<Row> rightRows;
+
+    /** Position in the right row batch. */
+    private int rightRowPos;
 
     /** Current row. */
     private RowBatch curRow;
@@ -73,58 +84,88 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
         rightState.setup(ctx);
     }
 
+
+
+    private final HashMap<Object, List<Row>> table = new HashMap<>();
+
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public IterationResult advance() {
+        // Build hash table for the right input.
+        while (!rightState.isDone()) {
+            if (rightState.advance()) {
+                for (Row row : rightState) {
+                    add(row);
+                }
+            } else {
+                return IterationResult.WAIT;
+            }
+        }
+
+        // Special case: right input produced no results.
+        if (table.isEmpty()) {
+            curRow = EmptyRowBatch.INSTANCE;
+
+            return IterationResult.FETCHED_DONE;
+        }
+
+        // Main join cycle.
         while (true) {
-            // Get the left row.
-            if (leftRow == null) {
-                while (true) {
-                    if (!state.advance()) {
-                        return IterationResult.WAIT;
-                    }
+            // Loop until we find a match between the left and right inputs.
+            while (leftRow == null) {
+                // Check if we have reached the end.
+                if (state.isDone()) {
+                    curRow = EmptyRowBatch.INSTANCE;
 
-                    leftRow = state.nextIfExists();
+                    return IterationResult.FETCHED_DONE;
+                }
 
-                    if (leftRow != null) {
-                        rightState.reset();
+                // Get the next data chunk.
+                if (!state.advance()) {
+                    return IterationResult.WAIT;
+                }
+
+                // Match the next row.
+                for (Row leftRow0 : state) {
+                    List<Row> rightRows0 = get(leftRow0);
+
+                    if (!rightRows0.isEmpty()) {
+                        leftRow = leftRow0;
+                        rightRows = rightRows0;
+                        rightRowPos = 0;
 
                         break;
-                    } else if (state.isDone()) {
-                        curRow = EmptyRowBatch.INSTANCE;
-
-                        return IterationResult.FETCHED_DONE;
                     }
                 }
             }
 
-            // Iterate over the right input.
-            do {
-                if (!rightState.advance()) {
-                    return IterationResult.WAIT;
+            // Match left and right inputs.
+            boolean found = false;
+
+            for (int i = rightRowPos; i < rightRows.size(); i++) {
+                Row rightRow = rightRows.get(i);
+
+                JoinRow row = new JoinRow(leftRow, rightRow);
+
+                if (filter.eval(ctx, row)) {
+                    rightRowPos = i + 1;
+
+                    curRow = row;
+
+                    found = true;
+
+                    break;
                 }
+            }
 
-                for (Row rightRow : rightState) {
-                    JoinRow row = new JoinRow(leftRow, rightRow);
+            // Reset the left row if there is no match of we reached the end of the matching right input.
+            if (!found || rightRowPos == rightRows.size()) {
+                leftRow = null;
+            }
 
-                    // Evaluate the condition.
-                    if (filter.eval(ctx, row)) {
-                        curRow = row;
-
-                        if (state.isDone() && rightState.isDone()) {
-                            leftRow = null;
-
-                            return IterationResult.FETCHED_DONE;
-                        }
-
-                        return IterationResult.FETCHED;
-                    }
-                }
-
-            } while (!rightState.isDone());
-
-            // Nullify left row.
-            leftRow = null;
+            if (found) {
+                return IterationResult.FETCHED;
+            }
         }
     }
 
@@ -143,5 +184,120 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
         rightState.reset();
 
         curRow = null;
+    }
+
+    /**
+     * Add row from the right input to the hash table.
+     *
+     * @param rightRow Row.
+     */
+    private void add(Row rightRow) {
+        Object key = prepareKey(rightRow, rightHashKeys);
+
+        List<Row> rows = table.computeIfAbsent(key, k -> new ArrayList<>(1));
+
+        rows.add(rightRow);
+    }
+
+    /**
+     * Get matching values for the left row.
+     *
+     * @param leftRow Left row.
+     * @return Matching rows.
+     */
+    private List<Row> get(Row leftRow) {
+        Object key = prepareKey(leftRow, leftHashKeys);
+
+        List<Row> rows = table.get(key);
+
+        return rows != null ? rows : Collections.emptyList();
+    }
+
+    /**
+     * Prepare hash key for the row.
+     *
+     * @param row Row.
+     * @param hashKeys Columns to be used for hash key.
+     * @return Key.
+     */
+    private Object prepareKey(Row row, List<Integer> hashKeys) {
+        if (hashKeys.size() == 1) {
+            return row.getColumn(hashKeys.get(0));
+        } else if (hashKeys.size() == 2) {
+            return new HashKey2(
+                row.getColumn(hashKeys.get(0)),
+                row.getColumn(hashKeys.get(1))
+            );
+        } else {
+            Object[] vals = new Object[hashKeys.size()];
+
+            for (int i = 0; i < hashKeys.size(); i++) {
+                vals[i] = row.getColumn(hashKeys.get(i));
+            }
+
+            return new HashKeyN(vals);
+        }
+    }
+
+    private static final class HashKey2 {
+        private final Object val1;
+        private final Object val2;
+
+        private HashKey2(Object val1, Object val2) {
+            this.val1 = val1;
+            this.val2 = val2;
+        }
+
+        @Override
+        public int hashCode() {
+            int res = val1 != null ? val1.hashCode() : 0;
+
+            res = 31 * res + (val2 != null ? val2.hashCode() : 0);
+
+            return res;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            HashKey2 hashKey2 = (HashKey2) o;
+
+            return Objects.equals(val1, hashKey2.val1) && Objects.equals(val2, hashKey2.val2);
+        }
+    }
+
+    private static final class HashKeyN {
+        private final Object[] vals;
+
+        private HashKeyN(Object[] vals) {
+            this.vals = vals;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            HashKeyN hashKeyN = (HashKeyN) o;
+
+            return Arrays.equals(vals, hashKeyN.vals);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(vals);
+        }
     }
 }

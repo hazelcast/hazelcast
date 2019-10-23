@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.exchange.SingletonSortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.exchange.UnicastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.join.CollocatedJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.join.NestedLoopJoinPhysicalRel;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
@@ -44,10 +43,9 @@ import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
 import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
-import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
-import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
@@ -352,20 +350,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         );
 
         pushUpstream(aggNode);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void onCollocatedJoin(CollocatedJoinPhysicalRel rel) {
-        PhysicalNode leftInput = pollSingleUpstream();
-        PhysicalNode rightInput = pollSingleUpstream();
-
-        RexNode condition = rel.getCondition();
-        Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
-
-        CollocatedJoinPhysicalNode joinNode = new CollocatedJoinPhysicalNode(leftInput, rightInput, convertedCondition);
-
-        pushUpstream(joinNode);
     }
 
      @SuppressWarnings("unchecked")

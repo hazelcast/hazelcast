@@ -38,7 +38,6 @@ public interface PhysicalNodeVisitor {
     void onProjectNode(ProjectPhysicalNode node);
     void onFilterNode(FilterPhysicalNode node);
     void onCollocatedAggregateNode(CollocatedAggregatePhysicalNode node);
-    void onCollocatedJoinNode(CollocatedJoinPhysicalNode node);
     void onNestedLoopJoinNode(NestedLoopJoinPhysicalNode node);
     void onHashJoinNode(HashJoinPhysicalNode node);
     void onMaterializedInputNode(MaterializedInputPhysicalNode node);

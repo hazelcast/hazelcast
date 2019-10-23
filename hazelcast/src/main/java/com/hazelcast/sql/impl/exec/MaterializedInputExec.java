@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 
@@ -45,6 +46,8 @@ public class MaterializedInputExec extends AbstractUpstreamAwareExec {
             // Need to fetch more rows from upstream.
             if (state.isDone()) {
                 // No more results from the upstream, we are done.
+                curRow = EmptyRowBatch.INSTANCE;
+
                 return IterationResult.FETCHED_DONE;
             } else {
                 // Try advancing upstream.
@@ -53,14 +56,8 @@ public class MaterializedInputExec extends AbstractUpstreamAwareExec {
                     return IterationResult.WAIT;
                 } else {
                     // Advanced, consume rows.
-                    while (true) {
-                        Row row = state.nextIfExists();
-
-                        if (row != null) {
-                            rows.add(row);
-                        } else {
-                            break;
-                        }
+                    for (Row row : state) {
+                        rows.add(row);
                     }
                 }
             }

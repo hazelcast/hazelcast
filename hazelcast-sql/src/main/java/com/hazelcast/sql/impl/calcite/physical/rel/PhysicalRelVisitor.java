@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.calcite.physical.rel;
 import com.hazelcast.sql.impl.calcite.physical.rel.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.exchange.SingletonSortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.exchange.UnicastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.join.CollocatedJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.join.NestedLoopJoinPhysicalRel;
 
@@ -38,7 +37,6 @@ public interface PhysicalRelVisitor {
     void onProject(ProjectPhysicalRel rel);
     void onFilter(FilterPhysicalRel rel);
     void onCollocatedAggregate(CollocatedAggregatePhysicalRel rel);
-    void onCollocatedJoin(CollocatedJoinPhysicalRel rel);
     void onNestedLoopJoin(NestedLoopJoinPhysicalRel rel);
     void onHashJoin(HashJoinPhysicalRel rel);
     void onMaterializedInput(MaterializedInputPhysicalRel rel);

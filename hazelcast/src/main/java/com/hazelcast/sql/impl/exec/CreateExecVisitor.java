@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.exec.io.ReceiveExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
 import com.hazelcast.sql.impl.exec.io.UnicastSendExec;
 import com.hazelcast.sql.impl.exec.join.HashJoinExec;
-import com.hazelcast.sql.impl.exec.join.LocalJoinExec;
 import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
@@ -35,7 +34,6 @@ import com.hazelcast.sql.impl.mailbox.SingleInbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
-import com.hazelcast.sql.impl.physical.CollocatedJoinPhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
@@ -296,17 +294,6 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     @Override
     public void onCollocatedAggregateNode(CollocatedAggregatePhysicalNode node) {
         Exec res = new LocalAggregateExec(pop(), node.getGroupKeySize(), node.getAccumulators(), node.isSorted());
-
-        push(res);
-    }
-
-    @Override
-    public void onCollocatedJoinNode(CollocatedJoinPhysicalNode node) {
-        Exec res = new LocalJoinExec(
-            pop(),
-            pop(),
-            node.getCondition()
-        );
 
         push(res);
     }
