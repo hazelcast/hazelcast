@@ -176,7 +176,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return storage.getEntryCostEstimator().getEstimate();
     }
 
-    protected long getNow() {
+    protected static long getNow() {
         return Clock.currentTimeMillis();
     }
 
