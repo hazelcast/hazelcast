@@ -117,6 +117,11 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return isRecordStoreExpirable();
     }
 
+    @Override
+    public Object get(Data dataKey, boolean backup, Address callerAddress) {
+        return get(dataKey, backup, callerAddress, true);
+    }
+
     /**
      * Intended to put an upper bound to iterations. Used in evictions.
      *
@@ -343,7 +348,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(this, true);
     }
 
-    protected void accessRecord(Record record, long now) {
+    @Override
+    public void accessRecord(Record record, long now) {
         record.onAccess(now);
         updateStatsOnGet(now);
         setExpirationTime(record);
