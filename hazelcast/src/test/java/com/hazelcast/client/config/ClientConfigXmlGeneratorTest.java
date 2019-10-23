@@ -440,12 +440,19 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void connectionStrategy() {
         ClientConnectionStrategyConfig expected = new ClientConnectionStrategyConfig();
         expected.setAsyncStart(true)
-                .setReconnectMode(ASYNC);
+                .setReconnectMode(ASYNC)
+                .setConnectionRetryConfig(new ConnectionRetryConfig()
+                        .setInitialBackoffMillis(1000)
+                        .setMaxBackoffMillis(30000)
+                        .setMultiplier(2.0)
+                        .setFailOnMaxBackoff(true)
+                        .setJitter(0.2));
         clientConfig.setConnectionStrategyConfig(expected);
 
         ClientConnectionStrategyConfig actual = newConfigViaGenerator().getConnectionStrategyConfig();
         assertEquals(expected.isAsyncStart(), actual.isAsyncStart());
         assertEquals(expected.getReconnectMode(), actual.getReconnectMode());
+        assertEquals(expected.getConnectionRetryConfig(), actual.getConnectionRetryConfig());
     }
 
     @Test

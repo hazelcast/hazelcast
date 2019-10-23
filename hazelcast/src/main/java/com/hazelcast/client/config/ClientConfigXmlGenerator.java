@@ -131,9 +131,7 @@ public final class ClientConfigXmlGenerator {
         //QueryCaches
         queryCaches(gen, clientConfig.getQueryCacheConfigs());
         //ConnectionStrategy
-        ClientConnectionStrategyConfig connectionStrategy = clientConfig.getConnectionStrategyConfig();
-        gen.node("connection-strategy", null, "async-start", connectionStrategy.isAsyncStart(),
-                "reconnect-mode", connectionStrategy.getReconnectMode());
+        connectionStrategy(gen, clientConfig.getConnectionStrategyConfig());
         //UserCodeDeployment
         userCodeDeployment(gen, clientConfig.getUserCodeDeploymentConfig());
         //FlakeIdGenerator
@@ -564,6 +562,22 @@ public final class ClientConfigXmlGenerator {
                         "store-initial-delay-seconds", preloader.getStoreInitialDelaySeconds(),
                         "store-interval-seconds", preloader.getStoreIntervalSeconds());
         //close near-cache
+        gen.close();
+    }
+
+    private static void connectionStrategy(XmlGenerator gen, ClientConnectionStrategyConfig connectionStrategy) {
+        ConnectionRetryConfig connectionRetry = connectionStrategy.getConnectionRetryConfig();
+        gen.open("connection-strategy", "async-start", connectionStrategy.isAsyncStart(),
+                "reconnect-mode", connectionStrategy.getReconnectMode());
+        gen.open("connection-retry")
+                .node("initial-backoff-millis", connectionRetry.getInitialBackoffMillis())
+                .node("max-backoff-millis", connectionRetry.getMaxBackoffMillis())
+                .node("multiplier", connectionRetry.getMultiplier())
+                .node("fail-on-max-backoff", connectionRetry.isFailOnMaxBackoff())
+                .node("jitter", connectionRetry.getJitter())
+                .close();
+
+        // close connection-strategy
         gen.close();
     }
 
