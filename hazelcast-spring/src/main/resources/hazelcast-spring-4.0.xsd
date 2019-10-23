@@ -3011,13 +3011,7 @@
     <xs:complexType name="service">
         <xs:sequence>
             <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Deprecated element, subject to remove. Please use class-name/implementation attributes instead
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
+            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
             <xs:element name="configuration" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
