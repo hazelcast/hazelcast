@@ -27,7 +27,7 @@ import java.util.Objects;
 /**
  * Broadcast send node.
  */
-public class BroadcastSendPhysicalNode implements PhysicalNode {
+public class BroadcastSendPhysicalNode implements EdgeAwarePhysicalNode {
     /** Edge ID. */
     private int edgeId;
 
@@ -43,12 +43,18 @@ public class BroadcastSendPhysicalNode implements PhysicalNode {
         this.upstream = upstream;
     }
 
+    public PhysicalNode getUpstream() {
+        return upstream;
+    }
+
+    @Override
     public int getEdgeId() {
         return edgeId;
     }
 
-    public PhysicalNode getUpstream() {
-        return upstream;
+    @Override
+    public boolean isSender() {
+        return true;
     }
 
     @Override

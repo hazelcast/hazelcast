@@ -77,7 +77,7 @@ import java.util.UUID;
  * Visitor which produces query plan.
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity"})
-public class PlanCreateVisitor implements PhysicalRelVisitor {
+public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
 
@@ -94,15 +94,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private final Deque<PhysicalNode> upstreamNodes = new ArrayDeque<>();
 
     /** ID of current edge. */
-    private int currentEdge;
+    private int nextEdgeGenerator;
 
-    /** Current outbound edges. */
-    private Integer currentOutboundEdge;
-
-    /** Current inbound edges. */
-    private List<Integer> currentInboundEdges;
-
-    public PlanCreateVisitor(
+    public PlanCreatePhysicalRelVisitor(
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
         List<Address> dataMemberAddresses
@@ -207,8 +201,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
-        addOutboundEdge(edge);
-
         UnicastSendPhysicalNode sendNode = new UnicastSendPhysicalNode(
             edge,
             upstreamNode,
@@ -218,8 +210,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         addFragment(sendNode,  QueryFragmentMapping.DATA_MEMBERS);
 
         // Create receiver.
-        addInboundEdge(edge);
-
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(edge);
 
         pushUpstream(receiveNode);
@@ -233,8 +223,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
-        addOutboundEdge(edge);
-
         BroadcastSendPhysicalNode sendNode = new BroadcastSendPhysicalNode(
             edge,
             upstreamNode
@@ -243,8 +231,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         addFragment(sendNode,  QueryFragmentMapping.DATA_MEMBERS);
 
         // Create receiver.
-        addInboundEdge(edge);
-
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(edge);
 
         pushUpstream(receiveNode);
@@ -262,8 +248,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
-        addOutboundEdge(edge);
-
         UnicastSendPhysicalNode sendNode = new UnicastSendPhysicalNode(
             edge,
             sortNode,
@@ -273,8 +257,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
 
         // Create a receiver and push it to stack.
-        addInboundEdge(edge);
-
         ReceiveSortMergePhysicalNode receiveNode = new ReceiveSortMergePhysicalNode(
             edge,
             sortNode.getExpressions(),
@@ -438,39 +420,29 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
      * @param mapping Fragment mapping mode.
      */
     private void addFragment(PhysicalNode node, QueryFragmentMapping mapping) {
+        EdgeCollectorPhysicalNodeVisitor edgeVisitor = new EdgeCollectorPhysicalNodeVisitor();
+
+        node.visit(edgeVisitor);
+
+        Integer outboundEdge = edgeVisitor.getOutboundEdge();
+        List<Integer> inboundEdges = edgeVisitor.getInboundEdges();
+
         QueryFragment fragment = new QueryFragment(
             node,
-            currentOutboundEdge,
-            currentInboundEdges,
+            outboundEdge,
+            inboundEdges,
             mapping
         );
-
-        currentOutboundEdge = null;
-        currentInboundEdges = null;
 
         fragments.add(fragment);
     }
 
     private int nextEdge() {
-        return currentEdge++;
+        return nextEdgeGenerator++;
     }
 
-    private void addInboundEdge(int edgeId) {
-        if (currentInboundEdges == null) {
-            currentInboundEdges = new ArrayList<>(1);
-        }
-
-        currentInboundEdges.add(edgeId);
-    }
-
-    private void addOutboundEdge(int edgeId) {
-        assert currentOutboundEdge == null;
-
-        currentOutboundEdge = edgeId;
-    }
-
-     @SuppressWarnings("unchecked")
-     private static Expression<Boolean> convertFilter(RexNode expression) {
+    @SuppressWarnings("unchecked")
+    private static Expression<Boolean> convertFilter(RexNode expression) {
         if (expression == null) {
             return null;
         }

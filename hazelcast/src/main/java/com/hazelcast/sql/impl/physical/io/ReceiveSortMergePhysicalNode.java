@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.physical.io;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.io.IOException;
@@ -29,7 +28,7 @@ import java.util.Objects;
 /**
  * Physical node which receives from remote stripes and performs sort-merge.
  */
-public class ReceiveSortMergePhysicalNode implements PhysicalNode {
+public class ReceiveSortMergePhysicalNode implements EdgeAwarePhysicalNode {
     /** Edge iD. */
     private int edgeId;
 
@@ -49,16 +48,22 @@ public class ReceiveSortMergePhysicalNode implements PhysicalNode {
         this.ascs = ascs;
     }
 
-    public int getEdgeId() {
-        return edgeId;
-    }
-
     public List<Expression> getExpressions() {
         return expressions;
     }
 
     public List<Boolean> getAscs() {
         return ascs;
+    }
+
+    @Override
+    public int getEdgeId() {
+        return edgeId;
+    }
+
+    @Override
+    public boolean isSender() {
+        return false;
     }
 
     @Override

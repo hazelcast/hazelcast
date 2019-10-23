@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
@@ -60,7 +61,7 @@ import java.util.UUID;
  /**
  * Visitor which builds an executor for every observed physical node.
  */
-public class CreateExecVisitor implements PhysicalNodeVisitor {
+public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     // TODO: Understand how to calculate it properly. It should not be hardcoded.
     private static final int OUTBOX_BATCH_SIZE = 1024;
 
@@ -91,7 +92,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     /** Inboxes. */
     private List<AbstractInbox> inboxes = new ArrayList<>(1);
 
-    public CreateExecVisitor(
+    public CreateExecPhysicalNodeVisitor(
         NodeEngine nodeEngine,
         QueryExecuteOperation operation,
         QueryFragmentDescriptor currentFragment,
@@ -181,9 +182,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
             PartitionIdSet partitions = partitionMap.get(outboxMemberId);
 
-            partitions.forEach((part) -> {
-                partitionOutboxIndexes[part] = outboxIndex0;
-            });
+            partitions.forEach((part) -> partitionOutboxIndexes[part] = outboxIndex0);
         }
 
         exec = new UnicastSendExec(pop(), outboxes, node.getHashFunction(), partitionOutboxIndexes);

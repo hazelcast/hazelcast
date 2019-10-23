@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.exec.CreateExecVisitor;
+import com.hazelcast.sql.impl.exec.CreateExecPhysicalNodeVisitor;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
@@ -155,7 +155,7 @@ public class QueryWorker implements Runnable {
         QueryFragmentDescriptor fragmentDescriptor = task.getFragment();
 
         // Create executor and mailboxes.
-        CreateExecVisitor visitor = new CreateExecVisitor(
+        CreateExecPhysicalNodeVisitor visitor = new CreateExecPhysicalNodeVisitor(
             nodeEngine,
             operation,
             fragmentDescriptor,

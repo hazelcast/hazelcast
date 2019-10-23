@@ -28,7 +28,7 @@ import java.util.Objects;
 /**
  * Node which unicasts data to remote stripes.
  */
-public class UnicastSendPhysicalNode implements PhysicalNode {
+public class UnicastSendPhysicalNode implements EdgeAwarePhysicalNode {
     /** Edge ID. */
     private int edgeId;
 
@@ -48,16 +48,22 @@ public class UnicastSendPhysicalNode implements PhysicalNode {
         this.hashFunction = hashFunction;
     }
 
-    public int getEdgeId() {
-        return edgeId;
-    }
-
     public PhysicalNode getUpstream() {
         return upstream;
     }
 
     public HashFunction getHashFunction() {
         return hashFunction;
+    }
+
+    @Override
+    public int getEdgeId() {
+        return edgeId;
+    }
+
+    @Override
+    public boolean isSender() {
+        return true;
     }
 
     @Override

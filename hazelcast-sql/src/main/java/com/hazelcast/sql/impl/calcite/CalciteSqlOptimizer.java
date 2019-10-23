@@ -355,7 +355,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
 
         // Create the plan.
-        PlanCreateVisitor visitor = new PlanCreateVisitor(partMap, dataMemberIds, dataMemberAddresses);
+        PlanCreatePhysicalRelVisitor visitor = new PlanCreatePhysicalRelVisitor(partMap, dataMemberIds, dataMemberAddresses);
 
         rel.visit(visitor);
 

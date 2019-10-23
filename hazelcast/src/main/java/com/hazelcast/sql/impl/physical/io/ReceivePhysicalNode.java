@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.physical.io;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.io.IOException;
@@ -27,7 +26,7 @@ import java.util.Objects;
 /**
  * Physical node which receives from remote stripes.
  */
-public class ReceivePhysicalNode implements PhysicalNode {
+public class ReceivePhysicalNode implements EdgeAwarePhysicalNode {
     /** Edge ID. */
     private int edgeId;
 
@@ -39,8 +38,14 @@ public class ReceivePhysicalNode implements PhysicalNode {
         this.edgeId = edgeId;
     }
 
+    @Override
     public int getEdgeId() {
         return edgeId;
+    }
+
+    @Override
+    public boolean isSender() {
+        return false;
     }
 
     @Override
