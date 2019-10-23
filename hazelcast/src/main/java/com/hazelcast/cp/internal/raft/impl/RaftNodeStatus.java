@@ -58,8 +58,8 @@ public enum RaftNodeStatus {
     /**
      * When a Raft group is destroyed, all Raft nodes' statuses in that group
      * become {@code TERMINATED} after the destroy process is done. Moreover,
-     * a Raft node can move to {@code TERMINATED} status if its JVM is being
-     * shut-down.
+     * a Raft node can move to {@code TERMINATED} status if the Hazelcast node
+     * containing this Raft node is shutting down.
      */
     TERMINATED
 
