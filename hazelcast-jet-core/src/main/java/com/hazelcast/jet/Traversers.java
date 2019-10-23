@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -38,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  */
 public final class Traversers {
 
-    private static final Traverser<Object> EMPTY_TRAVERSER = () -> null;
+    private static final Traverser<Object> EMPTY_TRAVERSER = new EmptyTraverser<>();
 
     private Traversers() {
     }
@@ -247,7 +248,46 @@ public final class Traversers {
         }
     }
 
-    private static class SingletonTraverser<T> implements Traverser<T> {
+    private static final class EmptyTraverser<T> implements Traverser<T> {
+        @Override
+        public T next() {
+            return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Nonnull @Override
+        public <R> Traverser<R> map(@Nonnull Function<? super T, ? extends R> mapFn) {
+            return (Traverser<R>) this;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Nonnull @Override
+        public <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> flatMapFn) {
+            return (Traverser<R>) this;
+        }
+
+        @Nonnull @Override
+        public Traverser<T> filter(@Nonnull Predicate<? super T> filterFn) {
+            return this;
+        }
+
+        @Nonnull @Override
+        public Traverser<T> takeWhile(@Nonnull Predicate<? super T> predicate) {
+            return this;
+        }
+
+        @Nonnull @Override
+        public Traverser<T> dropWhile(@Nonnull Predicate<? super T> predicate) {
+            return this;
+        }
+
+        @Nonnull @Override
+        public Traverser<T> peek(@Nonnull Consumer<? super T> action) {
+            return this;
+        }
+    }
+
+    private static final class SingletonTraverser<T> implements Traverser<T> {
         private T item;
 
         SingletonTraverser(@Nonnull T item) {
