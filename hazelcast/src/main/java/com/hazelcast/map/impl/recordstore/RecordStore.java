@@ -59,6 +59,17 @@ public interface RecordStore<R extends Record> {
 
     LocalRecordStoreStats getLocalRecordStoreStats();
 
+    /**
+     * Touches the given record, updating its last access time to {@code now} and
+     * maintaining statistics.
+     * <p>
+     * An implementation is not supposed to be thread safe.
+     *
+     * @param record the accessed record
+     * @param now    the current time
+     */
+    void accessRecord(Record record, long now);
+
     String getName();
 
     /**
@@ -129,8 +140,16 @@ public interface RecordStore<R extends Record> {
      * Loads missing keys from map store.
      *
      * @param dataKey key.
-     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
+     * @param touch   when {@code true}, if an existing record was found for the given key,
+     *                then its last access time is updated.
      * @return value of an entry in {@link RecordStore}
+     */
+    Object get(Data dataKey, boolean backup, Address callerAddress, boolean touch);
+
+    /**
+     * Same as {@link #get(Data, boolean, Address, boolean)} with parameter {@code touch}
+     * set {@code true}.
      */
     Object get(Data dataKey, boolean backup, Address callerAddress);
 

@@ -132,6 +132,21 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
         assertEquals(100, totalBackupEntryCount);
     }
 
+    // see https://github.com/hazelcast/hazelcast/issues/15515
+    @Test
+    public void removeAll_doesNotTouchNonMatchingEntries() {
+        String mapName = "test";
+        IMap<Integer, Integer> map = member.getMap(mapName);
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+        long expirationTime = map.getEntryView(1).getExpirationTime();
+
+        map.removeAll(new SqlPredicate("__key >= 100"));
+        assertEquals("Expiration time of non-matching key 1 should be same as original",
+                expirationTime, map.getEntryView(1).getExpirationTime());
+    }
+
     private static final class OddFinderPredicate implements Predicate<Integer, Integer> {
         @Override
         public boolean apply(Map.Entry<Integer, Integer> mapEntry) {

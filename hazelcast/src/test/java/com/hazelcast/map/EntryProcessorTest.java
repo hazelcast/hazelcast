@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -2004,6 +2005,48 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         for (Object response : partitionResponses.values()) {
             assertEquals(0, ((MapEntries) response).size());
+        }
+    }
+
+    // when executing EntryProcessor with predicate via partition scan
+    // entries not matching the predicate should not be touched
+    // see https://github.com/hazelcast/hazelcast/issues/15515
+    @Test
+    public void testEntryProcessorWithPredicate_doesNotTouchNonMatchingEntries() {
+        testEntryProcessorWithPredicate_updatesLastAccessTime(false);
+    }
+
+    @Test
+    public void testEntryProcessorWithPredicate_touchesMatchingEntries() {
+        testEntryProcessorWithPredicate_updatesLastAccessTime(true);
+    }
+
+    private void testEntryProcessorWithPredicate_updatesLastAccessTime(final boolean accessExpected) {
+        Config config = smallInstanceConfig();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        config.getMapConfig(MAP_NAME)
+              .setTimeToLiveSeconds(60)
+              .setMaxIdleSeconds(30);
+
+        HazelcastInstance member = createHazelcastInstance(config);
+        IMap<String, String> map = member.getMap(MAP_NAME);
+        map.put("testKey", "testValue");
+        EntryView evStart = map.getEntryView("testKey");
+        sleepAtLeastSeconds(2);
+        map.executeOnEntries(new NoOpEntryProcessor(), new Predicate() {
+            @Override
+            public boolean apply(Map.Entry mapEntry) {
+                return accessExpected;
+            }
+        });
+        EntryView evEnd = map.getEntryView("testKey");
+
+        if (accessExpected) {
+            assertTrue("Expiration time should be greater than original one",
+                    evEnd.getExpirationTime() > evStart.getExpirationTime());
+        } else {
+            assertEquals("Expiration time should be the same", evStart.getExpirationTime(), evEnd.getExpirationTime());
         }
     }
 
