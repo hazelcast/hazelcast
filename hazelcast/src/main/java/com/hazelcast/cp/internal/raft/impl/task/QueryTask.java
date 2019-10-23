@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -155,11 +154,9 @@ public class QueryTask implements Runnable {
                 resultFuture.completeExceptionally(new CannotReplicateException(null));
                 return false;
             case TERMINATED:
-                resultFuture.completeExceptionally(new CPGroupDestroyedException(raftNode.getGroupId()));
-                return false;
             case STEPPED_DOWN:
-                resultFuture.completeExceptionally(new NotLeaderException(raftNode.getGroupId(),
-                        raftNode.getLocalMember(), null));
+                resultFuture.completeExceptionally(
+                        new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
                 return false;
             default:
                 return true;

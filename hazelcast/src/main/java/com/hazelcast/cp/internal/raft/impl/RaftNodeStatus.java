@@ -49,15 +49,17 @@ public enum RaftNodeStatus {
     STEPPED_DOWN,
 
     /**
-     * When a Raft group is being terminated, all Raft nodes' statuses in that
-     * group become {@code TERMINATING}. Once termination process is completed,
-     * then the statuses become {@link #TERMINATED}.
+     * When a Raft group is being destroyed, all Raft nodes' statuses in that
+     * group become {@code TERMINATING}. Once the Raft group destroy process
+     * is completed, then the statuses become {@link #TERMINATED}.
      */
     TERMINATING,
 
     /**
-     * When a Raft group is terminated completely, all Raft nodes' statuses in
-     * that group become {@code TERMINATED}.
+     * When a Raft group is destroyed, all Raft nodes' statuses in that group
+     * become {@code TERMINATED} after the destroy process is done. Moreover,
+     * a Raft node can move to {@code TERMINATED} status if its JVM is being
+     * shut-down.
      */
     TERMINATED
 
