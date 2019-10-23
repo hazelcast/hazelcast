@@ -375,7 +375,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public <T> T getService(String serviceName) {
+    public <T> T getService(@Nonnull String serviceName) {
         T service = serviceManager.getService(serviceName);
         if (service == null) {
             if (isRunning()) {
@@ -389,7 +389,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public <T> T getServiceOrNull(String serviceName) {
+    public <T> T getServiceOrNull(@Nonnull String serviceName) {
         return serviceManager.getService(serviceName);
     }
 

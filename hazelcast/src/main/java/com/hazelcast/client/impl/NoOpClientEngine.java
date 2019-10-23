@@ -30,6 +30,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -45,6 +46,7 @@ public class NoOpClientEngine implements ClientEngine {
         return true;
     }
 
+    @Nonnull
     @Override
     public Collection<Client> getClients() {
         return emptyList();

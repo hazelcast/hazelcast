@@ -260,12 +260,14 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         return getDistributedObject(DistributedDurableExecutorService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
     public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
         checkNotNull(name, "Retrieving a Flake ID-generator instance with a null name is not allowed!");
         return getDistributedObject(FlakeIdGeneratorService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
         checkNotNull(name, "Retrieving a replicated map instance with a null name is not allowed!");

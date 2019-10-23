@@ -38,6 +38,7 @@ import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -62,7 +63,8 @@ public class ClientRaftProxyFactory {
         this.context = context;
     }
 
-    public <T extends DistributedObject> T createProxy(String serviceName, String proxyName) {
+    public @Nonnull
+    <T extends DistributedObject> T createProxy(String serviceName, String proxyName) {
         proxyName = withoutDefaultGroupName(proxyName);
         String objectName = getObjectNameForProxy(proxyName);
 

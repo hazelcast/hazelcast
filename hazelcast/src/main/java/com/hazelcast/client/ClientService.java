@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -35,6 +36,7 @@ public interface ClientService {
      *
      * @return all connected clients to this member
      */
+    @Nonnull
     Collection<Client> getConnectedClients();
 
     /**
@@ -46,7 +48,7 @@ public interface ClientService {
      * @return registration ID which can be used to remove the listener using the {@link #removeClientListener(UUID)} method
      * @throws java.lang.NullPointerException if clientListener is {@code null}
      */
-    UUID addClientListener(ClientListener clientListener);
+    @Nonnull UUID addClientListener(@Nonnull ClientListener clientListener);
 
     /**
      * Removes a ClientListener.
@@ -57,5 +59,5 @@ public interface ClientService {
      * @return {@code true} if registration is removed, {@code false} otherwise
      * @throws java.lang.NullPointerException if registration ID is {@code null}
      */
-    boolean removeClientListener(UUID registrationId);
+    boolean removeClientListener(@Nonnull UUID registrationId);
 }

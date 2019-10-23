@@ -188,11 +188,13 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
         return getClient().newTransactionContext(options);
     }
 
+    @Nonnull
     @Override
     public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
         return getClient().getFlakeIdGenerator(name);
     }
 
+    @Nonnull
     @Override
     public CardinalityEstimator getCardinalityEstimator(@Nonnull String name) {
         return getClient().getCardinalityEstimator(name);

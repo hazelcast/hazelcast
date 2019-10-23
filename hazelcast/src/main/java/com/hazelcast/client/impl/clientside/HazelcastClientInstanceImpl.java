@@ -523,6 +523,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
     public <E> ITopic<E> getReliableTopic(@Nonnull String name) {
         checkNotNull(name, "Retrieving a topic instance with a null name is not allowed!");
@@ -593,12 +594,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return transactionManager;
     }
 
+    @Nonnull
     @Override
     public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
         checkNotNull(name, "Retrieving a Flake ID-generator instance with a null name is not allowed!");
         return getDistributedObject(FlakeIdGeneratorService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
     public CardinalityEstimator getCardinalityEstimator(@Nonnull String name) {
         checkNotNull(name, "Retrieving a cardinality estimator instance with a null name is not allowed!");
@@ -612,6 +615,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return getDistributedObject(PNCounterService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
     public IScheduledExecutorService getScheduledExecutorService(@Nonnull String name) {
         checkNotNull(name, "Retrieving a scheduled executor instance with a null name is not allowed!");

@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 
 public final class TerminatedLifecycleService implements LifecycleService {
@@ -37,13 +38,14 @@ public final class TerminatedLifecycleService implements LifecycleService {
     public void terminate() {
     }
 
+    @Nonnull
     @Override
-    public UUID addLifecycleListener(LifecycleListener lifecycleListener) {
+    public UUID addLifecycleListener(@Nonnull LifecycleListener lifecycleListener) {
         throw new HazelcastInstanceNotActiveException();
     }
 
     @Override
-    public boolean removeLifecycleListener(UUID registrationId) {
+    public boolean removeLifecycleListener(@Nonnull UUID registrationId) {
         throw new HazelcastInstanceNotActiveException();
     }
 }

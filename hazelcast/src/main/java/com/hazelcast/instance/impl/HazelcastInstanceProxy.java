@@ -136,6 +136,7 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return getOriginal().getRingbuffer(name);
     }
 
+    @Nonnull
     @Override
     public IExecutorService getExecutorService(@Nonnull String name) {
         return getOriginal().getExecutorService(name);
@@ -168,11 +169,13 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return getOriginal().newTransactionContext(options);
     }
 
+    @Nonnull
     @Override
     public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
         return getOriginal().getFlakeIdGenerator(name);
     }
 
+    @Nonnull
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
         return getOriginal().getReplicatedMap(name);

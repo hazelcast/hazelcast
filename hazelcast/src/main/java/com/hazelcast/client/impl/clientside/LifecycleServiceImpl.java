@@ -28,6 +28,7 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 
+import javax.annotation.Nonnull;
 import java.util.EventListener;
 import java.util.List;
 import java.util.UUID;
@@ -42,6 +43,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
@@ -89,15 +91,18 @@ public final class LifecycleServiceImpl implements LifecycleService {
         return client.getLoggingService().getLogger(LifecycleService.class);
     }
 
+    @Nonnull
     @Override
-    public UUID addLifecycleListener(LifecycleListener lifecycleListener) {
+    public UUID addLifecycleListener(@Nonnull LifecycleListener lifecycleListener) {
+        checkNotNull(lifecycleListener, "lifecycleListener must not be null");
         final UUID id = UuidUtil.newUnsecureUUID();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }
 
     @Override
-    public boolean removeLifecycleListener(UUID registrationId) {
+    public boolean removeLifecycleListener(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId must not be null");
         return lifecycleListeners.remove(registrationId) != null;
     }
 

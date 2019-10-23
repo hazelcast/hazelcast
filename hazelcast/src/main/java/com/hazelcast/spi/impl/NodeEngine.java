@@ -39,6 +39,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 /**
@@ -266,7 +267,7 @@ public interface NodeEngine {
      * @param <T>         the type of the service
      * @return the found service, or HazelcastException in case of failure ({@code null} will never be returned)
      */
-    <T> T getService(String serviceName);
+    <T> T getService(@Nonnull String serviceName);
 
     /**
      * Gets the service for the given serviceName if it exists or null otherwise.
@@ -276,7 +277,7 @@ public interface NodeEngine {
      * @return the found service, or null if the service was not found
      * @throws NullPointerException if the serviceName is {@code null}
      */
-    <T> T getServiceOrNull(String serviceName);
+    <T> T getServiceOrNull(@Nonnull String serviceName);
 
     /**
      * Returns the codebase version of the node. For example, when running on hazelcast-3.8.jar, this would resolve

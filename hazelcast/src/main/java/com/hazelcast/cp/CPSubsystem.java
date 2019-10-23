@@ -16,19 +16,20 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
+import com.hazelcast.map.IMap;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
@@ -386,7 +387,8 @@ public interface CPSubsystem {
      * @return {@link IAtomicLong} proxy for the given name
      * @throws HazelcastException if CP Subsystem is not enabled
      */
-    IAtomicLong getAtomicLong(String name);
+    @Nonnull
+    IAtomicLong getAtomicLong(@Nonnull String name);
 
     /**
      * Returns a proxy for an {@link IAtomicReference} instance created on
@@ -409,7 +411,8 @@ public interface CPSubsystem {
      * @return {@link IAtomicReference} proxy for the given name
      * @throws HazelcastException if CP Subsystem is not enabled
      */
-    <E> IAtomicReference<E> getAtomicReference(String name);
+    @Nonnull
+    <E> IAtomicReference<E> getAtomicReference(@Nonnull String name);
 
     /**
      * Returns a proxy for an {@link ICountDownLatch} instance created on
@@ -432,7 +435,7 @@ public interface CPSubsystem {
      * @return {@link ICountDownLatch} proxy for the given name
      * @throws HazelcastException if CP Subsystem is not enabled
      */
-    ICountDownLatch getCountDownLatch(String name);
+    @Nonnull ICountDownLatch getCountDownLatch(@Nonnull String name);
 
     /**
      * Returns a proxy for an {@link FencedLock} instance created on CP
@@ -450,13 +453,12 @@ public interface CPSubsystem {
      * <strong>Each call of this method performs a commit to the METADATA CP
      * group. Hence, callers should cache the returned proxy.</strong>
      *
-     * @see FencedLockConfig
-     *
      * @param name name of the {@link FencedLock} proxy
      * @return {@link FencedLock} proxy for the given name
      * @throws HazelcastException if CP Subsystem is not enabled
+     * @see FencedLockConfig
      */
-    FencedLock getLock(String name);
+    @Nonnull FencedLock getLock(@Nonnull String name);
 
     /**
      * Returns a proxy for an {@link ISemaphore} instance created on CP
@@ -474,13 +476,12 @@ public interface CPSubsystem {
      * <strong>Each call of this method performs a commit to the METADATA CP
      * group. Hence, callers should cache the returned proxy.</strong>
      *
-     * @see SemaphoreConfig
-     *
      * @param name name of the {@link ISemaphore} proxy
      * @return {@link ISemaphore} proxy for the given name
      * @throws HazelcastException if CP Subsystem is not enabled
+     * @see SemaphoreConfig
      */
-    ISemaphore getSemaphore(String name);
+    @Nonnull ISemaphore getSemaphore(@Nonnull String name);
 
     /**
      * Returns the local CP member if this Hazelcast member is part of
