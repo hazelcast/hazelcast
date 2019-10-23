@@ -40,6 +40,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -68,32 +69,37 @@ public class CPSubsystemImpl implements CPSubsystem {
         }
     }
 
+    @Nonnull
     @Override
-    public IAtomicLong getAtomicLong(String name) {
+    public IAtomicLong getAtomicLong(@Nonnull String name) {
         checkNotNull(name, "Retrieving an atomic long instance with a null name is not allowed!");
         return createProxy(AtomicLongService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
+    public <E> IAtomicReference<E> getAtomicReference(@Nonnull String name) {
         checkNotNull(name, "Retrieving an atomic reference instance with a null name is not allowed!");
         return createProxy(AtomicRefService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public ICountDownLatch getCountDownLatch(String name) {
+    public ICountDownLatch getCountDownLatch(@Nonnull String name) {
         checkNotNull(name, "Retrieving a count down latch instance with a null name is not allowed!");
         return createProxy(CountDownLatchService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public FencedLock getLock(String name) {
+    public FencedLock getLock(@Nonnull String name) {
         checkNotNull(name, "Retrieving an fenced lock instance with a null name is not allowed!");
         return createProxy(LockService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public ISemaphore getSemaphore(String name) {
+    public ISemaphore getSemaphore(@Nonnull String name) {
         checkNotNull(name, "Retrieving a semaphore instance with a null name is not allowed!");
         return createProxy(SemaphoreService.SERVICE_NAME, name);
     }
@@ -126,7 +132,7 @@ public class CPSubsystemImpl implements CPSubsystem {
         return getService(RaftSessionService.SERVICE_NAME);
     }
 
-    private <T> T getService(String serviceName) {
+    private <T> T getService(@Nonnull String serviceName) {
         return instance.node.getNodeEngine().getService(serviceName);
     }
 

@@ -25,6 +25,7 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.internal.util.Preconditions;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.UUID;
 
@@ -41,7 +42,7 @@ public class Registration implements EventRegistration {
     public Registration() {
     }
 
-    public Registration(UUID id, String serviceName, String topic,
+    public Registration(@Nonnull UUID id, String serviceName, String topic,
                         EventFilter filter, Address subscriber, Object listener, boolean localOnly) {
         this.id = Preconditions.checkNotNull(id, "Registration ID cannot be null!");
         this.filter = filter;

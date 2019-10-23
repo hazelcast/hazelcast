@@ -16,7 +16,7 @@
 
 package com.hazelcast.logging;
 
+@FunctionalInterface
 public interface LogListener {
-
     void log(LogEvent logEvent);
 }

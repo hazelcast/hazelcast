@@ -64,6 +64,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionManagerService;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -373,6 +374,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
+    @Nonnull
     @Override
     public Collection<Client> getClients() {
         Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();

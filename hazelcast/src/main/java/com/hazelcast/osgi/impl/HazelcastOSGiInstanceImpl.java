@@ -122,6 +122,7 @@ class HazelcastOSGiInstanceImpl
         return delegatedInstance.getMultiMap(name);
     }
 
+    @Nonnull
     @Override
     public <E> Ringbuffer<E> getRingbuffer(@Nonnull String name) {
         return delegatedInstance.getRingbuffer(name);
@@ -183,6 +184,7 @@ class HazelcastOSGiInstanceImpl
         return delegatedInstance.newTransactionContext(options);
     }
 
+    @Nonnull
     @Override
     public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
         return delegatedInstance.getFlakeIdGenerator(name);

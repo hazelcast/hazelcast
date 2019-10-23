@@ -34,6 +34,10 @@ import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
 
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 /**
  * Client-side impl of the CP subsystem to create CP data structure proxies
  */
@@ -49,28 +53,38 @@ public class CPSubsystemImpl implements CPSubsystem {
         proxyFactory.init(context);
     }
 
+    @Nonnull
     @Override
-    public IAtomicLong getAtomicLong(String name) {
+    public IAtomicLong getAtomicLong(@Nonnull String name) {
+        checkNotNull(name, "Retrieving an atomic long instance with a null name is not allowed!");
         return proxyFactory.createProxy(AtomicLongService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public <E> IAtomicReference<E> getAtomicReference(String name) {
+    public <E> IAtomicReference<E> getAtomicReference(@Nonnull String name) {
+        checkNotNull(name, "Retrieving an atomic reference instance with a null name is not allowed!");
         return proxyFactory.createProxy(AtomicRefService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public ICountDownLatch getCountDownLatch(String name) {
+    public ICountDownLatch getCountDownLatch(@Nonnull String name) {
+        checkNotNull(name, "Retrieving a count down latch instance with a null name is not allowed!");
         return proxyFactory.createProxy(CountDownLatchService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public FencedLock getLock(String name) {
+    public FencedLock getLock(@Nonnull String name) {
+        checkNotNull(name, "Retrieving an fenced lock instance with a null name is not allowed!");
         return proxyFactory.createProxy(LockService.SERVICE_NAME, name);
     }
 
+    @Nonnull
     @Override
-    public ISemaphore getSemaphore(String name) {
+    public ISemaphore getSemaphore(@Nonnull String name) {
+        checkNotNull(name, "Retrieving a semaphore instance with a null name is not allowed!");
         return proxyFactory.createProxy(SemaphoreService.SERVICE_NAME, name);
     }
 

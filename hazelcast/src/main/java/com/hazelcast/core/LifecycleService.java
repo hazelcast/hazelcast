@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
@@ -49,7 +50,7 @@ public interface LifecycleService {
      * @param lifecycleListener the listener object
      * @return the listener ID
      */
-    UUID addLifecycleListener(LifecycleListener lifecycleListener);
+    @Nonnull UUID addLifecycleListener(@Nonnull LifecycleListener lifecycleListener);
 
     /**
      * Removes a lifecycle listener.
@@ -57,5 +58,5 @@ public interface LifecycleService {
      * @param registrationId the listener ID returned by {@link #addLifecycleListener(LifecycleListener)}
      * @return true if the listener is removed successfully, false otherwise
      */
-    boolean removeLifecycleListener(UUID registrationId);
+    boolean removeLifecycleListener(@Nonnull UUID registrationId);
 }

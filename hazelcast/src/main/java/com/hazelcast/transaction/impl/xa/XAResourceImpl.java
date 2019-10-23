@@ -39,6 +39,7 @@ import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOpe
 import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOperation;
 import com.hazelcast.internal.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
@@ -295,6 +296,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         return SERVICE_NAME;
     }
 
+    @Nonnull
     @Override
     public TransactionContext getTransactionContext() {
         long threadId = Thread.currentThread().getId();

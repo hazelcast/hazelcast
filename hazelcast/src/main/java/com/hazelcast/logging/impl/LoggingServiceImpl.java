@@ -28,6 +28,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,22 +36,16 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class LoggingServiceImpl implements LoggingService {
 
     private final CopyOnWriteArrayList<LogListenerRegistration> listeners
             = new CopyOnWriteArrayList<LogListenerRegistration>();
 
-    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<>(100);
 
-    private final ConstructorFunction<String, ILogger> loggerConstructor
-            = new ConstructorFunction<String, ILogger>() {
-
-        @Override
-        public ILogger createNew(String key) {
-            return new DefaultLogger(key);
-        }
-    };
+    private final ConstructorFunction<String, ILogger> loggerConstructor = DefaultLogger::new;
 
     private final LoggerFactory loggerFactory;
     private final String versionMessage;
@@ -72,18 +67,22 @@ public class LoggingServiceImpl implements LoggingService {
                 + thisMember.getAddress().getPort() + " ";
     }
 
+    @Nonnull
     @Override
-    public ILogger getLogger(String name) {
+    public ILogger getLogger(@Nonnull String name) {
+        checkNotNull(name, "name must not be null");
         return getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
+    @Nonnull
     @Override
-    public ILogger getLogger(Class clazz) {
+    public ILogger getLogger(@Nonnull Class clazz) {
+        checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
     }
 
     @Override
-    public void addLogListener(Level level, LogListener logListener) {
+    public void addLogListener(@Nonnull Level level, @Nonnull LogListener logListener) {
         listeners.add(new LogListenerRegistration(level, logListener));
         if (level.intValue() < minLevel.intValue()) {
             minLevel = level;
@@ -91,7 +90,7 @@ public class LoggingServiceImpl implements LoggingService {
     }
 
     @Override
-    public void removeLogListener(LogListener logListener) {
+    public void removeLogListener(@Nonnull LogListener logListener) {
         listeners.remove(new LogListenerRegistration(Level.ALL, logListener));
     }
 
@@ -107,7 +106,9 @@ public class LoggingServiceImpl implements LoggingService {
         final Level level;
         final LogListener logListener;
 
-        LogListenerRegistration(Level level, LogListener logListener) {
+        LogListenerRegistration(@Nonnull Level level, @Nonnull LogListener logListener) {
+            checkNotNull(level, "level must not be null");
+            checkNotNull(logListener, "logListener must not be null");
             this.level = level;
             this.logListener = logListener;
         }

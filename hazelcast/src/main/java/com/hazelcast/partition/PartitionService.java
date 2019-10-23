@@ -18,6 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.cluster.Member;
 
+import javax.annotation.Nonnull;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * PartitionService allows you to query {@link Partition}s and attach/detach {@link MigrationListener}s to listen to partition
  * migration events.
- *
+ * <p>
  * The methods on the PartitionService are thread-safe.
  *
  * @see Partition
@@ -47,8 +48,7 @@ public interface PartitionService {
      * @param key the given key
      * @return the partition that the given key belongs to
      */
-    // TODO: what about null.
-    Partition getPartition(Object key);
+    Partition getPartition(@Nonnull Object key);
 
     /**
      * Adds a MigrationListener.

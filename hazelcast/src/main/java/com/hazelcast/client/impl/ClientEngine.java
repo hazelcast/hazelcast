@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -55,6 +56,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      */
     boolean bind(ClientEndpoint endpoint);
 
+    @Nonnull
     Collection<Client> getClients();
 
     int getClientEndpointCount();

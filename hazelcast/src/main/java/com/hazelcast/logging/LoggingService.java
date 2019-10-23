@@ -16,15 +16,16 @@
 
 package com.hazelcast.logging;
 
+import javax.annotation.Nonnull;
 import java.util.logging.Level;
 
 public interface LoggingService {
 
-    void addLogListener(Level level, LogListener logListener);
+    void addLogListener(@Nonnull Level level, @Nonnull LogListener logListener);
 
-    void removeLogListener(LogListener logListener);
+    void removeLogListener(@Nonnull LogListener logListener);
 
-    ILogger getLogger(String name);
+    @Nonnull ILogger getLogger(@Nonnull String name);
 
-    ILogger getLogger(Class type);
+    @Nonnull ILogger getLogger(@Nonnull Class type);
 }

@@ -27,24 +27,19 @@ import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.internal.util.ConstructorFunction;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class ClientLoggingService implements LoggingService {
 
-    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<>(100);
 
-    private final ConstructorFunction<String, ILogger> loggerConstructor
-            = new ConstructorFunction<String, ILogger>() {
-
-        @Override
-        public ILogger createNew(String key) {
-            return new DefaultLogger(key);
-        }
-    };
+    private final ConstructorFunction<String, ILogger> loggerConstructor = DefaultLogger::new;
 
     private final LoggerFactory loggerFactory;
     private final BuildInfo buildInfo;
@@ -66,20 +61,24 @@ public class ClientLoggingService implements LoggingService {
     }
 
     @Override
-    public void addLogListener(Level level, LogListener logListener) {
+    public void addLogListener(@Nonnull Level level, @Nonnull LogListener logListener) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void removeLogListener(LogListener logListener) {
+    public void removeLogListener(@Nonnull LogListener logListener) {
         throw new UnsupportedOperationException();
     }
 
-    public ILogger getLogger(String name) {
+    @Nonnull
+    public ILogger getLogger(@Nonnull String name) {
+        checkNotNull(name, "name must not be null");
         return getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
-    public ILogger getLogger(Class clazz) {
+    @Nonnull
+    public ILogger getLogger(@Nonnull Class clazz) {
+        checkNotNull(clazz, "class must not be null");
         return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
     }
 

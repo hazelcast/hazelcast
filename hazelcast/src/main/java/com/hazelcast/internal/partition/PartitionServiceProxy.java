@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.internal.util.FutureUtil;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +44,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class PartitionServiceProxy implements PartitionService {
 
@@ -83,7 +85,8 @@ public class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public Partition getPartition(Object key) {
+    public Partition getPartition(@Nonnull Object key) {
+        checkNotNull(key, "key cannot be null");
         int partitionId = partitionService.getPartitionId(key);
         return partitionMap.get(partitionId);
     }

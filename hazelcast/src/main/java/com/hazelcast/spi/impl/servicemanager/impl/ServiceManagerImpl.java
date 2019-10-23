@@ -63,6 +63,7 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.wan.impl.WanReplicationService;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
@@ -328,7 +329,7 @@ public final class ServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public ServiceInfo getServiceInfo(String serviceName) {
+    public ServiceInfo getServiceInfo(@Nonnull String serviceName) {
         return services.get(serviceName);
     }
 
@@ -349,7 +350,7 @@ public final class ServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public <T> T getService(String serviceName) {
+    public <T> T getService(@Nonnull String serviceName) {
         final ServiceInfo serviceInfo = getServiceInfo(serviceName);
         return serviceInfo != null ? (T) serviceInfo.getService() : null;
     }
