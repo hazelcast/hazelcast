@@ -134,7 +134,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     ) {
         return attachFlatMapUsingServiceAsync("filter", serviceFactory,
-                (s, t) -> filterAsyncFn.apply(s, t).thenApply(passed -> passed ? singleton(t) : null));
+                (s, t) -> filterAsyncFn.apply(s, t).thenApply(passed -> passed ? singleton(t) : Traversers.empty()));
     }
 
     @Nonnull @Override

@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.execution.init.VertexDef;
+import com.hazelcast.jet.impl.metrics.MetricsContext;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.CircularListCursor;
@@ -126,6 +127,7 @@ public class ProcessorTasklet implements Tasklet {
     private final AtomicLong queuesCapacity = new AtomicLong();
 
     private final Predicate<Object> addToInboxFunction = inbox.queue()::add;
+    private final MetricsContext metricsContext = new MetricsContext();
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public ProcessorTasklet(@Nonnull Context context,
@@ -220,6 +222,11 @@ public class ProcessorTasklet implements Tasklet {
             logger.severe(jobNameAndExecutionId(context.jobConfig().getName(), context.executionId())
                     + " encountered an exception in Processor.close(), ignoring it", e);
         }
+    }
+
+    @Override
+    public MetricsContext getMetricsContext() {
+        return metricsContext;
     }
 
     @SuppressWarnings("checkstyle:returncount")
@@ -524,5 +531,7 @@ public class ProcessorTasklet implements Tasklet {
 
         context.collect(tagger, this);
         context.collect(tagger, this.processor);
+
+        metricsContext.collectMetrics(tagger, context);
     }
 }

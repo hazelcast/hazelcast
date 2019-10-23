@@ -18,9 +18,11 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.jet.impl.metrics.MetricsContext;
 import com.hazelcast.jet.impl.util.ProgressState;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public interface Tasklet {
 
@@ -35,6 +37,11 @@ public interface Tasklet {
     }
 
     default void close() {
+    }
+
+    @Nullable
+    default MetricsContext getMetricsContext() {
+        return null;
     }
 
     default void collectMetrics(MetricTagger tagger, MetricsCollectionContext context) {

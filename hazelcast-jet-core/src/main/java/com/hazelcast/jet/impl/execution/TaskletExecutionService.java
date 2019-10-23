@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.impl.metrics.MetricsImpl;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -63,7 +64,6 @@ import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
@@ -189,15 +189,6 @@ public class TaskletExecutionService {
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
     }
 
-    private String trackersToString() {
-        return Arrays.stream(cooperativeWorkers)
-                     .flatMap(w -> w.trackers.stream())
-                     .map(Object::toString)
-                     .sorted()
-                     .collect(joining("\n"))
-                + "\n-----------------";
-    }
-
     /**
      * Blocks until all workers terminate (cooperative & blocking).
      */
@@ -252,9 +243,11 @@ public class TaskletExecutionService {
             final Tasklet t = tracker.tasklet;
             currentThread().setContextClassLoader(tracker.jobClassLoader);
             IdleStrategy idlerLocal = idlerNonCooperative;
+            MetricsImpl.Container userMetricsContextContainer = MetricsImpl.container();
 
             try {
                 blockingWorkerCount.incrementAndGet();
+                userMetricsContextContainer.setContext(t.getMetricsContext());
                 startedLatch.countDown();
                 t.init();
                 long idleCount = 0;
@@ -274,6 +267,7 @@ public class TaskletExecutionService {
                 tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
             } finally {
                 blockingWorkerCount.decrementAndGet();
+                userMetricsContextContainer.setContext(null);
                 currentThread().setContextClassLoader(clBackup);
                 tracker.executionTracker.taskletDone();
             }
@@ -294,6 +288,7 @@ public class TaskletExecutionService {
 
         private boolean finestLogEnabled;
         private Thread myThread;
+        private MetricsImpl.Container userMetricsContextContainer;
 
         CooperativeWorker() {
             this.trackers = new CopyOnWriteArrayList<>();
@@ -302,6 +297,8 @@ public class TaskletExecutionService {
         @Override
         public void run() {
             myThread = currentThread();
+            userMetricsContextContainer = MetricsImpl.container();
+
             IdleStrategy idlerLocal = idlerCooperative;
             long idleCount = 0;
 
@@ -328,6 +325,7 @@ public class TaskletExecutionService {
             }
             try {
                 myThread.setContextClassLoader(t.jobClassLoader);
+                userMetricsContextContainer.setContext(t.tasklet.getMetricsContext());
                 final ProgressState result = t.tasklet.call();
                 if (result.isDone()) {
                     dismissTasklet(t);
@@ -336,6 +334,8 @@ public class TaskletExecutionService {
             } catch (Throwable e) {
                 logger.warning("Exception in " + t.tasklet, e);
                 t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
+            } finally {
+                userMetricsContextContainer.setContext(null);
             }
             if (t.executionTracker.executionCompletedExceptionally()) {
                 dismissTasklet(t);

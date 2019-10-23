@@ -38,12 +38,12 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *     <li>{@link GeneralStage#mapUsingServiceAsync}
  *     <li>{@link GeneralStage#filterUsingServiceAsync}
  *     <li>{@link GeneralStage#flatMapUsingServiceAsync}
- *     <li>{@link GeneralStageWithKey#mapUsingservice}
- *     <li>{@link GeneralStageWithKey#filterUsingservice}
- *     <li>{@link GeneralStageWithKey#flatMapUsingservice}
- *     <li>{@link GeneralStageWithKey#mapUsingserviceAsync}
- *     <li>{@link GeneralStageWithKey#filterUsingserviceAsync}
- *     <li>{@link GeneralStageWithKey#flatMapUsingserviceAsync}
+ *     <li>{@link GeneralStageWithKey#mapUsingService}
+ *     <li>{@link GeneralStageWithKey#filterUsingService}
+ *     <li>{@link GeneralStageWithKey#flatMapUsingService}
+ *     <li>{@link GeneralStageWithKey#mapUsingServiceAsync}
+ *     <li>{@link GeneralStageWithKey#filterUsingServiceAsync}
+ *     <li>{@link GeneralStageWithKey#flatMapUsingServiceAsync}
  * </ul>
  *
  * @param <S> the user-defined service object type
