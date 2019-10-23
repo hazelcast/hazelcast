@@ -72,6 +72,27 @@ public final class RuleUtils {
     }
 
     /**
+     * Get operand matching a node with specific pair of child nodes.
+     *
+     * @param cls Node class.
+     * @param childCls1 Child node class 1.
+     * @param childCls2 Child node class 2.
+     * @param convention Convention.
+     * @return Operand.
+     */
+    public static <R1 extends RelNode, R2 extends RelNode, R3 extends RelNode> RelOptRuleOperand parentChildChild(
+        Class<R1> cls,
+        Class<R2> childCls1,
+        Class<R2> childCls2,
+        Convention convention
+    ) {
+        RelOptRuleOperand childOperand1 = RelOptRule.operand(childCls1, RelOptRule.any());
+        RelOptRuleOperand childOperand2 = RelOptRule.operand(childCls2, RelOptRule.any());
+
+        return RelOptRule.operand(cls, convention, RelOptRule.some(childOperand1, childOperand2));
+    }
+
+    /**
      * Add a single trait to the trait set.
      *
      * @param traitSet Original trait set.

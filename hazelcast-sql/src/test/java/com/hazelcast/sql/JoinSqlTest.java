@@ -19,6 +19,7 @@ package com.hazelcast.sql;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,6 +33,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+
+import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -50,13 +53,15 @@ public class JoinSqlTest extends SqlTestSupport {
 
     @Test
     public void testEquiPartitionedPartitionedNonCollocated() {
-        QueryPlan plan = getPlan(
+        SqlCursorImpl cursor = executeQuery(
             member,
-            "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
+            "SELECT p.deptTitle, d.title FROM person p INNER JOIN department d ON p.deptTitle = d.title"
+//            "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
         );
 
-        // TODO: Assert!
-        System.out.println(plan);
+        List<SqlRow> rows = getQueryRows(cursor);
+
+        assertEquals(1, rows.size());
     }
 
     @Test

@@ -438,8 +438,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
      * @param mapping Fragment mapping mode.
      */
     private void addFragment(PhysicalNode node, QueryFragmentMapping mapping) {
-        assert upstreamNodes.isEmpty();
-
         QueryFragment fragment = new QueryFragment(
             node,
             currentOutboundEdge,

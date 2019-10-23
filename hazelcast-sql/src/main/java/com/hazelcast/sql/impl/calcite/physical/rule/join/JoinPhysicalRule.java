@@ -52,7 +52,7 @@ public class JoinPhysicalRule extends RelOptRule {
 
     private JoinPhysicalRule() {
         super(
-            RuleUtils.parentChild(JoinLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+            RuleUtils.parentChildChild(JoinLogicalRel.class, RelNode.class, RelNode.class, HazelcastConventions.LOGICAL),
             JoinPhysicalRule.class.getSimpleName()
         );
     }
