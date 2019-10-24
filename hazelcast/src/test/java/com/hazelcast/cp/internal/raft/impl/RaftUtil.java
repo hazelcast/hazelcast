@@ -125,7 +125,7 @@ public class RaftUtil {
     }
 
     public static void waitUntilLeaderElected(RaftNodeImpl node) {
-        assertTrueEventually(() -> assertNotNull(getLeaderMember(node)));
+        assertTrueEventually(() -> assertNotNull("Leader is null on " + node, getLeaderMember(node)));
     }
 
     private static <T> T readRaftState(RaftNodeImpl node, Callable<T> task) {

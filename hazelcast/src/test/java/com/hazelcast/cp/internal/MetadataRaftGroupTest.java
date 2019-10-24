@@ -59,7 +59,6 @@ import static com.hazelcast.cp.internal.MetadataRaftGroupManager.MetadataRaftGro
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
-import static com.hazelcast.cp.internal.raft.impl.RaftUtil.waitUntilLeaderElected;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsToAddresses;
@@ -498,7 +497,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
                 assertTrueEventually(() -> {
                     RaftNodeImpl raftNode = getRaftNode(instance, groupId);
                     assertNotNull(raftNode);
-                    waitUntilLeaderElected(raftNode);
+                    assertNotNull("Leader is null on " + raftNode, getLeaderMember(raftNode));
                 });
             }
         }
@@ -520,7 +519,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
                 }
                 RaftNodeImpl raftNode = getRaftNode(instance, getMetadataGroupId(instance));
                 assertNotNull(raftNode);
-                waitUntilLeaderElected(raftNode);
+                assertNotNull("Leader is null on " + raftNode, getLeaderMember(raftNode));
             }
         });
     }
