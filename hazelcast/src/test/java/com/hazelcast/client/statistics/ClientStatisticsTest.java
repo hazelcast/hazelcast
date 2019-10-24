@@ -106,6 +106,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         String expectedClientAddress = aConnection.getLocalSocketAddress().getAddress().getHostAddress();
         assertEquals(expectedClientAddress, stats.get("clientAddress"));
         assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), stats.get("clientVersion"));
+        assertEquals(client.getName(), stats.get("clientName"));
 
         // time measured by us after client connection should be greater than the connection time reported by the statistics
         assertTrue(format("connectionTimeStat was %d, clientConnectionTime was %d (%s)",
