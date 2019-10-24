@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -139,13 +138,7 @@ public class MembershipChangeTask implements Runnable {
                 resultFuture.completeExceptionally(new CannotReplicateException(null));
                 return false;
             case TERMINATED:
-                resultFuture.completeExceptionally(new CPGroupDestroyedException(raftNode.getGroupId()));
-                logger.severe("Cannot " + membershipChangeMode + " " + member + " with expected members commit index: "
-                        + groupMembersCommitIndex + " since raft node is terminated.");
-                return false;
             case STEPPED_DOWN:
-                logger.severe("Cannot " + membershipChangeMode + " " + member + " with expected members commit index: "
-                        + groupMembersCommitIndex + " since raft node is stepped down.");
                 resultFuture.completeExceptionally(
                         new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
                 return false;

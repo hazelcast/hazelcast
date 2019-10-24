@@ -268,7 +268,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
         if (status == TERMINATED) {
             Collection<RaftNodeLifecycleAwareService> services = nodeEngine.getServices(RaftNodeLifecycleAwareService.class);
             for (RaftNodeLifecycleAwareService service : services) {
-                service.onRaftGroupDestroyed(groupId);
+                service.onRaftNodeTerminated(groupId);
             }
         } else if (status == STEPPED_DOWN) {
             Collection<RaftNodeLifecycleAwareService> services = nodeEngine.getServices(RaftNodeLifecycleAwareService.class);

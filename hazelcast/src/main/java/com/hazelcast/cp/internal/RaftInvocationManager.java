@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.exception.CannotCreateRaftGroupException;
 import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
@@ -30,13 +31,16 @@ import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
+import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.RaftInvocation;
@@ -47,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static java.util.Collections.shuffle;
 
@@ -141,12 +146,13 @@ public class RaftInvocationManager {
 
     private void invokeCreateRaftGroup(String groupName, int groupSize, List<RaftEndpoint> members,
                                        InternalCompletableFuture<RaftGroupId> resultFuture) {
-        InternalCompletableFuture<RaftGroupId> f =
+        InternalCompletableFuture<CPGroupSummary> f =
                 invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members));
 
-        f.whenCompleteAsync((groupId, t) -> {
+        f.whenCompleteAsync((group, t) -> {
             if (t == null) {
-                resultFuture.complete(groupId);
+                resultFuture.complete((RaftGroupId) group.id());
+                triggerRaftNodeCreation(group);
             } else {
                 if (t instanceof CannotCreateRaftGroupException) {
                     logger.fine("Could not create CP group: " + groupName + " with members: " + members,
@@ -157,6 +163,20 @@ public class RaftInvocationManager {
                 resultFuture.completeExceptionally(t);
             }
         });
+    }
+
+    void triggerRaftNodeCreation(CPGroupSummary group) {
+        for (CPMember groupMember : group.members()) {
+            if (groupMember.equals(raftService.getLocalCPMember())) {
+                ExecutionService executionService = nodeEngine.getExecutionService();
+                executionService.execute(CP_SUBSYSTEM_EXECUTOR,
+                        () -> raftService.createRaftNode(group.id(), group.initialMembers()));
+            } else {
+                Operation op = new CreateRaftNodeOp(group.id(), group.initialMembers());
+                OperationService operationService = nodeEngine.getOperationService();
+                operationService.send(op, groupMember.getAddress());
+            }
+        }
     }
 
     <T> InternalCompletableFuture<T> changeMembership(CPGroupId groupId, long membersCommitIndex,

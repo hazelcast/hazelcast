@@ -151,7 +151,7 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
     }
 
     @Override
-    public void onRaftGroupDestroyed(CPGroupId groupId) {
+    public void onRaftNodeTerminated(CPGroupId groupId) {
         registries.remove(groupId);
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -33,9 +32,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.UUID;
 
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
-import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_MEMBER_LIST;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
@@ -111,18 +107,18 @@ public class ReplicateTask implements Runnable {
     }
 
     private boolean verifyRaftNodeStatus() {
-        if (raftNode.getStatus() == INITIAL) {
-            resultFuture.completeExceptionally(new CannotReplicateException(null));
-            return false;
-        } else if (raftNode.getStatus() == TERMINATED) {
-            resultFuture.completeExceptionally(new CPGroupDestroyedException(raftNode.getGroupId()));
-            return false;
-        } else if (raftNode.getStatus() == STEPPED_DOWN) {
-            resultFuture.completeExceptionally(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
-            return false;
+        switch (raftNode.getStatus()) {
+            case INITIAL:
+                resultFuture.completeExceptionally(new CannotReplicateException(null));
+                return false;
+            case TERMINATED:
+            case STEPPED_DOWN:
+                resultFuture.completeExceptionally(
+                        new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
+                return false;
+            default:
+                return true;
         }
-
-        return true;
     }
 
     private void preApplyRaftGroupCmd(long logIndex, Object operation) {

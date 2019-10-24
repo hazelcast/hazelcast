@@ -481,11 +481,17 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
             groupEndpoints.add(member.toRaftEndpoint());
         }
 
-        InternalCompletableFuture<CPGroupId> f = raftService.getInvocationManager()
+        InternalCompletableFuture<CPGroupSummary> f = raftService.getInvocationManager()
                                                      .invoke(getMetadataGroupId(leaderInstance),
                                                              new CreateRaftGroupOp("test", groupEndpoints));
 
-        CPGroupId groupId = f.get();
+        f.whenCompleteAsync((group, t) -> {
+            if (t == null) {
+                raftService.getInvocationManager().triggerRaftNodeCreation(group);
+            }
+        });
+
+        CPGroupId groupId = f.get().id();
 
         for (HazelcastInstance instance : instances) {
             if (endpoints.contains(instance.getCPSubsystem().getLocalCPMember())) {

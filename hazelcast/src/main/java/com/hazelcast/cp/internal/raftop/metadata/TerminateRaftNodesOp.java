@@ -39,14 +39,14 @@ import java.util.Collection;
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */
-public class DestroyRaftNodesOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation {
+public class TerminateRaftNodesOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation {
 
     private Collection<CPGroupId> groupIds;
 
-    public DestroyRaftNodesOp() {
+    public TerminateRaftNodesOp() {
     }
 
-    public DestroyRaftNodesOp(Collection<CPGroupId> groupIds) {
+    public TerminateRaftNodesOp(Collection<CPGroupId> groupIds) {
         this.groupIds = groupIds;
     }
 
@@ -54,7 +54,7 @@ public class DestroyRaftNodesOp extends Operation implements IdentifiedDataSeria
     public void run() {
         RaftService service = getService();
         for (CPGroupId groupId : groupIds) {
-            service.destroyRaftNode(groupId);
+            service.terminateRaftNode(groupId, true);
         }
     }
 
@@ -75,7 +75,7 @@ public class DestroyRaftNodesOp extends Operation implements IdentifiedDataSeria
 
     @Override
     public int getClassId() {
-        return RaftServiceDataSerializerHook.DESTROY_RAFT_NODES_OP;
+        return RaftServiceDataSerializerHook.TERMINATE_RAFT_NODES_OP;
     }
 
     @Override

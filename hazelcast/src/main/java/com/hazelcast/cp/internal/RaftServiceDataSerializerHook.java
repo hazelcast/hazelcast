@@ -45,7 +45,7 @@ import com.hazelcast.cp.internal.raftop.metadata.CompleteDestroyRaftGroupsOp;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteRaftGroupMembershipChangesOp;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
-import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
+import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.ForceDestroyRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveRaftGroupByNameOp;
@@ -92,7 +92,7 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int MEMBERSHIP_CHANGE_REPLICATE_OP = 18;
     public static final int MEMBERSHIP_CHANGE_SCHEDULE = 19;
     public static final int DEFAULT_RAFT_GROUP_QUERY_OP = 20;
-    public static final int DESTROY_RAFT_NODES_OP = 21;
+    public static final int TERMINATE_RAFT_NODES_OP = 21;
     public static final int GET_ACTIVE_CP_MEMBERS_OP = 22;
     public static final int GET_DESTROYING_RAFT_GROUP_IDS_OP = 23;
     public static final int GET_MEMBERSHIP_CHANGE_SCHEDULE_OP = 24;
@@ -174,8 +174,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new MembershipChangeSchedule();
                 case DEFAULT_RAFT_GROUP_QUERY_OP:
                     return new RaftQueryOp();
-                case DESTROY_RAFT_NODES_OP:
-                    return new DestroyRaftNodesOp();
+                case TERMINATE_RAFT_NODES_OP:
+                    return new TerminateRaftNodesOp();
                 case GET_ACTIVE_CP_MEMBERS_OP:
                     return new GetActiveCPMembersOp();
                 case GET_DESTROYING_RAFT_GROUP_IDS_OP:
