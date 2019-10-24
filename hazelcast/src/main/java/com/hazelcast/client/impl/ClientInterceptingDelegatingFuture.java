@@ -50,7 +50,7 @@ public class ClientInterceptingDelegatingFuture<V> extends ClientDelegatingFutur
         Throwable throwable = null;
         ClientMessage response = null;
         try {
-            response = future.get();
+            response = (ClientMessage) future.get();
         } catch (Throwable t) {
             originalThrowable = t;
             throwable = (t instanceof ExecutionException) ? t.getCause() : t;
@@ -65,7 +65,7 @@ public class ClientInterceptingDelegatingFuture<V> extends ClientDelegatingFutur
         Throwable throwable = null;
         ClientMessage response = null;
         try {
-            response = future.get(timeout, unit);
+            response = (ClientMessage) future.get(timeout, unit);
         } catch (Throwable t) {
             originalThrowable = t;
             throwable = (t instanceof ExecutionException) ? t.getCause() : t;
@@ -79,7 +79,7 @@ public class ClientInterceptingDelegatingFuture<V> extends ClientDelegatingFutur
         Throwable throwable = null;
         ClientMessage response = null;
         try {
-            response = future.join();
+            response = (ClientMessage) future.join();
         } catch (Throwable t) {
             originalThrowable = t;
             throwable = (t instanceof CompletionException) ? t.getCause() : t;
@@ -92,7 +92,7 @@ public class ClientInterceptingDelegatingFuture<V> extends ClientDelegatingFutur
         Throwable throwable = null;
         ClientMessage response = null;
         try {
-            response = future.joinInternal();
+            response = ((ClientInvocationFuture) future).joinInternal();
         } catch (Throwable t) {
             throwable = t;
         }
@@ -104,7 +104,7 @@ public class ClientInterceptingDelegatingFuture<V> extends ClientDelegatingFutur
             interceptor.accept(null, throwable);
             throw ExceptionUtil.sneakyThrow(originalThrowable);
         } else {
-            final V value = resolveResponse(response, deserializeResponse);
+            final V value = resolve(response);
             interceptor.accept(value, null);
             return value;
         }

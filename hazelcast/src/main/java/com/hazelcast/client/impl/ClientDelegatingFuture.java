@@ -20,21 +20,23 @@ import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.DelegatingCompletableFuture;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
+import javax.annotation.Nonnull;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static java.util.Objects.requireNonNull;
 
 /**
  * The Client Delegating Future is used to delegate {@link
@@ -52,11 +54,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     private static final Object VOID = "VOID";
 
     final boolean deserializeResponse;
-    final ClientInvocationFuture future;
-
-    private final SerializationService serializationService;
     private final ClientMessageDecoder clientMessageDecoder;
-    private final V defaultValue;
     private final Executor userExecutor;
     private volatile Object decodedResponse = VOID;
 
@@ -64,10 +62,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
                                   SerializationService serializationService,
                                   ClientMessageDecoder clientMessageDecoder, V defaultValue, boolean deserializeResponse) {
         super(serializationService, clientInvocationFuture, defaultValue);
-        this.future = clientInvocationFuture;
-        this.serializationService = serializationService;
         this.clientMessageDecoder = clientMessageDecoder;
-        this.defaultValue = defaultValue;
         this.userExecutor = clientInvocationFuture.getInvocation().getUserExecutor();
         this.deserializeResponse = deserializeResponse;
     }
@@ -91,50 +86,48 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     }
 
     @Override
-    public V get() throws InterruptedException, ExecutionException {
-        try {
-            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            throw ExceptionUtil.sneakyThrow(e);
+    public V getNow(V valueIfAbsent) {
+        // if there is an explicit value set, we use that
+        if (result != null) {
+            return (V) result;
         }
-    }
 
-    @Override
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        ClientMessage response = future.get(timeout, unit);
-        return (V) resolveResponse(response, deserializeResponse);
-    }
+        // if there already is a deserialized value set, use it.
+        if (deserializedValue != VOID) {
+            return (V) deserializedValue;
+        }
 
-    @Override
-    public V join() {
-        ClientMessage response = future.join();
-        return resolveResponse(response, deserializeResponse);
-    }
-
-    @Override
-    public V joinInternal() {
-        ClientMessage response = future.joinInternal();
-        return resolveResponse(response, deserializeResponse);
+        // otherwise, do not cache the value returned from future.getNow
+        // because it might be the default valueIfAbsent
+        Object value = future.getNow(valueIfAbsent);
+        if (value instanceof ClientMessage) {
+            return resolve(value);
+        } else {
+            return (value instanceof Data && deserializeResponse)
+                    ? serializationService.toObject(value) : (V) value;
+        }
     }
 
     @SuppressWarnings("unchecked")
-    protected V resolveResponse(ClientMessage clientMessage, boolean deserialize) {
-        if (defaultValue != null) {
-            return defaultValue;
+    @Override
+    protected V resolve(Object object) {
+        if (result != null) {
+            return (V) result;
         }
 
-        Object decodedResponse = decodeResponse(clientMessage);
-        if (deserialize) {
-            return serializationService.toObject(decodedResponse);
+        ClientMessage clientMessage = (ClientMessage) object;
+        Object decoded = decodeResponse(clientMessage);
+        if (deserializeResponse) {
+            return serializationService.toObject(decoded);
         }
-        return (V) decodedResponse;
+        return (V) decoded;
     }
 
-    private Object resolveAny(Object o, boolean deserialize) {
+        private Object resolveAny(Object o) {
         if (o instanceof ClientMessage) {
-            return resolveResponse((ClientMessage) o, deserialize);
+            return resolve(o);
         }
-        if (deserialize) {
+        if (deserializeResponse) {
             return serializationService.toObject(o);
         }
         return o;
@@ -152,7 +145,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     }
 
     protected ClientInvocationFuture getFuture() {
-        return future;
+        return (ClientInvocationFuture) future;
     }
 
     @Override
@@ -350,23 +343,17 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public CompletableFuture<V> whenComplete(BiConsumer<? super V, ? super Throwable> action) {
-        CompletableFuture<V> completableFuture = InternalCompletableFuture.withExecutor(userExecutor);
-        future.whenComplete(new DeserializingBiConsumer<>(action, completableFuture));
-        return completableFuture;
+        return future.handle(new WhenCompleteAdapter(action));
     }
 
     @Override
     public CompletableFuture<V> whenCompleteAsync(BiConsumer<? super V, ? super Throwable> action) {
-        CompletableFuture<V> completableFuture = InternalCompletableFuture.withExecutor(userExecutor);
-        future.whenCompleteAsync(new DeserializingBiConsumer<>(action, completableFuture), userExecutor);
-        return completableFuture;
+        return future.handleAsync(new WhenCompleteAdapter(action), userExecutor);
     }
 
     @Override
     public CompletableFuture<V> whenCompleteAsync(BiConsumer<? super V, ? super Throwable> action, Executor executor) {
-        CompletableFuture<V> completableFuture = InternalCompletableFuture.withExecutor(userExecutor);
-        future.whenCompleteAsync(new DeserializingBiConsumer<>(action, completableFuture), executor);
-        return completableFuture;
+        return future.handleAsync(new WhenCompleteAdapter(action), executor);
     }
 
     @Override
@@ -391,17 +378,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public CompletableFuture<V> exceptionally(Function<Throwable, ? extends V> fn) {
-        CompletableFuture<V> completableFuture = InternalCompletableFuture.withExecutor(userExecutor);
-        future.exceptionally(throwable -> {
-            try {
-                V value = fn.apply(throwable);
-                completableFuture.complete(value);
-            } catch (Throwable t) {
-                completableFuture.completeExceptionally(t);
-            }
-            return null;
-        });
-        return completableFuture;
+        return future.handleAsync(new ExceptionallyAdapter(fn));
     }
 
     @Override
@@ -442,26 +419,28 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     class DeserializingFunction<R> implements Function<ClientMessage, R> {
         private final Function<? super V, ? extends R> delegate;
 
-        DeserializingFunction(Function<? super V, ? extends R> delegate) {
+        DeserializingFunction(@Nonnull Function<? super V, ? extends R> delegate) {
+            requireNonNull(delegate);
             this.delegate = delegate;
         }
 
         @Override
         public R apply(ClientMessage e) {
-            return delegate.apply(resolveResponse(e, deserializeResponse));
+            return delegate.apply(resolve(e));
         }
     }
 
     class DeserializingConsumer implements Consumer<ClientMessage> {
         private final Consumer<? super V> delegate;
 
-        DeserializingConsumer(Consumer<? super V> delegate) {
+        DeserializingConsumer(@Nonnull Consumer<? super V> delegate) {
+            requireNonNull(delegate);
             this.delegate = delegate;
         }
 
         @Override
         public void accept(ClientMessage e) {
-            V resolved = resolveResponse(e, deserializeResponse);
+            V resolved = resolve(e);
             delegate.accept(resolved);
         }
 
@@ -474,42 +453,90 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     class DeserializingBiFunction<U, R> implements BiFunction<ClientMessage, U, R> {
         private final BiFunction<? super V, U, ? extends R> delegate;
 
-        DeserializingBiFunction(BiFunction<? super V, U, ? extends R> delegate) {
+        DeserializingBiFunction(@Nonnull BiFunction<? super V, U, ? extends R> delegate) {
+            requireNonNull(delegate);
             this.delegate = delegate;
         }
 
         @Override
         public R apply(ClientMessage t, U u) {
-            return delegate.apply(resolveResponse(t, deserializeResponse), (U) resolveAny(u, deserializeResponse));
+            V resolved = t == null ? null : resolve(t);
+            return delegate.apply(resolved, (U) resolveAny(u));
         }
     }
 
     class DeserializingBiConsumer<U> implements BiConsumer<ClientMessage, U> {
         private final BiConsumer<? super V, U> delegate;
-        private final CompletableFuture<V> future;
 
-        DeserializingBiConsumer(BiConsumer<? super V, U> delegate) {
+        DeserializingBiConsumer(@Nonnull BiConsumer<? super V, U> delegate) {
+            requireNonNull(delegate);
             this.delegate = delegate;
-            this.future = null;
-        }
-
-        DeserializingBiConsumer(BiConsumer<? super V, U> delegate, CompletableFuture<V> future) {
-            this.delegate = delegate;
-            this.future = future;
         }
 
         @Override
         public void accept(ClientMessage t, U u) {
-            V resolved = t == null ? null : resolveResponse(t, deserializeResponse);
+            V resolved = t == null ? null : resolve(t);
+            delegate.accept(resolved, (U) resolveAny(u));
+        }
+    }
+
+    // adapts a BiConsumer to a BiFunction for implementation
+    // of whenComplete methods
+    class WhenCompleteAdapter implements BiFunction<ClientMessage, Throwable, V> {
+        private final BiConsumer<? super V, ? super Throwable> delegate;
+
+        WhenCompleteAdapter(@Nonnull BiConsumer<? super V, ? super Throwable> delegate) {
+            requireNonNull(delegate);
+            this.delegate = delegate;
+        }
+
+        @Override
+        public V apply(ClientMessage message, Throwable t) {
+            V resolved = message == null ? null : resolve(message);
+            Throwable delegateException = null;
             try {
-                delegate.accept(resolved, (U) resolveAny(u, deserializeResponse));
-                if (future != null) {
-                    future.complete(resolved);
-                }
+                delegate.accept(resolved, t);
             } catch (Throwable throwable) {
-                if (future != null) {
-                    future.completeExceptionally(throwable);
+                delegateException = throwable;
+            }
+            // implement whenComplete exception handling scheme:
+            // - if original future was cancelled, throw wrapped in CompletionException
+            // - if t != null, throw it
+            // - if delegateException != null, throw it
+            // - otherwise return resolved value
+            if (t != null) {
+                if (t instanceof CancellationException) {
+                    throw new CompletionException(t);
+                } else {
+                    throw sneakyThrow(t);
                 }
+            } else if (delegateException != null) {
+                throw sneakyThrow(delegateException);
+            } else {
+                return resolved;
+            }
+        }
+    }
+
+    // adapts a Consumer to a BiFunction for implementation of exceptionally()
+    class ExceptionallyAdapter implements BiFunction<ClientMessage, Throwable, V> {
+        private final Function<? super Throwable, ? extends V> delegate;
+
+        ExceptionallyAdapter(@Nonnull Function<? super Throwable, ? extends V> delegate) {
+            requireNonNull(delegate);
+            this.delegate = delegate;
+        }
+
+        @Override
+        public V apply(ClientMessage message, Throwable t) {
+            V resolved = message == null ? null : resolve(message);
+            if (t == null) {
+                return resolved;
+            }
+            try {
+                return delegate.apply(t);
+            } catch (Throwable throwable) {
+                throw throwable;
             }
         }
     }

@@ -79,7 +79,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     // new Throwable(String message)
     private static final MethodType MT_INIT_STRING = MethodType.methodType(void.class, String.class);
 
-    private static final AtomicReferenceFieldUpdater<AbstractInvocationFuture, Object> STATE =
+    private static final AtomicReferenceFieldUpdater<AbstractInvocationFuture, Object> STATE_UPDATER =
             newUpdater(AbstractInvocationFuture.class, Object.class, "state");
 
     // Default executor for async callbacks: ForkJoinPool.commonPool() or a thread-per-task executor when
@@ -470,14 +470,17 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         return future;
     }
 
+    @Override
     public InternalCompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable action) {
         return runAfterEitherAsync(other, action, CALLER_RUNS);
     }
 
+    @Override
     public InternalCompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other, @Nonnull Runnable action) {
         return runAfterEitherAsync(other, action, defaultExecutor());
     }
 
+    @Override
     public InternalCompletableFuture<Void> runAfterEitherAsync(@Nonnull CompletionStage<?> other,
                                                        @Nonnull Runnable action,
                                                        @Nonnull Executor executor) {
@@ -510,7 +513,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     boolean compareAndSetState(Object oldState, Object newState) {
-        return STATE.compareAndSet(this, oldState, newState);
+        return STATE_UPDATER.compareAndSet(this, oldState, newState);
     }
 
     protected final Object getState() {
@@ -1843,7 +1846,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
      * {@code exceptionFromParent}. Otherwise, the dependent future is completed exceptionally with
      * the exception thrown from user action ({@code exceptionFromAction}).
      */
-    private static void completeDependentExceptionally(CompletableFuture future, Throwable exceptionFromParent,
+    public static void completeDependentExceptionally(CompletableFuture future, Throwable exceptionFromParent,
                                                        Throwable exceptionFromAction) {
         assert (exceptionFromParent != null || exceptionFromAction != null);
         if (exceptionFromParent == null) {
@@ -1858,7 +1861,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
      * {@code CompletionException}, if {@code throwable} is not {@code null}, or with the given
      * {@code value}.
      */
-    private static <V> void completeDependent(CompletableFuture<V> future, V value, Throwable throwable) {
+    public static <V> void completeDependent(CompletableFuture<V> future, V value, Throwable throwable) {
         if (throwable == null) {
             future.complete(value);
         } else {

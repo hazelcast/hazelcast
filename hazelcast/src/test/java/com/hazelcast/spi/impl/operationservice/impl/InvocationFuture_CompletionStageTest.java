@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.CompletableFutureAbstractTest;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.CompletableFutureTestUtil.CountingExecutor;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -50,7 +49,6 @@ public class InvocationFuture_CompletionStageTest extends CompletableFutureAbstr
     public void setup() {
         factory = new TestHazelcastInstanceFactory();
         local = factory.newHazelcastInstance(getConfig());
-        countingExecutor = new CountingExecutor();
     }
 
     @After
