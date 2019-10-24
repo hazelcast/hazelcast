@@ -17,21 +17,21 @@
 package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -388,5 +388,14 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 + ", objectName = " + objectName
                 + ", target = " + target
                 + ", sendConnection = " + sendConnection + '}';
+    }
+
+    // package private methods for tests
+    CallIdSequence getCallIdSequence() {
+        return callIdSequence;
+    }
+
+    ClientInvocationFuture getClientInvocationFuture() {
+        return clientInvocationFuture;
     }
 }

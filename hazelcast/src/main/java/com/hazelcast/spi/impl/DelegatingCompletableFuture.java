@@ -62,10 +62,10 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         }
     };
 
-    private final CompletableFuture future;
-    private final InternalSerializationService serializationService;
-    private final Object result;
-    private volatile Object deserializedValue = VOID;
+    protected final CompletableFuture future;
+    protected final InternalSerializationService serializationService;
+    protected final Object result;
+    protected volatile Object deserializedValue = VOID;
 
     public DelegatingCompletableFuture(@Nonnull SerializationService serializationService,
                                        @Nonnull CompletableFuture future) {
