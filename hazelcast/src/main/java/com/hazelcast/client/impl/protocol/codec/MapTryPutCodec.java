@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it means that the caller thread could not acquire the lock for the key within the timeout duration,
  * thus the put operation is not successful.
  */
-@Generated("61ac21cb145d91b920836a5aaa69aaad")
+@Generated("815bcd8c1702f3b5d4b1104288bb7264")
 public final class MapTryPutCodec {
-    //hex: 0x010F00
-    public static final int REQUEST_MESSAGE_TYPE = 69376;
-    //hex: 0x010F01
-    public static final int RESPONSE_MESSAGE_TYPE = 69377;
+    //hex: 0x010C00
+    public static final int REQUEST_MESSAGE_TYPE = 68608;
+    //hex: 0x010C01
+    public static final int RESPONSE_MESSAGE_TYPE = 68609;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

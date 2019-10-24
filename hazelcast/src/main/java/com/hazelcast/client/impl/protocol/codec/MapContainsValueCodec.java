@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map maps one or more keys to the specified value.This operation will probably require time
  * linear in the map size for most implementations of the Map interface.
  */
-@Generated("607860e044f213682fb2d08cd0d38caf")
+@Generated("2eb138d9175d8942fb4fff832935fec5")
 public final class MapContainsValueCodec {
-    //hex: 0x010A00
-    public static final int REQUEST_MESSAGE_TYPE = 68096;
-    //hex: 0x010A01
-    public static final int RESPONSE_MESSAGE_TYPE = 68097;
+    //hex: 0x010700
+    public static final int REQUEST_MESSAGE_TYPE = 67328;
+    //hex: 0x010701
+    public static final int RESPONSE_MESSAGE_TYPE = 67329;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

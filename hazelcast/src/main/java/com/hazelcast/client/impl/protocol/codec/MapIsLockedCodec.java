@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
  */
-@Generated("728cf4081fe47329f7264f37413cfe2f")
+@Generated("8b344809866b7234a4bed697c67690d8")
 public final class MapIsLockedCodec {
-    //hex: 0x011500
-    public static final int REQUEST_MESSAGE_TYPE = 70912;
-    //hex: 0x011501
-    public static final int RESPONSE_MESSAGE_TYPE = 70913;
+    //hex: 0x011200
+    public static final int REQUEST_MESSAGE_TYPE = 70144;
+    //hex: 0x011201
+    public static final int RESPONSE_MESSAGE_TYPE = 70145;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

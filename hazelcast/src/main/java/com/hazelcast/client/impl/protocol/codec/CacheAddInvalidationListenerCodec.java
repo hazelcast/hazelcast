@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("094dd59a8fad11dc377d5371db22524a")
+@Generated("9869071d5cd81dd0224c4345b47b7e56")
 public final class CacheAddInvalidationListenerCodec {
-    //hex: 0x150200
-    public static final int REQUEST_MESSAGE_TYPE = 1376768;
-    //hex: 0x150201
-    public static final int RESPONSE_MESSAGE_TYPE = 1376769;
+    //hex: 0x130200
+    public static final int REQUEST_MESSAGE_TYPE = 1245696;
+    //hex: 0x130201
+    public static final int RESPONSE_MESSAGE_TYPE = 1245697;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -51,11 +51,11 @@ public final class CacheAddInvalidationListenerCodec {
     private static final int EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = EVENT_CACHE_INVALIDATION_SOURCE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x150202
-    private static final int EVENT_CACHE_INVALIDATION_MESSAGE_TYPE = 1376770;
+    //hex: 0x130202
+    private static final int EVENT_CACHE_INVALIDATION_MESSAGE_TYPE = 1245698;
     private static final int EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x150203
-    private static final int EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE = 1376771;
+    //hex: 0x130203
+    private static final int EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE = 1245699;
 
     private CacheAddInvalidationListenerCodec() {
     }

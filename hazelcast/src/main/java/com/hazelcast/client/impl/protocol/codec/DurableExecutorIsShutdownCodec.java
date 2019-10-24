@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this executor has been shut down.
  */
-@Generated("2fe33fd1f7dc4a5bfcc092f21f3def3f")
+@Generated("44acd1d46598bf7b8f0ef1b3669096b8")
 public final class DurableExecutorIsShutdownCodec {
-    //hex: 0x1B0200
-    public static final int REQUEST_MESSAGE_TYPE = 1769984;
-    //hex: 0x1B0201
-    public static final int RESPONSE_MESSAGE_TYPE = 1769985;
+    //hex: 0x180200
+    public static final int REQUEST_MESSAGE_TYPE = 1573376;
+    //hex: 0x180201
+    public static final int RESPONSE_MESSAGE_TYPE = 1573377;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

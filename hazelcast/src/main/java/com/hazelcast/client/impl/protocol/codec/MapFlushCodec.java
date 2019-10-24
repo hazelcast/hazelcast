@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If this map has a MapStore, this method flushes all the local dirty entries by calling MapStore.storeAll()
  * and/or MapStore.deleteAll().
  */
-@Generated("da27ab2d3a82680c68bba87d3a5a55ef")
+@Generated("0d6d23342b2f12a2218128396d5aa9a1")
 public final class MapFlushCodec {
-    //hex: 0x010D00
-    public static final int REQUEST_MESSAGE_TYPE = 68864;
-    //hex: 0x010D01
-    public static final int RESPONSE_MESSAGE_TYPE = 68865;
+    //hex: 0x010A00
+    public static final int REQUEST_MESSAGE_TYPE = 68096;
+    //hex: 0x010A01
+    public static final int RESPONSE_MESSAGE_TYPE = 68097;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

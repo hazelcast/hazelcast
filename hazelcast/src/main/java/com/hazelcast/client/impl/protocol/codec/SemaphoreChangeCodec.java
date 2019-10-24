@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Increases or decreases the number of permits by the given value.
  */
-@Generated("8eedc1f49139247560c45c6223bf9233")
+@Generated("59b44e5b1d37a6198d9184cd362cf777")
 public final class SemaphoreChangeCodec {
-    //hex: 0x0D0500
-    public static final int REQUEST_MESSAGE_TYPE = 853248;
-    //hex: 0x0D0501
-    public static final int RESPONSE_MESSAGE_TYPE = 853249;
+    //hex: 0x0C0500
+    public static final int REQUEST_MESSAGE_TYPE = 787712;
+    //hex: 0x0C0501
+    public static final int RESPONSE_MESSAGE_TYPE = 787713;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

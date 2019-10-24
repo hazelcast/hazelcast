@@ -43,12 +43,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("f79223662f103e04e7cbd3910f5e74a0")
+@Generated("2ee67463d8dbd557a7cacae5fec2574e")
 public final class MapEventJournalReadCodec {
-    //hex: 0x014800
-    public static final int REQUEST_MESSAGE_TYPE = 83968;
-    //hex: 0x014801
-    public static final int RESPONSE_MESSAGE_TYPE = 83969;
+    //hex: 0x014500
+    public static final int REQUEST_MESSAGE_TYPE = 83200;
+    //hex: 0x014501
+    public static final int RESPONSE_MESSAGE_TYPE = 83201;
     private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MIN_SIZE_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_MIN_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

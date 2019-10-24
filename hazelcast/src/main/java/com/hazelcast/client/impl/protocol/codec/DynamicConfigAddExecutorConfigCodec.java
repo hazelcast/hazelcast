@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("4bd6bb4b74389fe1ccb5d4c48c4563ed")
+@Generated("5cbcf30399b9de71c89ca3ceac4f8bca")
 public final class DynamicConfigAddExecutorConfigCodec {
-    //hex: 0x1E0900
-    public static final int REQUEST_MESSAGE_TYPE = 1968384;
-    //hex: 0x1E0901
-    public static final int RESPONSE_MESSAGE_TYPE = 1968385;
+    //hex: 0x1B0800
+    public static final int REQUEST_MESSAGE_TYPE = 1771520;
+    //hex: 0x1B0801
+    public static final int RESPONSE_MESSAGE_TYPE = 1771521;
     private static final int REQUEST_POOL_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_QUEUE_CAPACITY_FIELD_OFFSET = REQUEST_POOL_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_QUEUE_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;

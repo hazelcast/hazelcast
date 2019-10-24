@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
  * events filtered by the given predicate.
  */
-@Generated("313559529a9686ba2435d768350a3c25")
+@Generated("c8589c7012ba010c7e73390267b92287")
 public final class ReplicatedMapAddEntryListenerWithPredicateCodec {
-    //hex: 0x0E0B00
-    public static final int REQUEST_MESSAGE_TYPE = 920320;
-    //hex: 0x0E0B01
-    public static final int RESPONSE_MESSAGE_TYPE = 920321;
+    //hex: 0x0D0B00
+    public static final int REQUEST_MESSAGE_TYPE = 854784;
+    //hex: 0x0D0B01
+    public static final int RESPONSE_MESSAGE_TYPE = 854785;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -52,8 +52,8 @@ public final class ReplicatedMapAddEntryListenerWithPredicateCodec {
     private static final int EVENT_ENTRY_UUID_FIELD_OFFSET = EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET = EVENT_ENTRY_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_ENTRY_INITIAL_FRAME_SIZE = EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x0E0B02
-    private static final int EVENT_ENTRY_MESSAGE_TYPE = 920322;
+    //hex: 0x0D0B02
+    private static final int EVENT_ENTRY_MESSAGE_TYPE = 854786;
 
     private ReplicatedMapAddEntryListenerWithPredicateCodec() {
     }

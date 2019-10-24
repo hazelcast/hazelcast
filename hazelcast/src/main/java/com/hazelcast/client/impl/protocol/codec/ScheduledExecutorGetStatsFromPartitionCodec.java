@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("179d99a71e0f01bb94ac0d1c01370f07")
+@Generated("5c642e7022d4006cb5e7d4ff854b6575")
 public final class ScheduledExecutorGetStatsFromPartitionCodec {
-    //hex: 0x1D0500
-    public static final int REQUEST_MESSAGE_TYPE = 1901824;
-    //hex: 0x1D0501
-    public static final int RESPONSE_MESSAGE_TYPE = 1901825;
+    //hex: 0x1A0500
+    public static final int REQUEST_MESSAGE_TYPE = 1705216;
+    //hex: 0x1A0501
+    public static final int RESPONSE_MESSAGE_TYPE = 1705217;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_LAST_IDLE_TIME_NANOS_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_TOTAL_IDLE_TIME_NANOS_FIELD_OFFSET = RESPONSE_LAST_IDLE_TIME_NANOS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

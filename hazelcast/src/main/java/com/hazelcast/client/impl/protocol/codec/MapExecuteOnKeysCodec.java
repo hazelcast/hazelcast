@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.The results mapped by
  * each key in the collection.
  */
-@Generated("1683e5415f50ac8774830cd2f1e7cc1d")
+@Generated("8c17d002b2d50c2e510e1190d6cf09cc")
 public final class MapExecuteOnKeysCodec {
-    //hex: 0x013600
-    public static final int REQUEST_MESSAGE_TYPE = 79360;
-    //hex: 0x013601
-    public static final int RESPONSE_MESSAGE_TYPE = 79361;
+    //hex: 0x013300
+    public static final int REQUEST_MESSAGE_TYPE = 78592;
+    //hex: 0x013301
+    public static final int RESPONSE_MESSAGE_TYPE = 78593;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

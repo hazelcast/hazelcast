@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Acquires all available permits at once and returns immediately.
  */
-@Generated("09a94b584e1f719f5050d0afe80f9011")
+@Generated("e81beaa8d4ebc5035783262c139177e6")
 public final class SemaphoreDrainCodec {
-    //hex: 0x0D0400
-    public static final int REQUEST_MESSAGE_TYPE = 852992;
-    //hex: 0x0D0401
-    public static final int RESPONSE_MESSAGE_TYPE = 852993;
+    //hex: 0x0C0400
+    public static final int REQUEST_MESSAGE_TYPE = 787456;
+    //hex: 0x0C0401
+    public static final int RESPONSE_MESSAGE_TYPE = 787457;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

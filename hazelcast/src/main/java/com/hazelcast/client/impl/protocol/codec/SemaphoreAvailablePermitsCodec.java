@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of available permits.
  */
-@Generated("c92bb49aa20068581818bd957de541a6")
+@Generated("f977ed1f7494a51171608b5875f3b8d6")
 public final class SemaphoreAvailablePermitsCodec {
-    //hex: 0x0D0600
-    public static final int REQUEST_MESSAGE_TYPE = 853504;
-    //hex: 0x0D0601
-    public static final int RESPONSE_MESSAGE_TYPE = 853505;
+    //hex: 0x0C0600
+    public static final int REQUEST_MESSAGE_TYPE = 787968;
+    //hex: 0x0C0601
+    public static final int RESPONSE_MESSAGE_TYPE = 787969;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

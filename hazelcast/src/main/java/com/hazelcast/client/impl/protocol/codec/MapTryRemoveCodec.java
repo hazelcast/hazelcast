@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the key is already locked by another thread and/or member, then this operation will wait the timeout
  * amount for acquiring the lock.
  */
-@Generated("f29e14961791983d5c741b5b12096c77")
+@Generated("bcdb05444213a940d87381a22c6a2ce1")
 public final class MapTryRemoveCodec {
-    //hex: 0x010E00
-    public static final int REQUEST_MESSAGE_TYPE = 69120;
-    //hex: 0x010E01
-    public static final int RESPONSE_MESSAGE_TYPE = 69121;
+    //hex: 0x010B00
+    public static final int REQUEST_MESSAGE_TYPE = 68352;
+    //hex: 0x010B01
+    public static final int RESPONSE_MESSAGE_TYPE = 68353;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

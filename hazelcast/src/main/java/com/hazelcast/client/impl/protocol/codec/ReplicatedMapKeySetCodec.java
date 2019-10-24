@@ -41,12 +41,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * very poor performance if called repeatedly (for example, in a loop). If the use case is different from querying
  * the data, please copy the resulting set into a new java.util.HashSet.
  */
-@Generated("48288991f6c9579eaab7038cacd39c74")
+@Generated("f8d1e0673564d6d69dcdfa96aebc4067")
 public final class ReplicatedMapKeySetCodec {
-    //hex: 0x0E0F00
-    public static final int REQUEST_MESSAGE_TYPE = 921344;
-    //hex: 0x0E0F01
-    public static final int RESPONSE_MESSAGE_TYPE = 921345;
+    //hex: 0x0D0F00
+    public static final int REQUEST_MESSAGE_TYPE = 855808;
+    //hex: 0x0D0F01
+    public static final int RESPONSE_MESSAGE_TYPE = 855809;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

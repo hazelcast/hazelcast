@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("155064ce6772ecbbff667dcbd8c22f31")
+@Generated("b469765dee7bc92b0e0f048378777d42")
 public final class ClientRemoveAllListenersCodec {
-    //hex: 0x000900
-    public static final int REQUEST_MESSAGE_TYPE = 2304;
-    //hex: 0x000901
-    public static final int RESPONSE_MESSAGE_TYPE = 2305;
+    //hex: 0x000700
+    public static final int REQUEST_MESSAGE_TYPE = 1792;
+    //hex: 0x000701
+    public static final int RESPONSE_MESSAGE_TYPE = 1793;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

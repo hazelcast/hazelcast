@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
  * to define when the value is outdated and thus should be removed from the replicated map.
  */
-@Generated("ef21d7bda7ad7bcdc8435aa7742d1f11")
+@Generated("75f1148adc709b2a5424539e9d26ec84")
 public final class ReplicatedMapPutCodec {
-    //hex: 0x0E0100
-    public static final int REQUEST_MESSAGE_TYPE = 917760;
-    //hex: 0x0E0101
-    public static final int RESPONSE_MESSAGE_TYPE = 917761;
+    //hex: 0x0D0100
+    public static final int REQUEST_MESSAGE_TYPE = 852224;
+    //hex: 0x0D0101
+    public static final int RESPONSE_MESSAGE_TYPE = 852225;
     private static final int REQUEST_TTL_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

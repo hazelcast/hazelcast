@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a list configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("00434cbd4969b1ffe8777386f930448e")
+@Generated("8f8977167b001deaf72fadbd11351481")
 public final class DynamicConfigAddListConfigCodec {
-    //hex: 0x1E0500
-    public static final int REQUEST_MESSAGE_TYPE = 1967360;
-    //hex: 0x1E0501
-    public static final int RESPONSE_MESSAGE_TYPE = 1967361;
+    //hex: 0x1B0400
+    public static final int REQUEST_MESSAGE_TYPE = 1770496;
+    //hex: 0x1B0401
+    public static final int RESPONSE_MESSAGE_TYPE = 1770497;
     private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;

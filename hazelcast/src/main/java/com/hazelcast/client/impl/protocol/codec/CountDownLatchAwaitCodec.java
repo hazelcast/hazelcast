@@ -51,12 +51,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * waiting time elapses then the value false is returned.  If the time is
  * less than or equal to zero, the method will not wait at all.
  */
-@Generated("67847f9fd05e9bd66e90c987d3dfec4a")
+@Generated("9a39ed94c73a344c2faf7d92d626c878")
 public final class CountDownLatchAwaitCodec {
-    //hex: 0x0C0200
-    public static final int REQUEST_MESSAGE_TYPE = 786944;
-    //hex: 0x0C0201
-    public static final int RESPONSE_MESSAGE_TYPE = 786945;
+    //hex: 0x0B0200
+    public static final int REQUEST_MESSAGE_TYPE = 721408;
+    //hex: 0x0B0201
+    public static final int RESPONSE_MESSAGE_TYPE = 721409;
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_MS_FIELD_OFFSET = REQUEST_INVOCATION_UID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMEOUT_MS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * readers or it can be read multiple times by the same reader. Currently it isn't possible to control how long this
  * call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
  */
-@Generated("91d90e10ddd27f4fea03c5399b08c5e5")
+@Generated("a4211b695de30ac37124a87102af98d5")
 public final class RingbufferReadOneCodec {
-    //hex: 0x190800
-    public static final int REQUEST_MESSAGE_TYPE = 1640448;
-    //hex: 0x190801
-    public static final int RESPONSE_MESSAGE_TYPE = 1640449;
+    //hex: 0x170700
+    public static final int REQUEST_MESSAGE_TYPE = 1509120;
+    //hex: 0x170701
+    public static final int RESPONSE_MESSAGE_TYPE = 1509121;
     private static final int REQUEST_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

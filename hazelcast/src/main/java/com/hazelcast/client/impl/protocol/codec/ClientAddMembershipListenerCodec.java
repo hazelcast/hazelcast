@@ -37,27 +37,27 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("04c48da899108f6aa8add902c6e22823")
+@Generated("3bfd1411203a2d903bafa9ed3cc6886a")
 public final class ClientAddMembershipListenerCodec {
-    //hex: 0x000400
-    public static final int REQUEST_MESSAGE_TYPE = 1024;
-    //hex: 0x000401
-    public static final int RESPONSE_MESSAGE_TYPE = 1025;
+    //hex: 0x000300
+    public static final int REQUEST_MESSAGE_TYPE = 768;
+    //hex: 0x000301
+    public static final int RESPONSE_MESSAGE_TYPE = 769;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MEMBER_INITIAL_FRAME_SIZE = EVENT_MEMBER_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x000402
-    private static final int EVENT_MEMBER_MESSAGE_TYPE = 1026;
+    //hex: 0x000302
+    private static final int EVENT_MEMBER_MESSAGE_TYPE = 770;
     private static final int EVENT_MEMBER_LIST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x000403
-    private static final int EVENT_MEMBER_LIST_MESSAGE_TYPE = 1027;
+    //hex: 0x000303
+    private static final int EVENT_MEMBER_LIST_MESSAGE_TYPE = 771;
     private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_INITIAL_FRAME_SIZE = EVENT_MEMBER_ATTRIBUTE_CHANGE_OPERATION_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x000404
-    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE = 1028;
+    //hex: 0x000304
+    private static final int EVENT_MEMBER_ATTRIBUTE_CHANGE_MESSAGE_TYPE = 772;
 
     private ClientAddMembershipListenerCodec() {
     }

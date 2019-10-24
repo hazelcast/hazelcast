@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the size of the set.
  */
-@Generated("f01cc595c95e5607403a5a42091af676")
+@Generated("da2db0cbe86049fd2e52c9361fa4078c")
 public final class TransactionalSetSizeCodec {
-    //hex: 0x120300
-    public static final int REQUEST_MESSAGE_TYPE = 1180416;
-    //hex: 0x120301
-    public static final int RESPONSE_MESSAGE_TYPE = 1180417;
+    //hex: 0x100300
+    public static final int REQUEST_MESSAGE_TYPE = 1049344;
+    //hex: 0x100301
+    public static final int RESPONSE_MESSAGE_TYPE = 1049345;
     private static final int REQUEST_TXN_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TXN_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

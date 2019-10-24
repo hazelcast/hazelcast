@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Evicts the specified key from this map. If a MapStore is defined for this map, then the entry is not deleted
  * from the underlying MapStore, evict only removes the entry from the memory.
  */
-@Generated("13a8d21c4e1f02a3a4a45cf310382873")
+@Generated("b0d6c62f9a5cce643cb615894d88229e")
 public final class MapEvictCodec {
-    //hex: 0x012200
-    public static final int REQUEST_MESSAGE_TYPE = 74240;
-    //hex: 0x012201
-    public static final int RESPONSE_MESSAGE_TYPE = 74241;
+    //hex: 0x011F00
+    public static final int REQUEST_MESSAGE_TYPE = 73472;
+    //hex: 0x011F01
+    public static final int RESPONSE_MESSAGE_TYPE = 73473;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

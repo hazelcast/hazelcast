@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("15fa7bbbc1c0257e01b97438dcf15ba7")
+@Generated("d1b722e59a280bcb04d603c09a0585ba")
 public final class ClientAuthenticationCodec {
-    //hex: 0x000200
-    public static final int REQUEST_MESSAGE_TYPE = 512;
-    //hex: 0x000201
-    public static final int RESPONSE_MESSAGE_TYPE = 513;
+    //hex: 0x000100
+    public static final int REQUEST_MESSAGE_TYPE = 256;
+    //hex: 0x000101
+    public static final int RESPONSE_MESSAGE_TYPE = 257;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_PARTITION_COUNT_FIELD_OFFSET = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
@@ -61,7 +61,7 @@ public final class ClientAuthenticationCodec {
     public static class RequestParameters {
 
         /**
-         * Cluster name that will client connect to.
+         * Cluster name that client will connect to.
          */
         public java.lang.String clusterName;
 

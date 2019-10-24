@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("c72f25e58fc2e644f60edd085679926c")
+@Generated("c081e905ccd0c1f72a5f69f697ed0a1c")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
-    //hex: 0x180100
-    public static final int REQUEST_MESSAGE_TYPE = 1573120;
-    //hex: 0x180101
-    public static final int RESPONSE_MESSAGE_TYPE = 1573121;
+    //hex: 0x160100
+    public static final int REQUEST_MESSAGE_TYPE = 1442048;
+    //hex: 0x160101
+    public static final int RESPONSE_MESSAGE_TYPE = 1442049;
     private static final int REQUEST_BATCH_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BUFFER_SIZE_FIELD_OFFSET = REQUEST_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_DELAY_SECONDS_FIELD_OFFSET = REQUEST_BUFFER_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

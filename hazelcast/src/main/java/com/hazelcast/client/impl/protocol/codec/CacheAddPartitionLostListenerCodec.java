@@ -40,12 +40,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated("c296dff32ba219baa518d404c831ffeb")
+@Generated("e18d90f725c558746995f19b1287aaf7")
 public final class CacheAddPartitionLostListenerCodec {
-    //hex: 0x151A00
-    public static final int REQUEST_MESSAGE_TYPE = 1382912;
-    //hex: 0x151A01
-    public static final int RESPONSE_MESSAGE_TYPE = 1382913;
+    //hex: 0x131A00
+    public static final int REQUEST_MESSAGE_TYPE = 1251840;
+    //hex: 0x131A01
+    public static final int RESPONSE_MESSAGE_TYPE = 1251841;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -53,8 +53,8 @@ public final class CacheAddPartitionLostListenerCodec {
     private static final int EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET = EVENT_CACHE_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_CACHE_PARTITION_LOST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    //hex: 0x151A02
-    private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 1382914;
+    //hex: 0x131A02
+    private static final int EVENT_CACHE_PARTITION_LOST_MESSAGE_TYPE = 1251842;
 
     private CacheAddPartitionLostListenerCodec() {
     }

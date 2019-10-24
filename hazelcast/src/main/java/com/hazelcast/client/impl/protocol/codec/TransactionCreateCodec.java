@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("f93f257cba3cf40a7d46e09e6ebd21ce")
+@Generated("1b740b1e2ce72571a6ee1bd7f0945c0b")
 public final class TransactionCreateCodec {
-    //hex: 0x170200
-    public static final int REQUEST_MESSAGE_TYPE = 1507840;
-    //hex: 0x170201
-    public static final int RESPONSE_MESSAGE_TYPE = 1507841;
+    //hex: 0x150200
+    public static final int REQUEST_MESSAGE_TYPE = 1376768;
+    //hex: 0x150201
+    public static final int RESPONSE_MESSAGE_TYPE = 1376769;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_DURABILITY_FIELD_OFFSET = REQUEST_TIMEOUT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_TRANSACTION_TYPE_FIELD_OFFSET = REQUEST_DURABILITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;

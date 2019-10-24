@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels further execution and scheduling of the task
  */
-@Generated("c3b83ab0f73c2affa339197ce8c27e92")
+@Generated("57e428a212a27a0804ab89550758f04c")
 public final class ScheduledExecutorCancelFromPartitionCodec {
-    //hex: 0x1D0900
-    public static final int REQUEST_MESSAGE_TYPE = 1902848;
-    //hex: 0x1D0901
-    public static final int RESPONSE_MESSAGE_TYPE = 1902849;
+    //hex: 0x1A0900
+    public static final int REQUEST_MESSAGE_TYPE = 1706240;
+    //hex: 0x1A0901
+    public static final int RESPONSE_MESSAGE_TYPE = 1706241;
     private static final int REQUEST_MAY_INTERRUPT_IF_RUNNING_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAY_INTERRUPT_IF_RUNNING_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

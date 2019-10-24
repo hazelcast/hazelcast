@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("f85e44d8c645b52af66ff9e0cd1186d8")
+@Generated("99dd88e39f3856cc5c0ac4bbdd9ae580")
 public final class DynamicConfigAddTopicConfigCodec {
-    //hex: 0x1E0800
-    public static final int REQUEST_MESSAGE_TYPE = 1968128;
-    //hex: 0x1E0801
-    public static final int RESPONSE_MESSAGE_TYPE = 1968129;
+    //hex: 0x1B0700
+    public static final int REQUEST_MESSAGE_TYPE = 1771264;
+    //hex: 0x1B0701
+    public static final int RESPONSE_MESSAGE_TYPE = 1771265;
     private static final int REQUEST_GLOBAL_ORDERING_ENABLED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_GLOBAL_ORDERING_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MULTI_THREADING_ENABLED_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

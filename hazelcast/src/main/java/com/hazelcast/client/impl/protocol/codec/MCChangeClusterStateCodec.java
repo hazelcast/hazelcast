@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("78794bcdd1a58d51b27c534602500ded")
+@Generated("e664d75f262226619b5fe07a04821ba6")
 public final class MCChangeClusterStateCodec {
-    //hex: 0x270200
-    public static final int REQUEST_MESSAGE_TYPE = 2556416;
-    //hex: 0x270201
-    public static final int RESPONSE_MESSAGE_TYPE = 2556417;
+    //hex: 0x200200
+    public static final int REQUEST_MESSAGE_TYPE = 2097664;
+    //hex: 0x200201
+    public static final int RESPONSE_MESSAGE_TYPE = 2097665;
     private static final int REQUEST_NEW_STATE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_STATE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -53,7 +53,12 @@ public final class MCChangeClusterStateCodec {
     public static class RequestParameters {
 
         /**
-         * ID of the new state of the cluster.
+         * New state of the cluster:
+         * 0 - ACTIVE
+         * 1 - NO_MIGRATION
+         * 2 - FROZEN
+         * 3 - PASSIVE
+         * 4 - IN_TRANSITION (not allowed)
          */
         public int newState;
     }

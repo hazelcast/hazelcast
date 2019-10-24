@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically sets the value to the given updated value only if the current
  * value the expected value.
  */
-@Generated("6c32572db4d31486401acee85dffbf3b")
+@Generated("c3576f22ec8c9d498256c52e6aec073c")
 public final class AtomicLongCompareAndSetCodec {
-    //hex: 0x0A0400
-    public static final int REQUEST_MESSAGE_TYPE = 656384;
-    //hex: 0x0A0401
-    public static final int RESPONSE_MESSAGE_TYPE = 656385;
+    //hex: 0x090400
+    public static final int REQUEST_MESSAGE_TYPE = 590848;
+    //hex: 0x090401
+    public static final int RESPONSE_MESSAGE_TYPE = 590849;
     private static final int REQUEST_EXPECTED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_UPDATED_FIELD_OFFSET = REQUEST_EXPECTED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UPDATED_FIELD_OFFSET + LONG_SIZE_IN_BYTES;

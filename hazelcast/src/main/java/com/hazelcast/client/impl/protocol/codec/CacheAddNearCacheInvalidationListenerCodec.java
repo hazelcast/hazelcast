@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Eventually consistent client near caches should use this method to add invalidation listeners
  * instead of {@link #addInvalidationListener(String, boolean)}
  */
-@Generated("6cccf6f776ea16ca45f8cb28541853a2")
+@Generated("d5b033498c827fc9a680c4078b3d73e3")
 public final class CacheAddNearCacheInvalidationListenerCodec {
-    //hex: 0x151E00
-    public static final int REQUEST_MESSAGE_TYPE = 1383936;
-    //hex: 0x151E01
-    public static final int RESPONSE_MESSAGE_TYPE = 1383937;
+    //hex: 0x131E00
+    public static final int REQUEST_MESSAGE_TYPE = 1252864;
+    //hex: 0x131E01
+    public static final int RESPONSE_MESSAGE_TYPE = 1252865;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -53,11 +53,11 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
     private static final int EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = EVENT_CACHE_INVALIDATION_SOURCE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x151E02
-    private static final int EVENT_CACHE_INVALIDATION_MESSAGE_TYPE = 1383938;
+    //hex: 0x131E02
+    private static final int EVENT_CACHE_INVALIDATION_MESSAGE_TYPE = 1252866;
     private static final int EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x151E03
-    private static final int EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE = 1383939;
+    //hex: 0x131E03
+    private static final int EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE = 1252867;
 
     private CacheAddNearCacheInvalidationListenerCodec() {
     }

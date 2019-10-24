@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value and returns the old value.
  */
-@Generated("21a731a7851edbd81d03717e6cb1b021")
+@Generated("db94d613a0b9985edce31880eb3f3cd2")
 public final class AtomicLongGetAndSetCodec {
-    //hex: 0x0A0700
-    public static final int REQUEST_MESSAGE_TYPE = 657152;
-    //hex: 0x0A0701
-    public static final int RESPONSE_MESSAGE_TYPE = 657153;
+    //hex: 0x090700
+    public static final int REQUEST_MESSAGE_TYPE = 591616;
+    //hex: 0x090701
+    public static final int RESPONSE_MESSAGE_TYPE = 591617;
     private static final int REQUEST_NEW_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

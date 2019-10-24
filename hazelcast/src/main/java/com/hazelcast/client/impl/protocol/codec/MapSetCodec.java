@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If ttl is 0, then the entry lives forever. Similar to the put operation except that set doesn't
  * return the old value, which is more efficient.
  */
-@Generated("68243665e46de483da0d8f18a8fd4099")
+@Generated("17c1dbfe18a1cbb376a7a9e3098e5b50")
 public final class MapSetCodec {
-    //hex: 0x011200
-    public static final int REQUEST_MESSAGE_TYPE = 70144;
-    //hex: 0x011201
-    public static final int RESPONSE_MESSAGE_TYPE = 70145;
+    //hex: 0x010F00
+    public static final int REQUEST_MESSAGE_TYPE = 69376;
+    //hex: 0x010F01
+    public static final int RESPONSE_MESSAGE_TYPE = 69377;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
