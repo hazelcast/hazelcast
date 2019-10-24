@@ -326,7 +326,7 @@ public class Statistics {
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
                     .append(mainConnection.getLocalSocketAddress().getAddress().getHostAddress());
 
-            addStat(stats, "clusterName", client.getName());
+            addStat(stats, "clientName", client.getName());
 
             ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
             Credentials credentials = connectionManager.getLastCredentials();
