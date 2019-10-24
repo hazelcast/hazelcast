@@ -243,7 +243,7 @@ public class RaftInvocationManager {
         return raftInvocationContext;
     }
 
-    public CPMemberInfo getCPMember(RaftEndpoint endpoint) {
+    CPMember getCPMember(RaftEndpoint endpoint) {
         return endpoint != null ? raftInvocationContext.getCPMember(endpoint.getUuid()) : null;
     }
 

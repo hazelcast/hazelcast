@@ -59,7 +59,7 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         return createHazelcastInstanceFactory();
     }
 
-    protected RaftNodeImpl waitAllForLeaderElection(HazelcastInstance[] instances, CPGroupId groupId) {
+    protected static RaftNodeImpl waitAllForLeaderElection(HazelcastInstance[] instances, CPGroupId groupId) {
         assertTrueEventually(() -> {
             RaftNodeImpl leaderNode = getLeaderNode(instances, groupId);
             int leaderTerm = getTerm(leaderNode);
@@ -137,11 +137,11 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
               .setProperty(MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
 
-    protected RaftNodeImpl getLeaderNode(HazelcastInstance[] instances, CPGroupId groupId) {
+    protected static RaftNodeImpl getLeaderNode(HazelcastInstance[] instances, CPGroupId groupId) {
         return getRaftNode(getLeaderInstance(instances, groupId), groupId);
     }
 
-    protected HazelcastInstance getLeaderInstance(HazelcastInstance[] instances, CPGroupId groupId) {
+    protected static HazelcastInstance getLeaderInstance(HazelcastInstance[] instances, CPGroupId groupId) {
         RaftNodeImpl[] raftNodeRef = new RaftNodeImpl[1];
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
@@ -168,7 +168,7 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         throw new AssertionError();
     }
 
-    protected HazelcastInstance getRandomFollowerInstance(HazelcastInstance[] instances, CPGroupId groupId) {
+    protected static HazelcastInstance getRandomFollowerInstance(HazelcastInstance[] instances, CPGroupId groupId) {
         RaftNodeImpl[] raftNodeRef = new RaftNodeImpl[1];
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {

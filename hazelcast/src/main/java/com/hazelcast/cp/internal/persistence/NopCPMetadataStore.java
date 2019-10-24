@@ -19,6 +19,8 @@ package com.hazelcast.cp.internal.persistence;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.RaftGroupId;
 
+import java.util.Collection;
+
 /**
  * Used when CP Subsystem works transiently (its state is not persisted).
  */
@@ -51,6 +53,15 @@ public final class NopCPMetadataStore implements CPMetadataStore {
     @Override
     public CPMember readLocalCPMember() {
         return null;
+    }
+
+    @Override
+    public void persistActiveCPMembers(Collection<? extends CPMember> members, long commitIndex) {
+    }
+
+    @Override
+    public long readActiveCPMembers(Collection<CPMember> members) {
+        return 0;
     }
 
     @Override

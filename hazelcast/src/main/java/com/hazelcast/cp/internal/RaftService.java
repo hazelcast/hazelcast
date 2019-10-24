@@ -831,7 +831,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return getMetadataGroupId().getSeed() == ((RaftGroupId) groupId).getSeed();
     }
 
-    public boolean updateInvocationManagerMembers(long groupIdSeed, long membersCommitIndex, Collection<CPMemberInfo> members) {
+    public boolean updateInvocationManagerMembers(long groupIdSeed, long membersCommitIndex,
+            Collection<? extends CPMember> members) {
         return invocationManager.getRaftInvocationContext().setMembers(groupIdSeed, membersCommitIndex, members);
     }
 

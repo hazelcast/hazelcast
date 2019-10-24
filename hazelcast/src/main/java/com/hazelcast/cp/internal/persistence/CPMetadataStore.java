@@ -20,6 +20,7 @@ import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.RaftGroupId;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Persists and restores CP member metadata of the local member.
@@ -57,6 +58,20 @@ public interface CPMetadataStore {
      * is not not known yet CP member discovery will run.
      */
     CPMember readLocalCPMember() throws IOException;
+
+    /**
+     * Persists active CP members list.
+     * @param members CP members
+     * @param commitIndex member list commit index
+     */
+    void persistActiveCPMembers(Collection<? extends CPMember> members, long commitIndex) throws IOException;
+
+    /**
+     * Reads active CP members and the commit index.
+     * @param members collection to append read members
+     * @return the member list commit index
+     */
+    long readActiveCPMembers(Collection<CPMember> members) throws IOException;
 
     /**
      * Persists group id of the METADATA group.
