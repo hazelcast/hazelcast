@@ -32,6 +32,7 @@ import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -44,23 +45,35 @@ import static java.util.Collections.emptySet;
  * @see MetricsRegistry#collect(MetricsCollector)
  */
 class MetricsCollectionCycle {
+    private static final MetricValueCatcher NOOP_CATCHER = new NoOpMetricValueCatcher();
+
     private final MetricTaggerSupplier taggerSupplier;
-    private final Function<Class, SourceMetadata> lookupMetadataFunction;
+    private final Function<Class, SourceMetadata> lookupMetadataFn;
+    private final Function<String, MetricValueCatcher> lookupMetricValueCatcherFn;
     private final MetricsCollector metricsCollector;
     private final ProbeLevel minimumLevel;
     private final MetricsContext metricsContext = new MetricsContext();
+    private final long collectionId = System.nanoTime();
 
-    MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFunction,
-                           MetricsCollector metricsCollector, ProbeLevel minimumLevel) {
+    MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFn,
+                           Function<String, MetricValueCatcher> lookupMetricValueCatcherFn,
+                           MetricsCollector metricsCollector,
+                           ProbeLevel minimumLevel) {
         this.taggerSupplier = new TaggerSupplier();
-        this.lookupMetadataFunction = lookupMetadataFunction;
+        this.lookupMetadataFn = lookupMetadataFn;
+        this.lookupMetricValueCatcherFn = lookupMetricValueCatcherFn;
         this.metricsCollector = metricsCollector;
         this.minimumLevel = minimumLevel;
     }
 
-    void collectStaticMetrics(Collection<ProbeInstance> probeInstances) {
-        for (ProbeInstance probeInstance : probeInstances) {
+    void collectStaticMetrics(Map<String, ProbeInstance> probeInstanceEntries) {
+        for (Map.Entry<String, ProbeInstance> entry : probeInstanceEntries.entrySet()) {
+            String metricId = entry.getKey();
+            ProbeInstance probeInstance = entry.getValue();
             ProbeFunction function = probeInstance.function;
+
+            lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, probeInstance, function);
+
             if (function instanceof LongProbeFunction) {
                 collectLong(probeInstance.source, probeInstance.name, (LongProbeFunction) function);
             } else if (function instanceof DoubleProbeFunction) {
@@ -77,25 +90,42 @@ class MetricsCollectionCycle {
         }
     }
 
+    void notifyAllGauges(Collection<AbstractGauge> gauges) {
+        for (AbstractGauge gauge : gauges) {
+            gauge.onCollectionCompleted(collectionId);
+        }
+    }
+
+    private MetricValueCatcher lookupMetricValueCatcher(String metricId) {
+        MetricValueCatcher catcher = lookupMetricValueCatcherFn.apply(metricId);
+        return catcher != null ? catcher : NOOP_CATCHER;
+    }
+
     private void extractAndCollectDynamicMetrics(MetricTagger tagger, Object source) {
-        SourceMetadata metadata = lookupMetadataFunction.apply(source.getClass());
+        SourceMetadata metadata = lookupMetadataFn.apply(source.getClass());
 
         for (MethodProbe methodProbe : metadata.methods()) {
             if (methodProbe.probe.level().isEnabled(minimumLevel)) {
-                String name = tagger
-                        .withTag("unit", methodProbe.probe.unit().name().toLowerCase())
-                        .withMetricTag(methodProbe.getProbeOrMethodName())
-                        .metricName();
+                MetricTagger metricTagger = tagger.withTag("unit", methodProbe.probe.unit().name().toLowerCase())
+                                                  .withMetricTag(methodProbe.getProbeOrMethodName());
+                String metricId = metricTagger.metricId();
+                String name = metricTagger.metricName();
+
+                lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, source, methodProbe);
+
                 collect(name, source, methodProbe);
             }
         }
 
         for (FieldProbe fieldProbe : metadata.fields()) {
             if (fieldProbe.probe.level().isEnabled(minimumLevel)) {
-                String name = tagger
+                MetricTagger metricTagger = tagger
                         .withTag("unit", fieldProbe.probe.unit().name().toLowerCase())
-                        .withMetricTag(fieldProbe.getProbeOrFieldName())
-                        .metricName();
+                        .withMetricTag(fieldProbe.getProbeOrFieldName());
+                String metricId = metricTagger.metricId();
+                String name = metricTagger.metricName();
+
+                lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, source, fieldProbe);
                 collect(name, source, fieldProbe);
             }
         }
@@ -148,7 +178,6 @@ class MetricsCollectionCycle {
     }
 
     private class MetricsContext implements MetricsCollectionContext {
-
         @Override
         public void collect(MetricTagger metricTagger, Object source) {
             extractAndCollectDynamicMetrics(metricTagger, source);
@@ -157,9 +186,13 @@ class MetricsCollectionCycle {
         @Override
         public void collect(MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit, long value) {
             if (level.isEnabled(minimumLevel)) {
-                metricsCollector.collectLong(tagger.withTag("unit", unit.name().toLowerCase())
-                                                   .withMetricTag(name)
-                                                   .metricName(), value, emptySet());
+                MetricTagger metricTagger = tagger.withTag("unit", unit.name().toLowerCase())
+                                                  .withMetricTag(name);
+                String metricName = metricTagger.metricName();
+                String metricId = metricTagger.metricId();
+
+                lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, value);
+                metricsCollector.collectLong(metricName, value, emptySet());
             }
         }
 
@@ -167,9 +200,14 @@ class MetricsCollectionCycle {
         @Override
         public void collect(MetricTagger tagger, String name, ProbeLevel level, ProbeUnit unit, double value) {
             if (level.isEnabled(minimumLevel)) {
-                metricsCollector.collectDouble(tagger.withTag("unit", unit.name().toLowerCase())
-                                                     .withMetricTag(name)
-                                                     .metricName(), value, emptySet());
+                MetricTagger metricTagger = tagger.withTag("unit", unit.name().toLowerCase())
+                                                  .withMetricTag(name);
+
+                String metricName = metricTagger.metricName();
+                String metricId = metricTagger.metricId();
+
+                lookupMetricValueCatcher(metricId).catchMetricValue(collectionId, value);
+                metricsCollector.collectDouble(metricName, value, emptySet());
             }
         }
     }
@@ -186,4 +224,23 @@ class MetricsCollectionCycle {
             return new MetricTaggerImpl(namespace);
         }
     }
+
+    private static final class NoOpMetricValueCatcher implements MetricValueCatcher {
+
+        @Override
+        public void catchMetricValue(long collectionId, Object source, ProbeFunction function) {
+            // noop
+        }
+
+        @Override
+        public void catchMetricValue(long collectionId, long value) {
+            // noop
+        }
+
+        @Override
+        public void catchMetricValue(long collectionId, double value) {
+            // noop
+        }
+    }
 }
+

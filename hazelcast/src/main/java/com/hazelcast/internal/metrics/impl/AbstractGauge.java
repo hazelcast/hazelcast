@@ -17,12 +17,16 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.Metric;
+import com.hazelcast.internal.metrics.ProbeFunction;
+
+import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicReference;
 
 abstract class AbstractGauge implements Metric {
 
     protected final MetricsRegistryImpl metricsRegistry;
     protected final String name;
-    private volatile ProbeInstance probeInstance;
+    protected long lastCollectionId = Long.MIN_VALUE;
 
     AbstractGauge(MetricsRegistryImpl metricsRegistry, String name) {
         this.metricsRegistry = metricsRegistry;
@@ -34,16 +38,95 @@ abstract class AbstractGauge implements Metric {
         return name;
     }
 
-    void clearProbeInstance() {
-        probeInstance = null;
+    public abstract void onProbeInstanceSet(ProbeInstance probeInstance);
+
+    abstract MetricValueCatcher getCatcherOrNull();
+
+    final void onCollectionCompleted(long collectionId) {
+        if (lastCollectionId != collectionId) {
+            MetricValueCatcher catcher = getCatcherOrNull();
+            if (catcher != null && catcher instanceof AbstractMetricValueCatcher) {
+                ((AbstractMetricValueCatcher) catcher).clearCachedValue();
+                ((AbstractMetricValueCatcher) catcher).clearCachedMetricSourceRef();
+            }
+        }
     }
 
-    ProbeInstance getProbeInstance() {
-        ProbeInstance probeInstance = this.probeInstance;
-        if (probeInstance == null) {
-            probeInstance = metricsRegistry.getProbeInstance(name);
-            this.probeInstance = probeInstance;
+    abstract class AbstractMetricValueCatcher implements MetricValueCatcher {
+        private final AtomicReference<DynamicMetricSourceReference> dynamicMetricRef = new AtomicReference<>();
+
+        @Override
+        public final void catchMetricValue(long collectionId, Object source, ProbeFunction function) {
+            lastCollectionId = collectionId;
+            if (function == null || source == null) {
+                clearCachedValue();
+            } else {
+                DynamicMetricSourceReference cachedMetricRef = dynamicMetricRef.get();
+                if (cachedMetricRef == null || source != cachedMetricRef.source() || function != cachedMetricRef.function()) {
+                    dynamicMetricRef.set(new DynamicMetricSourceReference(source, function));
+                    clearCachedValue();
+                }
+            }
         }
-        return probeInstance;
+
+        final <T> T readBase(MetricValueExtractorFunction<T> extractorFn, MetricCachedValueReaderFunction<T> readCachedFn) {
+            // called from LongGaugeImpl#read() and DoubleGaugeImpl#read()
+            // it does boxing and unboxing through the passed function
+            // parameters as the trade-off of the mostly shared code base
+
+            // check if we have a usable cached dynamic metric reference
+            // if so, read the value from it
+            DynamicMetricSourceReference cachedMetricRef = dynamicMetricRef.get();
+            if (cachedMetricRef != null) {
+                // need to make local copies since source and function
+                // is accessed through weak references
+                Object source = cachedMetricRef.source();
+                ProbeFunction function = cachedMetricRef.function();
+
+                if (source != null && function != null) {
+                    return extractorFn.extractValue(name, source, function, metricsRegistry);
+                } else {
+                    clearCachedMetricSourceRef();
+                }
+            }
+
+            // otherwise use the cached value
+            return readCachedFn.readCachedValue();
+        }
+
+        abstract void clearCachedValue();
+
+        final void clearCachedMetricSourceRef() {
+            dynamicMetricRef.lazySet(null);
+        }
+
+    }
+
+    private static final class DynamicMetricSourceReference {
+        private final WeakReference<Object> sourceRef;
+        private final WeakReference<ProbeFunction> functionRef;
+
+        DynamicMetricSourceReference(Object source, ProbeFunction function) {
+            this.sourceRef = new WeakReference<>(source);
+            this.functionRef = new WeakReference<>(function);
+        }
+
+        Object source() {
+            return sourceRef.get();
+        }
+
+        ProbeFunction function() {
+            return functionRef.get();
+        }
+    }
+
+    @FunctionalInterface
+    interface MetricValueExtractorFunction<T> {
+        T extractValue(String name, Object source, ProbeFunction function, MetricsRegistryImpl metricsRegistry);
+    }
+
+    @FunctionalInterface
+    interface MetricCachedValueReaderFunction<T> {
+        T readCachedValue();
     }
 }
