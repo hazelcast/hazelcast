@@ -90,7 +90,7 @@ abstract class AbstractGauge implements Metric {
                 }
             }
 
-            // otherwise use the the cached value
+            // otherwise use the cached value
             return readCachedFn.readCachedValue();
         }
 

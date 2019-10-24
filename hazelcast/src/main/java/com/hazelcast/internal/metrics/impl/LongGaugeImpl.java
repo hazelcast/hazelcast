@@ -42,7 +42,7 @@ import com.hazelcast.internal.metrics.ProbeFunction;
  */
 class LongGaugeImpl extends AbstractGauge implements LongGauge {
 
-    static final long DEFAULT_VALUE = 0;
+    static final long DEFAULT_VALUE = 0L;
 
     /**
      * The value of this gauge is read out from this gauge source. Needed
