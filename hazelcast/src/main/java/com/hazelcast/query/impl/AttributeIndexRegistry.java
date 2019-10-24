@@ -29,7 +29,6 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static com.hazelcast.query.impl.Comparison.GREATER;
 import static com.hazelcast.query.impl.Comparison.GREATER_OR_EQUAL;
-import static com.hazelcast.query.impl.Comparison.LESS;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static java.util.Collections.emptySet;
@@ -270,11 +269,6 @@ public class AttributeIndexRegistry {
         @Override
         public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
             switch (comparison) {
-                case NOT_EQUAL:
-                    Set<QueryableEntry> result = new HashSet<QueryableEntry>();
-                    result.addAll(delegate.getRecords(LESS, new CompositeValue(width, value, NEGATIVE_INFINITY)));
-                    result.addAll(delegate.getRecords(GREATER, new CompositeValue(width, value, POSITIVE_INFINITY)));
-                    return result;
                 case LESS:
                     CompositeValue lessFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
                     CompositeValue lessTo = new CompositeValue(width, value, NEGATIVE_INFINITY);

@@ -86,9 +86,6 @@ public class IndexFirstComponentDecoratorTest {
         assertEquals(expected.getRecords(new Comparable[]{100, 101, 102}), actual.getRecords(new Comparable[]{100, 101, 102}));
         assertEquals(expected.getRecords(new Comparable[]{10, 20, 30, 30}), actual.getRecords(new Comparable[]{10, 20, 30, 30}));
 
-        assertEquals(expected.getRecords(Comparison.NOT_EQUAL, 50), actual.getRecords(Comparison.NOT_EQUAL, 50));
-        assertEquals(expected.getRecords(Comparison.NOT_EQUAL, -1), actual.getRecords(Comparison.NOT_EQUAL, -1));
-
         assertEquals(expected.getRecords(Comparison.LESS, 50), actual.getRecords(Comparison.LESS, 50));
         assertEquals(expected.getRecords(Comparison.LESS, 99), actual.getRecords(Comparison.LESS, 99));
         assertEquals(expected.getRecords(Comparison.LESS, 100), actual.getRecords(Comparison.LESS, 100));
