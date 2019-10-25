@@ -166,6 +166,16 @@ public class SecurityConfig {
     }
 
     /**
+     * Returns if the given name is a valid realm name.
+     *
+     * @param name realm name to be checked
+     * @return {@code true} if realm with given name exists, {@code false} otherwise.
+     */
+    public boolean isRealm(String name) {
+        return name != null && realmConfigs.containsKey(name);
+    }
+
+    /**
      * @return a boolean flag indicating whether actions, submitted as tasks in an Executor from clients
      * and have no permission mappings, are blocked or allowed.
      * <p>
