@@ -1,5 +1,24 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.4 ====
+
+1. Enhancements
+
+- Added support for the `PartitionLostListener` configuration
+on the client side. [#15762]
+
+2. Fixes
+
+- Fixed an issue where the query was ignoring the index
+but was processing successfully. [#15808]
+- Fixed an issue where the predicate queries to retrieve
+multi-values were failing on the nested JSON objects in arrays. [#15789]
+- Fixed a possible livelock when many threads were trying to
+use the `incrementMod()` method causing an infinite loop. [#15777]
+- Fixed shutting down Management Center service caused by
+an NPE when MultiMap statistics are gathered after
+`MultiMapService.shutdown()`. [#15656]
+
 ==== 3.12.3 ====
 
 1. Enhancements
