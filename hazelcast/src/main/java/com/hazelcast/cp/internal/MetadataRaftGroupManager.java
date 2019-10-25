@@ -30,9 +30,9 @@ import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
-import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
+import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
@@ -433,6 +433,9 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         logger.fine("METADATA " + metadataGroup + " initialization is committed for " + callerCPMember + " with seed: "
                 + expectedGroupIdSeed + " and discovered CP members: " + discoveredCPMembers);
 
+        initialCPMembers = unmodifiableList(new ArrayList<>(discoveredCPMembers));
+        doSetActiveMembers(commitIndex, new LinkedHashSet<>(discoveredCPMembers));
+
         if (initializedCPMembers.size() == config.getCPMemberCount()) {
             // All CP members have committed their initialization
 
@@ -450,15 +453,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
             return true;
         }
-
-        if (initialCPMembers != null) {
-            // Already initialized the CP member list...
-            return false;
-        }
-
-        Collection<CPMemberInfo> cpMembers = new LinkedHashSet<>(discoveredCPMembers);
-        initialCPMembers = unmodifiableList(new ArrayList<>(cpMembers));
-        doSetActiveMembers(commitIndex, cpMembers);
 
         return false;
     }
@@ -889,6 +883,10 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         return activeMembers;
     }
 
+    public long getActiveMembersCommitIndex() {
+        return activeMembersCommitIndex;
+    }
+
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
     public void handleMetadataGroupId(RaftGroupId newMetadataGroupId) {
         checkNotNull(newMetadataGroupId);
@@ -956,7 +954,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         checkNotNull(member);
         checkMetadataGroupInitSuccessful();
 
-        Collection<CPMemberInfo> newMembers = new LinkedHashSet<>(activeMembers.size());
+        LinkedHashSet<CPMemberInfo> newMembers = new LinkedHashSet<>(activeMembers.size());
         boolean found = false;
 
         for (CPMemberInfo existingMember : activeMembers) {
@@ -1012,7 +1010,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         checkState(membershipChangeSchedule == null,
                 "Cannot rebalance CP groups because there is ongoing " + membershipChangeSchedule);
 
-        Collection<CPMemberInfo> newMembers = new LinkedHashSet<>(activeMembers);
+        LinkedHashSet<CPMemberInfo> newMembers = new LinkedHashSet<>(activeMembers);
         newMembers.add(member);
         doSetActiveMembers(commitIndex, newMembers);
         logger.info("Added new " + member + ". New active CP members list: " + newMembers);
@@ -1031,12 +1029,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     private void removeActiveMember(long commitIndex, CPMemberInfo member) {
-        Collection<CPMemberInfo> newMembers = new LinkedHashSet<>(activeMembers);
+        LinkedHashSet<CPMemberInfo> newMembers = new LinkedHashSet<>(activeMembers);
         newMembers.remove(member);
         doSetActiveMembers(commitIndex, newMembers);
     }
 
-    private void doSetActiveMembers(long commitIndex, Collection<CPMemberInfo> members) {
+    @SuppressWarnings("checkstyle:illegaltype")
+    private void doSetActiveMembers(long commitIndex, LinkedHashSet<CPMemberInfo> members) {
         // first set the active members, then set the commit index.
         // because readers will use commit index for comparison, etc.
         // When a caller reads commit index first, it knows that the active members
@@ -1044,6 +1043,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         activeMembers = unmodifiableCollection(members);
         activeMembersCommitIndex = commitIndex;
         try {
+            logger.fine("Persisting active CP members " + activeMembers + " with commitIndex " + activeMembersCommitIndex);
             getCpMetadataStore().persistActiveCPMembers(activeMembers, activeMembersCommitIndex);
         } catch (IOException e) {
             throw new HazelcastException(e);
