@@ -1,5 +1,13 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.11.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.11.5 ====
+
+1. Fixes
+
+* Fixed an issue where the newly joining members could not form
+a cluster when the existing members go down. For this, the joiner
+mechanism has been improved, details of which can be seen in [#15871].
+
 ==== 3.11.4 ====
 
 1. Fixes
