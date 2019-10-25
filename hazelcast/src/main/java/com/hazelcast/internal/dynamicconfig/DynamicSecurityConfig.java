@@ -188,10 +188,14 @@ public class DynamicSecurityConfig extends SecurityConfig {
         return staticSecurityConfig.getRealmLoginModuleConfigs(realmName);
     }
 
-
     @Override
     public SecurityConfig setClientRealmConfig(String realmName, RealmConfig realmConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public boolean isRealm(String name) {
+        return staticSecurityConfig.isRealm(name);
     }
 
     @Override
