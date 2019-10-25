@@ -18,9 +18,6 @@ use the `incrementMod()` method causing an infinite loop. [#15777]
 - Fixed shutting down Management Center service caused by
 an NPE when MultiMap statistics are gathered after
 `MultiMapService.shutdown()`. [#15656]
-- Fixed the Java heap space `OutOfMemory` issue during the
-WebSphere Liberty server startup, with Hazelcast client
-which is enabled for session persistence. [#15454]
 
 ==== 3.12.3 ====
 
