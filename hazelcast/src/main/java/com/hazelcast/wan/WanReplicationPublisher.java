@@ -219,18 +219,4 @@ public interface WanReplicationPublisher<T> {
     default int removeWanEvents() {
         return 0;
     }
-
-    /**
-     * Removes all WAN events awaiting replication and belonging to the provided
-     * service and partition.
-     * If the publisher does not store WAN events, this method is a no-op.
-     * Invoked when migrating WAN replication data between members in a cluster.
-     * NOTE: used only in Hazelcast Enterprise.
-     *
-     * @param serviceName the service name of the WAN events should be removed
-     * @param partitionId the partition ID of the WAN events should be removed
-     */
-    default int removeWanEvents(int partitionId, String serviceName) {
-        return 0;
-    }
 }
