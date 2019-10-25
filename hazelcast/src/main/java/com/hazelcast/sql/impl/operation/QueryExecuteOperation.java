@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
@@ -133,8 +134,7 @@ public class QueryExecuteOperation extends QueryOperation {
 
         for (Map.Entry<UUID, PartitionIdSet> entry : partitionMapping.entrySet()) {
             UUIDSerializationUtil.writeUUID(out, entry.getKey());
-            out.writeInt(entry.getValue().size());
-            out.writeLongArray(entry.getValue().getBitSet().toLongArray());
+            SerializationUtil.writeNullablePartitionIdSet(entry.getValue(), out);
         }
 
         // Write fragments.
@@ -189,7 +189,7 @@ public class QueryExecuteOperation extends QueryOperation {
 
         for (int i = 0; i < partitionMappingCnt; i++) {
             UUID key = UUIDSerializationUtil.readUUID(in);
-            PartitionIdSet val = new PartitionIdSet(in.readInt(), BitSet.valueOf(in.readLongArray()));
+            PartitionIdSet val = SerializationUtil.readNullablePartitionIdSet(in);
 
             partitionMapping.put(key, val);
         }

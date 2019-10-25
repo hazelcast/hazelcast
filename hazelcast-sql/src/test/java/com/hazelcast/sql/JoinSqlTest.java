@@ -55,8 +55,7 @@ public class JoinSqlTest extends SqlTestSupport {
     public void testEquiPartitionedPartitionedNonCollocated() {
         SqlCursorImpl cursor = executeQuery(
             member,
-            "SELECT p.deptTitle, d.title FROM person p INNER JOIN department d ON p.deptTitle = d.title"
-//            "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
+            "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
         );
 
         List<SqlRow> rows = getQueryRows(cursor);

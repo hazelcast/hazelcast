@@ -60,6 +60,9 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
     /** Position in the right row batch. */
     private int rightRowPos;
 
+    /** Hash table for the right input. */
+    private final HashMap<Object, List<Row>> table = new HashMap<>();
+
     /** Current row. */
     private RowBatch curRow;
 
@@ -83,10 +86,6 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
     protected void setup1(QueryContext ctx) {
         rightState.setup(ctx);
     }
-
-
-
-    private final HashMap<Object, List<Row>> table = new HashMap<>();
 
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override

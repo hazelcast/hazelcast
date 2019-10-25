@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
+import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.physical.hash.HashFunction;
@@ -55,7 +56,7 @@ public class UnicastSendExec extends AbstractSendExec {
             return outboxes[0];
         } else {
             int hash = hashFunction.getHash(row);
-            int part = hash % partitionOutboxIndexes.length;
+            int part = HashUtil.hashToIndex(hash, partitionOutboxIndexes.length);
             int outboxIndex = partitionOutboxIndexes[part];
 
             return outboxes[outboxIndex];
