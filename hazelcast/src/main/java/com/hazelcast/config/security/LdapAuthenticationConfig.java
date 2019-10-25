@@ -44,7 +44,7 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
     private String roleMappingAttribute;
     private LdapRoleMappingMode roleMappingMode;
     private String roleNameAttribute;
-    private int roleRecursionMaxDepth;
+    private Integer roleRecursionMaxDepth;
     private LdapSearchScope roleSearchScope;
     private String userNameAttribute;
 
@@ -144,11 +144,11 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
         return this;
     }
 
-    public int getRoleRecursionMaxDepth() {
+    public Integer getRoleRecursionMaxDepth() {
         return roleRecursionMaxDepth;
     }
 
-    public LdapAuthenticationConfig setRoleRecursionMaxDepth(int roleRecursionMaxDepth) {
+    public LdapAuthenticationConfig setRoleRecursionMaxDepth(Integer roleRecursionMaxDepth) {
         this.roleRecursionMaxDepth = roleRecursionMaxDepth;
         return this;
     }
@@ -224,7 +224,7 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
         setIfConfigured(props, "roleMappingAttribute", roleMappingAttribute);
         setIfConfigured(props, "roleMappingMode", roleMappingMode);
         setIfConfigured(props, "roleNameAttribute", roleNameAttribute);
-        props.setProperty("roleRecursionMaxDepth", String.valueOf(roleRecursionMaxDepth));
+        setIfConfigured(props, "roleRecursionMaxDepth", roleRecursionMaxDepth);
         setIfConfigured(props, "roleSearchScope", roleSearchScope);
         setIfConfigured(props, "userNameAttribute", userNameAttribute);
 
@@ -272,21 +272,34 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
             return false;
         }
         LdapAuthenticationConfig other = (LdapAuthenticationConfig) obj;
-        return parseDn == other.parseDn && Objects.equals(passwordAttribute, other.passwordAttribute)
-                && Objects.equals(roleContext, other.roleContext) && Objects.equals(roleFilter, other.roleFilter)
-                && Objects.equals(roleMappingAttribute, other.roleMappingAttribute) && roleMappingMode == other.roleMappingMode
+        return parseDn == other.parseDn
+                && Objects.equals(passwordAttribute, other.passwordAttribute)
+                && Objects.equals(roleContext, other.roleContext)
+                && Objects.equals(roleFilter, other.roleFilter)
+                && Objects.equals(roleMappingAttribute, other.roleMappingAttribute)
+                && roleMappingMode == other.roleMappingMode
                 && Objects.equals(roleNameAttribute, other.roleNameAttribute)
-                && roleRecursionMaxDepth == other.roleRecursionMaxDepth && roleSearchScope == other.roleSearchScope
+                && Objects.equals(roleRecursionMaxDepth, other.roleRecursionMaxDepth)
+                && roleSearchScope == other.roleSearchScope
                 && Objects.equals(socketFactoryClassName, other.socketFactoryClassName)
                 && Objects.equals(systemUserDn, other.systemUserDn)
-                && Objects.equals(systemUserPassword, other.systemUserPassword) && Objects.equals(url, other.url)
-                && Objects.equals(userContext, other.userContext) && Objects.equals(userFilter, other.userFilter)
-                && Objects.equals(userNameAttribute, other.userNameAttribute) && userSearchScope == other.userSearchScope;
+                && Objects.equals(systemUserPassword, other.systemUserPassword)
+                && Objects.equals(url, other.url)
+                && Objects.equals(userContext, other.userContext)
+                && Objects.equals(userFilter, other.userFilter)
+                && Objects.equals(userNameAttribute, other.userNameAttribute)
+                && userSearchScope == other.userSearchScope;
     }
 
     private void setIfConfigured(Properties props, String propertyName, String value) {
         if (!isNullOrEmpty(value)) {
             props.setProperty(propertyName, value);
+        }
+    }
+
+    private void setIfConfigured(Properties props, String propertyName, Object value) {
+        if (value != null) {
+            props.setProperty(propertyName, value.toString());
         }
     }
 
