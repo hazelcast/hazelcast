@@ -37,10 +37,12 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -80,9 +82,11 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
+
     private static final int NODE_COUNT = 3;
     private static final int TASK_COUNT = 1000;
-
 
     // we need to make sure that if a deserialization exception is encounter, the exception isn't lost but always
     // is send to the caller.
@@ -308,7 +312,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testManagedContextAndLocal() throws Exception {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
         final AtomicBoolean initialized = new AtomicBoolean();
         config.setManagedContext(new ManagedContext() {
@@ -338,7 +342,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void hazelcastInstanceAwareAndLocal() throws Exception {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
         HazelcastInstance instance = createHazelcastInstance(config);
         IExecutorService executor = instance.getExecutorService("test");
@@ -368,7 +372,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testExecuteMultipleNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         for (int i = 0; i < NODE_COUNT; i++) {
             IExecutorService service = instances[i].getExecutorService("testExecuteMultipleNode");
             int rand = new Random().nextInt(100);
@@ -383,7 +387,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToKeyOwnerRunnable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
         ExecutionCallback callback = new ExecutionCallback() {
@@ -414,7 +418,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToMemberRunnable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
         ExecutionCallback callback = new ExecutionCallback() {
@@ -445,7 +449,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToMembersRunnable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(NODE_COUNT);
         int sum = 0;
         Set<Member> membersSet = instances[0].getCluster().getMembers();
@@ -469,7 +473,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToAllMembersRunnable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT * NODE_COUNT);
         MultiExecutionCallback callback = new MultiExecutionCallback() {
@@ -521,7 +525,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitMultipleNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         for (int i = 0; i < NODE_COUNT; i++) {
             IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
             Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
@@ -532,7 +536,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToKeyOwnerCallable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
 
         List<Future> futures = new ArrayList<Future>();
         for (int i = 0; i < NODE_COUNT; i++) {
@@ -553,7 +557,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToKeyOwnerCallable_withCallback() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(NODE_COUNT);
 
         for (int i = 0; i < NODE_COUNT; i++) {
@@ -571,7 +575,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToMemberCallable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
 
         List<Future> futures = new ArrayList<Future>();
 
@@ -593,7 +597,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToMemberCallable_withCallback() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(NODE_COUNT);
         for (int i = 0; i < NODE_COUNT; i++) {
             HazelcastInstance instance = instances[i];
@@ -610,7 +614,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToMembersCallable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(NODE_COUNT);
         MultiExecutionCallback callback = new MultiExecutionCallback() {
@@ -646,7 +650,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToAllMembersCallable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch countDownLatch = new CountDownLatch(NODE_COUNT * NODE_COUNT);
         MultiExecutionCallback callback = new MultiExecutionCallback() {
@@ -926,8 +930,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testClusterShutdown_whenMultipleNodes_thenAllExecutorsAreShutdown() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(smallInstanceConfig());
 
         final ExecutorService es1 = instance1.getExecutorService("testClusterShutdown");
         final ExecutorService es2 = instance1.getExecutorService("testClusterShutdown");
@@ -949,7 +953,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testStatsIssue2039() throws Exception {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         String name = "testStatsIssue2039";
         config.addExecutorConfig(new ExecutorConfig(name).setQueueCapacity(1).setPoolSize(1));
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -1037,7 +1041,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testLongRunningCallable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         long callTimeoutMillis = 4000;
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
@@ -1101,12 +1105,11 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
     }
 
-
     @Test(expected = HazelcastSerializationException.class)
     public void testUnserializableResponse_exceptionPropagatesToCaller() throws Throwable {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(smallInstanceConfig());
 
         IExecutorService service = instance1.getExecutorService("executor");
         TaskWithUnserialazableResponse counterCallable = new TaskWithUnserialazableResponse();
@@ -1121,9 +1124,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test(expected = HazelcastSerializationException.class)
     public void testUnserializableResponse_exceptionPropagatesToCallerCallback() throws Throwable {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
-
+        HazelcastInstance instance1 = factory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(smallInstanceConfig());
 
         IExecutorService service = instance1.getExecutorService("executor");
         TaskWithUnserialazableResponse counterCallable = new TaskWithUnserialazableResponse();
