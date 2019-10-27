@@ -208,13 +208,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return record;
     }
 
-    protected Object runMapStore(Record record, Data key, Object value, long now, UUID transactionId) {
+    protected Object runMapStore(Record record, Data key, Object newValue, long now, UUID transactionId) {
         long expirationTime = record.getExpirationTime();
-        value = mapDataStore.add(key, value, expirationTime, now, transactionId);
+        newValue = mapDataStore.add(key, newValue, expirationTime, now, transactionId);
         if (mapDataStore.isPostProcessingMapStore()) {
-            recordFactory.setValue(record, value);
+            storage.updateRecordValue(key, record, newValue);
         }
-        return value;
+        return newValue;
     }
 
     @Override

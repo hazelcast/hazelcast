@@ -152,11 +152,6 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void disposeDeferredBlocks() {
-        // NOP intentionally.
-    }
-
-    @Override
     public Iterable getRandomSamples(int sampleCount) {
         return records.getRandomSamples(sampleCount);
     }
