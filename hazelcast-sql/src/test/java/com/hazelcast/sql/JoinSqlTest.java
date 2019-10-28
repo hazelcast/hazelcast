@@ -60,7 +60,7 @@ public class JoinSqlTest extends SqlTestSupport {
 
         List<SqlRow> rows = getQueryRows(cursor);
 
-        assertEquals(1, rows.size());
+        assertEquals(ModelGenerator.PERSON_CNT, rows.size());
     }
 
     @Test

@@ -34,8 +34,8 @@ import com.hazelcast.sql.support.model.person.PersonKey;
  */
 public class ModelGenerator {
     public static final int CITY_CNT = 2;
-    public static final int DEPARTMENT_CNT = 1;
-    public static final int PERSON_CNT = 1;
+    public static final int DEPARTMENT_CNT = 2;
+    public static final int PERSON_CNT = 10;
 
     public static final String CITY = "city";
     public static final String DEPARTMENT = "department";
