@@ -116,6 +116,7 @@ also an IMDG member, so Jet also exposes all the metrics available in IMDG.
 
 Let's look at these 3 broad categories of metrics in detail.
 
+[[imdg-metrics]]
 === IMDG Metrics ===
 There is a wide range of metrics and statistics provided by IMDG:
 
@@ -131,6 +132,7 @@ max/committed/used/free native memory)
 * class loading related statistics
 * thread count information (current, peak and daemon thread counts)
 
+[[cluster-metrics]]
 === Jet Cluster metrics ===
 
 [cols="3,2"]
@@ -152,6 +154,7 @@ the processor. Lower value affects the latency.
 N is the number of the cooperative thread.
 |===
 
+[[job-metrics]]
 === Jet Job metrics ===
 
 All job specific metrics have their `{jet-javadoc}/core/metrics/MetricTags.html#JOB[job=<jobId>]`,
@@ -260,6 +263,7 @@ these metrics for each processor instance _N_, the _N_ denotes the global
 processor index.
 |===
 
+[[user-metrics]]
 === User-defined metrics ===
 
 User-defined metrics are actually a subset of job metrics. What
@@ -267,8 +271,9 @@ distinguishes them from regular job-specific metrics is exactly what
 their name implies: they are not built-in, but defined when processing
 pipelines are written.
 
-Since user metrics are also job metrics, they will have the same tag
-structure. Only their names will differ.
+Since user metrics are also job metrics, they will have all the tags
+job metrics have. They also have an extra tag, called `USER` which is
+of type `boolean` and is set to `true`.
 
 Let's see how one would go about defining user metrics. For example if
 you would like to monitor your filtering step you could write code like
@@ -317,6 +322,7 @@ Take note that the fix not only moves the code for obtaining the
 `Metric` instance outside of the block executing on the ForkJoinPool, it
 also creates a "thread-safe" type of metric.
 
+[[exposing-metrics]]
 === Exposing metrics ===
 
 The main method Jet has for exposing the metrics to the outside world is
@@ -376,6 +382,7 @@ snapshot, would look like this:
 include::{javasource}/integration/Metrics.java[tag=s2]
 ----
 
+[[configuration]]
 === Configuration
 
 The metrics collection is enabled by default. You can configure it
