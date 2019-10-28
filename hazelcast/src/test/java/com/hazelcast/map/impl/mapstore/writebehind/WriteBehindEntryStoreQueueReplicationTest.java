@@ -32,6 +32,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertNull;
@@ -54,10 +56,11 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
 
+        Map<Integer, Long> expectedExpiryTimes = new HashMap<>();
         IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        long expectedExpirationTime = System.currentTimeMillis() + ttlSec * 1000;
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, ttlSec, TimeUnit.SECONDS);
+            expectedExpiryTimes.put(i, map.getEntryView(i).getExpirationTime());
         }
 
         // scale down
@@ -70,7 +73,7 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         // the entry store after original nodes crash
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
-                testEntryStore.assertRecordStored(i, i, expectedExpirationTime, 2000);
+                testEntryStore.assertRecordStored(i, i, expectedExpiryTimes.get(i), 2000);
             }
         });
 
@@ -97,10 +100,11 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
 
+        Map<Integer, Long> expectedExpiryTimes = new HashMap<>();
         IMap<Integer, Integer> map = node1.getMap(mapName);
-        long expectedExpirationTime = System.currentTimeMillis() + ttlSec * 1000;
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, ttlSec, TimeUnit.SECONDS);
+            expectedExpiryTimes.put(i, map.getEntryView(i).getExpirationTime());
         }
 
         // scale up
@@ -113,7 +117,7 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         // the entry store after original nodes crash
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
-                testEntryStore.assertRecordStored(i, i, expectedExpirationTime, 2000);
+                testEntryStore.assertRecordStored(i, i, expectedExpiryTimes.get(i), 2000);
             }
         });
 
