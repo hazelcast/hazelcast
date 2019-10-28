@@ -18,9 +18,6 @@ package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
-import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.nio.IOService;
@@ -108,13 +105,5 @@ class TcpIpUnifiedEndpointManager
     @Probe(name = "textCount", level = MANDATORY)
     public int getCurrentTextConnections() {
         return getTextConnections().size();
-    }
-
-    @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-        super.provideDynamicMetrics(taggerSupplier, context);
-
-        MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection");
-        context.collect(tagger, this);
     }
 }
