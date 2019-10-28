@@ -16,37 +16,32 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 
-public final class MapScanLogicalRule extends RelOptRule {
+public final class MapScanLogicalRule extends ConverterRule {
     public static final RelOptRule INSTANCE = new MapScanLogicalRule();
 
     private MapScanLogicalRule() {
-        super(
-            RuleUtils.single(LogicalTableScan.class, Convention.NONE),
-            RelFactories.LOGICAL_BUILDER,
-            MapScanLogicalRule.class.getSimpleName()
-        );
+        super(LogicalTableScan.class, Convention.NONE, HazelcastConventions.LOGICAL, MapScanLogicalRule.class.getSimpleName());
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
-        LogicalTableScan scan = call.rel(0);
+    public RelNode convert(RelNode rel) {
+        LogicalTableScan scan = (LogicalTableScan)rel;
 
-        MapScanLogicalRel newScan = new MapScanLogicalRel(
+        return new MapScanLogicalRel(
             scan.getCluster(),
             RuleUtils.toLogicalConvention(scan.getTraitSet()),
             scan.getTable(),
             scan.identity(),
             null
         );
-
-        call.transformTo(newScan);
     }
 }

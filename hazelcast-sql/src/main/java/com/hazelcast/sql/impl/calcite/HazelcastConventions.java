@@ -37,7 +37,7 @@ public final class HazelcastConventions {
 
         @Override
         public boolean useAbstractConvertersForConversion(RelTraitSet fromTraits, RelTraitSet toTraits) {
-            return true;
+            return !fromTraits.satisfies(toTraits);
         }
     };
 

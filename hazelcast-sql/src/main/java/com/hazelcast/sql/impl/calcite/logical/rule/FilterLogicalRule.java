@@ -25,7 +25,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalFilter;
 
-// TODO: Investigate ability to merge scan and filter!
 public final class FilterLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new FilterLogicalRule();
 

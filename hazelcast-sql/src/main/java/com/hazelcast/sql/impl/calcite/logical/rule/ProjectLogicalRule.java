@@ -16,23 +16,25 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalProject;
 
-public final class ProjectLogicalRule extends RelOptRule {
+public final class ProjectLogicalRule extends ConverterRule {
     public static final RelOptRule INSTANCE = new ProjectLogicalRule();
 
     private ProjectLogicalRule() {
         super(
-            RuleUtils.single(LogicalProject.class, Convention.NONE),
-            RelFactories.LOGICAL_BUILDER,
+            LogicalProject.class,
+            Convention.NONE,
+            HazelcastConventions.LOGICAL,
             ProjectLogicalRule.class.getSimpleName()
         );
     }
@@ -51,5 +53,19 @@ public final class ProjectLogicalRule extends RelOptRule {
         );
 
         call.transformTo(newProject);
+    }
+
+    @Override
+    public RelNode convert(RelNode rel) {
+        Project project = (Project) rel;
+        RelNode input = project.getInput();
+
+        return new ProjectLogicalRel(
+            project.getCluster(),
+            RuleUtils.toLogicalConvention(project.getTraitSet()),
+            RuleUtils.toLogicalInput(input),
+            project.getProjects(),
+            project.getRowType()
+        );
     }
 }

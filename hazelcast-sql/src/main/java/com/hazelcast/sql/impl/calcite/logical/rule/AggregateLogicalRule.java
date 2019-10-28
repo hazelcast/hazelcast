@@ -17,37 +17,39 @@
 package com.hazelcast.sql.impl.calcite.logical.rule;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.AggregateLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 
 // TODO: GROUP BY ("__key", ...) could be converted to plain projection because every group is guaranteed to be unique.
-public final class AggregateLogicalRule extends RelOptRule {
+public final class AggregateLogicalRule extends ConverterRule {
     public static final RelOptRule INSTANCE = new AggregateLogicalRule();
 
     private AggregateLogicalRule() {
         super(
-            RuleUtils.single(LogicalAggregate.class, Convention.NONE),
-            RelFactories.LOGICAL_BUILDER,
+            LogicalAggregate.class,
+            Convention.NONE,
+            HazelcastConventions.LOGICAL,
             AggregateLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
-        LogicalAggregate agg = call.rel(0);
+    public RelNode convert(RelNode rel) {
+        LogicalAggregate agg = (LogicalAggregate) rel;
         RelNode input = agg.getInput(0);
 
+        // TODO: Proper exception handling.
         if (agg.getGroupCount() > 1) {
             throw new HazelcastSqlException(-1, "Grouping sets are not supported.");
         }
 
-        AggregateLogicalRel newAgg = new AggregateLogicalRel(
+        return new AggregateLogicalRel(
             agg.getCluster(),
             RuleUtils.toLogicalConvention(agg.getTraitSet()),
             RuleUtils.toLogicalInput(input),
@@ -56,7 +58,5 @@ public final class AggregateLogicalRule extends RelOptRule {
             agg.getGroupSets(),
             agg.getAggCallList()
         );
-
-        call.transformTo(newAgg);
     }
 }
