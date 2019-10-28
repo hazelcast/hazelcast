@@ -46,6 +46,8 @@ import java.util.List;
 
 // TODO: Create or reuse a rule to move Filter to Join condition!
 // TODO: E.g. SELECT * FROM A, B WHERE A.a = B.b => SELECT * FROM A INNER JOIN B ON A.a = B.b
+
+// TODO: Should it be an instance of ConverterRule?
 public final class JoinLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new JoinLogicalRule();
 

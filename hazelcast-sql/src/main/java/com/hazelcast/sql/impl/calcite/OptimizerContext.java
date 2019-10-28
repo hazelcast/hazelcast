@@ -170,11 +170,9 @@ public class OptimizerContext {
             ProjectLogicalRule.INSTANCE,
             AggregateLogicalRule.INSTANCE,
             SortLogicalRule.INSTANCE,
-            JoinLogicalRule.INSTANCE,
+            JoinLogicalRule.INSTANCE
 
             // TODO: Transitive closures
-
-            new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
 
         Program program = Programs.of(rules);
