@@ -41,6 +41,7 @@ public class FieldHashFunction implements HashFunction, DataSerializable {
         this.fields = fields;
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public int getHash(Row row) {
         int res = 0;

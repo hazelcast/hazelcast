@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.QueryResultConsumer;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;

@@ -18,9 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
  * Filter executor.

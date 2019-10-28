@@ -105,8 +105,8 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
 
         HashJoinPhysicalNode that = (HashJoinPhysicalNode) o;
 
-        return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition) &&
-            leftHashKeys.equals(that.leftHashKeys) && rightHashKeys.equals(that.rightHashKeys);
+        return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition)
+            && leftHashKeys.equals(that.leftHashKeys) && rightHashKeys.equals(that.rightHashKeys);
     }
 
     @Override

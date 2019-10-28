@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
-import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
@@ -61,6 +60,7 @@ import java.util.UUID;
  /**
  * Visitor which builds an executor for every observed physical node.
  */
+ @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     // TODO: Understand how to calculate it properly. It should not be hardcoded.
     private static final int OUTBOX_BATCH_SIZE = 1024;

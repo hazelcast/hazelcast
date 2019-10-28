@@ -87,7 +87,7 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
         rightState.setup(ctx);
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
     public IterationResult advance() {
         // Build hash table for the right input.
