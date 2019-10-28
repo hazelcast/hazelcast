@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 
 /**
  * Interface for WAN publisher migration related events. Can be implemented
@@ -27,7 +27,7 @@ import com.hazelcast.spi.partition.PartitionMigrationEvent;
  * NOTE: used only in Hazelcast Enterprise.
  *
  * @see PartitionMigrationEvent
- * @see com.hazelcast.spi.partition.MigrationAwareService
+ * @see com.hazelcast.internal.partition.MigrationAwareService
  */
 public interface WanReplicationPublisherMigrationListener {
     /**
