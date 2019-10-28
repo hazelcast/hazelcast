@@ -21,6 +21,7 @@ import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
@@ -45,8 +46,13 @@ public class FilterPhysicalRel extends Filter implements PhysicalRel {
     }
 
     @Override
-    public Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
+    public final Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
         return new FilterPhysicalRel(getCluster(), traitSet, input, condition);
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 
     @Override

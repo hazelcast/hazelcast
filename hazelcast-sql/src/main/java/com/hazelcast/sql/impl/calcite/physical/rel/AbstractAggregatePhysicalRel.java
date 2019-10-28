@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rel;
 
+import com.hazelcast.sql.impl.calcite.logical.rel.AggregateLogicalRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.util.ImmutableBitSet;
@@ -52,5 +54,10 @@ public abstract class AbstractAggregatePhysicalRel extends Aggregate implements 
 
     public boolean isSorted() {
         return sorted;
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw).item("sorted", sorted);
     }
 }

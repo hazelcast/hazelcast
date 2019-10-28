@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
@@ -43,5 +44,10 @@ public class BroadcastExchangePhysicalRel extends SingleRel implements PhysicalR
         ((PhysicalRel) input).visit(visitor);
 
         visitor.onBroadcastExchange(this);
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 }

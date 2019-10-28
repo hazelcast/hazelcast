@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.logical.rel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
@@ -29,7 +30,12 @@ public class RootLogicalRel extends SingleRel implements LogicalRel {
     }
 
     @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+    public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new RootLogicalRel(getCluster(), traitSet, sole(inputs));
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 }

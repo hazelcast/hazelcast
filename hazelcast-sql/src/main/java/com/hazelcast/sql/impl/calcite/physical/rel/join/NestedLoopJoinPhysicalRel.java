@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
@@ -68,5 +69,10 @@ public class NestedLoopJoinPhysicalRel extends AbstractJoinPhysicalRel implement
     @Override
     protected void visitAfterInputs(PhysicalRelVisitor visitor) {
         visitor.onNestedLoopJoin(this);
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 }

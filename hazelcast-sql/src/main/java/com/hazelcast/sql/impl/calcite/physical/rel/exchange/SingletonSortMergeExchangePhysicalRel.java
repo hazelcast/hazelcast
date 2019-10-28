@@ -18,10 +18,13 @@ package com.hazelcast.sql.impl.calcite.physical.rel.exchange;
 
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
+import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
@@ -64,5 +67,12 @@ public class SingletonSortMergeExchangePhysicalRel extends SingleRel implements 
         ((PhysicalRel) input).visit(visitor);
 
         visitor.onSingletonSortMergeExchange(this);
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        super.explainTerms(pw);
+
+        return pw.item("collation", collation.getFieldCollations());
     }
 }

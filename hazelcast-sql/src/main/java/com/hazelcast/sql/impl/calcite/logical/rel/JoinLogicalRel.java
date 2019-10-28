@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.calcite.common.AbstractJoinRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
@@ -41,7 +42,7 @@ public class JoinLogicalRel extends AbstractJoinRel implements LogicalRel {
     }
 
     @Override
-    public Join copy(
+    public final Join copy(
         RelTraitSet traitSet,
         RexNode condition,
         RelNode left,
@@ -50,5 +51,10 @@ public class JoinLogicalRel extends AbstractJoinRel implements LogicalRel {
         boolean semiJoinDone
     ) {
         return new JoinLogicalRel(getCluster(), traitSet, left, right, condition, joinType, leftKeys, rightKeys);
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 }

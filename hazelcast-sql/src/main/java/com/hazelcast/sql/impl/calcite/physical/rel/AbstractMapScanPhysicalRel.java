@@ -64,7 +64,8 @@ public abstract class AbstractMapScanPhysicalRel extends TableScan implements Ph
         return builder.build();
     }
 
-    @Override public RelWriter explainTerms(RelWriter pw) {
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
             .itemIf("projects", projects, !projects.isEmpty())
             .itemIf("filter", filter, filter != null);

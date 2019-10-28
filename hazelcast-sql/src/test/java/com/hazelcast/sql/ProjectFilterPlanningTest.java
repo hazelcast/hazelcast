@@ -103,7 +103,7 @@ public class ProjectFilterPlanningTest extends SqlTestSupport {
         );
     }
 
-    @Test
+    @Test(timeout = Long.MAX_VALUE)
     public void testProjectScanMerge() {
         QueryFragment fragment = getSingleFragmentFromPlan(
             member,

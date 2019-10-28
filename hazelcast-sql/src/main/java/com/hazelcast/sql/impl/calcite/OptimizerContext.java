@@ -81,6 +81,9 @@ import java.util.Properties;
  * Optimizer context which holds the whole environment for the given optimization session.
  */
 public class OptimizerContext {
+
+    public static volatile boolean DEBUG = false;
+
     /** Basic Calcite config. */
     private final VolcanoPlanner planner;
 
@@ -189,6 +192,8 @@ public class OptimizerContext {
     }
 
     public PhysicalRel optimizePhysical(RelNode rel) {
+        DEBUG = true;
+
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
             RootPhysicalRule.INSTANCE,

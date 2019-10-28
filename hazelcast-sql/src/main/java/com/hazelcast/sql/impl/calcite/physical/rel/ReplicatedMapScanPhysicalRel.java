@@ -22,6 +22,7 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
@@ -48,7 +49,7 @@ public class ReplicatedMapScanPhysicalRel extends AbstractMapScanPhysicalRel {
     }
 
     @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+    public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new ReplicatedMapScanPhysicalRel(getCluster(), traitSet, getTable(), projects, filter);
     }
 

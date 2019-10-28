@@ -48,10 +48,15 @@ public class CollocatedAggregatePhysicalRel extends AbstractAggregatePhysicalRel
     }
 
     @Override
-    public Aggregate copy(RelTraitSet traitSet, RelNode input, boolean indicator, ImmutableBitSet groupSet,
-        List<ImmutableBitSet> groupSets, List<AggregateCall> aggCalls) {
-        return new CollocatedAggregatePhysicalRel(getCluster(), traitSet, input, indicator, groupSet, groupSets,
-            aggCalls, sorted);
+    public final Aggregate copy(
+        RelTraitSet traitSet,
+        RelNode input,
+        boolean indicator,
+        ImmutableBitSet groupSet,
+        List<ImmutableBitSet> groupSets,
+        List<AggregateCall> aggCalls
+    ) {
+        return new CollocatedAggregatePhysicalRel(getCluster(), traitSet, input, indicator, groupSet, groupSets, aggCalls, sorted);
     }
 
     @Override

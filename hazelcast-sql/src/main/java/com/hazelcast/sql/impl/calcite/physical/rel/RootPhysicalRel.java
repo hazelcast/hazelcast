@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.physical.rel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
@@ -38,8 +39,13 @@ public class RootPhysicalRel extends SingleRel implements PhysicalRel {
     }
 
     @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+    public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new RootPhysicalRel(this.getCluster(), traitSet, sole(inputs));
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 
     @Override

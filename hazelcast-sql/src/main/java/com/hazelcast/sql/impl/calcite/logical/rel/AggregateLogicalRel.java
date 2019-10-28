@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.logical.rel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.util.ImmutableBitSet;
@@ -39,7 +40,7 @@ public class AggregateLogicalRel extends Aggregate implements LogicalRel {
     }
 
     @Override
-    public Aggregate copy(
+    public final Aggregate copy(
         RelTraitSet traitSet,
         RelNode input,
         boolean indicator,
@@ -48,5 +49,10 @@ public class AggregateLogicalRel extends Aggregate implements LogicalRel {
         List<AggregateCall> aggCalls
     ) {
         return new AggregateLogicalRel(getCluster(), traitSet, input, indicator, groupSet, groupSets, aggCalls);
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 }

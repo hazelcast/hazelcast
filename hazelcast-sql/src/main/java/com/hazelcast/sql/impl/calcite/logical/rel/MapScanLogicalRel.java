@@ -53,12 +53,19 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
     }
 
     @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+    public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new MapScanLogicalRel(getCluster(), traitSet, table, projects, filter);
     }
 
     @Override
-    public RelDataType deriveRowType() {
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+            .itemIf("projects", projects, !projects.isEmpty())
+            .itemIf("filter", filter, filter != null);
+    }
+
+    @Override
+    public final RelDataType deriveRowType() {
         RelDataTypeFactory.Builder builder = getCluster().getTypeFactory().builder();
         List<RelDataTypeField> fieldList = table.getRowType().getFieldList();
 
@@ -67,12 +74,6 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
         }
 
         return builder.build();
-    }
-
-    @Override public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw)
-            .itemIf("projects", projects, !projects.isEmpty())
-            .itemIf("filter", filter, filter != null);
     }
 
     public List<Integer> getProjects() {

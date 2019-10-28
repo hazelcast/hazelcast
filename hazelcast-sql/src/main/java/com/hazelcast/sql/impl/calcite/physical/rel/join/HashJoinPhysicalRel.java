@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
@@ -84,6 +85,13 @@ public class HashJoinPhysicalRel extends AbstractJoinPhysicalRel implements Phys
 
     public List<Integer> getRightHashKeys() {
         return rightHashKeys;
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        super.explainTerms(pw);
+
+        return pw.item("leftHashKeys", leftHashKeys).item("rightHashKeys", rightHashKeys);
     }
 
     @Override
