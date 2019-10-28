@@ -607,7 +607,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleUpdatePermissions(HttpPostCommand command) {
         String res = response(ResponseType.FORBIDDEN);
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
-        return;
     }
 
     private void handleCPMember(final HttpPostCommand command) throws UnsupportedEncodingException {
