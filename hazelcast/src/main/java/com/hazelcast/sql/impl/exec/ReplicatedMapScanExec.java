@@ -118,4 +118,10 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
     protected String normalizePath(String path) {
         return path;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldNames=" + fieldNames
+            + ", projects=" + projects + ", filter=" + filter + '}';
+    }
 }

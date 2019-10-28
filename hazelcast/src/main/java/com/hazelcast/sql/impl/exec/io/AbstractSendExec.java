@@ -33,6 +33,9 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     /** Row which pending send. */
     private Row pendingRow;
 
+    /** Done flag. */
+    private boolean done;
+
     public AbstractSendExec(Exec upstream, Outbox[] outboxes) {
         super(upstream);
 
@@ -41,6 +44,10 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance() {
+        if (done) {
+            return IterationResult.FETCHED_DONE;
+        }
+
         if (pendingRow != null) {
             if (pushRow(pendingRow)) {
                 pendingRow = null;
@@ -63,6 +70,8 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
             }
 
             if (state.isDone()) {
+                done = true;
+
                 for (Outbox outbox : outboxes) {
                     outbox.flush();
                 }

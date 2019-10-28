@@ -137,4 +137,10 @@ public class MapScanExec extends AbstractMapScanExec {
     protected String normalizePath(String path) {
         return map.normalizeAttributePath(path);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldNames=" + fieldNames
+            + ", projects=" + projects + ", filter=" + filter + ", partitionCount=" + parts.size() + '}';
+    }
 }
