@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.test.HazelcastTestSupport.getNode;

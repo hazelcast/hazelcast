@@ -33,8 +33,8 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
-import com.hazelcast.spi.partition.PartitionAwareService;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.PartitionAwareService;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -44,7 +44,7 @@ import static com.hazelcast.internal.partition.InternalPartitionService.PARTITIO
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED;
 import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED;
-import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 
 /**
  * Maintains registration of partition-system related listeners and dispatches corresponding events.

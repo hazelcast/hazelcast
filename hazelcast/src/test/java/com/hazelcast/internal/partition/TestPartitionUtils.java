@@ -25,7 +25,6 @@ import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 
 import java.lang.reflect.Method;

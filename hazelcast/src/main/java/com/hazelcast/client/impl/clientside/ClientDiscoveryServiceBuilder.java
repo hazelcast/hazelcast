@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.ClientExtension;
-import com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils;
+import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
@@ -58,7 +58,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 
 import static com.hazelcast.client.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
-import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
+import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 class ClientDiscoveryServiceBuilder {

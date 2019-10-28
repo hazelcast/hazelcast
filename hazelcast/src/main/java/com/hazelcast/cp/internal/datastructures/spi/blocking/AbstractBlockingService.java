@@ -39,7 +39,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
-import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.MigrationAwareService;
 
 import java.util.ArrayList;
 import java.util.Collection;

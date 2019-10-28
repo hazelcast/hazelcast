@@ -16,8 +16,11 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.AbstractYamlConfigBuilder;
-import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.client.config.impl.ClientFailoverConfigSections;
+import com.hazelcast.client.config.impl.YamlClientFailoverConfigLocator;
+import com.hazelcast.client.config.impl.YamlClientFailoverDomConfigProcessor;
+import com.hazelcast.internal.config.AbstractYamlConfigBuilder;
+import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
 import com.hazelcast.core.HazelcastException;
@@ -26,6 +29,7 @@ import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -99,6 +103,7 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
      * @param locator the configured locator to use
      * @throws HazelcastException if no failover configuration is found
      */
+    @PrivateApi
     public YamlClientFailoverConfigBuilder(YamlClientFailoverConfigLocator locator) {
         if (locator == null) {
             locator = new YamlClientFailoverConfigLocator();
@@ -158,6 +163,6 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
 
     @Override
     protected String getConfigRoot() {
-        return ClientFailoverConfigSections.CLIENT_FAILOVER.name;
+        return ClientFailoverConfigSections.CLIENT_FAILOVER.getName();
     }
 }

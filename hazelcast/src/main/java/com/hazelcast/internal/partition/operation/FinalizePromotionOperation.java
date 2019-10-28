@@ -26,9 +26,9 @@ import com.hazelcast.internal.partition.operation.PromotionCommitOperation.Promo
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.partition.ReplicaMigrationEvent;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
-import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 
 import java.util.Arrays;
 

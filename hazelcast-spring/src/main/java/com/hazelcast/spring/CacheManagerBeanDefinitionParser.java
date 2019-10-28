@@ -26,8 +26,8 @@ import org.w3c.dom.Node;
 
 import java.util.Properties;
 
-import static com.hazelcast.config.DomConfigHelper.childElements;
-import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 
 /**
  * Bean definition parser for JCache {@link javax.cache.CacheManager}.

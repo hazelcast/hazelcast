@@ -17,6 +17,7 @@
 package com.hazelcast.query.extractor;
 
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.query.impl.ArgumentParser;
 
 /***
  * Common superclass for all extractors that enable the user to define custom attributes and extract their values.

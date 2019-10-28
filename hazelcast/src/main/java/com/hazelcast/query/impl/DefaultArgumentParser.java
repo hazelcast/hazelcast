@@ -16,8 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.query.extractor.ArgumentParser;
-
 /**
  * ArgumentParser that's used by default. It simply passes the given object through - without doing any parsing.
  *

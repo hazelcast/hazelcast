@@ -31,7 +31,6 @@ import com.hazelcast.internal.partition.service.fragment.TestFragmentedMigration
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;

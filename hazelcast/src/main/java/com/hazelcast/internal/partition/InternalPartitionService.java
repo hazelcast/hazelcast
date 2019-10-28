@@ -26,7 +26,6 @@ import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.List;
 

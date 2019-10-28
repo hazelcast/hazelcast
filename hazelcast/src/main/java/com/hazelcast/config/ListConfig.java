@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 
 /**
  * Contains the configuration for an {@link IList}.

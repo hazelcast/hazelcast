@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.eviction;
 
-import com.hazelcast.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;

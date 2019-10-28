@@ -17,7 +17,6 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.config.AbstractBasicConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
