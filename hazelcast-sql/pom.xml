@@ -69,6 +69,14 @@
             <version>1.19.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!--
           Dependencies below are overriding hazelcast-root's ones. It should
           be safe since everything is already shaded into hazelcast and

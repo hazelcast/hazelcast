@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
 import com.hazelcast.sql.support.plan.PhysicalPlanChecker;
-import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Common infrastructure for SQL tests.
  */
-public class SqlTestSupport extends HazelcastTestSupport {
+public class SqlTestSupport {
     protected QueryPlan getPlan(HazelcastInstance target, String sql) {
         SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
 

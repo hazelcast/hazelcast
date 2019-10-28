@@ -31,7 +31,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,26 +40,24 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ProjectFilterPlanningTest extends SqlTestSupport {
-    protected HazelcastInstance member;
+    private static TestHazelcastInstanceFactory factory;
+    private static HazelcastInstance member;
 
-    @Before
-    public void before() {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+    @BeforeClass
+    public static void beforeClass() {
+        factory = new TestHazelcastInstanceFactory(2);
 
-        member = nodeFactory.newHazelcastInstance();
-        nodeFactory.newHazelcastInstance();
+        member = factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
 
         ModelGenerator.generatePerson(member);
     }
 
-    @Test
-    public void testProjectDistributionField() {
-        QueryFragment fragment = getSingleFragmentFromPlan(
-            member,
-            "SELECT p.deptId FROM person p"
-        );
-
-        System.out.println(fragment);
+    @AfterClass
+    public static void afterClass() {
+        if (factory != null) {
+            factory.shutdownAll();
+        }
     }
 
     /**

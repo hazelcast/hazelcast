@@ -16,7 +16,7 @@
 
 package org.apache.calcite.jdbc;
 
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRootSchema;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import org.apache.calcite.schema.SchemaVersion;
 
 /**
@@ -24,7 +24,7 @@ import org.apache.calcite.schema.SchemaVersion;
  */
 public final class HazelcastRootCalciteSchema extends SimpleCalciteSchema {
 
-    public HazelcastRootCalciteSchema(HazelcastRootSchema schema) {
+    public HazelcastRootCalciteSchema(HazelcastSchema schema) {
         super(null, schema, "");
     }
 

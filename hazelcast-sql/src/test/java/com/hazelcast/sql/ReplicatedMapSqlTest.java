@@ -16,21 +16,20 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.support.ModelGenerator;
-import com.hazelcast.sql.support.model.person.City;
 import com.hazelcast.sql.support.SqlTestSupport;
+import com.hazelcast.sql.support.model.person.City;
 import com.hazelcast.sql.support.plan.PhysicalPlanChecker;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,17 +48,23 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapSqlTest extends SqlTestSupport {
-    private HazelcastInstance member;
-    private HazelcastInstance liteMember;
+    private static TestHazelcastInstanceFactory factory;
+    private static HazelcastInstance member;
 
-    @Before
-    public void before() {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+    @BeforeClass
+    public static void beforeClass() {
+        factory = new TestHazelcastInstanceFactory(2);
 
-        member = nodeFactory.newHazelcastInstance();
-        liteMember = nodeFactory.newHazelcastInstance(new Config().setLiteMember(true));
+        member = factory.newHazelcastInstance();
 
         ModelGenerator.generatePerson(member);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        if (factory != null) {
+            factory.shutdownAll();
+        }
     }
 
     @Test
@@ -159,19 +164,4 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
     // TODO: Tests for interleaved project and filter (need filter pushdown rule).
     // TODO: Tests for aggregations
     // TODO: Tests for joins
-
-    @Test
-    @Ignore
-    // TODO: Support replicated map descriptors on lite member?
-    public void testReplicatedProjectLite() {
-        try (SqlCursorImpl cursor = executeQuery(liteMember, "SELECT name FROM city")) {
-            QueryPlan plan = cursor.getHandle().getPlan();
-
-            assertEquals(2, plan.getFragments().size());
-
-            List<SqlRow> rows = getQueryRows(cursor);
-
-            assertEquals(ModelGenerator.CITY_CNT, rows.size());
-        }
-    }
 }
