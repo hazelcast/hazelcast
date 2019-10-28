@@ -60,10 +60,6 @@ public class InitMetadataRaftGroupOp extends MetadataRaftGroupOp implements Inde
         return PostponedResponse.INSTANCE;
     }
 
-    public List<CPMemberInfo> getDiscoveredCPMembers() {
-        return discoveredCPMembers;
-    }
-
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;

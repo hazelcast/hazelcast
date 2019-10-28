@@ -54,8 +54,8 @@ public interface CPMetadataStore {
 
     /**
      * Reads {@link CPMember} identity of this member from storage.
-     * If {@code null} is returned, it means that AP/CP identity of the member
-     * is not not known yet CP member discovery will run.
+     * If {@code null} is returned, it means that either local member is AP
+     * or AP/CP identity of it is not known yet.
      */
     CPMember readLocalCPMember() throws IOException;
 

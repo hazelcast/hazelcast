@@ -27,6 +27,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,6 +76,7 @@ public class RaftInvocationContext {
             CPMembersContainer currentContainer = membersContainer.get();
             if (newContainer.version.compareTo(currentContainer.version) > 0) {
                 if (membersContainer.compareAndSet(currentContainer, newContainer)) {
+                    logger.info("Replaced " + currentContainer + " with " + newContainer);
                     return true;
                 }
             } else {
@@ -109,7 +111,7 @@ public class RaftInvocationContext {
 
             CPMembersContainer newContainer = new CPMembersContainer(currentContainer.version, newMembers);
             if (membersContainer.compareAndSet(currentContainer, newContainer)) {
-                logger.info("Replaced " + existingMember + " -> " + member);
+                logger.info("Replaced " + existingMember + " with " + member);
                 return;
             }
         }
@@ -200,6 +202,11 @@ public class RaftInvocationContext {
             this.members = members.values().toArray(new CPMember[0]);
             this.membersMap = members;
         }
+
+        @Override
+        public String toString() {
+            return "CPMembersContainer{" + "version=" + version + ", members=" + Arrays.toString(members) + '}';
+        }
     }
 
     @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
@@ -222,6 +229,11 @@ public class RaftInvocationContext {
             }
 
             return Long.compare(version, other.version);
+        }
+
+        @Override
+        public String toString() {
+            return "CPMembersVersion{" + "groupIdSeed=" + groupIdSeed + ", version=" + version + '}';
         }
     }
 }

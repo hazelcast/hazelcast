@@ -540,7 +540,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         OperationServiceImpl operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
             assertNotNull(operationService.invokeOnPartition(null, new TestGetOperation(), partitionId)
-                    .get(10, TimeUnit.SECONDS));
+                    .get(1, TimeUnit.MINUTES));
         }
     }
 
