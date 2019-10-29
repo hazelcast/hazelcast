@@ -111,7 +111,7 @@ public interface RecordStore<R extends Record> {
 
     boolean remove(Data dataKey, Object testValue);
 
-    boolean setTtl(Data key, long ttl);
+    boolean setTtl(Data key, long ttl, boolean backup);
 
     /**
      * Checks whether ttl or maxIdle are set on the record.
@@ -249,10 +249,11 @@ public interface RecordStore<R extends Record> {
      *
      * @param record      the value for record store.
      * @param nowInMillis nowInMillis
+     * @param indexesMustBePopulated
      * @return current record after put
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
-    Record putReplicatedRecord(R record, long nowInMillis);
+    Record putReplicatedRecord(R record, long nowInMillis, boolean indexesMustBePopulated);
 
     /**
      * Iterates over record store entries.

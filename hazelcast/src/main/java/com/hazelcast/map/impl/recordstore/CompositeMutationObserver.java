@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -50,35 +51,38 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
     }
 
     @Override
-    public void onPutRecord(Data key, R record) {
+    public void onPutRecord(Data key, R record,
+                            Object oldValue, boolean backup) {
         if (isEmpty(mutationObservers)) {
             return;
         }
 
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onPutRecord(key, record);
+            mutationObserver.onPutRecord(key, record, oldValue, backup);
         }
     }
 
     @Override
-    public void onReplicationPutRecord(Data key, R record) {
+    public void onReplicationPutRecord(@Nonnull Data key,
+                                       @Nonnull R record, boolean populateIndex) {
         if (isEmpty(mutationObservers)) {
             return;
         }
 
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onReplicationPutRecord(key, record);
+            mutationObserver.onReplicationPutRecord(key, record, populateIndex);
         }
     }
 
     @Override
-    public void onUpdateRecord(Data key, R record, Object newValue) {
+    public void onUpdateRecord(@Nonnull Data key, @Nonnull R record,
+                               Object oldValue, Object newValue, boolean backup) {
         if (isEmpty(mutationObservers)) {
             return;
         }
 
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onUpdateRecord(key, record, newValue);
+            mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
         }
     }
 
@@ -105,24 +109,25 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
     }
 
     @Override
-    public void onLoadRecord(Data key, R record) {
+    public void onLoadRecord(@Nonnull Data key, @Nonnull R record, boolean backup) {
         if (isEmpty(mutationObservers)) {
             return;
         }
 
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onLoadRecord(key, record);
+            mutationObserver.onLoadRecord(key, record, backup);
         }
     }
 
+
     @Override
-    public void onDestroy(boolean internal) {
+    public void onDestroy(boolean isDuringShutdown, boolean internal) {
         if (isEmpty(mutationObservers)) {
             return;
         }
 
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onDestroy(internal);
+            mutationObserver.onDestroy(isDuringShutdown, internal);
         }
     }
 

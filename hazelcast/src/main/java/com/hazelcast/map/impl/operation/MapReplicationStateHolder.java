@@ -39,7 +39,6 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
-import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,7 +51,6 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
-import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
 
 /**
  * Holder for raw IMap key-value pairs and their metadata.
@@ -157,9 +155,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 }
 
                 final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                final SerializationService serializationService = getSerializationService(mapContainer);
-                final boolean indexesMustBePopulated = indexesMustBePopulated(indexes, operation);
-                if (indexesMustBePopulated) {
+                final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
+                if (populateIndexes) {
                     // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
                     indexes.clearAll();
                 }
@@ -167,17 +164,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 long nowInMillis = Clock.currentTimeMillis();
                 final InternalIndex[] indexesSnapshot = indexes.getIndexes();
                 for (Record<Data> record : records) {
-                    Record newRecord = recordStore.putReplicatedRecord(record, nowInMillis);
-                    if (indexesMustBePopulated) {
-                        Object valueToIndex = getValueOrCachedValue(newRecord, serializationService);
-                        if (valueToIndex != null) {
-                            QueryableEntry queryableEntry = mapContainer.newQueryEntry(newRecord.getKey(), valueToIndex);
-                            queryableEntry.setRecord(newRecord);
-                            queryableEntry.setStoreAdapter(storeAdapter);
-                            indexes.putEntry(queryableEntry, null, Index.OperationSource.SYSTEM);
-                        }
-                    }
-
+                    Record newRecord = recordStore.putReplicatedRecord(record, nowInMillis, populateIndexes);
                     if (recordStore.shouldEvict()) {
                         // No need to continue replicating records anymore.
                         // We are already over eviction threshold, each put record will cause another eviction.
@@ -187,7 +174,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                     recordStore.disposeDeferredBlocks();
                 }
 
-                if (indexesMustBePopulated) {
+                if (populateIndexes) {
                     Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
                 }
             }

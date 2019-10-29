@@ -30,7 +30,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -39,14 +38,10 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
@@ -55,7 +50,6 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
-
     protected final int partitionId;
     protected final String name;
     protected final LockStore lockStore;
@@ -65,13 +59,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapStoreContext mapStoreContext;
     protected final ValueComparator valueComparator;
     protected final MapServiceContext mapServiceContext;
-    protected final SerializationService serializationService;
     protected final MapDataStore<Data, Object> mapDataStore;
-    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
     protected final CompositeMutationObserver<Record> mutationObserver;
+    protected final SerializationService serializationService;
+    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
-    private final StoreAdapter storeAdapter;
+    protected IndexingMutationObserver<Record> indexingObserver;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.name = mapContainer.getName();
@@ -87,7 +81,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
         this.mutationObserver = new CompositeMutationObserver<>();
-        this.storeAdapter = new RecordStoreAdapter(this);
     }
 
     @Override
@@ -109,12 +102,20 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
             addJsonMetadataMutationObserver();
         }
+
+        // Add observer for indexing
+        indexingObserver = new IndexingMutationObserver<>(serializationService, this);
+        mutationObserver.add(indexingObserver);
     }
 
     // Overridden in EE.
     protected void addJsonMetadataMutationObserver() {
         mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
                 JsonMetadataInitializer.INSTANCE));
+    }
+
+    public IndexingMutationObserver<Record> getIndexingObserver() {
+        return indexingObserver;
     }
 
     @Override
@@ -181,9 +182,10 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    protected void updateRecord(Data key, Record record, Object value,
+    protected void updateRecord(Data key, Record record, Object oldValue, Object newValue,
                                 long now, boolean countAsAccess,
-                                long ttl, long maxIdle, boolean mapStoreOperation, UUID transactionId) {
+                                long ttl, long maxIdle, boolean mapStoreOperation,
+                                UUID transactionId, boolean backup) {
         updateStatsOnPut(countAsAccess, now);
         record.onUpdate(now);
         if (countAsAccess) {
@@ -191,18 +193,18 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         }
         setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), true);
         if (mapStoreOperation) {
-            value = runMapStore(record, key, value, now, transactionId);
+            newValue = runMapStore(record, key, newValue, now, transactionId);
         }
-        mutationObserver.onUpdateRecord(key, record, value);
-        storage.updateRecordValue(key, record, value);
+        storage.updateRecordValue(key, record, newValue);
+        mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
     }
 
-    protected Record putNewRecord(Data key, Object value, long ttlMillis,
+    protected Record putNewRecord(Data key, Object oldValue, Object newValue, long ttlMillis,
                                   long maxIdleMillis, long now, UUID transactionId) {
-        Record record = createRecord(key, value, ttlMillis, maxIdleMillis, now);
-        runMapStore(record, key, value, now, transactionId);
+        Record record = createRecord(key, newValue, ttlMillis, maxIdleMillis, now);
+        runMapStore(record, key, newValue, now, transactionId);
         storage.put(key, record);
-        mutationObserver.onPutRecord(key, record);
+        mutationObserver.onPutRecord(key, record, oldValue, false);
         return record;
     }
 
@@ -218,38 +220,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     @Override
     public int getPartitionId() {
         return partitionId;
-    }
-
-    protected void saveIndex(Record record, Object oldValue) {
-        Data dataKey = record.getKey();
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.haveAtLeastOneIndex()) {
-            Object value = Records.getValueOrCachedValue(record, serializationService);
-            QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
-            queryableEntry.setRecord(record);
-            queryableEntry.setStoreAdapter(storeAdapter);
-            indexes.putEntry(queryableEntry, oldValue, Index.OperationSource.USER);
-        }
-    }
-
-    protected void removeIndex(Record record) {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.haveAtLeastOneIndex()) {
-            Data key = record.getKey();
-            Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntry(key, value, Index.OperationSource.USER);
-        }
-    }
-
-    protected void removeIndex(Collection<Record> records) {
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (!indexes.haveAtLeastOneIndex()) {
-            return;
-        }
-
-        for (Record record : records) {
-            removeIndex(record);
-        }
     }
 
     protected LockStore createLockStore() {
