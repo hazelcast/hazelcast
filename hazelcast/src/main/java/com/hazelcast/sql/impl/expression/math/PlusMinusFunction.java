@@ -23,9 +23,9 @@ import com.hazelcast.sql.SqlDaySecondInterval;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
@@ -36,6 +36,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 
 import static com.hazelcast.sql.impl.type.DataType.PRECISION_UNLIMITED;
 import static com.hazelcast.sql.impl.type.DataType.SCALE_UNLIMITED;
@@ -421,5 +422,30 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
         super.readData(in);
 
         minus = in.readBoolean();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof PlusMinusFunction)) {
+            return false;
+        }
+
+        PlusMinusFunction<?> that = (PlusMinusFunction<?>) o;
+
+        return minus == that.minus && Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(minus, operand1, operand2);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{minus=" + minus + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
     }
 }

@@ -4,6 +4,7 @@ import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
+import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -11,6 +12,7 @@ import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.math.PlusMinusFunction;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -19,9 +21,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.commons.math3.analysis.function.Exp;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,25 +33,12 @@ import java.util.List;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LogicalOptimizationTest {
-    /** Root schema. */
-    private static HazelcastSchema rootSchema;
-
+    /** Detailed result of the last call. */
     private LastCall last;
-
-    @BeforeClass
-    public static void beforeClass() {
-        Map<String, Table> tableMap = new HashMap<>();
-
-        tableMap.put("p", new HazelcastTable("p", true, null));
-
-        rootSchema = new HazelcastSchema(tableMap);
-    }
 
     @After
     public void after() {
@@ -67,7 +54,7 @@ public class LogicalOptimizationTest {
 
         RootLogicalRel root = assertRoot(node);
 
-        assertScan(root.getInput(), fields("f1", "f2"), projects(0, 1), null);
+        assertScan(root.getInput(), list("f1", "f2"), list(0, 1), null);
     }
 
     @Test
@@ -76,18 +63,30 @@ public class LogicalOptimizationTest {
 
         RootLogicalRel root = assertRoot(node);
 
-        // TODO: Clear table type?
-        assertScan(root.getInput(), fields("f2"), projects(0), null);
+        // TODO: Clear table type: scan should use only "f2".
+        assertScan(root.getInput(), list("f1", "f2"), list(1), null);
     }
 
     @Test
-    public void testComplexProjectScan() {
-        LogicalRel node = optimize("SELECT LENGTH(f1), f2 FROM p WHERE f3 > 0");
+    public void testComplexProjectFilterScan() {
+        LogicalRel node = optimize("SELECT f1 + f2, f2 FROM p WHERE f3 > 1");
 
         RootLogicalRel root = assertRoot(node);
 
-        // TODO: Proper assert.
-        //assertScan(root.getInput(), fields("f2"), projects(0), null);
+        ProjectLogicalRel project = assertProject(
+            root.getInput(),
+            list(
+                new PlusMinusFunction(new ColumnExpression(1), new ColumnExpression(2), false),
+                new ColumnExpression(2)
+            )
+        );
+
+        assertScan(
+            project.getInput(),
+            list("f3", "f1", "f2"),
+            list(0, 1, 2),
+            new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+        );
     }
 
     /**
@@ -101,8 +100,8 @@ public class LogicalOptimizationTest {
 
         assertScan(
             root.getInput(),
-            fields("f3", "f1", "f2"),
-            projects(1, 2),
+            list("f3", "f1", "f2"),
+            list(1, 2),
             new ComparisonPredicate(
                 new ColumnExpression(0),
                 new ConstantExpression<>(1),
@@ -119,7 +118,7 @@ public class LogicalOptimizationTest {
         MapScanLogicalRel scan = assertClass(node, MapScanLogicalRel.class);
 
         assertFields(expFields, scan.getTable().getRowType().getFieldNames());
-        assertProjects(expProjects, scan.getProjects());
+        assertProjectedFields(expProjects, scan.getProjects());
 
         Expression filter = scan.getFilter() != null ? scan.getFilter().accept(ExpressionConverterRexVisitor.INSTANCE) : null;
 
@@ -138,7 +137,7 @@ public class LogicalOptimizationTest {
         assertEquals(expFields, fields);
     }
 
-    private static void assertProjects(List<Integer> expProjects, List<Integer> projects) {
+    private static void assertProjectedFields(List<Integer> expProjects, List<Integer> projects) {
         if (projects == null) {
             projects = new ArrayList<>();
         } else {
@@ -148,6 +147,22 @@ public class LogicalOptimizationTest {
         assertEquals(expProjects, projects);
     }
 
+    private ProjectLogicalRel assertProject(RelNode rel, List<Expression> expProjects) {
+        ProjectLogicalRel project = assertClass(rel, ProjectLogicalRel.class);
+
+        List<Expression> projects = new ArrayList<>();
+
+        for (RexNode projectExpr : project.getProjects()) {
+            projects.add(projectExpr.accept(ExpressionConverterRexVisitor.INSTANCE));
+        }
+
+        expProjects = expProjects != null ? new ArrayList<>(expProjects) : new ArrayList<>();
+
+        assertEquals(expProjects, projects);
+
+        return project;
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> T assertClass(RelNode rel, Class<? extends LogicalRel> expClass) {
         assertEquals(expClass, rel.getClass());
@@ -155,7 +170,7 @@ public class LogicalOptimizationTest {
         return (T)rel;
     }
 
-    private static List<String> fields(String... fields) {
+    private static List<String> list(String... fields) {
         if (fields == null) {
             return new ArrayList<>();
         } else {
@@ -163,11 +178,19 @@ public class LogicalOptimizationTest {
         }
     }
 
-    private static List<Integer> projects(Integer... projects) {
+    private static List<Integer> list(Integer... projects) {
         if (projects == null) {
             return new ArrayList<>();
         } else {
             return new ArrayList<>(Arrays.asList(projects));
+        }
+    }
+
+    private static <T> List<T> list(T... vals) {
+        if (vals == null) {
+            return new ArrayList<>();
+        } else {
+            return new ArrayList<>(Arrays.asList(vals));
         }
     }
 
@@ -184,6 +207,11 @@ public class LogicalOptimizationTest {
     }
 
     private static OptimizerContext createContext() {
+        Map<String, Table> tableMap = new HashMap<>();
+        tableMap.put("p", new HazelcastTable("p", true, null));
+
+        HazelcastSchema rootSchema = new HazelcastSchema(tableMap);
+
         return OptimizerContext.create(rootSchema);
     }
 
@@ -198,4 +226,6 @@ public class LogicalOptimizationTest {
             this.logical = logical;
         }
     }
+
+
 }
