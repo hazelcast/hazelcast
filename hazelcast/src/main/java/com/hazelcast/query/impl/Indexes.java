@@ -32,6 +32,7 @@ import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -166,11 +167,12 @@ public class Indexes {
      * indexes.
      */
     public void createIndexesFromRecordedDefinitions(StoreAdapter partitionStoreAdapter) {
-        for (Map.Entry<String, IndexConfig> definition : definitions.entrySet()) {
-            addOrGetIndex(definition.getValue(), partitionStoreAdapter);
-        }
-
-        definitions.clear();
+        definitions.forEach((name, indexConfig) -> {
+            addOrGetIndex(indexConfig, partitionStoreAdapter);
+            definitions.compute(name, (k, v) -> {
+                return indexConfig == v ? null : v;
+            });
+        });
     }
 
     /**
@@ -187,6 +189,10 @@ public class Indexes {
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public InternalIndex[] getCompositeIndexes() {
         return compositeIndexes;
+    }
+
+    public Collection<IndexConfig> getIndexDefinitions() {
+        return definitions.values();
     }
 
     /**
@@ -223,6 +229,19 @@ public class Indexes {
      */
     public boolean haveAtLeastOneIndex() {
         return indexes != EMPTY_INDEXES;
+    }
+
+    /**
+     * Returns {@code true} if the indexes instance contains either at least one index or its definition,
+     * {@code false} otherwise.
+     *
+     * @return
+     */
+    public boolean haveAtLeastOneIndexOrDefinition() {
+        boolean haveAtLeastOneIndexOrDefinition = haveAtLeastOneIndex() || !definitions.isEmpty();
+        // for local indexes assert that indexes and definitions are exclusive
+        assert isGlobal() || !haveAtLeastOneIndexOrDefinition || !haveAtLeastOneIndex() || definitions.isEmpty();
+        return haveAtLeastOneIndexOrDefinition;
     }
 
     /**

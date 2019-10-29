@@ -115,16 +115,19 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             Set<IndexConfig> indexConfigs = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
                 // global-index
-                for (Index index : mapContainer.getIndexes().getIndexes()) {
+                final Indexes indexes = mapContainer.getIndexes();
+                for (Index index : indexes.getIndexes()) {
                     indexConfigs.add(index.getConfig());
                 }
+                indexConfigs.addAll(indexes.getIndexDefinitions());
             } else {
                 // partitioned-index
                 final Indexes indexes = mapContainer.getIndexes(container.getPartitionId());
-                if (indexes != null && indexes.haveAtLeastOneIndex()) {
+                if (indexes != null && indexes.haveAtLeastOneIndexOrDefinition()) {
                     for (Index index : indexes.getIndexes()) {
                         indexConfigs.add(index.getConfig());
                     }
+                    indexConfigs.addAll(indexes.getIndexDefinitions());
                 }
             }
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapName);
@@ -222,6 +225,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         } else {
             Indexes indexes = mapContainer.getIndexes(operation.getPartitionId());
             StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new RecordStoreAdapter(recordStore);
+            indexes.createIndexesFromRecordedDefinitions(recordStoreAdapter);
             for (IndexConfig indexConfig : indexConfigs) {
                 indexes.addOrGetIndex(indexConfig, recordStoreAdapter);
             }
