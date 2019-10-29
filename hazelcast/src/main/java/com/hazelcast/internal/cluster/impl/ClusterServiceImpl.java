@@ -684,10 +684,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     // should be called under lock
     void setMasterAddress(Address master) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
-        if (master != null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Setting master address to " + master);
-            }
+        if (logger.isFineEnabled()) {
+            logger.fine("Setting master address to " + master);
         }
         masterAddress = master;
     }

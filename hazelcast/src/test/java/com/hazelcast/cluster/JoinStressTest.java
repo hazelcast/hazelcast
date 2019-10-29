@@ -46,9 +46,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -56,12 +58,10 @@ import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.TCP_JOIN_PORT_TRY_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.WAIT_SECONDS_BEFORE_JOIN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
-/**
- * @author mdogan 6/17/13
- */
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
@@ -301,5 +301,58 @@ public class JoinStressTest extends HazelcastTestSupport {
         for (int i = 0; i < numThreads; i++) {
             threads[i].join();
         }
+    }
+
+    @Test
+    public void testTcpJoin_whenInitialMembersTerminated_duringStartup() throws Exception {
+        testJoin_whenInitialMembersTerminated_duringStartup(false);
+    }
+
+    @Test
+    public void testMulticastJoin_whenInitialMembersTerminated_duringStartup() throws Exception {
+        testJoin_whenInitialMembersTerminated_duringStartup(true);
+    }
+
+    private void testJoin_whenInitialMembersTerminated_duringStartup(boolean multicast) throws Exception {
+        int nodeCount = 5;
+
+        final Config config = new Config();
+        config.setProperty(WAIT_SECONDS_BEFORE_JOIN.getName(), WAIT_SECONDS_BEFORE_JOIN.getDefaultValue());
+        config.setProperty(TCP_JOIN_PORT_TRY_COUNT.getName(), String.valueOf(nodeCount));
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(multicast);
+        join.getTcpIpConfig().setEnabled(!multicast).clear().addMember("127.0.0.1");
+
+        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount - 1];
+        for (int i = 0; i < instances.length; i++) {
+            instances[i] = Hazelcast.newHazelcastInstance(config);
+        }
+
+        Callable<HazelcastInstance> newInstanceTask = new Callable<HazelcastInstance>() {
+            @Override
+            public HazelcastInstance call() {
+                return Hazelcast.newHazelcastInstance(config);
+            }
+        };
+
+        Future<HazelcastInstance> future1 = spawn(newInstanceTask);
+        Future<HazelcastInstance> future2 = spawn(newInstanceTask);
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                for (HazelcastInstance instance : instances) {
+                    sleepRandom(500, 1000);
+                    instance.getLifecycleService().terminate();
+                }
+            }
+        });
+
+        assertCompletesEventually(future1);
+        assertCompletesEventually(future2);
+
+        HazelcastInstance instance1 = future1.get();
+        HazelcastInstance instance2 = future2.get();
+        assertClusterSizeEventually(2, instance1, instance2);
     }
 }
