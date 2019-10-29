@@ -19,7 +19,6 @@ package com.hazelcast.client.cache.stats;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.stats.CacheStatsTest;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -88,7 +87,7 @@ public class ClientCacheStatsTest extends CacheStatsTest {
 
     @Override
     protected CachingProvider getCachingProvider() {
-        return HazelcastClientCachingProvider.createCachingProvider(client);
+        return createClientCachingProvider(client);
     }
 
     protected ClientConfig createClientConfig() {

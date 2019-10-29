@@ -18,7 +18,6 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CachingProviderTest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
@@ -38,6 +37,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearSystemProperties;
 import static org.junit.Assert.assertNotNull;
@@ -90,7 +90,7 @@ public class ClientCachingProviderTest extends CachingProviderTest {
 
     @Override
     protected CachingProvider createCachingProvider(HazelcastInstance defaultInstance) {
-        return HazelcastClientCachingProvider.createCachingProvider(defaultInstance);
+        return createClientCachingProvider(defaultInstance);
     }
 
     @Override

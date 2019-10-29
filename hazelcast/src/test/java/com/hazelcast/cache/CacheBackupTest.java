@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
@@ -38,6 +37,7 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -57,7 +57,7 @@ public class CacheBackupTest extends HazelcastTestSupport {
         }
         final HazelcastInstance hz = instances[0];
 
-        final CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz);
+        final CachingProvider cachingProvider = createServerCachingProvider(hz);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         final String cacheName = randomName();
         final CacheConfig cacheConfig = new CacheConfig().setName(cacheName);

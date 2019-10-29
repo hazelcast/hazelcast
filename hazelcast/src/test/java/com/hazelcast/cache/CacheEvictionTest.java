@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -33,6 +32,8 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.Random;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheEvictionTest extends HazelcastTestSupport {
@@ -44,7 +45,7 @@ public class CacheEvictionTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         instance = createHazelcastInstance();
-        provider = HazelcastServerCachingProvider.createCachingProvider(instance);
+        provider = createServerCachingProvider(instance);
         CacheManager cacheManager = provider.getCacheManager();
         String cacheName = randomString();
         cache = cacheManager.createCache(cacheName, new CacheConfig());

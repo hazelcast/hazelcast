@@ -16,13 +16,12 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,6 +29,8 @@ import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -45,7 +46,7 @@ public class DummyClientCachePartitionIteratorTest extends AbstractClientCachePa
         factory.newHazelcastInstance(config);
 
         HazelcastInstance client = factory.newHazelcastClient(getClientConfig(server));
-        cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        cachingProvider = createClientCachingProvider(client);
     }
 
     private static ClientConfig getClientConfig(HazelcastInstance instance) {

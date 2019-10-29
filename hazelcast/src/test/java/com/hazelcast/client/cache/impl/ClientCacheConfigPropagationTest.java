@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -40,7 +41,7 @@ public class ClientCacheConfigPropagationTest extends CacheConfigPropagationTest
 
     @Override
     protected CacheManager createCacheManagerTestDriver() {
-        return HazelcastClientCachingProvider.createCachingProvider(driver).getCacheManager(null, null,
+        return createClientCachingProvider(driver).getCacheManager(null, null,
                 propertiesByInstanceItself(driver));
     }
 

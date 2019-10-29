@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.eviction;
 
 import com.hazelcast.cache.eviction.CacheEvictionPolicyComparatorTest;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -31,6 +30,8 @@ import org.junit.runner.RunWith;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheEvictionPolicyComparatorTest extends CacheEvictionPolicyComparatorTest {
@@ -40,7 +41,7 @@ public class ClientCacheEvictionPolicyComparatorTest extends CacheEvictionPolicy
 
     @Override
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
-        return HazelcastClientCachingProvider.createCachingProvider(instance);
+        return createClientCachingProvider(instance);
     }
 
     @Override

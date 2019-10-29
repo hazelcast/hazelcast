@@ -18,7 +18,6 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheContextTest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,6 +27,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -42,7 +43,7 @@ public class ClientCacheContextTest extends CacheContextTest {
         hazelcastInstance2 = factory.newHazelcastInstance();
 
         driverInstance = factory.newHazelcastClient();
-        provider = HazelcastClientCachingProvider.createCachingProvider(driverInstance);
+        provider = createClientCachingProvider(driverInstance);
     }
 
     @After

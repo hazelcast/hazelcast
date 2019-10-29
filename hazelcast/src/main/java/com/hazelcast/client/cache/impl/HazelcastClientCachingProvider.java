@@ -42,18 +42,18 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
  * Used internally by {@link com.hazelcast.cache.HazelcastCachingProvider} when
  * the JCache type is configured as {@code client}.
  * <p>
- * This implementation creates a new singleton {@link HazelcastInstance}
- * client. This instance is provided into the created managers.
- * <p>
- * If you need to use your already created HazelcastInstance, you can directly
- * create a provider using
- * {@link #createCachingProvider(com.hazelcast.core.HazelcastInstance)}.
+ * This implementation may create a new or reuse an existing {@link HazelcastInstance}
+ * client.
  *
  * @see javax.cache.spi.CachingProvider
  */
 public final class HazelcastClientCachingProvider extends AbstractHazelcastCachingProvider {
 
     public HazelcastClientCachingProvider() {
+    }
+
+    public HazelcastClientCachingProvider(HazelcastInstance instance) {
+        this.hazelcastInstance = instance;
     }
 
     /**

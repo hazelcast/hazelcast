@@ -21,11 +21,11 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
-import com.hazelcast.internal.config.CachePartitionLostListenerConfigReadOnly;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.config.CachePartitionLostListenerConfigReadOnly;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.test.AssertTask;
@@ -45,7 +45,7 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.List;
 
-import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -69,7 +69,7 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
-        HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.getCache(cacheName);
 
