@@ -39,17 +39,21 @@ public final class RowCountMetadata extends RelMdRowCount {
     public Double getRowCount(TableScan rel, RelMetadataQuery mq) {
         HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
 
-        Object container = table.getContainer();
+        double count;
 
-        int count;
+        if (table.hasContainer()) {
+            Object container = table.getContainer();
 
-        // TODO: Cache this!
-        if (container instanceof MapProxyImpl) {
-            count = ((MapProxyImpl) container).size();
+            // TODO: Cache this!
+            if (table.isPartitioned()) {
+                count = ((MapProxyImpl) container).size();
+            } else {
+                count = ((ReplicatedMapProxy) container).size();
+            }
         } else {
-            count = ((ReplicatedMapProxy) container).size();
+            count = super.getRowCount(rel, mq);
         }
 
-        return (double) count;
+        return count;
     }
 }

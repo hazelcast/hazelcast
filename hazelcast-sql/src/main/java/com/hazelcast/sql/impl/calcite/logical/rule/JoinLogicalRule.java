@@ -41,11 +41,6 @@ import java.util.List;
 /**
  * Convert abstract join to logical join. Optional filter pullout is performed for equi-joins.
  */
-// TODO: Create or reuse a rule to move a filter past join (investigate Calcite's built-in rules).
-// TODO: I.e. to be able to perform table scan with some filters already applied
-
-// TODO: Create or reuse a rule to move Filter to Join condition!
-// TODO: E.g. SELECT * FROM A, B WHERE A.a = B.b => SELECT * FROM A INNER JOIN B ON A.a = B.b
 
 // TODO: Should it be an instance of ConverterRule?
 public final class JoinLogicalRule extends RelOptRule {

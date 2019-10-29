@@ -14,40 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.logical.rule;
+package com.hazelcast.sql.impl.calcite.logical.rule.converter;
 
+import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.FilterLogicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.logical.LogicalFilter;
 
-public final class FilterLogicalRule extends RelOptRule {
+public final class FilterLogicalRule extends ConverterRule {
     public static final RelOptRule INSTANCE = new FilterLogicalRule();
 
     private FilterLogicalRule() {
-        super(
-            RuleUtils.single(LogicalFilter.class, Convention.NONE),
-            RelFactories.LOGICAL_BUILDER,
-            FilterLogicalRule.class.getSimpleName()
-        );
+        super(LogicalFilter.class, Convention.NONE, HazelcastConventions.LOGICAL, FilterLogicalRule.class.getSimpleName());
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
-        LogicalFilter filter = call.rel(0);
+    public RelNode convert(RelNode rel) {
+        LogicalFilter filter = (LogicalFilter) rel;
         RelNode input = filter.getInput();
 
-        FilterLogicalRel newFilter = new FilterLogicalRel(
+        return new FilterLogicalRel(
             filter.getCluster(),
             RuleUtils.toLogicalConvention(filter.getTraitSet()),
             RuleUtils.toLogicalInput(input),
             filter.getCondition()
         );
-
-        call.transformTo(newFilter);
     }
 }

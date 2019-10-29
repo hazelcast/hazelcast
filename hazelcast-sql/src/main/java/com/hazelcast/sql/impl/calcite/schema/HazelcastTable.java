@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -29,27 +28,43 @@ import java.util.List;
  * Hazelcast table which can register fields dynamically.
  */
 public class HazelcastTable extends AbstractTable {
+    /** Name. */
+    private final String name;
+
+    /** Whether this is a partitioned map. */
+    private final boolean partitioned;
+
     /** Data container. */
     private final DistributedObject container;
 
     /** Fields. */
     private final HazelcastTableFields fields = new HazelcastTableFields();
 
-    public HazelcastTable(DistributedObject container) {
+    public HazelcastTable(String name, boolean partitioned, DistributedObject container) {
+        this.name = name;
+        this.partitioned = partitioned;
         this.container = container;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isPartitioned() {
+        return partitioned;
+    }
+
+    public boolean isReplicated() {
+        return !isPartitioned();
+    }
+
+    public boolean hasContainer() {
+        return container != null;
     }
 
     @SuppressWarnings("unchecked")
     public <T extends DistributedObject> T getContainer() {
         return (T) container;
-    }
-
-    public String getName() {
-        return container.getName();
-    }
-
-    public boolean isReplicated() {
-        return container.getServiceName().equals(ReplicatedMapService.SERVICE_NAME);
     }
 
     public List<RelDataTypeField> getFieldList() {
@@ -59,5 +74,10 @@ public class HazelcastTable extends AbstractTable {
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
         return new HazelcastTableRelDataType(typeFactory, fields);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{name=" + name + ", partitioned=" + partitioned + '}';
     }
 }

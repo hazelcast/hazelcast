@@ -92,7 +92,7 @@ public class SchemaUtils {
         for (String mapName : mapNames) {
             DistributedObject map = nodeEngine.getProxyService().getDistributedObject(serviceName, mapName);
 
-            HazelcastTable table = new HazelcastTable(map);
+            HazelcastTable table = new HazelcastTable(mapName, partitioned, map);
 
             res.put(mapName, table);
         }
