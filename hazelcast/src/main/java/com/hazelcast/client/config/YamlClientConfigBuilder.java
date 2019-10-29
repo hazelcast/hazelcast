@@ -19,7 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.config.impl.ClientConfigSections;
 import com.hazelcast.client.config.impl.YamlClientConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientDomConfigProcessor;
-import com.hazelcast.internal.config.AbstractYamlConfigBuilder;
+import com.hazelcast.config.AbstractYamlConfigBuilder;
 import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;

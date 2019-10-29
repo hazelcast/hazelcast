@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.AbstractYamlConfigBuilder;
 import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;

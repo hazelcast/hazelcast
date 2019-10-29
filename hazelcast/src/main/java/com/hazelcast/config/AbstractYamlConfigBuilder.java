@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.config;
+package com.hazelcast.config;
 
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import com.hazelcast.internal.config.ConfigLoader;
+import com.hazelcast.internal.config.ConfigReplacerHelper;
+import com.hazelcast.internal.config.ConfigSections;
+import com.hazelcast.internal.config.YamlDomVariableReplacer;
 import com.hazelcast.internal.config.yaml.ElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlMapping;
 import com.hazelcast.internal.yaml.MutableYamlSequence;
@@ -42,6 +45,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getAttribute;
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static com.hazelcast.internal.yaml.YamlUtil.asSequence;
@@ -49,7 +53,6 @@ import static com.hazelcast.internal.yaml.YamlUtil.isMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.isOfSameType;
 import static com.hazelcast.internal.yaml.YamlUtil.isScalar;
 import static com.hazelcast.internal.yaml.YamlUtil.isSequence;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Contains logic for replacing system variables in the YAML file and importing YAML files from different locations.

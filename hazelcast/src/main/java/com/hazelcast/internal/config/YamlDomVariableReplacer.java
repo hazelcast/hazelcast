@@ -23,7 +23,7 @@ import org.w3c.dom.Node;
 
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedMutableYamlNode;
 
-class YamlDomVariableReplacer extends AbstractDomVariableReplacer {
+public class YamlDomVariableReplacer extends AbstractDomVariableReplacer {
 
     @Override
     public void replaceVariables(Node node, ConfigReplacer replacer, boolean failFast) {
