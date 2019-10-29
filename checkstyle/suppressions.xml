@@ -156,17 +156,6 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]util[\\/]MessageFlyweight"/>
     <suppress checks="UnusedImport" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
 
-    <!-- Monitor -->
-    <suppress checks="CyclomaticComplexity|NPathComplexity"
-              files="com[\\/]hazelcast[\\/]monitor[\\/]impl[\\/]LocalCacheStatsImpl"/>
-    <suppress checks="MethodCount|MethodLength|CyclomaticComplexity|NPathComplexity"
-              files="com[\\/]hazelcast[\\/]monitor[\\/]impl[\\/]LocalMapStatsImpl"/>
-    <suppress checks="CyclomaticComplexity|NPathComplexity"
-              files="com[\\/]hazelcast[\\/]monitor[\\/]impl[\\/]LocalQueueStatsImpl"/>
-    <suppress checks="CyclomaticComplexity|NPathComplexity|MethodCount"
-              files="com[\\/]hazelcast[\\/]monitor[\\/]impl[\\/]MemberStateImpl"/>
-    <suppress checks="CyclomaticComplexity|NPathComplexity" files="com[\\/]hazelcast[\\/]monitor[\\/]TimedMemberState"/>
-
     <!-- Query -->
     <suppress checks="MethodLength|CyclomaticComplexity|NPathComplexity" files="com[\\/]hazelcast[\\/]query[\\/]SqlPredicate"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]query[\\/]impl[\\/]TypeConverters"/>

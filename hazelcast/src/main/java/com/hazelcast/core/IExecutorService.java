@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.config.SplitBrainProtectionConfig;
-import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.executor.LocalExecutorStats;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

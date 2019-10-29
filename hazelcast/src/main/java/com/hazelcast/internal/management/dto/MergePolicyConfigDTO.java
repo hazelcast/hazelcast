@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.JsonSerializable;
 
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getString;

@@ -18,8 +18,8 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
-import com.hazelcast.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
+import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
+import com.hazelcast.internal.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.RemoteService;

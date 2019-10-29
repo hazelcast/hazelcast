@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.monitor.impl.IndexOperationStats;
+import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.internal.util.Clock;

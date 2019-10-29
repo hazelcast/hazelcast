@@ -70,7 +70,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;

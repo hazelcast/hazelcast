@@ -19,7 +19,7 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

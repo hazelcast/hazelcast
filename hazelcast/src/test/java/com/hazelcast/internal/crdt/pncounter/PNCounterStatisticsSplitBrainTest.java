@@ -19,7 +19,7 @@ package com.hazelcast.internal.crdt.pncounter;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.monitor.LocalPNCounterStats;
+import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.SplitBrainTestSupport;

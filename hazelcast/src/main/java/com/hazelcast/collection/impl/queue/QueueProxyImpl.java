@@ -18,7 +18,7 @@ package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;

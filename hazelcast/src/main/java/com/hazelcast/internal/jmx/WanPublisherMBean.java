@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.monitor.LocalWanPublisherStats;
-import com.hazelcast.monitor.LocalWanStats;
+import com.hazelcast.internal.monitor.LocalWanPublisherStats;
+import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.Map;

@@ -25,7 +25,6 @@ import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;

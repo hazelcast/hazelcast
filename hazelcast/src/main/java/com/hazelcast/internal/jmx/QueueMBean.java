@@ -21,7 +21,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.internal.jmx.suppliers.LocalQueueStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
-import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.collection.LocalQueueStats;
 
 /**
  * Management bean for {@link IQueue}

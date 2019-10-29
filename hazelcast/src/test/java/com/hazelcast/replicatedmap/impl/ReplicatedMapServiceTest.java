@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.monitor.impl.EmptyLocalReplicatedMapStats;
-import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
+import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
+import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -35,7 +35,8 @@ import static java.lang.Math.max;
 
 /**
  * Provides node local statistics of a replicated map via {@link #getLocalReplicatedMapStats}
- * and also holds all {@link com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl} implementations of all replicated maps.
+ * and also holds all {@link com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl}
+ * implementations of all replicated maps.
  */
 class LocalReplicatedMapStatsProvider {
 

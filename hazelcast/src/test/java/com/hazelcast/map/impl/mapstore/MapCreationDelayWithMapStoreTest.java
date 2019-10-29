@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

@@ -24,7 +24,7 @@ import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.BasicMapTest;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.EntryExpiredListener;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;

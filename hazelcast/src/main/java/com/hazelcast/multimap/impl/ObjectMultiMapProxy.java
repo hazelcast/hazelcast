@@ -20,7 +20,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;

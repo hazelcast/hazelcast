@@ -34,7 +34,7 @@ import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.IndexCopyBehavior;

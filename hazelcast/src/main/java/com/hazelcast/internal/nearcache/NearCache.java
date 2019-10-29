@@ -17,7 +17,7 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.adapter.DataStructureAdapter;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -116,10 +116,10 @@ public interface NearCache<K, V> extends InitializingObject {
     int size();
 
     /**
-     * Get the {@link com.hazelcast.monitor.NearCacheStats} instance to
+     * Get the {@link NearCacheStats} instance to
      * monitor this store.
      *
-     * @return the {@link com.hazelcast.monitor.NearCacheStats} instance
+     * @return the {@link NearCacheStats} instance
      * to monitor this store
      */
     NearCacheStats getNearCacheStats();

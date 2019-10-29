@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.StoreAdapter;
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**

@@ -27,7 +27,6 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

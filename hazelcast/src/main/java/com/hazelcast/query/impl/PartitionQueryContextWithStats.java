@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 
 import java.util.HashSet;
 

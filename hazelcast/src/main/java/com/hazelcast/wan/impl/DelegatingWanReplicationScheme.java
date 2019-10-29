@@ -17,7 +17,7 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.monitor.LocalWanPublisherStats;
+import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;

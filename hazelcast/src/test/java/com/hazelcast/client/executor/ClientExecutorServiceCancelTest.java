@@ -30,7 +30,7 @@ import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
-import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

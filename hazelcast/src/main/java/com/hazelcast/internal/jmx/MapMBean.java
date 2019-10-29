@@ -19,7 +19,7 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.jmx.suppliers.LocalMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 

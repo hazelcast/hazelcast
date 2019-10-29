@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.adapter;
 
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

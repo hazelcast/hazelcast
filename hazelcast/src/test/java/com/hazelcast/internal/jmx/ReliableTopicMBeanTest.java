@@ -17,7 +17,7 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.topic.ITopic;
-import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

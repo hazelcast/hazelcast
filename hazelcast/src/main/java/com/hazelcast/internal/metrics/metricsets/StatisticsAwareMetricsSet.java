@@ -23,11 +23,11 @@ import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.monitor.LocalIndexStats;
-import com.hazelcast.monitor.LocalInstanceStats;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.query.LocalIndexStats;
+import com.hazelcast.instance.LocalInstanceStats;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
 import java.util.Map;

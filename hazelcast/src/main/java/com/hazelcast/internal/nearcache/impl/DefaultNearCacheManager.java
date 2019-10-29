@@ -21,7 +21,7 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.serialization.SerializationService;

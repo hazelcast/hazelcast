@@ -30,7 +30,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 

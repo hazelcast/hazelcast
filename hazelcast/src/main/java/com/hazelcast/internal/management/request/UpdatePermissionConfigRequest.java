@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.request;
 
 import com.hazelcast.config.PermissionConfig;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.JsonSerializable;
 import com.hazelcast.internal.management.dto.PermissionConfigDTO;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;

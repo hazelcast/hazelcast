@@ -17,8 +17,8 @@
 package com.hazelcast.internal.jmx.suppliers;
 
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.monitor.impl.EmptyLocalReplicatedMapStats;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
+import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
 
 /**
  * Implementation of {@link StatsSupplier} for {@link LocalReplicatedMapStats}

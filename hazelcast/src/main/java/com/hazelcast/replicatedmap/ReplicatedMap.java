@@ -19,7 +19,6 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.adapter;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
 
 import javax.cache.expiry.ExpiryPolicy;

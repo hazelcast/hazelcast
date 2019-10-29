@@ -27,13 +27,14 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.map.listener.EntryExpiredListener;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -135,7 +136,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
      * Depending on the parameters the following memory costs are asserted:
      * <ul>
      * <li>{@link NearCacheStats#getOwnedEntryMemoryCost()}</li>
-     * <li>{@link com.hazelcast.monitor.LocalMapStats#getHeapCost()}</li>
+     * <li>{@link LocalMapStats#getHeapCost()}</li>
      * </ul>
      *
      * @param map         the {@link IMap} with a Near Cache to be tested

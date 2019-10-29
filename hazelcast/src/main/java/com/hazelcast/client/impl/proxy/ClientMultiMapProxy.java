@@ -52,7 +52,7 @@ import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
-import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;

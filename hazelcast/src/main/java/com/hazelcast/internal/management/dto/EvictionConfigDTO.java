@@ -21,7 +21,7 @@ import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.JsonSerializable;
 
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getString;

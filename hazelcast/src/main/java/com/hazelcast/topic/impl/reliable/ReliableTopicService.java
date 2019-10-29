@@ -18,8 +18,8 @@ package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.RemoteService;

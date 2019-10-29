@@ -29,7 +29,7 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.event.MapEventData;
-import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;

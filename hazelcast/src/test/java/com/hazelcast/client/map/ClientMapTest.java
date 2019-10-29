@@ -33,7 +33,7 @@ import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
