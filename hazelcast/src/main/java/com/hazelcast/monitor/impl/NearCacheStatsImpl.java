@@ -334,6 +334,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 + ", evictions=" + evictions
                 + ", expirations=" + expirations
                 + ", invalidations=" + invalidations
+                + ", invalidationRequests=" + invalidationRequests
                 + ", lastPersistenceTime=" + lastPersistenceTime
                 + ", persistenceCount=" + persistenceCount
                 + ", lastPersistenceDuration=" + lastPersistenceDuration
