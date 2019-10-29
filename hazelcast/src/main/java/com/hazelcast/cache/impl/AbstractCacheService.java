@@ -34,6 +34,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.monitor.LocalCacheStats;
+import com.hazelcast.internal.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
@@ -70,6 +72,7 @@ import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -651,8 +654,12 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public CacheStatisticsImpl getStatistics(String cacheNameWithPrefix) {
-        return statistics.get(cacheNameWithPrefix);
+    public Map<String, LocalCacheStats> getStats() {
+        Map<String, LocalCacheStats> stats = new HashMap<>();
+        for (Map.Entry<String, CacheStatisticsImpl> entry : statistics.entrySet()) {
+            stats.put(entry.getKey(), new LocalCacheStatsImpl(entry.getValue()));
+        }
+        return stats;
     }
 
     @Override

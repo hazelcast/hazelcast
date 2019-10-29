@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.Client;
@@ -40,6 +39,7 @@ import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
+import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -58,7 +58,6 @@ import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.internal.monitor.impl.HotRestartStateImpl;
-import com.hazelcast.internal.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalMemoryStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
@@ -285,13 +284,14 @@ public class TimedMemberStateFactory {
 
         if (cacheServiceEnabled) {
             ICacheService cacheService = getCacheService();
+            Map<String, LocalCacheStats> stats = cacheService.getStats();
             for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
                 if (cacheConfig.isStatisticsEnabled()) {
-                    CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
+                    LocalCacheStats stat = stats.get(cacheConfig.getManagerPrefix());
                     //Statistics can be null for a short period of time since config is created at first then stats map
                     //is filled.git
-                    if (statistics != null) {
-                        count = handleCache(memberState, count, cacheConfig, statistics);
+                    if (stat != null) {
+                        count = handleCache(memberState, count, cacheConfig, stat);
                     }
                 }
             }
@@ -421,8 +421,8 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics) {
-        memberState.putLocalCacheStats(config.getNameWithPrefix(), new LocalCacheStatsImpl(cacheStatistics));
+    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, LocalCacheStats stats) {
+        memberState.putLocalCacheStats(config.getNameWithPrefix(), stats);
         return ++count;
     }
 
