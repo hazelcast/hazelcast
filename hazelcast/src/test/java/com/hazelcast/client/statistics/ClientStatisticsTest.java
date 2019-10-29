@@ -17,11 +17,10 @@
 package com.hazelcast.client.statistics;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.statistics.Statistics;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -31,10 +30,10 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -55,6 +54,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.client.impl.statistics.Statistics.split;
 import static com.hazelcast.client.impl.statistics.Statistics.unescapeSpecialCharacters;
 import static java.lang.String.format;
@@ -310,7 +310,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     private static CachingProvider getCachingProvider(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance);
+        return createServerCachingProvider(instance);
     }
 
     private static <K, V> CacheConfig<K, V> createCacheConfig() {

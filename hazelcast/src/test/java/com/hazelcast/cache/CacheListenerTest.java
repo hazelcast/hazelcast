@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -66,7 +66,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
 
         hazelcastInstance = hz1;
 
-        return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
+        return createServerCachingProvider(hazelcastInstance);
     }
 
     @Test

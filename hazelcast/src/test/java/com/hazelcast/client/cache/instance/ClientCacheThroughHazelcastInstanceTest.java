@@ -18,7 +18,6 @@ package com.hazelcast.client.cache.instance;
 
 import com.hazelcast.cache.instance.CacheThroughHazelcastInstanceTest;
 import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -32,6 +31,8 @@ import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelcastInstanceTest {
@@ -41,7 +42,7 @@ public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelca
 
     @Override
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
-        return HazelcastClientCachingProvider.createCachingProvider(instance);
+        return createClientCachingProvider(instance);
     }
 
     @Override

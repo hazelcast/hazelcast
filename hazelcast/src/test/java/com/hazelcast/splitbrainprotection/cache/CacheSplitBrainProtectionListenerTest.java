@@ -40,6 +40,7 @@ import javax.cache.Cache;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -68,7 +69,7 @@ public class CacheSplitBrainProtectionListenerTest extends HazelcastTestSupport 
         config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
 
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
         try {
             cache.put(generateKeyOwnedBy(instance), 1);
@@ -104,7 +105,7 @@ public class CacheSplitBrainProtectionListenerTest extends HazelcastTestSupport 
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        HazelcastServerCachingProvider cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(instance1);
+        HazelcastServerCachingProvider cachingProvider1 = createServerCachingProvider(instance1);
         Cache<Object, Object> cache = cachingProvider1.getCacheManager().getCache(cacheName);
         try {
             cache.put(generateKeyOwnedBy(instance1), 1);
@@ -159,7 +160,7 @@ public class CacheSplitBrainProtectionListenerTest extends HazelcastTestSupport 
         HazelcastInstance h1 = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(h1);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(h1);
         Cache<Object, Object> fourNode = cachingProvider.getCacheManager().getCache("fourNode");
         Cache<Object, Object> threeNode = cachingProvider.getCacheManager().getCache("threeNode");
         try {
@@ -206,7 +207,7 @@ public class CacheSplitBrainProtectionListenerTest extends HazelcastTestSupport 
         config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
         try {
             cache.put(generateKeyOwnedBy(instance), 1);
@@ -244,7 +245,7 @@ public class CacheSplitBrainProtectionListenerTest extends HazelcastTestSupport 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance1);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance1);
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
         try {
             cache.put(generateKeyOwnedBy(instance1), 1);

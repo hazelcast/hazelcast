@@ -39,6 +39,7 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -67,7 +68,7 @@ public class CacheClientListenerTest extends CacheListenerTest {
 
         hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
 
-        return HazelcastClientCachingProvider.createCachingProvider(hazelcastInstance);
+        return createClientCachingProvider(hazelcastInstance);
     }
 
     @Test
@@ -80,7 +81,7 @@ public class CacheClientListenerTest extends CacheListenerTest {
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCachingProvider cachingProvider = createClientCachingProvider(client);
 
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -90,7 +91,7 @@ public class CacheClientListenerTest extends CacheListenerTest {
 
         HazelcastInstance client2 = HazelcastClient.newHazelcastClient(clientConfig);
 
-        HazelcastClientCachingProvider cachingProvider2 = HazelcastClientCachingProvider.createCachingProvider(client2);
+        HazelcastClientCachingProvider cachingProvider2 = createClientCachingProvider(client2);
 
         CacheManager cacheManager2 = cachingProvider2.getCacheManager();
 

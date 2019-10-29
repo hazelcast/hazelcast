@@ -36,6 +36,7 @@ import javax.cache.CacheManager;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -125,7 +126,7 @@ public class CacheConfigPropagationTest extends HazelcastTestSupport {
     }
 
     protected CacheManager createCacheManagerTestDriver() {
-        return HazelcastServerCachingProvider.createCachingProvider(driver).getCacheManager(null, null,
+        return createServerCachingProvider(driver).getCacheManager(null, null,
                 propertiesByInstanceItself(driver));
     }
 

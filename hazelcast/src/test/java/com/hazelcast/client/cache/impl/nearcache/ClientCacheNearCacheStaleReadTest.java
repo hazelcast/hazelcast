@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -46,6 +45,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
@@ -93,7 +93,7 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
         member = factory.newHazelcastInstance(config);
         client = factory.newHazelcastClient(clientConfig);
 
-        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider provider = createClientCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
 
         CacheConfig<String, String> cacheConfig = createCacheConfig(cacheName);

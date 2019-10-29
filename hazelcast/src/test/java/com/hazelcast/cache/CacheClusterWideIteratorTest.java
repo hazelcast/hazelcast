@@ -18,7 +18,6 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.ClusterWideIterator;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -42,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
@@ -74,7 +74,7 @@ public class CacheClusterWideIteratorTest extends HazelcastTestSupport {
 
     protected CachingProvider createCachingProvider() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
+        return createServerCachingProvider(hazelcastInstance);
     }
 
     @After

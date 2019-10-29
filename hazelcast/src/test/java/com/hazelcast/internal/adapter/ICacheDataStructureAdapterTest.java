@@ -45,7 +45,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
@@ -67,7 +67,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
-        HazelcastServerCachingProvider cachingProvider = createCachingProvider(hazelcastInstance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(hazelcastInstance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
         CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();

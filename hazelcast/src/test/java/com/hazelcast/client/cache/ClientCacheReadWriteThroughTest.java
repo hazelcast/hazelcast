@@ -17,9 +17,7 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheReadWriteThroughTest;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -48,6 +46,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -62,7 +62,7 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
 
     @Override
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
-        return HazelcastClientCachingProvider.createCachingProvider(instance);
+        return createClientCachingProvider(instance);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
     protected HazelcastInstance getInstance() {
         // Create server instance
         HazelcastInstance serverInstance = factory.newHazelcastInstance(createConfig());
-        serverCachingProvider = HazelcastServerCachingProvider.createCachingProvider(serverInstance);
+        serverCachingProvider = createServerCachingProvider(serverInstance);
         // Create client instance
         ClientConfig clientConfig = new ClientConfig();
         NearCacheConfig nearCacheConfig = new NearCacheConfig(CACHE_WITH_NEARCACHE);

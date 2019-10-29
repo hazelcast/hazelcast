@@ -20,7 +20,7 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.cache.impl.HazelcastInstanceCacheManager;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -29,9 +29,8 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICacheManager;
-import com.hazelcast.map.IMap;
-import com.hazelcast.cache.impl.HazelcastInstanceCacheManager;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -49,6 +48,7 @@ import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.util.Properties;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -82,7 +82,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
     }
 
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance);
+        return createServerCachingProvider(instance);
     }
 
     protected HazelcastInstance createInstance() {

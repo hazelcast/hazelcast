@@ -63,6 +63,7 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -514,7 +515,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
         for (int i = 0; i < count; i++) {
             HazelcastInstance instance = factory.newHazelcastInstance(config);
-            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(instance);
+            CachingProvider provider = createServerCachingProvider(instance);
             CacheManager cacheManager = provider.getCacheManager();
 
             Cache<Object, Object> cache = cacheManager.getCache("test");
@@ -527,7 +528,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         String cacheName = randomString();
         Config config = createConfig(cacheName);
         HazelcastInstance instance = createHazelcastInstance(config);
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         Cache<Object, Object> cache = cacheManager.getCache(cacheName);
         EntryListener.latch = new CountDownLatch(1);

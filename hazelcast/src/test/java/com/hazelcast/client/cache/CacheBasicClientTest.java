@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheBasicAbstractTest;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -51,6 +50,6 @@ public class CacheBasicClientTest extends CacheBasicAbstractTest {
 
     @Override
     protected CachingProvider getCachingProvider() {
-        return HazelcastClientCachingProvider.createCachingProvider(getHazelcastInstance());
+        return createClientCachingProvider(getHazelcastInstance());
     }
 }

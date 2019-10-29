@@ -41,24 +41,27 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
  * Used internally by {@link com.hazelcast.cache.HazelcastCachingProvider} when
  * the JCache type is configured as {@code server}.
  * <p>
- * This implementation creates a new singleton {@link HazelcastInstance}
- * member. This instance is provided into the created managers.
- * <p>
- * If you need to use your already created HazelcastInstance, you can directly
- * create a provider using
- * {@link #createCachingProvider(com.hazelcast.core.HazelcastInstance)}.
+ * This implementation may create a new or reuse an existing {@link HazelcastInstance}
+ * member.
  *
  * @see javax.cache.spi.CachingProvider
  */
 public final class HazelcastServerCachingProvider extends AbstractHazelcastCachingProvider {
 
+    public HazelcastServerCachingProvider() {
+    }
+
     /**
-     * Helper method for creating caching provider for testing, etc.
+     * Creates a new {@code HazelcastServerCachingProvider} with an
+     * existing default fallback {@code HazelcastInstance}.
+     *
+     * @param instance  an existing, running {@code HazelcastInstance} which will be used
+     *                  as default if no other means to identify a {@code HazelcastInstance}
+     *                  are provided when constructing a {@code CacheManager} from this
+     *                  {@code CachingProvider}.
      */
-    public static HazelcastServerCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
-        HazelcastServerCachingProvider cachingProvider = new HazelcastServerCachingProvider();
-        cachingProvider.hazelcastInstance = hazelcastInstance;
-        return cachingProvider;
+    public HazelcastServerCachingProvider(HazelcastInstance instance) {
+        this.hazelcastInstance = instance;
     }
 
     @Override
@@ -124,7 +127,7 @@ public final class HazelcastServerCachingProvider extends AbstractHazelcastCachi
     private HazelcastInstance getDefaultInstance() {
         if (hazelcastInstance == null) {
             // if there is no default instance in use (not created yet and not specified):
-            // 1. locate default ClientConfig: if it specifies an instance name, get-or-create an instance by that name
+            // 1. locate default Config: if it specifies an instance name, get-or-create an instance by that name
             // 2. otherwise start a new Hazelcast member
             Config config = getDefaultConfig();
             if (isNullOrEmptyAfterTrim(config.getInstanceName())) {

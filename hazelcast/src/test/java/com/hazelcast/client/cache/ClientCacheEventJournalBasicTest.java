@@ -30,6 +30,8 @@ import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheEventJournalBasicTest extends CacheEventJournalBasicTest {
@@ -52,7 +54,7 @@ public class ClientCacheEventJournalBasicTest extends CacheEventJournalBasicTest
 
     @Override
     protected CacheManager createCacheManager() {
-        final HazelcastClientCachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        final HazelcastClientCachingProvider provider = createClientCachingProvider(client);
         return provider.getCacheManager();
     }
 

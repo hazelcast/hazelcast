@@ -17,7 +17,6 @@
 package com.hazelcast.cache.instance;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.config.CacheConfig;
@@ -62,6 +61,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -90,7 +90,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
     }
 
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance);
+        return createServerCachingProvider(instance);
     }
 
     protected HazelcastInstance createInstance() {

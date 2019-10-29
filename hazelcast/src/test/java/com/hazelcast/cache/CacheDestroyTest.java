@@ -17,7 +17,6 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheEventListener;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
@@ -50,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static java.lang.String.format;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -108,7 +108,7 @@ public class CacheDestroyTest extends CacheTestSupport {
             hz.addDistributedObjectListener(new CacheProxyListener(cacheProxyCreatedLatch));
         }
 
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(getHazelcastInstance());
+        CachingProvider cachingProvider = createServerCachingProvider(getHazelcastInstance());
         CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.createCache(CACHE_NAME, new CacheConfig());
 

@@ -18,7 +18,6 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -44,6 +43,7 @@ import javax.cache.event.CacheEntryListenerException;
 import javax.cache.spi.CachingProvider;
 import java.io.Serializable;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -66,7 +66,7 @@ public class CacheContextTest extends HazelcastTestSupport {
         hazelcastInstance2 = factory.newHazelcastInstance();
 
         driverInstance = hazelcastInstance1;
-        provider = HazelcastServerCachingProvider.createCachingProvider(driverInstance);
+        provider = createServerCachingProvider(driverInstance);
     }
 
     @Test

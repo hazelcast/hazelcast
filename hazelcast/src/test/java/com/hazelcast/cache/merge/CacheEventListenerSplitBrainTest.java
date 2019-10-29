@@ -48,6 +48,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -112,7 +113,7 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
 
     protected CacheManager getCacheManager(HazelcastInstance instance) {
         HazelcastInstanceImpl hazelcastInstanceImpl = TestUtil.getHazelcastInstanceImpl(instance);
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceImpl);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(hazelcastInstanceImpl);
         return cachingProvider.getCacheManager();
     }
 
