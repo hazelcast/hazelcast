@@ -17,12 +17,10 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
@@ -66,8 +64,6 @@ import com.hazelcast.internal.monitor.impl.NodeStateImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -93,7 +89,6 @@ public class TimedMemberStateFactory {
     private static final int PARTITION_SAFETY_CHECK_PERIOD = 60;
 
     protected final HazelcastInstanceImpl instance;
-    private final boolean cacheServiceEnabled;
 
     private volatile boolean memberStateSafe = true;
 
@@ -104,13 +99,6 @@ public class TimedMemberStateFactory {
             instance.node.loggingService.getLogger(getClass())
                     .warning("hazelcast.mc.max.visible.instance.count property is removed.");
         }
-        cacheServiceEnabled = isCacheServiceEnabled();
-    }
-
-    private boolean isCacheServiceEnabled() {
-        NodeEngineImpl nodeEngine = instance.node.nodeEngine;
-        Collection<ServiceInfo> serviceInfos = nodeEngine.getServiceInfos(CacheService.class);
-        return !serviceInfos.isEmpty();
     }
 
     public void init() {
@@ -273,6 +261,8 @@ public class TimedMemberStateFactory {
             } else if (service instanceof FlakeIdGeneratorService) {
                 count = handleFlakeIdGenerator(memberState, count, config,
                         ((FlakeIdGeneratorService) service).getStats());
+            } else if (service instanceof CacheService) {
+                count = handleCache(memberState, count, config, ((CacheService) service).getStats());
             }
         }
 
@@ -280,21 +270,6 @@ public class TimedMemberStateFactory {
         Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
         if (wanStats != null) {
             count = handleWan(memberState, count, wanStats);
-        }
-
-        if (cacheServiceEnabled) {
-            ICacheService cacheService = getCacheService();
-            Map<String, LocalCacheStats> stats = cacheService.getStats();
-            for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
-                if (cacheConfig.isStatisticsEnabled()) {
-                    LocalCacheStats stat = stats.get(cacheConfig.getManagerPrefix());
-                    //Statistics can be null for a short period of time since config is created at first then stats map
-                    //is filled.git
-                    if (stat != null) {
-                        count = handleCache(memberState, count, cacheConfig, stat);
-                    }
-                }
-            }
         }
     }
 
@@ -411,6 +386,18 @@ public class TimedMemberStateFactory {
         return count;
     }
 
+    private int handleCache(MemberStateImpl memberState, int count, Config config, Map<String, LocalCacheStats> map) {
+        for (Map.Entry<String, LocalCacheStats> entry : map.entrySet()) {
+            String name = entry.getKey();
+            if (config.findCacheConfig(name).isStatisticsEnabled()) {
+                LocalCacheStats stats = entry.getValue();
+                memberState.putLocalCacheStats(name, stats);
+                ++count;
+            }
+        }
+        return count;
+    }
+
     private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans) {
         for (Map.Entry<String, LocalWanStats> entry : wans.entrySet()) {
             String schemeName = entry.getKey();
@@ -419,15 +406,6 @@ public class TimedMemberStateFactory {
             count++;
         }
         return count;
-    }
-
-    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, LocalCacheStats stats) {
-        memberState.putLocalCacheStats(config.getNameWithPrefix(), stats);
-        return ++count;
-    }
-
-    private ICacheService getCacheService() {
-        return instance.node.nodeEngine.getService(ICacheService.SERVICE_NAME);
     }
 
     private AdvancedNetworkStatsDTO createAdvancedNetworkStats(Map<EndpointQualifier, NetworkStats> stats,
