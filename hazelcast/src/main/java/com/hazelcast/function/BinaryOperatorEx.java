@@ -37,6 +37,7 @@ public interface BinaryOperatorEx<T> extends BinaryOperator<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link BinaryOperator#apply}.
+     * @throws Exception in case of any exceptional case
      */
     T applyEx(T t1, T t2) throws Exception;
 
@@ -52,6 +53,7 @@ public interface BinaryOperatorEx<T> extends BinaryOperator<T>, Serializable {
     /**
      * {@code Serializable} variant of {@link
      * BinaryOperator#minBy(Comparator) java.util.function.BinaryOperator#minBy(Comparator)}.
+     * @param <T> the type of the input arguments of the comparator
      */
     static <T> BinaryOperatorEx<T> minBy(Comparator<? super T> comparator) {
         checkNotNull(comparator, "comparator");
@@ -61,6 +63,7 @@ public interface BinaryOperatorEx<T> extends BinaryOperator<T>, Serializable {
     /**
      * {@code Serializable} variant of {@link
      * BinaryOperator#maxBy(Comparator) java.util.function.BinaryOperator#maxBy(Comparator)}.
+     * @param <T> the type of the input arguments of the comparator
      */
     static <T> BinaryOperatorEx<T> maxBy(Comparator<? super T> comparator) {
         checkNotNull(comparator, "comparator");

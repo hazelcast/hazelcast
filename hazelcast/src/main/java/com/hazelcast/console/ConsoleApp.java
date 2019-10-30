@@ -1549,6 +1549,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
      * Starts the test application.
      * <p>
      * Loads the config from classpath hazelcast.xml, if it fails to load, will use default config.
+     * @throws Exception in case of any exceptional case
      */
     public static void main(String[] args) throws Exception {
         Config config;

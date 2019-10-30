@@ -89,6 +89,7 @@ public interface IScheduledExecutorService
      * @param command the task to execute
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -104,6 +105,7 @@ public interface IScheduledExecutorService
      * @param command the task to execute
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the return type of callable tasks
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -128,6 +130,7 @@ public interface IScheduledExecutorService
      * @param initialDelay the time to delay first execution
      * @param period       the period between successive executions
      * @param unit         the time unit of the initialDelay and period parameters
+     * @param <V>          the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task, and whose
      * {@code get()} method will throw an exception upon cancellation
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -145,6 +148,7 @@ public interface IScheduledExecutorService
      * @param member  the member to execute the task
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -163,6 +167,7 @@ public interface IScheduledExecutorService
      * @param member  the member to execute the task
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the return type of callable tasks
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -190,6 +195,7 @@ public interface IScheduledExecutorService
      * @param initialDelay the time to delay first execution
      * @param period       the period between successive executions
      * @param unit         the time unit of the initialDelay and period parameters
+     * @param <V>          the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task, and whose
      * {@code get()} method will throw an exception upon cancellation
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -208,6 +214,7 @@ public interface IScheduledExecutorService
      * @param key     the key to identify the partition owner, which will execute the task
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -226,6 +233,7 @@ public interface IScheduledExecutorService
      * @param key     the key to identify the partition owner, which will execute the task
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the return type of callable tasks
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -253,6 +261,7 @@ public interface IScheduledExecutorService
      * @param initialDelay the time to delay first execution
      * @param period       the period between successive executions
      * @param unit         the time unit of the initialDelay and period parameters
+     * @param <V>          the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task, and whose
      * {@code get()} method will throw an exception upon cancellation
      * @throws RejectedExecutionException if the task cannot be  scheduled for execution
@@ -275,6 +284,7 @@ public interface IScheduledExecutorService
      * @param command the task to execute
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -296,6 +306,7 @@ public interface IScheduledExecutorService
      * @param command the task to execute
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the return type of callable tasks
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -326,6 +337,7 @@ public interface IScheduledExecutorService
      * @param initialDelay the time to delay first execution
      * @param period       the period between successive executions
      * @param unit         the time unit of the initialDelay and period parameters
+     * @param <V>          the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task, and whose
      * {@code get()} method will throw an exception upon cancellation
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -347,6 +359,7 @@ public interface IScheduledExecutorService
      * @param members the collections of members - where to execute the task
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -369,6 +382,7 @@ public interface IScheduledExecutorService
      * @param members the collections of members - where to execute the task
      * @param delay   the time from now to delay execution
      * @param unit    the time unit of the delay parameter
+     * @param <V>     the return type of callable tasks
      * @return a ScheduledFuture representing pending completion of the task and whose
      * {@code get()} method will return {@code null} upon completion
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -399,6 +413,7 @@ public interface IScheduledExecutorService
      * @param initialDelay the time to delay first execution
      * @param period       the period between successive executions
      * @param unit         the time unit of the initialDelay and period parameters
+     * @param <V>          the result type of the returned ScheduledFuture
      * @return a ScheduledFuture representing pending completion of the task, and whose
      * {@code get()} method will throw an exception upon cancellation
      * @throws RejectedExecutionException if the task cannot be scheduled for execution
@@ -417,7 +432,7 @@ public interface IScheduledExecutorService
      * <code>ScheduledFuture</code> again.
      *
      * @param handler The handler of the task as found from {@link IScheduledFuture#getHandler()}
-     * @param <V>     The return type of callable tasks
+     * @param <V>     the result type of the returned ScheduledFuture
      * @return A new {@link IScheduledFuture} from the given handler.
      */
     @Nonnull
@@ -428,6 +443,7 @@ public interface IScheduledExecutorService
      * members in the cluster. If a member has no running tasks for this
      * scheduler, it wont be included in the returned {@link Map}.
      *
+     * @param <V>     the result type of the returned ScheduledFuture
      * @return A {@link Map} with {@link Member} keys and a List of {@link IScheduledFuture}
      * found for this scheduler.
      */

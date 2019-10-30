@@ -294,6 +294,7 @@ public class HazelcastProperties {
      * The case of the enum is ignored.
      *
      * @param property the {@link ClusterProperty} to get the value from
+     * @param <E> the enum type
      * @return the enum
      * @throws IllegalArgumentException if the enum value can't be found
      */

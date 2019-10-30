@@ -601,7 +601,7 @@ public interface FencedLock extends Lock, DistributedObject {
      * May the force be the one who dares to implement
      * a linearizable distributed {@link Condition} :)
      *
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException for now
      */
     Condition newCondition();
 }

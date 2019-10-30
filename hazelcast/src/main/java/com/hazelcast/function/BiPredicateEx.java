@@ -37,6 +37,7 @@ public interface BiPredicateEx<T, U> extends BiPredicate<T, U>, Serializable {
 
     /**
      * Exception-declaring version of {@link BiPredicate#test}.
+     * @throws Exception in case of any exceptional case
      */
     boolean testEx(T t, U u) throws Exception;
 

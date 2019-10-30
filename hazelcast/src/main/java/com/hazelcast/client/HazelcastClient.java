@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.r
  * The HazelcastClient is comparable to the {@link com.hazelcast.core.Hazelcast} class and provides the ability
  * the create and manage Hazelcast clients. Hazelcast clients are {@link HazelcastInstance} implementations, so
  * in most cases most of the code is unaware of talking to a cluster member or a client.
- * <p/>
+ * <p>
  * <h1>Smart vs unisocket clients</h1>
  * Hazelcast Client enables you to do all Hazelcast operations without being a member of the cluster. Clients can be:
  * <ol>
@@ -56,7 +56,7 @@ import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.r
  * </li>
  * </ol>
  * For more information see {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}.
- * <p/>
+ * <p>
  * <h1>High availability</h1>
  * When the connected cluster member dies, client will automatically switch to another live member.
  */
@@ -76,7 +76,7 @@ public final class HazelcastClient {
      * Creates a new HazelcastInstance (a new client in a cluster).
      * This method allows you to create and run multiple instances
      * of Hazelcast clients on the same JVM.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all clients on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -118,7 +118,7 @@ public final class HazelcastClient {
      * Creates a new HazelcastInstance (a new client in a cluster).
      * This method allows you to create and run multiple instances
      * of Hazelcast clients on the same JVM.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all clients on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -219,11 +219,11 @@ public final class HazelcastClient {
 
     /**
      * Gets an immutable collection of all client HazelcastInstances created in this JVM.
-     * <p/>
+     * <p>
      * In managed environments such as Java EE or OSGi Hazelcast can be loaded by multiple classloaders. Typically you will get
      * at least one classloader per every application deployed. In these cases only the client HazelcastInstances created
      * by the same application will be seen, and instances created by different applications are invisible.
-     * <p/>
+     * <p>
      * The returned collection is a snapshot of the client HazelcastInstances. So changes to the client HazelcastInstances
      * will not be visible in this collection.
      *
@@ -236,10 +236,10 @@ public final class HazelcastClient {
 
     /**
      * Shuts down all the client HazelcastInstance created in this JVM.
-     * <p/>
+     * <p>
      * To be more precise it shuts down the HazelcastInstances loaded using the same classloader this HazelcastClient has been
      * loaded with.
-     * <p/>
+     * <p>
      * This method is mostly used for testing purposes.
      *
      * @see #getAllHazelcastClients()
@@ -313,13 +313,11 @@ public final class HazelcastClient {
     /**
      * Sets <tt>OutOfMemoryHandler</tt> to be used when an <tt>OutOfMemoryError</tt>
      * is caught by Hazelcast Client threads.
-     * <p/>
      * <p>
      * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called although JVM throws
      * <tt>OutOfMemoryError</tt>.
      * Because error may be thrown from an external (user thread) thread
      * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
-     * </p>
      *
      * @param outOfMemoryHandler set when an <tt>OutOfMemoryError</tt> is caught by HazelcastClient threads
      * @see OutOfMemoryError

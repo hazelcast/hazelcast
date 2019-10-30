@@ -403,6 +403,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param timeunit the time unit of the {@code time} argument
      * @return {@code true} if the lock was acquired, {@code false} if the
      * waiting time elapsed before the lock was acquired
+     * @throws InterruptedException if interrupted while trying to acquire the lock
      */
     boolean tryLock(@Nonnull K key,
                     long time, @Nullable TimeUnit timeunit) throws InterruptedException;
@@ -432,6 +433,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @return {@code true} if the lock was acquired and {@code false} if the
      * waiting time elapsed before the lock was acquired
      * @throws NullPointerException if the specified key is {@code null}
+     * @throws InterruptedException if interrupted while trying to acquire the lock
      */
     boolean tryLock(@Nonnull K key,
                     long time, @Nullable TimeUnit timeunit,

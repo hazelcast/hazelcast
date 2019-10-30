@@ -37,6 +37,7 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable {
 
     /**
      * Exception-declaring version of {@link Function#apply}.
+     * @throws Exception in case of any exceptional case
      */
     R applyEx(T t) throws Exception;
 
@@ -52,6 +53,7 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable {
     /**
      * {@code Serializable} variant of {@link Function#identity()
      * java.util.function.Function#identity()}.
+     * @param <T> the type of the input and output objects to the function
      */
     static <T> FunctionEx<T, T> identity() {
         return t -> t;
@@ -60,6 +62,8 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable {
     /**
      * {@code Serializable} variant of {@link Function#compose(Function)
      * java.util.function.Function#compose(Function)}.
+     * @param <V> the type of input to the {@code before} function, and to the
+     *           composed function
      */
     default <V> FunctionEx<V, R> compose(FunctionEx<? super V, ? extends T> before) {
         checkNotNull(before, "before");
@@ -69,6 +73,8 @@ public interface FunctionEx<T, R> extends Function<T, R>, Serializable {
     /**
      * {@code Serializable} variant of {@link Function#andThen(Function)
      * java.util.function.Function#andThen(Function)}.
+     * @param <V> the type of output of the {@code after} function, and of the
+     *           composed function
      */
     default <V> FunctionEx<T, V> andThen(FunctionEx<? super R, ? extends V> after) {
         checkNotNull(after, "after");

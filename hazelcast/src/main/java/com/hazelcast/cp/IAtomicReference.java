@@ -32,7 +32,7 @@ import java.util.concurrent.CompletionStage;
  * registering a callback to be executed upon completion. For example:
  * <pre>
  * CompletionStage&lt;E&gt; future = atomicRef.getAsync();
- * future.whenCompleteAsync((v, throwable) -> {
+ * future.whenCompleteAsync((v, throwable) -&gt; {
  *     if (throwable == null) {
  *         // do something with the old value returned by put operation
  *     } else {
@@ -146,6 +146,7 @@ public interface IAtomicReference<E> extends DistributedObject {
      * change.
      *
      * @param function the function applied on the value, the stored value does not change
+     * @param <R> the result type of the function
      * @return the result of the function application
      * @throws IllegalArgumentException if function is {@code null}
      */
@@ -237,6 +238,7 @@ public interface IAtomicReference<E> extends DistributedObject {
      * change.
      *
      * @param function the function
+     * @param <R> the result type of the function
      * @return the result of the function application
      * @throws IllegalArgumentException if function is {@code null}
      */
