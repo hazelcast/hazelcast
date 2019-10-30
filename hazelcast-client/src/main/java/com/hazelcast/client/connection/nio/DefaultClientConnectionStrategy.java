@@ -71,6 +71,11 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     }
 
     @Override
+    public void beforeConnectToCluster(Address target) {
+
+    }
+
+    @Override
     public void onConnectToCluster() {
     }
 

@@ -24,6 +24,7 @@ import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
+import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
@@ -136,8 +137,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ManagedMap queryCaches = getQueryCaches(node);
                     configBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
                 } else if ("connection-strategy".equals(nodeName)) {
-                    createAndFillBeanBuilder(node, ClientConnectionStrategyConfig.class, "connectionStrategyConfig",
-                            configBuilder);
+                    handleConnectionStrategy(node);
                 } else if ("user-code-deployment".equals(nodeName)) {
                     handleUserCodeDeployment(node);
                 } else if ("flake-id-generator".equals(nodeName)) {
@@ -146,6 +146,19 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
             return builder.getBeanDefinition();
+        }
+
+        private void handleConnectionStrategy(Node node) {
+            BeanDefinitionBuilder clientConnectionStrategyConfig = createBeanBuilder(ClientConnectionStrategyConfig.class);
+            fillAttributeValues(node, clientConnectionStrategyConfig);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("connection-retry".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, ConnectionRetryConfig.class,
+                            "ConnectionRetryConfig", clientConnectionStrategyConfig);
+                }
+            }
+            configBuilder.addPropertyValue("connectionStrategyConfig", clientConnectionStrategyConfig.getBeanDefinition());
         }
 
         private void handleUserCodeDeployment(Node node) {
