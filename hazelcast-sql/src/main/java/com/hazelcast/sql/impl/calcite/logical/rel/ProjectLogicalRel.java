@@ -16,11 +16,15 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
+import com.hazelcast.sql.impl.calcite.cost.CostUtils;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 
@@ -45,5 +49,13 @@ public class ProjectLogicalRel extends Project implements LogicalRel {
     @Override
     public final RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw);
+    }
+
+    @Override
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        double rowCount = mq.getRowCount(getInput());
+        double cpu = CostUtils.adjustProjectCpu(rowCount * exps.size(), false);
+
+        return planner.getCostFactory().makeCost(rowCount, cpu, 0);
     }
 }

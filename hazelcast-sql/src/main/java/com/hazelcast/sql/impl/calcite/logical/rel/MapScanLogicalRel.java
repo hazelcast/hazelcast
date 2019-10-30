@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.logical.rel;
 
+import com.hazelcast.sql.impl.calcite.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -114,7 +115,7 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
 
         int expressionCount = getProjects().size();
 
-        double projectCpu = filterRowCount * expressionCount;
+        double projectCpu = CostUtils.adjustProjectCpu(filterRowCount * expressionCount, true);
 
         // 3. Finally, return sum of both scan and project.
         RelOptCost totalCost = planner.getCostFactory().makeCost(
