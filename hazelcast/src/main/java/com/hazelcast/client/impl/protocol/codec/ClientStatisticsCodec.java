@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -65,7 +67,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * lastStatisticsCollectionTime: The time stamp (milliseconds since epoch) when the latest update for the statistics is
  * collected.
  * 
- * Near cache statistics (see {@link NearCacheStats}):
+ * Near cache statistics (see {@link com.hazelcast.monitor.NearCacheStats}):
  * 
  * nc.<StatIMapName>.creationTime: The creation time (milliseconds since epoch) of this Near Cache on the client.
  * 
