@@ -24,8 +24,8 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.memory.NativeOutOfMemoryError;
-import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -154,7 +154,7 @@ public final class WithForcedEviction {
         MapContainer mapContainer = recordStore.getMapContainer();
         MapConfig mapConfig = mapContainer.getMapConfig();
         if (mapConfig.getInMemoryFormat() == NATIVE
-                && mapConfig.getEvictionPolicy() != NONE) {
+                && mapConfig.getEvictionConfig().getEvictionPolicy() != NONE) {
             Evictor evictor = mapContainer.getEvictor();
             evictor.forceEvict(recordStore);
         }
@@ -198,7 +198,7 @@ public final class WithForcedEviction {
                 for (RecordStore recordStore : maps.values()) {
                     MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
                     if (mapConfig.getInMemoryFormat() == NATIVE
-                            && mapConfig.getEvictionPolicy() != NONE) {
+                            && mapConfig.getEvictionConfig().getEvictionPolicy() != NONE) {
                         evictAllThenDispose(recordStore, isBackup);
                     }
                 }

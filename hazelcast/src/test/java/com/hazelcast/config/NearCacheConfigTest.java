@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -62,7 +62,7 @@ public class NearCacheConfigTest {
     public void testConstructor_withMultipleParametersAndEvictionConfig() {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setEvictionPolicy(EvictionPolicy.LFU)
-                .setMaximumSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
+                .setMaxSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
                 .setSize(66);
 
         config = new NearCacheConfig();
@@ -77,7 +77,7 @@ public class NearCacheConfigTest {
         assertTrue(config.isInvalidateOnChange());
         assertEquals(InMemoryFormat.NATIVE, config.getInMemoryFormat());
         assertEquals(EvictionPolicy.LFU, config.getEvictionConfig().getEvictionPolicy());
-        assertEquals(USED_NATIVE_MEMORY_PERCENTAGE, config.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(USED_NATIVE_MEMORY_PERCENTAGE, config.getEvictionConfig().getMaxSizePolicy());
         assertEquals(66, config.getEvictionConfig().getSize());
     }
 

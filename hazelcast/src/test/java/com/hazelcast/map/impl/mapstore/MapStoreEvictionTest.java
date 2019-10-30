@@ -18,10 +18,11 @@ package com.hazelcast.map.impl.mapstore;
 
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.AssertTask;
@@ -162,9 +163,10 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
         MapConfig mapConfig = cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         if (sizeLimited) {
-            MaxSizeConfig maxSizeConfig = new MaxSizeConfig(MAX_SIZE_PER_NODE, MaxSizeConfig.MaxSizePolicy.PER_NODE);
-            mapConfig.setMaxSizeConfig(maxSizeConfig);
-            mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
+            EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+            evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
+            evictionConfig.setMaxSizePolicy(MaxSizePolicy.PER_NODE);
+            evictionConfig.setSize(MAX_SIZE_PER_NODE);
         }
 
         return cfg;

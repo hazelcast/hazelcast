@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -97,7 +98,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     @Test
     public void checkCacheConfig_withEntryCountMaxSizePolicy_OBJECT() {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                 .setInMemoryFormat(OBJECT)
                 .setEvictionConfig(evictionConfig);
@@ -108,7 +109,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void checkCacheConfig_withEntryCountMaxSizePolicy_NATIVE() {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                 .setInMemoryFormat(NATIVE)
                 .setEvictionConfig(evictionConfig);

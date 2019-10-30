@@ -50,7 +50,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertEquals;
@@ -121,7 +121,7 @@ public class ClientCacheInvalidationMetaDataFetcherTest extends HazelcastTestSup
 
     private CacheConfig newCacheConfig() {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
 
         return new CacheConfig()

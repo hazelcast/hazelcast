@@ -23,13 +23,12 @@ import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -46,27 +45,31 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.MutableInteger;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 
+import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_SIZE;
+import static com.hazelcast.config.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.config.MaxSizePolicy.PER_PARTITION;
+import static com.hazelcast.config.MaxSizePolicy.USED_HEAP_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_HEAP_SIZE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE;
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE;
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
@@ -74,12 +77,12 @@ import static com.hazelcast.instance.ProtocolType.REST;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicy;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.spi.properties.GroupProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.spi.properties.GroupProperty.HTTP_HEALTHCHECK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.REST_ENABLED;
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
 /**
@@ -92,8 +95,13 @@ public final class ConfigValidator {
     private static final EnumSet<MaxSizePolicy> SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES
             = EnumSet.of(MaxSizePolicy.ENTRY_COUNT);
 
-    private static final EnumSet<MaxSizeConfig.MaxSizePolicy> SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+    private static final EnumSet<MaxSizePolicy> SUPPORTED_NATIVE_MAX_SIZE_POLICIES
             = EnumSet.of(PER_NODE, PER_PARTITION, USED_NATIVE_MEMORY_PERCENTAGE,
+            FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
+
+    private static final EnumSet<MaxSizePolicy> IMAP_MAX_SIZE_POLICIES
+            = EnumSet.of(PER_NODE, PER_PARTITION, USED_HEAP_SIZE, USED_HEAP_PERCENTAGE,
+            FREE_HEAP_SIZE, FREE_HEAP_PERCENTAGE, USED_NATIVE_MEMORY_PERCENTAGE,
             FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
 
     private static final EnumSet<EvictionPolicy> SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
@@ -137,8 +145,7 @@ public final class ConfigValidator {
     }
 
     private static void checkNativeMaxSizePolicy(MapConfig mapConfig) {
-        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
-        MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        MaxSizePolicy maxSizePolicy = mapConfig.getEvictionConfig().getMaxSizePolicy();
         if (!SUPPORTED_NATIVE_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
             throw new IllegalArgumentException("Map maximum size policy " + maxSizePolicy
                     + " cannot be used with NATIVE in memory format."
@@ -152,7 +159,7 @@ public final class ConfigValidator {
      * percent free HD memory space.
      * <p>
      * If configured max-size-policy is {@link
-     * MaxSizeConfig.MaxSizePolicy#FREE_NATIVE_MEMORY_PERCENTAGE},
+     * MaxSizePolicy#FREE_NATIVE_MEMORY_PERCENTAGE},
      * this method asserts that max-size is not below {@code
      * hazelcast.hotrestart.free.native.memory.percentage}.
      */
@@ -162,10 +169,10 @@ public final class ConfigValidator {
             return;
         }
         int hotRestartMinFreeNativeMemoryPercentage = properties.getInteger(HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE);
-        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
-        MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
-        int localSizeConfig = maxSizeConfig.getSize();
-        if (FREE_NATIVE_MEMORY_PERCENTAGE == maxSizePolicy && localSizeConfig < hotRestartMinFreeNativeMemoryPercentage) {
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        MaxSizePolicy maximumSizePolicy = evictionConfig.getMaxSizePolicy();
+        int localSizeConfig = evictionConfig.getSize();
+        if (FREE_NATIVE_MEMORY_PERCENTAGE == maximumSizePolicy && localSizeConfig < hotRestartMinFreeNativeMemoryPercentage) {
             throw new IllegalArgumentException(format(
                     "There is a global limit on the minimum free native memory, configurable by the system property %s,"
                             + " whose value is currently %d percent. The map %s has Hot Restart enabled,"
@@ -255,7 +262,7 @@ public final class ConfigValidator {
                                             NativeMemoryConfig nativeMemoryConfig, boolean isClient) {
         checkNotNativeWhenOpenSource(nearCacheConfig.getInMemoryFormat());
         checkLocalUpdatePolicy(mapName, nearCacheConfig.getLocalUpdatePolicy());
-        checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true);
+        checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true, false);
         checkOnHeapNearCacheMaxSizePolicy(nearCacheConfig);
         checkNearCacheNativeMemoryConfig(nearCacheConfig.getInMemoryFormat(),
                 nativeMemoryConfig, getBuildInfo().isEnterprise());
@@ -287,7 +294,8 @@ public final class ConfigValidator {
      * @param isNearCache    {@code true} if the config is for a Near Cache, {@code false} otherwise
      */
     @SuppressWarnings("ConstantConditions")
-    public static void checkEvictionConfig(EvictionConfig evictionConfig, boolean isNearCache) {
+    public static void checkEvictionConfig(EvictionConfig evictionConfig,
+                                           boolean isNearCache, boolean isIMap) {
         if (evictionConfig == null) {
             throw new IllegalArgumentException("Eviction config cannot be null!");
         }
@@ -295,7 +303,8 @@ public final class ConfigValidator {
         String comparatorClassName = evictionConfig.getComparatorClassName();
         EvictionPolicyComparator comparator = evictionConfig.getComparator();
 
-        checkEvictionConfig(evictionPolicy, comparatorClassName, comparator, isNearCache);
+        checkEvictionConfig(evictionConfig.getMaxSizePolicy(),
+                evictionPolicy, comparatorClassName, comparator, isNearCache, isIMap);
     }
 
     private static void checkOnHeapNearCacheMaxSizePolicy(NearCacheConfig nearCacheConfig) {
@@ -304,7 +313,7 @@ public final class ConfigValidator {
             return;
         }
 
-        MaxSizePolicy maxSizePolicy = nearCacheConfig.getEvictionConfig().getMaximumSizePolicy();
+        MaxSizePolicy maxSizePolicy = nearCacheConfig.getEvictionConfig().getMaxSizePolicy();
         if (!SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES.contains(maxSizePolicy)) {
             throw new IllegalArgumentException(format("Near Cache maximum size policy %s cannot be used with %s storage."
                             + " Supported maximum size policies are: %s",
@@ -336,20 +345,33 @@ public final class ConfigValidator {
     /**
      * Checks if parameters for an {@link EvictionConfig} are valid in their context.
      *
+     * @param maxSizePolicy       the max size policy
      * @param evictionPolicy      the {@link EvictionPolicy} for the {@link EvictionConfig}
      * @param comparatorClassName the comparator class name for the {@link EvictionConfig}
      * @param comparator          the comparator implementation for the {@link EvictionConfig}
      * @param isNearCache         {@code true} if the config is for a Near Cache, {@code false} otherwise
+     * @param isIMap
      */
-    public static void checkEvictionConfig(EvictionPolicy evictionPolicy, String comparatorClassName, Object comparator,
-                                           boolean isNearCache) {
+    public static void checkEvictionConfig(MaxSizePolicy maxSizePolicy,
+                                           EvictionPolicy evictionPolicy,
+                                           String comparatorClassName,
+                                           Object comparator,
+                                           boolean isNearCache, boolean isIMap) {
+        if (isIMap) {
+            if (!IMAP_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
+                String msg = format("IMap eviction config doesn't support max size policy `%s`. "
+                        + "Please select a valid one: %s.", maxSizePolicy, IMAP_MAX_SIZE_POLICIES);
+                throw new IllegalArgumentException(msg);
+            }
+            return;
+        }
+
         if (comparatorClassName != null && comparator != null) {
             throw new IllegalArgumentException("Only one of the `comparator class name` and `comparator`"
                     + " can be configured in the eviction configuration!");
         }
         if (!isNearCache && !SUPPORTED_EVICTION_POLICIES.contains(evictionPolicy)) {
             if (isNullOrEmpty(comparatorClassName) && comparator == null) {
-
                 String msg = format("Eviction policy `%s` is not supported. Either you can provide a custom one or "
                         + "can use one of the supported: %s.", evictionPolicy, SUPPORTED_EVICTION_POLICIES);
 
@@ -417,14 +439,14 @@ public final class ConfigValidator {
      */
     static void checkEvictionConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig) {
         if (inMemoryFormat == NATIVE) {
-            MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
+            MaxSizePolicy maxSizePolicy = evictionConfig.getMaxSizePolicy();
             if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
                 throw new IllegalArgumentException("Invalid max-size policy "
                         + '(' + maxSizePolicy + ") for NATIVE in-memory format! Only "
-                        + MaxSizePolicy.USED_NATIVE_MEMORY_SIZE + ", "
-                        + MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE + ", "
-                        + MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE + ", "
-                        + MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE
+                        + USED_NATIVE_MEMORY_SIZE + ", "
+                        + USED_NATIVE_MEMORY_PERCENTAGE + ", "
+                        + FREE_NATIVE_MEMORY_SIZE + ", "
+                        + FREE_NATIVE_MEMORY_PERCENTAGE
                         + " are supported.");
             }
         }

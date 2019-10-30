@@ -19,29 +19,30 @@ package com.hazelcast.config;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
-import com.hazelcast.map.IMap;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Configuration for eviction.
- * You can set a limit for number of entries or total memory cost of entries.
+ * ß
+ * You can set a limit for number of
+ * entries or total memory cost of entries.
  * <p>
  * The default values of the eviction configuration are
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
- * <li>{@link EvictionConfig.MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
- * <li>{@value DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP} as maximum size for on-heap {@link IMap}</li>
- * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size for all other data structures and configurations</li>
+ * <li>{@link MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
+ * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size
+ * for all other data structures and configurations</li>
  * </ul>
  */
 @BinaryInterface
@@ -54,11 +55,6 @@ public class EvictionConfig implements EvictionConfiguration,
     public static final int DEFAULT_MAX_ENTRY_COUNT = 10000;
 
     /**
-     * Default maximum entry count for Map on-heap Near Caches.
-     */
-    public static final int DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP = Integer.MAX_VALUE;
-
-    /**
      * Default Max-Size Policy.
      */
     public static final MaxSizePolicy DEFAULT_MAX_SIZE_POLICY = MaxSizePolicy.ENTRY_COUNT;
@@ -67,37 +63,6 @@ public class EvictionConfig implements EvictionConfiguration,
      * Default Eviction Policy.
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
-
-    /**
-     * Maximum Size Policy
-     */
-    public enum MaxSizePolicy {
-        /**
-         * Policy based on maximum number of entries
-         * stored per data structure (map, cache etc)
-         */
-        ENTRY_COUNT,
-        /**
-         * Policy based on maximum used native memory in megabytes per
-         * data structure (map, cache etc) on each Hazelcast instance
-         */
-        USED_NATIVE_MEMORY_SIZE,
-        /**
-         * Policy based on maximum used native memory percentage per
-         * data structure (map, cache etc) on each Hazelcast instance
-         */
-        USED_NATIVE_MEMORY_PERCENTAGE,
-        /**
-         * Policy based on minimum free native
-         * memory in megabytes per Hazelcast instance
-         */
-        FREE_NATIVE_MEMORY_SIZE,
-        /**
-         * Policy based on minimum free native
-         * memory percentage per Hazelcast instance
-         */
-        FREE_NATIVE_MEMORY_PERCENTAGE
-    }
 
     protected int size = DEFAULT_MAX_ENTRY_COUNT;
     protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
@@ -150,7 +115,7 @@ public class EvictionConfig implements EvictionConfiguration,
      */
     public EvictionConfig setSize(int size) {
         this.sizeConfigured = true;
-        this.size = checkPositive(size,
+        this.size = checkNotNegative(size,
                 "size must be positive number!");
         return this;
     }
@@ -160,7 +125,7 @@ public class EvictionConfig implements EvictionConfiguration,
      *
      * @return the {@link MaxSizePolicy} of this eviction configuration
      */
-    public MaxSizePolicy getMaximumSizePolicy() {
+    public MaxSizePolicy getMaxSizePolicy() {
         return maxSizePolicy;
     }
 
@@ -170,7 +135,7 @@ public class EvictionConfig implements EvictionConfiguration,
      * @param maxSizePolicy the {@link MaxSizePolicy} of this eviction configuration
      * @return this EvictionConfig instance
      */
-    public EvictionConfig setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+    public EvictionConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = checkNotNull(maxSizePolicy,
                 "maxSizePolicy cannot be null!");
         return this;

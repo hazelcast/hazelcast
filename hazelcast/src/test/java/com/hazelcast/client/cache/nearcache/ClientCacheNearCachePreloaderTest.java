@@ -49,7 +49,7 @@ import javax.cache.spi.CachingProvider;
 import java.io.File;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_INVALIDATE_ON_CHANGE;
@@ -147,7 +147,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
         if (nearCacheConfig.getInMemoryFormat() == NATIVE) {
             cacheConfig.getEvictionConfig()
                     .setEvictionPolicy(LRU)
-                    .setMaximumSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
+                    .setMaxSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
                     .setSize(90);
         }
 

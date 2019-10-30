@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
@@ -30,10 +30,6 @@ import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
-
-import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_POLICY;
-import static com.hazelcast.config.MaxSizeConfig.DEFAULT_MAX_SIZE;
-import static com.hazelcast.config.MergePolicyConfig.DEFAULT_MERGE_POLICY;
 
 public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
     public GetMapConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -60,18 +56,11 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
     protected ClientMessage encodeResponse(Object response) {
         MapConfigReadOnly config = (MapConfigReadOnly) response;
 
-        int maxSize = config.getMaxSizeConfig() != null
-                ? config.getMaxSizeConfig().getSize()
-                : DEFAULT_MAX_SIZE;
-        int maxSizePolicy = config.getMaxSizeConfig() != null
-                ? config.getMaxSizeConfig().getMaxSizePolicy().getId()
-                : MaxSizeConfig.MaxSizePolicy.PER_NODE.getId();
-        int evictionPolicy = config.getEvictionPolicy() != null
-                ? config.getEvictionPolicy().getId()
-                : DEFAULT_EVICTION_POLICY.getId();
-        String mergePolicy = config.getMergePolicyConfig() != null
-                ? config.getMergePolicyConfig().getPolicy()
-                : DEFAULT_MERGE_POLICY;
+        EvictionConfig evictionConfig = config.getEvictionConfig();
+        int maxSize = evictionConfig.getSize();
+        int maxSizePolicyId = evictionConfig.getMaxSizePolicy().getId();
+        int evictionPolicyId = evictionConfig.getEvictionPolicy().getId();
+        String mergePolicy = config.getMergePolicyConfig().getPolicy();
 
         return MCGetMapConfigCodec.encodeResponse(
                 config.getInMemoryFormat().getId(),
@@ -80,9 +69,9 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
                 config.getTimeToLiveSeconds(),
                 config.getMaxIdleSeconds(),
                 maxSize,
-                maxSizePolicy,
+                maxSizePolicyId,
                 config.isReadBackupData(),
-                evictionPolicy,
+                evictionPolicyId,
                 mergePolicy);
     }
 

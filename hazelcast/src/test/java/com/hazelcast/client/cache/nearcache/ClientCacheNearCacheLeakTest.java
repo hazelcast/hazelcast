@@ -56,7 +56,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import javax.cache.spi.CachingProvider;
 import java.util.Collection;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
@@ -146,7 +146,7 @@ public class ClientCacheNearCacheLeakTest extends AbstractNearCacheLeakTest<Data
         if (nearCacheConfig.getInMemoryFormat() == NATIVE) {
             cacheConfig.getEvictionConfig()
                     .setEvictionPolicy(LRU)
-                    .setMaximumSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
+                    .setMaxSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
                     .setSize(90);
         }
 

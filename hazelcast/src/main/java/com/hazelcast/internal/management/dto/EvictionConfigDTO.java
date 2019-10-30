@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
@@ -41,7 +41,7 @@ class EvictionConfigDTO implements JsonSerializable {
     public JsonObject toJson() {
         JsonObject root = new JsonObject()
                 .add("size", evictionConfig.getSize())
-                .add("maxSizePolicy", evictionConfig.getMaximumSizePolicy().toString())
+                .add("maxSizePolicy", evictionConfig.getMaxSizePolicy().toString())
                 .add("evictionPolicy", evictionConfig.getEvictionPolicy().toString());
 
         String comparatorClassName = evictionConfig.getComparatorClassName();
@@ -55,7 +55,7 @@ class EvictionConfigDTO implements JsonSerializable {
     public void fromJson(JsonObject json) {
         evictionConfig = new EvictionConfig();
         evictionConfig.setSize(getInt(json, "size"));
-        evictionConfig.setMaximumSizePolicy(MaxSizePolicy.valueOf(getString(json, "maxSizePolicy")));
+        evictionConfig.setMaxSizePolicy(MaxSizePolicy.valueOf(getString(json, "maxSizePolicy")));
         evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
 
         JsonValue comparatorClassName = json.get("comparatorClassName");

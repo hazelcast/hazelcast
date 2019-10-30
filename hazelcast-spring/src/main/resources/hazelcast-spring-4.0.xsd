@@ -414,6 +414,58 @@
                         <xs:element name="map" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
+                                    <xs:element name="eviction" type="eviction-map" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                When maximum size is reached, map is evicted based on the eviction policy.
+                                                IMap has no eviction by default.
+
+                                                size:
+                                                maximum size can be any integer between 0 and Integer.MAX_VALUE.
+                                                For max-size to work, set the eviction-policy property to a value other than NONE.
+
+                                                Default value is 0.
+
+                                                max-size-policy:
+                                                max-size-policy has these valid values:
+                                                PER_NODE: Maximum number of map entries in each Hazelcast instance.
+                                                This is the default policy.
+                                                PER_PARTITION: Maximum number of map entries within each partition. Storage size
+                                                depends on the partition count in a Hazelcast instance.
+                                                This attribute should not be used often.
+                                                Avoid using this attribute with a small cluster: if the cluster is small it will
+                                                be hosting more partitions, and therefore map entries, than that of a larger
+                                                cluster. Thus, for a small cluster, eviction of the entries will decrease
+                                                performance (the number of entries is large).
+                                                USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast instance.
+                                                USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast
+                                                instance.
+                                                If, for example, JVM is configured to have 1000 MB and this value is 10, then the map
+                                                entries will be evicted when used heap size exceeds 100 MB.
+                                                FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
+                                                FREE_HEAP_PERCENTAGE: Minimum free heap size percentage for each JVM.
+                                                For example, if JVM is configured to have 1000 MB and this value is 10,
+                                                then the map entries will be evicted when free heap size is below 100 MB.
+                                                USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes per map
+                                                for each Hazelcast instance.
+                                                USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory size percentage per map
+                                                for each Hazelcast instance.
+                                                FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size in megabytes
+                                                for each Hazelcast instance.
+                                                FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory size percentage
+                                                for each Hazelcast instance.
+
+                                                eviction-policy:
+                                                Eviction policy has these valid values:
+                                                LRU (Least Recently Used),
+                                                LFU (Least Frequently Used),
+                                                RANDOM,
+                                                NONE.
+
+                                                Default value is "NONE".
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
                                     <xs:element name="map-store" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence>
@@ -644,49 +696,6 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="max-size" use="optional" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Maximum size. Any integer between 0 and Integer.MAX_VALUE. 0 means
-                                            Integer.MAX_VALUE. Default is 0.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <!--max-size-policy attribute wasn't converted to enumeration to support case-insensitivity-->
-                                <xs:attribute name="max-size-policy" use="optional" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Valid values are:
-                                            PER_NODE: Maximum number of map entries in each Hazelcast instance.
-                                            This is the default policy.
-                                            PER_PARTITION: Maximum number of map entries within each partition. Storage size
-                                            depends on the partition count in a Hazelcast instance.
-                                            This attribute should not be used often.
-                                            Avoid using this attribute with a small cluster: if the cluster is small it will
-                                            be hosting more partitions, and therefore map entries, than that of a larger
-                                            cluster. Thus, for a small cluster, eviction of the entries will decrease
-                                            performance (the number of entries is large).
-                                            USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast
-                                            instance.
-                                            USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast
-                                            instance.
-                                            If, for example, JVM is configured to have 1000 MB and this value is 10, then the map
-                                            entries will be evicted when used heap size exceeds 100 MB.
-                                            FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
-                                            FREE_HEAP_PERCENTAGE: Minimum free heap size percentage for each JVM.
-                                            For example, if JVM is configured to have 1000 MB and this value is 10,
-                                            then the map entries will be evicted when free heap size is below 100 MB.
-                                            USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes per map
-                                            for each Hazelcast instance.
-                                            USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory size percentage per map
-                                            for each Hazelcast instance.
-                                            FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size in megabytes
-                                            for each Hazelcast instance.
-                                            FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory size percentage
-                                            for each Hazelcast instance.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
                                 <xs:attribute name="max-idle-seconds" use="optional" type="xs:string">
                                     <xs:annotation>
                                         <xs:documentation>
@@ -695,14 +704,6 @@
                                             automatically evicted from the map. Entry is touched if get, put or
                                             containsKey is called. Any integer between 0 and Integer.MAX_VALUE. 0 means
                                             infinite. Default is 0.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="eviction-policy" use="optional" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Valid values are: NONE (no eviction), LRU (Least Recently Used), LFU
-                                            (Least Frequently Used). NONE is the default.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -3604,9 +3605,32 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <xs:simpleType name="max-size-policy-map">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="PER_NODE"/>
+            <xs:enumeration value="PER_PARTITION"/>
+            <xs:enumeration value="USED_HEAP_SIZE"/>
+            <xs:enumeration value="USED_HEAP_PERCENTAGE"/>
+            <xs:enumeration value="FREE_HEAP_SIZE"/>
+            <xs:enumeration value="FREE_HEAP_PERCENTAGE"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="eviction">
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
+        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
+        <xs:attribute name="comparator-class-name" type="xs:string" use="optional"/>
+        <xs:attribute name="comparator-bean" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="eviction-map">
+        <xs:attribute name="size" type="xs:nonNegativeInteger" default="0" use="optional"/>
+        <xs:attribute name="max-size-policy" type="max-size-policy-map" default="PER_NODE" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
         <xs:attribute name="comparator-class-name" type="xs:string" use="optional"/>
         <xs:attribute name="comparator-bean" type="xs:string" use="optional"/>

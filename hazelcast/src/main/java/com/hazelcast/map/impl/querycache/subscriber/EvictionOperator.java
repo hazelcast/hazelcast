@@ -49,9 +49,9 @@ class EvictionOperator {
     private final ClassLoader classLoader;
 
     EvictionOperator(QueryCacheRecordHashMap cache,
-                            QueryCacheConfig config,
-                            EvictionListener<Data, QueryCacheRecord> listener,
-                            ClassLoader classLoader) {
+                     QueryCacheConfig config,
+                     EvictionListener<Data, QueryCacheRecord> listener,
+                     ClassLoader classLoader) {
         this.cache = cache;
         this.evictionConfig = config.getEvictionConfig();
         this.evictionChecker = createCacheEvictionChecker();
@@ -81,7 +81,7 @@ class EvictionOperator {
     }
 
     private EvictionPolicyEvaluator<Data, QueryCacheRecord> createEvictionPolicyEvaluator() {
-        checkEvictionConfig(evictionConfig, false);
+        checkEvictionConfig(evictionConfig, false, false);
         return getEvictionPolicyEvaluator(evictionConfig, classLoader);
     }
 }

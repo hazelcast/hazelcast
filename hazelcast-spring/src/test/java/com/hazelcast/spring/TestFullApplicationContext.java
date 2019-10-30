@@ -61,7 +61,7 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
@@ -169,6 +169,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
@@ -315,8 +316,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
         assertEquals(2, testMapConfig.getBackupCount());
-        assertEquals(EvictionPolicy.NONE, testMapConfig.getEvictionPolicy());
-        assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
+        assertEquals(EvictionPolicy.NONE, testMapConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(Integer.MAX_VALUE, testMapConfig.getEvictionConfig().getSize());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertTrue(testMapConfig.getMerkleTreeConfig().isEnabled());
         assertEquals(20, testMapConfig.getMerkleTreeConfig().getDepth());
@@ -389,8 +390,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicy());
         assertTrue(wanReplicationRef.isRepublishingEnabled());
 
-        assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
-        assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
+        assertEquals(1000, testMapConfig2.getEvictionConfig().getSize());
+        assertEquals(MaxSizePolicy.PER_NODE, testMapConfig2.getEvictionConfig().getMaxSizePolicy());
         assertEquals(2, testMapConfig2.getEntryListenerConfigs().size());
         for (EntryListenerConfig listener : testMapConfig2.getEntryListenerConfigs()) {
             if (listener.getClassName() != null) {
@@ -410,8 +411,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("simpleMap", simpleMapConfig.getName());
         assertEquals(3, simpleMapConfig.getBackupCount());
         assertEquals(1, simpleMapConfig.getAsyncBackupCount());
-        assertEquals(EvictionPolicy.LRU, simpleMapConfig.getEvictionPolicy());
-        assertEquals(10, simpleMapConfig.getMaxSizeConfig().getSize());
+        assertEquals(EvictionPolicy.LRU, simpleMapConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(10, simpleMapConfig.getEvictionConfig().getSize());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
 
         // test that the simpleMapConfig does NOT have a nearCacheConfig
@@ -1233,7 +1234,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertIndexesEqual(queryCacheConfig);
         assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());
         assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
     }
 
@@ -1247,9 +1248,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapNativeMaxSizePolicy() {
         MapConfig mapConfig = config.getMapConfig("map-with-native-max-size-policy");
-        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
 
-        assertEquals(MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE, maxSizeConfig.getMaxSizePolicy());
+        assertEquals(USED_NATIVE_MEMORY_PERCENTAGE, evictionConfig.getMaxSizePolicy());
     }
 
     @Test
@@ -1286,10 +1287,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testMapEvictionPolicies() {
-        assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuEvictionMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruEvictionMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneEvictionMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomEvictionMap").getEvictionPolicy());
+        assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuEvictionMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruEvictionMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneEvictionMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomEvictionMap").getEvictionConfig().getEvictionPolicy());
     }
 
     @Test

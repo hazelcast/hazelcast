@@ -17,11 +17,12 @@
 package com.hazelcast.cache.impl.maxsize.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecordMap;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictionChecker;
 
 /**
  * Cache max-size policy implementation for
- * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy#ENTRY_COUNT}
+ * {@link MaxSizePolicy#ENTRY_COUNT}
  */
 public class EntryCountCacheEvictionChecker
         implements EvictionChecker {

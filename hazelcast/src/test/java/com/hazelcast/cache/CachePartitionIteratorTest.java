@@ -19,7 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -71,7 +71,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         String cacheName = randomString();
         CacheManager cacheManager = cachingProvider.getCacheManager();
         CacheConfig<K, V> config = new CacheConfig<K, V>();
-        config.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
+        config.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
         return (CacheProxy<K, V>) cacheManager.createCache(cacheName, config);
 
     }

@@ -33,11 +33,11 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -385,7 +385,7 @@ public class TestClientApplicationContext {
         assertFalse(queryCacheConfig.isPopulate());
         assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());
         assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
 
         assertEquals(2, queryCacheConfig.getIndexConfigs().size());

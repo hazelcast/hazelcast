@@ -16,11 +16,12 @@
 
 package com.hazelcast.internal.nearcache.impl.maxsize;
 
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
 
 /**
- * Near Cache max-size policy implementation for {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy#ENTRY_COUNT}.
+ * Near Cache max-size policy implementation for {@link MaxSizePolicy#ENTRY_COUNT}.
  * <p>
  * Checks if the Near Cache size is reached to max-size or not.
  *

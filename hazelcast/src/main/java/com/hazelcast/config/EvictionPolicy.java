@@ -15,6 +15,7 @@
  */
 
 package com.hazelcast.config;
+
 /**
  * Eviction Policy enum.
  */
@@ -36,22 +37,19 @@ public enum EvictionPolicy {
      */
     RANDOM(3);
 
-    private final byte id;
+    private static final EvictionPolicy[] VALUES = values();
+
+    private final int id;
 
     EvictionPolicy(int id) {
-        this.id = (byte) id;
+        this.id = id;
     }
 
-    public byte getId() {
+    public int getId() {
         return id;
     }
 
     public static EvictionPolicy getById(int id) {
-        for (EvictionPolicy ep : values()) {
-            if (ep.getId() == id) {
-                return ep;
-            }
-        }
-        throw new IllegalArgumentException("Unsupported ID value");
+        return VALUES[id];
     }
 }

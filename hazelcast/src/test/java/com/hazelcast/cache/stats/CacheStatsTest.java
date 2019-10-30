@@ -24,6 +24,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -737,7 +738,7 @@ public class CacheStatsTest extends CacheTestSupport {
                 .setStatisticsEnabled(true)
                 .setEvictionConfig(
                         new EvictionConfig().setSize(maxEntryCount)
-                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                                 .setEvictionPolicy(EvictionPolicy.LFU)
                 );
 

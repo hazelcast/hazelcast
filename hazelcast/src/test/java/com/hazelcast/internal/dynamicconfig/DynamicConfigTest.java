@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -40,10 +41,8 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
@@ -87,7 +86,8 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static org.junit.Assert.assertEquals;
 
@@ -782,19 +782,19 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     private EvictionConfig getEvictionConfigByPolicy() {
         return new EvictionConfig().setSize(39)
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setEvictionPolicy(EvictionPolicy.RANDOM);
     }
 
     private EvictionConfig getEvictionConfigByClassName() {
         return new EvictionConfig().setSize(39)
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setComparatorClassName("com.hazelcast.Comparator");
     }
 
     private EvictionConfig getEvictionConfigByImplementation() {
         return new EvictionConfig().setSize(39)
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setComparator(new SampleEvictionPolicyComparator());
     }
 
@@ -809,11 +809,10 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     private MapConfig getMapConfig() {
-        return new MapConfig(name)
-                .setAsyncBackupCount(3)
+        MapConfig mapConfig = new MapConfig(name);
+        mapConfig.setAsyncBackupCount(3)
                 .setBackupCount(2)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
-                .setEvictionPolicy(EvictionPolicy.RANDOM)
                 // TODO add merkle tree and journal config when client protocol for map codec is updated
                 //.setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
 //                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
@@ -822,7 +821,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))
-                .setMaxSizeConfig(new MaxSizeConfig(4096, MaxSizeConfig.MaxSizePolicy.PER_NODE))
                 .setTimeToLiveSeconds(220)
                 .setMaxIdleSeconds(110)
                 .setSplitBrainProtectionName(randomString())
@@ -831,6 +829,11 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)
                 .setStatisticsEnabled(false);
+        mapConfig.getEvictionConfig()
+                .setEvictionPolicy(EvictionPolicy.RANDOM)
+                .setSize(4096)
+                .setMaxSizePolicy(PER_NODE);
+        return mapConfig;
     }
 
     private MapConfig getMapConfig_withEntryListenerImplementation() {
@@ -864,7 +867,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setCoalesce(true)
                 .setPredicateConfig(new PredicateConfig("com.hazelcast.Predicate"))
                 .setEvictionConfig(new EvictionConfig().setSize(32)
-                        .setMaximumSizePolicy(ENTRY_COUNT)
+                        .setMaxSizePolicy(ENTRY_COUNT)
                         .setComparatorClassName("com.hazelcast.Comparator"));
     }
 

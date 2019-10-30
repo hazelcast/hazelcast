@@ -65,7 +65,7 @@ import java.util.Set;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static org.junit.Assert.assertEquals;
@@ -389,7 +389,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEvictionConfig(
                         new EvictionConfig()
                                 .setEvictionPolicy(LFU)
-                                .setMaximumSizePolicy(USED_NATIVE_MEMORY_SIZE)
+                                .setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE)
                                 //Comparator class name cannot set via xml
                                 //see https://github.com/hazelcast/hazelcast/issues/14093
                                 //.setComparatorClassName(randomString())
@@ -416,7 +416,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setEvictionConfig(
                         new EvictionConfig()
                                 .setEvictionPolicy(LFU)
-                                .setMaximumSizePolicy(USED_NATIVE_MEMORY_SIZE)
+                                .setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE)
                                 //Comparator class name cannot set via xml
                                 //see https://github.com/hazelcast/hazelcast/issues/14093
                                 //.setComparatorClassName(randomString())

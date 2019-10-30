@@ -20,8 +20,8 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
@@ -108,7 +108,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
 
     protected <K, V> CacheConfig<K, V> getCacheConfigWithMaxSize(int maxCacheSize) {
         CacheConfig<K, V> config = createCacheConfig();
-        config.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        config.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         config.getEvictionConfig().setSize(maxCacheSize);
         return config;
     }

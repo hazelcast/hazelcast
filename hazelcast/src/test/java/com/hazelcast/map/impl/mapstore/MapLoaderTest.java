@@ -23,21 +23,22 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.MapStoreFactory;
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.query.Predicate;
@@ -49,7 +50,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.EmptyStatement;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -72,7 +72,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
@@ -662,22 +661,18 @@ public class MapLoaderTest extends HazelcastTestSupport {
         int partitionCount = 10;
         int entriesCount = 1000000;
 
-        MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
-                .setMaxSizePolicy(PER_PARTITION)
-                .setSize(sizePerPartition);
-
         MapStoreConfig storeConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
                 .setImplementation(new SimpleLoader(entriesCount));
-
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
 
-        config.getMapConfig(mapName)
-                .setEvictionPolicy(EvictionPolicy.LRU)
-                .setMaxSizeConfig(maxSizeConfig)
-                .setMapStoreConfig(storeConfig);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setMapStoreConfig(storeConfig);
+        mapConfig.getEvictionConfig()
+                .setMaxSizePolicy(MaxSizePolicy.PER_PARTITION)
+                .setSize(sizePerPartition).setEvictionPolicy(EvictionPolicy.LRU);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap imap = instance.getMap(mapName);

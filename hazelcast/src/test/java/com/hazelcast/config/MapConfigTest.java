@@ -45,7 +45,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -102,27 +101,31 @@ public class MapConfigTest {
 
     @Test
     public void testGetMaxSize() {
-        assertEquals(MaxSizeConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
+        assertEquals(MapConfig.DEFAULT_MAX_SIZE,
+                new MapConfig().getEvictionConfig().getSize());
     }
 
     @Test
     public void testSetMaxSize() {
-        assertEquals(1234, new MapConfig().getMaxSizeConfig().setSize(1234).getSize());
+        assertEquals(1234, new MapConfig().getEvictionConfig().setSize(1234).getSize());
     }
 
-    @Test
-    public void testSetMaxSizeMustBePositive() {
-        assertTrue(new MapConfig().getMaxSizeConfig().setSize(-1).getSize() > 0);
+    @Test(expected = IllegalArgumentException.class)
+    public void setting_max_size_to_a_negative_value_throws_exception() {
+        new MapConfig().getEvictionConfig().setSize(-1);
     }
 
     @Test
     public void testGetEvictionPolicy() {
-        assertEquals(MapConfig.DEFAULT_EVICTION_POLICY, new MapConfig().getEvictionPolicy());
+        assertEquals(MapConfig.DEFAULT_EVICTION_POLICY,
+                new MapConfig().getEvictionConfig().getEvictionPolicy());
     }
 
     @Test
     public void testSetEvictionPolicy() {
-        assertEquals(EvictionPolicy.LRU, new MapConfig().setEvictionPolicy(EvictionPolicy.LRU).getEvictionPolicy());
+        assertEquals(EvictionPolicy.LRU, new MapConfig().getEvictionConfig()
+                .setEvictionPolicy(EvictionPolicy.LRU)
+                .getEvictionPolicy());
     }
 
     @Test
@@ -323,35 +326,35 @@ public class MapConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapConfig.class)
-                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(MaxSizeConfig.class,
-                              new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),
-                              new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_NODE))
-                      .withPrefabValues(MapStoreConfig.class,
-                              new MapStoreConfig().setEnabled(true).setClassName("red"),
-                              new MapStoreConfig().setEnabled(true).setClassName("black"))
-                      .withPrefabValues(NearCacheConfig.class,
-                              new NearCacheConfig().setTimeToLiveSeconds(10)
-                                                   .setMaxIdleSeconds(20)
-                                                   .setInvalidateOnChange(false)
-                                                   .setInMemoryFormat(InMemoryFormat.BINARY),
-                              new NearCacheConfig().setTimeToLiveSeconds(15)
-                                                   .setMaxIdleSeconds(25)
-                                                   .setInvalidateOnChange(true)
-                                                   .setInMemoryFormat(InMemoryFormat.OBJECT))
-                      .withPrefabValues(WanReplicationRef.class,
-                              new WanReplicationRef().setName("red"),
-                              new WanReplicationRef().setName("black"))
-                      .withPrefabValues(PartitioningStrategyConfig.class,
-                              new PartitioningStrategyConfig("red"),
-                              new PartitioningStrategyConfig("black"))
-                      .withPrefabValues(MapConfigReadOnly.class,
-                              new MapConfigReadOnly(new MapConfig("red")),
-                              new MapConfigReadOnly(new MapConfig("black")))
-                      .withPrefabValues(MergePolicyConfig.class,
-                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                      .verify();
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .withPrefabValues(EvictionConfig.class,
+                        new EvictionConfig().setSize(300).setMaxSizePolicy(MaxSizePolicy.PER_PARTITION),
+                        new EvictionConfig().setSize(100).setMaxSizePolicy(MaxSizePolicy.PER_NODE))
+                .withPrefabValues(MapStoreConfig.class,
+                        new MapStoreConfig().setEnabled(true).setClassName("red"),
+                        new MapStoreConfig().setEnabled(true).setClassName("black"))
+                .withPrefabValues(NearCacheConfig.class,
+                        new NearCacheConfig().setTimeToLiveSeconds(10)
+                                .setMaxIdleSeconds(20)
+                                .setInvalidateOnChange(false)
+                                .setInMemoryFormat(InMemoryFormat.BINARY),
+                        new NearCacheConfig().setTimeToLiveSeconds(15)
+                                .setMaxIdleSeconds(25)
+                                .setInvalidateOnChange(true)
+                                .setInMemoryFormat(InMemoryFormat.OBJECT))
+                .withPrefabValues(WanReplicationRef.class,
+                        new WanReplicationRef().setName("red"),
+                        new WanReplicationRef().setName("black"))
+                .withPrefabValues(PartitioningStrategyConfig.class,
+                        new PartitioningStrategyConfig("red"),
+                        new PartitioningStrategyConfig("black"))
+                .withPrefabValues(MapConfigReadOnly.class,
+                        new MapConfigReadOnly(new MapConfig("red")),
+                        new MapConfigReadOnly(new MapConfig("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                .verify();
     }
 
     @Test

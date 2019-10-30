@@ -48,7 +48,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -94,7 +94,7 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setInMemoryFormat(inMemoryFormat);
         if (inMemoryFormat == NATIVE) {
-            cacheConfig.getEvictionConfig().setMaximumSizePolicy(USED_NATIVE_MEMORY_SIZE);
+            cacheConfig.getEvictionConfig().setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE);
         }
         cacheConfig.setStatisticsEnabled(true);
         cacheConfig.getMergePolicyConfig().setPolicy(mergePolicyClass.getName());

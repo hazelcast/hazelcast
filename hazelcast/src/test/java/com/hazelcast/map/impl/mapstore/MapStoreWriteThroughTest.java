@@ -17,10 +17,10 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -88,11 +88,12 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
-        MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
-        maxSizeConfig.setSize(size);
+
         MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        mapConfig.setMaxSizeConfig(maxSizeConfig);
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
+        evictionConfig.setSize(size);
+
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
