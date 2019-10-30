@@ -34,7 +34,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.map.IMap;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 
 import javax.annotation.Nonnull;
@@ -43,58 +43,110 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Contains the configuration for an {@link IMap} (read-only).
+ * Read only equivalent of {@link MapConfig}
+ *
+ * @see MapConfig
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:executablestatementcount"})
 public class MapConfigReadOnly extends MapConfig {
+
+    private final MaxSizeConfigReadOnly maxSizeConfigReadOnly;
+    private final WanReplicationRefReadOnly wanReplicationRefReadOnly;
+    private final MapStoreConfigReadOnly mapStoreConfigReadOnly;
+    private final NearCacheConfigReadOnly nearCacheConfigReadOnly;
+    private final HotRestartConfigReadOnly hotRestartConfigReadOnly;
+    private final EventJournalConfigReadOnly eventJournalConfigReadOnly;
+    private final MerkleTreeConfigReadOnly merkleTreeConfigReadOnly;
+    private final PartitioningStrategyConfigReadOnly partitioningStrategyConfigReadOnly;
+    private final List<IndexConfig> indexConfigReadOnly;
+    private final List<MapPartitionLostListenerConfig> partitionLostListenerConfigsReadOnly;
+    private final List<QueryCacheConfig> queryCacheConfigsReadOnly;
+    private final List<EntryListenerConfig> entryListenerConfigsReadOnly;
 
     public MapConfigReadOnly(MapConfig config) {
         super(config);
+
+        MaxSizeConfig maxSizeConfig = super.getMaxSizeConfig();
+        maxSizeConfigReadOnly = maxSizeConfig == null
+                ? null : new MaxSizeConfigReadOnly(maxSizeConfig);
+
+        WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
+        wanReplicationRefReadOnly = wanReplicationRef == null
+                ? null : new WanReplicationRefReadOnly(wanReplicationRef);
+
+        MapStoreConfig mapStoreConfig = super.getMapStoreConfig();
+        mapStoreConfigReadOnly = mapStoreConfig == null
+                ? null : new MapStoreConfigReadOnly(mapStoreConfig);
+
+        NearCacheConfig nearCacheConfig = super.getNearCacheConfig();
+        nearCacheConfigReadOnly = nearCacheConfig == null
+                ? null : new NearCacheConfigReadOnly(nearCacheConfig);
+
+        HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
+        hotRestartConfigReadOnly = new HotRestartConfigReadOnly(hotRestartConfig);
+
+        EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
+        eventJournalConfigReadOnly = new EventJournalConfigReadOnly(eventJournalConfig);
+
+        MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
+        merkleTreeConfigReadOnly = new MerkleTreeConfigReadOnly(merkleTreeConfig);
+
+        PartitioningStrategyConfig partitioningStrategyConfig = super.getPartitioningStrategyConfig();
+        partitioningStrategyConfigReadOnly = partitioningStrategyConfig == null
+                ? null : new PartitioningStrategyConfigReadOnly(partitioningStrategyConfig);
+
+        indexConfigReadOnly = getIndexConfigReadOnly();
+        partitionLostListenerConfigsReadOnly = getPartitionLostListenerConfigsReadOnly();
+        queryCacheConfigsReadOnly = getQueryCacheConfigsReadOnly();
+        entryListenerConfigsReadOnly = getEntryListenerConfigsReadOnly();
     }
 
-    @Override
-    public MaxSizeConfig getMaxSizeConfig() {
-        final MaxSizeConfig maxSizeConfig = super.getMaxSizeConfig();
-        if (maxSizeConfig == null) {
-            return null;
+    private List<EntryListenerConfig> getEntryListenerConfigsReadOnly() {
+        List<EntryListenerConfig> entryListenerConfigs = super.getEntryListenerConfigs();
+        if (CollectionUtil.isEmpty(entryListenerConfigs)) {
+            return Collections.emptyList();
         }
-        return new MaxSizeConfigReadOnly(maxSizeConfig);
-    }
 
-    @Override
-    public WanReplicationRef getWanReplicationRef() {
-        final WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
-        if (wanReplicationRef == null) {
-            return null;
+        List<EntryListenerConfig> readOnlyEntryListenerConfigs = new ArrayList<>(entryListenerConfigs.size());
+        for (EntryListenerConfig entryListenerConfig : entryListenerConfigs) {
+            readOnlyEntryListenerConfigs.add(new EntryListenerConfigReadOnly(entryListenerConfig));
         }
-        return new WanReplicationRefReadOnly(wanReplicationRef);
+        return Collections.unmodifiableList(readOnlyEntryListenerConfigs);
     }
 
-    @Override
-    public List<EntryListenerConfig> getEntryListenerConfigs() {
-        final List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
-        final List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
-        for (EntryListenerConfig listenerConfig : listenerConfigs) {
-            readOnlyListenerConfigs.add(new EntryListenerConfigReadOnly(listenerConfig));
+    private List<QueryCacheConfig> getQueryCacheConfigsReadOnly() {
+        List<QueryCacheConfig> queryCacheConfigs = super.getQueryCacheConfigs();
+        if (CollectionUtil.isEmpty(queryCacheConfigs)) {
+            return Collections.emptyList();
         }
-        return Collections.unmodifiableList(readOnlyListenerConfigs);
+
+        List<QueryCacheConfig> readOnlyOnes = new ArrayList<>(queryCacheConfigs.size());
+        for (QueryCacheConfig queryCacheConfig : queryCacheConfigs) {
+            readOnlyOnes.add(new QueryCacheConfigReadOnly(queryCacheConfig));
+        }
+        return Collections.unmodifiableList(readOnlyOnes);
     }
 
-    @Override
-    public List<MapPartitionLostListenerConfig> getPartitionLostListenerConfigs() {
-        final List<MapPartitionLostListenerConfig> listenerConfigs = super.getPartitionLostListenerConfigs();
-        final List<MapPartitionLostListenerConfig> readOnlyListenerConfigs =
-                new ArrayList<MapPartitionLostListenerConfig>(listenerConfigs.size());
+    private List<MapPartitionLostListenerConfig> getPartitionLostListenerConfigsReadOnly() {
+        List<MapPartitionLostListenerConfig> listenerConfigs = super.getPartitionLostListenerConfigs();
+        if (CollectionUtil.isEmpty(listenerConfigs)) {
+            return Collections.emptyList();
+        }
+
+        List<MapPartitionLostListenerConfig> readOnlyListenerConfigs = new ArrayList<>(listenerConfigs.size());
         for (MapPartitionLostListenerConfig listenerConfig : listenerConfigs) {
             readOnlyListenerConfigs.add(new MapPartitionLostListenerConfigReadOnly(listenerConfig));
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
 
-    @Override
-    public List<IndexConfig> getIndexConfigs() {
-        final List<IndexConfig> indexConfigs = super.getIndexConfigs();
-        final List<IndexConfig> readOnlyIndexConfigs = new ArrayList<>(indexConfigs.size());
+    private List<IndexConfig> getIndexConfigReadOnly() {
+        List<IndexConfig> indexConfigs = super.getIndexConfigs();
+        if (CollectionUtil.isEmpty(indexConfigs)) {
+            return Collections.emptyList();
+        }
+
+        List<IndexConfig> readOnlyIndexConfigs = new ArrayList<>(indexConfigs.size());
         for (IndexConfig indexConfig : indexConfigs) {
             readOnlyIndexConfigs.add(new IndexConfigReadOnly(indexConfig));
         }
@@ -102,47 +154,66 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
+    public MaxSizeConfig getMaxSizeConfig() {
+        return maxSizeConfigReadOnly;
+    }
+
+    @Override
+    public WanReplicationRef getWanReplicationRef() {
+        return wanReplicationRefReadOnly;
+    }
+
+    @Override
+    public List<EntryListenerConfig> getEntryListenerConfigs() {
+        return entryListenerConfigsReadOnly;
+    }
+
+    @Override
+    public List<MapPartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        return partitionLostListenerConfigsReadOnly;
+    }
+
+    @Override
+    public List<IndexConfig> getIndexConfigs() {
+        return indexConfigReadOnly;
+    }
+
+    @Override
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {
-        final PartitioningStrategyConfig partitioningStrategyConfig = super.getPartitioningStrategyConfig();
-        if (partitioningStrategyConfig == null) {
-            return null;
-        }
-        return new PartitioningStrategyConfigReadOnly(partitioningStrategyConfig);
+        return partitioningStrategyConfigReadOnly;
     }
 
     @Override
     public MapStoreConfig getMapStoreConfig() {
-        final MapStoreConfig mapStoreConfig = super.getMapStoreConfig();
-        if (mapStoreConfig == null) {
-            return null;
-        }
-        return new MapStoreConfigReadOnly(mapStoreConfig);
+        return mapStoreConfigReadOnly;
     }
 
     @Override
     public NearCacheConfig getNearCacheConfig() {
-        final NearCacheConfig nearCacheConfig = super.getNearCacheConfig();
-        if (nearCacheConfig == null) {
-            return null;
-        }
-        return new NearCacheConfigReadOnly(nearCacheConfig);
+        return nearCacheConfigReadOnly;
     }
 
     @Override
     public List<QueryCacheConfig> getQueryCacheConfigs() {
-        List<QueryCacheConfig> queryCacheConfigs = super.getQueryCacheConfigs();
-        List<QueryCacheConfig> readOnlyOnes = new ArrayList<QueryCacheConfig>(queryCacheConfigs.size());
-        for (QueryCacheConfig config : queryCacheConfigs) {
-            readOnlyOnes.add(new QueryCacheConfigReadOnly(config));
-        }
-        return Collections.unmodifiableList(readOnlyOnes);
+        return queryCacheConfigsReadOnly;
     }
 
     @Nonnull
     @Override
     public MerkleTreeConfig getMerkleTreeConfig() {
-        final MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
-        return new MerkleTreeConfigReadOnly(merkleTreeConfig);
+        return merkleTreeConfigReadOnly;
+    }
+
+    @Nonnull
+    @Override
+    public EventJournalConfig getEventJournalConfig() {
+        return eventJournalConfigReadOnly;
+    }
+
+    @Nonnull
+    @Override
+    public HotRestartConfig getHotRestartConfig() {
+        return hotRestartConfigReadOnly;
     }
 
     @Override
@@ -150,23 +221,9 @@ public class MapConfigReadOnly extends MapConfig {
         throw throwReadOnly();
     }
 
-    @Nonnull
-    @Override
-    public EventJournalConfig getEventJournalConfig() {
-        final EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
-        return new EventJournalConfigReadOnly(eventJournalConfig);
-    }
-
     @Override
     public MapConfig setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
         throw throwReadOnly();
-    }
-
-    @Nonnull
-    @Override
-    public HotRestartConfig getHotRestartConfig() {
-        final HotRestartConfig hotRestartConfig = super.getHotRestartConfig();
-        return new HotRestartConfigReadOnly(hotRestartConfig);
     }
 
     @Override
