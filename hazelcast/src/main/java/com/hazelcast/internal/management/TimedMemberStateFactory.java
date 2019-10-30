@@ -232,7 +232,7 @@ public class TimedMemberStateFactory {
         memberState.setClusterHotRestartStatus(state);
     }
 
-    private void createNodeState(MemberStateImpl memberState) {
+    protected void createNodeState(MemberStateImpl memberState) {
         Node node = instance.node;
         ClusterService cluster = instance.node.clusterService;
         NodeStateImpl nodeState = new NodeStateImpl(cluster.getClusterState(), node.getState(),
