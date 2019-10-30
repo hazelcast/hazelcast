@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.journal;
+package com.hazelcast.map.journal;
 
 import com.hazelcast.core.EntryEventType;
 

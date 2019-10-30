@@ -22,6 +22,7 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.ringbuffer.ReadResultSet;
 
 import java.util.Map;

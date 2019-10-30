@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.internal.journal.DeserializingEntry;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 

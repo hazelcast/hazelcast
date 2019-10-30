@@ -23,6 +23,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

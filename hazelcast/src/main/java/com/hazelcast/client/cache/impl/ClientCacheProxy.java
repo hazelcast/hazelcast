@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
