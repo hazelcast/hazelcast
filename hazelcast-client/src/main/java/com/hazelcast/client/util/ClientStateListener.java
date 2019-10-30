@@ -65,7 +65,8 @@ public class ClientStateListener
             currentState = event.getState();
             if (currentState.equals(CLIENT_CONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
                 connectedCondition.signalAll();
-            } else if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState
+            }
+            if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState
                     .equals(SHUTDOWN)) {
                 disconnectedCondition.signalAll();
             }
