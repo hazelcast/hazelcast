@@ -27,6 +27,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryEvictedListener;
@@ -47,7 +48,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,6 +74,7 @@ import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryIn
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.query.SampleTestObjects.Employee;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -207,32 +208,41 @@ public class EvictionTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
-        // make the cleaner task as aggressive as possible
-        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
+        // "disable" the cleaner task
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, Integer.toString(MAX_VALUE));
 
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Employee> map = node.getMap(mapName);
         map.addIndex(ordered ? IndexType.SORTED : IndexType.HASH, "city");
 
-        for (int i = 0; i < 5; ++i) {
+        int entries = 5;
+        Map<Integer, Long> lastAccessTimes = new HashMap<>();
+        for (int i = 0; i < entries; ++i) {
             String cityName = i % 2 == 0 ? "cityname" : null;
 
             Employee emp = new Employee(i, "name" + i, cityName, 0, true, i);
-            map.put(i, emp, 0L, SECONDS, 14L, SECONDS);
+            map.put(i, emp, 0L, SECONDS, 60L, SECONDS);
+            // we do get to set the last access time
+            map.get(i);
+            EntryView view = map.getEntryView(i);
+            long lastAccessTime = view.getLastAccessTime();
+            assertTrue(lastAccessTime > 0);
+            lastAccessTimes.put(i, lastAccessTime);
         }
+
+        sleepSeconds(1);
 
         EntryObject entryObject = new PredicateBuilderImpl().getEntryObject();
         Predicate predicateCityNull = entryObject.get("city").isNull();
-        // Touch the map entry though the index to make sure expiration cleaning task
-        // doesn't evict it.
-        assertTrueAllTheTime(() -> {
-            assertTrue(map.containsKey(0));
-            Collection<Employee> valuesNullCity = map.values(predicateCityNull);
-            assertEquals(2, valuesNullCity.size());
-
-            Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
-            assertEquals(3, valuesNotNullCity.size());
-        }, 30);
+        Collection<Employee> valuesNullCity = map.values(predicateCityNull);
+        Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
+        assertEquals(entries, valuesNullCity.size() + valuesNotNullCity.size());
+        // check that evaluating the predicate updated the last access time of the returned records
+        for (int i = 0; i < entries; ++i) {
+            EntryView view = map.getEntryView(i);
+            assertNotNull(view);
+            assertTrue(view.getLastAccessTime() > lastAccessTimes.get(i));
+        }
     }
 
     /**
