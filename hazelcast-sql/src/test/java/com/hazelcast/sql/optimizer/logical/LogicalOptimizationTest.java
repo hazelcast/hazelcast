@@ -81,18 +81,21 @@ public class LogicalOptimizationTest {
 
         RootLogicalRel root = assertRoot(node);
 
-        // TODO: Clear table type: scan should use only "f2".
         assertScan(root.getInput(), list("f1", "f2"), list(1), null);
     }
 
     @Test
     public void testProjectProjectFilterIntoScan() {
-        LogicalRel node = optimize("SELECT f2 + 1 FROM (SELECT f1, f2 FROM p WHERE f3 > 1)");
+        LogicalRel node = optimize("SELECT f2 FROM (SELECT f1, f2 FROM p WHERE f3 > 1)");
 
         RootLogicalRel root = assertRoot(node);
 
-        // TODO: Clear table type: scan should use only "f2".
-        assertScan(root.getInput(), list("f1", "f2"), list(1), null);
+        assertScan(
+            root.getInput(),
+            list("f3", "f1", "f2"),
+            list(2),
+            new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+        );
     }
 
     @Test
@@ -104,15 +107,15 @@ public class LogicalOptimizationTest {
         ProjectLogicalRel project = assertProject(
             root.getInput(),
             list(
-                new PlusMinusFunction(new ColumnExpression(1), new ColumnExpression(2), false),
-                new ColumnExpression(2)
+                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
+                new ColumnExpression(1)
             )
         );
 
         assertScan(
             project.getInput(),
             list("f3", "f1", "f2"),
-            list(0, 1, 2),
+            list(1, 2),
             new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
         );
     }
@@ -142,7 +145,7 @@ public class LogicalOptimizationTest {
         return assertClass(node, RootLogicalRel.class);
     }
 
-    private static MapScanLogicalRel assertScan(RelNode node, List<String> expFields, List<Integer> expProjects, Expression expFilter) {
+    private static void assertScan(RelNode node, List<String> expFields, List<Integer> expProjects, Expression expFilter) {
         MapScanLogicalRel scan = assertClass(node, MapScanLogicalRel.class);
 
         assertFields(expFields, scan.getTable().getRowType().getFieldNames());
@@ -151,8 +154,6 @@ public class LogicalOptimizationTest {
         Expression filter = scan.getFilter() != null ? scan.getFilter().accept(ExpressionConverterRexVisitor.INSTANCE) : null;
 
         assertEquals(expFilter, filter);
-
-        return scan;
     }
 
     private static void assertFields(List<String> expFields, List<String> fields) {
@@ -198,22 +199,7 @@ public class LogicalOptimizationTest {
         return (T)rel;
     }
 
-    private static List<String> list(String... fields) {
-        if (fields == null) {
-            return new ArrayList<>();
-        } else {
-            return new ArrayList<>(Arrays.asList(fields));
-        }
-    }
-
-    private static List<Integer> list(Integer... projects) {
-        if (projects == null) {
-            return new ArrayList<>();
-        } else {
-            return new ArrayList<>(Arrays.asList(projects));
-        }
-    }
-
+    @SuppressWarnings("unchecked")
     private static <T> List<T> list(T... vals) {
         if (vals == null) {
             return new ArrayList<>();
@@ -243,9 +229,18 @@ public class LogicalOptimizationTest {
         return OptimizerContext.create(rootSchema, 1);
     }
 
+    /**
+     * Result of the last call to optimizer. Not used directly. You may look at it in the debugger if needed.
+     */
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static class LastCall {
+        /** SQL node. */
         private final SqlNode node;
+
+        /** Original rel. */
         private final RelNode converted;
+
+        /** Optimized logical rel. */
         private final LogicalRel logical;
 
         public LastCall(SqlNode node, RelNode converted, LogicalRel logical) {
@@ -254,6 +249,4 @@ public class LogicalOptimizationTest {
             this.logical = logical;
         }
     }
-
-
 }

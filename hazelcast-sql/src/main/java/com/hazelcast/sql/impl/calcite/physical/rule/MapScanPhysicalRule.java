@@ -62,7 +62,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
         HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
 
-        List<Integer> projects = scan.getProjects() != null ? scan.getProjects() : scan.identity();
+        List<Integer> projects = scan.getProjects();
 
         PhysicalRel newScan;
 

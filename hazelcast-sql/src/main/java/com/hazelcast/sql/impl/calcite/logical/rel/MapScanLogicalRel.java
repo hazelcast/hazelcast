@@ -63,6 +63,8 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
 
     @Override
     public final RelWriter explainTerms(RelWriter pw) {
+        List<Integer> projects = getProjects();
+
         return super.explainTerms(pw)
             .itemIf("projects", projects, projects != null && !projects.isEmpty())
             .itemIf("filter", filter, filter != null);
@@ -73,9 +75,7 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
         RelDataTypeFactory.Builder builder = getCluster().getTypeFactory().builder();
         List<RelDataTypeField> fieldList = table.getRowType().getFieldList();
 
-        List<Integer> projects0 = projects != null ? projects : identity();
-
-        for (int project : projects0) {
+        for (int project : getProjects()) {
             builder.add(fieldList.get(project));
         }
 
@@ -83,7 +83,7 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
     }
 
     public List<Integer> getProjects() {
-        return projects;
+        return projects != null ? projects : identity();
     }
 
     public RexNode getFilter() {
@@ -112,7 +112,7 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
             filterRowCount = filterRowCount * filterSelectivity;
         }
 
-        int expressionCount = projects != null ? projects.size() : table.getRowType().getFieldCount();
+        int expressionCount = getProjects().size();
 
         double projectCpu = filterRowCount * expressionCount;
 
@@ -129,8 +129,13 @@ public class MapScanLogicalRel extends TableScan implements LogicalRel {
     @Override
     public double estimateRowCount(RelMetadataQuery mq) {
         double rowCount = super.estimateRowCount(mq);
-        double selectivity = mq.getSelectivity(this, filter);
 
-        return rowCount * selectivity;
+        if (filter != null) {
+            double selectivity = mq.getSelectivity(this, filter);
+
+            rowCount = rowCount * selectivity;
+        }
+
+        return rowCount;
     }
 }
