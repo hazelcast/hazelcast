@@ -285,7 +285,7 @@ class MockNetworkingService
 
         @Override
         public NetworkStats getNetworkStats() {
-            return null;
+            return new MockNetworkStats();
         }
 
         private class MockConnLifecycleListener
@@ -334,6 +334,20 @@ class MockNetworkingService
                 }
                 send(packet, target, this);
             }
+        }
+
+        private static class MockNetworkStats implements NetworkStats {
+
+            @Override
+            public long getBytesReceived() {
+                return 0;
+            }
+
+            @Override
+            public long getBytesSent() {
+                return 0;
+            }
+
         }
     }
 

@@ -25,6 +25,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.monitor.HotRestartState;
@@ -106,6 +107,11 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         Map<UUID, String> clientStats = new HashMap<>();
         clientStats.put(clientUuid, "someStats");
 
+        AdvancedNetworkStatsDTO inboundNetworkStats = new AdvancedNetworkStatsDTO();
+        inboundNetworkStats.incBytesTransceived(ProtocolType.MEMBER, 42);
+        AdvancedNetworkStatsDTO outboundNetworkStats = new AdvancedNetworkStatsDTO();
+        outboundNetworkStats.incBytesTransceived(ProtocolType.MEMBER, 24);
+
         Map<EndpointQualifier, Address> endpoints = new HashMap<>();
         endpoints.put(EndpointQualifier.MEMBER, new Address("127.0.0.1", 5701));
         endpoints.put(EndpointQualifier.resolve(ProtocolType.WAN, "MyWAN"), new Address("127.0.0.1", 5901));
@@ -138,6 +144,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setHotRestartState(hotRestartState);
         memberState.setWanSyncState(wanSyncState);
         memberState.setClientStats(clientStats);
+        memberState.setInboundNetworkStats(inboundNetworkStats);
+        memberState.setOutboundNetworkStats(outboundNetworkStats);
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -203,5 +211,10 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         Map<UUID, String> deserializedClientStats = deserialized.getClientStats();
         assertEquals("someStats", deserializedClientStats.get(clientUuid));
+
+        assertNotNull(deserialized.getInboundNetworkStats());
+        assertEquals(42, deserialized.getInboundNetworkStats().getBytesTransceived(ProtocolType.MEMBER));
+        assertNotNull(deserialized.getOutboundNetworkStats());
+        assertEquals(24, deserialized.getOutboundNetworkStats().getBytesTransceived(ProtocolType.MEMBER));
     }
 }
