@@ -34,6 +34,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.PartitioningStrategyFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -77,6 +78,8 @@ public class ClientContext {
         }
     };
     private final String name;
+    private final PartitioningStrategyFactory partitioningStrategyFactory;
+
 
     public ClientContext(HazelcastClientInstanceImpl client) {
         this.name = client.getName();
@@ -98,6 +101,7 @@ public class ClientContext {
         this.localUuid = clientConnectionManager.getClientUuid();
         this.minimalPartitionService = new ClientMinimalPartitionService();
         this.queryCacheContext = client.getQueryCacheContext();
+        this.partitioningStrategyFactory = new PartitioningStrategyFactory(client.getClientConfig().getClassLoader());
     }
 
     public ClientQueryCacheContext getQueryCacheContext() {
@@ -218,6 +222,10 @@ public class ClientContext {
 
     public ClientConfig getClientConfig() {
         return clientConfig;
+    }
+
+    public PartitioningStrategyFactory getPartitioningStrategyFactory() {
+        return partitioningStrategyFactory;
     }
 
     public boolean isActive() {

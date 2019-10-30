@@ -678,7 +678,7 @@ abstract class MapProxySupport<K, V>
 
     protected boolean setTtlInternal(Object key, long ttl, TimeUnit timeUnit) {
         long ttlInMillis = timeUnit.toMillis(ttl);
-        Data keyData = serializationService.toData(key);
+        Data keyData = toDataWithStrategy(key);
         MapOperation operation = operationProvider.createSetTtlOperation(name, keyData, ttlInMillis);
         return (Boolean) invokeOperation(keyData, operation);
     }
