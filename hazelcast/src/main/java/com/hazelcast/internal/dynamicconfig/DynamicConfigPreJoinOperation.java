@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

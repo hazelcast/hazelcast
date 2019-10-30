@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+
 /**
  * The AWSConfig contains the configuration for AWS join mechanism.
  * <p>

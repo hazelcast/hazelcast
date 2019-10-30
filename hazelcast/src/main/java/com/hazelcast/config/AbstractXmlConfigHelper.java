@@ -22,6 +22,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -136,7 +137,8 @@ public abstract class AbstractXmlConfigHelper {
         return inputStream;
     }
 
-    protected String getReleaseVersion() {
+    @PrivateApi
+    public String getReleaseVersion() {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         String[] versionTokens = StringUtil.tokenizeVersionString(buildInfo.getVersion());
         return versionTokens[0] + "." + versionTokens[1];

@@ -36,7 +36,7 @@ import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitio
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 
 import java.security.Permission;
 import java.util.Collection;

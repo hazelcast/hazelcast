@@ -28,8 +28,8 @@ import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
-import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.partition.PartitionAwareService;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.PartitionAwareService;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 

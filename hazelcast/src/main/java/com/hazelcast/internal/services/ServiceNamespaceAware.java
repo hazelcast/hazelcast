@@ -18,7 +18,7 @@ package com.hazelcast.internal.services;
 
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 
 /**
  * An object which is aware of {@link ServiceNamespace} which object itself belongs to.

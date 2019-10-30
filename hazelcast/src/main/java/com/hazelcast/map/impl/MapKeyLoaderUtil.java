@@ -18,7 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UnmodifiableIterator;
 

@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;

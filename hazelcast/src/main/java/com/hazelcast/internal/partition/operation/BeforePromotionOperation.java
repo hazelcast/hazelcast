@@ -22,8 +22,8 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation.PromotionOperationCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.ReplicaMigrationEvent;
-import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 
 /**
  * Runs locally when the node becomes owner of a partition, before applying a promotion result to the partition table.

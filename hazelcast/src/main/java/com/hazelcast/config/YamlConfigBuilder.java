@@ -16,12 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigSections;
+import com.hazelcast.internal.config.YamlConfigLocator;
+import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -105,6 +109,7 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
      *
      * @param locator the configured locator to use
      */
+    @PrivateApi
     public YamlConfigBuilder(YamlConfigLocator locator) {
         if (locator == null) {
             locator = new YamlConfigLocator();
@@ -142,7 +147,7 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
         }
 
-        YamlNode imdgRoot = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.name);
+        YamlNode imdgRoot = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.getName());
         if (imdgRoot == null) {
             imdgRoot = yamlRootNode;
         }
@@ -163,6 +168,6 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
 
     @Override
     protected String getConfigRoot() {
-        return ConfigSections.HAZELCAST.name;
+        return ConfigSections.HAZELCAST.getName();
     }
 }

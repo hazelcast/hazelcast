@@ -41,7 +41,7 @@ com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook
 com.hazelcast.internal.usercodedeployment.impl.UserCodeDeploymentSerializerHook
 com.hazelcast.aggregation.impl.AggregatorDataSerializerHook
 com.hazelcast.projection.impl.ProjectionDataSerializerHook
-com.hazelcast.config.ConfigDataSerializerHook
+com.hazelcast.internal.config.ConfigDataSerializerHook
 com.hazelcast.internal.journal.EventJournalDataSerializerHook
 com.hazelcast.flakeidgen.impl.FlakeIdGeneratorDataSerializerHook
 com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook

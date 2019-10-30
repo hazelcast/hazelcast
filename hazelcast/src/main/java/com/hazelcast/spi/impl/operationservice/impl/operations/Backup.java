@@ -45,7 +45,7 @@ import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
-import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 
 public final class Backup extends Operation implements BackupOperation, AllowedDuringPassiveState,
         IdentifiedDataSerializable {

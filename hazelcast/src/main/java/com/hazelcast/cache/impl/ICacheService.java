@@ -23,7 +23,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.internal.services.ManagedService;

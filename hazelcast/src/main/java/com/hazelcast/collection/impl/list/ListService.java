@@ -23,7 +23,7 @@ import com.hazelcast.collection.impl.txnlist.TransactionalListProxy;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.internal.util.ConstructorFunction;

@@ -25,7 +25,6 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 import java.io.IOException;
 

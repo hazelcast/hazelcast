@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.io.Serializable;

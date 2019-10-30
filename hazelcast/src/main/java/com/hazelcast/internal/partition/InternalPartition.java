@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.spi.partition.IPartition;
-
 import java.util.stream.IntStream;
 
 public interface InternalPartition extends IPartition {
