@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.config;
 
-import com.hazelcast.config.AbstractDomConfigProcessor;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.config.AbstractDomConfigProcessor;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -27,11 +27,11 @@ import org.w3c.dom.Node;
 
 import java.util.Optional;
 
-import static com.hazelcast.config.DomConfigHelper.childElements;
-import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.config.DomConfigHelper.getLongValue;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.jet.impl.config.JetConfigSections.EDGE_DEFAULTS;
 import static com.hazelcast.jet.impl.config.JetConfigSections.IMPORT;
 import static com.hazelcast.jet.impl.config.JetConfigSections.INSTANCE;

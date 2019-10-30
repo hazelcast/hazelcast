@@ -136,7 +136,7 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
     }
 
     @Override
-    protected String getReleaseVersion() {
+    public String getReleaseVersion() {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
         return jetBuildInfo.getVersion().substring(0, 3);

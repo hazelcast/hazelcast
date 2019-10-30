@@ -35,7 +35,7 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.map.impl.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.Before;
 import org.junit.BeforeClass;

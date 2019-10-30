@@ -29,7 +29,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.map.impl.journal.EventJournalMapEvent;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;

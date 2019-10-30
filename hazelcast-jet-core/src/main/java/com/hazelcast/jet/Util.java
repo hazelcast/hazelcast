@@ -23,8 +23,8 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.impl.journal.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalFunctions;
-import com.hazelcast.map.journal.EventJournalMapEvent;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;

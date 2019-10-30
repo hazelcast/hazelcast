@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.jet.impl.JetService;
@@ -31,7 +32,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.partition.IPartitionService;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
