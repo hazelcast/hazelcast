@@ -45,7 +45,11 @@ public final class OperatingSystemMXBeanSupport {
             String methodName = "get" + attributeName;
             OperatingSystemMXBean systemMXBean = OPERATING_SYSTEM_MX_BEAN;
             Method method = systemMXBean.getClass().getMethod(methodName);
-            method.setAccessible(true);
+            try {
+                method.setAccessible(true);
+            } catch (Exception e) {
+                return defaultValue;
+            }
 
             Object value = method.invoke(systemMXBean);
             if (value == null) {
