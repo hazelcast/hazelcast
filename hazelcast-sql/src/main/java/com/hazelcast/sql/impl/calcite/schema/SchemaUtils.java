@@ -20,6 +20,8 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
+import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Table;
 
@@ -47,10 +49,10 @@ public class SchemaUtils {
      * @param nodeEngine Node engine.
      * @return Root schema.
      */
-    public static HazelcastSchema createRootSchema(NodeEngine nodeEngine) {
+    public static HazelcastSchema createRootSchema(NodeEngine nodeEngine, StatisticProvider statisticProvider) {
         // Create partitioned and replicated schemas.
-        Map<String, Table> partitionedTables = prepareSchemaTables(nodeEngine, true);
-        Map<String, Table> replicatedTables = prepareSchemaTables(nodeEngine, false);
+        Map<String, Table> partitionedTables = prepareSchemaTables(nodeEngine, statisticProvider, true);
+        Map<String, Table> replicatedTables = prepareSchemaTables(nodeEngine, statisticProvider, false);
 
         HazelcastSchema partitionedSchema = new HazelcastSchema(partitionedTables);
         HazelcastSchema replicatedSchema = new HazelcastSchema(replicatedTables);
@@ -82,7 +84,7 @@ public class SchemaUtils {
      *     if replicated tables.
      * @return List of tables.
      */
-    private static Map<String, Table> prepareSchemaTables(NodeEngine nodeEngine, boolean partitioned) {
+    private static Map<String, Table> prepareSchemaTables(NodeEngine nodeEngine, StatisticProvider statisticProvider, boolean partitioned) {
         String serviceName = partitioned ? MapService.SERVICE_NAME : ReplicatedMapService.SERVICE_NAME;
 
         Collection<String> mapNames = nodeEngine.getProxyService().getDistributedObjectNames(serviceName);
@@ -92,7 +94,11 @@ public class SchemaUtils {
         for (String mapName : mapNames) {
             DistributedObject map = nodeEngine.getProxyService().getDistributedObject(serviceName, mapName);
 
-            HazelcastTable table = new HazelcastTable(mapName, partitioned, map);
+            long rowCount = statisticProvider.getRowCount(map);
+            
+            TableStatistics statistics = new TableStatistics(rowCount);
+            
+            HazelcastTable table = new HazelcastTable(mapName, partitioned, map, statistics);
 
             res.put(mapName, table);
         }

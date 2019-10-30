@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.sql.optimizer.logical;
 
 import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
@@ -8,6 +24,7 @@ import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -38,6 +55,7 @@ import static junit.framework.TestCase.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LogicalOptimizationTest {
     /** Detailed result of the last call. */
+    @SuppressWarnings("unused")
     private LastCall last;
 
     @After
@@ -60,6 +78,16 @@ public class LogicalOptimizationTest {
     @Test
     public void testProjectProjectIntoScan() {
         LogicalRel node = optimize("SELECT f2 FROM (SELECT f1, f2 FROM p)");
+
+        RootLogicalRel root = assertRoot(node);
+
+        // TODO: Clear table type: scan should use only "f2".
+        assertScan(root.getInput(), list("f1", "f2"), list(1), null);
+    }
+
+    @Test
+    public void testProjectProjectFilterIntoScan() {
+        LogicalRel node = optimize("SELECT f2 + 1 FROM (SELECT f1, f2 FROM p WHERE f3 > 1)");
 
         RootLogicalRel root = assertRoot(node);
 
@@ -208,11 +236,11 @@ public class LogicalOptimizationTest {
 
     private static OptimizerContext createContext() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("p", new HazelcastTable("p", true, null));
+        tableMap.put("p", new HazelcastTable("p", true, null, new TableStatistics(100)));
 
         HazelcastSchema rootSchema = new HazelcastSchema(tableMap);
 
-        return OptimizerContext.create(rootSchema);
+        return OptimizerContext.create(rootSchema, 1);
     }
 
     private static class LastCall {

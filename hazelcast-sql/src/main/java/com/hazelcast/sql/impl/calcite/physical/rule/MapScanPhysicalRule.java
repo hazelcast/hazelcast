@@ -62,6 +62,8 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
         HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
 
+        List<Integer> projects = scan.getProjects() != null ? scan.getProjects() : scan.identity();
+
         PhysicalRel newScan;
 
         if (hazelcastTable.isReplicated()) {
@@ -69,17 +71,17 @@ public final class MapScanPhysicalRule extends RelOptRule {
                 scan.getCluster(),
                 RuleUtils.toPhysicalConvention(scan.getTraitSet(), DistributionTrait.REPLICATED_DIST),
                 table,
-                scan.getProjects(),
+                projects,
                 scan.getFilter()
             );
         } else {
-            DistributionTrait distributionTrait = getDistributionTrait(hazelcastTable, scan.getProjects());
+            DistributionTrait distributionTrait = getDistributionTrait(hazelcastTable, projects);
 
             newScan = new MapScanPhysicalRel(
                 scan.getCluster(),
                 RuleUtils.toPhysicalConvention(scan.getTraitSet(), distributionTrait),
                 table,
-                scan.getProjects(),
+                projects,
                 scan.getFilter()
             );
         }
@@ -132,7 +134,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
         MapProxyImpl map = hazelcastTable.getContainer();
 
-        String distributionField = getDistributionFieldName(hazelcastTable);
+        String distributionFieldName = getDistributionFieldName(map);
 
         int index = 0;
 
@@ -141,7 +143,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
             if (path.equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
                 // If there is no distribution field, use the whole key.
-                if (distributionField == null) {
+                if (distributionFieldName == null) {
                     return Collections.singletonList(new DistributionField(index));
                 }
 
@@ -160,7 +162,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
                 String keyPath = SqlUtils.extractKeyPath(path);
 
                 if (keyPath != null) {
-                    if (keyPath.equals(distributionField)) {
+                    if (keyPath.equals(distributionFieldName)) {
                         return Collections.singletonList(new DistributionField(index));
                     }
                 }
@@ -175,14 +177,9 @@ public final class MapScanPhysicalRule extends RelOptRule {
     /**
      * Get distribution field name if possible.
      *
-     * @param hazelcastTable Table.
      * @return Distribution field or {@code null} if none available.
      */
-    private static String getDistributionFieldName(HazelcastTable hazelcastTable) {
-        assert !hazelcastTable.isReplicated();
-
-        MapProxyImpl map = hazelcastTable.getContainer();
-
+    private static String getDistributionFieldName(MapProxyImpl map) {
         PartitioningStrategy strategy = map.getPartitionStrategy();
 
         if (strategy instanceof DeclarativePartitioningStrategy) {

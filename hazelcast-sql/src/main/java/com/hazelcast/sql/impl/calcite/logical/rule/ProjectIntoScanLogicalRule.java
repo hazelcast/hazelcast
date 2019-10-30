@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.calcite.RuleUtils;
 import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
@@ -48,12 +49,35 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
         Mappings.TargetMapping mapping = project.getMapping();
 
-        if (mapping == null || Mappings.isIdentity(mapping)) {
+        RelNode transformed;
+
+        if (mapping == null) {
+            transformed = processComplex(project, scan);
+
+            if (transformed == null) {
+                // TODO: Remove when implemented.
+                return;
+            }
+        } else if (Mappings.isIdentity(mapping)) {
+            // Project returns all the rows of the scan. Let ProjectRemoveRule do it's job.
             return;
+        } else {
+            transformed = processSimple(mapping, scan);
         }
 
-        List<Integer> oldProjects;
-        RexNode filter;
+        call.transformTo(transformed);
+    }
+
+    /**
+     * Process simple case when all project expressions are direct field access.
+     *
+     * @param mapping Projects mapping.
+     * @param scan Scan.
+     * @return Transformed node (new scan).
+     */
+    private static RelNode processSimple(Mappings.TargetMapping mapping, TableScan scan) {
+        List<Integer> oldProjects = null;
+        RexNode filter = null;
 
         if (scan instanceof MapScanLogicalRel) {
             MapScanLogicalRel scan0 = (MapScanLogicalRel) scan;
@@ -61,21 +85,40 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
             oldProjects = scan0.getProjects();
             filter = scan0.getFilter();
 
-        } else {
+        }
+
+        if (oldProjects == null) {
             oldProjects = scan.identity();
-            filter = null;
         }
 
         List<Integer> newProjects = Mappings.apply((Mapping) mapping, oldProjects);
 
-        MapScanLogicalRel newScan = new MapScanLogicalRel(
+        return new MapScanLogicalRel(
             scan.getCluster(),
             RuleUtils.toLogicalConvention(scan.getTraitSet()),
             scan.getTable(),
             newProjects,
             filter
         );
+    }
 
-        call.transformTo(newScan);
+    /**
+     * Process complex project with expressions. Projection will remain as is, but the number of returned fields might be decreased in scan.
+     *
+     * @param project Project.
+     * @param scan Scan.
+     * @return Transformed node (new project with new scan).
+     */
+    private RelNode processComplex(Project project, TableScan scan) {
+        // TODO: Early exit here produce suboptimal results. Consider that we have [Project(a + 1) <- Filter(b) <- Scan] tree.
+        // TODO: Calcite will access [a, b] columns which will be recorded inside the scan row type.
+        // TODO: After merging filter and scan we will get: [Project(a + 1) <- Scan(a, b; filter(b))].
+        // TODO: Since this project is not identity (i.e. it is not a plain column), we will exit. So final scan will return [a, b]
+        // TODO: columns, even though only [a] is needed by the project.
+        // TODO: What we need to do here instead, is visit all project expressions and collect accessed columns. Then we should compare
+        // TODO: those columns with the columns recorded in Scan dynamic row type and remove unneccesary scan columns, shifting indexes
+        // TODO: in project expressions accordingly. This was already done in the first version of this rule, with the idea borrowed
+        // TODO: from Drill. Need to return. See commit db80cf0a.
+        return null;
     }
 }

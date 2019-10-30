@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl.calcite.statistics;
 
-import org.apache.calcite.plan.HazelcastRelOptCluster;
-import org.apache.calcite.rel.RelNode;
+import com.hazelcast.core.DistributedObject;
 
 /**
- * Marker interface for Hazelcast rel node.
+ * Contains statistics required for planner.
  */
-public interface HazelcastRelNode extends RelNode {
-    default HazelcastRelOptCluster getHazelcastCluster() {
-        return HazelcastRelOptCluster.cast(getCluster());
-    }
+public interface StatisticProvider {
+
+    long getRowCount(DistributedObject container);
 }

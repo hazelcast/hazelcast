@@ -27,6 +27,8 @@ import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
 import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.statistics.DefaultStatisticProvider;
+import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlNode;
 
@@ -44,14 +46,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
+    /** Statistics provider. */
+    private final StatisticProvider statisticProvider;
+
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+
+        statisticProvider = new DefaultStatisticProvider();
     }
 
     @Override
     public QueryPlan prepare(String sql) {
         // 1. Prepare context.
-        OptimizerContext context = OptimizerContext.create(nodeEngine);
+        OptimizerContext context = OptimizerContext.create(nodeEngine, statisticProvider);
 
         // 2. Parse SQL string and validate it.
         SqlNode node = context.parse(sql);

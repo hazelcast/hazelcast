@@ -58,13 +58,13 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
             projects = scan0.getProjects();
             oldFilter = scan0.getFilter();
         } else {
-            projects = scan.identity();
+            projects = null;
             oldFilter = null;
         }
 
         RelDataType rowType = scan.getRowType();
 
-        Mapping mapping = Mappings.target(projects, rowType.getFieldCount());
+        Mapping mapping = Mappings.target(scan.identity(), scan.getTable().getRowType().getFieldCount());
 
         RexNode newFilter = RexUtil.apply(mapping, filter.getCondition());
 

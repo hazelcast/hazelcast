@@ -20,6 +20,8 @@ import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTraitDef;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.ConventionTraitDef;
+import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelTrait;
@@ -271,5 +273,17 @@ public final class RuleUtils {
      */
     public static RelCollation getCollation(RelNode rel) {
         return rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+    }
+
+    /**
+     * Convenient method to get cost of a relation.
+     *
+     * @param rel Relation.
+     * @return Cost.
+     */
+    public static RelOptCost getCost(RelNode rel) {
+        RelOptCluster cluster = rel.getCluster();
+
+        return cluster.getPlanner().getCost(rel, cluster.getMetadataQuery());
     }
 }

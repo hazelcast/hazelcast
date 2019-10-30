@@ -40,7 +40,7 @@ public final class MapScanLogicalRule extends ConverterRule {
             scan.getCluster(),
             RuleUtils.toLogicalConvention(scan.getTraitSet()),
             scan.getTable(),
-            scan.identity(),
+            null,
             null
         );
     }

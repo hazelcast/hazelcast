@@ -16,9 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.cost.metadata;
 
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdRowCount;
@@ -26,6 +23,9 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.util.BuiltInMethod;
 
+/**
+ * Metadata which provides row count estimates.
+ */
 public final class RowCountMetadata extends RelMdRowCount {
     /** Provider to be registered in Calcite. */
     public static final RelMetadataProvider SOURCE =
@@ -37,23 +37,6 @@ public final class RowCountMetadata extends RelMdRowCount {
 
     @Override
     public Double getRowCount(TableScan rel, RelMetadataQuery mq) {
-        HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
-
-        double count;
-
-        if (table.hasContainer()) {
-            Object container = table.getContainer();
-
-            // TODO: Cache this!
-            if (table.isPartitioned()) {
-                count = ((MapProxyImpl) container).size();
-            } else {
-                count = ((ReplicatedMapProxy) container).size();
-            }
-        } else {
-            count = super.getRowCount(rel, mq);
-        }
-
-        return count;
+        return super.getRowCount(rel, mq);
     }
 }

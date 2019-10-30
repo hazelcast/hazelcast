@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTable;
 
 import java.util.List;
@@ -37,13 +38,17 @@ public class HazelcastTable extends AbstractTable {
     /** Data container. */
     private final DistributedObject container;
 
+    /** Table statistic. */
+    private final Statistic statistic;
+
     /** Fields. */
     private final HazelcastTableFields fields = new HazelcastTableFields();
 
-    public HazelcastTable(String name, boolean partitioned, DistributedObject container) {
+    public HazelcastTable(String name, boolean partitioned, DistributedObject container, Statistic statistic) {
         this.name = name;
         this.partitioned = partitioned;
         this.container = container;
+        this.statistic = statistic;
     }
 
     public String getName() {
@@ -58,10 +63,6 @@ public class HazelcastTable extends AbstractTable {
         return !isPartitioned();
     }
 
-    public boolean hasContainer() {
-        return container != null;
-    }
-
     @SuppressWarnings("unchecked")
     public <T extends DistributedObject> T getContainer() {
         return (T) container;
@@ -74,6 +75,11 @@ public class HazelcastTable extends AbstractTable {
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
         return new HazelcastTableRelDataType(typeFactory, fields);
+    }
+
+    @Override
+    public final Statistic getStatistic() {
+        return statistic;
     }
 
     @Override

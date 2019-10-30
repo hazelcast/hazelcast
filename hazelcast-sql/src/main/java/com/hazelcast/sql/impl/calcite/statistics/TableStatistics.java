@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl.calcite.statistics;
 
-import org.apache.calcite.plan.HazelcastRelOptCluster;
-import org.apache.calcite.rel.RelNode;
+public class TableStatistics extends TableStatisticAdapter {
+    /** Row count. */
+    private final Long rowCount;
 
-/**
- * Marker interface for Hazelcast rel node.
- */
-public interface HazelcastRelNode extends RelNode {
-    default HazelcastRelOptCluster getHazelcastCluster() {
-        return HazelcastRelOptCluster.cast(getCluster());
+    public TableStatistics(long rowCount) {
+        this((Long)rowCount);
+    }
+
+    public TableStatistics(Long rowCount) {
+        this.rowCount = rowCount;
+    }
+
+    @Override
+    public Double getRowCount() {
+        return rowCount != null ? (double) rowCount : null;
     }
 }

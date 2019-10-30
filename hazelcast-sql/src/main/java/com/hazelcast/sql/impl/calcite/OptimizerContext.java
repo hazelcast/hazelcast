@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
@@ -37,6 +38,7 @@ import com.hazelcast.sql.impl.calcite.physical.rule.SortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.physical.rule.join.JoinPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
+import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -45,7 +47,7 @@ import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
-import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
@@ -53,7 +55,6 @@ import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.RelFactories;
-import org.apache.calcite.rel.metadata.CachingRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rex.RexBuilder;
@@ -76,7 +77,7 @@ import java.util.Properties;
  * Optimizer context which holds the whole environment for the given optimization session.
  */
 public class OptimizerContext {
-
+    // TODO: Remove me.
     public static volatile boolean DEBUG = false;
 
     /** Basic Calcite config. */
@@ -94,25 +95,29 @@ public class OptimizerContext {
      * @param nodeEngine Node engine.
      * @return Context.
      */
-    public static OptimizerContext create(NodeEngine nodeEngine) {
-        HazelcastSchema rootSchema = SchemaUtils.createRootSchema(nodeEngine);
+    public static OptimizerContext create(NodeEngine nodeEngine, StatisticProvider statisticProvider) {
+        HazelcastSchema rootSchema = SchemaUtils.createRootSchema(nodeEngine, statisticProvider);
 
-        return create(rootSchema);
+        int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
+
+        return create(rootSchema, memberCount);
     }
 
     /**
      * Create new context for the given schema.
      *
      * @param rootSchema Root schema.
+     * @param memberCount Member count.
      * @return Context.
      */
-    public static OptimizerContext create(HazelcastSchema rootSchema) {
+    public static OptimizerContext create(HazelcastSchema rootSchema, int memberCount) {
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         CalciteConnectionConfig config = createConnectionConfig();
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, config, rootSchema);
         SqlValidator validator = createValidator(typeFactory, catalogReader);
         VolcanoPlanner planner = createPlanner(config);
-        SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(typeFactory, catalogReader, validator, planner);
+        HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, memberCount);
+        SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(catalogReader, validator, cluster);
 
         return new OptimizerContext(validator, sqlToRelConverter, planner);
     }
@@ -244,24 +249,26 @@ public class OptimizerContext {
         return planner;
     }
 
+    private static HazelcastRelOptCluster createCluster(VolcanoPlanner planner, JavaTypeFactory typeFactory, int memberCount) {
+        // TODO: Use CachingRelMetadataProvider instead?
+        RelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(MetadataProvider.INSTANCE);
+
+        HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(planner, new RexBuilder(typeFactory), memberCount);
+        cluster.setMetadataProvider(relMetadataProvider);
+
+        return cluster;
+    }
+
     private static SqlToRelConverter createSqlToRelConverter(
-        JavaTypeFactory typeFactory,
         Prepare.CatalogReader catalogReader,
         SqlValidator validator,
-        VolcanoPlanner planner
+        HazelcastRelOptCluster cluster
     ) {
         SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder = SqlToRelConverter.configBuilder()
             .withTrimUnusedFields(true)
             .withExpand(false)
             .withExplain(false)
             .withConvertTableAccess(false);
-
-        // TODO: Use CachingRelMetadataProvider instead?
-        RelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(MetadataProvider.INSTANCE);
-
-        RelOptCluster cluster = RelOptCluster.create(planner, new RexBuilder(typeFactory));
-
-        cluster.setMetadataProvider(relMetadataProvider);
 
         return new SqlToRelConverter(
             null,

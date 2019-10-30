@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
-
-import org.apache.calcite.plan.HazelcastRelOptCluster;
-import org.apache.calcite.rel.RelNode;
+package com.hazelcast.sql.impl.calcite.schema;
 
 /**
- * Marker interface for Hazelcast rel node.
+ * An interface marking that the instance can return it's row count.
  */
-public interface HazelcastRelNode extends RelNode {
-    default HazelcastRelOptCluster getHazelcastCluster() {
-        return HazelcastRelOptCluster.cast(getCluster());
-    }
+public interface HazelcastRowCountAware {
+    /**
+     * @return Row count.
+     */
+    long getRowCount();
 }
