@@ -23,7 +23,6 @@ import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.AbstractMap;
@@ -33,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSizeEstimator;
 
 /**
@@ -42,18 +42,19 @@ import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSiz
  */
 public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
-    private final RecordFactory<R> recordFactory;
+    private final InMemoryFormat inMemoryFormat;
     private final StorageSCHM<R> records;
+    private final SerializationService ss;
 
     // not final for testing purposes.
     private EntryCostEstimator<Data, Record> entryCostEstimator;
 
-    StorageImpl(RecordFactory<R> recordFactory,
-                InMemoryFormat inMemoryFormat,
-                SerializationService serializationService) {
-        this.recordFactory = recordFactory;
+    StorageImpl(InMemoryFormat inMemoryFormat,
+                SerializationService ss) {
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
-        this.records = new StorageSCHM<>(serializationService);
+        this.inMemoryFormat = inMemoryFormat;
+        this.records = new StorageSCHM<>(ss);
+        this.ss = ss;
     }
 
     @Override
@@ -92,7 +93,8 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     public void updateRecordValue(Data key, R record, Object value) {
         updateCostEstimate(-entryCostEstimator.calculateValueCost(record));
 
-        recordFactory.setValue(record, value);
+        record.setValue(inMemoryFormat == BINARY
+                ? ss.toData(value) : ss.toObject(value));
 
         updateCostEstimate(entryCostEstimator.calculateValueCost(record));
     }

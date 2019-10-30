@@ -180,6 +180,14 @@ public class MergeOperation extends MapOperation
                 toBackupListByRemovingEvictedRecords(), disableWanReplicationEvent);
     }
 
+    /**
+     * Since records may get evicted on NOOME after
+     * they have been merged. We are re-checking
+     * backup pair list to eliminate evicted entries.
+     *
+     * @return list of existing records which can
+     * safely be transferred to backup replica.
+     */
     @Nonnull
     private List toBackupListByRemovingEvictedRecords() {
         List toBackupList = new ArrayList(backupPairs.size());

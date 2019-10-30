@@ -26,6 +26,4 @@ import com.hazelcast.nio.serialization.Data;
 public interface RecordFactory<T> {
 
     Record<T> newRecord(Data key, Object value);
-
-    void setValue(Record<T> record, Object value);
 }

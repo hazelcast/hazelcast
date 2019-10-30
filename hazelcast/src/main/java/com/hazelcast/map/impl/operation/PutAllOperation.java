@@ -183,6 +183,14 @@ public class PutAllOperation extends MapOperation
                 toBackupListByRemovingEvictedRecords(), false);
     }
 
+    /**
+     * Since records may get evicted on NOOME after
+     * they have been put. We are re-checking
+     * backup pair list to eliminate evicted entries.
+     *
+     * @return list of existing records which can
+     * safely be transferred to backup replica.
+     */
     @Nonnull
     private List toBackupListByRemovingEvictedRecords() {
         List toBackupList = new ArrayList(backupPairs.size());

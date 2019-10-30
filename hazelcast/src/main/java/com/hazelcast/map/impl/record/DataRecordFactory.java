@@ -53,17 +53,4 @@ public class DataRecordFactory implements RecordFactory<Data> {
         record.setKey(key);
         return record;
     }
-
-    @Override
-    public void setValue(Record<Data> record, Object value) {
-        assert value != null : "value can not be null";
-
-        final Data v;
-        if (value instanceof Data) {
-            v = (Data) value;
-        } else {
-            v = serializationService.toData(value, partitionStrategy);
-        }
-        record.setValue(v);
-    }
 }

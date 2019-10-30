@@ -159,7 +159,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
-        return new StorageImpl(recordFactory, memoryFormat, serializationService);
+        return new StorageImpl(memoryFormat, serializationService);
     }
 
     @Override
@@ -193,7 +193,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         }
         setExpirationTimes(ttl, maxIdle, record, mapContainer.getMapConfig(), true);
         if (mapStoreOperation) {
-            newValue = runMapStore(record, key, newValue, now, transactionId);
+            newValue = putIntoMapStore(record, key, newValue, now, transactionId);
         }
         storage.updateRecordValue(key, record, newValue);
         mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
@@ -202,15 +202,14 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected Record putNewRecord(Data key, Object oldValue, Object newValue, long ttlMillis,
                                   long maxIdleMillis, long now, UUID transactionId) {
         Record record = createRecord(key, newValue, ttlMillis, maxIdleMillis, now);
-        runMapStore(record, key, newValue, now, transactionId);
+        putIntoMapStore(record, key, newValue, now, transactionId);
         storage.put(key, record);
         mutationObserver.onPutRecord(key, record, oldValue, false);
         return record;
     }
 
-    protected Object runMapStore(Record record, Data key, Object newValue, long now, UUID transactionId) {
-        long expirationTime = record.getExpirationTime();
-        newValue = mapDataStore.add(key, newValue, expirationTime, now, transactionId);
+    protected Object putIntoMapStore(Record record, Data key, Object newValue, long now, UUID transactionId) {
+        newValue = mapDataStore.add(key, newValue, record.getExpirationTime(), now, transactionId);
         if (mapDataStore.isPostProcessingMapStore()) {
             storage.updateRecordValue(key, record, newValue);
         }

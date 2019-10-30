@@ -812,7 +812,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             record = createRecord(key, newValue, UNSET, UNSET, now);
             mergeRecordExpiration(record, mergingEntry);
             if (persistenceEnabledFor(provenance)) {
-                runMapStore(record, key, newValue, now, null);
+                putIntoMapStore(record, key, newValue, now, null);
             }
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record, null, false);
