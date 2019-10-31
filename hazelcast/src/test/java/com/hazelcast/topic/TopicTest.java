@@ -21,7 +21,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
 

@@ -17,7 +17,6 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.monitor.LocalTopicStats;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

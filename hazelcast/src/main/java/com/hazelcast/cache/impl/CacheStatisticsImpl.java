@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 

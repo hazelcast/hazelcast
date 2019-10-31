@@ -27,7 +27,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.listener.EntryEvictedListener;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;

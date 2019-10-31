@@ -26,8 +26,8 @@ import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -171,7 +171,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#GET} is used
-     * and that the {@link com.hazelcast.monitor.NearCacheStats} are calculated correctly.
+     * and that the {@link NearCacheStats} are calculated correctly.
      */
     @Test
     public void whenGetIsUsed_thenNearCacheShouldBePopulated() {
@@ -180,7 +180,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#GET_ASYNC} is used
-     * and that the {@link com.hazelcast.monitor.NearCacheStats} are calculated correctly.
+     * and that the {@link NearCacheStats} are calculated correctly.
      */
     @Test
     public void whenGetAsyncIsUsed_thenNearCacheShouldBePopulated() {
@@ -189,7 +189,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#GET_ALL} is used
-     * and that the {@link com.hazelcast.monitor.NearCacheStats} are calculated correctly.
+     * and that the {@link NearCacheStats} are calculated correctly.
      */
     @Test
     public void whenGetAllIsUsed_thenNearCacheShouldBePopulated() {
@@ -221,7 +221,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#GET_ALL} is used on a half
-     * filled Near Cache and that the {@link com.hazelcast.monitor.NearCacheStats} are calculated correctly.
+     * filled Near Cache and that the {@link NearCacheStats} are calculated correctly.
      */
     @Test
     public void whenGetAllWithHalfFilledNearCacheIsUsed_thenNearCacheShouldBePopulated() {

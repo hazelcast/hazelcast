@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.ITopic;

@@ -19,7 +19,7 @@ package com.hazelcast.internal.management.dto;
 import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.JsonSerializable;
 
 import java.util.function.Consumer;
 

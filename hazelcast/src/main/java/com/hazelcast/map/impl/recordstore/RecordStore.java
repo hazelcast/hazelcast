@@ -30,7 +30,7 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;

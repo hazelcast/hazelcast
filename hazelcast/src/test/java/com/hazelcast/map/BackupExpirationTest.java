@@ -26,7 +26,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.serialization.SerializationService;

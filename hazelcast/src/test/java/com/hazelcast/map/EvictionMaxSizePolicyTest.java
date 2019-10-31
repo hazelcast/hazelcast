@@ -33,7 +33,6 @@ import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.partition.IPartitionService;

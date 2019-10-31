@@ -19,7 +19,7 @@ package com.hazelcast.collection.impl.txnqueue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;

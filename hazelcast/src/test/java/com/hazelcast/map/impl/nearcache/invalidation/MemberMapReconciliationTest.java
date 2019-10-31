@@ -29,7 +29,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;

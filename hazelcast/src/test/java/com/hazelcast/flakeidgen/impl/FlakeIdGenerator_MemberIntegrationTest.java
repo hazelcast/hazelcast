@@ -18,7 +18,7 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
+import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

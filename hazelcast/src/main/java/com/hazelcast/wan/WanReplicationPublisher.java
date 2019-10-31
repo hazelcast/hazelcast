@@ -19,7 +19,7 @@ package com.hazelcast.wan;
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.monitor.LocalWanPublisherStats;
+import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 
 import java.util.Collection;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 
 /**
  * Cache statistics

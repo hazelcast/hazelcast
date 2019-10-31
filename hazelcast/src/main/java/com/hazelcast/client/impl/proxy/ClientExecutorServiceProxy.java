@@ -36,7 +36,7 @@ import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionAware;

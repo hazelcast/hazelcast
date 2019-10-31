@@ -25,7 +25,7 @@ import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.JsonSerializable;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

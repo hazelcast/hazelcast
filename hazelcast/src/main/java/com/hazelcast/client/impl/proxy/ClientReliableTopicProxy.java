@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;

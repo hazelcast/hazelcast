@@ -36,7 +36,7 @@ import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWithCounter;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
