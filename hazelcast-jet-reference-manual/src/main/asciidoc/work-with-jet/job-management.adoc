@@ -1,7 +1,7 @@
 [[command-line]]
 = Jet Command Line Tool
 
-Jet comes with a command line tool, `jet.sh` which you can use to submit
+Jet comes with a command line tool, `jet` which you can use to submit
 jobs and do basic management of their lifecycle. It supports these
 commands:
 
@@ -28,7 +28,7 @@ connection parameters explicitly. For example, to list all the
 jobs running on the cluster you can use the following command:
 
 ....
-bin/jet.sh -a 192.168.0.1:5701,192.168.0.1:5702 -g my-group list-jobs
+bin/jet -a 192.168.0.1:5701,192.168.0.1:5702 -g my-group list-jobs
 ....
 
 This command would try to connect to either `192.168.0.1:5701`
@@ -37,11 +37,11 @@ all the running jobs on the cluster. If you want to use the tool
 with a different `client.xml` you can do it as follows:
 
 ....
-bin/jet.sh -f client.xml list-jobs
+bin/jet -f client.xml list-jobs
 ....
 
 For more details on how to use the command line tool please refer to its own
-documentation which can be retrieved by the command `jet.sh --help`
+documentation which can be retrieved by the command `jet --help`
 
 [[management-center]]
 = Management Center

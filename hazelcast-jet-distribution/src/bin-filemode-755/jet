@@ -1,0 +1,7 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(dirname "$0")"
+#shellcheck source=bin-regular/common.sh
+. "$SCRIPT_DIR/common.sh"
+
+$JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetCommandLine "$@"

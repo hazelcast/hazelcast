@@ -42,6 +42,7 @@
         <module>files</module>
         <module>grpc</module>
         <module>hadoop</module>
+        <module>hello-world</module>
         <module>imdg-connectors</module>
         <module>jdbc</module>
         <module>jms</module>

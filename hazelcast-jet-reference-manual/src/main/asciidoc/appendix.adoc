@@ -75,7 +75,7 @@ newer PATCH version without losing the state of a running job.
 
 == Command Line Tools and Configuration Files
 
-The command line tools provided such as `jet.sh` and the configuration
+The command line tools provided such as `jet` and the configuration
 XML files are backwards-compatible between MINOR versions. This means
 that when upgrading a cluster to a new minor version, the XML configuration
 for the previous version can be used without any modification.
@@ -327,7 +327,7 @@ apply.
 === picocli
 
 picocli is a command line parser which is used for the implementation of
-`jet.sh` command line tool.
+`jet` command line tool.
 
 picocli is distributed under the terms of the
 http://www.apache.org/licenses/LICENSE-2.0[Apache License 2].

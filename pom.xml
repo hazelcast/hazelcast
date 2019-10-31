@@ -72,9 +72,17 @@
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
+
+        <!-- Main IMDG dependency -->
         <hazelcast.version>4.0-SNAPSHOT</hazelcast.version>
+        <!-- Dependencies on IMDG modules: must be the same versions IMDG depends on! -->
+        <hazelcast.protocol.version>1.8.0-5</hazelcast.protocol.version>
+        <hazelcast.aws.version>3.1.0-SNAPSHOT</hazelcast.aws.version>
+        <hazelcast.kubernetes.version>1.5.1</hazelcast.kubernetes.version>
+        <hazelcast.gcp.version>1.1.1</hazelcast.gcp.version>
 
         <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
+        <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
@@ -92,15 +100,14 @@
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
 
-        <!-- optional dependencies -->
+        <!-- optional dependencies (required for building, but don't become module's transitive deps) -->
         <jms.api.version>2.0.1</jms.api.version>
         <jsr107.api.version>1.0.0</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <log4j.version>1.2.12</log4j.version>
-        <log4j2.version>2.3</log4j2.version>
-        <slf4j.api.version>1.6.6</slf4j.api.version>
+        <log4j.version>1.2.17</log4j.version>
+        <log4j2.version>2.12.1</log4j2.version>
+        <slf4j.api.version>1.7.28</slf4j.api.version>
         <reflections.version>0.9.10</reflections.version>
-        <hazelcast.aws.version>3.1.0-SNAPSHOT</hazelcast.aws.version>
         <osgi.version>4.2.0</osgi.version>
         <hadoop.version>2.8.3</hadoop.version>
         <spring.version>4.3.0.RELEASE</spring.version>
@@ -176,6 +183,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
@@ -422,6 +430,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven.shade.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven.deploy.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

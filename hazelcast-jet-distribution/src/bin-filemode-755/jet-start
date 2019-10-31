@@ -1,0 +1,15 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "$0")
+#shellcheck source=bin-regular/common.sh
+. "$SCRIPT_DIR"/common.sh
+
+echo "########################################"
+echo "# JAVA=$JAVA"
+echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
+echo "# CLASSPATH=$CLASSPATH"
+echo "########################################"
+echo "Starting Hazelcast Jet"
+
+set -x
+$JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetMemberStarter

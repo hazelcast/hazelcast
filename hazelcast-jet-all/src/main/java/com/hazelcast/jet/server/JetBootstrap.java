@@ -65,7 +65,7 @@ import java.util.jar.JarFile;
  * Main-Class} in {@code MANIFEST.MF}.
  * </li><li>
  * Run your JAR, but instead of {@code java -jar jetjob.jar} use {@code
- * jet.sh submit jetjob.jar}. The script is found in the Jet distribution
+ * jet submit jetjob.jar}. The script is found in the Jet distribution
  * zipfile, in the {@code bin} directory. On Windows use {@code
  * jet.bat}.
  * </li><li>
@@ -90,7 +90,7 @@ import java.util.jar.JarFile;
  * <p>
  * After building the JAR, submit the job:
  * <pre>
- * $ jet.sh submit jetjob.jar
+ * $ jet submit jetjob.jar
  * </pre>
  *
  * @since 3.0
@@ -160,7 +160,7 @@ public final class JetBootstrap {
     public static JetInstance getInstance() {
         if (supplier == null) {
             throw new JetException(
-                    "JetBootstrap.getInstance() should be used in conjunction with the jet.sh submit command"
+                    "JetBootstrap.getInstance() should be used in conjunction with the jet submit command"
             );
         }
         return supplier.get();

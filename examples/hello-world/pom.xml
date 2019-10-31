@@ -20,7 +20,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hazelcast-jet-examples-wordcount</artifactId>
+    <artifactId>hazelcast-jet-examples-hello-world</artifactId>
 
     <parent>
         <groupId>com.hazelcast.jet.examples</groupId>
@@ -36,7 +36,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.hazelcast.jet.examples.wordcount.WordCount</mainClass>
+                            <mainClass>com.hazelcast.jet.examples.helloworld.HelloWorld</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

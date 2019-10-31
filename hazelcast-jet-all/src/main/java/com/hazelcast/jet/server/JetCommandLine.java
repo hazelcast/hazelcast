@@ -51,6 +51,7 @@ import picocli.CommandLine.RunAll;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Comparator;
@@ -70,11 +71,8 @@ import static java.util.Collections.emptyList;
 
 @Command(
         name = "jet",
-        description = "Utility for interacting with a Hazelcast Jet cluster." +
-                "%n%n" +
-                "The command line tool uses the Jet client to connect and perform operations " +
-                "on the cluster. By default, the client config XML inside the config path will " +
-                "be used for the connection." +
+        description = "Utility to perform operations on a Hazelcast Jet cluster.%n" +
+                "By default it uses the file config/hazelcast-client.yaml to configure the client connection." +
                 "%n%n" +
                 "Global options are:%n",
         versionProvider = JetVersionProvider.class,
@@ -92,9 +90,9 @@ public class JetCommandLine implements Runnable {
     private final PrintStream err;
 
     @Option(names = {"-f", "--config"},
-            description = "Optional path to a client config XML/YAML file. " +
-                    "By default config/hazelcast-client.xml is used." +
-                    "If this option is specified then the addresses and group name options are ignored.",
+            description = "Optional path to a client config XML/YAML file." +
+                    " The default is to use config/hazelcast-client.yaml." +
+                    " If you set this option, Jet will ignore the --addresses and --group options.",
             order = 0
     )
     private File config;
@@ -103,9 +101,9 @@ public class JetCommandLine implements Runnable {
             split = ",",
             arity = "1..*",
             paramLabel = "<hostname>:<port>",
-            description = "Optional comma-separated list of Jet node addresses in the format " +
-                    "<hostname>:<port> to connect to another cluster than the " +
-                    "one configured in config/hazelcast-client.xml",
+            description = "Optional comma-separated list of Jet node addresses in the format" +
+                    " <hostname>:<port>, if you want to connect to a cluster other than the" +
+                    " one configured in the configuration file",
             order = 1
     )
     private List<String> addresses;
@@ -170,7 +168,7 @@ public class JetCommandLine implements Runnable {
             @Mixin(name = "verbosity") Verbosity verbosity,
             @Option(names = {"-s", "--snapshot"},
                     paramLabel = "<snapshot name>",
-                    description = "Name of initial snapshot to start the job from"
+                    description = "Name of the initial snapshot to start the job from"
             ) String snapshotName,
             @Option(names = {"-n", "--name"},
                     paramLabel = "<name>",
@@ -182,7 +180,7 @@ public class JetCommandLine implements Runnable {
             ) File file,
             @Parameters(index = "1..*",
                     paramLabel = "<arguments>",
-                    description = "arguments to pass to the supplied jar file"
+                    description = "Arguments to pass to the supplied jar file"
             ) List<String> params
     ) throws Exception {
         if (params == null) {
@@ -193,12 +191,12 @@ public class JetCommandLine implements Runnable {
         if (!file.exists()) {
             throw new Exception("File " + file + " could not be found.");
         }
-        printf("Submitting JAR '%s' with arguments %s%n", file, params);
+        printf("Submitting JAR '%s' with arguments %s", file, params);
         if (name != null) {
-            printf("Using job name '%s'%n", name);
+            printf("Using job name '%s'", name);
         }
         if (snapshotName != null) {
-            printf("Job will be restored from snapshot with name '%s'%n", snapshotName);
+            printf("Will restore the job from the snapshot with name '%s'", snapshotName);
         }
         JetBootstrap.executeJar(this::getJetClient, file.getAbsolutePath(), snapshotName, name, params);
     }
@@ -214,10 +212,10 @@ public class JetCommandLine implements Runnable {
         runWithJet(verbosity, jet -> {
             Job job = getJob(jet, name);
             assertJobRunning(name, job);
-            printf("Suspending job %s...%n", formatJob(job));
+            printf("Suspending job %s...", formatJob(job));
             job.suspend();
             waitForJobStatus(job, JobStatus.SUSPENDED);
-            println("Job was successfully suspended.");
+            println("Job suspended.");
         });
     }
 
@@ -228,16 +226,16 @@ public class JetCommandLine implements Runnable {
             @Mixin(name = "verbosity") Verbosity verbosity,
             @Parameters(index = "0",
                     paramLabel = "<job name or id>",
-                    description = "Name of the job to terminate"
+                    description = "Name of the job to cancel"
             ) String name
     ) throws IOException {
         runWithJet(verbosity, jet -> {
             Job job = getJob(jet, name);
             assertJobActive(name, job);
-            printf("Cancelling job %s...%n", formatJob(job));
+            printf("Cancelling job %s", formatJob(job));
             job.cancel();
             waitForJobStatus(job, JobStatus.FAILED);
-            println("Job was successfully terminated.");
+            println("Job cancelled.");
         });
     }
 
@@ -249,7 +247,7 @@ public class JetCommandLine implements Runnable {
             @Mixin(name = "verbosity") Verbosity verbosity,
             @Parameters(index = "0",
                     paramLabel = "<job name or id>",
-                    description = "Name of the job to terminate")
+                    description = "Name of the job to take the snapshot from")
                     String jobName,
             @Parameters(index = "1",
                     paramLabel = "<snapshot name>",
@@ -263,16 +261,16 @@ public class JetCommandLine implements Runnable {
             Job job = getJob(jet, jobName);
             assertJobActive(jobName, job);
             if (isTerminal) {
-                printf("Saving snapshot with name '%s' from job '%s' and terminating the job...%n",
+                printf("Saving snapshot with name '%s' from job '%s' and cancelling the job...",
                         snapshotName, formatJob(job)
                 );
                 job.cancelAndExportSnapshot(snapshotName);
                 waitForJobStatus(job, JobStatus.FAILED);
             } else {
-                printf("Saving snapshot with name '%s' from job '%s'...%n", snapshotName, formatJob(job));
+                printf("Saving snapshot with name '%s' from job '%s'...", snapshotName, formatJob(job));
                 job.exportSnapshot(snapshotName);
             }
-            printf("Snapshot '%s' was successfully exported.%n", snapshotName);
+            printf("Exported snapshot '%s'.", snapshotName);
         });
     }
 
@@ -290,10 +288,10 @@ public class JetCommandLine implements Runnable {
         runWithJet(verbosity, jet -> {
             JobStateSnapshot jobStateSnapshot = jet.getJobStateSnapshot(snapshotName);
             if (jobStateSnapshot == null) {
-                throw new JetException(String.format("No snapshot with name '%s' was found", snapshotName));
+                throw new JetException(String.format("Didn't find a snapshot named '%s'", snapshotName));
             }
             jobStateSnapshot.destroy();
-            printf("Snapshot '%s' was successfully deleted.%n", snapshotName);
+            printf("Deleted snapshot '%s'.", snapshotName);
         });
     }
 
@@ -313,7 +311,7 @@ public class JetCommandLine implements Runnable {
             println("Restarting job " + formatJob(job) + "...");
             job.restart();
             waitForJobStatus(job, JobStatus.RUNNING);
-            println("Job was successfully restarted.");
+            println("Job restarted.");
         });
     }
 
@@ -335,7 +333,7 @@ public class JetCommandLine implements Runnable {
             println("Resuming job " + formatJob(job) + "...");
             job.resume();
             waitForJobStatus(job, JobStatus.RUNNING);
-            println("Job was successfully resumed.");
+            println("Job resumed.");
         });
     }
 
@@ -352,7 +350,7 @@ public class JetCommandLine implements Runnable {
         runWithJet(verbosity, jet -> {
             JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
             List<JobSummary> summaries = client.getJobSummaryList();
-            String format = "%-19s %-18s %-23s %s%n";
+            String format = "%-19s %-18s %-23s %s";
             printf(format, "ID", "STATUS", "SUBMISSION TIME", "NAME");
             summaries.stream()
                      .filter(job -> listAll || isActive(job.getStatus()))
@@ -375,7 +373,7 @@ public class JetCommandLine implements Runnable {
                     boolean fullJobName) throws IOException {
         runWithJet(verbosity, jet -> {
             Collection<JobStateSnapshot> snapshots = jet.getJobStateSnapshots();
-            printf("%-23s %-15s %-24s %s%n", "TIME", "SIZE (bytes)", "JOB NAME", "SNAPSHOT NAME");
+            printf("%-23s %-15s %-24s %s", "TIME", "SIZE (bytes)", "JOB NAME", "SNAPSHOT NAME");
             snapshots.stream()
                      .sorted(Comparator.comparing(JobStateSnapshot::name))
                      .forEach(ss -> {
@@ -384,7 +382,7 @@ public class JetCommandLine implements Runnable {
                          if (!fullJobName) {
                              jobName = shorten(jobName);
                          }
-                         printf("%-23s %-,15d %-24s %s%n", creationTime, ss.payloadSize(), jobName, ss.name());
+                         printf("%-23s %-,15d %-24s %s", creationTime, ss.payloadSize(), jobName, ss.name());
                      });
         });
     }
@@ -406,7 +404,7 @@ public class JetCommandLine implements Runnable {
 
             println("");
 
-            String format = "%-24s %-19s%n";
+            String format = "%-24s %-19s";
             printf(format, "ADDRESS", "UUID");
             cluster.getMembers().forEach(member -> printf(format, member.getAddress(), member.getUuid()));
         });
@@ -474,7 +472,7 @@ public class JetCommandLine implements Runnable {
     }
 
     private void printf(String format, Object... objects) {
-        out.printf(format, objects);
+        out.printf(format + "%n", objects);
     }
 
     private void println(String msg) {
@@ -558,7 +556,7 @@ public class JetCommandLine implements Runnable {
             if (jetCmd.verbosity.isVerbose) {
                 ex.printStackTrace(err());
             } else {
-                err().println("ERROR: " + ex.getCause().getMessage());
+                err().println("ERROR: " + peel(ex.getCause()).getMessage());
                 err().println();
                 err().println("To see the full stack trace, re-run with the -v/--verbosity option");
             }
@@ -567,5 +565,13 @@ public class JetCommandLine implements Runnable {
             }
             throw ex;
         }
+
+        static Throwable peel(Throwable e) {
+            if (e instanceof InvocationTargetException) {
+                return e.getCause();
+            }
+            return e;
+        }
     }
+
 }

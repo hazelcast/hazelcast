@@ -197,7 +197,7 @@ The entire cluster can be shut down gracefully in several ways:
 - on the command line:
 [source]
 ----
-$ cluster.sh -o shutdown
+$ jet-cluster-admin -o shutdown
 ----
 
 - using the Jet Management Center
