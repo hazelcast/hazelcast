@@ -172,8 +172,6 @@ public class OptimizerContext {
     }
 
     public PhysicalRel optimizePhysical(RelNode rel) {
-        DEBUG = true;
-
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
             RootPhysicalRule.INSTANCE,

@@ -97,7 +97,12 @@ public abstract class OptimizerTestSupport {
         return res;
     }
 
-    private static HazelcastSchema createDefaultSchema() {
+    /**
+     * Creates the default test schema. Override that method if you would like to have anoher schema.
+     *
+     * @return Default schema.
+     */
+    protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
         tableMap.put("p", new HazelcastTable("p", true, null, null, new TableStatistics(100)));
 
