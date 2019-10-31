@@ -81,7 +81,7 @@ public class CompleteRaftGroupMembershipChangesOp extends MetadataRaftGroupOp im
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int count = in.readInt();
-        changedGroups = new HashMap<CPGroupId, BiTuple<Long, Long>>(count);
+        changedGroups = new HashMap<>(count);
         for (int i = 0; i < count; i++) {
             CPGroupId groupId = in.readObject();
             long currMembersCommitIndex = in.readLong();

@@ -36,6 +36,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 import static com.hazelcast.internal.util.InvocationUtil.CALLER_RUNS_EXECUTOR;
 
 /**
@@ -76,8 +77,8 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             }
             return;
         } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
-            service.stepDownRaftNode(groupId);
             sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
+            getNodeEngine().getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> service.stepDownRaftNode(groupId));
             return;
         }
 
