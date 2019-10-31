@@ -23,16 +23,17 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Metadata;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
- * Creates json related metadata for map records.
- * Metadata is created and set for put and update operations. There is
- * no need for removing metadata on remove events because metadata is
- * stored inside record. It is removed with the record.
+ * Creates json related metadata for map records. Metadata is
+ * created and set for put and update operations. There is no
+ * need for removing metadata on remove events because metadata
+ * is stored inside record. It is removed with the record.
  */
 public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
@@ -46,23 +47,26 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     }
 
     @Override
-    public void onClear() {
-        // no-op
-    }
-
-    @Override
-    public void onPutRecord(Data key, Record record) {
+    public void onPutRecord(@Nonnull Data key, Record record, Object oldValue, boolean backup) {
         onPutInternal(record);
     }
 
     @Override
-    public void onReplicationPutRecord(Data key, Record record) {
+    public void onReplicationPutRecord(@Nonnull Data key, @Nonnull Record record, boolean populateIndex) {
         onPutInternal(record);
+
     }
 
     @Override
-    public void onUpdateRecord(Data key, Record record, Object newValue) {
-        updateValueMetadataIfNeccessary(record, newValue);
+    public void onUpdateRecord(@Nonnull Data key, @Nonnull Record record,
+                               Object oldValue, Object newValue, boolean backup) {
+        updateValueMetadataIfNeccessary(record, newValue, oldValue);
+    }
+
+    @Override
+    public void onLoadRecord(@Nonnull Data key, @Nonnull Record record, boolean backup) {
+        onPutInternal(record);
+
     }
 
     @Override
@@ -76,17 +80,17 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     }
 
     @Override
-    public void onLoadRecord(Data key, Record record) {
-        onPutInternal(record);
-    }
-
-    @Override
-    public void onDestroy(boolean internal) {
+    public void onReset() {
         // no-op
     }
 
     @Override
-    public void onReset() {
+    public void onClear() {
+        // no-op
+    }
+
+    @Override
+    public void onDestroy(boolean isDuringShutdown, boolean internal) {
         // no-op
     }
 
@@ -110,10 +114,10 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     }
 
     @SuppressFBWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
-    private void updateValueMetadataIfNeccessary(Record record, Object updateValue) {
+    private void updateValueMetadataIfNeccessary(Record record, Object updateValue, Object oldValue) {
         Object valueMetadata = null;
         try {
-            if (record.getValue() instanceof Data) {
+            if (oldValue instanceof Data) {
                 valueMetadata = metadataInitializer.createFromData(serializationService.toData(updateValue));
             } else {
                 valueMetadata = metadataInitializer.createFromObject(serializationService.toObject(updateValue));

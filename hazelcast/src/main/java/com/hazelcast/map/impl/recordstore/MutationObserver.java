@@ -25,39 +25,45 @@ import javax.annotation.Nonnull;
 /**
  * Interface for observing {@link RecordStore} mutations
  *
- * @param <R> The type of the records in the observed {@link RecordStore}
+ * @param <R> The type of the records
+ *            in the observed {@link RecordStore}
  */
 public interface MutationObserver<R extends Record> {
     /**
-     * Called if the observed {@link RecordStore} is cleared
-     */
-    void onClear();
-
-    /**
      * Called when a new record is added to the {@link RecordStore}
      *
-     * @param key    The key of the record
-     * @param record The record
+     * @param key      The key of the record
+     * @param record   The record with new value
+     * @param oldValue old value
+     * @param backup    {@code true} if this method is
+     *                 called by a backup operation, otherwise {@code false}
      */
-    void onPutRecord(@Nonnull Data key, @Nonnull R record);
+    void onPutRecord(@Nonnull Data key, R record, Object oldValue, boolean backup);
 
     /**
      * Called when a new record is added to the {@link RecordStore} due
      * to replication
      *
-     * @param key    The key of the record
-     * @param record The record
+     * @param key           The key of the record
+     * @param record        The record
+     * @param populateIndex  {@code true} if
+     *                      indexing can be done, otherwise {@code false}
      */
-    void onReplicationPutRecord(@Nonnull Data key, @Nonnull R record);
+    void onReplicationPutRecord(@Nonnull Data key, @Nonnull R record, boolean populateIndex);
 
     /**
-     * Called when a new record is updated in the observed {@link RecordStore}
+     * Called when a new record is updated
+     * in the observed {@link RecordStore}
      *
      * @param key      The key of the record
-     * @param record   The record
+     * @param record   The record with the new value
+     * @param oldValue The old value of the record
      * @param newValue The new value of the record
+     * @param backup   {@code true} if this method is
+     *                 called by a backup operation, otherwise {@code false}
      */
-    void onUpdateRecord(@Nonnull Data key, @Nonnull R record, Object newValue);
+    void onUpdateRecord(@Nonnull Data key, @Nonnull R record,
+                        Object oldValue, Object newValue, boolean backup);
 
     /**
      * Called when a record is removed from the observed {@link RecordStore}
@@ -80,20 +86,30 @@ public interface MutationObserver<R extends Record> {
      *
      * @param key    The key of the record
      * @param record The record
+     * @param backup {@code true} if this method is
+     *               called by a backup operation, otherwise {@code false}
      */
-    void onLoadRecord(@Nonnull Data key, @Nonnull R record);
-
-    /**
-     * Called when the observed {@link RecordStore} is being destroyed.
-     * The observer should release all resources. The implementations of
-     * this method should be idempotent.
-     *
-     * @param internal is only data bound to the {@link MapService} being destroyed
-     */
-    void onDestroy(boolean internal);
+    void onLoadRecord(@Nonnull Data key, @Nonnull R record, boolean backup);
 
     /**
      * Called when the observed {@link RecordStore} is being reset.
      */
     void onReset();
+
+    /**
+     * Called if the observed {@link RecordStore} is cleared
+     */
+    void onClear();
+
+    /**
+     * Called when the observed {@link RecordStore} is being
+     * destroyed. The observer should release all resources.
+     * The implementations of this method should be idempotent.
+     *
+     * @param isDuringShutdown {@code true} if this method
+     *                         is called during shutdown, otherwise {@code false}
+     * @param internal         is only data bound
+     *                         to the {@link MapService} being destroyed
+     */
+    void onDestroy(boolean isDuringShutdown, boolean internal);
 }

@@ -17,19 +17,23 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.services.ObjectNamespace;
+
+import javax.annotation.Nonnull;
 
 public class EventJournalWriterMutationObserver implements MutationObserver {
-    private final MapEventJournal eventJournal;
+
     private final int partitionId;
+    private final MapEventJournal eventJournal;
     private final EventJournalConfig eventJournalConfig;
     private final ObjectNamespace objectNamespace;
 
-    public EventJournalWriterMutationObserver(MapEventJournal eventJournal, MapContainer mapContainer,
+    public EventJournalWriterMutationObserver(MapEventJournal eventJournal,
+                                              MapContainer mapContainer,
                                               int partitionId) {
         this.eventJournal = eventJournal;
         this.partitionId = partitionId;
@@ -38,46 +42,52 @@ public class EventJournalWriterMutationObserver implements MutationObserver {
     }
 
     @Override
-    public void onClear() {
-        // NOP
+    public void onPutRecord(@Nonnull Data key, Record record, Object oldValue, boolean backup) {
+        eventJournal.writeAddEvent(eventJournalConfig, objectNamespace,
+                partitionId, record.getKey(), record.getValue());
     }
 
-    @Override
-    public void onPutRecord(Data key, Record record) {
-        eventJournal.writeAddEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
-    }
 
     @Override
-    public void onReplicationPutRecord(Data key, Record record) {
-        // NOP
-    }
-
-    @Override
-    public void onUpdateRecord(Data key, Record record, Object newValue) {
-        eventJournal.writeUpdateEvent(eventJournalConfig, objectNamespace, partitionId,
-                record.getKey(), record.getValue(), newValue);
+    public void onUpdateRecord(@Nonnull Data key, @Nonnull Record record,
+                               Object oldValue, Object newValue, boolean backup) {
+        eventJournal.writeUpdateEvent(eventJournalConfig, objectNamespace,
+                partitionId, record.getKey(), oldValue, newValue);
     }
 
     @Override
     public void onRemoveRecord(Data key, Record record) {
-        eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
+        eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace,
+                partitionId, record.getKey(), record.getValue());
     }
 
     @Override
     public void onEvictRecord(Data key, Record record) {
-        eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
+        eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace,
+                partitionId, record.getKey(), record.getValue());
     }
 
     @Override
-    public void onLoadRecord(Data key, Record record) {
-        eventJournal.writeLoadEvent(eventJournalConfig, objectNamespace, partitionId, record.getKey(), record.getValue());
+    public void onLoadRecord(@Nonnull Data key, @Nonnull Record record, boolean backup) {
+        eventJournal.writeLoadEvent(eventJournalConfig, objectNamespace,
+                partitionId, record.getKey(), record.getValue());
     }
 
     @Override
-    public void onDestroy(boolean internal) {
+    public void onDestroy(boolean isDuringShutdown, boolean internal) {
         if (!internal) {
             eventJournal.destroy(objectNamespace, partitionId);
         }
+    }
+
+    @Override
+    public void onReplicationPutRecord(@Nonnull Data key, @Nonnull Record record, boolean populateIndex) {
+        // NOP
+    }
+
+    @Override
+    public void onClear() {
+        // NOP
     }
 
     @Override

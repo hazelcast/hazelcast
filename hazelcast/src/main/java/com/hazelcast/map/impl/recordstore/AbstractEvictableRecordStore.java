@@ -55,7 +55,6 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  * Contains eviction specific functionality.
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
-
     protected final long expiryDelayMillis;
     protected final Address thisAddress;
     protected final EventService eventService;
