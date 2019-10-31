@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromAddressCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
@@ -96,14 +96,14 @@ public class ScheduledExecutorTaskGetResultFromAddressMessageTask
     /**
      * Exceptions may be wrapped in ExecutionExceptionDecorator, the wrapped ExecutionException should be sent to
      * the client.
+     *
      * @param throwable
      */
     @Override
-    protected void sendClientMessage(Throwable throwable) {
+    protected Throwable peelIfNeeded(Throwable throwable) {
         if (throwable instanceof ScheduledTaskResult.ExecutionExceptionDecorator) {
-            super.sendClientMessage(throwable.getCause());
-        } else {
-            super.sendClientMessage(throwable);
+            throwable = throwable.getCause();
         }
+        return super.peelIfNeeded(throwable);
     }
 }

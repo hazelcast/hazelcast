@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 /**
- * An interface that can be implemented by an operation that can block. For example an ILock.acquire.
+ * An interface that can be implemented by an operation that can block. For example an IQueue.take().
  */
 public interface BlockingOperation {
 

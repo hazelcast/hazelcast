@@ -22,7 +22,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -206,7 +206,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnTarget(null, new NonSerializableResponseOperation(), target);
 
-        future.join();
+        future.joinInternal();
     }
 
     @Test(expected = HazelcastSerializationException.class)
@@ -222,7 +222,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnTarget(null, new NonSerializableResponseOperation_withNormalResponseWrapper(), target);
 
-        future.join();
+        future.joinInternal();
     }
 
     private static class NonSerializableResponse {

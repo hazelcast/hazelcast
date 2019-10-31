@@ -16,10 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigSections;
+import com.hazelcast.internal.config.MemberDomConfigProcessor;
+import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -106,6 +110,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
      *
      * @param locator the configured locator to use
      */
+    @PrivateApi
     public XmlConfigBuilder(XmlConfigLocator locator) {
         if (locator == null) {
             locator = new XmlConfigLocator();
@@ -171,7 +176,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
         String rootNodeName = root.getNodeName();
         if (!ConfigSections.HAZELCAST.isEqual(rootNodeName)) {
             throw new InvalidConfigurationException("Invalid root element in xml configuration!"
-                    + " Expected: <" + ConfigSections.HAZELCAST.name + ">, Actual: <" + rootNodeName + ">.");
+                    + " Expected: <" + ConfigSections.HAZELCAST.getName() + ">, Actual: <" + rootNodeName + ">.");
         }
     }
 

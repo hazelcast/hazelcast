@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("9e031a989a1358830b9e8af345642c2b")
+@Generated("b469765dee7bc92b0e0f048378777d42")
 public final class ClientRemoveAllListenersCodec {
-    //hex: 0x000900
-    public static final int REQUEST_MESSAGE_TYPE = 2304;
-    //hex: 0x000901
-    public static final int RESPONSE_MESSAGE_TYPE = 2305;
+    //hex: 0x000700
+    public static final int REQUEST_MESSAGE_TYPE = 1792;
+    //hex: 0x000701
+    public static final int RESPONSE_MESSAGE_TYPE = 1793;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientRemoveAllListenersCodec() {
     }
@@ -63,7 +64,7 @@ public final class ClientRemoveAllListenersCodec {
     }
 
     public static ClientRemoveAllListenersCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -84,7 +85,7 @@ public final class ClientRemoveAllListenersCodec {
     }
 
     public static ClientRemoveAllListenersCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

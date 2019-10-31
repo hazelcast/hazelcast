@@ -45,7 +45,7 @@ public class FailoverConfigTest {
     public void testAllClientConfigsAreHandledInMultipleClientConfigSupport() {
         Set<String> allClientConfigMethods = new HashSet<>();
         Collections.addAll(allClientConfigMethods, "setProperty", "getProperty", "getClassLoader", "getProperties",
-                "setProperties", "getLabels", "getClusterName", "getClusterPassword", "getSecurityConfig", "isSmartRouting", "setSmartRouting",
+                "setProperties", "getLabels", "getClusterName", "getSecurityConfig", "isSmartRouting", "setSmartRouting",
                 "getSocketInterceptorConfig", "setSocketInterceptorConfig", "getConnectionAttemptPeriod",
                 "setConnectionAttemptPeriod", "getConnectionAttemptLimit", "setConnectionAttemptLimit", "getConnectionTimeout",
                 "setConnectionTimeout", "addAddress", "setAddresses", "getAddresses", "isRedoOperation", "setRedoOperation",
@@ -55,14 +55,15 @@ public class FailoverConfigTest {
                 "setNearCacheConfigMap", "getFlakeIdGeneratorConfigMap", "findFlakeIdGeneratorConfig",
                 "getFlakeIdGeneratorConfig", "addFlakeIdGeneratorConfig", "setFlakeIdGeneratorConfigMap",
                 "setReliableTopicConfigMap", "getReliableTopicConfigMap", "getCredentials", "setCredentials", "setClusterName",
-                "setClusterPassword", "getListenerConfigs", "setListenerConfigs", "getLoadBalancer", "setLoadBalancer", "setClassLoader",
+                "getListenerConfigs", "setListenerConfigs", "getLoadBalancer", "setLoadBalancer", "setClassLoader",
                 "getManagedContext", "setManagedContext", "getExecutorPoolSize", "setExecutorPoolSize", "getProxyFactoryConfigs",
                 "setProxyFactoryConfigs", "getSerializationConfig", "setSerializationConfig", "getNativeMemoryConfig",
                 "setNativeMemoryConfig", "getLicenseKey", "setLicenseKey", "addQueryCacheConfig", "getQueryCacheConfigs",
                 "setQueryCacheConfigs", "getInstanceName", "setInstanceName", "getConnectionStrategyConfig",
                 "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
                 "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
-                "setUserContext", "getUserContext", "setMetricsConfig", "getMetricsConfig", "equals", "hashCode", "toString");
+                "setUserContext", "getUserContext", "setMetricsConfig",
+                "setBackupAckToClientEnabled", "isBackupAckToClientEnabled", "getMetricsConfig", "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             String methodName = method.getName();

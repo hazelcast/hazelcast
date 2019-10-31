@@ -16,8 +16,11 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexUtils;
 
 import java.util.Collection;
 import java.util.Map;
@@ -115,9 +118,18 @@ public interface QueryCache<K, V> {
     int size();
 
     /**
-     * @see IMap#addIndex(String, boolean)
+     * @see IMap#addIndex(IndexType, String...)
      */
-    void addIndex(String attribute, boolean ordered);
+    default void addIndex(IndexType type, String... attributes) {
+        IndexConfig config = IndexUtils.createIndexConfig(type, attributes);
+
+        addIndex(config);
+    }
+
+    /**
+     * @see IMap#addIndex(IndexConfig)
+     */
+    void addIndex(IndexConfig config);
 
     /**
      * @see IMap#getAll(Set)

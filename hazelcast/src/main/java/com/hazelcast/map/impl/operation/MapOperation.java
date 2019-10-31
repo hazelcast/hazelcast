@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -42,10 +43,10 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
@@ -129,10 +130,9 @@ public abstract class MapOperation extends AbstractNamedOperation
             return;
         }
 
-        if (mapContainer.getMapConfig().getInMemoryFormat() == NATIVE) {
-            assert getPartitionId() != GENERIC_PARTITION_ID
-                    : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
-        }
+        assert mapContainer.getMapConfig().getInMemoryFormat() != NATIVE
+                || getPartitionId() != GENERIC_PARTITION_ID
+                : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
     }
 
     protected void afterRunInternal() {
@@ -214,7 +214,8 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public boolean isPostProcessing(RecordStore recordStore) {
         MapDataStore mapDataStore = recordStore.getMapDataStore();
-        return mapDataStore.isPostProcessingMapStore() || mapServiceContext.hasInterceptor(name);
+        return mapDataStore.isPostProcessingMapStore()
+                || !mapContainer.getInterceptorRegistry().getInterceptors().isEmpty();
     }
 
     public void setThreadId(long threadId) {
@@ -248,7 +249,8 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     /**
-     * This method helps to add clearing Near Cache event only from one-partition which matches partitionId of the map name.
+     * This method helps to add clearing Near Cache event only from
+     * one-partition which matches partitionId of the map name.
      */
     protected final void invalidateAllKeysInNearCaches() {
         if (mapContainer.hasInvalidationListener()) {
@@ -335,5 +337,16 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected boolean disableWanReplicationEvent() {
         return false;
+    }
+
+    protected final TxnReservedCapacityCounter wbqCapacityCounter() {
+        return recordStore.getMapDataStore().getTxnReservedCapacityCounter();
+    }
+
+    protected final Data getValueOrPostProcessedValue(Record record, Data dataValue) {
+        if (!isPostProcessing(recordStore)) {
+            return dataValue;
+        }
+        return mapServiceContext.toData(record.getValue());
     }
 }

@@ -18,19 +18,38 @@ package com.hazelcast.config;
 
 /**
  * Storage format type of values stored in cluster
-*/
+ */
 public enum InMemoryFormat {
     /**
      * As Binary
      */
-    BINARY,
+    BINARY(0),
     /**
      * As Object
      */
-    OBJECT,
+    OBJECT(1),
 
     /**
      * As native storage
      */
-    NATIVE
+    NATIVE(2);
+
+    private final byte id;
+
+    InMemoryFormat(int id) {
+        this.id = (byte) id;
+    }
+
+    public byte getId() {
+        return id;
+    }
+
+    public static InMemoryFormat getById(int id) {
+        for (InMemoryFormat imf : values()) {
+            if (imf.getId() == id) {
+                return imf;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID value");
+    }
 }

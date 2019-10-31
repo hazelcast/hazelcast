@@ -20,7 +20,7 @@ import com.hazelcast.collection.impl.queue.operations.CheckAndEvictOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.internal.util.scheduler.ScheduledEntryProcessor;
@@ -53,7 +53,7 @@ public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, V
             Operation op = new CheckAndEvictOperation(entry.getKey())
                     .setPartitionId(partitionId);
 
-            operationService.invokeOnPartition(op).join();
+            operationService.invokeOnPartition(op).joinInternal();
         }
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

@@ -16,8 +16,28 @@
 
 package com.hazelcast.client.config;
 
+import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import javax.annotation.Nonnull;
+
 import com.hazelcast.client.Client;
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
@@ -25,7 +45,6 @@ import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
@@ -34,25 +53,6 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.Credentials;
-
-import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
-import static com.hazelcast.config.Config.DEFAULT_CLUSTER_PASSWORD;
-import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
 /**
  * Main configuration to setup a Hazelcast Client
@@ -64,17 +64,6 @@ public class ClientConfig {
      * To pass properties
      */
     private Properties properties = new Properties();
-
-    /**
-     * The cluster name uniquely identifying the hazelcast cluster
-     */
-    private String clusterName = DEFAULT_CLUSTER_NAME;
-
-    /**
-     * The cluster password.
-     */
-    private String clusterPassword = DEFAULT_CLUSTER_PASSWORD;
-
 
     /**
      * The Security Configuration for custom Credentials:
@@ -104,6 +93,7 @@ public class ClientConfig {
      */
     private int executorPoolSize = -1;
     private String instanceName;
+    private String clusterName = Config.DEFAULT_CLUSTER_NAME;
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
     private final Map<String, NearCacheConfig> nearCacheConfigMap;
     private final Map<String, ClientReliableTopicConfig> reliableTopicConfigMap;
@@ -115,6 +105,7 @@ public class ClientConfig {
     private ClassLoader classLoader;
     private ClientConnectionStrategyConfig connectionStrategyConfig = new ClientConnectionStrategyConfig();
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+    private boolean backupAckToClientEnabled = true;
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap;
     private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
@@ -174,6 +165,7 @@ public class ClientConfig {
         classLoader = config.classLoader;
         connectionStrategyConfig = new ClientConnectionStrategyConfig(config.connectionStrategyConfig);
         userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig(config.userCodeDeploymentConfig);
+        backupAckToClientEnabled = config.backupAckToClientEnabled;
         flakeIdGeneratorConfigMap = new ConcurrentHashMap<>();
         for (Entry<String, ClientFlakeIdGeneratorConfig> entry : config.flakeIdGeneratorConfigMap.entrySet()) {
             flakeIdGeneratorConfigMap.put(entry.getKey(), new ClientFlakeIdGeneratorConfig(entry.getValue()));
@@ -189,8 +181,8 @@ public class ClientConfig {
      * By default the {@link MatchingPointConfigPatternMatcher} is used.
      *
      * @param configPatternMatcher the pattern matcher
-     * @throws IllegalArgumentException if the pattern matcher is {@code null}
      * @return this configuration
+     * @throws IllegalArgumentException if the pattern matcher is {@code null}
      */
     public ClientConfig setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         isNotNull(configPatternMatcher, "configPatternMatcher");
@@ -254,10 +246,9 @@ public class ClientConfig {
     }
 
     /**
-     * Gets {@link com.hazelcast.client.config.ClientSecurityConfig} object
+     * Gets {@link ClientSecurityConfig} object which allows client credentials configuration.
      *
-     * @return {@link com.hazelcast.client.config.ClientSecurityConfig}
-     * @see com.hazelcast.client.config.ClientSecurityConfig
+     * @return {@link ClientSecurityConfig} instance
      */
     public ClientSecurityConfig getSecurityConfig() {
         return securityConfig;
@@ -273,6 +264,16 @@ public class ClientConfig {
     public ClientConfig setSecurityConfig(ClientSecurityConfig securityConfig) {
         isNotNull(securityConfig, "securityConfig");
         this.securityConfig = securityConfig;
+        return this;
+    }
+
+    /**
+     * Shortcut for {@code getSecurityConfig().setCredentials()}
+     * @param credentials Credentials instance to be set
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     */
+    public ClientConfig setCredentials(Credentials credentials) {
+        getSecurityConfig().setCredentials(credentials);
         return this;
     }
 
@@ -531,76 +532,6 @@ public class ClientConfig {
     }
 
     /**
-     * Gets {@link com.hazelcast.security.Credentials}
-     *
-     * @return {@link com.hazelcast.security.Credentials}
-     * @see com.hazelcast.security.Credentials
-     */
-    public Credentials getCredentials() {
-        return securityConfig.getCredentials();
-    }
-
-    /**
-     * Sets {@link com.hazelcast.security.Credentials}
-     *
-     * @param credentials {@link com.hazelcast.security.Credentials}
-     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-     */
-    public ClientConfig setCredentials(Credentials credentials) {
-        securityConfig.setCredentials(credentials);
-        return this;
-    }
-
-    /**
-     * Returns the cluster name uniquely identifying the hazelcast cluster. This name is
-     * used in different scenarios, such as identifying cluster for WAN publisher.
-     *
-     * @return the cluster name.
-     */
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    /**
-     * Sets the cluster name uniquely identifying the hazelcast cluster. This name is
-     * used in different scenarios, such as identifying cluster for WAN publisher.
-     * @param clusterName the new cluster name
-     * @return this config instance
-     * @throws IllegalArgumentException if name is {@code null}
-     */
-    public ClientConfig setClusterName(String clusterName) {
-        this.clusterName = isNotNull(clusterName, "clusterName");
-        return this;
-    }
-
-    /**
-     * Gets the password of the cluster.
-     *
-     * @return the password of the cluster
-     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
-     * {@link SecurityConfig security} is enabled (Enterprise edition only).
-     */
-    @Deprecated
-    public String getClusterPassword() {
-        return clusterPassword;
-    }
-
-    /**
-     * Sets the password for the cluster.
-     *
-     * @param password the password to set for the cluster
-     * @return the updated Config
-     * @throws IllegalArgumentException if password is {@code null}
-     * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
-     * {@link SecurityConfig security} is enabled (Enterprise edition only).
-     */
-    @Deprecated
-    public ClientConfig setClusterPassword(final String password) {
-        this.clusterPassword = isNotNull(password, "cluster password");
-        return this;
-    }
-
-    /**
      * Gets list of all configured {@link ListenerConfig}'s
      *
      * @return {@link ListenerConfig}
@@ -801,6 +732,21 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Returns the configured cluster name. The name is sent as part of client authentication message and may be verified on the
+     * member.
+     *
+     * @return the configured cluster name
+     */
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public ClientConfig setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+        return this;
+    }
+
     public ClientConnectionStrategyConfig getConnectionStrategyConfig() {
         return connectionStrategyConfig;
     }
@@ -919,84 +865,28 @@ public class ClientConfig {
         return userContext;
     }
 
-    @Override
-    @SuppressWarnings({"checkstyle:methodlength", "checkstyle:cyclomaticcomplexity",
-            "checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    /**
+     * This feature reduces number of hops and increase performance for smart clients.
+     * It is enabled by default for smart clients.
+     * This config has no effect for unisocket clients.
+     *
+     * @param backupAckToClientEnabled enables client to get backup acknowledgements directly from the member
+     *                                 that backups are applied
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     */
+    public ClientConfig setBackupAckToClientEnabled(boolean backupAckToClientEnabled) {
+        this.backupAckToClientEnabled = backupAckToClientEnabled;
+        return this;
+    }
 
-        ClientConfig that = (ClientConfig) o;
-
-        if (executorPoolSize != that.executorPoolSize) {
-            return false;
-        }
-        if (!properties.equals(that.properties)) {
-            return false;
-        }
-        if (!clusterName.equals(that.clusterName)) {
-            return false;
-        }
-        if (!securityConfig.equals(that.securityConfig)) {
-            return false;
-        }
-        if (!networkConfig.equals(that.networkConfig)) {
-            return false;
-        }
-        if (loadBalancer != null ? !loadBalancer.equals(that.loadBalancer) : that.loadBalancer != null) {
-            return false;
-        }
-        if (!listenerConfigs.equals(that.listenerConfigs)) {
-            return false;
-        }
-        if (instanceName != null ? !instanceName.equals(that.instanceName) : that.instanceName != null) {
-            return false;
-        }
-        if (configPatternMatcher != null
-                ? !configPatternMatcher.equals(that.configPatternMatcher) : that.configPatternMatcher != null) {
-            return false;
-        }
-        if (!nearCacheConfigMap.equals(that.nearCacheConfigMap)) {
-            return false;
-        }
-        if (!reliableTopicConfigMap.equals(that.reliableTopicConfigMap)) {
-            return false;
-        }
-        if (!queryCacheConfigs.equals(that.queryCacheConfigs)) {
-            return false;
-        }
-        if (!serializationConfig.equals(that.serializationConfig)) {
-            return false;
-        }
-        if (!nativeMemoryConfig.equals(that.nativeMemoryConfig)) {
-            return false;
-        }
-        if (!proxyFactoryConfigs.equals(that.proxyFactoryConfigs)) {
-            return false;
-        }
-        if (managedContext != null ? !managedContext.equals(that.managedContext) : that.managedContext != null) {
-            return false;
-        }
-        if (classLoader != null ? !classLoader.equals(that.classLoader) : that.classLoader != null) {
-            return false;
-        }
-        if (!connectionStrategyConfig.equals(that.connectionStrategyConfig)) {
-            return false;
-        }
-        if (!userCodeDeploymentConfig.equals(that.userCodeDeploymentConfig)) {
-            return false;
-        }
-        if (!flakeIdGeneratorConfigMap.equals(that.flakeIdGeneratorConfigMap)) {
-            return false;
-        }
-        if (!labels.equals(that.labels)) {
-            return false;
-        }
-        return userContext.equals(that.userContext);
+    /**
+     * Note that backup acks to client can be enabled only for smart client.
+     * This config has no effect for unisocket clients.
+     *
+     * @return true if backup acknowledgements comes to client
+     */
+    public boolean isBackupAckToClientEnabled() {
+        return backupAckToClientEnabled;
     }
 
     /**
@@ -1018,32 +908,46 @@ public class ClientConfig {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
     public int hashCode() {
-        int result = properties.hashCode();
-        result = 31 * result + clusterName.hashCode();
-        result = 31 * result + securityConfig.hashCode();
-        result = 31 * result + networkConfig.hashCode();
-        result = 31 * result + (loadBalancer != null ? loadBalancer.hashCode() : 0);
-        result = 31 * result + listenerConfigs.hashCode();
-        result = 31 * result + executorPoolSize;
-        result = 31 * result + (instanceName != null ? instanceName.hashCode() : 0);
-        result = 31 * result + (configPatternMatcher != null ? configPatternMatcher.hashCode() : 0);
-        result = 31 * result + nearCacheConfigMap.hashCode();
-        result = 31 * result + reliableTopicConfigMap.hashCode();
-        result = 31 * result + queryCacheConfigs.hashCode();
-        result = 31 * result + serializationConfig.hashCode();
-        result = 31 * result + nativeMemoryConfig.hashCode();
-        result = 31 * result + proxyFactoryConfigs.hashCode();
-        result = 31 * result + (managedContext != null ? managedContext.hashCode() : 0);
-        result = 31 * result + (classLoader != null ? classLoader.hashCode() : 0);
-        result = 31 * result + connectionStrategyConfig.hashCode();
-        result = 31 * result + userCodeDeploymentConfig.hashCode();
-        result = 31 * result + flakeIdGeneratorConfigMap.hashCode();
-        result = 31 * result + labels.hashCode();
-        result = 31 * result + userContext.hashCode();
-        result = 31 * result + metricsConfig.hashCode();
-        return result;
+        return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
+                executorPoolSize, flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
+                managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
+                proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
+                userCodeDeploymentConfig, userContext);
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        ClientConfig other = (ClientConfig) obj;
+        return backupAckToClientEnabled == other.backupAckToClientEnabled && Objects.equals(classLoader, other.classLoader)
+                && Objects.equals(clusterName, other.clusterName)
+                && Objects.equals(configPatternMatcher, other.configPatternMatcher)
+                && Objects.equals(connectionStrategyConfig, other.connectionStrategyConfig)
+                && executorPoolSize == other.executorPoolSize
+                && Objects.equals(flakeIdGeneratorConfigMap, other.flakeIdGeneratorConfigMap)
+                && Objects.equals(instanceName, other.instanceName) && Objects.equals(labels, other.labels)
+                && Objects.equals(listenerConfigs, other.listenerConfigs) && Objects.equals(loadBalancer, other.loadBalancer)
+                && Objects.equals(managedContext, other.managedContext) && Objects.equals(metricsConfig, other.metricsConfig)
+                && Objects.equals(nativeMemoryConfig, other.nativeMemoryConfig)
+                && Objects.equals(nearCacheConfigMap, other.nearCacheConfigMap)
+                && Objects.equals(networkConfig, other.networkConfig) && Objects.equals(properties, other.properties)
+                && Objects.equals(proxyFactoryConfigs, other.proxyFactoryConfigs)
+                && Objects.equals(queryCacheConfigs, other.queryCacheConfigs)
+                && Objects.equals(reliableTopicConfigMap, other.reliableTopicConfigMap)
+                && Objects.equals(securityConfig, other.securityConfig)
+                && Objects.equals(serializationConfig, other.serializationConfig)
+                && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
+                && Objects.equals(userContext, other.userContext);
     }
 
     @Override
@@ -1066,6 +970,7 @@ public class ClientConfig {
                 + ", proxyFactoryConfigs=" + proxyFactoryConfigs
                 + ", connectionStrategyConfig=" + connectionStrategyConfig
                 + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig
+                + ", backupAckToClientEnabled=" + backupAckToClientEnabled
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig

@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.transaction.TransactionalQueue;
 
 import javax.annotation.Nonnull;

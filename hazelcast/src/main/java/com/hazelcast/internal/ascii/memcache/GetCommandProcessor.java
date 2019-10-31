@@ -28,7 +28,7 @@ public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
         this.entryConverter = entryConverter;
     }
 
-    @Deprecated
+    @Override
     public void handle(GetCommand getCommand) {
         String memcacheKey = getCommand.getKey();
         MapNameAndKeyPair mapNameAndKeyPair = parseMemcacheKey(memcacheKey);

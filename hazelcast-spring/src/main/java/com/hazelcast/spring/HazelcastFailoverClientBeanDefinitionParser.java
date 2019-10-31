@@ -26,14 +26,14 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
 
 /**
  * BeanDefinitionParser for Hazelcast Client Configuration.
  *     <hz:client-failover id="blueGreenClient" try-count="5">
  *         <hz:client>
- *             <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
+ *             <hz:cluster-name>${cluster.name}</hz:cluster-name>
  *             <hz:network>
  *                 <hz:member>127.0.0.1:5700</hz:member>
  *                 <hz:member>127.0.0.1:5701</hz:member>
@@ -41,7 +41,7 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
  *         </hz:client>
  *
  *         <hz:client>
- *             <hz:cluster name="alternativeClusterName" password="${cluster.password}"/>
+ *             <hz:cluster-name>alternativeClusterName</hz:cluster-name>
  *             <hz:network>
  *                 <hz:member>127.0.0.1:5702</hz:member>
  *                 <hz:member>127.0.0.1:5703</hz:member>

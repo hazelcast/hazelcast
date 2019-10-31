@@ -72,8 +72,8 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
 
         String key = generateKeyOwnedBy(instances[1]);
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
-        IAtomicLong runC = instances[0].getAtomicLong("runC");
-        IAtomicLong loadC = instances[0].getAtomicLong("loadC");
+        IAtomicLong runC = instances[0].getCPSubsystem().getAtomicLong("runC");
+        IAtomicLong loadC = instances[0].getCPSubsystem().getAtomicLong("loadC");
 
         latch.trySetCount(1);
 

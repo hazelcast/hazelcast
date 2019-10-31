@@ -16,14 +16,18 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.config.impl.ClientFailoverConfigSections;
+import com.hazelcast.client.config.impl.ClientFailoverDomConfigProcessor;
+import com.hazelcast.client.config.impl.XmlClientFailoverConfigLocator;
 import com.hazelcast.config.AbstractXmlConfigBuilder;
-import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -101,6 +105,7 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
      * @param locator the configured locator to use
      * @throws HazelcastException if no failover configuration is found
      */
+    @PrivateApi
     public XmlClientFailoverConfigBuilder(XmlClientFailoverConfigLocator locator) {
         if (locator == null) {
             locator = new XmlClientFailoverConfigLocator();

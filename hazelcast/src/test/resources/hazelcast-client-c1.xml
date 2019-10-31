@@ -20,10 +20,7 @@
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd">
 
-    <cluster>
-        <name>cluster1</name>
-        <password>cluster1pass</password>
-    </cluster>
+    <cluster-name>cluster1</cluster-name>
 
     <network>
         <cluster-members>
@@ -32,7 +29,6 @@
     </network>
 
     <connection-strategy async-start="true" reconnect-mode="OFF">
-        <connection-retry enabled="false"/>
     </connection-strategy>
 
 </hazelcast-client>

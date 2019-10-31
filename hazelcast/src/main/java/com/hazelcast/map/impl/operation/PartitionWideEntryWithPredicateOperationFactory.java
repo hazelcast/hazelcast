@@ -34,7 +34,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 

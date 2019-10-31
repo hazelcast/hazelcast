@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.nio.ObjectDataInput;

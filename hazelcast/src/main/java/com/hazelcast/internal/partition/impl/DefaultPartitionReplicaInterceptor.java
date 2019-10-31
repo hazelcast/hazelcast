@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 
@@ -26,11 +25,9 @@ import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
  * and cancel any ongoing replica synchronization on the changed partition.
  */
 final class DefaultPartitionReplicaInterceptor implements PartitionReplicaInterceptor {
-    private final Node node;
     private final InternalPartitionServiceImpl partitionService;
 
-    DefaultPartitionReplicaInterceptor(Node node, InternalPartitionServiceImpl partitionService) {
-        this.node = node;
+    DefaultPartitionReplicaInterceptor(InternalPartitionServiceImpl partitionService) {
         this.partitionService = partitionService;
     }
 
@@ -40,7 +37,7 @@ final class DefaultPartitionReplicaInterceptor implements PartitionReplicaInterc
             partitionService.getReplicaManager().cancelReplicaSync(partitionId);
         }
 
-        if (node.isMaster()) {
+        if (partitionService.isLocalMemberMaster()) {
             partitionService.getPartitionStateManager().incrementVersion();
         }
     }

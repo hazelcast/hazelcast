@@ -25,7 +25,7 @@ import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.JsonSerializable;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,9 +33,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+import static com.hazelcast.config.MapConfig.DEFAULT_CACHED_DESERIALIZED_VALUES;
+import static com.hazelcast.config.MapConfig.DEFAULT_METADATA_POLICY;
+import static com.hazelcast.config.MapConfig.DEFAULT_STATISTICS_ENABLED;
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
-import static com.hazelcast.internal.util.JsonUtil.getObject;
 import static com.hazelcast.internal.util.JsonUtil.getString;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
@@ -79,7 +81,7 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
         root.add("maxIdle", mapConfig.getMaxIdleSeconds());
         root.add("readBackupData", mapConfig.isReadBackupData());
         root.add("statisticsEnabled", mapConfig.isStatisticsEnabled());
-        root.add("mergePolicy", new MergePolicyConfigDTO(mapConfig.getMergePolicyConfig()).toJson());
+        root.add("mergePolicy", mapConfig.getMergePolicyConfig().getPolicy());
         root.add("mapStoreConfig", new MapStoreConfigDTO(mapConfig.getMapStoreConfig()).toJson());
 
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
@@ -108,22 +110,29 @@ public class MapConfigDTO implements JsonSerializable, IdentifiedDataSerializabl
                 .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getString(json, "maxSizePolicy"))));
         mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
         mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(getString(json, "memoryFormat")));
-        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.valueOf(getString(json, "cacheDeserializedValues")));
-        mapConfig.setMetadataPolicy(MetadataPolicy.valueOf(getString(json, "metadataPolicy")));
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.valueOf(
+                getString(json, "cacheDeserializedValues", DEFAULT_CACHED_DESERIALIZED_VALUES.name())));
+        mapConfig.setMetadataPolicy(
+                MetadataPolicy.valueOf(getString(json, "metadataPolicy", DEFAULT_METADATA_POLICY.name())));
         mapConfig.setBackupCount(getInt(json, "backupCount"));
         mapConfig.setAsyncBackupCount(getInt(json, "asyncBackupCount"));
         mapConfig.setTimeToLiveSeconds(getInt(json, "ttl"));
         mapConfig.setMaxIdleSeconds(getInt(json, "maxIdle"));
         mapConfig.setReadBackupData(getBoolean(json, "readBackupData"));
-        mapConfig.setStatisticsEnabled(getBoolean(json, "statisticsEnabled"));
+        mapConfig.setStatisticsEnabled(
+                getBoolean(json, "statisticsEnabled", DEFAULT_STATISTICS_ENABLED));
 
-        MergePolicyConfigDTO mergePolicyConfigDTO = new MergePolicyConfigDTO();
-        mergePolicyConfigDTO.fromJson(getObject(json, "mergePolicy"));
-        mapConfig.setMergePolicyConfig(mergePolicyConfigDTO.getConfig());
+        String mergePolicy = getString(json, "mergePolicy", null);
+        if (mergePolicy != null) {
+            mapConfig.getMergePolicyConfig().setPolicy(mergePolicy);
+        }
 
-        MapStoreConfigDTO mapStoreConfigDTO = new MapStoreConfigDTO();
-        mapStoreConfigDTO.fromJson(getObject(json, "mapStoreConfig"));
-        mapConfig.setMapStoreConfig(mapStoreConfigDTO.getConfig());
+        JsonValue mapStoreConfig = json.get("mapStoreConfig");
+        if (mapStoreConfig != null && !mapStoreConfig.isNull()) {
+            MapStoreConfigDTO mapStoreConfigDTO = new MapStoreConfigDTO();
+            mapStoreConfigDTO.fromJson(mapStoreConfig.asObject());
+            mapConfig.setMapStoreConfig(mapStoreConfigDTO.getConfig());
+        }
 
         JsonValue nearCacheConfig = json.get("nearCacheConfig");
         if (nearCacheConfig != null && !nearCacheConfig.isNull()) {

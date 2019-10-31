@@ -17,11 +17,10 @@
 package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndAddOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -35,8 +34,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link GetAndAddOp}
  */
-public class GetMessageTask extends AbstractMessageTask<CPAtomicLongGetCodec.RequestParameters>
-        implements ExecutionCallback<Long> {
+public class GetMessageTask extends AbstractCPMessageTask<AtomicLongGetCodec.RequestParameters> {
 
     public GetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,22 +45,22 @@ public class GetMessageTask extends AbstractMessageTask<CPAtomicLongGetCodec.Req
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .<Long>query(parameters.groupId, new GetAndAddOp(parameters.name, 0), LINEARIZABLE)
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
-    protected CPAtomicLongGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicLongGetCodec.decodeRequest(clientMessage);
+    protected AtomicLongGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongGetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicLongGetCodec.encodeResponse((Long) response);
+        return AtomicLongGetCodec.encodeResponse((Long) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override
@@ -82,15 +80,5 @@ public class GetMessageTask extends AbstractMessageTask<CPAtomicLongGetCodec.Req
 
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(Long response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

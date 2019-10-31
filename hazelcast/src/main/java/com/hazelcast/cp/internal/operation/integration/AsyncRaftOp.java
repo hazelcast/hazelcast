@@ -16,8 +16,8 @@
 
 package com.hazelcast.cp.internal.operation.integration;
 
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.cp.internal.RaftSystemOperation;
@@ -35,7 +35,7 @@ import java.io.IOException;
 public abstract class AsyncRaftOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation {
 
     protected CPGroupId groupId;
-    protected CPMember target;
+    protected RaftEndpoint target;
 
     AsyncRaftOp() {
     }
@@ -44,7 +44,7 @@ public abstract class AsyncRaftOp extends Operation implements IdentifiedDataSer
         this.groupId = groupId;
     }
 
-    public final Operation setTargetMember(CPMember target) {
+    public final Operation setTargetEndpoint(RaftEndpoint target) {
         this.target = target;
         return this;
     }

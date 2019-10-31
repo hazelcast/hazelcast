@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -35,7 +35,7 @@ import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.UuidUtil;
 
@@ -482,14 +482,14 @@ public class ScheduledExecutorServiceProxy
     private @Nonnull
     <V> IScheduledFuture<V> submitOnPartitionSync(String taskName, Operation op, int partitionId) {
         op.setPartitionId(partitionId);
-        invokeOnPartition(op).join();
+        invokeOnPartition(op).joinInternal();
         return createFutureProxy(partitionId, taskName);
     }
 
     private @Nonnull
     <V> IScheduledFuture<V> submitOnMemberSync(String taskName, Operation op, Member member) {
         Address address = member.getAddress();
-        getOperationService().invokeOnTarget(getServiceName(), op, address).join();
+        getOperationService().invokeOnTarget(getServiceName(), op, address).joinInternal();
         return createFutureProxy(address, taskName);
     }
 

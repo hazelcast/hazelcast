@@ -75,7 +75,8 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
         instances[instances.length - 1].shutdown();
 
         HazelcastInstance instance = factory.newHazelcastInstance(createConfig(3, 3));
-        instance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+        instance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
+                .toCompletableFuture().get();
 
         // Read from local CP member, which should install snapshot after promotion.
         assertTrueEventually(() -> {
@@ -97,7 +98,7 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
     }
 
     protected T getValue(InternalCompletableFuture<Object> future) {
-        return (T) future.join();
+        return (T) future.joinInternal();
     }
 
     private InternalCompletableFuture<Object> queryLocally(HazelcastInstance instance) {

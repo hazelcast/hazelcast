@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,15 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("9601c4da8fea9239f1ff68451b58b6d4")
+@Generated("30528c6990913e992c7c54d4ef12fedc")
 public final class CachePutAllCodec {
-    //hex: 0x151C00
-    public static final int REQUEST_MESSAGE_TYPE = 1383424;
-    //hex: 0x151C01
-    public static final int RESPONSE_MESSAGE_TYPE = 1383425;
+    //hex: 0x131C00
+    public static final int REQUEST_MESSAGE_TYPE = 1252352;
+    //hex: 0x131C01
+    public static final int RESPONSE_MESSAGE_TYPE = 1252353;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CachePutAllCodec() {
     }
@@ -65,7 +66,7 @@ public final class CachePutAllCodec {
          * expiry policy for the entry. Byte-array which is serialized from an object implementing
          * {@link javax.cache.expiry.ExpiryPolicy} interface.
          */
-        public com.hazelcast.nio.serialization.Data expiryPolicy;
+        public @Nullable com.hazelcast.nio.serialization.Data expiryPolicy;
 
         /**
          * user generated id which shall be received as a field of the cache event upon completion of
@@ -74,7 +75,7 @@ public final class CachePutAllCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> entries, com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> entries, @Nullable com.hazelcast.nio.serialization.Data expiryPolicy, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -84,18 +85,18 @@ public final class CachePutAllCodec {
         encodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET, completionId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        MapCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, expiryPolicy, DataCodec::encode);
         return clientMessage;
     }
 
     public static CachePutAllCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.completionId = decodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.entries = MapCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         request.expiryPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return request;
     }
@@ -114,7 +115,7 @@ public final class CachePutAllCodec {
     }
 
     public static CachePutAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

@@ -41,7 +41,7 @@ public class ProxyEqualityTest {
     private final TestHazelcastFactory hazelcastFactoryClusterA = new TestHazelcastFactory();
     private final TestHazelcastFactory hazelcastFactoryClusterB = new TestHazelcastFactory();
 
-    private final String atomicName = "foo";
+    private final String name = "foo";
 
     private HazelcastInstance client1ClusterA;
     private HazelcastInstance client2ClusterA;
@@ -81,8 +81,8 @@ public class ProxyEqualityTest {
     @Test
     public void testTwoClientProxiesFromTheSameInstanceAreEquals() {
 
-        ClientProxy ref1 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
+        ClientProxy ref1 = (ClientProxy) client1ClusterA.getSet(name);
+        ClientProxy ref2 = (ClientProxy) client1ClusterA.getSet(name);
 
         assertEquals(ref1, ref2);
     }
@@ -90,8 +90,8 @@ public class ProxyEqualityTest {
     @Test
     public void testProxiesAreCached() {
 
-        ClientProxy ref1 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
+        ClientProxy ref1 = (ClientProxy) client1ClusterA.getSet(name);
+        ClientProxy ref2 = (ClientProxy) client1ClusterA.getSet(name);
 
         assertSame(ref1, ref2);
     }
@@ -99,8 +99,8 @@ public class ProxyEqualityTest {
     @Test
     public void testTwoClientProxiesFromDifferentInstancesAreNotEquals() {
 
-        ClientProxy ref1 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1ClusterB.getAtomicLong(atomicName);
+        ClientProxy ref1 = (ClientProxy) client1ClusterA.getSet(name);
+        ClientProxy ref2 = (ClientProxy) client1ClusterB.getSet(name);
 
         assertNotEquals(ref1, ref2);
     }
@@ -108,8 +108,8 @@ public class ProxyEqualityTest {
     @Test
     public void testTwoClientProxiesFromTwoDifferentClientsConnectedToTheSameInstanceAreNotEquals() {
 
-        ClientProxy ref1 = (ClientProxy) client1ClusterA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client2ClusterA.getAtomicLong(atomicName);
+        ClientProxy ref1 = (ClientProxy) client1ClusterA.getSet(name);
+        ClientProxy ref2 = (ClientProxy) client2ClusterA.getSet(name);
 
         assertNotEquals(ref1, ref2);
     }

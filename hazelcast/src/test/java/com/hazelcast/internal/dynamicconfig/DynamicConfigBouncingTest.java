@@ -21,9 +21,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -109,7 +110,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig("queryCacheName")
                 .setBatchSize(100)
-                .addIndexConfig(new MapIndexConfig("attribute", false))
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "attribute"))
                 .addEntryListenerConfig(new EntryListenerConfig("foo.bar.Classname", false, true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT);
 
@@ -131,8 +132,8 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .addEntryListenerConfig(entryListener)
                 .addEntryListenerConfig(mapListener)
                 .addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig("foo.bar.Classname"))
-                .addMapIndexConfig(new MapIndexConfig("orderAttribute", true))
-                .addMapIndexConfig(new MapIndexConfig("unorderedAttribute", false))
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "orderAttribute"))
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "unorderedAttribute"))
                 .addAttributeConfig(new AttributeConfig("attribute", "foo.bar.ExtractorClass"))
                 .addQueryCacheConfig(queryCacheConfig)
                 .setStatisticsEnabled(false)

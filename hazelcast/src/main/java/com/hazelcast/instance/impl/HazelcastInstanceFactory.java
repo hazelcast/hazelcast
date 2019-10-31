@@ -20,9 +20,9 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.config.XmlConfigLocator;
+import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.config.YamlConfigBuilder;
-import com.hazelcast.config.YamlConfigLocator;
+import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.util.ModularJavaUtils;
@@ -40,8 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
-import static com.hazelcast.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
@@ -59,7 +59,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class HazelcastInstanceFactory {
 
     private static final int ADDITIONAL_SLEEP_SECONDS_FOR_NON_FIRST_MEMBERS = 4;
-    private static final int MOBY_NAME_MAX_ATTEMPTS = 3;
 
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
     private static final ConcurrentMap<String, InstanceFuture> INSTANCE_MAP = new ConcurrentHashMap<String, InstanceFuture>(5);
@@ -173,28 +172,11 @@ public final class HazelcastInstanceFactory {
         int instanceNum = FACTORY_ID_GEN.incrementAndGet();
         String name;
         if (useMobyNaming) {
-            name = createUniqueMobyName(instanceNum);
+            name = MobyNames.getRandomName(instanceNum);
         } else {
             name = "_hzInstance_" + instanceNum + "_" + config.getClusterName();
         }
         return name;
-    }
-
-    /**
-     * Generate random Moby Name. If a name already exists it repeats {@link #MOBY_NAME_MAX_ATTEMPTS} times, if no success
-     * so {@param instanceNum} is appended to the end to provide uniqueness.
-     * @param instanceNum instance number. Must be unique within the current classloader.
-     * @return new instance's generated name.
-     */
-    private static String createUniqueMobyName(int instanceNum) {
-        String nameCandidate = null;
-        for (int i = 0; i < MOBY_NAME_MAX_ATTEMPTS; i++) {
-            nameCandidate = MobyNames.getRandomName();
-            if (!INSTANCE_MAP.containsKey(nameCandidate)) {
-                return nameCandidate;
-            }
-        }
-        return nameCandidate + instanceNum;
     }
 
     /**

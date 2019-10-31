@@ -19,7 +19,7 @@ package com.hazelcast.multimap;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.IMap;
-import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.map.LocalMapStats;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -471,7 +471,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * backupEntryCount, lastUpdateTime, and lockedEntryCount.
      * <p>
      * Since this stats are only for the local portion of this multi map, if you
-     * need the cluster-wide MultiMapStats, then you need to get the {@link com.hazelcast.monitor.LocalMapStats LocalMapStats}
+     * need the cluster-wide MultiMapStats, then you need to get the {@link LocalMapStats LocalMapStats}
      * from all members of the cluster and combine them.
      *
      * @return this multimap's local statistics.

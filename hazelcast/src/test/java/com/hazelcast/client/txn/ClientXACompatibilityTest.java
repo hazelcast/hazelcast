@@ -396,13 +396,6 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
         assertEquals(val2, m.get(key2));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetXAResource_TransactionProxy() throws Exception {
-        xaResource.start(xid, TMNOFLAGS);
-        TransactionContext transactionContext = xaResource.getTransactionContext();
-        transactionContext.getXaResource();
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void testGetTransactionObject_UnknownService() throws Exception {
         xaResource.start(xid, TMNOFLAGS);

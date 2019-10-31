@@ -17,7 +17,7 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nearcache.NearCacheStats;
 
 /**
  * {@link com.hazelcast.cache.CacheStatistics} implementation for client side {@link com.hazelcast.cache.ICache}.

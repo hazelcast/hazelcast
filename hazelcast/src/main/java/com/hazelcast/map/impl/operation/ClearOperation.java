@@ -25,7 +25,8 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
-public class ClearOperation extends MapOperation implements BackupAwareOperation, PartitionAwareOperation, MutatingOperation {
+public class ClearOperation extends MapOperation
+        implements BackupAwareOperation, PartitionAwareOperation, MutatingOperation {
 
     private boolean shouldBackup;
     private int numberOfClearedEntries;

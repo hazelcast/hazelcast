@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.internal.util.SetUtil.singletonPartitionIdSet;
@@ -52,12 +51,14 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
         this.timeoutInMillis = timeoutInMillis;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result) {
         runUsingPartitionScanWithoutPaging(mapName, predicate, partitions, result);
-        if (predicate instanceof PagingPredicate) {
-            Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry((PagingPredicate) predicate);
-            result.orderAndLimit((PagingPredicate) predicate, nearestAnchorEntry);
+        if (predicate instanceof PagingPredicateImpl) {
+            PagingPredicateImpl pagingPredicate = (PagingPredicateImpl) predicate;
+            Map.Entry<Integer, Map.Entry> nearestAnchorEntry = pagingPredicate.getNearestAnchorEntry();
+            result.orderAndLimit(pagingPredicate, nearestAnchorEntry);
         }
     }
 

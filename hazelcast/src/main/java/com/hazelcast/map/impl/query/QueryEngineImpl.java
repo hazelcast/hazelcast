@@ -24,14 +24,14 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
@@ -104,8 +104,8 @@ public class QueryEngineImpl implements QueryEngine {
     private Query adjustQuery(Query query) {
         IterationType retrievalIterationType = getRetrievalIterationType(query.getPredicate(), query.getIterationType());
         Query adjustedQuery = Query.of(query).iterationType(retrievalIterationType).build();
-        if (adjustedQuery.getPredicate() instanceof PagingPredicate) {
-            PagingPredicateAccessor.setIterationType((PagingPredicate) adjustedQuery.getPredicate(), query.getIterationType());
+        if (adjustedQuery.getPredicate() instanceof PagingPredicateImpl) {
+            ((PagingPredicateImpl) adjustedQuery.getPredicate()).setIterationType(query.getIterationType());
         } else {
             if (adjustedQuery.getPredicate() == Predicates.alwaysTrue()) {
                 queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(adjustedQuery.getMapName());

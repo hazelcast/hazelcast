@@ -77,7 +77,7 @@ public class CompleteDestroyRaftGroupsOp extends MetadataRaftGroupOp implements 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int count = in.readInt();
-        groupIds = new HashSet<CPGroupId>();
+        groupIds = new HashSet<>();
         for (int i = 0; i < count; i++) {
             CPGroupId groupId = in.readObject();
             groupIds.add(groupId);

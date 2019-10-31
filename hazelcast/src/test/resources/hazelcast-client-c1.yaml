@@ -13,9 +13,7 @@
 # limitations under the License.
 
 hazelcast-client:
-  cluster:
-    name: cluster1
-    password: cluster1pass
+  cluster-name: cluster1
 
   network:
     cluster-members:

@@ -22,7 +22,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.Objects;
 
 /**
@@ -99,16 +98,18 @@ import java.util.Objects;
  */
 @SuppressWarnings("checkstyle:MagicNumber")
 @BinaryInterface
-public final class ClientMessage extends LinkedList<ClientMessage.Frame> implements OutboundFrame {
+public final class ClientMessage implements OutboundFrame {
 
     // All offsets here are offset of frame.content byte[]
     // Note that frames have frame length and flags before this byte[] content
     public static final int TYPE_FIELD_OFFSET = 0;
     public static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    //backup acks field offset is used by response messages
+    public static final int RESPONSE_BACKUP_ACKS_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
+    //partition id field offset used by request and event messages
+    public static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     //offset valid for fragmentation frames only
     public static final int FRAGMENTATION_ID_OFFSET = 0;
-    //optional fixed partition id field offset
-    public static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
 
     public static final int DEFAULT_FLAGS = 0;
     public static final int BEGIN_FRAGMENT_FLAG = 1 << 15;
@@ -119,6 +120,8 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
     public static final int END_DATA_STRUCTURE_FLAG = 1 << 11;
     public static final int IS_NULL_FLAG = 1 << 10;
     public static final int IS_EVENT_FLAG = 1 << 9;
+    public static final int BACKUP_AWARE_FLAG = 1 << 8;
+    public static final int BACKUP_EVENT_FLAG = 1 << 7;
 
     //frame length + flags
     public static final int SIZE_OF_FRAME_LENGTH_AND_FLAGS = Bits.INT_SIZE_IN_BYTES + Bits.SHORT_SIZE_IN_BYTES;
@@ -127,6 +130,9 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
     public static final Frame END_FRAME = new Frame(new byte[0], END_DATA_STRUCTURE_FLAG);
 
     private static final long serialVersionUID = 1L;
+
+    transient Frame startFrame;
+    transient Frame endFrame;
 
     private transient boolean isRetryable;
     private transient boolean acquiresResource;
@@ -137,47 +143,90 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
 
     }
 
-    private ClientMessage(LinkedList<Frame> frames) {
-        super(frames);
+    private ClientMessage(Frame startFrame) {
+        this.startFrame = startFrame;
+        endFrame = startFrame;
+        while (endFrame.next != null) {
+            endFrame = endFrame.next;
+        }
     }
 
     public static ClientMessage createForEncode() {
         return new ClientMessage();
     }
 
-    public static ClientMessage createForDecode(LinkedList<Frame> frames) {
-        return new ClientMessage(frames);
+    public static ClientMessage createForDecode(Frame startFrame) {
+        return new ClientMessage(startFrame);
+    }
+
+    public Frame getStartFrame() {
+        return startFrame;
+    }
+
+    public ClientMessage add(Frame frame) {
+        frame.next = null;
+        if (startFrame == null) {
+            startFrame = frame;
+            endFrame = frame;
+            return this;
+        }
+
+        endFrame.next = frame;
+        endFrame = frame;
+        return this;
+    }
+
+    public ForwardFrameIterator frameIterator() {
+        return new ForwardFrameIterator(startFrame);
     }
 
     public int getMessageType() {
-        return Bits.readIntL(get(0).content, ClientMessage.TYPE_FIELD_OFFSET);
+        return Bits.readIntL(startFrame.content, ClientMessage.TYPE_FIELD_OFFSET);
     }
 
     public ClientMessage setMessageType(int messageType) {
-        Bits.writeIntL(get(0).content, TYPE_FIELD_OFFSET, messageType);
+        Bits.writeIntL(startFrame.content, TYPE_FIELD_OFFSET, messageType);
         return this;
     }
 
     public long getCorrelationId() {
-        return Bits.readLongL(get(0).content, CORRELATION_ID_FIELD_OFFSET);
+        return Bits.readLongL(startFrame.content, CORRELATION_ID_FIELD_OFFSET);
     }
 
     public ClientMessage setCorrelationId(long correlationId) {
-        Bits.writeLongL(get(0).content, CORRELATION_ID_FIELD_OFFSET, correlationId);
+        Bits.writeLongL(startFrame.content, CORRELATION_ID_FIELD_OFFSET, correlationId);
+        return this;
+    }
+
+    /**
+     * @return the number of acks will be send for a request
+     */
+    public int getNumberOfBackupAcks() {
+        return Bits.readIntL(getStartFrame().content, RESPONSE_BACKUP_ACKS_FIELD_OFFSET);
+    }
+
+    /**
+     * Sets the setNumberOfAcks field.
+     *
+     * @param numberOfAcks The value to set in the setNumberOfAcks field.
+     * @return The ClientMessage with the new dataOffset field value.
+     */
+    public ClientMessage setNumberOfBackupAcks(final int numberOfAcks) {
+        Bits.writeIntL(getStartFrame().content, RESPONSE_BACKUP_ACKS_FIELD_OFFSET, numberOfAcks);
         return this;
     }
 
     public int getPartitionId() {
-        return Bits.readIntL(get(0).content, PARTITION_ID_FIELD_OFFSET);
+        return Bits.readIntL(startFrame.content, PARTITION_ID_FIELD_OFFSET);
     }
 
     public ClientMessage setPartitionId(int partitionId) {
-        Bits.writeIntL(get(0).content, PARTITION_ID_FIELD_OFFSET, partitionId);
+        Bits.writeIntL(startFrame.content, PARTITION_ID_FIELD_OFFSET, partitionId);
         return this;
     }
 
     public int getHeaderFlags() {
-        return get(0).flags;
+        return startFrame.flags;
     }
 
     public boolean isRetryable() {
@@ -219,8 +268,10 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
 
     public int getFrameLength() {
         int frameLength = 0;
-        for (Frame frame : this) {
-            frameLength += frame.getSize();
+        Frame currentFrame = startFrame;
+        while (currentFrame != null) {
+            frameLength += currentFrame.getSize();
+            currentFrame = currentFrame.next;
         }
         return frameLength;
     }
@@ -229,18 +280,27 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
         return false;
     }
 
+    public void merge(ClientMessage fragment) {
+        // ignore the first frame of the fragment since first frame marks the fragment
+        Frame fragmentMessageStartFrame = fragment.startFrame.next;
+        this.endFrame.next = fragmentMessageStartFrame;
+        while (endFrame.next != null) {
+            endFrame = endFrame.next;
+        }
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientMessage{");
         sb.append("connection=").append(connection);
-        if (size() > 0) {
+        if (startFrame != null) {
             sb.append(", length=").append(getFrameLength());
             sb.append(", correlationId=").append(getCorrelationId());
             sb.append(", operation=").append(getOperationName());
             sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
             sb.append(", isRetryable=").append(isRetryable());
-            sb.append(", isEvent=").append(isFlagSet(get(0).flags, IS_EVENT_FLAG));
-            sb.append(", isFragmented=").append(!isFlagSet(get(0).flags, UNFRAGMENTED_MESSAGE));
+            sb.append(", isEvent=").append(isFlagSet(startFrame.flags, IS_EVENT_FLAG));
+            sb.append(", isFragmented=").append(!isFlagSet(startFrame.flags, UNFRAGMENTED_MESSAGE));
         }
         sb.append('}');
         return sb.toString();
@@ -254,10 +314,9 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
      * @return the copy message
      */
     public ClientMessage copyWithNewCorrelationId(long correlationId) {
-        ClientMessage newMessage = new ClientMessage(this);
 
-        Frame initialFrameCopy = newMessage.get(0).copy();
-        newMessage.set(0, initialFrameCopy);
+        Frame initialFrameCopy = startFrame.deepCopy();
+        ClientMessage newMessage = new ClientMessage(initialFrameCopy);
 
         newMessage.setCorrelationId(correlationId);
 
@@ -304,11 +363,38 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
         return result;
     }
 
+    public static final class ForwardFrameIterator {
+        private Frame nextFrame;
+
+        private ForwardFrameIterator(Frame start) {
+            nextFrame = start;
+        }
+
+        public Frame next() {
+            Frame result = nextFrame;
+            if (nextFrame != null) {
+                nextFrame = nextFrame.next;
+            }
+            return result;
+        }
+
+        public boolean hasNext() {
+            return nextFrame != null;
+        }
+
+        public Frame peekNext() {
+            return nextFrame;
+        }
+
+    }
+
     @SuppressWarnings("checkstyle:VisibilityModifier")
     public static class Frame {
         public final byte[] content;
         //begin-fragment end-fragment final begin-data-structure end-data-structure is-null is-event 9reserverd
         public int flags;
+
+        Frame next;
 
         public Frame(byte[] content) {
             this(content, DEFAULT_FLAGS);
@@ -320,9 +406,19 @@ public final class ClientMessage extends LinkedList<ClientMessage.Frame> impleme
             this.flags = flags;
         }
 
+        // Shares the content bytes
         public Frame copy() {
+            Frame frame = new Frame(content, flags);
+            frame.next = this.next;
+            return frame;
+        }
+
+        // Copies the content bytes
+        public Frame deepCopy() {
             byte[] newContent = Arrays.copyOf(content, content.length);
-            return new Frame(newContent, flags);
+            Frame frame = new Frame(newContent, flags);
+            frame.next = this.next;
+            return frame;
         }
 
         public boolean isEndFrame() {

@@ -26,19 +26,17 @@ import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.transaction.TransactionalSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.TransactionImpl.SuspendedTransactionImpl;
 
-import javax.transaction.xa.XAResource;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -50,10 +48,13 @@ final class TransactionContextImpl implements TransactionContext {
     private final NodeEngineImpl nodeEngine;
     private final TransactionWrapper transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
-            = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+            = new HashMap<>(2);
 
-    TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
-                           TransactionOptions options, UUID ownerUuid, boolean originatedFromClient) {
+    TransactionContextImpl(@Nonnull TransactionManagerServiceImpl transactionManagerService,
+                           @Nonnull NodeEngineImpl nodeEngine,
+                           @Nonnull TransactionOptions options,
+                           @Nullable UUID ownerUuid,
+                           boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
         this.transaction = new TransactionWrapper(
                 new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient));
@@ -176,11 +177,5 @@ final class TransactionContextImpl implements TransactionContext {
 
     Transaction getTransaction() {
         return transaction;
-    }
-
-    @Override
-    public XAResource getXaResource() {
-        ProxyService proxyService = nodeEngine.getProxyService();
-        return (HazelcastXAResource) proxyService.getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
     }
 }

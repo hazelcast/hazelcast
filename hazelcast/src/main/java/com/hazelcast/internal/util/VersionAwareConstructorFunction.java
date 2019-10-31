@@ -20,8 +20,8 @@ import com.hazelcast.version.Version;
 
 /**
  * VersionAware version of the ConstructorFunction.
- * It is also able to create "default" objects when the version is unknown or not-specified. In this case
- * use the createNew method with out the version.
+ * It is also able to create "default" objects when the version is unknown
+ * or not-specified. In this case use the createNew method with out the version.
  *
  * @param <K> key type
  * @param <V> value type
@@ -29,13 +29,18 @@ import com.hazelcast.version.Version;
 public interface VersionAwareConstructorFunction<K, V> extends ConstructorFunction<K, V> {
 
     /**
-     * Creates a new instance of an object given the construction argument and the version of the object
+     * Creates a new instance of an object given the construction argument and
+     * the version of the object.
+     * Either the {@code clusterVersion} or the {@code wanProtocolVersion} para
      *
-     * @param arg     construction argument
-     * @param version version of the object it should create - it's cluster version bound, since objects change
-     *                between release only
+     * @param arg                construction argument
+     * @param clusterVersion     version of the object it should create - it's cluster version bound, since
+     *                           objects change between release only. May be {@link Version#UNKNOWN} if the
+     *                           WAN protocol version is set or cluster version is not available
+     * @param wanProtocolVersion WAN protocol version. May be {@link Version#UNKNOWN} if the
+     *                           cluster version is set or WAN protocol version is not available
      * @return a new instance of an object
      */
-    V createNew(K arg, Version version);
+    V createNew(K arg, Version clusterVersion, Version wanProtocolVersion);
 
 }

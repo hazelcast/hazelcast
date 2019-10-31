@@ -18,9 +18,12 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CompositeValue;
+import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.ObjectTestUtils;
@@ -37,7 +40,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
 
-import static com.hazelcast.query.impl.predicates.PredicateUtils.constructCanonicalCompositeIndexName;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
@@ -74,7 +76,8 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testUnordered() {
-        map.addIndex("age, height", false);
+        IndexConfig indexConfig = IndexUtils.createTestIndexConfig(IndexType.HASH, "age", "height");
+        map.addIndex(indexConfig);
         assertEquals(0, map.getLocalMapStats().getIndexedQueryCount());
 
         for (int i = 0; i < 100; ++i) {
@@ -87,7 +90,7 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
                     return ObjectTestUtils.equals(mapEntry.getValue().age, age) && ObjectTestUtils.equals(
                             mapEntry.getValue().height, height);
                 }
-            }, predicate(value(age, height), "age", "height"));
+            }, predicate(indexConfig.getName(), value(age, height), "age", "height"));
         }
 
         assertEquals(100, map.getLocalMapStats().getIndexedQueryCount());
@@ -95,7 +98,9 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testOrdered() {
-        map.addIndex("age, height", true);
+        IndexConfig indexConfig = IndexUtils.createTestIndexConfig(IndexType.SORTED, "age", "height");
+
+        map.addIndex(indexConfig);
         assertEquals(0, map.getLocalMapStats().getIndexedQueryCount());
 
         for (int i = 0; i < 100; ++i) {
@@ -108,7 +113,7 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
                     return ObjectTestUtils.equals(mapEntry.getValue().age, age) && ObjectTestUtils.equals(
                             mapEntry.getValue().height, height);
                 }
-            }, predicate(value(age, height), "age", "height"));
+            }, predicate(indexConfig.getName(), value(age, height), "age", "height"));
         }
 
         assertEquals(100, map.getLocalMapStats().getIndexedQueryCount());
@@ -144,8 +149,8 @@ public class CompositeEqualPredicateTest extends HazelcastTestSupport {
         return value == 0 ? null : value;
     }
 
-    private static Predicate predicate(CompositeValue value, String... components) {
-        return new CompositeEqualPredicate(constructCanonicalCompositeIndexName(components), components, value);
+    private static Predicate predicate(String indexName, CompositeValue value, String... components) {
+        return new CompositeEqualPredicate(indexName, components, value);
     }
 
     private static CompositeValue value(Comparable... values) {

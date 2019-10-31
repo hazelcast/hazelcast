@@ -33,9 +33,9 @@ import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.collection.LocalQueueStats;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
@@ -49,12 +49,12 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.partition.MigrationAwareService;
-import com.hazelcast.spi.partition.MigrationEndpoint;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -257,7 +257,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public QueueProxyImpl createDistributedObject(String objectId) {
+    public QueueProxyImpl createDistributedObject(String objectId, boolean local) {
         QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(objectId);
         checkQueueConfig(queueConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
@@ -265,7 +265,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
+    public void destroyDistributedObject(String name, boolean local) {
         QueueContainer container = containerMap.remove(name);
         if (container != null) {
             container.destroy();

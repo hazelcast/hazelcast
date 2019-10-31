@@ -20,20 +20,24 @@ import com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChang
 import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
+import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
-import com.hazelcast.cp.internal.operation.RestartCPMemberOp;
+import com.hazelcast.cp.internal.operation.ResetCPMemberOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftBackupOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftQueryOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeSnapshotReplicationOp;
+import com.hazelcast.cp.internal.operation.TransferLeadershipOp;
 import com.hazelcast.cp.internal.operation.integration.AppendFailureResponseOp;
 import com.hazelcast.cp.internal.operation.integration.AppendRequestOp;
 import com.hazelcast.cp.internal.operation.integration.AppendSuccessResponseOp;
 import com.hazelcast.cp.internal.operation.integration.InstallSnapshotOp;
 import com.hazelcast.cp.internal.operation.integration.PreVoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.PreVoteResponseOp;
+import com.hazelcast.cp.internal.operation.integration.TriggerLeaderElectionOp;
 import com.hazelcast.cp.internal.operation.integration.VoteRequestOp;
 import com.hazelcast.cp.internal.operation.integration.VoteResponseOp;
+import com.hazelcast.cp.internal.operation.unsafe.UnsafeStateReplicationOp;
 import com.hazelcast.cp.internal.raftop.GetInitialRaftGroupMembersIfCurrentGroupMemberOp;
 import com.hazelcast.cp.internal.raftop.NotifyTermChangeOp;
 import com.hazelcast.cp.internal.raftop.metadata.AddCPMemberOp;
@@ -41,7 +45,7 @@ import com.hazelcast.cp.internal.raftop.metadata.CompleteDestroyRaftGroupsOp;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteRaftGroupMembershipChangesOp;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftNodeOp;
-import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
+import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.ForceDestroyRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveRaftGroupByNameOp;
@@ -88,7 +92,7 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int MEMBERSHIP_CHANGE_REPLICATE_OP = 18;
     public static final int MEMBERSHIP_CHANGE_SCHEDULE = 19;
     public static final int DEFAULT_RAFT_GROUP_QUERY_OP = 20;
-    public static final int DESTROY_RAFT_NODES_OP = 21;
+    public static final int TERMINATE_RAFT_NODES_OP = 21;
     public static final int GET_ACTIVE_CP_MEMBERS_OP = 22;
     public static final int GET_DESTROYING_RAFT_GROUP_IDS_OP = 23;
     public static final int GET_MEMBERSHIP_CHANGE_SCHEDULE_OP = 24;
@@ -107,12 +111,19 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
     public static final int GET_RAFT_GROUP_IDS_OP = 37;
     public static final int GET_ACTIVE_RAFT_GROUP_IDS_OP = 38;
     public static final int RAFT_PRE_JOIN_OP = 39;
-    public static final int RESTART_CP_MEMBER_OP = 40;
+    public static final int RESET_CP_MEMBER_OP = 40;
     public static final int GROUP_MEMBERSHIP_CHANGE = 41;
     public static final int UNSAFE_RAFT_REPLICATE_OP = 42;
     public static final int UNSAFE_RAFT_QUERY_OP = 43;
     public static final int UNSAFE_RAFT_BACKUP_OP = 44;
     public static final int UNSAFE_SNAPSHOT_REPLICATE_OP = 45;
+    public static final int CP_ENDPOINT = 46;
+    public static final int CP_GROUP_SUMMARY = 47;
+    public static final int GET_LEADED_GROUPS = 48;
+    public static final int TRANSFER_LEADERSHIP_OP = 49;
+    public static final int TRIGGER_LEADER_ELECTION_OP = 50;
+    public static final int UNSAFE_MODE_PARTITION_STATE = 51;
+    public static final int UNSAFE_STATE_REPLICATE_OP = 52;
 
     @Override
     public int getFactoryId() {
@@ -163,8 +174,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new MembershipChangeSchedule();
                 case DEFAULT_RAFT_GROUP_QUERY_OP:
                     return new RaftQueryOp();
-                case DESTROY_RAFT_NODES_OP:
-                    return new DestroyRaftNodesOp();
+                case TERMINATE_RAFT_NODES_OP:
+                    return new TerminateRaftNodesOp();
                 case GET_ACTIVE_CP_MEMBERS_OP:
                     return new GetActiveCPMembersOp();
                 case GET_DESTROYING_RAFT_GROUP_IDS_OP:
@@ -201,8 +212,8 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new GetActiveRaftGroupIdsOp();
                 case RAFT_PRE_JOIN_OP:
                     return new RaftServicePreJoinOp();
-                case RESTART_CP_MEMBER_OP:
-                    return new RestartCPMemberOp();
+                case RESET_CP_MEMBER_OP:
+                    return new ResetCPMemberOp();
                 case GROUP_MEMBERSHIP_CHANGE:
                     return new CPGroupMembershipChange();
                 case UNSAFE_RAFT_REPLICATE_OP:
@@ -213,6 +224,20 @@ public final class RaftServiceDataSerializerHook implements DataSerializerHook {
                     return new UnsafeRaftBackupOp();
                 case UNSAFE_SNAPSHOT_REPLICATE_OP:
                     return new UnsafeSnapshotReplicationOp();
+                case CP_ENDPOINT:
+                    return new RaftEndpointImpl();
+                case CP_GROUP_SUMMARY:
+                    return new CPGroupSummary();
+                case GET_LEADED_GROUPS:
+                    return new GetLeadedGroupsOp();
+                case TRANSFER_LEADERSHIP_OP:
+                    return new TransferLeadershipOp();
+                case TRIGGER_LEADER_ELECTION_OP:
+                    return new TriggerLeaderElectionOp();
+                case UNSAFE_MODE_PARTITION_STATE:
+                    return new UnsafeModePartitionState();
+                case UNSAFE_STATE_REPLICATE_OP:
+                    return new UnsafeStateReplicationOp();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }

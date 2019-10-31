@@ -18,17 +18,13 @@ package com.hazelcast.client.txn;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -44,9 +40,6 @@ import javax.transaction.Transaction;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.client.util.AddressHelper.getSocketAddresses;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -66,31 +59,11 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
 
     @Test(expected = TransactionException.class)
     public void testTransactionBeginShouldFail_onDisconnectedState() {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        final AtomicBoolean waitFlag = new AtomicBoolean();
-        final CountDownLatch testFinished = new CountDownLatch(1);
-        final AddressProvider addressProvider = new AddressProvider() {
-            @Override
-            public Addresses loadAddresses() {
-                if (waitFlag.get()) {
-                    try {
-                        testFinished.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                return getSocketAddresses("127.0.0.1");
-            }
-
-            @Override
-            public Address translate(Address address) {
-                return address;
-            }
-        };
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(addressProvider, clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         Hazelcast.newHazelcastInstance();
         final TransactionContext context = client.newTransactionContext();
@@ -103,47 +76,20 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
             }
         });
 
-        //we are closing owner connection and making sure owner connection is not established ever again
-        waitFlag.set(true);
-        instance.shutdown();
+        Hazelcast.shutdownAll();
 
         assertOpenEventually(clientDisconnected);
 
-        try {
-            context.beginTransaction();
-        } finally {
-            testFinished.countDown();
-        }
-
+        context.beginTransaction();
     }
 
     @Test(expected = TransactionException.class)
     public void testNewTransactionContextShouldFail_onDisconnectedState() {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        final AtomicBoolean waitFlag = new AtomicBoolean();
-        final CountDownLatch testFinished = new CountDownLatch(1);
-        final AddressProvider addressProvider = new AddressProvider() {
-            @Override
-            public Addresses loadAddresses() {
-                if (waitFlag.get()) {
-                    try {
-                        testFinished.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                return getSocketAddresses("127.0.0.1");
-            }
-
-            @Override
-            public Address translate(Address address) {
-                return address;
-            }
-        };
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(addressProvider, clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         Hazelcast.newHazelcastInstance();
 
@@ -155,48 +101,20 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
             }
         });
 
-        //we are closing owner connection and making sure owner connection is not established ever again
-        waitFlag.set(true);
-        instance.shutdown();
+        Hazelcast.shutdownAll();
 
         assertOpenEventually(clientDisconnected);
 
-        try {
-            client.newTransactionContext();
-        } finally {
-            testFinished.countDown();
-        }
-
+        client.newTransactionContext();
     }
 
     @Test(expected = TransactionException.class)
     public void testXAShouldFail_onDisconnectedState() throws Throwable {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        final AtomicBoolean waitFlag = new AtomicBoolean();
-        final CountDownLatch testFinished = new CountDownLatch(1);
-        final AddressProvider addressProvider = new AddressProvider() {
-            @Override
-            public Addresses loadAddresses() {
-                if (waitFlag.get()) {
-                    try {
-                        testFinished.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                return getSocketAddresses("127.0.0.1");
-            }
-
-            @Override
-            public Address translate(Address address) {
-                return address;
-            }
-        };
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        clientConfig.setProperty(ClientProperty.ALLOW_INVOCATIONS_WHEN_DISCONNECTED.getName(), "true");
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(addressProvider, clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         Hazelcast.newHazelcastInstance();
 
@@ -216,9 +134,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
             }
         });
 
-        //we are closing owner connection and making sure owner connection is not established ever again
-        waitFlag.set(true);
-        instance.shutdown();
+        Hazelcast.shutdownAll();
 
         assertOpenEventually(clientDisconnected);
 
@@ -228,10 +144,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
             transaction.rollback();
             tm.close();
             cleanAtomikosLogs();
-            testFinished.countDown();
         }
-
-
     }
 
     public void cleanAtomikosLogs() {

@@ -23,10 +23,10 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
+import com.hazelcast.internal.util.collection.WeightedEvictableList.WeightedItem;
 import com.hazelcast.json.internal.JsonPattern;
 import com.hazelcast.json.internal.JsonSchemaHelper;
 import com.hazelcast.json.internal.JsonSchemaNode;
-import com.hazelcast.internal.util.collection.WeightedEvictableList.WeightedItem;
 
 import java.io.IOException;
 import java.util.List;
@@ -132,7 +132,7 @@ public abstract class AbstractJsonGetter extends Getter {
 
                 } else {
                     // non array case
-                    if (!findAttribute(parser, pathCursor)) {
+                    if (!findAttribute(parser, pathCursor, false)) {
                         return null;
                     }
                 }
@@ -209,7 +209,8 @@ public abstract class AbstractJsonGetter extends Getter {
      * @return {@code true} if given attribute name exists in the current object
      * @throws IOException
      */
-    private boolean findAttribute(JsonParser parser, JsonPathCursor pathCursor) throws IOException {
+    private boolean findAttribute(JsonParser parser, JsonPathCursor pathCursor,
+                                  boolean multiValue) throws IOException {
         JsonToken token = parser.getCurrentToken();
         if (token != START_OBJECT) {
             return false;
@@ -222,6 +223,8 @@ public abstract class AbstractJsonGetter extends Getter {
             if (pathCursor.getCurrent().equals(parser.getCurrentName())) {
                 parser.nextToken();
                 return true;
+            } else if (multiValue) {
+                parser.nextToken();
             } else {
                 parser.nextToken();
                 parser.skipChildren();
@@ -268,7 +271,7 @@ public abstract class AbstractJsonGetter extends Getter {
             } else {
                 if (currentToken == START_OBJECT) {
                     do {
-                        if (!findAttribute(parser, pathCursor)) {
+                        if (!findAttribute(parser, pathCursor, true)) {
                             break;
                         }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.operation;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -35,8 +34,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
+import java.util.function.BiConsumer;
 
-import static com.hazelcast.cp.internal.operation.RaftReplicateOp.CALLER_RUNS_EXECUTOR;
+import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
+import static com.hazelcast.internal.util.InvocationUtil.CALLER_RUNS_EXECUTOR;
 
 /**
  * The operation that passes a query to leader or a follower of a Raft group.
@@ -47,7 +48,8 @@ import static com.hazelcast.cp.internal.operation.RaftReplicateOp.CALLER_RUNS_EX
  * commits the query but fails before sending the response, therefore the query
  * operation is expected to have no side-effect.
  */
-public class RaftQueryOp extends Operation implements IndeterminateOperationStateAware, RaftSystemOperation, ExecutionCallback,
+public class RaftQueryOp extends Operation implements IndeterminateOperationStateAware, RaftSystemOperation,
+                                                      BiConsumer<Object, Throwable>,
                                                       IdentifiedDataSerializable {
 
     private CPGroupId groupId;
@@ -71,12 +73,12 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             if (service.isRaftGroupDestroyed(groupId)) {
                 sendResponse(new CPGroupDestroyedException(groupId));
             } else {
-                sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+                sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             }
             return;
         } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
-            service.stepDownRaftNode(groupId);
-            sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+            sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
+            getNodeEngine().getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> service.stepDownRaftNode(groupId));
             return;
         }
 
@@ -84,7 +86,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             ((RaftNodeAware) op).setRaftNode(raftNode);
         }
 
-        raftNode.query(op, queryPolicy).andThen(this, CALLER_RUNS_EXECUTOR);
+        raftNode.query(op, queryPolicy).whenCompleteAsync(this, CALLER_RUNS_EXECUTOR);
     }
 
     @Override
@@ -93,13 +95,12 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
     }
 
     @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        sendResponse(t);
+    public void accept(Object o, Throwable throwable) {
+        if (throwable == null) {
+            sendResponse(o);
+        } else {
+            sendResponse(throwable);
+        }
     }
 
     @Override

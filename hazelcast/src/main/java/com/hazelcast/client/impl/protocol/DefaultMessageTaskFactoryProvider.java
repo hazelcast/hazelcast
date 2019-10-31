@@ -16,6 +16,13 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefApplyCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefCompareAndSetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefContainsCodec;
@@ -26,6 +33,10 @@ import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreChangeCodec;
@@ -33,6 +44,7 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
+import com.hazelcast.client.impl.protocol.task.AddBackupListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.AddPartitionListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
@@ -52,7 +64,6 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDurableExecutorC
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddFlakeIdGeneratorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddListConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddLockConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMultiMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddQueueConfigMessageTask;
@@ -65,6 +76,9 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddTopicConfigMessa
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapEventJournalReadTask;
@@ -129,10 +143,26 @@ import com.hazelcast.cp.internal.session.client.GenerateThreadIdMessageTask;
 import com.hazelcast.cp.internal.session.client.HeartbeatSessionMessageTask;
 import com.hazelcast.flakeidgen.impl.client.NewIdBatchMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterAddAndGetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterDecrementAndGetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterGetAndAddCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterGetAndIncrementCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterGetAndSetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterGetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterIncrementAndGetCodec;
+import com.hazelcast.internal.longregister.client.codec.LongRegisterSetCodec;
+import com.hazelcast.internal.longregister.client.task.LongRegisterAddAndGetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterDecrementAndGetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterGetAndAddMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterGetAndIncrementMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterGetAndSetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterGetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterIncrementAndGetMessageTask;
+import com.hazelcast.internal.longregister.client.task.LongRegisterSetMessageTask;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
@@ -266,48 +296,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.ringbuffer.RingbufferSizeMessageTask(clientMessage, node, connection);
-            }
-        });
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.lock
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockUnlockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockUnlockMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockIsLockedCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockIsLockedMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockForceUnlockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockForceUnlockMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockGetRemainingLeaseTimeCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockGetRemainingLeaseTimeMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockIsLockedByCurrentThreadCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockIsLockedByCurrentThreadMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockLockMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockTryLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockTryLockMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.LockGetLockCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockGetLockCountMessageTask(clientMessage, node, connection);
             }
         });
 //endregion
@@ -582,70 +570,45 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         });
 //endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.atomiclong
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+//region ----------  REGISTRATION FOR com.hazelcast.internal.longregister.client.task
+        factories.put(LongRegisterDecrementAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongApplyMessageTask(clientMessage, node, connection);
+                return new LongRegisterDecrementAndGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongDecrementAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterGetAndAddCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongDecrementAndGetMessageTask(clientMessage, node, connection);
+                return new LongRegisterGetAndAddMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterAddAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndAddMessageTask(clientMessage, node, connection);
+                return new LongRegisterAddAndGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongAlterAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongAlterAndGetMessageTask(clientMessage, node, connection);
+                return new LongRegisterGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongAddAndGetMessageTask(clientMessage, node, connection);
+                return new LongRegisterSetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterIncrementAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetMessageTask(clientMessage, node, connection);
+                return new LongRegisterIncrementAndGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterGetAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongCompareAndSetMessageTask(clientMessage, node, connection);
+                return new LongRegisterGetAndSetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(LongRegisterGetAndIncrementCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongSetMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongAlterMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongIncrementAndGetMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndSetMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAlterCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndAlterMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndIncrementCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.atomiclong.AtomicLongGetAndIncrementMessageTask(clientMessage, node, connection);
+                return new LongRegisterGetAndIncrementMessageTask(clientMessage, node, connection);
             }
         });
 //endregion
@@ -695,28 +658,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.transactionalmultimap.TransactionalMultiMapValueCountMessageTask(clientMessage, node, connection);
-            }
-        });
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.condition
-        factories.put(com.hazelcast.client.impl.protocol.codec.ConditionSignalCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionSignalMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ConditionBeforeAwaitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionBeforeAwaitMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ConditionAwaitCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionAwaitMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ConditionSignalAllCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionSignalAllMessageTask(clientMessage, node, connection);
             }
         });
 //endregion
@@ -1676,6 +1617,13 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new IsFailoverSupportedMessageTask(clientMessage, node, connection);
             }
         });
+        factories.put(com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AddBackupListenerMessageTask(clientMessage, node, connection);
+            }
+        });
+
 //endregion
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.queue
         factories.put(com.hazelcast.client.impl.protocol.codec.QueueCompareAndRemoveAllCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
@@ -1946,11 +1894,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new AddRingbufferConfigMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new AddLockConfigMessageTask(clientMessage, node, connection);
-            }
-        });
         factories.put(com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddListConfigMessageTask(clientMessage, node, connection);
@@ -2061,43 +2004,43 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         });
 
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongAddAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongAddAndGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddAndGetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongCompareAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongCompareAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new CompareAndSetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndAddCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongGetAndAddCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetAndAddMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongGetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongGetAndSetCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetAndSetMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongApplyCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongApplyCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new ApplyMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPAtomicLongAlterCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(AtomicLongAlterCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AlterMessageTask(clientMessage, node, connection);
@@ -2166,25 +2109,25 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         });
 
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPFencedLockLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(FencedLockLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new LockMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPFencedLockTryLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(FencedLockTryLockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new TryLockMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPFencedLockUnlockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(FencedLockUnlockCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new UnlockMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CPFencedLockGetLockOwnershipCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(FencedLockGetLockOwnershipCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             @Override
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetLockOwnershipStateMessageTask(clientMessage, node, connection);
@@ -2233,11 +2176,29 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new ReleasePermitsMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MetricsReadMetricsCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec.REQUEST_MESSAGE_TYPE,
                 new MessageTaskFactory() {
                     @Override
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new ReadMetricsMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new ChangeClusterStateMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new GetMapConfigMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new UpdateMapConfigMessageTask(clientMessage, node, connection);
                     }
                 });
     }

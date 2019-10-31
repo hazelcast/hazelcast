@@ -78,8 +78,6 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             return;
         }
 
-        RaftLog raftLog = state.log();
-
         // Transform into follower if a newer term is seen or another node wins the election of the current term
         if (req.term() > state.term() || state.role() != FOLLOWER) {
             // If RPC request or response contains term T > currentTerm: set currentTerm = T, convert to follower (§5.1)
@@ -92,6 +90,8 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             logger.info("Setting leader: " + req.leader());
             raftNode.leader(req.leader());
         }
+
+        RaftLog raftLog = state.log();
 
         // Verify the last log entry
         if (req.prevLogIndex() > 0) {
@@ -147,7 +147,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                 // If an existing entry conflicts with a new one (same index but different terms),
                 // delete the existing entry and all that follow it (§5.3)
                 if (reqEntry.term() != localEntry.term()) {
-                    List<LogEntry> truncatedEntries = raftLog.truncateEntriesFrom(reqEntry.index());
+                    List<LogEntry> truncatedEntries = raftLog.deleteEntriesFrom(reqEntry.index());
                     if (logger.isFineEnabled()) {
                         logger.warning("Truncated " + truncatedEntries.size() + " entries from entry index: "
                                 + reqEntry.index() + " => " + truncatedEntries);
@@ -159,6 +159,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                     raftNode.invalidateFuturesFrom(reqEntry.index());
                     revertPreAppliedRaftGroupCmd(truncatedEntries);
                     newEntries = Arrays.copyOfRange(req.entries(), i, req.entryCount());
+                    raftLog.flush();
                     break;
                 }
             }
@@ -180,6 +181,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                 }
 
                 raftLog.appendEntries(newEntries);
+                raftLog.flush();
             }
         }
 

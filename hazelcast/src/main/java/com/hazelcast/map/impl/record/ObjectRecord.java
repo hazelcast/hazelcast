@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.impl.record;
 
-class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
-
+public class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
     private volatile Object value;
 
     ObjectRecord() {
@@ -29,7 +28,8 @@ class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
         this.value = value;
     }
 
-    // as there is no easy way to calculate the size of Object cost is not implemented for ObjectRecord
+    // as there is no easy way to calculate the size of
+    // Object cost is not implemented for ObjectRecord
     @Override
     public long getCost() {
         return 0L;
@@ -60,9 +60,7 @@ class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
         }
 
         ObjectRecord that = (ObjectRecord) o;
-
         return value.equals(that.value);
-
     }
 
     @Override
@@ -70,5 +68,13 @@ class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
         int result = super.hashCode();
         result = 31 * result + value.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ObjectRecord{"
+                + "value=" + value
+                + ", " + super.toString()
+                + "} ";
     }
 }

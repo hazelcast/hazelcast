@@ -50,10 +50,6 @@ public class SemaphoreService extends AbstractBlockingService<AcquireInvocationK
         super(nodeEngine);
     }
 
-    private SemaphoreConfig getConfig(String name) {
-        return nodeEngine.getConfig().getCPSubsystemConfig().findSemaphoreConfig(name);
-    }
-
     public boolean initSemaphore(CPGroupId groupId, String name, int permits) {
         try {
             Collection<AcquireInvocationKey> acquired = getOrInitRegistry(groupId).init(name, permits);
@@ -65,8 +61,12 @@ public class SemaphoreService extends AbstractBlockingService<AcquireInvocationK
         }
     }
 
+    private SemaphoreConfig getConfig(String name) {
+        return nodeEngine.getConfig().getCPSubsystemConfig().findSemaphoreConfig(name);
+    }
+
     public int availablePermits(CPGroupId groupId, String name) {
-        SemaphoreRegistry registry = getRegistryOrNull(groupId);
+        SemaphoreRegistry registry = getOrInitRegistry(groupId);
         return registry != null ? registry.availablePermits(name) : 0;
     }
 
@@ -114,7 +114,8 @@ public class SemaphoreService extends AbstractBlockingService<AcquireInvocationK
         }
 
         if (!result.success()) {
-            throw new IllegalArgumentException();
+            throw new IllegalStateException("Could not release " + permits + " permits in Semaphore[" + name
+                    + "] because the caller has acquired less than " + permits + " permits");
         }
     }
 
@@ -156,7 +157,12 @@ public class SemaphoreService extends AbstractBlockingService<AcquireInvocationK
 
     @Override
     protected SemaphoreRegistry createNewRegistry(CPGroupId groupId) {
-        return new SemaphoreRegistry(groupId);
+        return new SemaphoreRegistry(groupId, raftService.getConfig());
+    }
+
+    @Override
+    protected void onRegistryRestored(SemaphoreRegistry registry) {
+        registry.setCpSubsystemConfig(raftService.getConfig());
     }
 
     @Override

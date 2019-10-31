@@ -59,13 +59,8 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     }
 
     private void registerMetric(Metric metric, final int value) {
-        metricsRegistry.register(this, metric.getName(), MANDATORY,
-                new DoubleProbeFunction<HealthMonitorTest>() {
-                    @Override
-                    public double get(HealthMonitorTest source) throws Exception {
-                        return value;
-                    }
-                });
+        metricsRegistry.registerStaticProbe(this, metric.getName(), MANDATORY,
+                (DoubleProbeFunction<HealthMonitorTest>) source -> value);
     }
 
     @Test

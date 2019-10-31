@@ -19,14 +19,11 @@ package com.hazelcast.scheduledexecutor;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -42,10 +39,6 @@ public abstract class AbstractScheduledExecutorNullTest extends HazelcastTestSup
         Callable<String> sampleCallable = () -> "";
         Member sampleMember = new MemberImpl();
         Set<Member> sampleMembers = Collections.singleton(sampleMember);
-
-        IScheduledExecutorService e = getDriver().getScheduledExecutorService(randomMapName());
-        IScheduledFuture<Object> f = e.getScheduledFuture(new ScheduledTaskHandlerImpl());
-        Map<Member, List<IScheduledFuture<Object>>> f2 = e.getAllScheduledFutures();
 
         assertThrowsNPE(s -> s.schedule((Runnable) null, 1, sampleTimeUnit));
         assertThrowsNPE(s -> s.schedule(sampleRunnable, 1, null));

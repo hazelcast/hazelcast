@@ -18,13 +18,15 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IndeterminateOperationStateException;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
-import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
+import javax.annotation.Nullable;
+
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
 
 /**
  * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
@@ -263,7 +265,8 @@ public abstract class InvocationBuilder {
      * @param executionCallback the new ExecutionCallback. If null is passed, the ExecutionCallback is unset.
      * @return the updated InvocationBuilder.
      */
-    public InvocationBuilder setExecutionCallback(ExecutionCallback<Object> executionCallback) {
+    public InvocationBuilder setExecutionCallback(
+            @Nullable ExecutionCallback<Object> executionCallback) {
         this.executionCallback = executionCallback;
         return this;
     }
@@ -289,5 +292,5 @@ public abstract class InvocationBuilder {
         return this;
     }
 
-    public abstract <E> InternalCompletableFuture<E> invoke();
+    public abstract <E> InvocationFuture<E> invoke();
 }

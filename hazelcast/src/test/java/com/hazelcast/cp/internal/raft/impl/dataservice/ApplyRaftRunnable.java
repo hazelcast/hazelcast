@@ -17,10 +17,18 @@
 package com.hazelcast.cp.internal.raft.impl.dataservice;
 
 import com.hazelcast.cp.internal.raft.impl.testing.RaftRunnable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public class ApplyRaftRunnable implements RaftRunnable {
+import java.io.IOException;
+
+public class ApplyRaftRunnable implements RaftRunnable, DataSerializable {
 
     private Object val;
+
+    public ApplyRaftRunnable() {
+    }
 
     public ApplyRaftRunnable(Object val) {
         this.val = val;
@@ -31,8 +39,23 @@ public class ApplyRaftRunnable implements RaftRunnable {
         return ((RaftDataService) service).apply(commitIndex, val);
     }
 
+    public Object getVal() {
+        return val;
+    }
+
     @Override
     public String toString() {
         return "ApplyRaftRunnable{" + "val=" + val + '}';
     }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(val);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        val = in.readObject();
+    }
+
 }

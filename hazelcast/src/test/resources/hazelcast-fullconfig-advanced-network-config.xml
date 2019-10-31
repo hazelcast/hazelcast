@@ -86,7 +86,7 @@
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
                 <cluster-id>HZLCAST001</cluster-id>
-                <cluster-name>CLUSTER-NAME</cluster-name>
+                <group-name>RESOURCE-GROUP-NAME</group-name>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>

@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -26,7 +27,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -215,7 +216,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testPutAsync_returnValue() throws ExecutionException, InterruptedException {
         testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
-        assertEquals("val", map.putAsync("key", "val2").get());
+        assertEquals("val", map.putAsync("key", "val2").toCompletableFuture().get());
     }
 
     @Test
@@ -239,7 +240,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     @Test
     public void testRemoveAsync_returnValue() throws ExecutionException, InterruptedException {
         testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
-        assertEquals("val", map.removeAsync("key").get());
+        assertEquals("val", map.removeAsync("key").toCompletableFuture().get());
     }
 
     @Test
@@ -336,7 +337,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     private void assertExpiredEventually(IMap map, String prefix, int from, int to) {
         assertTrueEventually(() -> {
             for (int i = from; i < to; i++) {
-                assertNull(map.get(prefix + i));
+                EntryView entryView = map.getEntryView(prefix + i);
+                assertNull("Current time: " + System.currentTimeMillis(), entryView);
             }
         });
     }

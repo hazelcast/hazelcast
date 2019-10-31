@@ -77,11 +77,6 @@ public class MultiMapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setSyncBackupCountOfReadOnlyMultiMapConfigShouldFail() {
-        getReadOnlyConfig().setSyncBackupCount(1);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void setBackupCountOfReadOnlyMultiMapConfigShouldFail() {
         getReadOnlyConfig().setBackupCount(1);
     }

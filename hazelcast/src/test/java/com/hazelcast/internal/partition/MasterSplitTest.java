@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 

@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -43,16 +44,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("c5d1b560745c4d9ccb00ec2785bd5b1d")
+@Generated("ed703b66ef8fc5ae9dd94f3493e6c4cd")
 public final class PNCounterAddCodec {
-    //hex: 0x200200
-    public static final int REQUEST_MESSAGE_TYPE = 2097664;
-    //hex: 0x200201
-    public static final int RESPONSE_MESSAGE_TYPE = 2097665;
+    //hex: 0x1D0200
+    public static final int REQUEST_MESSAGE_TYPE = 1901056;
+    //hex: 0x1D0201
+    public static final int RESPONSE_MESSAGE_TYPE = 1901057;
     private static final int REQUEST_DELTA_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET = REQUEST_DELTA_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_VALUE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_VALUE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_REPLICA_COUNT_FIELD_OFFSET = RESPONSE_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_REPLICA_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -87,10 +88,10 @@ public final class PNCounterAddCodec {
         /**
          * the target replica
          */
-        public com.hazelcast.nio.Address targetReplica;
+        public com.hazelcast.cluster.Address targetReplica;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long delta, boolean getBeforeUpdate, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, com.hazelcast.nio.Address targetReplica) {
+    public static ClientMessage encodeRequest(java.lang.String name, long delta, boolean getBeforeUpdate, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps, com.hazelcast.cluster.Address targetReplica) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -101,19 +102,19 @@ public final class PNCounterAddCodec {
         encodeBoolean(initialFrame.content, REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET, getBeforeUpdate);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        MapUUIDLongCodec.encode(clientMessage, replicaTimestamps);
+        EntryListUUIDLongCodec.encode(clientMessage, replicaTimestamps);
         AddressCodec.encode(clientMessage, targetReplica);
         return clientMessage;
     }
 
     public static PNCounterAddCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.delta = decodeLong(initialFrame.content, REQUEST_DELTA_FIELD_OFFSET);
         request.getBeforeUpdate = decodeBoolean(initialFrame.content, REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.replicaTimestamps = MapUUIDLongCodec.decode(iterator);
+        request.replicaTimestamps = EntryListUUIDLongCodec.decode(iterator);
         request.targetReplica = AddressCodec.decode(iterator);
         return request;
     }
@@ -141,21 +142,21 @@ public final class PNCounterAddCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
         encodeLong(initialFrame.content, RESPONSE_VALUE_FIELD_OFFSET, value);
         encodeInt(initialFrame.content, RESPONSE_REPLICA_COUNT_FIELD_OFFSET, replicaCount);
-        MapUUIDLongCodec.encode(clientMessage, replicaTimestamps);
+        clientMessage.add(initialFrame);
+
+        EntryListUUIDLongCodec.encode(clientMessage, replicaTimestamps);
         return clientMessage;
     }
 
     public static PNCounterAddCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.value = decodeLong(initialFrame.content, RESPONSE_VALUE_FIELD_OFFSET);
         response.replicaCount = decodeInt(initialFrame.content, RESPONSE_REPLICA_COUNT_FIELD_OFFSET);
-        response.replicaTimestamps = MapUUIDLongCodec.decode(iterator);
+        response.replicaTimestamps = EntryListUUIDLongCodec.decode(iterator);
         return response;
     }
 

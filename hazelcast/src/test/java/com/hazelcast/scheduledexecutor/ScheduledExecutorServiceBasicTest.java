@@ -23,12 +23,13 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
-import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -350,7 +351,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         startedLatch.trySetCount(1);
         finishedLatch.trySetCount(1);
 
-        IAtomicLong runEntryCounter = instances[1].getAtomicLong("runEntryCounterName");
+        IAtomicLong runEntryCounter = instances[1].getCPSubsystem().getAtomicLong("runEntryCounterName");
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         executorService.scheduleOnKeyOwner(new ICountdownLatchMapIncrementCallableTask("map",
@@ -634,7 +635,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ScheduledTaskHandler handler = future.getHandler();
 
         int partitionOwner = handler.getPartitionId();
-        IPartitionLostEvent internalEvent = new IPartitionLostEvent(partitionOwner, replicaLostCount, null);
+        IPartitionLostEvent internalEvent = new PartitionLostEventImpl(partitionOwner, replicaLostCount, null);
         ((InternalPartitionServiceImpl) getNodeEngineImpl(instances[0]).getPartitionService()).onPartitionLost(internalEvent);
 
         assertTrueEventually(() -> {

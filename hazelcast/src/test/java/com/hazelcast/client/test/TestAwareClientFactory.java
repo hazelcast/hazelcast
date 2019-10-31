@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 
 /**
@@ -43,13 +44,16 @@ public class TestAwareClientFactory extends TestAwareInstanceFactory {
 
     /**
      * Creates new client instance which uses in its network configuration the first member created by this factory. The value
-     * {@link com.hazelcast.test.AbstractHazelcastClassRunner#getTestMethodName()} is used as a cluster cluster name.
+     * {@link com.hazelcast.test.AbstractHazelcastClassRunner#getTestMethodName()} is used as the cluster name if it's not
+     * changed already.
      */
     public HazelcastInstance newHazelcastClient(ClientConfig config) {
         if (config == null) {
             config = new ClientConfig();
         }
-        config.setClusterName(getTestMethodName());
+        if (DEFAULT_CLUSTER_NAME.equals(config.getClusterName())) {
+            config.setClusterName(getTestMethodName());
+        }
         List<HazelcastInstance> members = getOrInitInstances(perMethodMembers);
         if (members.isEmpty()) {
             throw new IllegalStateException("Members have to be created first");

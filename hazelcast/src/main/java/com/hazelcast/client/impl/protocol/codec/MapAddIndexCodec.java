@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -33,24 +34,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Adds an index to this map for the specified entries so that queries can run faster.If you are querying your values
- * mostly based on age and active then you should consider indexing these fields.
- * Index attribute should either have a getter method or be public.You should also make sure to add the indexes before
- * adding entries to this map.
- * Indexing time is executed in parallel on each partition by operation threads. The Map is not blocked during this
- * operation.The time taken in proportional to the size of the Map and the number Members.
- * Until the index finishes being created, any searches for the attribute will use a full Map scan, thus avoiding
- * using a partially built index and returning incorrect results.
+ * Adds an index to this map with specified configuration.
  */
-@Generated("7eb3a1680bac9f0ff743bee2c56fe159")
+@Generated("74e5034bdefa98c0c0e480dd692fa3cc")
 public final class MapAddIndexCodec {
-    //hex: 0x012D00
-    public static final int REQUEST_MESSAGE_TYPE = 77056;
-    //hex: 0x012D01
-    public static final int RESPONSE_MESSAGE_TYPE = 77057;
-    private static final int REQUEST_ORDERED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ORDERED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    //hex: 0x012A00
+    public static final int REQUEST_MESSAGE_TYPE = 76288;
+    //hex: 0x012A01
+    public static final int RESPONSE_MESSAGE_TYPE = 76289;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MapAddIndexCodec() {
     }
@@ -59,42 +52,36 @@ public final class MapAddIndexCodec {
     public static class RequestParameters {
 
         /**
-         * name of map
+         * Name of map.
          */
         public java.lang.String name;
 
         /**
-         * index attribute of value
+         * Index configuration.
          */
-        public java.lang.String attribute;
-
-        /**
-         * true if index should be ordered, false otherwise.
-         */
-        public boolean ordered;
+        public com.hazelcast.config.IndexConfig indexConfig;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String attribute, boolean ordered) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.config.IndexConfig indexConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.AddIndex");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeBoolean(initialFrame.content, REQUEST_ORDERED_FIELD_OFFSET, ordered);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        StringCodec.encode(clientMessage, attribute);
+        IndexConfigCodec.encode(clientMessage, indexConfig);
         return clientMessage;
     }
 
     public static MapAddIndexCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        request.ordered = decodeBoolean(initialFrame.content, REQUEST_ORDERED_FIELD_OFFSET);
+        //empty initial frame
+        iterator.next();
         request.name = StringCodec.decode(iterator);
-        request.attribute = StringCodec.decode(iterator);
+        request.indexConfig = IndexConfigCodec.decode(iterator);
         return request;
     }
 
@@ -112,7 +99,7 @@ public final class MapAddIndexCodec {
     }
 
     public static MapAddIndexCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

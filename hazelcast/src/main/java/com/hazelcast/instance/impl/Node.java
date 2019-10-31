@@ -24,7 +24,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -69,8 +69,8 @@ import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.EndpointManager;
@@ -111,7 +111,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
+import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -128,7 +128,6 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
@@ -241,7 +240,6 @@ public class Node {
             logger = loggingService.getLogger(Node.class.getName());
 
             nodeExtension.printNodeInfo();
-            logGroupPasswordInfo();
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
@@ -250,7 +248,7 @@ public class Node {
             config.setConfigurationService(nodeEngine.getConfigurationService());
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-            metricsRegistry.collectMetrics(nodeExtension);
+            metricsRegistry.provideMetrics(nodeExtension);
 
             networkingService = nodeContext.createNetworkingService(this, serverSocketRegistry);
             healthMonitor = new HealthMonitor(this);
@@ -916,17 +914,4 @@ public class Node {
         }
         return attributes;
     }
-
-    private void logGroupPasswordInfo() {
-        String password = config.getClusterPassword();
-        if (!(config.getSecurityConfig().isEnabled()
-                || isNullOrEmpty(password)
-                || Config.DEFAULT_CLUSTER_PASSWORD.equals(password))) {
-            logger.info("A non-empty group password is configured for the Hazelcast member."
-                    + " Since version 3.8.2, members with the same cluster name,"
-                    + " but with different group passwords (that do not use authentication) form a cluster."
-                    + " The group password configuration will be removed completely in a future release.");
-        }
-    }
-
 }

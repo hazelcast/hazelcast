@@ -18,9 +18,9 @@ package com.hazelcast.cp.internal.datastructures;
 
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptor;
@@ -34,8 +34,8 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
     @Override
     public ServiceDescriptor[] createServiceDescriptors() {
         return new ServiceDescriptor[] {
-            new RaftAtomicLongServiceDescriptor(),
-            new RaftLockServiceDescriptor(),
+            new AtomicLongServiceDescriptor(),
+            new LockServiceDescriptor(),
             new RaftSessionManagerServiceDescriptor(),
             new AtomicRefServiceDescriptor(),
             new SemaphoreServiceDescriptor(),
@@ -43,15 +43,15 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
         };
     }
 
-    private static class RaftAtomicLongServiceDescriptor implements ServiceDescriptor {
+    private static class AtomicLongServiceDescriptor implements ServiceDescriptor {
         @Override
         public String getServiceName() {
-            return RaftAtomicLongService.SERVICE_NAME;
+            return AtomicLongService.SERVICE_NAME;
         }
 
         @Override
         public Object getService(NodeEngine nodeEngine) {
-            return new RaftAtomicLongService(nodeEngine);
+            return new AtomicLongService(nodeEngine);
         }
     }
 
@@ -67,15 +67,15 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
         }
     }
 
-    private static class RaftLockServiceDescriptor implements ServiceDescriptor {
+    private static class LockServiceDescriptor implements ServiceDescriptor {
         @Override
         public String getServiceName() {
-            return RaftLockService.SERVICE_NAME;
+            return LockService.SERVICE_NAME;
         }
 
         @Override
         public Object getService(NodeEngine nodeEngine) {
-            return new RaftLockService(nodeEngine);
+            return new LockService(nodeEngine);
         }
     }
 

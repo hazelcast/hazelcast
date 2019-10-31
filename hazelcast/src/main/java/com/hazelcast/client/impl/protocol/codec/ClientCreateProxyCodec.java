@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("bdac7c0294b9e58b9a419d8e9e296a4d")
+@Generated("21e81359c7f9c21e050ec3386fa2dee1")
 public final class ClientCreateProxyCodec {
-    //hex: 0x000500
-    public static final int REQUEST_MESSAGE_TYPE = 1280;
-    //hex: 0x000501
-    public static final int RESPONSE_MESSAGE_TYPE = 1281;
+    //hex: 0x000400
+    public static final int REQUEST_MESSAGE_TYPE = 1024;
+    //hex: 0x000401
+    public static final int RESPONSE_MESSAGE_TYPE = 1025;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientCreateProxyCodec() {
     }
@@ -60,7 +61,6 @@ public final class ClientCreateProxyCodec {
          * "hz:impl:listService"
          * "hz:impl:queueService"
          * "hz:impl:setService"
-         * "hz:impl:atomicLongService"
          * "hz:impl:idGeneratorService"
          * "hz:impl:executorService"
          * "hz:impl:mapService"
@@ -79,10 +79,10 @@ public final class ClientCreateProxyCodec {
         /**
          * TODO DOC
          */
-        public com.hazelcast.nio.Address target;
+        public com.hazelcast.cluster.Address target;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String serviceName, com.hazelcast.nio.Address target) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String serviceName, com.hazelcast.cluster.Address target) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -97,7 +97,7 @@ public final class ClientCreateProxyCodec {
     }
 
     public static ClientCreateProxyCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -121,7 +121,7 @@ public final class ClientCreateProxyCodec {
     }
 
     public static ClientCreateProxyCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

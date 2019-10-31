@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring.transaction;
 
-import javax.transaction.xa.XAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalList;
@@ -93,10 +92,6 @@ class TransactionContextHolder implements TransactionContext {
 
     public UUID getTxnId() {
         return transactionContext.getTxnId();
-    }
-
-    public XAResource getXaResource() {
-        return transactionContext.getXaResource();
     }
 
     public <E> TransactionalList<E> getList(String name) {

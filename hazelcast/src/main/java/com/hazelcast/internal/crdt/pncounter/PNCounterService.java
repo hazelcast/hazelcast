@@ -27,8 +27,8 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.Memoizer;
-import com.hazelcast.monitor.LocalPNCounterStats;
-import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;
+import com.hazelcast.internal.monitor.LocalPNCounterStats;
+import com.hazelcast.internal.monitor.impl.LocalPNCounterStatsImpl;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -148,12 +148,12 @@ public class PNCounterService implements
     }
 
     @Override
-    public PNCounterProxy createDistributedObject(String objectName) {
+    public PNCounterProxy createDistributedObject(String objectName, boolean local) {
         return new PNCounterProxy(objectName, nodeEngine, this);
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
         counters.remove(objectName);
         statsMap.remove(objectName);
         splitBrainProtectionConfigCache.remove(objectName);

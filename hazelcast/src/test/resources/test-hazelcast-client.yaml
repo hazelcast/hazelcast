@@ -13,9 +13,7 @@
 # limitations under the License.
 
 hazelcast-client:
-  cluster:
-    name: foobar-yaml
-    password: dev-pass
+  cluster-name: foobar-yaml
   network:
     ssl:
       enabled: true

@@ -16,6 +16,8 @@
 
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -24,6 +26,7 @@ import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import static com.hazelcast.config.cp.SemaphoreConfig.DEFAULT_INITIAL_PERMITS;
 import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
 
 /**
@@ -33,16 +36,25 @@ import static com.hazelcast.cp.internal.datastructures.semaphore.AcquireResult.A
 public class SemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey, Semaphore>
         implements IdentifiedDataSerializable {
 
+    private CPSubsystemConfig cpSubsystemConfig;
+
     SemaphoreRegistry() {
     }
 
-    SemaphoreRegistry(CPGroupId groupId) {
+    SemaphoreRegistry(CPGroupId groupId, CPSubsystemConfig cpSubsystemConfig) {
         super(groupId);
+        this.cpSubsystemConfig = cpSubsystemConfig;
+    }
+
+    public void setCpSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
+        this.cpSubsystemConfig = cpSubsystemConfig;
     }
 
     @Override
     protected Semaphore createNewResource(CPGroupId groupId, String name) {
-        return new Semaphore(groupId, name);
+        SemaphoreConfig semaphoreConfig = cpSubsystemConfig.findSemaphoreConfig(name);
+        int initialPermits = semaphoreConfig != null ? semaphoreConfig.getInitialPermits() : DEFAULT_INITIAL_PERMITS;
+        return new Semaphore(groupId, name, initialPermits);
     }
 
     @Override
@@ -69,8 +81,7 @@ public class SemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey, Se
     }
 
     int availablePermits(String name) {
-        Semaphore semaphore = getResourceOrNull(name);
-        return semaphore != null ? semaphore.getAvailable() : 0;
+        return getOrInitResource(name).getAvailable();
     }
 
     AcquireResult acquire(String name, AcquireInvocationKey key, long timeoutMs) {

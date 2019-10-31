@@ -16,26 +16,27 @@
 
 package com.hazelcast.spring.security;
 
+import javax.security.auth.callback.CallbackHandler;
+
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
-import java.util.Properties;
-
 public class DummyCredentialsFactory implements ICredentialsFactory {
 
-    private String clusterName;
-    private String clusterPassword;
+    private final Credentials credentials;
+
+    public DummyCredentialsFactory(String username, String password) {
+        credentials = new UsernamePasswordCredentials(username, password);
+    }
 
     @Override
-    public void configure(String clusterName, String clusterPassword, Properties properties) {
-        this.clusterName = clusterName;
-        this.clusterPassword = clusterPassword;
+    public void configure(CallbackHandler callbackHandler) {
     }
 
     @Override
     public Credentials newCredentials() {
-        return new UsernamePasswordCredentials(clusterName, clusterPassword);
+        return credentials;
     }
 
     @Override

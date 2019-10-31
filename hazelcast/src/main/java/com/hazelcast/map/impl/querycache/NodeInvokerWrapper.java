@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;

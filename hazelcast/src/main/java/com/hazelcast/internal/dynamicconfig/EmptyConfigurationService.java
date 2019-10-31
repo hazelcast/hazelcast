@@ -16,14 +16,12 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -92,16 +90,6 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public AtomicLongConfig findAtomicLongConfig(String name) {
-        return null;
-    }
-
-    @Override
-    public LockConfig findLockConfig(String name) {
-        return null;
-    }
-
-    @Override
     public ListConfig findListConfig(String name) {
         return null;
     }
@@ -137,11 +125,6 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public Map<String, LockConfig> getLockConfigs() {
-        return emptyMap();
-    }
-
-    @Override
     public Map<String, MapConfig> getMapConfigs() {
         return emptyMap();
     }
@@ -173,11 +156,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, RingbufferConfig> getRingbufferConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
         return emptyMap();
     }
 

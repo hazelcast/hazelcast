@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -34,8 +34,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
@@ -43,6 +41,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -60,6 +59,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -205,7 +205,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     @Override
     public V getAndRemove(K key) {
         long start = nowInNanosOrDefault();
-        ICompletableFuture<V> future = getAndRemoveSyncInternal(key);
+        InternalCompletableFuture<V> future = getAndRemoveSyncInternal(key);
         try {
             V removedValue = toObject(future.get());
             if (statisticsEnabled) {
@@ -390,7 +390,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
+    public InternalCompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = CacheEventJournalSubscribeCodec.encodeRequest(nameWithPrefix);
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<>(fut, getSerializationService(),
@@ -398,7 +398,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+    public <T> InternalCompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
             int minSize,
             int maxSize,
@@ -418,93 +418,93 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    public ICompletableFuture<V> getAsync(K key) {
+    public InternalCompletableFuture<V> getAsync(K key) {
         return getAsync(key, null);
     }
 
     @Override
-    public ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+    public InternalCompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         validateNotNull(key);
 
-        ExecutionCallback<V> callback = !statisticsEnabled ? null : statsHandler.newOnGetCallback(startNanos);
+        BiConsumer<V, Throwable> callback = !statisticsEnabled ? null : statsHandler.newOnGetCallback(startNanos);
         return getAsyncInternal(key, expiryPolicy, callback);
     }
 
     @Override
-    public ICompletableFuture<Void> putAsync(K key, V value) {
+    public InternalCompletableFuture<Void> putAsync(K key, V value) {
         return putAsync(key, value, null);
     }
 
     @Override
-    public ICompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (ICompletableFuture<Void>) putAsyncInternal(key, value, expiryPolicy, false, true,
+    public InternalCompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return (InternalCompletableFuture<Void>) putAsyncInternal(key, value, expiryPolicy, false, true,
                 newStatsCallbackOrNull(false));
     }
 
     @Override
-    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
-        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, null, false, true);
+    public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return (InternalCompletableFuture<Boolean>) putIfAbsentInternal(key, value, null, false, true);
     }
 
     @Override
-    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, expiryPolicy, false, true);
+    public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return (InternalCompletableFuture<Boolean>) putIfAbsentInternal(key, value, expiryPolicy, false, true);
     }
 
     @Override
-    public ICompletableFuture<V> getAndPutAsync(K key, V value) {
+    public InternalCompletableFuture<V> getAndPutAsync(K key, V value) {
         return getAndPutAsync(key, value, null);
     }
 
     @Override
-    public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public InternalCompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return putAsyncInternal(key, value, expiryPolicy, true, false, newStatsCallbackOrNull(true));
     }
 
     @Override
-    public ICompletableFuture<Boolean> removeAsync(K key) {
-        return (ICompletableFuture<Boolean>) removeAsyncInternal(key, null, false, false, true);
+    public InternalCompletableFuture<Boolean> removeAsync(K key) {
+        return (InternalCompletableFuture<Boolean>) removeAsyncInternal(key, null, false, false, true);
     }
 
     @Override
-    public ICompletableFuture<Boolean> removeAsync(K key, V oldValue) {
-        return (ICompletableFuture<Boolean>) removeAsyncInternal(key, oldValue, true, false, true);
+    public InternalCompletableFuture<Boolean> removeAsync(K key, V oldValue) {
+        return (InternalCompletableFuture<Boolean>) removeAsyncInternal(key, oldValue, true, false, true);
     }
 
     @Override
-    public ICompletableFuture<V> getAndRemoveAsync(K key) {
+    public InternalCompletableFuture<V> getAndRemoveAsync(K key) {
         return getAndRemoveAsyncInternal(key);
     }
 
     @Override
-    public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V value) {
         return replaceAsyncInternal(key, null, value, null, false, false, true);
     }
 
     @Override
-    public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
     }
 
     @Override
-    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
         return replaceAsyncInternal(key, oldValue, newValue, null, true, false, true);
     }
 
     @Override
-    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
     }
 
     @Override
-    public ICompletableFuture<V> getAndReplaceAsync(K key, V value) {
+    public InternalCompletableFuture<V> getAndReplaceAsync(K key, V value) {
         return replaceAndGetAsyncInternal(key, null, value, null, false, false, true);
     }
 
     @Override
-    public ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public InternalCompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, false, true);
     }
 

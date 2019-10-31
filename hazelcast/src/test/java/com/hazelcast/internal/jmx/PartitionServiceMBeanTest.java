@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.monitor.impl.MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT;
+import static com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

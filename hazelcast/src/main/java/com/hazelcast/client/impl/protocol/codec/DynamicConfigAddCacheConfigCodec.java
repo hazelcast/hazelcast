@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -37,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cache configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("24d947fb0686a874bb1a5006486802bc")
+@Generated("058f3d7d9104da02d8d37da3a0cd22b3")
 public final class DynamicConfigAddCacheConfigCodec {
-    //hex: 0x1E1000
-    public static final int REQUEST_MESSAGE_TYPE = 1970176;
-    //hex: 0x1E1001
-    public static final int RESPONSE_MESSAGE_TYPE = 1970177;
+    //hex: 0x1B0E00
+    public static final int REQUEST_MESSAGE_TYPE = 1773056;
+    //hex: 0x1B0E01
+    public static final int RESPONSE_MESSAGE_TYPE = 1773057;
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MANAGEMENT_ENABLED_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_READ_THROUGH_FIELD_OFFSET = REQUEST_MANAGEMENT_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -51,7 +52,7 @@ public final class DynamicConfigAddCacheConfigCodec {
     private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_DISABLE_PER_ENTRY_INVALIDATION_EVENTS_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_DISABLE_PER_ENTRY_INVALIDATION_EVENTS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private DynamicConfigAddCacheConfigCodec() {
     }
@@ -67,12 +68,12 @@ public final class DynamicConfigAddCacheConfigCodec {
         /**
          * class name of key type
          */
-        public java.lang.String keyType;
+        public @Nullable java.lang.String keyType;
 
         /**
          * class name of value type
          */
-        public java.lang.String valueType;
+        public @Nullable java.lang.String valueType;
 
         /**
          * {@code true} to enable gathering of statistics, otherwise {@code false}
@@ -97,22 +98,22 @@ public final class DynamicConfigAddCacheConfigCodec {
         /**
          * name of cache loader factory class, if one is configured
          */
-        public java.lang.String cacheLoaderFactory;
+        public @Nullable java.lang.String cacheLoaderFactory;
 
         /**
          * name of cache writer factory class, if one is configured
          */
-        public java.lang.String cacheWriterFactory;
+        public @Nullable java.lang.String cacheWriterFactory;
 
         /**
          * Factory                    name of cache loader factory class, if one is configured
          */
-        public java.lang.String cacheLoader;
+        public @Nullable java.lang.String cacheLoader;
 
         /**
          * Factory                    name of cache writer factory class, if one is configured
          */
-        public java.lang.String cacheWriter;
+        public @Nullable java.lang.String cacheWriter;
 
         /**
          * number of synchronous backups
@@ -135,14 +136,14 @@ public final class DynamicConfigAddCacheConfigCodec {
          * number of members required in the cluster for the cache to remain functional.
          * When {@code null}, split brain protection does not apply to this cache's operations.
          */
-        public java.lang.String splitBrainProtectionName;
+        public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
          * name of a class implementing {@link com.hazelcast.cache.CacheMergePolicy}
          * that handles merging of values for this cache while recovering from
          * network partitioning
          */
-        public java.lang.String mergePolicy;
+        public @Nullable java.lang.String mergePolicy;
 
         /**
          * when {@code true} disables invalidation events for per entry but
@@ -153,46 +154,46 @@ public final class DynamicConfigAddCacheConfigCodec {
         /**
          * partition lost listener configurations
          */
-        public java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs;
+        public @Nullable java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs;
 
         /**
          * expiry policy factory class name. When configuring an expiry policy,
          * either this or {@ode timedExpiryPolicyFactoryConfig} should be configured.
          */
-        public java.lang.String expiryPolicyFactoryClassName;
+        public @Nullable java.lang.String expiryPolicyFactoryClassName;
 
         /**
          * expiry policy factory with duration configuration
          */
-        public com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
+        public @Nullable com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
 
         /**
          * cache entry listeners configuration
          */
-        public java.util.List<com.hazelcast.config.CacheSimpleEntryListenerConfig> cacheEntryListeners;
+        public @Nullable java.util.List<com.hazelcast.config.CacheSimpleEntryListenerConfig> cacheEntryListeners;
 
         /**
          * cache eviction configuration
          */
-        public com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig;
+        public @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig;
 
         /**
          * reference to an existing WAN replication configuration
          */
-        public com.hazelcast.config.WanReplicationRef wanReplicationRef;
+        public @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef;
 
         /**
          * Event Journal configuration
          */
-        public com.hazelcast.config.EventJournalConfig eventJournalConfig;
+        public @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig;
 
         /**
          * hot restart configuration
          */
-        public com.hazelcast.config.HotRestartConfig hotRestartConfig;
+        public @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String keyType, java.lang.String valueType, boolean statisticsEnabled, boolean managementEnabled, boolean readThrough, boolean writeThrough, java.lang.String cacheLoaderFactory, java.lang.String cacheWriterFactory, java.lang.String cacheLoader, java.lang.String cacheWriter, int backupCount, int asyncBackupCount, java.lang.String inMemoryFormat, java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, boolean disablePerEntryInvalidationEvents, java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, java.lang.String expiryPolicyFactoryClassName, com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig, java.util.Collection<com.hazelcast.config.CacheSimpleEntryListenerConfig> cacheEntryListeners, com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, com.hazelcast.config.WanReplicationRef wanReplicationRef, com.hazelcast.config.EventJournalConfig eventJournalConfig, com.hazelcast.config.HotRestartConfig hotRestartConfig) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.lang.String keyType, @Nullable java.lang.String valueType, boolean statisticsEnabled, boolean managementEnabled, boolean readThrough, boolean writeThrough, @Nullable java.lang.String cacheLoaderFactory, @Nullable java.lang.String cacheWriterFactory, @Nullable java.lang.String cacheLoader, @Nullable java.lang.String cacheWriter, int backupCount, int asyncBackupCount, java.lang.String inMemoryFormat, @Nullable java.lang.String splitBrainProtectionName, @Nullable java.lang.String mergePolicy, boolean disablePerEntryInvalidationEvents, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, @Nullable java.lang.String expiryPolicyFactoryClassName, @Nullable com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig, @Nullable java.util.Collection<com.hazelcast.config.CacheSimpleEntryListenerConfig> cacheEntryListeners, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -229,7 +230,7 @@ public final class DynamicConfigAddCacheConfigCodec {
     }
 
     public static DynamicConfigAddCacheConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
@@ -274,7 +275,7 @@ public final class DynamicConfigAddCacheConfigCodec {
     }
 
     public static DynamicConfigAddCacheConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

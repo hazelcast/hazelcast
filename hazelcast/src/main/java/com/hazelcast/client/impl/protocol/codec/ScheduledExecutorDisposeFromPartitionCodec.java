@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Dispose the task from the scheduler
  */
-@Generated("36b5b3c7c97aec225331c42266c2ce3e")
+@Generated("ff9e8430ff7a4853e8fb120c200cd28b")
 public final class ScheduledExecutorDisposeFromPartitionCodec {
-    //hex: 0x1D1100
-    public static final int REQUEST_MESSAGE_TYPE = 1904896;
-    //hex: 0x1D1101
-    public static final int RESPONSE_MESSAGE_TYPE = 1904897;
+    //hex: 0x1A1100
+    public static final int REQUEST_MESSAGE_TYPE = 1708288;
+    //hex: 0x1A1101
+    public static final int RESPONSE_MESSAGE_TYPE = 1708289;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ScheduledExecutorDisposeFromPartitionCodec() {
     }
@@ -75,7 +76,7 @@ public final class ScheduledExecutorDisposeFromPartitionCodec {
     }
 
     public static ScheduledExecutorDisposeFromPartitionCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -98,7 +99,7 @@ public final class ScheduledExecutorDisposeFromPartitionCodec {
     }
 
     public static ScheduledExecutorDisposeFromPartitionCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

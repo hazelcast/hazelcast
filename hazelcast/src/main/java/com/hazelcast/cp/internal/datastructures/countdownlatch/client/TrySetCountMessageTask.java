@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.TrySetCountOp;
 import com.hazelcast.instance.impl.Node;
@@ -33,8 +32,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link TrySetCountOp}
  */
-public class TrySetCountMessageTask extends AbstractMessageTask<CountDownLatchTrySetCountCodec.RequestParameters>
-        implements ExecutionCallback<Boolean> {
+public class TrySetCountMessageTask extends AbstractCPMessageTask<CountDownLatchTrySetCountCodec.RequestParameters> {
 
     public TrySetCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,7 +43,7 @@ public class TrySetCountMessageTask extends AbstractMessageTask<CountDownLatchTr
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                 .<Boolean>invoke(parameters.groupId, new TrySetCountOp(parameters.name, parameters.count))
-                .andThen(this);
+                .whenCompleteAsync(this);
     }
 
     @Override
@@ -81,15 +79,5 @@ public class TrySetCountMessageTask extends AbstractMessageTask<CountDownLatchTr
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.count};
-    }
-
-    @Override
-    public void onResponse(Boolean response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

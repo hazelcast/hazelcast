@@ -23,25 +23,16 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.InternalLockNamespace;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockServiceImpl;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IdGenerator;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -112,25 +103,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLock() {
-        String partitionKey = "hazelcast";
-        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-
-        ILock lock = hz.getLock("lock@" + partitionKey);
-        lock.lock();
-        assertEquals("lock@" + partitionKey, lock.getName());
-        assertEquals(partitionKey, lock.getPartitionKey());
-
-        Node node = getNode(hz);
-        LockServiceImpl lockService = node.nodeEngine.getService(LockServiceImpl.SERVICE_NAME);
-
-        Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
-        LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace(lock.getName()));
-        Data key = node.getSerializationService().toData(lock.getName(), StringPartitioningStrategy.INSTANCE);
-        assertTrue(lockStore.isLocked(key));
-    }
-
-    @Test
     public void testRingbuffer() {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
@@ -145,34 +117,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
                 service.getContainers().get(service.getRingbufferPartitionId(ringbuffer.getName()));
         assertNotNull(partitionContainers);
         assertTrue(partitionContainers.containsKey(RingbufferService.getRingbufferNamespace(ringbuffer.getName())));
-    }
-
-    @Test
-    public void testIdGenerator() {
-        String partitionKey = "hazelcast";
-        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-
-        IdGenerator idGenerator = hz.getIdGenerator("idgenerator@" + partitionKey);
-        idGenerator.newId();
-        assertEquals("idgenerator@" + partitionKey, idGenerator.getName());
-        assertEquals(partitionKey, idGenerator.getPartitionKey());
-
-        AtomicLongService service = getNodeEngine(hz).getService(AtomicLongService.SERVICE_NAME);
-        assertTrue(service.containsAtomicLong("hz:atomic:idGenerator:" + idGenerator.getName()));
-    }
-
-    @Test
-    public void testAtomicLong() {
-        String partitionKey = "hazelcast";
-        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-
-        IAtomicLong atomicLong = hz.getAtomicLong("atomiclong@" + partitionKey);
-        atomicLong.incrementAndGet();
-        assertEquals("atomiclong@" + partitionKey, atomicLong.getName());
-        assertEquals(partitionKey, atomicLong.getPartitionKey());
-
-        AtomicLongService service = getNodeEngine(hz).getService(AtomicLongService.SERVICE_NAME);
-        assertTrue(service.containsAtomicLong(atomicLong.getName()));
     }
 
     @Test

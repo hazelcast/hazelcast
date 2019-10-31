@@ -74,8 +74,8 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
-        RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+        LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+        LockRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch latch = new CountDownLatch(1);
         spawn(() -> {
@@ -100,8 +100,8 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
-        RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+        LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+        LockRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch latch = new CountDownLatch(1);
         spawn(() -> {
@@ -128,8 +128,8 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
-        RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+        LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+        LockRegistry registry = service.getRegistryOrNull(groupId);
 
         long fence = lock.tryLockAndGetFence(1, TimeUnit.SECONDS);
 
@@ -144,8 +144,8 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
-        RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+        LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+        LockRegistry registry = service.getRegistryOrNull(groupId);
 
         spawn(() -> {
             lock.tryLock(10, MINUTES);
@@ -179,7 +179,7 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
         long sessionId = sessionService.getAllSessions(groupId).get().iterator().next().id();
 
         getRaftInvocationManager(proxyInstance)
-                .invoke(groupId, new UnlockOp(objectName, sessionId, getThreadId(), newUnsecureUUID())).join();
+                .invoke(groupId, new UnlockOp(objectName, sessionId, getThreadId(), newUnsecureUUID())).joinInternal();
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
@@ -258,12 +258,12 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
         });
 
         assertTrueEventually(() -> {
-            RaftLockService service = getNodeEngineImpl(primaryInstance).getService(RaftLockService.SERVICE_NAME);
-            RaftLockRegistry registry = service.getRegistryOrNull(lock.getGroupId());
+            LockService service = getNodeEngineImpl(primaryInstance).getService(LockService.SERVICE_NAME);
+            LockRegistry registry = service.getRegistryOrNull(this.lock.getGroupId());
             assertNotNull(registry);
-            RaftLock raftLock = registry.getResourceOrNull(objectName);
-            assertNotNull(raftLock);
-            assertFalse(raftLock.getInternalWaitKeysMap().isEmpty());
+            Lock lock = registry.getResourceOrNull(objectName);
+            assertNotNull(lock);
+            assertFalse(lock.getInternalWaitKeysMap().isEmpty());
         });
 
         proxyInstance.shutdown();

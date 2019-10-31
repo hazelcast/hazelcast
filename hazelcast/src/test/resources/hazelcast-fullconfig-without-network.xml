@@ -41,10 +41,7 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <cluster>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </cluster>
+    <cluster-name>dev</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
     <management-center enabled="true" update-interval="5" scripting-enabled="false">
@@ -103,7 +100,7 @@
                 <tenant-id>TENANT_ID</tenant-id>
                 <subscription-id>SUB_ID</subscription-id>
                 <cluster-id>HZLCAST001</cluster-id>
-                <cluster-name>CLUSTER-NAME</cluster-name>
+                <group-name>RESOURCE-GROUP-NAME</group-name>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -348,8 +345,16 @@
         </wan-replication-ref>
 
         <indexes>
-            <index ordered="false">name</index>
-            <index ordered="true">age</index>
+            <index type="HASH">
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
+            </index>
+            <index>
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
         </indexes>
 
         <attributes>
@@ -380,8 +385,16 @@
                 <populate>true</populate>
                 <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
                 <indexes>
-                    <index ordered="false">name</index>
-                    <index ordered="true">age</index>
+                    <index type="HASH">
+                        <attributes>
+                            <attribute>name</attribute>
+                        </attributes>
+                    </index>
+                    <index>
+                        <attributes>
+                            <attribute>age</attribute>
+                        </attributes>
+                    </index>
                 </indexes>
             </query-cache>
         </query-caches>
@@ -453,15 +466,6 @@
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
     </reliable-topic>
-
-    <lock name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-    </lock>
-
-    <atomic-long name="default">
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-    </atomic-long>
 
     <ringbuffer name="default">
         <capacity>25311</capacity>
@@ -594,30 +598,44 @@
     </services>
 
     <security enabled="false">
-        <member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
-            <properties>
-                <property name="property">value</property>
-            </properties>
-        </member-credentials-factory>
-        <member-login-modules>
-            <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-                <properties>
-                    <property name="property">value</property>
-                </properties>
-            </login-module>
-        </member-login-modules>
-        <client-login-modules>
-            <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
-                <properties>
-                    <property name="property">value</property>
-                </properties>
-            </login-module>
-            <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-                <properties>
-                    <property name="property">value</property>
-                </properties>
-            </login-module>
-        </client-login-modules>
+        <realms>
+            <realm name="mr">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                            <properties>
+                                <property name="property">value</property>
+                            </properties>
+                        </login-module>
+                    </jaas>
+                </authentication>
+                <identity>
+                    <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
+                        <properties>
+                            <property name="property">value</property>
+                        </properties>
+                    </credentials-factory>
+                </identity>
+            </realm>
+            <realm name="cr">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
+                            <properties>
+                                <property name="property">value</property>
+                            </properties>
+                        </login-module>
+                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                            <properties>
+                                <property name="property">value</property>
+                            </properties>
+                        </login-module>
+                    </jaas>
+                </authentication>
+            </realm>
+        </realms>
+        <member-authentication realm="mr"/>
+        <client-authentication realm="cr"/>
         <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
             <properties>
                 <property name="property">value</property>
@@ -667,11 +685,6 @@
                     <action>all</action>
                 </actions>
             </set-permission>
-            <id-generator-permission name="*">
-                <actions>
-                    <action>all</action>
-                </actions>
-            </id-generator-permission>
             <flake-id-generator-permission name="*">
                 <actions>
                     <action>all</action>
@@ -798,6 +811,9 @@
         <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
         <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>
         <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+        <persistence-enabled>false</persistence-enabled>
+        <base-dir>data</base-dir>
+        <data-load-timeout-seconds>30</data-load-timeout-seconds>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>

@@ -25,7 +25,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-abstract class AbstractClientFailoverConfigBuilderTest {
+public abstract class AbstractClientFailoverConfigBuilderTest {
     protected ClientFailoverConfig fullClientConfig;
 
     @After

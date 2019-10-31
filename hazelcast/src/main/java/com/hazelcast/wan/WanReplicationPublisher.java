@@ -19,8 +19,8 @@ package com.hazelcast.wan;
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.monitor.LocalWanPublisherStats;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.monitor.LocalWanPublisherStats;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 
 import java.util.Collection;
 import java.util.Set;
@@ -217,20 +217,6 @@ public interface WanReplicationPublisher<T> {
      * NOTE: used only in Hazelcast Enterprise.
      */
     default int removeWanEvents() {
-        return 0;
-    }
-
-    /**
-     * Removes all WAN events awaiting replication and belonging to the provided
-     * service and partition.
-     * If the publisher does not store WAN events, this method is a no-op.
-     * Invoked when migrating WAN replication data between members in a cluster.
-     * NOTE: used only in Hazelcast Enterprise.
-     *
-     * @param serviceName the service name of the WAN events should be removed
-     * @param partitionId the partition ID of the WAN events should be removed
-     */
-    default int removeWanEvents(int partitionId, String serviceName) {
         return 0;
     }
 }

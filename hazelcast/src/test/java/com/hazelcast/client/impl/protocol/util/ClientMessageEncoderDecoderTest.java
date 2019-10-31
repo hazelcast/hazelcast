@@ -27,7 +27,7 @@ import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -74,7 +74,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
@@ -107,7 +107,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
@@ -133,8 +133,8 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID uuid = UUID.randomUUID();
         UUID ownerUuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
-        ClientMessage message = ClientAuthenticationCodec.encodeRequest("user", "pass",
-                uuid, ownerUuid, true, "JAVA", (byte) 1,
+        ClientMessage message = ClientAuthenticationCodec.encodeRequest("cluster", "user", "pass",
+                uuid, "JAVA", (byte) 1,
                 "1.0", "name", labels, 271, clusterId);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
@@ -151,7 +151,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
@@ -166,11 +166,10 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
 
         ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(resultingMessage.get());
 
+        assertEquals("cluster", parameters.clusterName);
         assertEquals("user", parameters.username);
         assertEquals("pass", parameters.password);
         assertEquals(uuid, parameters.uuid);
-        assertEquals(ownerUuid, parameters.ownerUuid);
-        assertEquals(true, parameters.isOwnerConnection);
         assertEquals("JAVA", parameters.clientType);
         assertEquals((byte) 1, parameters.serializationVersion);
         assertEquals("1.0", parameters.clientHazelcastVersion);
@@ -192,7 +191,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID clusterId = UUID.randomUUID();
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, ownerUuid, (byte) 1, "3.12", members, 271, clusterId);
+                uuid, (byte) 1, "3.12", 271, clusterId);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -208,7 +207,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
@@ -226,10 +225,8 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(2, parameters.status);
         assertEquals(new Address("127.0.0.1", 5701), parameters.address);
         assertEquals(uuid, parameters.uuid);
-        assertEquals(ownerUuid, parameters.ownerUuid);
         assertEquals(1, parameters.serializationVersion);
         assertEquals("3.12", parameters.serverHazelcastVersion);
-        assertArrayEquals(members.toArray(), parameters.clientUnregisteredMembers.toArray());
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
     }
@@ -275,7 +272,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());

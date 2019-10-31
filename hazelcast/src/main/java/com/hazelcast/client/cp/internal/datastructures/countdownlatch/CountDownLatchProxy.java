@@ -59,7 +59,7 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
 
         long timeoutMillis = Math.max(0, unit.toMillis(timeout));
         ClientMessage request = CountDownLatchAwaitCodec.encodeRequest(groupId, objectName, newUnsecureUUID(), timeoutMillis);
-        ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().join();
+        ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 
         return CountDownLatchAwaitCodec.decodeResponse(response).response;
     }
@@ -81,7 +81,7 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
 
     private int getRound() {
         ClientMessage request = CountDownLatchGetRoundCodec.encodeRequest(groupId, objectName);
-        ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().join();
+        ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 
         return CountDownLatchGetRoundCodec.decodeResponse(response).response;
     }
@@ -89,13 +89,13 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
     private void countDown(int round, UUID invocationUid) {
         ClientMessage request = CountDownLatchCountDownCodec.encodeRequest(groupId, objectName, invocationUid, round);
 
-        new ClientInvocation(getClient(), request, name).invoke().join();
+        new ClientInvocation(getClient(), request, name).invoke().joinInternal();
     }
 
     @Override
     public int getCount() {
         ClientMessage request = CountDownLatchGetCountCodec.encodeRequest(groupId, objectName);
-        ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().join();
+        ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 
         return CountDownLatchGetCountCodec.decodeResponse(response).response;
     }
@@ -103,7 +103,7 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
     @Override
     public boolean trySetCount(int count) {
         ClientMessage request = CountDownLatchTrySetCountCodec.encodeRequest(groupId, objectName, count);
-        ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().join();
+        ClientMessage response = new ClientInvocation(getClient(), request, name).invoke().joinInternal();
 
         return CountDownLatchTrySetCountCodec.decodeResponse(response).response;
     }
@@ -120,7 +120,7 @@ public class CountDownLatchProxy extends ClientProxy implements ICountDownLatch 
     @Override
     public void onDestroy() {
         ClientMessage request = CPGroupDestroyCPObjectCodec.encodeRequest(groupId, getServiceName(), objectName);
-        new ClientInvocation(getClient(), request, name).invoke().join();
+        new ClientInvocation(getClient(), request, name).invoke().joinInternal();
     }
 
 }

@@ -16,93 +16,90 @@
 
 package com.hazelcast.cp.internal;
 
-import com.hazelcast.cp.CPGroup;
+import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.ACTIVE;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
+import static java.util.Collections.unmodifiableSet;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 
 /**
  * Contains metadata information for Raft groups, such as group id,
  * group members, etc. Maintained within the Metadata Raft group.
  */
-public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
+public final class CPGroupInfo implements IdentifiedDataSerializable {
 
     private RaftGroupId id;
-    private Set<CPMemberInfo> initialMembers;
-    private Set<CPMemberInfo> members;
+    private Set<RaftEndpoint> initialMembers;
+    private Set<RaftEndpoint> members;
     private long membersCommitIndex;
 
     // read outside of Raft
     private volatile CPGroupStatus status;
 
-    private transient CPMemberInfo[] membersArray;
-
     public CPGroupInfo() {
     }
 
-    public CPGroupInfo(RaftGroupId id, Collection<CPMemberInfo> members) {
+    public CPGroupInfo(RaftGroupId id, Collection<RaftEndpoint> members) {
         this.id = id;
         this.status = ACTIVE;
-        this.initialMembers = Collections.unmodifiableSet(new LinkedHashSet<>(members));
-        this.members = Collections.unmodifiableSet(new LinkedHashSet<>(members));
-        this.membersArray = members.toArray(new CPMemberInfo[0]);
+        this.initialMembers = unmodifiableSet(new LinkedHashSet<>(members));
+        this.members = unmodifiableSet(new LinkedHashSet<>(members));
     }
 
-    @Override
     public RaftGroupId id() {
         return id;
     }
 
     public String name() {
-        return id.name();
+        return id.getName();
     }
 
     public int initialMemberCount() {
         return initialMembers.size();
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Collection<CPMember> members() {
-        return (Collection) members;
-    }
-
-    public Collection<CPMemberInfo> memberImpls() {
+    public Collection<RaftEndpoint> members() {
         return members;
-    }
-
-    @SuppressWarnings("unchecked")
-    public Collection<CPMember> initialMembers() {
-        return (Collection) initialMembers;
-    }
-
-    public boolean containsMember(CPMemberInfo member) {
-        return members.contains(member);
     }
 
     public int memberCount() {
         return members.size();
     }
 
-    @Override
+    public boolean containsMember(RaftEndpoint member) {
+        return members.contains(member);
+    }
+
+    public Collection<RaftEndpoint> memberImpls() {
+        return members;
+    }
+
+    public Collection<RaftEndpoint> initialMembers() {
+        return initialMembers;
+    }
+
     public CPGroupStatus status() {
         return status;
     }
 
-    public boolean setDestroying() {
+    boolean setDestroying() {
         if (status == DESTROYED) {
             return false;
         }
@@ -111,12 +108,12 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
         return true;
     }
 
-    public boolean setDestroyed() {
+    boolean setDestroyed() {
         checkState(status != ACTIVE, "Cannot destroy " + id + " because status is: " + status);
         return forceSetDestroyed();
     }
 
-    public boolean forceSetDestroyed() {
+    boolean forceSetDestroyed() {
         if (status == DESTROYED) {
             return false;
         }
@@ -125,19 +122,19 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
         return true;
     }
 
-    public long getMembersCommitIndex() {
+    long getMembersCommitIndex() {
         return membersCommitIndex;
     }
 
-    public boolean applyMembershipChange(CPMemberInfo leaving, CPMemberInfo joining,
-                                         long expectedMembersCommitIndex, long newMembersCommitIndex) {
+    boolean applyMembershipChange(RaftEndpoint leaving, RaftEndpoint joining, long expectedMembersCommitIndex,
+                                  long newMembersCommitIndex) {
         checkState(status == ACTIVE, "Cannot apply membership change of Leave: " + leaving
                 + " and Join: " + joining + " since status is: " + status);
         if (membersCommitIndex != expectedMembersCommitIndex) {
             return false;
         }
 
-        Set<CPMemberInfo> m = new LinkedHashSet<>(members);
+        Set<RaftEndpoint> m = new LinkedHashSet<>(members);
         if (leaving != null) {
             boolean removed = m.remove(leaving);
             assert removed : leaving + " is not member of " + toString();
@@ -148,28 +145,43 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
             assert added : joining + " is already member of " + toString();
         }
 
-        members = Collections.unmodifiableSet(m);
+        members = unmodifiableSet(m);
         membersCommitIndex = newMembersCommitIndex;
-        membersArray = members.toArray(new CPMemberInfo[0]);
         return true;
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP",
-            justification = "Returning internal array intentionally to avoid performance penalty.")
-    public CPMemberInfo[] membersArray() {
-        return membersArray;
+    CPGroupSummary toSummary(Collection<CPMemberInfo> cpMembers) {
+        Map<UUID, CPMemberInfo> cpMembersMap = new HashMap<>();
+        for (CPMemberInfo cpMember : cpMembers) {
+            cpMembersMap.put(cpMember.getUuid(), cpMember);
+        }
+        // we should preserve the member ordering so we iterate over group members instead of all cp members
+        List<CPMember> groupEndpoints = new ArrayList<>();
+        for (RaftEndpoint endpoint : members) {
+            CPMemberInfo memberInfo = cpMembersMap.get(endpoint.getUuid());
+            if (memberInfo == null) {
+                continue;
+            }
+            groupEndpoints.add(memberInfo);
+        }
+
+        if (groupEndpoints.size() != members.size()) {
+            throw new IllegalStateException("Missing CP member in active CP members: " + cpMembers + " for " + this);
+        }
+
+        return new CPGroupSummary(id,  status, initialMembers, groupEndpoints);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(id);
         out.writeInt(initialMembers.size());
-        for (CPMemberInfo member : initialMembers) {
+        for (RaftEndpoint member : initialMembers) {
             out.writeObject(member);
         }
         out.writeLong(membersCommitIndex);
         out.writeInt(members.size());
-        for (CPMemberInfo member : members) {
+        for (RaftEndpoint member : members) {
             out.writeObject(member);
         }
         out.writeUTF(status.toString());
@@ -179,21 +191,20 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         id = in.readObject();
         int initialMemberCount = in.readInt();
-        Set<CPMemberInfo> initialMembers = new LinkedHashSet<>();
+        Set<RaftEndpoint> initialMembers = new LinkedHashSet<>();
         for (int i = 0; i < initialMemberCount; i++) {
-            CPMemberInfo member = in.readObject();
+            RaftEndpoint member = in.readObject();
             initialMembers.add(member);
         }
-        this.initialMembers = Collections.unmodifiableSet(initialMembers);
+        this.initialMembers = unmodifiableSet(initialMembers);
         membersCommitIndex = in.readLong();
         int memberCount = in.readInt();
         members = new LinkedHashSet<>(memberCount);
         for (int i = 0; i < memberCount; i++) {
-            CPMemberInfo member = in.readObject();
+            RaftEndpoint member = in.readObject();
             members.add(member);
         }
-        membersArray = members.toArray(new CPMemberInfo[0]);
-        members = Collections.unmodifiableSet(members);
+        members = unmodifiableSet(members);
         status = CPGroupStatus.valueOf(in.readUTF());
     }
 

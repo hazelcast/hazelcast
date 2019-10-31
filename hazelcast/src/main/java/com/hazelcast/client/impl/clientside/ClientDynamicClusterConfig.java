@@ -17,14 +17,12 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddAtomicLongConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
@@ -45,7 +43,6 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConf
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -57,7 +54,6 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -87,7 +83,6 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -95,6 +90,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
@@ -143,7 +140,7 @@ public class ClientDynamicClusterConfig extends Config {
                 mapConfig.getMaxSizeConfig().getMaxSizePolicy().name(), mapConfig.getMaxSizeConfig().getSize(),
                 MapStoreConfigHolder.of(mapConfig.getMapStoreConfig(), serializationService),
                 NearCacheConfigHolder.of(mapConfig.getNearCacheConfig(), serializationService),
-                mapConfig.getWanReplicationRef(), mapConfig.getMapIndexConfigs(), mapConfig.getAttributeConfigs(),
+                mapConfig.getWanReplicationRef(), mapConfig.getIndexConfigs(), mapConfig.getAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
                 mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(),
                 mapConfig.getMergePolicyConfig().getBatchSize(), mapConfig.getMetadataPolicy().getId());
@@ -187,14 +184,6 @@ public class ClientDynamicClusterConfig extends Config {
                 queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
                 queueConfig.getMergePolicyConfig().getBatchSize());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addLockConfig(LockConfig lockConfig) {
-        ClientMessage request = DynamicConfigAddLockConfigCodec.encodeRequest(lockConfig.getName(),
-                lockConfig.getSplitBrainProtectionName());
         invoke(request);
         return this;
     }
@@ -341,15 +330,6 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
-        ClientMessage request = DynamicConfigAddAtomicLongConfigCodec.encodeRequest(
-                atomicLongConfig.getName(), atomicLongConfig.getSplitBrainProtectionName(),
-                atomicLongConfig.getMergePolicyConfig().getPolicy(), atomicLongConfig.getMergePolicyConfig().getBatchSize());
-        invoke(request);
-        return this;
-    }
-
-    @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
         return super.addWanReplicationConfig(wanReplicationConfig);
     }
@@ -448,16 +428,6 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public String getClusterPassword() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setClusterPassword(final String password) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
     public NetworkConfig getNetworkConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
@@ -534,26 +504,6 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public LockConfig findLockConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public LockConfig getLockConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, LockConfig> getLockConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setLockConfigs(Map<String, LockConfig> lockConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -775,26 +725,6 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config setCardinalityEstimatorConfigs(
             Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicLongConfig findAtomicLongConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public AtomicLongConfig getAtomicLongConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setAtomicLongConfigs(Map<String, AtomicLongConfig> atomicLongConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

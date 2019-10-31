@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 
@@ -186,8 +187,9 @@ public class ServerSocketEndpointConfig
         return this;
     }
 
+    @PrivateApi
     @Override
-    ServerSocketEndpointConfig setProtocolType(ProtocolType protocolType) {
+    public ServerSocketEndpointConfig setProtocolType(ProtocolType protocolType) {
         super.setProtocolType(protocolType);
         return this;
     }

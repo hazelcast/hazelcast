@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,6 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -59,15 +61,12 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testRunWithProblematicProbe() {
-        metricsRegistry.register(this, "broken", MANDATORY, new LongProbeFunction() {
-            @Override
-            public long get(Object source) {
-                throw new RuntimeException("error");
-            }
+        metricsRegistry.registerStaticProbe(this, "broken", MANDATORY, (LongProbeFunction) source -> {
+            throw new RuntimeException("error");
         });
 
         plugin.run(logWriter);
-        assertContains("broken=java.lang.RuntimeException:error");
+        assertContains("[metric=broken]=java.lang.RuntimeException:error");
     }
 
     @Test
@@ -75,7 +74,34 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
         plugin.run(logWriter);
 
         // we just test a few to make sure the metrics are written
-        assertContains("client.endpoint.count=0");
-        assertContains("operation.responseQueueSize=0");
+        assertContains("[unit=count,metric=client.endpoint.count]=0");
+        assertContains("[unit=count,metric=operation.responseQueueSize]=0");
     }
+
+    @Test
+    public void testExclusion() {
+        metricsRegistry.registerStaticMetrics(new ExclusionProbeSource(), "test");
+
+        plugin.run(logWriter);
+
+        assertContains("[unit=count,metric=test.notExcludedLong]=1");
+        assertNotContains("[unit=count,metric=test.excludedLong]=1");
+        assertContains("[unit=count,metric=test.notExcludedDouble]=1.5");
+        assertNotContains("[unit=count,metric=test.excludedDouble]=2.5");
+    }
+
+    private static class ExclusionProbeSource {
+        @Probe
+        private long notExcludedLong = 1;
+
+        @Probe(excludedTargets = DIAGNOSTICS)
+        private long excludedLong = 2;
+
+        @Probe
+        private double notExcludedDouble = 1.5D;
+
+        @Probe(excludedTargets = DIAGNOSTICS)
+        private double excludedDouble = 2.5D;
+    }
+
 }

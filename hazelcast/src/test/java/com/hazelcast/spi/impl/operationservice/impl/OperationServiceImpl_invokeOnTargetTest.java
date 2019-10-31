@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -99,7 +99,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
                 null, operation, remoteAddress);
 
         try {
-            invocation.join();
+            invocation.joinInternal();
             fail();
         } catch (TargetNotMemberException e) {
         }
@@ -112,7 +112,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
                 null, operation, getAddress(remote));
 
         try {
-            invocation.join();
+            invocation.joinInternal();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }

@@ -18,8 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -87,7 +88,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, Trade> map = instance.getMap(name);
-        map.addIndex(attributeName, false);
+        map.addIndex(IndexType.HASH, attributeName);
 
         // WHEN
         // This `get` will trigger load from map-loader but since eviction kicks in, entry will get removed
@@ -114,12 +115,12 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     @Test
     public void putRemove_withIndex_whereAttributeIsNull() {
         // GIVEN
-        MapIndexConfig mapIndexConfig = new MapIndexConfig();
-        mapIndexConfig.setAttribute("amount");
-        mapIndexConfig.setOrdered(false);
+        IndexConfig indexConfig = new IndexConfig();
+        indexConfig.addAttribute("amount");
+        indexConfig.setType(IndexType.HASH);
 
         MapConfig mapConfig = new MapConfig().setName("map");
-        mapConfig.addMapIndexConfig(mapIndexConfig);
+        mapConfig.addIndexConfig(indexConfig);
 
         Config config = new Config();
         config.addMapConfig(mapConfig);
@@ -148,7 +149,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     public void putAndQuery_whenMultipleMappingFound_thenDoNotReturnDuplicatedEntry() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Body> map = instance.getMap(randomMapName());
-        map.addIndex("limbArray[any].fingerCount", true);
+        map.addIndex(IndexType.SORTED, "limbArray[any].fingerCount");
 
         Limb leftHand = new Limb("hand", new Nail("red"));
         Limb rightHand = new Limb("hand");
@@ -192,8 +193,8 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     public void testEmptyAndNullCollectionIndexing() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Body> map = instance.getMap(randomMapName());
-        map.addIndex("limbArray[any].fingerCount", false);
-        map.addIndex("limbCollection[any].fingerCount", true);
+        map.addIndex(IndexType.HASH, "limbArray[any].fingerCount");
+        map.addIndex(IndexType.SORTED, "limbCollection[any].fingerCount");
 
         map.put(0, new Body("body0"));
 
@@ -224,7 +225,16 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         List<Index> result = new ArrayList<>();
         for (int partitionId : mapServiceContext.getOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
-            result.add(indexes.getIndex(attribute));
+
+            for (InternalIndex index : indexes.getIndexes()) {
+                for (String component : index.getComponents()) {
+                    if (component.equals(IndexUtils.canonicalizeAttribute(attribute))) {
+                        result.add(index);
+
+                        break;
+                    }
+                }
+            }
         }
         return result;
     }

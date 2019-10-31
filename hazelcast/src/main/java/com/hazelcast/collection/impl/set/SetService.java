@@ -23,7 +23,7 @@ import com.hazelcast.collection.impl.txnset.TransactionalSetProxy;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -83,13 +83,13 @@ public class SetService extends CollectionService {
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectId) {
+    public DistributedObject createDistributedObject(String objectId, boolean local) {
         return new SetProxyImpl(objectId, nodeEngine, this);
     }
 
     @Override
-    public void destroyDistributedObject(String name) {
-        super.destroyDistributedObject(name);
+    public void destroyDistributedObject(String name, boolean local) {
+        super.destroyDistributedObject(name, local);
         splitBrainProtectionConfigCache.remove(name);
     }
 

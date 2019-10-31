@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,16 +36,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("921b137bd65a559bb5ef688ba5abf3a8")
+@Generated("982a6943b5263e9137c120be7a9ec2c5")
 public final class ExecutorServiceCancelOnAddressCodec {
-    //hex: 0x090400
-    public static final int REQUEST_MESSAGE_TYPE = 590848;
-    //hex: 0x090401
-    public static final int RESPONSE_MESSAGE_TYPE = 590849;
+    //hex: 0x080400
+    public static final int REQUEST_MESSAGE_TYPE = 525312;
+    //hex: 0x080401
+    public static final int RESPONSE_MESSAGE_TYPE = 525313;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INTERRUPT_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INTERRUPT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ExecutorServiceCancelOnAddressCodec() {
@@ -61,7 +62,7 @@ public final class ExecutorServiceCancelOnAddressCodec {
         /**
          * Address of the host to execute the request on.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
 
         /**
          * If true, then the thread interrupt call can be used to cancel the thread, otherwise interrupt can not be used.
@@ -69,7 +70,7 @@ public final class ExecutorServiceCancelOnAddressCodec {
         public boolean interrupt;
     }
 
-    public static ClientMessage encodeRequest(java.util.UUID uuid, com.hazelcast.nio.Address address, boolean interrupt) {
+    public static ClientMessage encodeRequest(java.util.UUID uuid, com.hazelcast.cluster.Address address, boolean interrupt) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -84,7 +85,7 @@ public final class ExecutorServiceCancelOnAddressCodec {
     }
 
     public static ExecutorServiceCancelOnAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
@@ -106,14 +107,14 @@ public final class ExecutorServiceCancelOnAddressCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        encodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         return clientMessage;
     }
 
     public static ExecutorServiceCancelOnAddressCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);

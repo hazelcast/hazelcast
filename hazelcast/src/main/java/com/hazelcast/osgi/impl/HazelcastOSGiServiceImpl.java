@@ -25,10 +25,11 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.StringUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -80,21 +81,16 @@ class HazelcastOSGiServiceImpl
         }
     }
 
-    private boolean shouldSetClusterName(Config config) {
-        if (StringUtil.isNullOrEmpty(config.getClusterName())
-                || Config.DEFAULT_CLUSTER_NAME.equals(config.getClusterName())) {
-            if (!Boolean.getBoolean(HAZELCAST_OSGI_GROUPING_DISABLED)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean shouldSetClusterName(String clusterName) {
+        return (isNullOrEmpty(clusterName) || Config.DEFAULT_CLUSTER_NAME.equals(clusterName))
+                && !Boolean.getBoolean(HAZELCAST_OSGI_GROUPING_DISABLED);
     }
 
     private Config getConfig(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
-        if (shouldSetClusterName(config)) {
+        if (shouldSetClusterName(config.getClusterName())) {
             config.setClusterName(id);
         }
         return config;

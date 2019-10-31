@@ -50,7 +50,6 @@ public class ClientManagerTest {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().setPort(5701);
         config.setClusterName("cluster1");
-        config.setClusterPassword("cluster1pass");
 
         Hazelcast.newHazelcastInstance(config);
 
@@ -58,7 +57,6 @@ public class ClientManagerTest {
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().setPort(5702);
         config2.setClusterName("cluster2");
-        config2.setClusterPassword("cluster2pass");
 
         Hazelcast.newHazelcastInstance(config2);
     }

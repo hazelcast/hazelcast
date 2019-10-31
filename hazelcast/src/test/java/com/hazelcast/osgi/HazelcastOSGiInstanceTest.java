@@ -27,14 +27,13 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.cp.lock.ILock;
+import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
@@ -262,15 +261,18 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getLockCalledSuccessfullyOverOSGiInstance() {
-        ILock mockLock = mock(ILock.class);
+        FencedLock mockLock = mock(FencedLock.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getLock("my-lock")).thenReturn(mockLock);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
 
-        assertEquals(mockLock, hazelcastOSGiInstance.getLock("my-lock"));
+        when(cpSubsystem.getLock("my-lock")).thenReturn(mockLock);
 
-        verify(mockHazelcastInstance).getLock("my-lock");
+        assertEquals(mockLock, hazelcastOSGiInstance.getCPSubsystem().getLock("my-lock"));
+
+        verify(cpSubsystem).getLock("my-lock");
     }
 
     @Test
@@ -395,29 +397,18 @@ public class HazelcastOSGiInstanceTest {
     }
 
     @Test
-    public void getIdGeneratorCalledSuccessfullyOverOSGiInstance() {
-        IdGenerator mockIdGenerator = mock(IdGenerator.class);
-        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
-
-        when(mockHazelcastInstance.getIdGenerator("my-idgenerator")).thenReturn(mockIdGenerator);
-
-        assertEquals(mockIdGenerator, hazelcastOSGiInstance.getIdGenerator("my-idgenerator"));
-
-        verify(mockHazelcastInstance).getIdGenerator("my-idgenerator");
-    }
-
-    @Test
     public void getAtomicLongCalledSuccessfullyOverOSGiInstance() {
         IAtomicLong mockAtomicLong = mock(IAtomicLong.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        when(mockHazelcastInstance.getAtomicLong("my-atomiclong")).thenReturn(mockAtomicLong);
+        CPSubsystem cpSubsystem = mock(CPSubsystem.class);
+        when(mockHazelcastInstance.getCPSubsystem()).thenReturn(cpSubsystem);
+        when(mockHazelcastInstance.getCPSubsystem().getAtomicLong("my-atomiclong")).thenReturn(mockAtomicLong);
 
-        assertEquals(mockAtomicLong, hazelcastOSGiInstance.getAtomicLong("my-atomiclong"));
+        assertEquals(mockAtomicLong, hazelcastOSGiInstance.getCPSubsystem().getAtomicLong("my-atomiclong"));
 
-        verify(mockHazelcastInstance).getAtomicLong("my-atomiclong");
+        verify(cpSubsystem).getAtomicLong("my-atomiclong");
     }
 
     @Test

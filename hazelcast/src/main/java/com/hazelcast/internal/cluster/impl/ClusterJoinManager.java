@@ -18,7 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.hotrestart.InternalHotRestartService;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
@@ -37,7 +37,7 @@ import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.security.Credentials;
@@ -373,7 +373,9 @@ public class ClusterJoinManager {
             }
             String endpoint = joinRequest.getAddress().getHost();
             try {
-                LoginContext loginContext = node.securityContext.createMemberLoginContext(credentials, connection);
+                String remoteClusterName = joinRequest.getConfigCheck().getClusterName();
+                LoginContext loginContext = node.securityContext.createMemberLoginContext(remoteClusterName, credentials,
+                        connection);
                 loginContext.login();
             } catch (LoginException e) {
                 throw new SecurityException(format("Authentication has failed for %s @%s, cause: %s",

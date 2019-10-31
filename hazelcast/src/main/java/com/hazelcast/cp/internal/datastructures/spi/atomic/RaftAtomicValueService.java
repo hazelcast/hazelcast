@@ -128,7 +128,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
     protected abstract V newAtomicValue(CPGroupId groupId, String name, T val);
 
     @Override
-    public final void onRaftGroupDestroyed(CPGroupId groupId) {
+    public final void onRaftNodeTerminated(CPGroupId groupId) {
         Iterator<BiTuple<CPGroupId, String>> iter = atomicValues.keySet().iterator();
         while (iter.hasNext()) {
             BiTuple<CPGroupId, String> next = iter.next();

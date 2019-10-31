@@ -17,30 +17,29 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.ClientExtension;
-import com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils;
+import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.nio.DefaultCredentialsFactory;
 import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;
 import com.hazelcast.client.properties.ClientProperty;
-import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.StaticCredentialsFactory;
 import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
@@ -55,10 +54,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.security.auth.callback.UnsupportedCallbackException;
+
 import static com.hazelcast.client.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
-import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 class ClientDiscoveryServiceBuilder {
@@ -87,6 +87,12 @@ class ClientDiscoveryServiceBuilder {
             ClientNetworkConfig networkConfig = config.getNetworkConfig();
             SocketInterceptor interceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
             ICredentialsFactory credentialsFactory = initCredentialsFactory(config);
+            if (credentialsFactory == null) {
+                credentialsFactory = new StaticCredentialsFactory(new UsernamePasswordCredentials(null, null));
+            }
+            credentialsFactory.configure(cs -> {
+                throw new UnsupportedCallbackException(cs[0]);
+            });
             DiscoveryService discoveryService = initDiscoveryService(config);
             AddressProvider provider;
             if (externalAddressProvider != null) {
@@ -97,8 +103,8 @@ class ClientDiscoveryServiceBuilder {
 
             final SSLConfig sslConfig = networkConfig.getSSLConfig();
             final SocketOptions socketOptions = networkConfig.getSocketOptions();
-            contexts.add(new CandidateClusterContext(provider, discoveryService, credentialsFactory, interceptor,
-                    qualifier -> clientExtension.createChannelInitializer(sslConfig, socketOptions)));
+            contexts.add(new CandidateClusterContext(config.getClusterName(), provider, discoveryService, credentialsFactory,
+                    interceptor, qualifier -> clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
         return new ClientDiscoveryService(configsTryCount, contexts);
     }
@@ -241,45 +247,7 @@ class ClientDiscoveryServiceBuilder {
 
     private ICredentialsFactory initCredentialsFactory(ClientConfig config) {
         ClientSecurityConfig securityConfig = config.getSecurityConfig();
-        validateSecurityConfig(securityConfig);
-        ICredentialsFactory c = getCredentialsFromFactory(config);
-        if (c == null) {
-            return new DefaultCredentialsFactory(securityConfig, config, config.getClassLoader());
-        }
-        return c;
-    }
-
-    private void validateSecurityConfig(ClientSecurityConfig securityConfig) {
-        boolean configuredViaCredentials = securityConfig.getCredentials() != null
-                || securityConfig.getCredentialsClassname() != null;
-
-        CredentialsFactoryConfig factoryConfig = securityConfig.getCredentialsFactoryConfig();
-        boolean configuredViaCredentialsFactory = factoryConfig.getClassName() != null
-                || factoryConfig.getImplementation() != null;
-
-        if (configuredViaCredentials && configuredViaCredentialsFactory) {
-            throw new IllegalStateException("Ambiguous Credentials config. Set only one of Credentials or ICredentialsFactory");
-        }
-    }
-
-    private ICredentialsFactory getCredentialsFromFactory(ClientConfig config) {
-        CredentialsFactoryConfig credentialsFactoryConfig = config.getSecurityConfig().getCredentialsFactoryConfig();
-        ICredentialsFactory factory = credentialsFactoryConfig.getImplementation();
-        if (factory == null) {
-            String factoryClassName = credentialsFactoryConfig.getClassName();
-            if (factoryClassName != null) {
-                try {
-                    factory = ClassLoaderUtil.newInstance(config.getClassLoader(), factoryClassName);
-                } catch (Exception e) {
-                    throw rethrow(e);
-                }
-            }
-        }
-        if (factory == null) {
-            return null;
-        }
-        factory.configure(config.getClusterName(), config.getClusterPassword(), credentialsFactoryConfig.getProperties());
-        return factory;
+        return securityConfig.asCredentialsFactory(config.getClassLoader());
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {

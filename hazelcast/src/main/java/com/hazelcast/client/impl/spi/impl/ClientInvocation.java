@@ -17,22 +17,25 @@
 package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.operationservice.impl.BaseInvocation;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.io.IOException;
@@ -51,19 +54,18 @@ import static com.hazelcast.internal.util.StringUtil.timeToString;
  * 2) Should it be retried?<br>
  * 3) How many times is it retried?
  */
-public class ClientInvocation implements Runnable {
-
+public class ClientInvocation extends BaseInvocation implements Runnable {
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
     private static final int UNASSIGNED_PARTITION = -1;
     private static final AtomicLongFieldUpdater<ClientInvocation> INVOKE_COUNT
             = AtomicLongFieldUpdater.newUpdater(ClientInvocation.class, "invokeCount");
-
     final LifecycleService lifecycleService;
     private final ClientInvocationFuture clientInvocationFuture;
     private final ILogger logger;
     private final ClientClusterService clientClusterService;
     private final AbstractClientInvocationService invocationService;
     private final ClientExecutionService executionService;
+    private final ClusterConnectorService clusterConnectorService;
     private volatile ClientMessage clientMessage;
     private final CallIdSequence callIdSequence;
     private final Address address;
@@ -83,6 +85,7 @@ public class ClientInvocation implements Runnable {
                                int partitionId,
                                Address address,
                                Connection connection) {
+        this.clusterConnectorService = client.getClusterConnectorService();
         this.clientClusterService = client.getClientClusterService();
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (AbstractClientInvocationService) client.getInvocationService();
@@ -96,8 +99,7 @@ public class ClientInvocation implements Runnable {
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = invocationService.getCallIdSequence();
-        this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
-                clientMessage, logger, callIdSequence);
+        this.clientInvocationFuture = new ClientInvocationFuture(this, clientMessage, logger, callIdSequence);
         this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
     }
 
@@ -167,9 +169,6 @@ public class ClientInvocation implements Runnable {
                 invocationService.invokeOnRandomTarget(this);
             }
         } catch (Exception e) {
-            if (e instanceof HazelcastOverloadException) {
-                throw (HazelcastOverloadException) e;
-            }
             notifyException(e);
         }
     }
@@ -193,7 +192,7 @@ public class ClientInvocation implements Runnable {
         try {
             invokeOnSelection();
         } catch (Throwable e) {
-            clientInvocationFuture.complete(e);
+            completeExceptionally(e);
         }
     }
 
@@ -201,23 +200,53 @@ public class ClientInvocation implements Runnable {
         this.invocationTimeoutMillis = invocationTimeoutMillis;
     }
 
-    public void notify(ClientMessage clientMessage) {
-        if (clientMessage == null) {
-            throw new IllegalArgumentException("response can't be null");
-        }
-        clientInvocationFuture.complete(clientMessage);
+
+    /**
+     * @param clientMessage return true if invocation completed
+     */
+    void notify(ClientMessage clientMessage) {
+        assert clientMessage != null : "response can't be null";
+        int expectedBackups = clientMessage.getNumberOfBackupAcks();
+
+        notifyResponse(clientMessage, expectedBackups);
     }
 
-    public void notifyException(Throwable exception) {
+    @Override
+    protected boolean shouldCompleteWithoutBackups() {
+        return true;
+    }
+
+    @Override
+    protected void complete(Object response) {
+        clientInvocationFuture.complete(response);
+        invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+    }
+
+    @Override
+    protected void completeExceptionally(Throwable t) {
+        clientInvocationFuture.completeExceptionally(t);
+        invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+    }
+
+    protected boolean shouldFailOnIndeterminateOperationState() {
+        return invocationService.shouldFailOnIndeterminateOperationState();
+    }
+
+    void notifyException(Throwable exception) {
         logException(exception);
 
         if (!lifecycleService.isRunning()) {
-            clientInvocationFuture.complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
+            completeExceptionally(new HazelcastClientNotActiveException("Client is shutting down", exception));
+            return;
+        }
+
+        if (shouldThrowOfflineException(exception)) {
+            clientInvocationFuture.complete(new HazelcastClientOfflineException("Client is offline"));
             return;
         }
 
         if (isNotAllowedToRetryOnSelection(exception)) {
-            clientInvocationFuture.complete(exception);
+            completeExceptionally(exception);
             return;
         }
 
@@ -225,7 +254,7 @@ public class ClientInvocation implements Runnable {
                 || invocationService.isRedoOperation()
                 || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable());
         if (!retry) {
-            clientInvocationFuture.complete(exception);
+            completeExceptionally(exception);
             return;
         }
 
@@ -235,16 +264,22 @@ public class ClientInvocation implements Runnable {
                 logger.finest("Exception will not be retried because invocation timed out", exception);
             }
 
-            clientInvocationFuture.complete(newOperationTimeoutException(exception));
+            completeExceptionally(newOperationTimeoutException(exception));
             return;
         }
 
         try {
             execute();
         } catch (RejectedExecutionException e) {
-            clientInvocationFuture.complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
+            completeExceptionally(new HazelcastClientNotActiveException("Client is shutting down", exception));
         }
 
+    }
+
+    private boolean shouldThrowOfflineException(Throwable exception) {
+        return ClientConnectionStrategyConfig.ReconnectMode.ASYNC.equals(invocationService.getReconnectMode())
+                && exception instanceof IOException
+                && !clusterConnectorService.mainConnectionExists();
     }
 
     private void logException(Throwable exception) {
@@ -258,6 +293,7 @@ public class ClientInvocation implements Runnable {
     }
 
     private void execute() {
+        invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
         if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
             // fast retry for the first few invocations
             executionService.execute(this);
@@ -269,7 +305,8 @@ public class ClientInvocation implements Runnable {
     }
 
     private boolean isNotAllowedToRetryOnSelection(Throwable exception) {
-        if (isBindToSingleConnection() && exception instanceof IOException) {
+        if (isBindToSingleConnection()
+                && (exception instanceof IOException || exception instanceof TargetDisconnectedException)) {
             return true;
         }
 
@@ -288,7 +325,7 @@ public class ClientInvocation implements Runnable {
         return connection != null;
     }
 
-    public EventHandler getEventHandler() {
+    EventHandler getEventHandler() {
         return handler;
     }
 
@@ -321,7 +358,7 @@ public class ClientInvocation implements Runnable {
         return executionService.getUserExecutor();
     }
 
-    private Object newOperationTimeoutException(Throwable e) {
+    private Exception newOperationTimeoutException(Throwable e) {
         StringBuilder sb = new StringBuilder();
         sb.append(this);
         sb.append(" timed out because exception occurred after client invocation timeout ");
@@ -351,5 +388,14 @@ public class ClientInvocation implements Runnable {
                 + ", objectName = " + objectName
                 + ", target = " + target
                 + ", sendConnection = " + sendConnection + '}';
+    }
+
+    // package private methods for tests
+    CallIdSequence getCallIdSequence() {
+        return callIdSequence;
+    }
+
+    ClientInvocationFuture getClientInvocationFuture() {
+        return clientInvocationFuture;
     }
 }

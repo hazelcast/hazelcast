@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
+import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpointManager;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.internal.networking.HandlerStatus;
@@ -23,9 +26,11 @@ import com.hazelcast.internal.networking.nio.InboundHandlerWithCounters;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
+import java.util.Properties;
 import java.util.function.Consumer;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAGMENT_FLAG;
@@ -43,11 +48,21 @@ import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer, Consumer<ClientMessage>> {
 
     private final Connection connection;
-    private final Long2ObjectHashMap<ClientMessageReader> builderBySessionIdMap = new Long2ObjectHashMap<>();
-    private ClientMessageReader activeReader = new ClientMessageReader();
+    private final Long2ObjectHashMap<ClientMessage> builderBySessionIdMap = new Long2ObjectHashMap<>();
+    private ClientMessageReader activeReader;
 
-    public ClientMessageDecoder(Connection connection, Consumer<ClientMessage> dst) {
+    private boolean clientIsTrusted;
+    private final int maxMessageLength;
+    private final ClientEndpointManager clientEndpointManager;
+
+    public ClientMessageDecoder(Connection connection, Consumer<ClientMessage> dst, HazelcastProperties properties) {
         dst(dst);
+        if (properties == null) {
+            properties = new HazelcastProperties((Properties) null);
+        }
+        clientEndpointManager = dst instanceof ClientEngine ? ((ClientEngine) dst).getEndpointManager() : null;
+        maxMessageLength = properties.getInteger(GroupProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES);
+        activeReader = new ClientMessageReader(maxMessageLength);
         this.connection = connection;
     }
 
@@ -61,33 +76,36 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
         src.flip();
         try {
             while (src.hasRemaining()) {
-                boolean complete = activeReader.readFrom(src);
+                boolean trusted = isEndpointTrusted();
+                boolean complete = activeReader.readFrom(src, trusted);
                 if (!complete) {
                     break;
                 }
 
-                ClientMessage.Frame firstFrame = activeReader.getFrames().get(0);
+                ClientMessage.Frame firstFrame = activeReader.getClientMessage().getStartFrame();
                 int flags = firstFrame.flags;
                 if (ClientMessage.isFlagSet(flags, UNFRAGMENTED_MESSAGE)) {
-                    handleMessage(activeReader);
+                    handleMessage(activeReader.getClientMessage());
+                } else if (!trusted) {
+                    throw new IllegalStateException(
+                            "Fragmented client messages are not allowed before the client is authenticated.");
                 } else {
-                    //remove the fragmentationFrame
-                    activeReader.getFrames().removeFirst();
+                    ClientMessage.ForwardFrameIterator frameIterator = activeReader.getClientMessage().frameIterator();
+                    //ignore the fragmentationFrame
+                    frameIterator.next();
+                    ClientMessage.Frame startFrame = frameIterator.next();
                     long fragmentationId = Bits.readLongL(firstFrame.content, FRAGMENTATION_ID_OFFSET);
                     if (ClientMessage.isFlagSet(flags, BEGIN_FRAGMENT_FLAG)) {
-                        builderBySessionIdMap.put(fragmentationId, activeReader);
+                        builderBySessionIdMap.put(fragmentationId, ClientMessage.createForDecode(startFrame));
                     } else if (ClientMessage.isFlagSet(flags, END_FRAGMENT_FLAG)) {
-                        ClientMessageReader messageReader = builderBySessionIdMap.get(fragmentationId);
-                        LinkedList<ClientMessage.Frame> frames = messageReader.getFrames();
-                        frames.addAll(activeReader.getFrames());
-                        handleMessage(messageReader);
+                        ClientMessage clientMessage = mergeIntoExistingClientMessage(fragmentationId);
+                        handleMessage(clientMessage);
                     } else {
-                        ClientMessageReader messageReader = builderBySessionIdMap.get(fragmentationId);
-                        messageReader.getFrames().addAll(activeReader.getFrames());
+                        mergeIntoExistingClientMessage(fragmentationId);
                     }
                 }
 
-                activeReader = new ClientMessageReader();
+                activeReader = new ClientMessageReader(maxMessageLength);
             }
 
             return CLEAN;
@@ -96,9 +114,22 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
         }
     }
 
-    private void handleMessage(ClientMessageReader clientMessageReader) {
-        LinkedList<ClientMessage.Frame> frames = clientMessageReader.getFrames();
-        ClientMessage clientMessage = ClientMessage.createForDecode(frames);
+    private boolean isEndpointTrusted() {
+        if (clientEndpointManager == null || clientIsTrusted) {
+            return true;
+        }
+        ClientEndpoint endpoint = clientEndpointManager.getEndpoint(connection);
+        clientIsTrusted = endpoint != null && endpoint.isAuthenticated();
+        return clientIsTrusted;
+    }
+
+    private ClientMessage mergeIntoExistingClientMessage(long fragmentationId) {
+        ClientMessage existingMessage = builderBySessionIdMap.get(fragmentationId);
+        existingMessage.merge(activeReader.getClientMessage());
+        return existingMessage;
+    }
+
+    private void handleMessage(ClientMessage clientMessage) {
         clientMessage.setConnection(connection);
         normalPacketsRead.inc();
         dst.accept(clientMessage);

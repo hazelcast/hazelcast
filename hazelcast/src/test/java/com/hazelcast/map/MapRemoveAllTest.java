@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -57,7 +56,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void throws_exception_whenPredicateNull() throws Exception {
+    public void throws_exception_whenPredicateNull() {
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("predicate cannot be null");
 
@@ -66,7 +65,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_all_entries_whenPredicateTrue() throws Exception {
+    public void removes_all_entries_whenPredicateTrue() {
         IMap<Integer, Integer> map = member.getMap("test");
         for (int i = 0; i < MAP_SIZE; i++) {
             map.put(i, i);
@@ -78,7 +77,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_no_entries_whenPredicateFalse() throws Exception {
+    public void removes_no_entries_whenPredicateFalse() {
         IMap<Integer, Integer> map = member.getMap("test");
         for (int i = 0; i < MAP_SIZE; i++) {
             map.put(i, i);
@@ -90,7 +89,7 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void removes_odd_keys_whenPredicateOdd() throws Exception {
+    public void removes_odd_keys_whenPredicateOdd() {
         IMap<Integer, Integer> map = member.getMap("test");
         for (int i = 0; i < MAP_SIZE; i++) {
             map.put(i, i);
@@ -127,6 +126,21 @@ public class MapRemoveAllTest extends HazelcastTestSupport {
 
         assertEquals(100, totalOwnedEntryCount);
         assertEquals(100, totalBackupEntryCount);
+    }
+
+    // see https://github.com/hazelcast/hazelcast/issues/15515
+    @Test
+    public void removeAll_doesNotTouchNonMatchingEntries() {
+        String mapName = "test";
+        IMap<Integer, Integer> map = member.getMap(mapName);
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+        long expirationTime = map.getEntryView(1).getExpirationTime();
+
+        map.removeAll(Predicates.sql("__key >= 100"));
+        assertEquals("Expiration time of non-matching key 1 should be same as original",
+                expirationTime, map.getEntryView(1).getExpirationTime());
     }
 
     private static final class OddFinderPredicate implements Predicate<Integer, Integer> {

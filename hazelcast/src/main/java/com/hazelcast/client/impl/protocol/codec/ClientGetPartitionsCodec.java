@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("0ccb1892929a81cc5e15fa585be10c9c")
+@Generated("da5cf2d17502b84ad90e856abe94204f")
 public final class ClientGetPartitionsCodec {
-    //hex: 0x000800
-    public static final int REQUEST_MESSAGE_TYPE = 2048;
-    //hex: 0x000801
-    public static final int RESPONSE_MESSAGE_TYPE = 2049;
+    //hex: 0x000600
+    public static final int REQUEST_MESSAGE_TYPE = 1536;
+    //hex: 0x000601
+    public static final int RESPONSE_MESSAGE_TYPE = 1537;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientGetPartitionsCodec() {
@@ -64,7 +65,7 @@ public final class ClientGetPartitionsCodec {
     }
 
     public static ClientGetPartitionsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -77,7 +78,7 @@ public final class ClientGetPartitionsCodec {
         /**
          * TODO DOC
          */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions;
+        public java.util.List<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions;
 
         /**
          * TODO DOC
@@ -85,23 +86,23 @@ public final class ClientGetPartitionsCodec {
         public int partitionStateVersion;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET, partitionStateVersion);
         clientMessage.add(initialFrame);
 
-        encodeInt(initialFrame.content, RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET, partitionStateVersion);
-        MapCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
+        EntryListCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
         return clientMessage;
     }
 
     public static ClientGetPartitionsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.partitionStateVersion = decodeInt(initialFrame.content, RESPONSE_PARTITION_STATE_VERSION_FIELD_OFFSET);
-        response.partitions = MapCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
+        response.partitions = EntryListCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
         return response;
     }
 

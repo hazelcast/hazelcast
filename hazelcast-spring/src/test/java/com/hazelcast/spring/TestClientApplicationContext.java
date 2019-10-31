@@ -26,18 +26,18 @@ import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
-import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -54,7 +54,6 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.collection.ISet;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.QuickTest;
@@ -80,6 +79,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
@@ -129,11 +129,11 @@ public class TestClientApplicationContext {
     @Resource(name = "client14-reliable-topic")
     private HazelcastClientProxy hazelcastReliableTopic;
 
-    @Resource(name = "client15-credentials-factory")
-    private HazelcastClientProxy credentialsFactory;
-
     @Resource(name = "client16-name-and-labels")
     private HazelcastClientProxy namedClient;
+
+    @Resource(name = "client17-backupAckToClient")
+    private HazelcastClientProxy backupAckToClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -161,9 +161,6 @@ public class TestClientApplicationContext {
 
     @Resource(name = "executorService")
     private ExecutorService executorService;
-
-    @Resource(name = "idGenerator")
-    private IdGenerator idGenerator;
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
@@ -198,12 +195,7 @@ public class TestClientApplicationContext {
 
         ClientConfig config = client.getClientConfig();
         assertEquals("13", config.getProperty("hazelcast.client.retry.count"));
-        assertEquals(3, config.getNetworkConfig().getConnectionAttemptLimit());
         assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
-        assertEquals(3000, config.getNetworkConfig().getConnectionAttemptPeriod());
-
-        ClientConfig config2 = client2.getClientConfig();
-        assertEquals(credentials, config2.getSecurityConfig().getCredentials());
 
         client.getMap("default").put("Q", "q");
         client2.getMap("default").put("X", "x");
@@ -273,12 +265,12 @@ public class TestClientApplicationContext {
         AwsConfig awsConfig = networkConfig.getAwsConfig();
         assertFalse(awsConfig.isEnabled());
         assertTrue(awsConfig.isUsePublicIp());
-        assertEquals("sample-access-key", awsConfig.getAccessKey());
-        assertEquals("sample-secret-key", awsConfig.getSecretKey());
-        assertEquals("sample-region", awsConfig.getRegion());
-        assertEquals("sample-group", awsConfig.getSecurityGroupName());
-        assertEquals("sample-tag-key", awsConfig.getTagKey());
-        assertEquals("sample-tag-value", awsConfig.getTagValue());
+        assertEquals("sample-access-key", awsConfig.getProperty("access-key"));
+        assertEquals("sample-secret-key", awsConfig.getProperty("secret-key"));
+        assertEquals("sample-region", awsConfig.getProperty("region"));
+        assertEquals("sample-group", awsConfig.getProperty("security-group-name"));
+        assertEquals("sample-tag-key", awsConfig.getProperty("tag-key"));
+        assertEquals("sample-tag-value", awsConfig.getProperty("tag-value"));
     }
 
     @Test
@@ -286,7 +278,7 @@ public class TestClientApplicationContext {
         assertNotNull(client5);
 
         ClientConfig config = client5.getClientConfig();
-        assertEquals(0, config.getNetworkConfig().getConnectionAttemptLimit());
+        assertFalse(config.getConnectionStrategyConfig().getConnectionRetryConfig().isFailOnMaxBackoff());
     }
 
     @Test
@@ -299,7 +291,6 @@ public class TestClientApplicationContext {
         assertNotNull(set);
         assertNotNull(list);
         assertNotNull(executorService);
-        assertNotNull(idGenerator);
         assertNotNull(atomicLong);
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
@@ -312,7 +303,6 @@ public class TestClientApplicationContext {
         assertEquals("topic", topic.getName());
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
-        assertEquals("idGenerator", idGenerator.getName());
         assertEquals("atomicLong", atomicLong.getName());
         assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
@@ -397,6 +387,21 @@ public class TestClientApplicationContext {
         assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
+
+        assertEquals(2, queryCacheConfig.getIndexConfigs().size());
+
+        IndexConfig hashIndex = queryCacheConfig.getIndexConfigs().get(0);
+        assertEquals(IndexType.HASH, hashIndex.getType());
+        assertNull(hashIndex.getName());
+        assertEquals(1, hashIndex.getAttributes().size());
+        assertEquals("name", hashIndex.getAttributes().get(0));
+
+        IndexConfig sortedIndex = queryCacheConfig.getIndexConfigs().get(1);
+        assertEquals(IndexType.SORTED, sortedIndex.getType());
+        assertEquals("sortedIndex", sortedIndex.getName());
+        assertEquals(2, sortedIndex.getAttributes().size());
+        assertEquals("age", sortedIndex.getAttributes().get(0));
+        assertEquals("name", sortedIndex.getAttributes().get(1));
     }
 
     @Test
@@ -414,15 +419,6 @@ public class TestClientApplicationContext {
         assertEquals("gen1", config.getName());
         assertEquals(3, config.getPrefetchCount());
         assertEquals(3000L, config.getPrefetchValidityMillis());
-    }
-
-    @Test
-    public void testCredentialsFactory() {
-        ClientSecurityConfig securityConfig = credentialsFactory.getClientConfig().getSecurityConfig();
-        CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
-        assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
-        assertEquals("value", credentialsFactoryConfig.getProperties().getProperty("property"));
-        assertNotNull(credentialsFactoryConfig.getImplementation());
     }
 
     @Test
@@ -449,7 +445,6 @@ public class TestClientApplicationContext {
     public void testConnectionRetry() {
         ConnectionRetryConfig connectionRetryConfig = connectionRetryClient
                 .getClientConfig().getConnectionStrategyConfig().getConnectionRetryConfig();
-        assertTrue(connectionRetryConfig.isEnabled());
         assertTrue(connectionRetryConfig.isFailOnMaxBackoff());
         assertEquals(0.5, connectionRetryConfig.getJitter(), 0);
         assertEquals(2000, connectionRetryConfig.getInitialBackoffMillis());
@@ -479,7 +474,7 @@ public class TestClientApplicationContext {
 
     @Test
     public void testInstanceNameConfig() {
-        assertEquals("clientName", namedClient.getName());
+        assertEquals("clusterName", namedClient.getName());
     }
 
     @Test
@@ -487,5 +482,10 @@ public class TestClientApplicationContext {
         Set<String> labels = namedClient.getClientConfig().getLabels();
         assertEquals(1, labels.size());
         assertContains(labels, "foo");
+    }
+
+    @Test
+    public void testBackupAckToClient() {
+        assertFalse(backupAckToClient.getClientConfig().isBackupAckToClientEnabled());
     }
 }

@@ -17,13 +17,14 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.internal.metrics.managementcenter.ManagementCenterPublisher;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -35,6 +36,7 @@ import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -64,7 +66,7 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     // Holds futures for pending read metrics operations
     private final ConcurrentMap<CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>>, Long>
             pendingReads = new ConcurrentHashMap<>();
-    private final ProbeRenderer probeRenderer = new PublisherProbeRenderer();
+    private final MetricsCollector metricsCollector = new PublisherMetricsCollector();
     private volatile boolean collectorScheduled;
 
     /**
@@ -147,12 +149,12 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
 
     // visible for testing
     void collectMetrics() {
-        collectMetrics(probeRenderer);
+        collectMetrics(metricsCollector);
     }
 
     // visible for testing
-    void collectMetrics(ProbeRenderer probeRenderer) {
-        metricsRegistrySupplier.get().render(probeRenderer);
+    void collectMetrics(MetricsCollector metricsCollector) {
+        metricsRegistrySupplier.get().collect(metricsCollector);
         for (MetricsPublisher publisher : publishers) {
             try {
                 publisher.whenComplete();
@@ -240,12 +242,12 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
     /**
      * A probe renderer which renders the metrics to all the given publishers.
      */
-    private class PublisherProbeRenderer implements ProbeRenderer {
+    private class PublisherMetricsCollector implements MetricsCollector {
         @Override
-        public void renderLong(String name, long value) {
+        public void collectLong(String name, long value, Set<MetricTarget> excludedTargets) {
             for (MetricsPublisher publisher : publishers) {
                 try {
-                    publisher.publishLong(name, value);
+                    publisher.publishLong(name, value, excludedTargets);
                 } catch (Exception e) {
                     logError(name, value, publisher, e);
                 }
@@ -253,10 +255,10 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
         }
 
         @Override
-        public void renderDouble(String name, double value) {
+        public void collectDouble(String name, double value, Set<MetricTarget> excludedTargets) {
             for (MetricsPublisher publisher : publishers) {
                 try {
-                    publisher.publishDouble(name, value);
+                    publisher.publishDouble(name, value, excludedTargets);
                 } catch (Exception e) {
                     logError(name, value, publisher, e);
                 }
@@ -264,12 +266,12 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
         }
 
         @Override
-        public void renderException(String name, Exception e) {
+        public void collectException(String name, Exception e, Set<MetricTarget> excludedTargets) {
             logger.warning("Error when rendering '" + name + '\'', e);
         }
 
         @Override
-        public void renderNoValue(String name) {
+        public void collectNoValue(String name, Set<MetricTarget> excludedTargets) {
             // noop
         }
 

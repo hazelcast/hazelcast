@@ -27,8 +27,6 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.cp.lock.ILock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -49,6 +47,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
@@ -57,11 +56,11 @@ import java.util.concurrent.ConcurrentMap;
  * Hazelcast instance. Each instance is a member and/or client in a Hazelcast cluster. When
  * you want to use Hazelcast's distributed data structures, you must first create an instance.
  * Multiple Hazelcast instances can be created on a single JVM.
- *
+ * <p>
  * Instances should be shut down explicitly. See the {@link #shutdown()} method.
  * If the instance is a client and you don't shut it down explicitly, it will continue to run and
  * even connect to another live member if the one it was connected fails.
- *
+ * <p>
  * Each Hazelcast instance has its own socket and threads.
  *
  * @see Hazelcast#newHazelcastInstance(Config config)
@@ -73,6 +72,7 @@ public interface HazelcastInstance {
      *
      * @return name of this Hazelcast instance
      */
+    @Nonnull
     String getName();
 
     /**
@@ -81,7 +81,8 @@ public interface HazelcastInstance {
      * @param name name of the distributed queue
      * @return distributed queue instance with the specified name
      */
-    <E> IQueue<E> getQueue(String name);
+    @Nonnull
+    <E> IQueue<E> getQueue(@Nonnull String name);
 
     /**
      * Creates or returns the distributed topic instance with the specified name.
@@ -89,7 +90,8 @@ public interface HazelcastInstance {
      * @param name name of the distributed topic
      * @return distributed topic instance with the specified name
      */
-    <E> ITopic<E> getTopic(String name);
+    @Nonnull
+    <E> ITopic<E> getTopic(@Nonnull String name);
 
     /**
      * Creates or returns the distributed set instance with the specified name.
@@ -97,7 +99,8 @@ public interface HazelcastInstance {
      * @param name name of the distributed set
      * @return distributed set instance with the specified name
      */
-    <E> ISet<E> getSet(String name);
+    @Nonnull
+    <E> ISet<E> getSet(@Nonnull String name);
 
     /**
      * Creates or returns the distributed list instance with the specified name.
@@ -106,7 +109,8 @@ public interface HazelcastInstance {
      * @param name name of the distributed list
      * @return distributed list instance with the specified name
      */
-    <E> IList<E> getList(String name);
+    @Nonnull
+    <E> IList<E> getList(@Nonnull String name);
 
     /**
      * Creates or returns the distributed map instance with the specified name.
@@ -114,7 +118,8 @@ public interface HazelcastInstance {
      * @param name name of the distributed map
      * @return distributed map instance with the specified name
      */
-    <K, V> IMap<K, V> getMap(String name);
+    @Nonnull
+    <K, V> IMap<K, V> getMap(@Nonnull String name);
 
     /**
      * Creates or returns the replicated map instance with the specified name.
@@ -124,7 +129,8 @@ public interface HazelcastInstance {
      * @throws ReplicatedMapCantBeCreatedOnLiteMemberException if it is called on a lite member
      * @since 3.2
      */
-    <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
+    @Nonnull
+    <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name);
 
     /**
      * Creates or returns the distributed multimap instance with the specified name.
@@ -132,38 +138,8 @@ public interface HazelcastInstance {
      * @param name name of the distributed multimap
      * @return distributed multimap instance with the specified name
      */
-    <K, V> MultiMap<K, V> getMultiMap(String name);
-
-    /**
-     * Creates or returns the distributed lock instance for the specified key object.
-     * The specified object is considered to be the key for this lock.
-     * So keys are considered equals cluster-wide as long as
-     * they are serialized to the same byte array such as String, long,
-     * Integer.
-     * <p>
-     * Locks are fail-safe. If a member holds a lock and some of the
-     * members go down, the cluster will keep your locks safe and available.
-     * Moreover, when a member leaves the cluster, all the locks acquired
-     * by this dead member will be removed so that these locks can be
-     * available for live members immediately.
-     * <pre>
-     * Lock lock = hazelcastInstance.getLock("PROCESS_LOCK");
-     * lock.lock();
-     * try {
-     *   // process
-     * } finally {
-     *   lock.unlock();
-     * }
-     * </pre>
-     *
-     * @param key key of the lock instance
-     * @return distributed lock instance for the specified key.
-     * @deprecated This implementation may lose strong consistency in case of network failures
-     * or server failures. Please use {@link CPSubsystem#getLock(String)} instead.
-     * This method will be removed in Hazelcast 4.0.
-     */
-    @Deprecated
-    ILock getLock(String key);
+    @Nonnull
+    <K, V> MultiMap<K, V> getMultiMap(@Nonnull String name);
 
     /**
      * Creates or returns the distributed Ringbuffer instance with the specified name.
@@ -171,7 +147,8 @@ public interface HazelcastInstance {
      * @param name name of the distributed Ringbuffer
      * @return distributed RingBuffer instance with the specified name
      */
-    <E> Ringbuffer<E> getRingbuffer(String name);
+    @Nonnull
+    <E> Ringbuffer<E> getRingbuffer(@Nonnull String name);
 
     /**
      * Creates or returns the reliable topic instance with the specified name.
@@ -179,7 +156,8 @@ public interface HazelcastInstance {
      * @param name name of the reliable topic
      * @return the reliable topic
      */
-    <E> ITopic<E> getReliableTopic(String name);
+    @Nonnull
+    <E> ITopic<E> getReliableTopic(@Nonnull String name);
 
     /**
      * Returns the Cluster that this Hazelcast instance is part of.
@@ -189,6 +167,7 @@ public interface HazelcastInstance {
      *
      * @return the cluster that this Hazelcast instance is part of
      */
+    @Nonnull
     Cluster getCluster();
 
     /**
@@ -201,6 +180,7 @@ public interface HazelcastInstance {
      * @see Member
      * @see Client
      */
+    @Nonnull
     Endpoint getLocalEndpoint();
 
     /**
@@ -213,7 +193,8 @@ public interface HazelcastInstance {
      * @param name name of the executor service
      * @return the distributed executor service for the given name
      */
-    IExecutorService getExecutorService(String name);
+    @Nonnull
+    IExecutorService getExecutorService(@Nonnull String name);
 
     /**
      * Creates or returns the durable executor service for the given name.
@@ -225,7 +206,8 @@ public interface HazelcastInstance {
      * @param name name of the executor service
      * @return the durable executor service for the given name
      */
-    DurableExecutorService getDurableExecutorService(String name);
+    @Nonnull
+    DurableExecutorService getDurableExecutorService(@Nonnull String name);
 
     /**
      * Executes the given transactional task in current thread using default options
@@ -236,7 +218,7 @@ public interface HazelcastInstance {
      * @return result of the transactional task
      * @throws TransactionException if an error occurs during transaction.
      */
-    <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
+    <T> T executeTransaction(@Nonnull TransactionalTask<T> task) throws TransactionException;
 
     /**
      * Executes the given transactional task in current thread using given options
@@ -248,7 +230,8 @@ public interface HazelcastInstance {
      * @return result of the transactional task
      * @throws TransactionException if an error occurs during transaction.
      */
-    <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
+    <T> T executeTransaction(@Nonnull TransactionOptions options,
+                             @Nonnull TransactionalTask<T> task) throws TransactionException;
 
     /**
      * Creates a new TransactionContext associated with the current thread using default options.
@@ -263,24 +246,7 @@ public interface HazelcastInstance {
      * @param options options for this transaction
      * @return new TransactionContext associated with the current thread
      */
-    TransactionContext newTransactionContext(TransactionOptions options);
-
-    /**
-     * Creates or returns a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
-     * between <code>0</code> and <code>Long.MAX_VALUE</code>. ID generation occurs almost at the speed of
-     * local <code>AtomicLong.incrementAndGet()</code>. Generated IDs are unique during the life
-     * cycle of the cluster. If the entire cluster is restarted, IDs start from <code>0</code> again.
-     *
-     * @param name name of the {@link IdGenerator}
-     * @return IdGenerator for the given name
-     *
-     * @deprecated The implementation can produce duplicate IDs in case of network split, even
-     * with split-brain protection enabled (during short window while split-brain is detected).
-     * Use {@link #getFlakeIdGenerator(String)} for an alternative implementation which does not
-     * suffer from this problem.
-     */
-    @Deprecated
-    IdGenerator getIdGenerator(String name);
+    TransactionContext newTransactionContext(@Nonnull TransactionOptions options);
 
     /**
      * Creates or returns a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
@@ -293,27 +259,12 @@ public interface HazelcastInstance {
      * {@link com.hazelcast.internal.cluster.ClusterService#getMemberListJoinVersion() see here}).
      * <p>
      * For more details and caveats, see class documentation for {@link FlakeIdGenerator}.
-     * <p>
-     * Note: this implementation doesn't share namespace with {@link #getIdGenerator(String)}.
-     * That is, {@code getIdGenerator("a")} is distinct from {@code getFlakeIdGenerator("a")}.
      *
      * @param name name of the {@link FlakeIdGenerator}
      * @return FlakeIdGenerator for the given name
      */
-    FlakeIdGenerator getFlakeIdGenerator(String name);
-
-    /**
-     * Creates or returns a cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed
-     * implementation of <code>java.util.concurrent.atomic.AtomicLong</code>.
-     *
-     * @param name name of the {@link IAtomicLong} proxy
-     * @return IAtomicLong proxy for the given name
-     * @deprecated This implementation may lose strong consistency in case of network failures
-     * or server failures. Please use {@link CPSubsystem#getAtomicLong(String)} instead.
-     * This method will be removed in Hazelcast 4.0.
-     */
-    @Deprecated
-    IAtomicLong getAtomicLong(String name);
+    @Nonnull
+    FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name);
 
     /**
      * Returns all {@link DistributedObject}s, that is all maps, queues,
@@ -335,7 +286,7 @@ public interface HazelcastInstance {
      * @param distributedObjectListener instance listener
      * @return returns registration ID
      */
-    UUID addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
+    UUID addDistributedObjectListener(@Nonnull DistributedObjectListener distributedObjectListener);
 
     /**
      * Removes the specified Distributed Object listener. Returns silently
@@ -344,13 +295,14 @@ public interface HazelcastInstance {
      * @param registrationId ID of listener registration
      * @return {@code true} if registration is removed, {@code false} otherwise
      */
-    boolean removeDistributedObjectListener(UUID registrationId);
+    boolean removeDistributedObjectListener(@Nonnull UUID registrationId);
 
     /**
      * Returns the configuration of this Hazelcast instance.
      *
      * @return configuration of this Hazelcast instance
      */
+    @Nonnull
     Config getConfig();
 
     /**
@@ -360,6 +312,7 @@ public interface HazelcastInstance {
      *
      * @return the partition service of this Hazelcast instance
      */
+    @Nonnull
     PartitionService getPartitionService();
 
     /**
@@ -370,6 +323,7 @@ public interface HazelcastInstance {
      *
      * @return the split brain protection service of this Hazelcast instance
      */
+    @Nonnull
     SplitBrainProtectionService getSplitBrainProtectionService();
 
     /**
@@ -378,6 +332,7 @@ public interface HazelcastInstance {
      *
      * @return the {@link ClientService} of this Hazelcast instance.
      */
+    @Nonnull
     ClientService getClientService();
 
     /**
@@ -388,6 +343,7 @@ public interface HazelcastInstance {
      *
      * @return the logging service of this Hazelcast instance
      */
+    @Nonnull
     LoggingService getLoggingService();
 
     /**
@@ -397,6 +353,7 @@ public interface HazelcastInstance {
      *
      * @return the lifecycle service for this instance
      */
+    @Nonnull
     LifecycleService getLifecycleService();
 
     /**
@@ -405,7 +362,9 @@ public interface HazelcastInstance {
      * @param <T>         type of the DistributedObject
      * @return DistributedObject created by the service
      */
-    <T extends DistributedObject> T getDistributedObject(String serviceName, String name);
+    @Nonnull
+    <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
+                                                         @Nonnull String name);
 
     /**
      * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used
@@ -418,14 +377,14 @@ public interface HazelcastInstance {
      *
      * @return a ConcurrentMap that can be used to add user-context to the HazelcastInstance.
      */
-    ConcurrentMap<String, Object> getUserContext();
+    @Nonnull ConcurrentMap<String, Object> getUserContext();
 
     /**
      * Gets xaResource which will participate in XATransaction.
      *
      * @return the xaResource
      */
-    HazelcastXAResource getXAResource();
+    @Nonnull HazelcastXAResource getXAResource();
 
     /**
      * Obtain the {@link ICacheManager} that provides access to JSR-107 (JCache) caches configured on a Hazelcast cluster.
@@ -449,7 +408,7 @@ public interface HazelcastInstance {
      * @param name the name of the estimator
      * @return a {@link CardinalityEstimator}
      */
-    CardinalityEstimator getCardinalityEstimator(String name);
+    @Nonnull CardinalityEstimator getCardinalityEstimator(@Nonnull String name);
 
     /**
      * Creates or returns a {@link PNCounter} with the given
@@ -463,7 +422,7 @@ public interface HazelcastInstance {
      * @param name the name of the PN counter
      * @return a {@link PNCounter}
      */
-    PNCounter getPNCounter(String name);
+    @Nonnull PNCounter getPNCounter(@Nonnull String name);
 
     /**
      * Creates or returns the {@link IScheduledExecutorService} scheduled executor service for the given name.
@@ -473,14 +432,14 @@ public interface HazelcastInstance {
      * @param name name of the executor service
      * @return the scheduled executor service for the given name
      */
-    IScheduledExecutorService getScheduledExecutorService(String name);
+    @Nonnull IScheduledExecutorService getScheduledExecutorService(@Nonnull String name);
 
     /**
      * Returns the CP subsystem that offers a set of in-memory linearizable data structures
      *
      * @return the CP subsystem that offers a set of in-memory linearizable data structures
      */
-    CPSubsystem getCPSubsystem();
+    @Nonnull CPSubsystem getCPSubsystem();
 
     /**
      * Returns SQL service.

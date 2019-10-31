@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a new CP group with the given name
  */
-@Generated("5474d45b9c31a34995aac5e20656f59f")
+@Generated("743cc736104e71257064c1f98fb47c94")
 public final class CPGroupCreateCPGroupCodec {
-    //hex: 0x210100
-    public static final int REQUEST_MESSAGE_TYPE = 2162944;
-    //hex: 0x210101
-    public static final int RESPONSE_MESSAGE_TYPE = 2162945;
+    //hex: 0x1E0100
+    public static final int REQUEST_MESSAGE_TYPE = 1966336;
+    //hex: 0x1E0101
+    public static final int RESPONSE_MESSAGE_TYPE = 1966337;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CPGroupCreateCPGroupCodec() {
     }
@@ -69,7 +70,7 @@ public final class CPGroupCreateCPGroupCodec {
     }
 
     public static CPGroupCreateCPGroupCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -97,7 +98,7 @@ public final class CPGroupCreateCPGroupCodec {
     }
 
     public static CPGroupCreateCPGroupCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

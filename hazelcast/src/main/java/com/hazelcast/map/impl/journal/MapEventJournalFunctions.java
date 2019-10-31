@@ -18,8 +18,8 @@ package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.journal.DeserializingEntry;
-import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.map.EventJournalMapEvent;
 
 import java.io.Serializable;
 import java.util.Map.Entry;

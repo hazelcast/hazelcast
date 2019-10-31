@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 
 /**
  * Utility methods for {@link LocalMapStatsImpl}

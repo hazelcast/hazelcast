@@ -68,12 +68,8 @@ hazelcast-client:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
   #
-  # Specifies the name and password for a cluster you connect to.
-  # Cluster configuration allow you to create separate sub-clusters with different names.
-  # The password is only checked when security is enabled on Hazelcast members (Enterprise edition feature).
-  cluster:
-    name: dev
-    password: dev-pass
+  # Specifies the cluster name
+  cluster-name: dev
   #
   # When Hazelcast instances are created, they are put in a global registry with their creation names.
   # "instance-name" gives you the ability to get a specific Hazelcast instance from this registry
@@ -114,6 +110,14 @@ hazelcast-client:
   client-labels:
     - admin
     - foo
+
+  #
+  # The "backup-ack-to-client-enabled" element lets you enable/disable backups ack to client.
+  # This feature reduces number of hops and increase performance for smart clients.
+  # It is enabled by default for smart clients. This config has no effect for unisocket clients.
+  #
+  backup-ack-to-client: true
+
   #
   # ===== HAZELCAST NETWORK CONFIGURATION =====
   #
@@ -141,14 +145,6 @@ hazelcast-client:
   # * "connection-timeout":
   #     Connection timeout is the timeout value in milliseconds for members to accept client connection requests.
   #     The following are the example configurations. Its default value is 5000.
-  # * "connection-attempt-limit":
-  #     While the client is trying to connect initially to one of the members in the "cluster-members", that
-  #     member might not  be available at that moment. Instead of giving up, throwing an exception and stopping
-  #     the client, the client retries as many the times configured by this setting. This is also the case
-  #     when the previously established connection between the client and that member goes down.
-  # * "connection-attempt-period":
-  #     Connection attempt period is the duration in milliseconds between the connection attempts defined by
-  #     "connection-attempt-limit".
   # * "socket-options":
   #     You can configure the network socket options using this setting. It has the following sub-elements:
   #       - "tcp-no-delay": Enables/disables the TCP_NODELAY socket option. Its default value is true.
@@ -255,8 +251,6 @@ hazelcast-client:
     smart-routing: true
     redo-operation: true
     connection-timeout: 60000
-    connection-attempt-period: 3000
-    connection-attempt-limit: 2
     socket-options:
       tcp-no-delay: false
       keep-alive: true
@@ -305,7 +299,7 @@ hazelcast-client:
       tenant-id: TENANT_ID
       subscription-id: SUB_ID
       cluster-id: HZLCAST001
-      cluster-name: CLUSTER-NAME
+      group-name: RESOURCE-GROUP-NAME
     kubernetes:
       enabled: false
       namespace: MY-KUBERNETES-NAMESPACE
@@ -349,9 +343,7 @@ hazelcast-client:
   # ===== HAZELCAST SECURITY CONFIGURATION =====
   #
   # This feature is available only in Hazelcast Enterprise. Configuration element's name is "security".
-  #   It has the following sub-nodes:
-  # * "credentials":
-  #     The name of the class implementing Hazelcast's Credentials interface.
+  #   It has one of the following sub-nodes:
   # * "credentials-factory":
   #     Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
   #     interface.
@@ -359,9 +351,14 @@ hazelcast-client:
   #     ICredentialsFactory used to create Credentials objects.
   #     With the "properties" sub-element, you can define properties for the factory class. The properties can be
   #     defined as a mapping where the key is the name of the property.
+  # * "username-password":
+  #     Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
+  #     "username" and "password" attributes.
+  # * "token"
+  #     Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
+  #     Content of the attribute "value" is token value in given encoding (or in plain text).
   #
   security:
-    credentials: com.hazelcast.security.UsernamePasswordCredentials
     credentials-factory:
       class-name: com.hazelcast.examples.MyCredentialsFactory
       properties:
@@ -672,10 +669,8 @@ hazelcast-client:
   #          - comparator-class-name: The comparator to be used while comparing entries to be evicted.
   #
   # * "indexes":
-  #     You can define indexes for your map using the "indexes" mapping. Each "index" is defined as a mapping under "indexes"
-  #     where the key of the mapping is the name of the index. For the indexes you can define the boolean "ordered" scalar.
-  #     For example, if you will have a ranged query for a field of a map entry, then "ordered" should be set to true. But
-  #     if the field has a boolean value, then it should be set to false. Its default value is false.
+  #     You can define indexes for your map using the "indexes" mapping. Index definition consists of type, optional
+  #     name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
   #
   query-caches:
     query-cache-class-name-predicate:
@@ -699,8 +694,9 @@ hazelcast-client:
         size: 10000
         comparator-class-name: com.hazelcast.examples.MyEvictionComparator
       indexes:
-        name:
-          ordered: false
+        - type: HASH
+          attributes:
+            - "name"
     query-cache-sql-predicate:
       map-name: map-name
       predicate:
@@ -737,7 +733,6 @@ hazelcast-client:
     async-start: true
     reconnect-mode: ASYNC
     connection-retry:
-      enabled: true
       initial-backoff-millis: 2000
       max-backoff-millis: 60000
       multiplier: 3

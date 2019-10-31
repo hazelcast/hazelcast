@@ -16,6 +16,7 @@
 
 package com.hazelcast.splitbrainprotection.map;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.TestLoggingEntryProcessor;
 import com.hazelcast.splitbrainprotection.AbstractSplitBrainProtectionTest;
@@ -109,12 +110,12 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
 
     @Test
     public void putAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
-        map(0).putAsync("foo", "bar").get();
+        map(0).putAsync("foo", "bar").toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void putAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
-        map(3).putAsync("foo", "bar").get();
+        map(3).putAsync("foo", "bar").toCompletableFuture().get();
     }
 
     @Test
@@ -153,12 +154,12 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
 
     @Test
     public void removeAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
-        map(0).removeAsync("foo").get();
+        map(0).removeAsync("foo").toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void removeAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
-        map(3).removeAsync("foo").get();
+        map(3).removeAsync("foo").toCompletableFuture().get();
     }
 
     @Test
@@ -253,12 +254,12 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
 
     @Test
     public void addIndex_successful_whenSplitBrainProtectionSize_met() {
-        map(0).addIndex("__key", false);
+        map(0).addIndex(IndexType.HASH, "__key");
     }
 
     @Test(expected = SplitBrainProtectionException.class)
     public void addIndex_failing_whenSplitBrainProtectionSize_met() {
-        map(3).addIndex("__key", false);
+        map(3).addIndex(IndexType.HASH, "__key");
     }
 
     @Test
@@ -317,12 +318,12 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
 
     @Test
     public void submitToKey_successful_whenSplitBrainProtectionSize_met() throws Exception {
-        map(0).submitToKey("foo", new TestLoggingEntryProcessor()).get();
+        map(0).submitToKey("foo", new TestLoggingEntryProcessor()).toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     public void submitToKey_failing_whenSplitBrainProtectionSize_met() throws Exception {
-        map(3).submitToKey("foo", new TestLoggingEntryProcessor()).get();
+        map(3).submitToKey("foo", new TestLoggingEntryProcessor()).toCompletableFuture().get();
     }
 
     protected IMap map(int index) {

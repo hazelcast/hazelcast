@@ -16,28 +16,34 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.internal.nio.Bits;
 
+import static java.lang.String.format;
+
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 
-public class ClientMessageReader {
+public final class ClientMessageReader {
 
     private static final int INT_MASK = 0xffff;
-    private int readIndex;
     private int readOffset = -1;
-    private LinkedList<ClientMessage.Frame> frames = new LinkedList<>();
+    private ClientMessage clientMessage;
+    private int sumUntrustedMessageLength;
+    private final int maxMessageLength;
 
-    public boolean readFrom(ByteBuffer src) {
+    public ClientMessageReader(int maxMessageLenth) {
+        this.maxMessageLength = maxMessageLenth > 0 ? maxMessageLenth : Integer.MAX_VALUE;
+    }
+
+    public boolean readFrom(ByteBuffer src, boolean trusted) {
         for (; ; ) {
-            if (readFrame(src)) {
-                if (ClientMessage.isFlagSet(frames.get(readIndex).flags, IS_FINAL_FLAG)) {
+            if (readFrame(src, trusted)) {
+                if (ClientMessage.isFlagSet(clientMessage.endFrame.flags, IS_FINAL_FLAG)) {
                     return true;
                 }
-                readIndex++;
                 readOffset = -1;
             } else {
                 return false;
@@ -46,17 +52,16 @@ public class ClientMessageReader {
         }
     }
 
-    public LinkedList<ClientMessage.Frame> getFrames() {
-        return frames;
+    public ClientMessage getClientMessage() {
+        return clientMessage;
     }
 
     public void reset() {
-        readIndex = 0;
         readOffset = -1;
-        frames = new LinkedList<>();
+        clientMessage = null;
     }
 
-    private boolean readFrame(ByteBuffer src) {
+    private boolean readFrame(ByteBuffer src, boolean trusted) {
         // init internal buffer
         int remaining = src.remaining();
         if (remaining < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
@@ -65,20 +70,42 @@ public class ClientMessageReader {
         }
         if (readOffset == -1) {
             int frameLength = Bits.readIntL(src, src.position());
+            if (frameLength < SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
+                throw new IllegalArgumentException(format(
+                        "The client message frame reported illegal length (%d bytes)."
+                                + " Minimal length is the size of frame header (%d bytes).",
+                        frameLength, SIZE_OF_FRAME_LENGTH_AND_FLAGS));
+            }
+            if (!trusted) {
+                // check the message size overflow and message size limit
+                if (Integer.MAX_VALUE - frameLength < sumUntrustedMessageLength
+                        || sumUntrustedMessageLength + frameLength > maxMessageLength) {
+                    throw new MaxMessageSizeExceeded(
+                            format("The client message size (%d + %d) exceededs the maximum allowed length (%d)",
+                                    sumUntrustedMessageLength, frameLength, maxMessageLength));
+                }
+                sumUntrustedMessageLength += frameLength;
+            }
+
             src.position(src.position() + Bits.INT_SIZE_IN_BYTES);
             int flags = Bits.readShortL(src, src.position()) & INT_MASK;
             src.position(src.position() + Bits.SHORT_SIZE_IN_BYTES);
 
             int size = frameLength - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
             byte[] bytes = new byte[size];
-            frames.add(new ClientMessage.Frame(bytes, flags));
+            ClientMessage.Frame frame = new ClientMessage.Frame(bytes, flags);
+            if (clientMessage == null) {
+                clientMessage = ClientMessage.createForDecode(frame);
+            } else {
+                clientMessage.add(frame);
+            }
             readOffset = 0;
             if (size == 0) {
                 return true;
             }
         }
 
-        ClientMessage.Frame frame = frames.get(readIndex);
+        ClientMessage.Frame frame = clientMessage.endFrame;
         return accumulate(src, frame.content, frame.content.length - readOffset);
     }
 

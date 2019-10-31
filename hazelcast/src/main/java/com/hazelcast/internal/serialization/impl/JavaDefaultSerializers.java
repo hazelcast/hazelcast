@@ -43,7 +43,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
 import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
@@ -295,35 +294,6 @@ public final class JavaDefaultSerializers {
         @Override
         public void write(final ObjectDataOutput out, final Class obj) throws IOException {
             out.writeUTF(obj.getName());
-        }
-    }
-
-    public static final class EnumSerializer extends SingletonSerializer<Enum> {
-
-        @Override
-        public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_ENUM;
-        }
-
-        @Override
-        public void write(ObjectDataOutput out, Enum obj) throws IOException {
-            String name = obj.getDeclaringClass().getName();
-            out.writeUTF(name);
-            out.writeUTF(obj.name());
-        }
-
-        @Override
-        public Enum read(ObjectDataInput in) throws IOException {
-            String clazzName = in.readUTF();
-            Class clazz;
-            try {
-                clazz = ClassLoaderUtil.loadClass(in.getClassLoader(), clazzName);
-            } catch (ClassNotFoundException e) {
-                throw new HazelcastSerializationException("Failed to deserialize enum: " + clazzName, e);
-            }
-
-            String name = in.readUTF();
-            return Enum.valueOf(clazz, name);
         }
     }
 

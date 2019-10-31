@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.LockOperation;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.operations.LockOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.nio.Connection;
@@ -42,7 +42,7 @@ public class MapTryLockMessageTask
     @Override
     protected Operation prepareOperation() {
         return new LockOperation(getNamespace(), parameters.key,
-                parameters.threadId, parameters.lease, parameters.timeout, parameters.referenceId);
+                parameters.threadId, parameters.lease, parameters.timeout, parameters.referenceId, true);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class MapTryLockMessageTask
 
     @Override
     public String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return LockSupportService.SERVICE_NAME;
     }
 
     @Override

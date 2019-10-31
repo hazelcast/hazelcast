@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("94bdf4b2fdce57772c6a799ca632cfa5")
+@Generated("b2d72a3f4afb84c253f0183f665deef8")
 public final class XATransactionClearRemoteCodec {
-    //hex: 0x160100
-    public static final int REQUEST_MESSAGE_TYPE = 1442048;
-    //hex: 0x160101
-    public static final int RESPONSE_MESSAGE_TYPE = 1442049;
+    //hex: 0x140100
+    public static final int REQUEST_MESSAGE_TYPE = 1310976;
+    //hex: 0x140101
+    public static final int RESPONSE_MESSAGE_TYPE = 1310977;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private XATransactionClearRemoteCodec() {
     }
@@ -53,7 +54,7 @@ public final class XATransactionClearRemoteCodec {
         /**
          * Java XA transaction id as defined in interface javax.transaction.xa.Xid.
          */
-        public javax.transaction.xa.Xid xid;
+        public com.hazelcast.transaction.impl.xa.SerializableXID xid;
     }
 
     public static ClientMessage encodeRequest(javax.transaction.xa.Xid xid) {
@@ -69,7 +70,7 @@ public final class XATransactionClearRemoteCodec {
     }
 
     public static XATransactionClearRemoteCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -91,7 +92,7 @@ public final class XATransactionClearRemoteCodec {
     }
 
     public static XATransactionClearRemoteCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

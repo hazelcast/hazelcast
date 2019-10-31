@@ -17,24 +17,22 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.monitor.LocalIndexStats;
-import com.hazelcast.monitor.LocalInstanceStats;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.query.LocalIndexStats;
+import com.hazelcast.instance.LocalInstanceStats;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseFirstChar;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A MetricsSet that captures all the {@link StatisticsAwareService} services. In short: it provides the metrics for map,
@@ -48,49 +46,25 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Every {@link LocalInstanceStats} that was seen in the previous round but isn't available any longer, is unregistered from the
  * {@link MetricsRegistry}.
  */
-public class StatisticsAwareMetricsSet {
+public final class StatisticsAwareMetricsSet {
 
-    private static final int SCAN_PERIOD_SECONDS = 10;
-
-    private final ServiceManager serviceManager;
-    private final ILogger logger;
-
-    public StatisticsAwareMetricsSet(ServiceManager serviceManager, NodeEngineImpl nodeEngine) {
-        this.serviceManager = serviceManager;
-        this.logger = nodeEngine.getLogger(getClass());
+    private StatisticsAwareMetricsSet() {
     }
 
-    public void register(MetricsRegistry metricsRegistry) {
-        metricsRegistry.scheduleAtFixedRate(new Task(metricsRegistry), SCAN_PERIOD_SECONDS, SECONDS, INFO);
+    public static void register(ServiceManager serviceManager, MetricsRegistry metricsRegistry) {
+        metricsRegistry.registerDynamicMetricsProvider(new StatisticsAwareDynamicProvider(serviceManager));
     }
 
-    // Periodic task that goes through all StatisticsAwareService asking for stats and registers and if it doesn't exist,
-    // it will register it.
-    private final class Task implements Runnable {
-        private final MetricsRegistry metricsRegistry;
-        private Set<LocalInstanceStats> previousStats = new HashSet<>();
-        private Set<LocalInstanceStats> currentStats = new HashSet<>();
+    private static final class StatisticsAwareDynamicProvider implements DynamicMetricsProvider {
 
-        private Task(MetricsRegistry metricsRegistry) {
-            this.metricsRegistry = metricsRegistry;
+        private final ServiceManager serviceManager;
+
+        private StatisticsAwareDynamicProvider(ServiceManager serviceManager) {
+            this.serviceManager = serviceManager;
         }
 
         @Override
-        public void run() {
-            try {
-                registerAliveStats();
-                purgeDeadStats();
-
-                Set<LocalInstanceStats> tmp = previousStats;
-                previousStats = currentStats;
-                currentStats = tmp;
-                currentStats.clear();
-            } catch (Exception e) {
-                logger.finest("Error occurred while scanning for statistics aware metrics", e);
-            }
-        }
-
-        private void registerAliveStats() {
+        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
             for (StatisticsAwareService statisticsAwareService : serviceManager.getServices(StatisticsAwareService.class)) {
                 Map<String, LocalInstanceStats> stats = statisticsAwareService.getStats();
                 if (stats == null) {
@@ -100,36 +74,33 @@ public class StatisticsAwareMetricsSet {
                 for (Map.Entry<String, LocalInstanceStats> entry : stats.entrySet()) {
                     LocalInstanceStats localInstanceStats = entry.getValue();
 
-                    currentStats.add(localInstanceStats);
-
-                    if (previousStats.contains(localInstanceStats)) {
-                        // already registered
-                        continue;
-                    }
-
                     String name = entry.getKey();
 
                     NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
                     String baseName = localInstanceStats.getClass().getSimpleName()
-                            .replace("Stats", "")
-                            .replace("Local", "")
-                            .replace("Impl", "");
+                                                        .replace("Stats", "")
+                                                        .replace("Local", "")
+                                                        .replace("Impl", "");
                     baseName = lowerCaseFirstChar(baseName);
                     if (nearCacheStats != null) {
-                        metricsRegistry.scanAndRegister(nearCacheStats,
-                                baseName + "[" + name + "].nearcache");
+                        MetricTagger tagger = taggerSupplier.getMetricTagger(baseName + ".nearcache")
+                                                            .withIdTag("name", name);
+                        context.collect(tagger, nearCacheStats);
                     }
 
                     if (localInstanceStats instanceof LocalMapStatsImpl) {
                         Map<String, LocalIndexStats> indexStats = ((LocalMapStatsImpl) localInstanceStats).getIndexStats();
                         for (Map.Entry<String, LocalIndexStats> indexEntry : indexStats.entrySet()) {
-                            metricsRegistry.scanAndRegister(indexEntry.getValue(),
-                                    baseName + "[" + name + "].index[" + indexEntry.getKey() + "]");
+                            MetricTagger tagger = taggerSupplier.getMetricTagger(baseName + ".index")
+                                                                .withIdTag("name", name)
+                                                                .withTag("index", indexEntry.getKey());
+                            context.collect(tagger, indexEntry.getValue());
                         }
                     }
 
-                    metricsRegistry.scanAndRegister(localInstanceStats,
-                            baseName + "[" + name + "]");
+                    MetricTagger tagger = taggerSupplier.getMetricTagger(baseName)
+                                                        .withIdTag("name", name);
+                    context.collect(tagger, localInstanceStats);
                 }
             }
         }
@@ -143,20 +114,6 @@ public class StatisticsAwareMetricsSet {
                 return localMapStats.getNearCacheStatistics();
             } else {
                 return null;
-            }
-        }
-
-        private void purgeDeadStats() {
-            // purge all dead stats; so whatever was there the previous time and can't be found anymore, will be deleted
-            for (LocalInstanceStats localInstanceStats : previousStats) {
-                if (!currentStats.contains(localInstanceStats)) {
-                    metricsRegistry.deregister(localInstanceStats);
-
-                    NearCacheStats nearCacheStats = getNearCacheStats(localInstanceStats);
-                    if (nearCacheStats != null) {
-                        metricsRegistry.deregister(nearCacheStats);
-                    }
-                }
             }
         }
     }

@@ -16,8 +16,10 @@
 
 package com.hazelcast.cp.exception;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+
+import java.util.UUID;
 
 /**
  * A {@code CPSubsystemException} which is thrown when
@@ -26,8 +28,17 @@ import com.hazelcast.cp.CPGroupId;
 public class NotLeaderException extends CPSubsystemException {
     private static final long serialVersionUID = 1817579502149525710L;
 
-    public NotLeaderException(CPGroupId groupId, Endpoint local, Endpoint leader) {
+    public NotLeaderException(CPGroupId groupId, RaftEndpoint local, RaftEndpoint leader) {
         super(local + " is not LEADER of " + groupId + ". Known leader is: "
-                + (leader != null ? leader : "N/A") , leader);
+                + (leader != null ? leader : "N/A") , leader != null ? leader.getUuid() : null);
+    }
+
+    private NotLeaderException(String message, UUID leaderUuid, Throwable cause) {
+        super(message, cause, leaderUuid);
+    }
+
+    @Override
+    public NotLeaderException wrap() {
+        return new NotLeaderException(getMessage(), getLeaderUuid(), this);
     }
 }

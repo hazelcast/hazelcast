@@ -16,8 +16,11 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.config.impl.ClientConfigSections;
+import com.hazelcast.client.config.impl.YamlClientConfigLocator;
+import com.hazelcast.client.config.impl.YamlClientDomConfigProcessor;
 import com.hazelcast.config.AbstractYamlConfigBuilder;
-import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
@@ -25,6 +28,7 @@ import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -96,6 +100,7 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
      *
      * @param locator the configured locator to use
      */
+    @PrivateApi
     public YamlClientConfigBuilder(YamlClientConfigLocator locator) {
         if (locator == null) {
             locator = new YamlClientConfigLocator();
@@ -139,7 +144,7 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
         }
 
-        YamlNode clientRoot = yamlRootNode.childAsMapping(ClientConfigSections.HAZELCAST_CLIENT.name);
+        YamlNode clientRoot = yamlRootNode.childAsMapping(ClientConfigSections.HAZELCAST_CLIENT.getName());
         if (clientRoot == null) {
             clientRoot = yamlRootNode;
         }
@@ -155,6 +160,6 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
 
     @Override
     protected String getConfigRoot() {
-        return ClientConfigSections.HAZELCAST_CLIENT.name;
+        return ClientConfigSections.HAZELCAST_CLIENT.getName();
     }
 }

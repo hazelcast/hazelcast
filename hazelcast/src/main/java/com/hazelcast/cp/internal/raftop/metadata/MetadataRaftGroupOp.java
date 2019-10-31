@@ -34,7 +34,7 @@ public abstract class MetadataRaftGroupOp extends RaftOp {
         RaftService service = getService();
         MetadataRaftGroupManager metadataGroupManager = service.getMetadataGroupManager();
         checkTrue(metadataGroupManager.getMetadataGroupId().equals(groupId),
-                "Cannot perform CP subsystem management call on " + groupId);
+                "Cannot perform CP Subsystem management call on " + groupId);
         return run(metadataGroupManager, commitIndex);
     }
 

@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.exception.MemberAlreadyExistsException;
@@ -31,14 +30,15 @@ import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
+import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder;
 import com.hazelcast.cp.internal.raft.impl.testing.RaftRunnable;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,7 +54,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLastLogOrSnapshotE
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getStatus;
-import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newGroupWithService;
+import static com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder.newGroup;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -69,10 +69,6 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     private LocalRaftGroup group;
 
-    @Before
-    public void init() {
-    }
-
     @After
     public void destroy() {
         if (group != null) {
@@ -82,7 +78,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_newRaftNodeJoins_then_itAppendsMissingEntries() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -114,7 +110,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_followerLeaves_then_itIsRemovedFromTheGroupMembers() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -138,7 +134,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_newRaftNodeJoinsAfterAnotherNodeLeaves_then_itAppendsMissingEntries() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -178,9 +174,8 @@ public class MembershipChangeTest extends HazelcastTestSupport {
     @Test
     public void when_newRaftNodeJoinsAfterAnotherNodeLeavesAndSnapshotIsTaken_then_itAppendsMissingEntries() throws ExecutionException, InterruptedException {
         int commitIndexAdvanceCountToSnapshot = 10;
-        RaftAlgorithmConfig config = new RaftAlgorithmConfig();
-        config.setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCountToSnapshot);
-        group = newGroupWithService(3, config);
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCountToSnapshot);
+        group = newGroup(3, config);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -229,7 +224,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderLeaves_then_itIsRemovedFromTheGroupMembers() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -250,7 +245,8 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderLeaves_then_itCannotVoteForCommitOfMemberChange() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig().setLeaderHeartbeatPeriodInMillis(1000));
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setLeaderHeartbeatPeriodInMillis(1000);
+        group = newGroup(3, config);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -266,7 +262,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderLeaves_then_followersElectNewLeader() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -286,7 +282,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             for (RaftNodeImpl raftNode : followers) {
-                Endpoint newLeader = getLeaderMember(raftNode);
+                RaftEndpoint newLeader = getLeaderMember(raftNode);
                 assertNotNull(newLeader);
                 assertNotEquals(leader.getLocalMember(), newLeader);
             }
@@ -295,7 +291,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_membershipChangeRequestIsMadeWithWrongType_then_theChangeFails() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -310,7 +306,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_nonExistingEndpointIsRemoved_then_theChangeFails() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -320,7 +316,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
         leader.replicateMembershipChange(leavingFollower.getLocalMember(), MembershipChangeMode.REMOVE).get();
 
         try {
-            leader.replicateMembershipChange(leavingFollower.getLocalMember(), MembershipChangeMode.REMOVE).get();
+            leader.replicateMembershipChange(leavingFollower.getLocalMember(), MembershipChangeMode.REMOVE).joinInternal();
             fail();
         } catch (MemberDoesNotExistException ignored) {
         }
@@ -328,7 +324,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_existingEndpointIsAdded_then_theChangeFails() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -336,7 +332,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
         leader.replicate(new ApplyRaftRunnable("val")).get();
 
         try {
-            leader.replicateMembershipChange(leader.getLocalMember(), MembershipChangeMode.ADD).get();
+            leader.replicateMembershipChange(leader.getLocalMember(), MembershipChangeMode.ADD).joinInternal();
             fail();
         } catch (MemberAlreadyExistsException ignored) {
         }
@@ -346,13 +342,13 @@ public class MembershipChangeTest extends HazelcastTestSupport {
     public void when_thereIsNoCommitInTheCurrentTerm_then_cannotMakeMemberChange() throws ExecutionException, InterruptedException {
         // https://groups.google.com/forum/#!msg/raft-dev/t4xj6dJTP6E/d2D9LrWRza8J
 
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         try {
-            leader.replicateMembershipChange(leader.getLocalMember(), MembershipChangeMode.REMOVE).get();
+            leader.replicateMembershipChange(leader.getLocalMember(), MembershipChangeMode.REMOVE).joinInternal();
             fail();
         } catch (CannotReplicateException ignored) {
         }
@@ -362,7 +358,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
     public void when_appendNopEntryOnLeaderElection_then_canMakeMemberChangeAfterNopEntryCommitted() {
         // https://groups.google.com/forum/#!msg/raft-dev/t4xj6dJTP6E/d2D9LrWRza8J
 
-        group = newGroupWithService(3, new RaftAlgorithmConfig(), true);
+        group = new LocalRaftGroupBuilder(3).setAppendNopEntryOnLeaderElection(true).build();
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -379,7 +375,8 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_newJoiningNodeFirstReceivesSnapshot_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(5));
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(5);
+        group = newGroup(3, config);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -408,7 +405,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderFailsWhileLeavingRaftGroup_othersCommitTheMemberChange() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -433,7 +430,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             for (RaftNodeImpl follower : followers) {
-                Endpoint newLeaderEndpoint = getLeaderMember(follower);
+                RaftEndpoint newLeaderEndpoint = getLeaderMember(follower);
                 assertNotNull(newLeaderEndpoint);
                 assertNotEquals(leader.getLocalMember(), newLeaderEndpoint);
             }
@@ -451,7 +448,8 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_followerAppendsMultipleMembershipChangesAtOnce_then_itCommitsThemCorrectly() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(5, new RaftAlgorithmConfig().setLeaderHeartbeatPeriodInMillis(1000));
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig().setLeaderHeartbeatPeriodInMillis(1000);
+        group = newGroup(5, config);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -521,7 +519,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_leaderIsSteppingDown_then_itDoesNotAcceptNewAppends() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig(), true);
+        group = new LocalRaftGroupBuilder(3).setAppendNopEntryOnLeaderElection(true).build();
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -529,14 +527,14 @@ public class MembershipChangeTest extends HazelcastTestSupport {
         group.dropMessagesToMember(leader.getLocalMember(), followers[0].getLocalMember(), AppendRequest.class);
         group.dropMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
 
-        Future f1 = leader.replicateMembershipChange(leader.getLocalMember(), REMOVE);
-        Future f2 = leader.replicate(new PostponedResponseRaftRunnable());
+        InternalCompletableFuture f1 = leader.replicateMembershipChange(leader.getLocalMember(), REMOVE);
+        InternalCompletableFuture f2 = leader.replicate(new PostponedResponseRaftRunnable());
 
         assertFalse(f1.isDone());
         assertTrueEventually(() -> assertTrue(f2.isDone()));
 
         try {
-            f2.get();
+            f2.joinInternal();
             fail();
         } catch (CannotReplicateException ignored) {
         }
@@ -544,7 +542,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
     @Test
     public void when_replicatedMembershipChangeIsReverted_then_itCanBeCommittedOnSecondReplicate() throws ExecutionException, InterruptedException {
-        group = newGroupWithService(3, new RaftAlgorithmConfig(), true);
+        group = new LocalRaftGroupBuilder(3).setAppendNopEntryOnLeaderElection(true).build();
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();

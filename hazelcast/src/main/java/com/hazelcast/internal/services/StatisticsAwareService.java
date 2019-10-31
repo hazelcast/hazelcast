@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.services;
 
-import com.hazelcast.monitor.LocalInstanceStats;
+import com.hazelcast.instance.LocalInstanceStats;
 
 import java.util.Map;
 

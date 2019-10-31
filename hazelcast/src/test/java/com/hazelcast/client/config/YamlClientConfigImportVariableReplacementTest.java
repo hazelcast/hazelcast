@@ -275,12 +275,11 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "          secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1\n"
                 + "          secretKeyAlgorithm: DES\n"
                 + "      - class-name: " + AbstractConfigImportVariableReplacementTest.IdentityReplacer.class.getName() + "\n"
-                + "  cluster:\n"
-                + "    name: ${java.version} $ID{dev}\n"
-                + "    password: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}";
+                + "  cluster-name: ${java.version} $ID{dev}\n"
+                + "  instance-name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}";
         ClientConfig config = buildConfig(yaml, System.getProperties());
         assertEquals(System.getProperty("java.version") + " dev", config.getClusterName());
-        assertEquals("My very secret secret", config.getClusterPassword());
+        assertEquals("My very secret secret", config.getInstanceName());
     }
 
     @Override
@@ -291,8 +290,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "  config-replacers:\n"
                 + "    replacers:\n"
                 + "      - class-name: " + EncryptionReplacer.class.getName() + "\n"
-                + "    group:\n"
-                + "      name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}\n";
+                + "    cluster-name: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}\n";
         buildConfig(yaml, System.getProperties());
     }
 
@@ -310,8 +308,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "          p2: \"\"\n"
                 + "          p3: another property\n"
                 + "          p4: <test/>\n"
-                + "  cluster:\n"
-                + "    name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}";
+                + "  cluster-name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}";
         ClientConfig config = buildConfig(yaml, System.getProperties());
         assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
     }
@@ -321,16 +318,15 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     public void testNoConfigReplacersMissingProperties() {
         String yaml = ""
                 + "hazelcast-client:\n"
-                + "  cluster:\n"
-                + "    name: ${noSuchPropertyAvailable}";
+                + "  cluster-name: ${noSuchPropertyAvailable}";
 
-        ClientConfig config = buildConfig(yaml, System.getProperties());
-        assertEquals("${noSuchPropertyAvailable}", config.getClusterName());
+        ClientConfig clientConfig = buildConfig(yaml, System.getProperties());
+        assertEquals("${noSuchPropertyAvailable}", clientConfig.getClusterName());
     }
 
     @Override
     @Test
-    public void testImportClusterConfigFromClassPath() {
+    public void testImportConfigFromClassPath() {
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
@@ -338,7 +334,6 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
 
         ClientConfig config = buildConfig(yaml);
         assertEquals("cluster1", config.getClusterName());
-        assertEquals("cluster1pass", config.getClusterPassword());
     }
 
     @Override
@@ -371,18 +366,16 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  cluster-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: name2";
+                + "  cluster-name: name2";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -393,16 +386,14 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  cluster:\n"
-                + "    name: name";
+                + "  cluster-name: name";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  cluster:\n"
-                + "    name: name";
+                + "  cluster-name: name";
 
         ClientConfig config = buildConfig(yaml, "config.location", file.getAbsolutePath());
         assertEquals("name", config.getClusterName());
@@ -414,19 +405,17 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  cluster-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name:\n"
-                + "      - seqName: {}";
+                + "  cluster-name:\n"
+                + "    - seqName: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -437,18 +426,16 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name: name1";
+                + "  cluster-name: name1";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: {}";
+                + "  cluster-name: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }
@@ -459,19 +446,17 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
-                + "  group:\n"
-                + "    name:\n"
-                + "      - seqname";
+                + "  cluster-name:\n"
+                + "    - seqname";
         writeStringToStreamAndClose(os, importedYaml);
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}\n"
-                + "  group:\n"
-                + "    name: {}";
+                + "  cluster-name: {}";
 
-        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/cluster-name"));
 
         buildConfig(yaml, "config.location", file.getAbsolutePath());
     }

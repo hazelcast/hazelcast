@@ -21,7 +21,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.crdt.CRDTDataSerializerHook;
 import com.hazelcast.internal.crdt.pncounter.PNCounterImpl;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
-import com.hazelcast.monitor.impl.LocalPNCounterStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalPNCounterStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;

@@ -21,13 +21,11 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventBatch;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
@@ -52,16 +50,16 @@ import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.internal.management.request.TriggerPartialStartRequest;
 import com.hazelcast.internal.management.request.WanCheckConsistencyRequest;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,18 +84,20 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getObject;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
  */
 public class ManagementCenterService {
+    public static final String SERVICE_NAME = "hz:core:managementCenterService";
 
     private static final int HTTP_SUCCESS = 200;
     private static final int HTTP_NOT_MODIFIED = 304;
@@ -249,18 +249,18 @@ public class ManagementCenterService {
         }
     }
 
-    public InternalCompletableFuture<Object> callOnAddress(Address address, Operation operation) {
+    public InvocationFuture<Object> callOnAddress(Address address, Operation operation) {
         // TODO: why are we always executing on the MapService?
         OperationService operationService = instance.node.nodeEngine.getOperationService();
         return operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
     }
 
-    public InternalCompletableFuture<Object> callOnThis(Operation operation) {
+    public InvocationFuture<Object> callOnThis(Operation operation) {
         return callOnAddress(instance.node.getThisAddress(), operation);
     }
 
     public JsonObject syncCallOnThis(Operation operation) {
-        InternalCompletableFuture<Object> future = callOnThis(operation);
+        InvocationFuture<Object> future = callOnThis(operation);
         JsonObject result = new JsonObject();
         Object operationResult;
         try {
@@ -281,7 +281,7 @@ public class ManagementCenterService {
         return result;
     }
 
-    public InternalCompletableFuture<Object> callOnMember(Member member, Operation operation) {
+    public InvocationFuture<Object> callOnMember(Member member, Operation operation) {
         return callOnAddress(member.getAddress(), operation);
     }
 
@@ -390,7 +390,7 @@ public class ManagementCenterService {
         }
 
         private void sendEvents() throws MalformedURLException {
-            ArrayList<Event> eventList = new ArrayList<Event>();
+            ArrayList<Event> eventList = new ArrayList<>();
             if (events.drainTo(eventList) == 0) {
                 return;
             }
@@ -406,7 +406,7 @@ public class ManagementCenterService {
 
                 HttpURLConnection connection = openJsonConnection(url);
                 outputStream = connection.getOutputStream();
-                writer = new OutputStreamWriter(outputStream, "UTF-8");
+                writer = new OutputStreamWriter(outputStream, UTF_8);
 
                 batch.writeTo(writer);
 
@@ -513,7 +513,7 @@ public class ManagementCenterService {
                 }
 
                 outputStream = connection.getOutputStream();
-                writer = new OutputStreamWriter(outputStream, "UTF-8");
+                writer = new OutputStreamWriter(outputStream, UTF_8);
 
                 JsonObject root = new JsonObject();
                 TimedMemberState memberState = timedMemberState.get();
@@ -563,7 +563,7 @@ public class ManagementCenterService {
             InputStreamReader reader = null;
             try {
                 inputStream = connection.getInputStream();
-                reader = new InputStreamReader(inputStream, "UTF-8");
+                reader = new InputStreamReader(inputStream, UTF_8);
                 JsonObject response = Json.parse(reader).asObject();
                 lastConfigETag = connection.getHeaderField("ETag");
                 bwListConfigHandler.handleConfig(response);
@@ -584,8 +584,7 @@ public class ManagementCenterService {
      */
     private final class TaskPollThread extends Thread {
 
-        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests
-                = new HashMap<Integer, Class<? extends ConsoleRequest>>();
+        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests = new HashMap<>();
 
         private final ExecutionService executionService = instance.node.getNodeEngine().getExecutionService();
 
@@ -679,8 +678,8 @@ public class ManagementCenterService {
             InputStreamReader reader = null;
             try {
                 inputStream = openTaskInputStream();
-                reader = new InputStreamReader(inputStream, "UTF-8");
-                JsonObject request = JsonValue.readFrom(reader).asObject();
+                reader = new InputStreamReader(inputStream, UTF_8);
+                JsonObject request = Json.parse(reader).asObject();
                 if (!request.isEmpty()) {
                     JsonObject innerRequest = getObject(request, "request");
                     final int type = getInt(innerRequest, "type");
@@ -718,7 +717,7 @@ public class ManagementCenterService {
         private boolean processTaskAndSendResponse(int taskId, ConsoleRequest task) throws Exception {
             HttpURLConnection connection = openPostResponseConnection();
             OutputStream outputStream = connection.getOutputStream();
-            final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+            final OutputStreamWriter writer = new OutputStreamWriter(outputStream, UTF_8);
             try {
                 JsonObject root = new JsonObject();
                 root.add("taskId", taskId);
@@ -754,12 +753,12 @@ public class ManagementCenterService {
         }
 
         private URL newGetTaskUrl() throws IOException {
-            Config config = instance.getConfig();
+            String clusterName = instance.getConfig().getClusterName();
 
             Address localAddress = instance.node.getClusterService().getLocalMember().getAddress();
 
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
-                    + ":" + localAddress.getPort() + "&cluster=" + encode(config.getClusterName(), "UTF-8");
+                    + ":" + localAddress.getPort() + "&cluster=" + encode(clusterName, "UTF-8");
             return new URL(urlString);
         }
 

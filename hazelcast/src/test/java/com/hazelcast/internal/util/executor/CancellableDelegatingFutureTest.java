@@ -18,9 +18,11 @@ package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.spi.impl.DelegatingCompletableFuture;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,7 +35,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CancellableDelegatingFutureTest extends HazelcastTestSupport {
 
     @Rule
@@ -45,11 +47,11 @@ public class CancellableDelegatingFutureTest extends HazelcastTestSupport {
         final HazelcastInstance instance = factory.newHazelcastInstance();
         IExecutorService executorService = instance.getExecutorService(randomString());
         final CompletesOnInterruptionCallable callable = new CompletesOnInterruptionCallable();
-        final DelegatingFuture<Boolean> future = (DelegatingFuture<Boolean>) executorService.submit(callable);
+        final DelegatingCompletableFuture<Boolean> future = (DelegatingCompletableFuture<Boolean>) executorService.submit(callable);
 
         if (future.cancel(true)) {
             expected.expect(CancellationException.class);
-            future.getFuture().get();
+            future.getDelegate().get();
         }
     }
 

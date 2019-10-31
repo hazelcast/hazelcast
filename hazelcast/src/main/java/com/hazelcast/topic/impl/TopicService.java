@@ -19,9 +19,9 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.nio.Address;
+import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -107,7 +107,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public ITopic createDistributedObject(String name) {
+    public ITopic createDistributedObject(String name, boolean local) {
         TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
 
         if (topicConfig.isGlobalOrderingEnabled()) {
@@ -118,7 +118,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public void destroyDistributedObject(String objectId) {
+    public void destroyDistributedObject(String objectId, boolean local) {
         statsMap.remove(objectId);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, objectId);
     }

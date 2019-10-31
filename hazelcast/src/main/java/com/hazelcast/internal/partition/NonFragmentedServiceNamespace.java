@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
 
 /**
  * Internal {@link ServiceNamespace} implementation used by partitioning system to identify

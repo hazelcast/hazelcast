@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,14 +34,16 @@ class ClientCacheInvalidationListener
         implements EventHandler<ClientMessage> {
 
     private final AtomicLong invalidationCount = new AtomicLong();
-    private final List<String> singleInvalidationEventsLog = Collections.synchronizedList(new ArrayList<>());
+    private final List<String> singleInvalidationEventsLog = new ArrayList<>();
 
     public long getInvalidationCount() {
         return invalidationCount.get();
     }
 
     public void resetInvalidationCount() {
-        singleInvalidationEventsLog.clear();
+        synchronized (singleInvalidationEventsLog) {
+            singleInvalidationEventsLog.clear();
+        }
         invalidationCount.set(0);
     }
 
@@ -63,7 +64,9 @@ class ClientCacheInvalidationListener
 
     @Override
     public void handleCacheInvalidationEvent(String name, Data key, UUID sourceUuid, UUID partitionUuid, long sequence) {
-        singleInvalidationEventsLog.add(name + ":" + sourceUuid + ":" + partitionUuid + ":" + sequence);
+        synchronized (singleInvalidationEventsLog) {
+            singleInvalidationEventsLog.add(name + ":" + sourceUuid + ":" + partitionUuid + ":" + sequence);
+        }
         invalidationCount.incrementAndGet();
     }
 
@@ -73,7 +76,10 @@ class ClientCacheInvalidationListener
         invalidationCount.addAndGet(keys.size());
     }
 
+    // used in tests
     List<String> getSingleInvalidationEventsLog() {
-        return singleInvalidationEventsLog;
+        synchronized (singleInvalidationEventsLog) {
+            return new ArrayList<>(singleInvalidationEventsLog);
+        }
     }
 }

@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
 import com.hazelcast.map.MapStore;
 
+import java.util.UUID;
+
 /**
  * Represents a candidate entry to be inserted into {@link MapStore}
  *
@@ -25,7 +27,6 @@ import com.hazelcast.map.MapStore;
  * @param <V> the value type.
  */
 class AddedDelayedEntry<K, V> implements DelayedEntry<K, V> {
-
     private final K key;
     private final V value;
     private final long expirationTime;
@@ -79,6 +80,15 @@ class AddedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     @Override
     public long getSequence() {
         return sequence;
+    }
+
+    @Override
+    public void setTxnId(UUID txnId) {
+    }
+
+    @Override
+    public UUID getTxnId() {
+        return null;
     }
 
     /**

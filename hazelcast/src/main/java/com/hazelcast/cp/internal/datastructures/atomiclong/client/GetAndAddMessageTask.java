@@ -17,20 +17,19 @@
 package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndAddCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndAddOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicLongPermission;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 
@@ -39,8 +38,7 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 /**
  * Client message task for {@link GetAndAddOp}
  */
-public class GetAndAddMessageTask extends AbstractMessageTask<CPAtomicLongGetAndAddCodec.RequestParameters>
-        implements ExecutionCallback<Long> {
+public class GetAndAddMessageTask extends AbstractCPMessageTask<AtomicLongGetAndAddCodec.RequestParameters> {
 
     public GetAndAddMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -53,24 +51,24 @@ public class GetAndAddMessageTask extends AbstractMessageTask<CPAtomicLongGetAnd
         CPGroupId groupId = parameters.groupId;
         long delta = parameters.delta;
         RaftOp op = new GetAndAddOp(parameters.name, delta);
-        ICompletableFuture<Long> future = (delta == 0)
+        InternalCompletableFuture<Long> future = (delta == 0)
                 ? invocationManager.query(groupId, op, LINEARIZABLE) : invocationManager.invoke(groupId, op);
-        future.andThen(this);
+        future.whenCompleteAsync(this);
     }
 
     @Override
-    protected CPAtomicLongGetAndAddCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicLongGetAndAddCodec.decodeRequest(clientMessage);
+    protected AtomicLongGetAndAddCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongGetAndAddCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicLongGetAndAddCodec.encodeResponse((Long) response);
+        return AtomicLongGetAndAddCodec.encodeResponse((Long) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override
@@ -90,15 +88,5 @@ public class GetAndAddMessageTask extends AbstractMessageTask<CPAtomicLongGetAnd
 
     public Object[] getParameters() {
         return new Object[]{parameters.delta};
-    }
-
-    @Override
-    public void onResponse(Long response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

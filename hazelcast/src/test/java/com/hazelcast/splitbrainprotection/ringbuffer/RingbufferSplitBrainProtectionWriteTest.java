@@ -81,24 +81,24 @@ public class RingbufferSplitBrainProtectionWriteTest extends AbstractSplitBrainP
 
     @Test
     public void addAllAsync_splitBrainProtection() throws Exception {
-        ring(0).addAllAsync(asList("123"), OverflowPolicy.OVERWRITE).get();
+        ring(0).addAllAsync(asList("123"), OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
 
     @Test
     public void addAllAsync_noSplitBrainProtection() throws Exception {
         expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        ring(3).addAllAsync(asList("123"), OverflowPolicy.OVERWRITE).get();
+        ring(3).addAllAsync(asList("123"), OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
 
     @Test
     public void addAsync_splitBrainProtection() throws Exception {
-        ring(0).addAsync("123", OverflowPolicy.OVERWRITE).get();
+        ring(0).addAsync("123", OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
 
     @Test
     public void addAsync_noSplitBrainProtection() throws Exception {
         expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        ring(3).addAsync("123", OverflowPolicy.OVERWRITE).get();
+        ring(3).addAsync("123", OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
 
     protected Ringbuffer ring(int index) {

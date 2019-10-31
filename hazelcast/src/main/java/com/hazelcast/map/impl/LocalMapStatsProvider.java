@@ -21,20 +21,20 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.LocalRecordStoreStats;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.IndexesStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.monitor.impl.OnDemandIndexStats;
-import com.hazelcast.monitor.impl.PerIndexStats;
-import com.hazelcast.nio.Address;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.monitor.impl.IndexesStats;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.OnDemandIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -52,7 +52,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Provides node local statistics of a map via {@link #createLocalMapStats}
- * and also holds all {@link com.hazelcast.monitor.impl.LocalMapStatsImpl} implementations of all maps.
+ * and also holds all {@link com.hazelcast.internal.monitor.impl.LocalMapStatsImpl} implementations of all maps.
  */
 public class LocalMapStatsProvider {
 

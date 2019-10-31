@@ -65,7 +65,7 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
         }));
 
         assertCompletesEventually(f);
-        f.join();
+        f.joinInternal();
     }
 
     @Test

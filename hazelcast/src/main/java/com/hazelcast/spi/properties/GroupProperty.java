@@ -41,7 +41,6 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -53,71 +52,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class GroupProperty {
 
     /**
-     * Use this property to verify that Hazelcast nodes only join the cluster
-     * when their 'application' level configuration is the same.
-     * <p>
-     * If you have multiple machines, you want to make sure that each machine
-     * that joins the cluster has exactly the same 'application level' settings
-     * (such as settings that are not part of the Hazelcast configuration, maybe
-     * some file path). To prevent the machines with potentially different
-     * application level configuration from forming a cluster, you can set this
-     * property.
-     * <p>
-     * You could use actual values, such as string paths, but you can also use
-     * an md5 hash. We make a guarantee that nodes will form a cluster (become a
-     * member) only if the token is an exact match. If this token is different,
-     * the member can't be started and therefore you will get the guarantee that
-     * all members in the cluster will have exactly the same application validation
-     * token.
-     * <p>
-     * This validation token will be checked before a member joins the cluster.
-     */
-    public static final HazelcastProperty APPLICATION_VALIDATION_TOKEN
-            = new HazelcastProperty("hazelcast.application.validation.token");
-
-    /**
      * Total number of partitions in the Hazelcast cluster.
      */
     public static final HazelcastProperty PARTITION_COUNT
             = new HazelcastProperty("hazelcast.partition.count", 271);
-
-    /**
-     * For more detail see {@link #PARTITION_OPERATION_THREAD_COUNT}.
-     *
-     * If this property is set to false, Hazelcast will default to 3.x style
-     * operation thread configuration whereby the sum of the number of partition
-     * threads and IO threads exceeds the number of cores.
-     *
-     * If this property is set to true (default) Hazelcast will subtract the
-     * number of IO threads from the number of available processors and that will
-     * be the number of partition threads.
-     *
-     * If explicit number of partition threads is configured, this property is
-     * irrelevant.
-     *
-     * This property favors the typical get/set type of application. Application
-     * that are number crunching or query heavy, will get a performance hit
-     * because not all cores will be busy with processing operations since there
-     * are less operation threads than processors. So for such applications it
-     * is best to explicitly disable this property.
-     */
-    public static final HazelcastProperty PARTITION_OPERATION_THREAD_ISOLATED
-            = new HazelcastProperty("hazelcast.operation.thread.isolated", new Function<HazelcastProperties, Boolean>() {
-        @Override
-        public Boolean apply(HazelcastProperties properties) {
-            int availableProcessors = RuntimeAvailableProcessors.get();
-            if (availableProcessors < 20) {
-                return false;
-            }
-
-            int ioThreads = properties.getInteger(IO_INPUT_THREAD_COUNT) + properties.getInteger(IO_OUTPUT_THREAD_COUNT);
-            if (ioThreads > 8) {
-                return false;
-            }
-
-            return true;
-        }
-    });
 
     /**
      * The number of partition operation handler threads per member.
@@ -125,32 +63,10 @@ public final class GroupProperty {
      * If this is less than the number of partitions on a member, partition operations
      * will queue behind other operations of different partitions.
      *
-     * If the JVM detects 20 or more cores, and 'hazelcast.operation.thread.isolated' is set to true,
-     * it will prevent creating more threads than available cores by
-     * determining the number of operation threads as corecount-iothreadcount.
-     * This will prevent that IO threads and partition threads will contend for cores and this leads to
-     * increases throughput and less jitter.
-     *
-     * If explicit number of partition threads is configured, than the magic where we try to determine optimal
-     * number of partition threads is bypassed.
      */
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.operation.thread.count", new Function<HazelcastProperties, Integer>() {
-        @Override
-        public Integer apply(HazelcastProperties properties) {
-            int availableProcessors = RuntimeAvailableProcessors.get();
-            boolean isolated = properties.getBoolean(PARTITION_OPERATION_THREAD_ISOLATED);
-
-            if (isolated) {
-                int ioThreads = properties.getInteger(IO_INPUT_THREAD_COUNT) + properties.getInteger(IO_OUTPUT_THREAD_COUNT);
-                int partitionThreadCount = availableProcessors - ioThreads;
-                return checkPositive(partitionThreadCount, "partitionThreadCount must be positive,"
-                        + " but was " + partitionThreadCount);
-            } else {
-                return max(2, availableProcessors);
-            }
-        }
-    });
+            = new HazelcastProperty("hazelcast.operation.thread.count",
+            (Function<HazelcastProperties, Integer>) properties -> max(2, RuntimeAvailableProcessors.get()));
 
     /**
      * The number of generic operation handler threads per member.
@@ -218,13 +134,18 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.clientengine.blocking.thread.count", -1);
 
     /**
-     * Time after which client connection is removed or owner node of a client is removed from the cluster.
-     * <p>
-     * ClientDisconnectionOperation runs and cleans all resources of a client (listeners are removed, locks/txn are released).
-     * With this property, client has a window to connect back and prevent cleaning up its resources.
+     * Time period to check if a client is still part of the cluster.
      */
-    public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
-            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 60);
+    public static final HazelcastProperty CLIENT_CLEANUP_PERIOD
+            = new HazelcastProperty("hazelcast.client.cleanup.period.millis", 10000, MILLISECONDS);
+
+    /**
+     * Timeout duration to decide if a client is still part of the cluster.
+     * If a member can not find any connection to a client in the cluster, it will clean up local resources that is
+     * owned by that client.
+     */
+    public static final HazelcastProperty CLIENT_CLEANUP_TIMEOUT
+            = new HazelcastProperty("hazelcast.client.cleanup.timeout.millis", 120000, MILLISECONDS);
 
     /**
      * Number of threads for the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.
@@ -358,10 +279,10 @@ public final class GroupProperty {
      * Optimization that allows sending of packets over the network to be done on the calling thread if the
      * conditions are right. This can reduce latency and increase performance for low threaded environments.
      *
-     * It is disabled by default.
+     * It is enabled by default.
      */
     public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
-            = new HazelcastProperty("hazelcast.io.write.through", false);
+            = new HazelcastProperty("hazelcast.io.write.through", true);
 
     /**
      * Property needed for concurrency detection so that write through can be done correctly.
@@ -402,23 +323,26 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.connect.all.wait.seconds", 120, SECONDS);
 
     /**
-     * @deprecated Use {@link com.hazelcast.config.MemcacheProtocolConfig} instead.
+     * Enables or disables MEMCACHE protocol on members.
+     *
+     * @see com.hazelcast.config.MemcacheProtocolConfig
      */
-    @Deprecated
     public static final HazelcastProperty MEMCACHE_ENABLED
             = new HazelcastProperty("hazelcast.memcache.enabled", false);
     /**
-     * @deprecated Use {@link com.hazelcast.config.RestEndpointGroup RestEndpointGroups} in
-     * {@link com.hazelcast.config.RestApiConfig} instead.
+     * Enables or disables REST API on members.
+     *
+     * @see com.hazelcast.config.RestEndpointGroup
+     * @see com.hazelcast.config.RestApiConfig
      */
-    @Deprecated
     public static final HazelcastProperty REST_ENABLED
             = new HazelcastProperty("hazelcast.rest.enabled", false);
+
     /**
-     * @deprecated Enable or disable the {@link com.hazelcast.config.RestEndpointGroup#HEALTH_CHECK} group in
-     * {@link com.hazelcast.config.RestApiConfig} instead.
+     * Enables or disables HTTP health check API on members.
+     *
+     * @see com.hazelcast.config.RestEndpointGroup#HEALTH_CHECK
      */
-    @Deprecated
     public static final HazelcastProperty HTTP_HEALTHCHECK_ENABLED
             = new HazelcastProperty("hazelcast.http.healthcheck.enabled", false);
 
@@ -860,7 +784,7 @@ public final class GroupProperty {
      * By default it is configured as 100. With 271 partitions, that would give (271 + 1) * 100 = 27200 concurrent invocations
      * from a single member. The +1 is for generic operations. The reasons why 100 is chosen are:
      * - there can be concurrent operations that touch a lot of partitions which consume more than 1 invocation, and
-     * - certain methods like those from the IExecutor or ILock are also invocations and they can be very long running.
+     * - certain methods like those from the IExecutor are also invocations and they can be very long running.
      * <p>
      * No promise is made for the invocations being tracked per partition, or if there is a general pool of invocations.
      */
@@ -1084,6 +1008,21 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty MOBY_NAMING_ENABLED
             = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
+
+    /**
+     * Client protocol message size limit (in bytes) for unverified connections (i.e. maximal length of authentication message).
+     */
+    public static final HazelcastProperty CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES =
+            new HazelcastProperty("hazelcast.client.protocol.max.message.bytes", 1024);
+
+    public static final HazelcastProperty AUDIT_LOG_ENABLED = new HazelcastProperty("hazelcast.auditlog.enabled", false);
+
+    /**
+     * The interval at which network stats (bytes sent and received) are re-calculated and published.
+     * Used only when Advanced Networking is enabled.
+     */
+    public static final HazelcastProperty NETWORK_STATS_REFRESH_INTERVAL_SECONDS
+            = new HazelcastProperty("hazelcast.network.stats.refresh.interval.seconds", 3, SECONDS);
 
     private GroupProperty() {
     }

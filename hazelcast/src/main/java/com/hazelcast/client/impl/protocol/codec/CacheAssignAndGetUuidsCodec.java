@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("67d82d3a3cc99d9fa4ff016525b03a04")
+@Generated("84eb6a5f7a348c1c30625d1c4b8091d2")
 public final class CacheAssignAndGetUuidsCodec {
-    //hex: 0x152000
-    public static final int REQUEST_MESSAGE_TYPE = 1384448;
-    //hex: 0x152001
-    public static final int RESPONSE_MESSAGE_TYPE = 1384449;
+    //hex: 0x132000
+    public static final int REQUEST_MESSAGE_TYPE = 1253376;
+    //hex: 0x132001
+    public static final int RESPONSE_MESSAGE_TYPE = 1253377;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CacheAssignAndGetUuidsCodec() {
     }
@@ -63,7 +64,7 @@ public final class CacheAssignAndGetUuidsCodec {
     }
 
     public static CacheAssignAndGetUuidsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -85,16 +86,16 @@ public final class CacheAssignAndGetUuidsCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
+        EntryListIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
         return clientMessage;
     }
 
     public static CacheAssignAndGetUuidsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.partitionUuidList = MapIntegerUUIDCodec.decode(iterator);
+        response.partitionUuidList = EntryListIntegerUUIDCodec.decode(iterator);
         return response;
     }
 

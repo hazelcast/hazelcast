@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -211,7 +212,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Employee> map = node.getMap(mapName);
-        map.addIndex("city", ordered);
+        map.addIndex(ordered ? IndexType.SORTED : IndexType.HASH, "city");
 
         for (int i = 0; i < 5; ++i) {
             String cityName = i % 2 == 0 ? "cityname" : null;
@@ -286,13 +287,13 @@ public class EvictionTest extends HazelcastTestSupport {
 
         // Prolong 4th round
         startRef = currentTimeMillis();
-        map.putAsync(1, "value4").get();
+        map.putAsync(1, "value4").toCompletableFuture().get();
         endRef = currentTimeMillis();
         sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 
         // Prolong 5th round
         startRef = currentTimeMillis();
-        map.setAsync(1, "value5").get();
+        map.setAsync(1, "value5").toCompletableFuture().get();
         endRef = currentTimeMillis();
         sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
 

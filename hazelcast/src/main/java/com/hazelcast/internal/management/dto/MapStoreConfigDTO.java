@@ -21,7 +21,7 @@ import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.json.JsonSerializable;
 import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Map;

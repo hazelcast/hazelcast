@@ -29,7 +29,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:cluster name="dev" password="dev-pass"/>
+            <hz:cluster-name>dev</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.wait.seconds.before.join">0</hz:property>
                 <hz:property name="hazelcast.graceful.shutdown.max.wait">120</hz:property>

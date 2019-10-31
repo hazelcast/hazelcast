@@ -16,7 +16,10 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.internal.partition.ReplicaMigrationEventImpl;
+import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
@@ -57,24 +60,26 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int FETCH_PARTITION_STATE = 4;
     public static final int HAS_ONGOING_MIGRATION = 5;
     public static final int MIGRATION_COMMIT = 6;
-    // LegacyMigrationOperation and LegacyMigrationRequestOperation were assigned to 7th and 8th indices. Now they are gone.
-    public static final int PARTITION_STATE_OP = 9;
-    public static final int PROMOTION_COMMIT = 10;
-    public static final int REPLICA_SYNC_REQUEST = 11;
-    public static final int REPLICA_SYNC_RESPONSE = 12;
-    public static final int REPLICA_SYNC_RETRY_RESPONSE = 13;
-    public static final int SAFE_STATE_CHECK = 14;
-    public static final int SHUTDOWN_REQUEST = 15;
-    public static final int SHUTDOWN_RESPONSE = 16;
-    public static final int REPLICA_FRAGMENT_MIGRATION_STATE = 17;
-    public static final int MIGRATION = 18;
-    public static final int MIGRATION_REQUEST = 19;
-    public static final int NON_FRAGMENTED_SERVICE_NAMESPACE = 20;
-    public static final int PARTITION_REPLICA = 21;
-    public static final int PUBLISH_COMPLETED_MIGRATIONS = 22;
-    public static final int PARTITION_STATE_VERSION_CHECK_OP = 23;
+    public static final int PARTITION_STATE_OP = 7;
+    public static final int PROMOTION_COMMIT = 8;
+    public static final int REPLICA_SYNC_REQUEST = 9;
+    public static final int REPLICA_SYNC_RESPONSE = 10;
+    public static final int REPLICA_SYNC_RETRY_RESPONSE = 11;
+    public static final int SAFE_STATE_CHECK = 12;
+    public static final int SHUTDOWN_REQUEST = 13;
+    public static final int SHUTDOWN_RESPONSE = 14;
+    public static final int REPLICA_FRAGMENT_MIGRATION_STATE = 15;
+    public static final int MIGRATION = 16;
+    public static final int MIGRATION_REQUEST = 17;
+    public static final int NON_FRAGMENTED_SERVICE_NAMESPACE = 18;
+    public static final int PARTITION_REPLICA = 19;
+    public static final int PUBLISH_COMPLETED_MIGRATIONS = 20;
+    public static final int PARTITION_STATE_VERSION_CHECK_OP = 21;
+    public static final int REPLICA_MIGRATION_EVENT = 22;
+    public static final int MIGRATION_EVENT = 23;
+    public static final int PARTITION_LOST_EVENT = 24;
 
-    private static final int LEN = PARTITION_STATE_VERSION_CHECK_OP + 1;
+    private static final int LEN = PARTITION_LOST_EVENT + 1;
 
     @Override
     public int getFactoryId() {
@@ -106,6 +111,9 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         constructors[PARTITION_REPLICA] = arg -> new PartitionReplica();
         constructors[PUBLISH_COMPLETED_MIGRATIONS] = arg -> new PublishCompletedMigrationsOperation();
         constructors[PARTITION_STATE_VERSION_CHECK_OP] = arg -> new PartitionStateVersionCheckOperation();
+        constructors[REPLICA_MIGRATION_EVENT] = arg -> new ReplicaMigrationEventImpl();
+        constructors[MIGRATION_EVENT] = arg -> new MigrationStateImpl();
+        constructors[PARTITION_LOST_EVENT] = arg -> new PartitionLostEventImpl();
         return new ArrayDataSerializableFactory(constructors);
     }
 }

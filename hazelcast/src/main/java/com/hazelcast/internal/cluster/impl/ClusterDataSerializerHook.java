@@ -48,7 +48,7 @@ import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -101,8 +101,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int HEARTBEAT_COMPLAINT = 38;
     public static final int PROMOTE_LITE_MEMBER = 39;
     public static final int VECTOR_CLOCK = 40;
-    public static final int EXTENDED_BIND_MESSAGE = 41;
-    public static final int ENDPOINT_QUALIFIER = 42;
+    public static final int ENDPOINT_QUALIFIER = 41;
 
     static final int LEN = ENDPOINT_QUALIFIER + 1;
 
@@ -156,7 +155,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[HEARTBEAT_COMPLAINT] = arg -> new HeartbeatComplaintOp();
         constructors[PROMOTE_LITE_MEMBER] = arg -> new PromoteLiteMemberOp();
         constructors[VECTOR_CLOCK] = arg -> new VectorClock();
-        constructors[EXTENDED_BIND_MESSAGE] = arg -> new ExtendedBindMessage();
         constructors[ENDPOINT_QUALIFIER] = arg -> new EndpointQualifier();
         return new ArrayDataSerializableFactory(constructors);
     }

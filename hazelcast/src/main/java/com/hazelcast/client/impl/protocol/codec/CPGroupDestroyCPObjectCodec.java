@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -36,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the distributed object with the given name on the requested
  * CP group
  */
-@Generated("2226559b57a6f502432fb5ec48088a7f")
+@Generated("09ae8204d8fc34d21cd70e74a0bc87aa")
 public final class CPGroupDestroyCPObjectCodec {
-    //hex: 0x210200
-    public static final int REQUEST_MESSAGE_TYPE = 2163200;
-    //hex: 0x210201
-    public static final int RESPONSE_MESSAGE_TYPE = 2163201;
+    //hex: 0x1E0200
+    public static final int REQUEST_MESSAGE_TYPE = 1966592;
+    //hex: 0x1E0201
+    public static final int RESPONSE_MESSAGE_TYPE = 1966593;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CPGroupDestroyCPObjectCodec() {
     }
@@ -82,7 +83,7 @@ public final class CPGroupDestroyCPObjectCodec {
     }
 
     public static CPGroupDestroyCPObjectCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -106,7 +107,7 @@ public final class CPGroupDestroyCPObjectCodec {
     }
 
     public static CPGroupDestroyCPObjectCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

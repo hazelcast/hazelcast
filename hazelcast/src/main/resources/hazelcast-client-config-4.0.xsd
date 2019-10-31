@@ -26,8 +26,9 @@
             <xs:choice minOccurs="1" maxOccurs="unbounded">
                 <xs:element ref="import" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="config-replacers" type="config-replacers" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="cluster" type="cluster" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="cluster-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="executor-pool-size" type="executor-pool-size" minOccurs="0" maxOccurs="1"
@@ -110,8 +111,6 @@
             <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="redo-operation" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="connection-timeout" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="connection-attempt-period" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="connection-attempt-limit" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
@@ -212,20 +211,6 @@
         <xs:simpleType>
             <xs:restriction base="xs:int">
                 <xs:minInclusive value="1"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="connection-attempt-period" default="3000">
-        <xs:simpleType>
-            <xs:restriction base="xs:int">
-                <xs:minInclusive value="1"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="connection-attempt-limit" default="2">
-        <xs:simpleType>
-            <xs:restriction base="xs:int">
-                <xs:minInclusive value="0"/>
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
@@ -344,12 +329,23 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="index">
-        <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
-            </xs:extension>
-        </xs:simpleContent>
+        <xs:all>
+            <xs:element name="attributes" type="index-attributes"/>
+        </xs:all>
+        <xs:attribute name="name"/>
+        <xs:attribute name="type" type="index-type" default="SORTED"/>
     </xs:complexType>
+    <xs:complexType name="index-attributes">
+        <xs:sequence>
+            <xs:element name="attribute" type="xs:string" maxOccurs="255"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="index-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="SORTED"/>
+            <xs:enumeration value="HASH"/>
+        </xs:restriction>
+    </xs:simpleType>
     <xs:complexType name="item-listener">
         <xs:simpleContent>
             <xs:extension base="listener-base">
@@ -388,7 +384,6 @@
             <xs:element name="fail-on-max-backoff" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="jitter" type="xs:double" minOccurs="0" maxOccurs="1" default="0.2"/>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
     </xs:complexType>
 
     <xs:simpleType name="reconnect-mode">
@@ -399,19 +394,6 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="cluster">
-        <xs:all>
-            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev"/>
-            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1" default="dev-pass">
-                <xs:annotation>
-                    <xs:documentation>
-                        Password of the group to connect to.
-                        The password is only checked when security is enabled on Hazelcast members.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:all>
-    </xs:complexType>
     <xs:complexType name="listeners">
         <xs:sequence>
             <xs:element name="listener" type="listener-base" minOccurs="0" maxOccurs="unbounded"/>
@@ -427,10 +409,11 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="security">
-        <xs:sequence>
-            <xs:element name="credentials" type="credentials" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="credentials-factory" type="security-object" minOccurs="0" maxOccurs="1"/>
-        </xs:sequence>
+        <xs:choice>
+            <xs:element name="username-password" type="username-password"/>
+            <xs:element name="credentials-factory" type="security-object"/>
+            <xs:element name="token" type="token"/>
+        </xs:choice>
     </xs:complexType>
     <xs:complexType name="credentials">
         <xs:annotation>
@@ -457,6 +440,7 @@
             <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1"/>
             <xs:element name="preloader" type="preloader" minOccurs="0" maxOccurs="1"/>
         </xs:all>
@@ -834,5 +818,22 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
-
+    <xs:complexType name="username-password">
+        <xs:attribute name="username" type="xs:string" use="required" />
+        <xs:attribute name="password" type="xs:string" use="required" />
+    </xs:complexType>
+    <xs:complexType name="token">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="encoding">
+                    <xs:simpleType>
+                        <xs:restriction base="non-space-string">
+                            <xs:enumeration value="none"/>
+                            <xs:enumeration value="base64"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 </xs:schema>

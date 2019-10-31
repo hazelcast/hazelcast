@@ -19,8 +19,9 @@ package com.hazelcast.internal.management;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.monitor.MemberState;
-import com.hazelcast.monitor.impl.MemberStateImpl;
+import com.hazelcast.internal.monitor.MemberState;
+import com.hazelcast.internal.monitor.impl.MemberStateImpl;
+import com.hazelcast.json.JsonSerializable;
 
 import java.util.ArrayList;
 import java.util.List;

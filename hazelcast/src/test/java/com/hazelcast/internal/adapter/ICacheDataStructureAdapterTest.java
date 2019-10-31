@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -105,7 +104,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void testGetAsync() throws Exception {
         cache.put(42, "foobar");
 
-        Future<String> future = adapter.getAsync(42);
+        Future<String> future = adapter.getAsync(42).toCompletableFuture();
         String result = future.get();
         assertEquals("foobar", result);
     }
@@ -121,7 +120,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void testSetAsync() throws Exception {
         cache.put(42, "oldValue");
 
-        ICompletableFuture<Void> future = adapter.setAsync(42, "newValue");
+        Future<Void> future = adapter.setAsync(42, "newValue").toCompletableFuture();
         Void oldValue = future.get();
 
         assertNull(oldValue);
@@ -136,7 +135,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     @Test
     public void testSetAsyncWithExpiryPolicy() throws Exception {
         ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1000, 1, 1, TimeUnit.MILLISECONDS);
-        adapter.setAsync(42, "value", expiryPolicy).get();
+        adapter.setAsync(42, "value", expiryPolicy).toCompletableFuture().get();
         String value = cache.get(42);
         if (value != null) {
             assertEquals("value", value);
@@ -160,7 +159,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void testPutAsync() throws Exception {
         cache.put(42, "oldValue");
 
-        ICompletableFuture<String> future = adapter.putAsync(42, "newValue");
+        Future<String> future = adapter.putAsync(42, "newValue").toCompletableFuture();
         String oldValue = future.get();
 
         assertEquals("oldValue", oldValue);
@@ -177,7 +176,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         cache.put(42, "oldValue");
 
         ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1000, 1, 1, TimeUnit.MILLISECONDS);
-        ICompletableFuture<String> future = adapter.putAsync(42, "newValue", expiryPolicy);
+        Future<String> future = adapter.putAsync(42, "newValue", expiryPolicy).toCompletableFuture();
         String oldValue = future.get();
         String newValue = cache.get(42);
 
@@ -210,8 +209,8 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     public void testPutIfAbsentAsync() throws Exception {
         cache.put(42, "oldValue");
 
-        assertTrue(adapter.putIfAbsentAsync(23, "newValue").get());
-        assertFalse(adapter.putIfAbsentAsync(42, "newValue").get());
+        assertTrue(adapter.putIfAbsentAsync(23, "newValue").toCompletableFuture().get());
+        assertFalse(adapter.putIfAbsentAsync(42, "newValue").toCompletableFuture().get());
 
         assertEquals("newValue", cache.get(23));
         assertEquals("oldValue", cache.get(42));
@@ -261,7 +260,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         cache.put(23, "value-23");
         assertTrue(cache.containsKey(23));
 
-        String value = adapter.removeAsync(23).get();
+        String value = adapter.removeAsync(23).toCompletableFuture().get();
         assertEquals("value-23", value);
 
         assertFalse(cache.containsKey(23));
@@ -281,7 +280,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         cache.put(23, "value-23");
         assertTrue(cache.containsKey(23));
 
-        adapter.deleteAsync(23).get();
+        adapter.deleteAsync(23).toCompletableFuture().get();
 
         assertFalse(cache.containsKey(23));
     }

@@ -66,13 +66,14 @@ public final class ConverterCache {
      */
     public void invalidate(InternalIndex index) {
         String[] components = index.getComponents();
-        if (components == null) {
-            cache.remove(index.getName());
+        if (components.length == 1) {
+            cache.remove(components[0]);
             return;
         }
 
         for (String component : components) {
             TypeConverter converter = cache.get(component);
+
             if (converter instanceof UnresolvedConverter) {
                 cache.remove(component);
             }
@@ -86,7 +87,7 @@ public final class ConverterCache {
         cache.clear();
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:returncount"})
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
     private TypeConverter tryResolve(String attribute, UnresolvedConverter unresolved) {
         // The main idea here is to avoid scanning indexes on every invocation.
         // Unresolved converters are represented as UnresolvedConverter instances
@@ -111,11 +112,21 @@ public final class ConverterCache {
         }
 
         // try non-composite index first, if any
-        InternalIndex nonCompositeIndex = indexes.getIndex(attribute);
-        if (nonCompositeIndex != null) {
-            TypeConverter converter = nonCompositeIndex.getConverter();
+        for (InternalIndex index : indexesSnapshot) {
+            String[] components = index.getComponents();
+            if (components.length != 1) {
+                // composite index will be checked later.
+                continue;
+            }
+
+            if (!components[0].equals(attribute)) {
+                // not a component/attribute we are searching for
+                continue;
+            }
+
+            TypeConverter converter = index.getConverter();
             if (isNull(converter)) {
-                cache.put(attribute, new UnresolvedConverter(nonCompositeIndex, FULLY_UNRESOLVED));
+                cache.put(attribute, new UnresolvedConverter(index, FULLY_UNRESOLVED));
                 return null;
             } else {
                 cache.put(attribute, converter);
@@ -126,7 +137,7 @@ public final class ConverterCache {
         // scan composite indexes
         for (InternalIndex index : indexesSnapshot) {
             String[] components = index.getComponents();
-            if (components == null) {
+            if (components.length == 1) {
                 // not a composite index
                 continue;
             }
@@ -186,7 +197,7 @@ public final class ConverterCache {
 
             if (component == FULLY_UNRESOLVED) {
                 // we got a non-composite index with a null/transient converter
-                assert index.getComponents() == null;
+                assert index.getComponents().length == 1;
                 TypeConverter converter = index.getConverter();
                 return isNull(converter) ? null : converter;
             }

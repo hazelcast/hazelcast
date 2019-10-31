@@ -16,20 +16,25 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.partition.MigrationEvent;
-import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
+import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.partition.ReplicaMigrationEventImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
-import com.hazelcast.spi.partition.PartitionAwareService;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.PartitionAwareService;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -37,7 +42,9 @@ import java.util.UUID;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
-import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_FINISHED;
+import static com.hazelcast.internal.partition.impl.MigrationListenerAdapter.MIGRATION_STARTED;
+import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 
 /**
  * Maintains registration of partition-system related listeners and dispatches corresponding events.
@@ -52,21 +59,37 @@ public class PartitionEventManager {
         this.nodeEngine = node.nodeEngine;
     }
 
-    /** Sends a {@link MigrationEvent} to the registered event listeners. */
-    void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationEvent.MigrationStatus status) {
-        if (migrationInfo.getSourceCurrentReplicaIndex() != 0
-                && migrationInfo.getDestinationNewReplicaIndex() != 0) {
-            // only fire events for 0th replica migrations
-            return;
-        }
-
+    /** Sends a {@link ReplicaMigrationEvent} to the registered event listeners. */
+    public void sendMigrationEvent(MigrationState state, MigrationInfo migrationInfo, long elapsed) {
         ClusterServiceImpl clusterService = node.getClusterService();
-        MemberImpl current = clusterService.getMember(migrationInfo.getSourceAddress());
-        MemberImpl newOwner = clusterService.getMember(migrationInfo.getDestinationAddress());
-        MigrationEvent event = new MigrationEvent(migrationInfo.getPartitionId(), current, newOwner, status);
+        PartitionReplica sourceReplica = migrationInfo.getSource();
+        PartitionReplica destReplica = migrationInfo.getDestination();
+        Member source = sourceReplica != null ? clusterService.getMember(sourceReplica.address(), sourceReplica.uuid()) : null;
+        Member destination = clusterService.getMember(destReplica.address(), destReplica.uuid());
+
+        int partitionId = migrationInfo.getPartitionId();
+        int replicaIndex = migrationInfo.getDestinationNewReplicaIndex();
+        boolean success = migrationInfo.getStatus() == MigrationStatus.SUCCESS;
+        ReplicaMigrationEvent
+                event = new ReplicaMigrationEventImpl(state, partitionId, replicaIndex, source, destination, success, elapsed);
+
+        sendMigrationEvent(event);
+    }
+
+    public void sendMigrationProcessStartedEvent(MigrationState state) {
+        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(state, MIGRATION_STARTED, 0, null, null, false, 0L);
+        sendMigrationEvent(event);
+    }
+
+    public void sendMigrationProcessCompletedEvent(MigrationState state) {
+        ReplicaMigrationEvent event = new ReplicaMigrationEventImpl(state, MIGRATION_FINISHED, 0, null, null, false, 0L);
+        sendMigrationEvent(event);
+    }
+
+    private void sendMigrationEvent(ReplicaMigrationEvent event) {
         EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, MIGRATION_EVENT_TOPIC);
-        eventService.publishEvent(SERVICE_NAME, registrations, event, event.getPartitionId());
+        // All migration events are sent in order.
+        eventService.publishEvent(SERVICE_NAME, MIGRATION_EVENT_TOPIC, event, MIGRATION_EVENT_TOPIC.hashCode());
     }
 
     public UUID addMigrationListener(MigrationListener listener) {
@@ -125,18 +148,17 @@ public class PartitionEventManager {
     }
 
     public void onPartitionLost(IPartitionLostEvent event) {
-        final PartitionLostEvent partitionLostEvent = new PartitionLostEvent(event.getPartitionId(), event.getLostReplicaIndex(),
-                event.getEventSource());
-        final EventService eventService = nodeEngine.getEventService();
-        final Collection<EventRegistration> registrations = eventService
+        assert event instanceof PartitionLostEvent;
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService
                 .getRegistrations(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC);
-        eventService.publishEvent(SERVICE_NAME, registrations, partitionLostEvent, event.getPartitionId());
+        eventService.publishEvent(SERVICE_NAME, registrations, event, event.getPartitionId());
     }
 
     public void sendPartitionLostEvent(int partitionId, int lostReplicaIndex) {
-        final IPartitionLostEvent event = new IPartitionLostEvent(partitionId, lostReplicaIndex,
+        IPartitionLostEvent event = new PartitionLostEventImpl(partitionId, lostReplicaIndex,
                 nodeEngine.getThisAddress());
-        final InternalPartitionLostEventPublisher publisher = new InternalPartitionLostEventPublisher(nodeEngine, event);
+        InternalPartitionLostEventPublisher publisher = new InternalPartitionLostEventPublisher(nodeEngine, event);
         nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR, publisher);
     }
 

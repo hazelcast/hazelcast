@@ -20,8 +20,8 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.util.ResultSet;
-import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.monitor.impl.EmptyLocalReplicatedMapStats;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
+import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -250,7 +250,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         PutOperation putOperation = new PutOperation(getName(), dataKey, dataValue);
         InternalCompletableFuture<Object> future = getOperationService()
                 .invokeOnPartition(getServiceName(), putOperation, partitionId);
-        VersionResponsePair result = (VersionResponsePair) future.join();
+        VersionResponsePair result = (VersionResponsePair) future.joinInternal();
         return nodeEngine.toObject(result.getResponse());
     }
 
@@ -269,7 +269,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         PutOperation putOperation = new PutOperation(getName(), dataKey, dataValue, ttlMillis);
         InternalCompletableFuture<Object> future = getOperationService()
                 .invokeOnPartition(getServiceName(), putOperation, partitionId);
-        VersionResponsePair result = (VersionResponsePair) future.join();
+        VersionResponsePair result = (VersionResponsePair) future.joinInternal();
         return nodeEngine.toObject(result.getResponse());
     }
 
@@ -281,7 +281,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         RemoveOperation removeOperation = new RemoveOperation(getName(), dataKey);
         InternalCompletableFuture<Object> future = getOperationService()
                 .invokeOnPartition(getServiceName(), removeOperation, partitionId);
-        VersionResponsePair result = (VersionResponsePair) future.join();
+        VersionResponsePair result = (VersionResponsePair) future.joinInternal();
         return nodeEngine.toObject(result.getResponse());
     }
 

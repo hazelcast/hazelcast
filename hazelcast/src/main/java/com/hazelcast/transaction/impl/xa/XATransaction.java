@@ -16,12 +16,11 @@
 
 package com.hazelcast.transaction.impl.xa;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
@@ -41,6 +40,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -176,7 +176,7 @@ public final class XATransaction implements Transaction {
         }
     }
 
-    public void commitAsync(ExecutionCallback callback) {
+    public void commitAsync(BiConsumer callback) {
         if (state != PREPARED) {
             throw new IllegalStateException("Transaction is not prepared");
         }
@@ -204,7 +204,7 @@ public final class XATransaction implements Transaction {
         }
     }
 
-    public void rollbackAsync(ExecutionCallback callback) {
+    public void rollbackAsync(BiConsumer callback) {
         if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }

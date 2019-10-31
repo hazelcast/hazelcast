@@ -23,11 +23,6 @@ package com.hazelcast.query.impl;
 public enum Comparison {
 
     /**
-     * !=
-     */
-    NOT_EQUAL,
-
-    /**
      * &lt;
      */
     LESS,

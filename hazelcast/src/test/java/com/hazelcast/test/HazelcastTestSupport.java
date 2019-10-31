@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -35,6 +36,8 @@ import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
@@ -51,9 +54,6 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.impl.Indexes;
@@ -62,8 +62,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.starter.HazelcastStarter;
@@ -183,6 +183,13 @@ public abstract class HazelcastTestSupport {
 
     public static Config regularInstanceConfig() {
         return new Config();
+    }
+
+    // disables multicast/tcp-ip network discovery on the given config and returns the same
+    public static Config withoutNetworkJoin(Config config) {
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        return config;
     }
 
     protected Config getConfig() {
@@ -305,6 +312,14 @@ public abstract class HazelcastTestSupport {
 
     public static Address getAddress(HazelcastInstance hz) {
         return getClusterService(hz).getThisAddress();
+    }
+
+    public static Address[] getAddresses(HazelcastInstance[] instances) {
+        Address[] addresses = new Address[instances.length];
+        for (int i = 0; i < addresses.length; i++) {
+            addresses[i] = getAddress(instances[i]);
+        }
+        return addresses;
     }
 
     public static Address getAddress(HazelcastInstance hz, EndpointQualifier qualifier) {
@@ -1278,7 +1293,8 @@ public abstract class HazelcastTestSupport {
         // we are going to check five times a second
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;
-        for (int i = 0; i < iterations; i++) {
+        long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
+        for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
             try {
                 try {
                     task.run();
@@ -1302,7 +1318,8 @@ public abstract class HazelcastTestSupport {
         // we are going to check five times a second
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;
-        for (int i = 0; i < iterations; i++) {
+        long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
+        for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
             try {
                 try {
                     task.run();

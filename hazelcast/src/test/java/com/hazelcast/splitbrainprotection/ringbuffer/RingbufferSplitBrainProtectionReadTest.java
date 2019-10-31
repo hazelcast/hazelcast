@@ -128,13 +128,13 @@ public class RingbufferSplitBrainProtectionReadTest extends AbstractSplitBrainPr
 
     @Test
     public void readManyAsync_splitBrainProtection() throws Exception {
-        ring(0).readManyAsync(1L, 1, 1, new Filter()).get();
+        ring(0).readManyAsync(1L, 1, 1, new Filter()).toCompletableFuture().get();
     }
 
     @Test(expected = SplitBrainProtectionException.class)
     public void readManyAsync_noSplitBrainProtection() throws Throwable {
         try {
-            ring(3).readManyAsync(1L, 1, 1, new Filter()).get();
+            ring(3).readManyAsync(1L, 1, 1, new Filter()).toCompletableFuture().get();
         } catch (Exception ex) {
             throw ex.getCause();
         }

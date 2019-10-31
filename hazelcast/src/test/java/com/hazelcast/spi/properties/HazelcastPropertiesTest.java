@@ -173,11 +173,11 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getSystemProperty() {
-        GroupProperty.APPLICATION_VALIDATION_TOKEN.setSystemProperty("token");
+        GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("12");
 
-        assertEquals("token", GroupProperty.APPLICATION_VALIDATION_TOKEN.getSystemProperty());
+        assertEquals("12", GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getSystemProperty());
 
-        System.clearProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN.getName());
+        System.clearProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName());
     }
 
     @Test
@@ -259,7 +259,7 @@ public class HazelcastPropertiesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void getTimeUnit_noTimeUnitProperty() {
-        defaultProperties.getMillis(GroupProperty.APPLICATION_VALIDATION_TOKEN);
+        defaultProperties.getMillis(GroupProperty.AUDIT_LOG_ENABLED);
     }
 
     @Test

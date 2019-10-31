@@ -25,8 +25,8 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import static com.hazelcast.config.DomConfigHelper.childElements;
-import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 
 /**
  * BeanDefinitionParser for Hazelcast Instance Configuration.
@@ -35,7 +35,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
  * <pre>{@code
  * <hz:hazelcast id="instance">
  *      <hz:config>
- *          <hz:cluster name="dev" password="password"/>
+ *          <hz:cluster-name>dev</hz:cluster-name>
  *          <hz:network port="5701" port-auto-increment="false">
  *              <hz:join>
  *                  <hz:multicast enabled="false" multicast-group="224.2.2.3" multicast-port="54327"/>

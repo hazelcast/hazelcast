@@ -28,17 +28,20 @@ import com.hazelcast.client.impl.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
+import javax.annotation.Nonnull;
 import javax.transaction.xa.Xid;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 public class ClientTransactionManagerServiceImpl implements ClientTransactionManagerService {
@@ -61,17 +64,20 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     }
 
     @Override
-    public TransactionContext newTransactionContext(TransactionOptions options) {
+    public TransactionContext newTransactionContext(@Nonnull TransactionOptions options) {
         return new TransactionContextProxy(this, options);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(@Nonnull TransactionalTask<T> task) throws TransactionException {
         return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(@Nonnull TransactionOptions options,
+                                    @Nonnull TransactionalTask<T> task) throws TransactionException {
+        checkNotNull(options, "TransactionOptions must not be null!");
+        checkNotNull(task, "TransactionalTask is required!");
         final TransactionContext context = newTransactionContext(options);
         context.beginTransaction();
         try {
@@ -144,11 +150,10 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         return new OperationTimeoutException(msg, e);
     }
 
-    private ClientConnection tryConnectUnisocket() throws IOException {
-        ClientConnection connection = client.getConnectionManager().getOwnerConnection();
-
-        if (connection != null) {
-            return connection;
+    private ClientConnection tryConnectUnisocket() {
+        Iterator<ClientConnection> iterator = client.getConnectionManager().getActiveConnections().iterator();
+        if (iterator.hasNext()) {
+            return iterator.next();
         }
         return throwException(false);
     }

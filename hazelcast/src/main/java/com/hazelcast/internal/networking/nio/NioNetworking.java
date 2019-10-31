@@ -17,6 +17,10 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -30,9 +34,9 @@ import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -81,7 +85,7 @@ import static java.util.logging.Level.FINE;
  * feature and will cause the io threads to run hot. For this reason, when this feature
  * is enabled, the number of io threads should be reduced (preferably 1).
  */
-public final class NioNetworking implements Networking {
+public final class NioNetworking implements Networking, DynamicMetricsProvider {
 
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
@@ -108,7 +112,7 @@ public final class NioNetworking implements Networking {
     private volatile NioThread[] outputThreads;
     private volatile ScheduledFuture publishFuture;
 
-    // Currently this is a course grained aggregation of the bytes/send received.
+    // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
     @Probe
@@ -132,7 +136,6 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
-        metricsRegistry.scanAndRegister(this, "tcp");
         this.concurrencyDetection = ctx.concurrencyDetection;
         this.writeThroughEnabled = ctx.writeThroughEnabled;
         this.selectionKeyWakeupEnabled = ctx.selectionKeyWakeupEnabled;
@@ -191,7 +194,6 @@ public final class NioNetworking implements Networking {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.inputThread[" + thread.getName() + "]");
             thread.start();
         }
         this.inputThreads = inThreads;
@@ -207,18 +209,18 @@ public final class NioNetworking implements Networking {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
             thread.start();
         }
         this.outputThreads = outThreads;
 
         startIOBalancer();
+
+        metricsRegistry.registerDynamicMetricsProvider(this);
     }
 
     private void startIOBalancer() {
         ioBalancer = new IOBalancer(inputThreads, outputThreads, threadNamePrefix, balancerIntervalSeconds, loggingService);
         ioBalancer.start();
-        metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
     }
 
     @Override
@@ -226,6 +228,8 @@ public final class NioNetworking implements Networking {
         if (!started.compareAndSet(true, false)) {
             return;
         }
+
+        metricsRegistry.deregisterDynamicMetricsProvider(this);
 
         // if there are any channels left, we close them.
         for (Channel channel : channels) {
@@ -253,7 +257,6 @@ public final class NioNetworking implements Networking {
         outputThreads = null;
         closeListenerExecutor.shutdown();
         closeListenerExecutor = null;
-        metricsRegistry.deregister(ioBalancer);
     }
 
     private void shutdown(NioThread[] threads) {
@@ -262,7 +265,6 @@ public final class NioNetworking implements Networking {
         }
         for (NioThread thread : threads) {
             thread.shutdown();
-            metricsRegistry.deregister(thread);
         }
     }
 
@@ -277,7 +279,7 @@ public final class NioNetworking implements Networking {
 
         ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
         assert initializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
-        NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, metricsRegistry, closeListenerExecutor);
+        NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, closeListenerExecutor);
 
         socketChannel.configureBlocking(false);
 
@@ -323,14 +325,48 @@ public final class NioNetworking implements Networking {
                 ioBalancer);
     }
 
+    @Override
+    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+        for (Channel channel : channels) {
+            String pipelineId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
+
+            MetricTagger taggerIn = taggerSupplier.getMetricTagger("tcp.connection.in")
+                                                  .withIdTag("pipelineId", pipelineId);
+            context.collect(taggerIn, channel.inboundPipeline());
+
+            MetricTagger taggerOut = taggerSupplier.getMetricTagger("tcp.connection.out")
+                                                   .withIdTag("pipelineId", pipelineId);
+            context.collect(taggerOut, channel.outboundPipeline());
+        }
+
+        for (NioThread nioThread : inputThreads) {
+            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.inputThread")
+                                                .withIdTag("thread", nioThread.getName());
+            context.collect(tagger, nioThread);
+        }
+
+        for (NioThread nioThread : outputThreads) {
+            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.outputThread")
+                                                .withIdTag("thread", nioThread.getName());
+            context.collect(tagger, nioThread);
+        }
+
+        IOBalancer ioBalancer = this.ioBalancer;
+        if (ioBalancer != null) {
+            MetricTagger taggerBalancer = taggerSupplier.getMetricTagger("tcp.balancer");
+            context.collect(taggerBalancer, ioBalancer);
+        }
+
+        MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
+        context.collect(tagger, this);
+    }
+
     private class ChannelCloseListenerImpl implements ChannelCloseListener {
         @Override
         public void onClose(Channel channel) {
             NioChannel nioChannel = (NioChannel) channel;
             channels.remove(channel);
             ioBalancer.channelRemoved(nioChannel.inboundPipeline(), nioChannel.outboundPipeline());
-            metricsRegistry.deregister(nioChannel.inboundPipeline());
-            metricsRegistry.deregister(nioChannel.outboundPipeline());
         }
     }
 

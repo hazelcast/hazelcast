@@ -27,12 +27,15 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import java.io.IOException;
 
 /**
- * Used to notify {@link AwaitMapFlushOperation} when {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker StoreWorker}
- * managed to flush this {@link AwaitMapFlushOperation#sequence flushSequence}.
+ * Used to notify {@link AwaitMapFlushOperation} when {@link
+ * com.hazelcast.map.impl.mapstore.writebehind.StoreWorker
+ * StoreWorker} managed to flush this {@link
+ * AwaitMapFlushOperation#sequence flushSequence}.
  *
  * @see AwaitMapFlushOperation
  */
-public class NotifyMapFlushOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, Notifier {
+public class NotifyMapFlushOperation extends MapOperation
+        implements PartitionAwareOperation, ReadonlyOperation, Notifier {
 
     private long sequence;
 

@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("4a6960ffecad831a5c3bf004703d6ac5")
+@Generated("2422b478aad26d2da334aa6cc5162419")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
-    //hex: 0x1D0400
-    public static final int REQUEST_MESSAGE_TYPE = 1901568;
-    //hex: 0x1D0401
-    public static final int RESPONSE_MESSAGE_TYPE = 1901569;
+    //hex: 0x1A0400
+    public static final int REQUEST_MESSAGE_TYPE = 1704960;
+    //hex: 0x1A0401
+    public static final int RESPONSE_MESSAGE_TYPE = 1704961;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ScheduledExecutorGetAllScheduledFuturesCodec() {
     }
@@ -69,7 +70,7 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     }
 
     public static ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -92,16 +93,16 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, handlers, MemberCodec::encode, ListScheduledTaskHandlerCodec::encode);
+        EntryListCodec.encode(clientMessage, handlers, MemberCodec::encode, ListScheduledTaskHandlerCodec::encode);
         return clientMessage;
     }
 
     public static ScheduledExecutorGetAllScheduledFuturesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.handlers = MapCodec.decode(iterator, MemberCodec::decode, ListScheduledTaskHandlerCodec::decode);
+        response.handlers = EntryListCodec.decode(iterator, MemberCodec::decode, ListScheduledTaskHandlerCodec::decode);
         return response;
     }
 

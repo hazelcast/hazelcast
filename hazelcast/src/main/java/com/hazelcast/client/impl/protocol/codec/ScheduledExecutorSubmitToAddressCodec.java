@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,17 +36,17 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to a member for execution, member is provided in the form of an address.
  */
-@Generated("ddfe7c6351126563e0f350722d1816f5")
+@Generated("2ade0398d24db8a0b52357f7e1730009")
 public final class ScheduledExecutorSubmitToAddressCodec {
-    //hex: 0x1D0300
-    public static final int REQUEST_MESSAGE_TYPE = 1901312;
-    //hex: 0x1D0301
-    public static final int RESPONSE_MESSAGE_TYPE = 1901313;
+    //hex: 0x1A0300
+    public static final int REQUEST_MESSAGE_TYPE = 1704704;
+    //hex: 0x1A0301
+    public static final int RESPONSE_MESSAGE_TYPE = 1704705;
     private static final int REQUEST_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET = REQUEST_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET = REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ScheduledExecutorSubmitToAddressCodec() {
     }
@@ -61,7 +62,7 @@ public final class ScheduledExecutorSubmitToAddressCodec {
         /**
          * The address of the member where the task will get scheduled.
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
 
         /**
          * type of schedule logic, values 0 for SINGLE_RUN, 1 for AT_FIXED_RATE
@@ -89,7 +90,7 @@ public final class ScheduledExecutorSubmitToAddressCodec {
         public long periodInMillis;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, com.hazelcast.nio.Address address, byte type, java.lang.String taskName, com.hazelcast.nio.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, com.hazelcast.cluster.Address address, byte type, java.lang.String taskName, com.hazelcast.nio.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
@@ -108,7 +109,7 @@ public final class ScheduledExecutorSubmitToAddressCodec {
     }
 
     public static ScheduledExecutorSubmitToAddressCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.type = decodeByte(initialFrame.content, REQUEST_TYPE_FIELD_OFFSET);
@@ -135,7 +136,7 @@ public final class ScheduledExecutorSubmitToAddressCodec {
     }
 
     public static ScheduledExecutorSubmitToAddressCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

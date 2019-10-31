@@ -25,6 +25,8 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -57,18 +59,18 @@ public class ClientCardinalityEstimatorProxy
     }
 
     @Override
-    public void add(Object obj) {
-        addAsync(obj).join();
+    public void add(@Nonnull Object obj) {
+        addAsync(obj).joinInternal();
     }
 
     @Override
     public long estimate() {
-        return estimateAsync().join();
+        return estimateAsync().joinInternal();
     }
 
     @Override
-    public InternalCompletableFuture<Void> addAsync(Object obj) {
-        checkNotNull(obj, "Object is null");
+    public InternalCompletableFuture<Void> addAsync(@Nonnull Object obj) {
+        checkNotNull(obj, "Object must not be null");
 
         Data data = toData(obj);
         ClientMessage request = CardinalityEstimatorAddCodec.encodeRequest(name, data.hash64());

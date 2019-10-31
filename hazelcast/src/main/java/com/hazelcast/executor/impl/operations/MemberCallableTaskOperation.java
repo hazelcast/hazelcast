@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 
 public final class MemberCallableTaskOperation extends AbstractCallableTaskOperation
@@ -32,7 +33,9 @@ public final class MemberCallableTaskOperation extends AbstractCallableTaskOpera
     public MemberCallableTaskOperation() {
     }
 
-    public MemberCallableTaskOperation(String name, UUID uuid, Data callableData) {
+    public MemberCallableTaskOperation(String name,
+                                       UUID uuid,
+                                       @Nonnull Data callableData) {
         super(name, uuid, callableData);
     }
 

@@ -21,21 +21,22 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.jmx.ManagementService;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class LifecycleServiceImpl implements LifecycleService {
 
     private final HazelcastInstanceImpl instance;
-    private final ConcurrentMap<UUID, LifecycleListener> lifecycleListeners
-            = new ConcurrentHashMap<UUID, LifecycleListener>();
+    private final ConcurrentMap<UUID, LifecycleListener> lifecycleListeners = new ConcurrentHashMap<>();
     private final Object lifecycleLock = new Object();
 
     public LifecycleServiceImpl(HazelcastInstanceImpl instance) {
@@ -46,15 +47,18 @@ public class LifecycleServiceImpl implements LifecycleService {
         return instance.node.getLogger(LifecycleService.class.getName());
     }
 
+    @Nonnull
     @Override
-    public UUID addLifecycleListener(LifecycleListener lifecycleListener) {
+    public UUID addLifecycleListener(@Nonnull LifecycleListener lifecycleListener) {
+        checkNotNull(lifecycleListener, "lifecycleListener must not be null");
         final UUID id = UuidUtil.newUnsecureUUID();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }
 
     @Override
-    public boolean removeLifecycleListener(UUID registrationId) {
+    public boolean removeLifecycleListener(@Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId must not be null");
         return lifecycleListeners.remove(registrationId) != null;
     }
 

@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,20 +26,16 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
+public class PutBackupOperation
+        extends MapOperation implements BackupOperation {
 
-public class PutBackupOperation extends MapOperation implements BackupOperation {
+    protected Record<Data> record;
+    private Data dataValue;
 
-    protected Data dataKey;
-    protected Data dataValue;
-    protected RecordInfo recordInfo;
-
-    public PutBackupOperation(String name, Data dataKey, Data dataValue,
-                              RecordInfo recordInfo) {
+    public PutBackupOperation(String name, Record<Data> record, Data dataValue) {
         super(name);
-        this.dataKey = dataKey;
+        this.record = record;
         this.dataValue = dataValue;
-        this.recordInfo = recordInfo;
     }
 
     public PutBackupOperation() {
@@ -47,10 +43,9 @@ public class PutBackupOperation extends MapOperation implements BackupOperation 
 
     @Override
     protected void runInternal() {
-        Record record = recordStore.putBackup(dataKey, dataValue, recordInfo.getTtl(),
-                recordInfo.getMaxIdle(), isPutTransient(), getCallerProvenance());
-
-        applyRecordInfo(record, recordInfo);
+        // TODO performance: we can put this record directly into record-store if memory format is BINARY
+        Record currentRecord = recordStore.putBackup(record, isPutTransient(), getCallerProvenance());
+        Records.copyMetadataFrom(record, currentRecord);
     }
 
     protected boolean isPutTransient() {
@@ -59,8 +54,8 @@ public class PutBackupOperation extends MapOperation implements BackupOperation 
 
     @Override
     protected void afterRunInternal() {
-        evict(dataKey);
-        publishWanUpdate(dataKey, dataValue);
+        evict(record.getKey());
+        publishWanUpdate(record.getKey(), record.getValue());
 
         super.afterRunInternal();
     }
@@ -78,19 +73,12 @@ public class PutBackupOperation extends MapOperation implements BackupOperation 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
-        out.writeData(dataKey);
-        out.writeData(dataValue);
-        recordInfo.writeData(out);
+        Records.writeRecord(out, record, dataValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
-        dataKey = in.readData();
-        dataValue = in.readData();
-        recordInfo = new RecordInfo();
-        recordInfo.readData(in);
+        record = Records.readRecord(in);
     }
 }

@@ -28,8 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import com.hazelcast.internal.json.Location;
-import com.hazelcast.internal.json.ParseException;
 import com.hazelcast.test.annotation.QuickTest;
 
 @Category(QuickTest.class)
@@ -47,16 +45,6 @@ public class ParseException_Test {
     ParseException exception = new ParseException("Foo", location);
 
     assertSame(location, exception.getLocation());
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void position() {
-    ParseException exception = new ParseException("Foo", location);
-
-    assertEquals(location.offset, exception.getOffset());
-    assertEquals(location.line, exception.getLine());
-    assertEquals(location.column, exception.getColumn());
   }
 
   @Test

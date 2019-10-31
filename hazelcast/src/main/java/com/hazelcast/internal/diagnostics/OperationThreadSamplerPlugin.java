@@ -133,7 +133,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
         public void run() {
             long nextRunMillis = System.currentTimeMillis();
 
-            while (nodeEngine.isActive()) {
+            while (nodeEngine.isRunning()) {
                 LockSupport.parkUntil(nextRunMillis);
                 nextRunMillis = samplerPeriodMillis;
                 sample(executor.getPartitionOperationRunners(), partitionSpecificSamples);

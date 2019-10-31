@@ -29,6 +29,5 @@
             <discovery-strategy enabled="true" class="com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy">
             </discovery-strategy>
         </discovery-strategies>
-        <connection-attempt-limit>2147483647</connection-attempt-limit> <!-- Integer.MAX_VALUE -->
     </network>
 </hazelcast-client>

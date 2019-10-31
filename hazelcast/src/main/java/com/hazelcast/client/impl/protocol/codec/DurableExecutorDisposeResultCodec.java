@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,15 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Disposes the result of the execution with the given sequence
  */
-@Generated("28c7e58bbd1466663e222a805be1c044")
+@Generated("c4de860ccf8488e98393c2176474bb3d")
 public final class DurableExecutorDisposeResultCodec {
-    //hex: 0x1B0500
-    public static final int REQUEST_MESSAGE_TYPE = 1770752;
-    //hex: 0x1B0501
-    public static final int RESPONSE_MESSAGE_TYPE = 1770753;
+    //hex: 0x180500
+    public static final int REQUEST_MESSAGE_TYPE = 1574144;
+    //hex: 0x180501
+    public static final int RESPONSE_MESSAGE_TYPE = 1574145;
     private static final int REQUEST_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SEQUENCE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private DurableExecutorDisposeResultCodec() {
     }
@@ -76,7 +77,7 @@ public final class DurableExecutorDisposeResultCodec {
     }
 
     public static DurableExecutorDisposeResultCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.sequence = decodeInt(initialFrame.content, REQUEST_SEQUENCE_FIELD_OFFSET);
@@ -98,7 +99,7 @@ public final class DurableExecutorDisposeResultCodec {
     }
 
     public static DurableExecutorDisposeResultCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.dynamicconfig.search;
 
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -25,7 +24,6 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -104,22 +102,6 @@ public final class ConfigSearch {
             @Override
             public Map<String, QueueConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getQueueConfigs();
-            }
-        });
-        CONFIG_SUPPLIERS.put(LockConfig.class, new ConfigSupplier<LockConfig>() {
-            @Override
-            public LockConfig getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name) {
-                return configurationService.findLockConfig(name);
-            }
-
-            @Override
-            public LockConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getLockConfig(name);
-            }
-
-            @Override
-            public Map<String, LockConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getLockConfigs();
             }
         });
         CONFIG_SUPPLIERS.put(ListConfig.class, new ConfigSupplier<ListConfig>() {
@@ -201,22 +183,6 @@ public final class ConfigSearch {
             @Override
             public Map<String, RingbufferConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getRingbufferConfigs();
-            }
-        });
-        CONFIG_SUPPLIERS.put(AtomicLongConfig.class, new ConfigSupplier<AtomicLongConfig>() {
-            @Override
-            public AtomicLongConfig getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name) {
-                return configurationService.findAtomicLongConfig(name);
-            }
-
-            @Override
-            public AtomicLongConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
-                return staticConfig.getAtomicLongConfig(name);
-            }
-
-            @Override
-            public Map<String, AtomicLongConfig> getStaticConfigs(@Nonnull Config staticConfig) {
-                return staticConfig.getAtomicLongConfigs();
             }
         });
         CONFIG_SUPPLIERS.put(TopicConfig.class, new ConfigSupplier<TopicConfig>() {

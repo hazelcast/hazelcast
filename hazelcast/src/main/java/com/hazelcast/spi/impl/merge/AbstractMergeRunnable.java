@@ -17,23 +17,22 @@
 package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.MutableLong;
 
 import java.util.Arrays;
@@ -286,16 +285,10 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
      */
     private class LegacyOperationBiConsumer implements BiConsumer<Integer, Operation> {
 
-        private final ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-            @Override
-            public void onResponse(Object response) {
-                semaphore.release(1);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                logger.warning("Error while running merge operation: " + t.getMessage());
-                semaphore.release(1);
+        private final BiConsumer<Object, Throwable> mergeCallback = (r, throwable) -> {
+            semaphore.release(1);
+            if (throwable != null) {
+                logger.warning("Error while running merge operation: " + throwable.getMessage());
             }
         };
 
@@ -305,7 +298,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         public void accept(Integer partitionId, Operation operation) {
             try {
                 operationService.invokeOnPartition(serviceName, operation, partitionId)
-                        .andThen(mergeCallback);
+                        .whenCompleteAsync(mergeCallback);
             } catch (Throwable t) {
                 throw rethrow(t);
             }

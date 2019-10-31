@@ -24,6 +24,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
+import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
@@ -52,6 +53,7 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
     public static final int INSTALL_SNAPSHOT = 10;
     public static final int DESTROY_RAFT_GROUP_COMMAND = 11;
     public static final int UPDATE_RAFT_GROUP_MEMBERS_COMMAND = 12;
+    public static final int TRIGGER_LEADER_ELECTION = 13;
 
     @Override
     public int getFactoryId() {
@@ -86,6 +88,8 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
                     return new DestroyRaftGroupCmd();
                 case UPDATE_RAFT_GROUP_MEMBERS_COMMAND:
                     return new UpdateRaftGroupMembersCmd();
+                case TRIGGER_LEADER_ELECTION:
+                    return new TriggerLeaderElection();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }

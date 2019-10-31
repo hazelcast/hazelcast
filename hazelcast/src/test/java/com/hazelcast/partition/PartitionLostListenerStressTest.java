@@ -18,7 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.TestPartitionUtils;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;

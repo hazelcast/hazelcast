@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.internal.metrics.managementcenter.Metric;
+import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.metrics.managementcenter.ReadMetricsOperation;
 import com.hazelcast.map.IMap;
@@ -74,14 +75,31 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
 
             boolean mapMetric = false;
             List<Map.Entry<Long, byte[]>> collections = metricsResultSet.collections();
+            MetricKeyConsumer metricConsumer = new MetricKeyConsumer();
             for (Map.Entry<Long, byte[]> entry : collections) {
                 Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
                 while (metricIterator.hasNext()) {
                     Metric metric = metricIterator.next();
-                    mapMetric |= metric.key().contains("map[");
+                    metric.provide(metricConsumer);
+                    mapMetric |= metricConsumer.key.contains("name=map") & metricConsumer.key.contains("map.");
                 }
             }
             assertTrue(mapMetric);
         });
+    }
+
+    private static class MetricKeyConsumer implements MetricConsumer {
+
+        String key;
+
+        @Override
+        public void consumeLong(String key, long value) {
+            this.key = key;
+        }
+
+        @Override
+        public void consumeDouble(String key, double value) {
+            this.key = key;
+        }
     }
 }

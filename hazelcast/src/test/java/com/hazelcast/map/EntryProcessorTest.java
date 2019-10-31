@@ -18,9 +18,11 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -34,7 +36,6 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -202,7 +203,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Test
     public void testIndexAware_Issue_1719() {
         Config cfg = getConfig();
-        cfg.getMapConfig(MAP_NAME).addMapIndexConfig(new MapIndexConfig("attr1", false));
+        cfg.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.HASH, "attr1"));
         HazelcastInstance instance = createHazelcastInstance(cfg);
 
         IMap<String, TestData> map = instance.getMap(MAP_NAME);
@@ -262,7 +263,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Test
     public void testExecuteOnKeysBackupOperationIndexed() {
         Config cfg = getConfig();
-        cfg.getMapConfig(MAP_NAME).setBackupCount(1).addMapIndexConfig(new MapIndexConfig("attr1", false));
+        cfg.getMapConfig(MAP_NAME).setBackupCount(1).addIndexConfig(new IndexConfig(IndexType.HASH, "attr1"));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
@@ -1014,7 +1015,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
         map.put(1, 1);
 
-        Future<Integer> future = map.submitToKey(1, new IncrementorEntryProcessor<>());
+        Future<Integer> future = map.submitToKey(1, new IncrementorEntryProcessor<>()).toCompletableFuture();
         assertEquals(2, (int) future.get());
         assertEquals(2, (int) map.get(1));
     }
@@ -1025,7 +1026,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
 
-        Future<Integer> future = map.submitToKey(11, new IncrementorEntryProcessor<>());
+        Future<Integer> future = map.submitToKey(11, new IncrementorEntryProcessor<>()).toCompletableFuture();
         assertEquals(1, (int) future.get());
         assertEquals(1, (int) map.get(11));
     }
@@ -1205,7 +1206,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -1230,7 +1231,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         IMap<Integer, SampleTestObjects.ObjectWithInteger> map = node.getMap(MAP_NAME);
-        map.addIndex("attribute", true);
+        map.addIndex(IndexType.SORTED, "attribute");
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, new SampleTestObjects.ObjectWithInteger(i));
@@ -1245,7 +1246,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void test_executeOnEntriesWithPredicate_usesIndexes_whenIndexesAvailable() {
         HazelcastInstance node = createHazelcastInstance(getConfig());
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
@@ -1280,7 +1281,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         final IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
-        map.addIndex("__key", true);
+        map.addIndex(IndexType.SORTED, "__key");
 
         map.set(1, 1);
 
@@ -1291,8 +1292,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
         // so there is no chance of data being modified after the index has been queried.
         final int expectedApplyCount = inMemoryFormat == NATIVE ? 0 : 2;
-        assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
-                expectedApplyCount, PREDICATE_APPLY_COUNT.get());
+        assertTrueEventually(() -> assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
+                expectedApplyCount, PREDICATE_APPLY_COUNT.get()));
     }
 
     static class ApplyCountAwareIndexedTestPredicate implements IndexAwarePredicate {
@@ -1523,7 +1524,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config config = getConfig();
         MapConfig testMapConfig = config.getMapConfig(MAP_NAME);
         testMapConfig.setInMemoryFormat(inMemoryFormat);
-        testMapConfig.getMapIndexConfigs().add(new MapIndexConfig("lastValue", true));
+        testMapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "lastValue"));
         HazelcastInstance instance = createHazelcastInstance(config);
         return instance.getMap(MAP_NAME);
     }
@@ -1546,7 +1547,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IMap<Long, MyData> testMap = setupImapForEntryProcessorWithIndex();
         testMap.set(1L, new MyData(10));
 
-        testMap.submitToKey(1L, new MyProcessor()).get();
+        testMap.submitToKey(1L, new MyProcessor()).toCompletableFuture().get();
 
         Predicate betweenPredicate = Predicates.between("lastValue", 0, 10);
         Collection<MyData> values = testMap.values(betweenPredicate);
@@ -1627,6 +1628,42 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (Object response : partitionResponses.values()) {
             assertEquals(0, ((MapEntries) response).size());
         }
+    }
+
+    // when executing EntryProcessor with predicate via partition scan
+    // entries not matching the predicate should not be touched
+    // see https://github.com/hazelcast/hazelcast/issues/15515
+    @Test
+    public void testEntryProcessorWithPredicate_doesNotTouchNonMatchingEntries() {
+        testEntryProcessorWithPredicate_updatesLastAccessTime(false);
+    }
+
+    @Test
+    public void testEntryProcessorWithPredicate_touchesMatchingEntries() {
+        testEntryProcessorWithPredicate_updatesLastAccessTime(true);
+    }
+
+    private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
+        Config config = withoutNetworkJoin(smallInstanceConfig());
+        config.getMapConfig(MAP_NAME)
+              .setTimeToLiveSeconds(60)
+              .setMaxIdleSeconds(30);
+
+        HazelcastInstance member = createHazelcastInstance(config);
+        IMap<String, String> map = member.getMap(MAP_NAME);
+        map.put("testKey", "testValue");
+        EntryView evStart = map.getEntryView("testKey");
+        sleepAtLeastSeconds(2);
+        map.executeOnEntries(entry -> null, entry -> accessExpected);
+        EntryView evEnd = map.getEntryView("testKey");
+
+        if (accessExpected) {
+            assertTrue("Expiration time should be greater than original one",
+                    evEnd.getExpirationTime() > evStart.getExpirationTime());
+        } else {
+            assertEquals("Expiration time should be the same", evStart.getExpirationTime(), evEnd.getExpirationTime());
+        }
+
     }
 
     private static class MyData implements Serializable {

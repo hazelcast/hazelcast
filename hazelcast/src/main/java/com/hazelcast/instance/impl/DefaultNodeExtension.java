@@ -20,20 +20,26 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.cp.internal.persistence.CPPersistenceService;
+import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.hotrestart.InternalHotRestartService;
-import com.hazelcast.hotrestart.NoOpHotRestartService;
-import com.hazelcast.hotrestart.NoopInternalHotRestartService;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
+import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
+import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.auditlog.AuditlogService;
+import com.hazelcast.internal.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
@@ -60,23 +66,29 @@ import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.internal.memory.DefaultMemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.internal.memory.DefaultMemoryStats;
-import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.IOService;
-import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.internal.nio.tcp.DefaultChannelInitializerProvider;
 import com.hazelcast.internal.nio.tcp.PacketDecoder;
 import com.hazelcast.internal.nio.tcp.PacketEncoder;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.PhoneHome;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -86,12 +98,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.internal.util.ByteArrayProcessor;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.PhoneHome;
-import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -123,7 +129,24 @@ public class DefaultNodeExtension implements NodeExtension {
         this.logger = node.getLogger(NodeExtension.class);
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
+        checkPersistenceAllowed();
         createAndSetPhoneHome();
+    }
+
+    private void checkPersistenceAllowed() {
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = node.getConfig().getHotRestartPersistenceConfig();
+        if (hotRestartPersistenceConfig != null && hotRestartPersistenceConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Hot Restart requires Hazelcast Enterprise Edition");
+            }
+        }
+
+        CPSubsystemConfig cpSubsystemConfig = node.getConfig().getCPSubsystemConfig();
+        if (cpSubsystemConfig != null && cpSubsystemConfig.isPersistenceEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("CP persistence requires Hazelcast Enterprise Edition");
+            }
+        }
     }
 
     private void checkSecurityAllowed() {
@@ -498,11 +521,21 @@ public class DefaultNodeExtension implements NodeExtension {
         return false;
     }
 
+    @Override
+    public CPPersistenceService getCPPersistenceService() {
+        return NopCPPersistenceService.INSTANCE;
+    }
+
     protected void createAndSetPhoneHome() {
         this.phoneHome = new PhoneHome(node);
     }
 
     public void setLicenseKey(String licenseKey) {
         // NOP
+    }
+
+    @Override
+    public AuditlogService getAuditlogService() {
+        return NoOpAuditlogService.INSTANCE;
     }
 }

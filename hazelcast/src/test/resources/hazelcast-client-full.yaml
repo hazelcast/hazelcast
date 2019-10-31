@@ -34,9 +34,7 @@ hazelcast-client:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
 
-  cluster:
-    name: dev
-    password: dev-pass
+  cluster-name: dev
   instance-name: CLIENT_NAME
   license-key: HAZELCAST_ENTERPRISE_LICENSE_KEY
   properties:
@@ -50,6 +48,8 @@ hazelcast-client:
     - admin
     - foo
 
+  backup-ack-to-client-enabled: false
+
   network:
     cluster-members:
       - 127.0.0.1
@@ -60,8 +60,6 @@ hazelcast-client:
     smart-routing: true
     redo-operation: true
     connection-timeout: 60000
-    connection-attempt-period: 3000
-    connection-attempt-limit: 2
     socket-options:
       tcp-no-delay: false
       keep-alive: true
@@ -110,7 +108,7 @@ hazelcast-client:
       tenant-id: TENANT_ID
       subscription-id: SUB_ID
       cluster-id: HZLCAST001
-      cluster-name: CLUSTER-NAME
+      group-name: RESOURCE-GROUP-NAME
     kubernetes:
       enabled: false
       namespace: MY-KUBERNETES-NAMESPACE
@@ -261,8 +259,9 @@ hazelcast-client:
         size: 10000
         comparator-class-name: com.hazelcast.examples.MyEvictionComparator
       indexes:
-        name:
-          ordered: false
+        - type: HASH
+          attributes:
+            - "name"
     query-cache-sql-predicate:
       map-name: map-name
       predicate:
@@ -272,11 +271,10 @@ hazelcast-client:
     async-start: true
     reconnect-mode: ASYNC
     connection-retry:
-      enabled: true
       initial-backoff-millis: 2000
       max-backoff-millis: 60000
       multiplier: 3
-      fail-on-max-backoff: true
+      fail-on-max-backoff: false
       jitter: 0.5
 
   reliable-topic:

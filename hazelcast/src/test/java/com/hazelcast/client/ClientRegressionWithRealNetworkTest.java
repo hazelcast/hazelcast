@@ -35,7 +35,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -102,7 +102,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
             @Override
             public void run() {
                 ClientConfig config = new ClientConfig();
-                config.getNetworkConfig().setConnectionAttemptLimit(10);
+                config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
                 HazelcastClient.newHazelcastClient(config);
                 clientLatch.countDown();
             }
@@ -137,7 +137,8 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress(clientAddress).setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getNetworkConfig().addAddress(clientAddress);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
@@ -205,7 +206,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         networkConfig.addAddress(clientAddress);
-        networkConfig.setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final IMap<Integer, Integer> map = client.getMap("test");
 
@@ -257,7 +258,6 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(reconnectMode);
-        clientConfig.setProperty(ClientProperty.ALLOW_INVOCATIONS_WHEN_DISCONNECTED.getName(), "true");
         final AtomicBoolean waitFlag = new AtomicBoolean();
         final CountDownLatch testFinished = new CountDownLatch(1);
         final AddressProvider addressProvider = new AddressProvider() {
@@ -278,7 +278,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                 return address;
             }
         };
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(addressProvider, clientConfig);
 
@@ -291,7 +291,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         IMap<Object, Object> clientMap = client.getMap("test");
 
-        //we are closing owner connection and making sure owner connection is not established ever again
+        //we are closing a connection and making sure It is not established ever again
         waitFlag.set(true);
         instance1.shutdown();
 
@@ -308,7 +308,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         ClientConfig config = new ClientConfig();
         config.getConnectionStrategyConfig().setAsyncStart(true).
                 setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)
-                .getConnectionRetryConfig().setEnabled(true).setInitialBackoffMillis(1).setMaxBackoffMillis(1000);
+                .getConnectionRetryConfig().setInitialBackoffMillis(1).setMaxBackoffMillis(1000);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         final ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) clientInstanceImpl.getConnectionManager();

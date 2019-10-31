@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.nio.tcp;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.BindMessage;
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,19 +54,9 @@ public class BindRequest {
         if (logger.isFinestEnabled()) {
             logger.finest("Sending bind packet to " + remoteEndPoint);
         }
-        // since 3.12, send the new bind message followed by the pre-3.12 BindMessage
-        ExtendedBindMessage bind = new ExtendedBindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply);
+        BindMessage bind = new BindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
-        // using one of the undefined packet types we can avoid old members
-        // logging a serialization exception because they cannot deserialize the
-        // ExtendedBindMessage
-        // instead, a SEVERE entry about undefined packet type will be logged
-        Packet packet = new Packet(bytes).setPacketType(Packet.Type.EXTENDED_BIND);
-        connection.write(packet);
-
-        BindMessage oldbind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, reply);
-        bytes = ioService.getSerializationService().toBytes(oldbind);
-        packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
         connection.write(packet);
         //now you can send anything...
     }

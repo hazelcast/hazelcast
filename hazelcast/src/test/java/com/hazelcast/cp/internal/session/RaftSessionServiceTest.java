@@ -18,8 +18,8 @@ package com.hazelcast.cp.internal.session;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftService;
@@ -31,7 +31,7 @@ import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
 import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -190,8 +190,8 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             }
         });
 
-        CPMemberInfo leaderEndpoint = getLeaderMember(getRaftNode(instances[0], groupId));
-        HazelcastInstance leader = factory.getInstance(leaderEndpoint.getAddress());
+        RaftEndpoint leaderEndpoint = getLeaderMember(getRaftNode(instances[0], groupId));
+        HazelcastInstance leader = getInstance(leaderEndpoint);
         leader.getLifecycleService().terminate();
 
         assertTrueEventually(() -> {

@@ -19,6 +19,7 @@ package com.hazelcast.client.standalone;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
@@ -42,22 +43,20 @@ public class ClientEntryListenerDisconnectTest {
 
         Config config = new Config();
         config.setClusterName("test");
-        config.setClusterPassword("test");
         config.getNetworkConfig().setPort(6701);
 
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         IMap<Integer, GenericEvent> map = hazelcastInstance.getMap("test");
-        map.addIndex("userId", false);
+        map.addIndex(IndexType.HASH, "userId");
 
         Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("test").setClusterPassword("test");
+        clientConfig.setClusterName("test");
         clientConfig.getNetworkConfig()
                 .addAddress("localhost:6701", "localhost:6702")
-                .setConnectionAttemptLimit(100)
                 .setSmartRouting(false);
-
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Integer, GenericEvent> mapClient = client.getMap("test");
 

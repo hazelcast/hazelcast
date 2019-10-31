@@ -16,23 +16,24 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.NioNetworking;
-import com.hazelcast.internal.util.InstantiationUtils;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.NodeIOService;
 import com.hazelcast.internal.nio.tcp.TcpIpConnectionChannelErrorHandler;
 import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
+import com.hazelcast.internal.util.InstantiationUtils;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -146,14 +147,16 @@ public class DefaultNodeContext implements NodeContext {
         Networking networking = createNetworking(node);
         Config config = node.getConfig();
 
-        return new TcpIpNetworkingService(config,
+        MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
+        TcpIpNetworkingService tcpIpNetworkingService = new TcpIpNetworkingService(config,
                 ioService,
                 registry,
                 node.loggingService,
-                node.nodeEngine.getMetricsRegistry(),
+                metricsRegistry,
                 networking,
                 node.getNodeExtension().createChannelInitializerProvider(ioService),
                 node.getProperties());
+        return tcpIpNetworkingService;
     }
 
     private Networking createNetworking(Node node) {

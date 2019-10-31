@@ -35,7 +35,7 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
@@ -44,11 +44,11 @@ import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
-import com.hazelcast.spi.partition.PartitionAwareService;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.PartitionAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.WanReplicationEvent;
@@ -164,13 +164,13 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
-        return remoteService.createDistributedObject(objectName);
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
+        return remoteService.createDistributedObject(objectName, local);
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
-        remoteService.destroyDistributedObject(objectName);
+    public void destroyDistributedObject(String objectName, boolean local) {
+        remoteService.destroyDistributedObject(objectName, local);
         splitBrainProtectionAwareService.onDestroy(objectName);
     }
 

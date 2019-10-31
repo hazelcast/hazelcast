@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -24,7 +23,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -132,21 +130,6 @@ public interface ConfigurationService {
     RingbufferConfig findRingbufferConfig(String name);
 
     /**
-     * Finds existing AtomicLong config.
-     *
-     * @return AtomicLong Config or {@code null} when requested AtomicLong configuration does not exist
-     */
-    AtomicLongConfig findAtomicLongConfig(String name);
-
-    /**
-     * Finds existing Lock config.
-     *
-     * @param name name of the config
-     * @return Lock config or {@code null} when requested Lock configuration does not exist
-     */
-    LockConfig findLockConfig(String name);
-
-    /**
      * Finds existing List config.
      *
      * @param name name of the config
@@ -210,13 +193,6 @@ public interface ConfigurationService {
     Map<String, MapConfig> getMapConfigs();
 
     /**
-     * Returns all registered lock configurations.
-     *
-     * @return registered lock configurations
-     */
-    Map<String, LockConfig> getLockConfigs();
-
-    /**
      * Returns all registered queue configurations.
      *
      * @return registered queue configurations
@@ -257,13 +233,6 @@ public interface ConfigurationService {
      * @return registered ringbuffer configurations
      */
     Map<String, RingbufferConfig> getRingbufferConfigs();
-
-    /**
-     * Returns all registered AtomicLong configurations.
-     *
-     * @return registered AtomicLong configurations
-     */
-    Map<String, AtomicLongConfig> getAtomicLongConfigs();
 
     /**
      * Returns all registered topic configurations.

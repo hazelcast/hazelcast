@@ -40,7 +40,7 @@ public class UnsafeSessionlessSemaphoreBasicTest extends AbstractSessionlessSema
     @Override
     protected HazelcastInstance[] createInstances() {
         Config config = new Config();
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, true);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, true, 0);
         config.getCPSubsystemConfig().addSemaphoreConfig(semaphoreConfig);
         return factory.newInstances(config, 2);
     }

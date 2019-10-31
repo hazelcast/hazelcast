@@ -41,13 +41,10 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 public class ClientNetworkConfig {
 
     private static final int CONNECTION_TIMEOUT = 5000;
-    private static final int CONNECTION_ATTEMPT_PERIOD = 3000;
     private final List<String> addressList;
     private boolean smartRouting = true;
     private boolean redoOperation;
     private int connectionTimeout = CONNECTION_TIMEOUT;
-    private int connectionAttemptLimit = -1;
-    private int connectionAttemptPeriod = CONNECTION_ATTEMPT_PERIOD;
     private SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
     private SocketOptions socketOptions = new SocketOptions();
     private SSLConfig sslConfig;
@@ -71,8 +68,6 @@ public class ClientNetworkConfig {
         smartRouting = networkConfig.smartRouting;
         redoOperation = networkConfig.redoOperation;
         connectionTimeout = networkConfig.connectionTimeout;
-        connectionAttemptLimit = networkConfig.connectionAttemptLimit;
-        connectionAttemptPeriod = networkConfig.connectionAttemptPeriod;
         socketInterceptorConfig = new SocketInterceptorConfig(networkConfig.socketInterceptorConfig);
         socketOptions = new SocketOptions(networkConfig.socketOptions);
         sslConfig = networkConfig.sslConfig == null ? null : new SSLConfig(networkConfig.sslConfig);
@@ -102,8 +97,8 @@ public class ClientNetworkConfig {
      * Defines the Discovery Provider SPI configuration
      *
      * @param discoveryConfig the Discovery Provider SPI configuration
-     * @throws java.lang.IllegalArgumentException if discoveryConfig is null
      * @return this configuration
+     * @throws java.lang.IllegalArgumentException if discoveryConfig is null
      */
     public ClientNetworkConfig setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
         this.discoveryConfig = isNotNull(discoveryConfig, "discoveryConfig");
@@ -157,58 +152,6 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * Period for the next attempt to find a member to connect.
-     * <p>
-     * See {@link ClientNetworkConfig#connectionAttemptLimit}.
-     *
-     * @return connection attempt period in millis
-     */
-    public int getConnectionAttemptPeriod() {
-        return connectionAttemptPeriod;
-    }
-
-    /**
-     * Period for the next attempt to find a member to connect.
-     *
-     * @param connectionAttemptPeriod time to wait before another attempt in millis
-     * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
-     */
-    public ClientNetworkConfig setConnectionAttemptPeriod(int connectionAttemptPeriod) {
-        if (connectionAttemptPeriod < 0) {
-            throw new IllegalArgumentException("connectionAttemptPeriod cannot be negative");
-        }
-        this.connectionAttemptPeriod = connectionAttemptPeriod;
-        return this;
-    }
-
-    /**
-     * See {@link com.hazelcast.client.config.ClientNetworkConfig#setConnectionAttemptLimit(int)} for details
-     *
-     * @return connection attempt Limit
-     */
-    public int getConnectionAttemptLimit() {
-        return connectionAttemptLimit;
-    }
-
-    /**
-     * While client is trying to connect initially to one of the members in the {@link ClientNetworkConfig#addressList},
-     * all might be not available. Instead of giving up, throwing Exception and stopping client, it will
-     * attempt to retry as much as {@link ClientNetworkConfig#connectionAttemptLimit} times.
-     *
-     * @param connectionAttemptLimit number of times to attempt to connect
-     *                               A zero value means try forever.
-     *                               A negative value means default value
-     * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
-     */
-    public ClientNetworkConfig setConnectionAttemptLimit(int connectionAttemptLimit) {
-        if (connectionAttemptLimit < 0) {
-            throw new IllegalArgumentException("connectionAttemptLimit cannot be negative");
-        }
-        this.connectionAttemptLimit = connectionAttemptLimit;
-        return this;
-    }
-
-    /**
      * Timeout value in millis for nodes to accept client connection requests.
      *
      * @return connection timeout value in millis
@@ -218,15 +161,15 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * @param connectionTimeout Timeout value in millis for nodes to accept client connection requests.
+     * @param connectionTimeoutInMillis Timeout value in millis for nodes to accept client connection requests.
      *                          A zero value means wait until connection established or an error occurs.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
-    public ClientNetworkConfig setConnectionTimeout(int connectionTimeout) {
-        if (connectionTimeout < 0) {
+    public ClientNetworkConfig setConnectionTimeout(int connectionTimeoutInMillis) {
+        if (connectionTimeoutInMillis < 0) {
             throw new IllegalArgumentException("connectionTimeout cannot be negative");
         }
-        this.connectionTimeout = connectionTimeout;
+        this.connectionTimeout = connectionTimeoutInMillis;
         return this;
     }
 
@@ -563,12 +506,6 @@ public class ClientNetworkConfig {
         if (connectionTimeout != that.connectionTimeout) {
             return false;
         }
-        if (connectionAttemptLimit != that.connectionAttemptLimit) {
-            return false;
-        }
-        if (connectionAttemptPeriod != that.connectionAttemptPeriod) {
-            return false;
-        }
         if (!addressList.equals(that.addressList)) {
             return false;
         }
@@ -618,8 +555,6 @@ public class ClientNetworkConfig {
         result = 31 * result + (smartRouting ? 1 : 0);
         result = 31 * result + (redoOperation ? 1 : 0);
         result = 31 * result + connectionTimeout;
-        result = 31 * result + connectionAttemptLimit;
-        result = 31 * result + connectionAttemptPeriod;
         result = 31 * result + socketInterceptorConfig.hashCode();
         result = 31 * result + socketOptions.hashCode();
         result = 31 * result + (sslConfig != null ? sslConfig.hashCode() : 0);
@@ -643,8 +578,6 @@ public class ClientNetworkConfig {
                 + ", smartRouting=" + smartRouting
                 + ", redoOperation=" + redoOperation
                 + ", connectionTimeout=" + connectionTimeout
-                + ", connectionAttemptLimit=" + connectionAttemptLimit
-                + ", connectionAttemptPeriod=" + connectionAttemptPeriod
                 + ", socketInterceptorConfig=" + socketInterceptorConfig
                 + ", socketOptions=" + socketOptions
                 + ", sslConfig=" + sslConfig

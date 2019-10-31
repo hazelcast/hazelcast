@@ -26,7 +26,7 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "     It must be called only when a CP group loses its majority."
     echo "     All CP data structure proxies created before the force-destroy step will fail."
     echo "     If you create a new proxy for a CP data structure that is mapped to the destroyed CP group, the CP group will be initialized from scratch."
-    echo "     Please note that you cannot force-destroy the METADATA CP group. If you lose majority of the METADATA CP group, you have to restart the CP subsystem."
+    echo "     Please note that you cannot force-destroy the METADATA CP group. If you lose majority of the METADATA CP group, you have to reset CP Subsystem."
     echo "  - 'get-members' returns the list of active CP members in the cluster."
     echo "     Please note that even if a CP member has left the cluster, it is not automatically removed from the active CP member list immediately."
     echo "  - 'remove-member' removes the given CP member (-m) from the active CP member list."
@@ -37,7 +37,7 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "  - 'force-close-session' closes the given CP session (-s) on the given CP group (-c)."
     echo "     Once the CP session is closed, all CP resources (locks, semaphore permits, etc.) will be released."
     echo "     Before force-closing a CP session, please make sure that owner endpoint of the CP session is crashed and will not show up."
-    echo "  - 'restart' wipes out all CP subsystem state and restarts it from scratch."
+    echo "  - 'reset' wipes out all CP subsystem state and restarts it from scratch."
     echo "     Please call this API only on the Hazelcast master member (i.e., the first member in the Hazelcast cluster member list)."
     echo "     Please make sure that you call this API only once. Once you make the call, please observe the cluster to see if the CP subsystem initialization is successful."
     echo "If you query a non-existing CP group or a CP session, the call fails with 'Not found'."
@@ -352,9 +352,9 @@ if [[ "$OPERATION" = "force-close-session" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-if [[ "$OPERATION" = "restart" ]]; then
-    echo "Restarting the CP subsystem on ${ADDRESS}:${PORT}."
-    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/restart")
+if [[ "$OPERATION" = "reset" ]]; then
+    echo "Resetting the CP subsystem on ${ADDRESS}:${PORT}."
+    response=$(${CURL_CMD} --data "${CLUSTERNAME}&${PASSWORD}" "${URL_BASE}/reset")
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
 
@@ -371,5 +371,5 @@ if [[ "$OPERATION" = "restart" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-echo "Not a valid CP subsystem operation! Operations: 'get-local-member' | 'get-groups' || 'get-group' || 'force-destroy-group' || 'get-members' || 'remove-member' || 'promote-member' || 'get-sessions' || 'force-close-session' || 'restart'"
+echo "Not a valid CP subsystem operation! Operations: 'get-local-member' | 'get-groups' || 'get-group' || 'force-destroy-group' || 'get-members' || 'remove-member' || 'promote-member' || 'get-sessions' || 'force-close-session' || 'reset'"
 exit ${INVALID_ARGUMENT_RETURN_VALUE}

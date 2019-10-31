@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
@@ -26,27 +25,32 @@ import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.NoDataMemberInClusterException;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionLostListener;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
@@ -58,12 +62,12 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
     private static final long BLOCKING_GET_ONCE_SLEEP_MILLIS = 100;
-    private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
+    private final BiConsumer<ClientMessage, Throwable> refreshTaskCallback = new RefreshTaskCallback();
     private final ClientExecutionServiceImpl clientExecutionService;
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
     private final AtomicReference<PartitionTable> partitionTable =
-            new AtomicReference<PartitionTable>(new PartitionTable(null, -1, new Int2ObjectHashMap<Address>()));
+            new AtomicReference<>(new PartitionTable(null, -1, new Int2ObjectHashMap<>()));
     private volatile int partitionCount;
     private volatile long lastCorrelationId = -1;
 
@@ -76,6 +80,24 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     public void start() {
         //scheduling left in place to support server versions before 3.9.
         clientExecutionService.scheduleWithRepetition(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
+            for (ListenerConfig listenerConfig : listenerConfigs) {
+                EventListener implementation = listenerConfig.getImplementation();
+                if (implementation == null) {
+                    try {
+                        implementation = ClassLoaderUtil.newInstance(classLoader, listenerConfig.getClassName());
+                    } catch (Exception e) {
+                        logger.severe(e);
+                    }
+                }
+
+                if (implementation instanceof PartitionLostListener) {
+                    client.getPartitionService().addPartitionLostListener((PartitionLostListener) implementation);
+                }
+            }
+        }
     }
 
     private static class PartitionTable {
@@ -90,17 +112,18 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    public void listenPartitionTable(Connection ownerConnection) throws Exception {
+    public void listenPartitionTable(Connection connection) throws Exception {
         //when we connect to cluster back we need to reset partition state version
         //we are keeping the partition map as is because, user may want its operations run on connected members even if
         //owner connection is gone, and partition table is missing.
         // See @{link ClientProperty#ALLOW_INVOCATIONS_WHEN_DISCONNECTED}
         Int2ObjectHashMap<Address> partitions = getPartitions();
-        partitionTable.set(new PartitionTable(ownerConnection, -1, partitions));
+        partitionTable.set(new PartitionTable(connection, -1, partitions));
 
+        //Servers after 3.9 supports listeners
         ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
-        invocation.setEventHandler(new PartitionEventHandler(ownerConnection));
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, connection);
+        invocation.setEventHandler(new PartitionEventHandler(connection));
         invocation.invokeUrgent().get();
         lastCorrelationId = clientMessage.getCorrelationId();
     }
@@ -254,7 +277,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     @Override
-    public int getPartitionId(Data key) {
+    public int getPartitionId(@Nonnull Data key) {
         final int pc = getPartitionCount();
         if (pc <= 0) {
             return 0;
@@ -264,7 +287,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     @Override
-    public int getPartitionId(Object key) {
+    public int getPartitionId(@Nonnull Object key) {
         final Data data = client.getSerializationService().toData(key);
         return getPartitionId(data);
     }
@@ -343,14 +366,14 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         @Override
         public void run() {
             try {
-                ClientConnectionManager connectionManager = client.getConnectionManager();
-                Connection connection = connectionManager.getOwnerConnection();
+                Connection connection = ClientPartitionServiceImpl.this.partitionTable.get().connection;
                 if (connection == null) {
                     return;
                 }
                 ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
-                ClientInvocationFuture future = new ClientInvocation(client, requestMessage, null).invokeUrgent();
-                future.andThen(refreshTaskCallback);
+                ClientInvocationFuture future =
+                        new ClientInvocation(client, requestMessage, null, connection).invokeUrgent();
+                future.whenCompleteAsync(refreshTaskCallback);
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
                     logger.warning("Error while fetching cluster partition table!", e);
@@ -359,22 +382,21 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private class RefreshTaskCallback implements ExecutionCallback<ClientMessage> {
+    private class RefreshTaskCallback implements BiConsumer<ClientMessage, Throwable> {
 
         @Override
-        public void onResponse(ClientMessage responseMessage) {
-            if (responseMessage == null) {
-                return;
-            }
-            Connection connection = responseMessage.getConnection();
-            ClientGetPartitionsCodec.ResponseParameters response = ClientGetPartitionsCodec.decodeResponse(responseMessage);
-            processPartitionResponse(connection, response.partitions, response.partitionStateVersion);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            if (client.getLifecycleService().isRunning()) {
-                logger.warning("Error while fetching cluster partition table!", t);
+        public void accept(ClientMessage responseMessage, Throwable throwable) {
+            if (throwable == null) {
+                if (responseMessage == null) {
+                    return;
+                }
+                Connection connection = responseMessage.getConnection();
+                ClientGetPartitionsCodec.ResponseParameters response = ClientGetPartitionsCodec.decodeResponse(responseMessage);
+                processPartitionResponse(connection, response.partitions, response.partitionStateVersion);
+            } else {
+                if (client.getLifecycleService().isRunning()) {
+                    logger.warning("Error while fetching cluster partition table!", throwable);
+                }
             }
         }
     }

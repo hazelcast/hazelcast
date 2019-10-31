@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheEntryProcessorEntry;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.instance.HazelcastInstanceCacheManager;
+import com.hazelcast.cache.impl.HazelcastInstanceCacheManager;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;

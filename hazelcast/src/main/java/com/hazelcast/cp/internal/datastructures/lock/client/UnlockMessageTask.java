@@ -17,12 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.lock.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPFencedLockUnlockCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.codec.FencedLockUnlockCodec;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.UnlockOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -34,8 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link UnlockOp}
  */
-public class UnlockMessageTask extends AbstractMessageTask<CPFencedLockUnlockCodec.RequestParameters>
-        implements ExecutionCallback<Boolean> {
+public class UnlockMessageTask extends AbstractCPMessageTask<FencedLockUnlockCodec.RequestParameters> {
 
     public UnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,22 +43,22 @@ public class UnlockMessageTask extends AbstractMessageTask<CPFencedLockUnlockCod
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new UnlockOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid);
-        service.getInvocationManager().<Boolean>invoke(parameters.groupId, op).andThen(this);
+        service.getInvocationManager().<Boolean>invoke(parameters.groupId, op).whenCompleteAsync(this);
     }
 
     @Override
-    protected CPFencedLockUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPFencedLockUnlockCodec.decodeRequest(clientMessage);
+    protected FencedLockUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return FencedLockUnlockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPFencedLockUnlockCodec.encodeResponse((Boolean) response);
+        return FencedLockUnlockCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftLockService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override
@@ -81,15 +79,5 @@ public class UnlockMessageTask extends AbstractMessageTask<CPFencedLockUnlockCod
     @Override
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(Boolean response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

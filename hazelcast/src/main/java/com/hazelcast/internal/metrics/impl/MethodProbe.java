@@ -18,7 +18,9 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
 
@@ -43,7 +45,7 @@ import static java.lang.String.format;
 /**
  * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
  */
-abstract class MethodProbe implements ProbeFunction {
+abstract class MethodProbe implements ProbeFunction, ProbeAware {
 
     private static final Object[] EMPTY_ARGS = new Object[0];
 
@@ -58,18 +60,23 @@ abstract class MethodProbe implements ProbeFunction {
         method.setAccessible(true);
     }
 
+    @Override
+    public Probe getProbe() {
+        return probe;
+    }
+
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = namePrefix + '.' + getProbeOrMethodName();
-        metricsRegistry.registerInternal(source, name, probe.level(), this);
+        MetricTagger tagger = metricsRegistry
+                .newMetricTagger(namePrefix)
+                .withMetricTag(getProbeOrMethodName());
+        metricsRegistry.registerInternal(source, tagger, probe.level(), this);
     }
 
-    void register(ProbeBuilderImpl builder, Object source) {
-        builder
-                .withTag("unit", probe.unit().name().toLowerCase())
-                .register(source, getProbeOrMethodName(), probe.level(), this);
+    void register(MetricsRegistryImpl metricsRegistry, MetricTagger tagger, Object source) {
+        metricsRegistry.registerStaticProbe(source, tagger, getProbeOrMethodName(), probe.level(), probe.unit(), this);
     }
 
-    private String getProbeOrMethodName() {
+    String getProbeOrMethodName() {
         return probe.name().length() != 0
                 ? probe.name()
                 : getterIntoProperty(method.getName());

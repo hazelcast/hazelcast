@@ -36,13 +36,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -90,9 +91,9 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param <T>     the return type of the {@link Future}
      * @return the value of the {@link Future}
      */
-    public static <T> T getFuture(Future<T> future, String message) {
+    public static <T> T getFuture(CompletionStage<T> future, String message) {
         try {
-            return future.get();
+            return future.toCompletableFuture().get();
         } catch (InterruptedException e) {
             throw new AssertionError(message + " " + e.getMessage());
         } catch (ExecutionException e) {

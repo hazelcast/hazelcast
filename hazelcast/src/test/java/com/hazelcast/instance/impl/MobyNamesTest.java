@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -23,9 +24,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -33,19 +39,22 @@ public class MobyNamesTest extends HazelcastTestSupport {
 
     @Test
     public void getRandomNameNotEmpty() {
-        String randomName = MobyNames.getRandomName();
+        String randomName = MobyNames.getRandomName(0);
         assertFalse(isNullOrEmptyAfterTrim(randomName));
     }
 
     @Test
-    public void getNextRandomNameShouldBeDifferentWithHighProbability() {
-        String randomName = MobyNames.getRandomName();
-        int attempts = 100;
-        for (int i = 0; i < attempts; i++) {
-            if (!randomName.equals(MobyNames.getRandomName())) {
-                return;
-            }
+    public void allValuesReturnedFair() {
+        int totalCombinations = 99 * 231;
+        Map<String, AtomicInteger> namesCounts = new HashMap<>();
+        for (int i = 0; i < totalCombinations * 2; i++) {
+            String randomName = MobyNames.getRandomName(i);
+            namesCounts.computeIfAbsent(randomName, (key) -> new AtomicInteger(0)).incrementAndGet();
         }
-        fail("Could not generate the name that is not equal to " + randomName + " in " + attempts + " attempts");
+        assertEquals(namesCounts.size(), totalCombinations);
+        assertTrue(namesCounts.keySet().stream().noneMatch(StringUtil::isNullOrEmptyAfterTrim));
+        for (Map.Entry<String, AtomicInteger> entry : namesCounts.entrySet()) {
+            assertEquals(entry.getKey(), 2, entry.getValue().get());
+        }
     }
 }

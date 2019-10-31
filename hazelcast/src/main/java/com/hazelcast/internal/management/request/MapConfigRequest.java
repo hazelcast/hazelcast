@@ -61,7 +61,15 @@ public class MapConfigRequest implements ConsoleRequest {
         if (update) {
             final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
             for (Member member : members) {
-                resolveFuture(mcs.callOnMember(member, new UpdateMapConfigOperation(mapName, config.getConfig())));
+                UpdateMapConfigOperation operation = new UpdateMapConfigOperation(
+                        mapName,
+                        config.getConfig().getTimeToLiveSeconds(),
+                        config.getConfig().getMaxIdleSeconds(),
+                        config.getConfig().getMaxSizeConfig().getSize(),
+                        config.getConfig().getMaxSizeConfig().getMaxSizePolicy().getId(),
+                        config.getConfig().isReadBackupData(),
+                        config.getConfig().getEvictionPolicy().getId());
+                resolveFuture(mcs.callOnMember(member, operation));
             }
             result.add("updateResult", "success");
         } else {

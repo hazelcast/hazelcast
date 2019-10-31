@@ -35,9 +35,11 @@ import java.util.Set;
  */
 public enum ProtocolType {
 
-    /**
+    /*
      * Ordinals of this enum are used for IDS inside {@link EndpointQualifier}.
      * Do not re-arrange, only append new values at end.
+     *
+     * Note: names of this enum are used for metrics sent to Management Center, do not rename.
      */
     MEMBER(1, Protocols.CLUSTER),
     CLIENT(1, Protocols.CLIENT_BINARY_NEW),

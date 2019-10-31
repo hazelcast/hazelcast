@@ -17,6 +17,7 @@
 package com.hazelcast.core.standalone;
 
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -303,7 +304,7 @@ public class AllTest {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
                 try {
-                    map.getAsync(random.nextInt(SIZE)).get();
+                    map.getAsync(random.nextInt(SIZE)).toCompletableFuture().get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 } catch (ExecutionException e) {
@@ -425,8 +426,8 @@ public class AllTest {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
                 try {
-                    map.putAsync(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000)))
-                    ).get();
+                    map.putAsync(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))))
+                       .toCompletableFuture().get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 } catch (ExecutionException e) {
@@ -580,7 +581,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.addIndex("year", true);
+                map.addIndex(IndexType.SORTED, "year");
             }
         }, 1);
         addOperation(operations, new Runnable() {

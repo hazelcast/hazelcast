@@ -17,8 +17,10 @@
 package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.partition.Partition;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
+
+import javax.annotation.Nonnull;
 
 /**
  * Partition service for Hazelcast clients.
@@ -29,9 +31,9 @@ public interface ClientPartitionService {
 
     Address getPartitionOwner(int partitionId);
 
-    int getPartitionId(Data key);
+    int getPartitionId(@Nonnull Data key);
 
-    int getPartitionId(Object key);
+    int getPartitionId(@Nonnull Object key);
 
     int getPartitionCount();
 

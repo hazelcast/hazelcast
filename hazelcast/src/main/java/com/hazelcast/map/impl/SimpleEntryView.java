@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * SimpleEntryView is an implementation of {@link com.hazelcast.core.EntryView} and also it is writable.
@@ -224,21 +225,6 @@ public class SimpleEntryView<K, V>
         return this;
     }
 
-    /**
-     * Needed for client protocol compatibility.
-     */
-    @SuppressWarnings("unused")
-    public long getEvictionCriteriaNumber() {
-        return 0;
-    }
-
-    /**
-     * Needed for client protocol compatibility.
-     */
-    @SuppressWarnings("unused")
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeObject(out, key);
@@ -251,8 +237,6 @@ public class SimpleEntryView<K, V>
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
-        // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
-        out.writeLong(0);
         out.writeLong(ttl);
         out.writeLong(maxIdle);
     }
@@ -269,8 +253,6 @@ public class SimpleEntryView<K, V>
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         version = in.readLong();
-        // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
-        in.readLong();
         ttl = in.readLong();
         maxIdle = in.readLong();
     }
@@ -326,10 +308,10 @@ public class SimpleEntryView<K, V>
         if (maxIdle != that.maxIdle) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

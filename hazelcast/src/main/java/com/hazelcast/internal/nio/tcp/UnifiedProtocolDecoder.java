@@ -20,6 +20,8 @@ import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.auditlog.Level;
+import com.hazelcast.internal.auditlog.impl.AuditlogTypeIds;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
@@ -87,6 +89,12 @@ public class UnifiedProtocolDecoder
 
             String protocol = loadProtocol();
 
+            ioService.getAuditLogService()
+                .eventBuilder(AuditlogTypeIds.CONNECTION_ASKS_PROTOCOL)
+                .message("Protocol bytes received for a connection")
+                .level(Level.DEBUG)
+                .addParameter("protocol", protocol)
+                .log();
             if (CLUSTER.equals(protocol)) {
                 initChannelForCluster();
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
@@ -144,7 +152,7 @@ public class UnifiedProtocolDecoder
                 .setOption(DIRECT_BUF, false);
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-        channel.inboundPipeline().replace(this, new ClientMessageDecoder(connection, ioService.getClientEngine()));
+        channel.inboundPipeline().replace(this, new ClientMessageDecoder(connection, ioService.getClientEngine(), props));
     }
 
     private void initChannelForText(String protocol, boolean restApi) {

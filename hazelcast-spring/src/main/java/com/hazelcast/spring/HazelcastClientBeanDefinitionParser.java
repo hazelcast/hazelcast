@@ -32,16 +32,18 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
-import com.hazelcast.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.cp.CPSubsystem;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
@@ -57,10 +59,10 @@ import org.w3c.dom.Node;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.config.DomConfigHelper.childElements;
-import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.spring.HazelcastInstanceDefinitionParser.CP_SUBSYSTEM_SUFFIX;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
@@ -72,9 +74,8 @@ import static org.springframework.util.Assert.isTrue;
  * <b>Sample Spring XML for Hazelcast Client:</b>
  * <pre>{@code
  *   <hz:client id="client">
- *      <hz:cluster name="${cluster.name}" password="${cluster.password}" />
- *      <hz:network connection-attempt-limit="3"
- *          connection-attempt-period="3000"
+ *      <hz:cluster-name>${cluster.name}</hz:cluster-name>
+ *      <hz:network
  *          connection-timeout="1000"
  *          redo-operation="true"
  *          smart-routing="true">
@@ -146,8 +147,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             handleClientAttributes(rootNode);
             for (Node node : childElements(rootNode)) {
                 String nodeName = cleanNodeName(node);
-                if ("cluster".equals(nodeName)) {
-                    handleClusterAttributes(node);
+                if ("cluster-name".equals(nodeName)) {
+                    configBuilder.addPropertyValue("clusterName", getTextContent(node));
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(node, configBuilder);
                 } else if ("network".equals(nodeName)) {
@@ -183,6 +184,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     configBuilder.addPropertyValue("instanceName", getTextContent(node));
                 } else if ("labels".equals(nodeName)) {
                     handleLabels(node);
+                } else if ("backup-ack-to-client-enabled".equals(nodeName)) {
+                    configBuilder.addPropertyValue("backupAckToClientEnabled", getTextContent(node));
                 }
             }
             return configBuilder.getBeanDefinition();
@@ -196,8 +199,18 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String nodeName = cleanNodeName(child);
                 if ("credentials-factory".equals(nodeName)) {
                     handleCredentialsFactory(child, securityConfigBuilder);
-                } else if ("credentials".equals(nodeName)) {
-                    securityConfigBuilder.addPropertyValue("credentialsClassname", getTextContent(child));
+                } else if ("username-password".equals(nodeName)) {
+                    BeanDefinitionBuilder configBuilder = createBeanBuilder(UsernamePasswordIdentityConfig.class)
+                            .addConstructorArgValue(getAttribute(child, "username"))
+                            .addConstructorArgValue(getAttribute(child, "password"));
+                    securityConfigBuilder.addPropertyValue("UsernamePasswordIdentityConfig", configBuilder.getBeanDefinition());
+                } else if ("token".equals(nodeName)) {
+                    BeanDefinitionBuilder configBuilder = createBeanBuilder(TokenIdentityConfig.class)
+                            .addConstructorArgValue(TokenEncoding.getTokenEncoding(getAttribute(child, "encoding")))
+                            .addConstructorArgValue(getTextContent(child));
+                    securityConfigBuilder.addPropertyValue("TokenIdentityConfig", configBuilder.getBeanDefinition());
+                } else if ("credentials-ref".equals(nodeName)) {
+                    securityConfigBuilder.addPropertyReference("credentials", getTextContent(child));
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
@@ -278,8 +291,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     String value = att.getNodeValue();
                     if ("executor-pool-size".equals(name)) {
                         configBuilder.addPropertyValue("executorPoolSize", value);
-                    } else if ("credentials-ref".equals(name)) {
-                        configBuilder.addPropertyReference("credentials", value);
                     }
                 }
             }
@@ -472,9 +483,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedList<BeanDefinition> getIndexes(Node node) {
             ManagedList<BeanDefinition> indexes = new ManagedList<BeanDefinition>();
             for (Node indexNode : childElements(node)) {
-                BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(MapIndexConfig.class);
-                fillAttributeValues(indexNode, indexConfBuilder);
-                indexes.add(indexConfBuilder.getBeanDefinition());
+                handleIndex(indexes, indexNode);
             }
             return indexes;
         }

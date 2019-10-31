@@ -20,10 +20,11 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
@@ -282,6 +283,11 @@ class MockNetworkingService
             return false;
         }
 
+        @Override
+        public NetworkStats getNetworkStats() {
+            return new MockNetworkStats();
+        }
+
         private class MockConnLifecycleListener
                 implements ConnectionLifecycleListener<MockConnection> {
 
@@ -328,6 +334,20 @@ class MockNetworkingService
                 }
                 send(packet, target, this);
             }
+        }
+
+        private static class MockNetworkStats implements NetworkStats {
+
+            @Override
+            public long getBytesReceived() {
+                return 0;
+            }
+
+            @Override
+            public long getBytesSent() {
+                return 0;
+            }
+
         }
     }
 

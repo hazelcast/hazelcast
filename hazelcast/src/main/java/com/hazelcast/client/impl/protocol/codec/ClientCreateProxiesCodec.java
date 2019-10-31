@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -39,14 +40,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("cc4fbf4a6315dec786c6f57b8cab81d2")
+@Generated("18c92420c7b9a3b32001827af09c5b6d")
 public final class ClientCreateProxiesCodec {
-    //hex: 0x001300
-    public static final int REQUEST_MESSAGE_TYPE = 4864;
-    //hex: 0x001301
-    public static final int RESPONSE_MESSAGE_TYPE = 4865;
+    //hex: 0x001100
+    public static final int REQUEST_MESSAGE_TYPE = 4352;
+    //hex: 0x001101
+    public static final int RESPONSE_MESSAGE_TYPE = 4353;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientCreateProxiesCodec() {
     }
@@ -71,16 +72,16 @@ public final class ClientCreateProxiesCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
-        MapCodec.encode(clientMessage, proxies, StringCodec::encode, StringCodec::encode);
+        EntryListCodec.encode(clientMessage, proxies, StringCodec::encode, StringCodec::encode);
         return clientMessage;
     }
 
     public static ClientCreateProxiesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.proxies = MapCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
+        request.proxies = EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
         return request;
     }
 
@@ -98,7 +99,7 @@ public final class ClientCreateProxiesCodec {
     }
 
     public static ClientCreateProxiesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

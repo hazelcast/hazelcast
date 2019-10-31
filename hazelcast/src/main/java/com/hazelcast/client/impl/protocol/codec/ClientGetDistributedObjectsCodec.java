@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("311db2782c377f94dd336aeae5611d94")
+@Generated("330dcace5742f0d9ede4a69c05f99bad")
 public final class ClientGetDistributedObjectsCodec {
-    //hex: 0x000C00
-    public static final int REQUEST_MESSAGE_TYPE = 3072;
-    //hex: 0x000C01
-    public static final int RESPONSE_MESSAGE_TYPE = 3073;
+    //hex: 0x000A00
+    public static final int REQUEST_MESSAGE_TYPE = 2560;
+    //hex: 0x000A01
+    public static final int RESPONSE_MESSAGE_TYPE = 2561;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientGetDistributedObjectsCodec() {
     }
@@ -63,7 +64,7 @@ public final class ClientGetDistributedObjectsCodec {
     }
 
     public static ClientGetDistributedObjectsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -90,7 +91,7 @@ public final class ClientGetDistributedObjectsCodec {
     }
 
     public static ClientGetDistributedObjectsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

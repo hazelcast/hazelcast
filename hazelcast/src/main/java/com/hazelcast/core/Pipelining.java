@@ -22,6 +22,7 @@ import com.hazelcast.spi.annotation.Beta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
@@ -56,7 +57,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * The Pipelining isn't threadsafe. So only a single thread should add requests to
  * the Pipelining and wait for results.
  *
- * Currently all {@link ICompletableFuture} and their responses are stored in the
+ * Currently all {@link CompletionStage} and their responses are stored in the
  * Pipelining. So be careful executing a huge number of request with a single Pipelining
  * because it can lead to a huge memory bubble. In this cases it is better to
  * periodically, after waiting for completion, to replace the Pipelining by a new one.
@@ -80,7 +81,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 public class Pipelining<E> {
 
     private final AtomicInteger permits = new AtomicInteger();
-    private final List<ICompletableFuture<E>> futures = new ArrayList<ICompletableFuture<E>>();
+    private final List<CompletionStage<E>> futures = new ArrayList<>();
     private Thread thread;
 
     /**
@@ -106,9 +107,9 @@ public class Pipelining<E> {
      * @throws Exception is something fails getting the results.
      */
     public List<E> results() throws Exception {
-        List<E> result = new ArrayList<E>(futures.size());
-        for (ICompletableFuture<E> f : futures) {
-            result.add(f.get());
+        List<E> result = new ArrayList<>(futures.size());
+        for (CompletionStage<E> f : futures) {
+            result.add(f.toCompletableFuture().get());
         }
         return result;
     }
@@ -117,30 +118,20 @@ public class Pipelining<E> {
      * Adds a future to this Pipelining or blocks until there is capacity to add the future to the Pipelining.
      * <p>
      * This call blocks until there is space in the Pipelining, but it doesn't mean that the invocation that
-     * returned the ICompletableFuture got blocked.
+     * returned the CompletionStage got blocked.
      *
      * @param future the future to add.
      * @return the future added.
      * @throws InterruptedException if the Thread got interrupted while adding the request to the Pipelining.
      * @throws NullPointerException if future is null.
      */
-    public ICompletableFuture<E> add(ICompletableFuture<E> future) throws InterruptedException {
+    public CompletionStage<E> add(CompletionStage<E> future) throws InterruptedException {
         checkNotNull(future, "future can't be null");
         this.thread = Thread.currentThread();
 
         down();
         futures.add(future);
-        future.andThen(new ExecutionCallback<E>() {
-            @Override
-            public void onResponse(E response) {
-                up();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                up();
-            }
-        }, CALLER_RUNS);
+        future.whenCompleteAsync((response, t) -> up(), CALLER_RUNS);
         return future;
     }
 

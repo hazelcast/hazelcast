@@ -23,6 +23,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalid
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.journal.DeserializingEventJournalMapEvent;
@@ -137,8 +138,6 @@ import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOpe
 import com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.ReadAndResetAccumulatorOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.SetReadCursorOperation;
-import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.tx.MapTransactionLogRecord;
 import com.hazelcast.map.impl.tx.TxnDeleteBackupOperation;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
@@ -154,9 +153,7 @@ import com.hazelcast.map.impl.tx.TxnUnlockOperation;
 import com.hazelcast.map.impl.tx.VersionedValue;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.MapIndexInfo;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY_ID;
@@ -258,7 +255,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ADD_INTERCEPTOR = 90;
     public static final int MAP_REPLICATION = 91;
     public static final int POST_JOIN_MAP_OPERATION = 92;
-    public static final int INDEX_INFO = 93;
     public static final int MAP_INDEX_INFO = 94;
     public static final int INTERCEPTOR_INFO = 95;
     public static final int REMOVE_INTERCEPTOR = 96;
@@ -418,13 +414,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ADD_INTERCEPTOR] = arg -> new AddInterceptorOperation();
         constructors[MAP_REPLICATION] = arg -> new MapReplicationOperation();
         constructors[POST_JOIN_MAP_OPERATION] = arg -> new PostJoinMapOperation();
-        constructors[INDEX_INFO] = arg -> new IndexInfo();
         constructors[MAP_INDEX_INFO] = arg -> new MapIndexInfo();
         constructors[INTERCEPTOR_INFO] = arg -> new PostJoinMapOperation.InterceptorInfo();
         constructors[REMOVE_INTERCEPTOR] = arg -> new RemoveInterceptorOperation();
         constructors[QUERY_EVENT_FILTER] = arg -> new QueryEventFilter();
-        constructors[RECORD_INFO] = arg -> new RecordInfo();
-        constructors[RECORD_REPLICATION_INFO] = arg -> new RecordReplicationInfo();
         constructors[UUID_FILTER] = arg -> new UuidFilter();
         constructors[MAP_TRANSACTION_LOG_RECORD] = arg -> new MapTransactionLogRecord();
         constructors[VERSIONED_VALUE] = arg -> new VersionedValue();

@@ -39,8 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.internal.util.CollectionUtil.getItemAtPositionOrNull;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -91,7 +91,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         Set<String> names = metricsRegistry.getNames();
         assertEquals(1, names.size());
         String probeName = getItemAtPositionOrNull(names, 0);
-        assertEquals("prefix.someIntegerMethod", probeName);
+        assertEquals("[metric=prefix.someIntegerMethod]", probeName);
     }
 
     public void getLong(String methodName, int expectedValue) throws Exception {

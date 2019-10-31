@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("eb6164dbe918471e3843e45a6f5cc313")
+@Generated("af0c952f1b6a5d42ea72f7a974870c6e")
 public final class CacheGetConfigCodec {
-    //hex: 0x150D00
-    public static final int REQUEST_MESSAGE_TYPE = 1379584;
-    //hex: 0x150D01
-    public static final int RESPONSE_MESSAGE_TYPE = 1379585;
+    //hex: 0x130D00
+    public static final int REQUEST_MESSAGE_TYPE = 1248512;
+    //hex: 0x130D01
+    public static final int RESPONSE_MESSAGE_TYPE = 1248513;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CacheGetConfigCodec() {
     }
@@ -75,7 +76,7 @@ public final class CacheGetConfigCodec {
     }
 
     public static CacheGetConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -90,10 +91,10 @@ public final class CacheGetConfigCodec {
         /**
          * The cache configuration.
          */
-        public com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response;
+        public @Nullable com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -104,7 +105,7 @@ public final class CacheGetConfigCodec {
     }
 
     public static CacheGetConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

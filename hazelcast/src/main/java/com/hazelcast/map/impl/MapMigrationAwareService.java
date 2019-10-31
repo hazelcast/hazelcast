@@ -20,6 +20,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
@@ -33,11 +34,10 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.partition.FragmentedMigrationAwareService;
-import com.hazelcast.spi.partition.MigrationEndpoint;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
-import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -46,8 +46,8 @@ import java.util.function.Predicate;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.removeAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.sendEndOfSequenceEvents;
-import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
-import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
+import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 
 /**
  * Defines migration behavior of map service.
@@ -73,7 +73,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     @Override
     public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
-        return namespace instanceof ObjectNamespace && MapService.SERVICE_NAME.equals(namespace.getServiceName());
+        return namespace instanceof ObjectNamespace
+                && MapService.SERVICE_NAME.equals(namespace.getServiceName());
     }
 
     @Override
@@ -118,7 +119,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         int partitionId = event.getPartitionId();
 
-        Operation operation = new MapReplicationOperation(containers[partitionId], partitionId, event.getReplicaIndex());
+        Operation operation = new MapReplicationOperation(containers[partitionId],
+                partitionId, event.getReplicaIndex());
         operation.setService(mapServiceContext.getService());
         operation.setNodeEngine(mapServiceContext.getNodeEngine());
 
@@ -126,7 +128,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     }
 
     @Override
-    public Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event,
+                                                 Collection<ServiceNamespace> namespaces) {
         assert assertAllKnownNamespaces(namespaces);
 
         int partitionId = event.getPartitionId();
@@ -155,10 +158,15 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         }
 
         if (SOURCE == event.getMigrationEndpoint()) {
-            removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
+            // Do not change order of below methods
+            removeWbqCountersHavingLesserBackupCountThan(event.getPartitionId(),
+                    event.getNewReplicaIndex());
+            removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
+                    event.getNewReplicaIndex());
         }
 
-        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
+        PartitionContainer partitionContainer
+                = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
             // in case the record store has been created without loading during migration trigger again
             // if loading has been already started this call will do nothing
@@ -184,7 +192,11 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (DESTINATION == event.getMigrationEndpoint()) {
-            removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
+            // Do not change order of below methods
+            removeWbqCountersHavingLesserBackupCountThan(event.getPartitionId(),
+                    event.getCurrentReplicaIndex());
+            removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
+                    event.getCurrentReplicaIndex());
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         }
 
@@ -208,7 +220,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     private void removeRecordStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         if (thresholdReplicaIndex < 0) {
-            mapServiceContext.removeRecordStoresFromPartitionMatchingWith(allRecordStores(), partitionId,
+            mapServiceContext.removeRecordStoresFromPartitionMatchingWith(recordStore -> true, partitionId,
                     false, true);
         } else {
             mapServiceContext.removeRecordStoresFromPartitionMatchingWith(lesserBackupMapsThen(thresholdReplicaIndex),
@@ -217,10 +229,17 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     }
 
     /**
-     * @return predicate that matches with partitions of all maps
+     * Removes write-behind-queue-reservation-counters inside
+     * supplied partition from matching record-stores.
      */
-    private static Predicate<RecordStore> allRecordStores() {
-        return recordStore -> true;
+    private void removeWbqCountersHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        if (thresholdReplicaIndex < 0) {
+            mapServiceContext.removeWbqCountersFromMatchingPartitionsWith(
+                    recordStore -> true, partitionId);
+        } else {
+            mapServiceContext.removeWbqCountersFromMatchingPartitionsWith(
+                    lesserBackupMapsThen(thresholdReplicaIndex), partitionId);
+        }
     }
 
     /**

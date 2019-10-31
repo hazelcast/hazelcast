@@ -27,7 +27,7 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.impl.DataAwareMessage;
 

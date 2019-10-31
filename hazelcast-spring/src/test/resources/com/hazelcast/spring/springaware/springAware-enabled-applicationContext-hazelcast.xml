@@ -26,7 +26,7 @@
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
             <hz:spring-aware/>
-            <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -44,10 +44,8 @@
 
     <hz:client id="client" lazy-init="true" scope="prototype">
         <hz:spring-aware/>
-        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000"
                     redo-operation="true"
                     smart-routing="true">
 

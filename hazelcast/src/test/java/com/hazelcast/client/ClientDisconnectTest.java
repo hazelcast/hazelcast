@@ -62,7 +62,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     @Test
     public void testClientOperationCancelled_whenDisconnected() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
         final String queueName = "q";
 
@@ -115,7 +115,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     @Test
     public void testClientOperationCancelled_whenDisconnected_lock() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
         final String name = "m";
 
@@ -168,11 +168,10 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPendingInvocationAndWaitEntryCancelled_whenDisconnected_withLock() {
+    public void testPendingInvocationAndWaitEntryCancelled_whenDisconnected_withQueue() {
         Config config = new Config();
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
         final String name = randomName();
-        server.getLock(name).lock();
 
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
@@ -180,7 +179,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 try {
-                    client.getLock(name).lock();
+                    client.getQueue(name).take();
                 } catch (Throwable ignored) {
                 }
             }

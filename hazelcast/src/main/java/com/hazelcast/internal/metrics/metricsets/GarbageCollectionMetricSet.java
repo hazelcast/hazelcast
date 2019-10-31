@@ -71,7 +71,7 @@ public final class GarbageCollectionMetricSet {
 
         GcStats stats = new GcStats();
         metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS, INFO);
-        metricsRegistry.scanAndRegister(stats, "gc");
+        metricsRegistry.registerStaticMetrics(stats, "gc");
     }
 
 

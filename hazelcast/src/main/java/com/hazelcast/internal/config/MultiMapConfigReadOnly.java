@@ -75,11 +75,6 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
     }
 
     @Override
-    public MultiMapConfig setSyncBackupCount(int syncBackupCount) {
-        throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
-    }
-
-    @Override
     public MultiMapConfig setBackupCount(int backupCount) {
         throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
     }

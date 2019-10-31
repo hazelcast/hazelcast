@@ -16,8 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -29,16 +28,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 /**
- * The transaction log contains all {@link TransactionLogRecord} for a given transaction.
+ * The transaction log contains all {@link
+ * TransactionLogRecord} for a given transaction.
  *
- * If within a transaction 3 map.puts would be done on different keys and 1 queue.take would be done, than
- * the TransactionLog will contains 4 {@link TransactionLogRecord} instances.
+ * If within a transaction 3 map.puts would be done on different
+ * keys and 1 queue.take would be done, than the TransactionLog
+ * will contains 4 {@link TransactionLogRecord} instances.
  *
- * planned optimization:
- * Most transaction will be small, but an hashmap is created. Instead use an array and do a
- * linear search in that array. When there are too many items added, then enable the hashmap.
+ * Planned optimization:
+ * Most transaction will be small, but an HashMap is created.
+ * Instead use an array and do a linear search in that array.
+ * When there are too many items added, then enable the hashmap.
  */
 public class TransactionLog {
 
@@ -118,20 +121,20 @@ public class TransactionLog {
         return operationService.invokeOnPartition(op.getServiceName(), op, op.getPartitionId());
     }
 
-    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+    public void commitAsync(NodeEngine nodeEngine, BiConsumer callback) {
         for (TransactionLogRecord record : recordMap.values()) {
             invokeAsync(nodeEngine, callback, record, record.newCommitOperation());
         }
     }
 
-    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+    public void rollbackAsync(NodeEngine nodeEngine, BiConsumer callback) {
         for (TransactionLogRecord record : recordMap.values()) {
             invokeAsync(nodeEngine, callback, record, record.newRollbackOperation());
         }
     }
 
-    private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback,
-            TransactionLogRecord record, Operation op) {
+    private void invokeAsync(NodeEngine nodeEngine, BiConsumer callback,
+                             TransactionLogRecord record, Operation op) {
 
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
@@ -139,7 +142,8 @@ public class TransactionLog {
             Address target = ((TargetAwareTransactionLogRecord) record).getTarget();
             operationService.invokeOnTarget(op.getServiceName(), op, target);
         } else {
-            operationService.asyncInvokeOnPartition(op.getServiceName(), op, op.getPartitionId(), callback);
+            operationService.invokeOnPartitionAsync(op.getServiceName(), op, op.getPartitionId())
+                            .whenCompleteAsync(callback);
         }
     }
 }

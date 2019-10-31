@@ -16,8 +16,10 @@
 
 package com.hazelcast.cp.exception;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.IndeterminateOperationState;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
+
+import java.util.UUID;
 
 /**
  * A {@code CPSubsystemException} which is thrown when a Raft leader node
@@ -29,7 +31,16 @@ public class StaleAppendRequestException extends CPSubsystemException implements
 
     private static final long serialVersionUID = -736303015926722821L;
 
-    public StaleAppendRequestException(Endpoint leader) {
-        super(leader);
+    public StaleAppendRequestException(RaftEndpoint leader) {
+        super(leader != null ? leader.getUuid() : null);
+    }
+
+    private StaleAppendRequestException(UUID leaderUuid, Throwable cause) {
+        super(null, cause, leaderUuid);
+    }
+
+    @Override
+    public StaleAppendRequestException wrap() {
+        return new StaleAppendRequestException(getLeaderUuid(), this);
     }
 }

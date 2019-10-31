@@ -38,9 +38,7 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>test-instance</hz:instance-name>
-            <hz:cluster
-                    name="${cluster.name}"
-                    password="${cluster.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
             <hz:management-center enabled="true" update-interval="2" scripting-enabled="false">
                 <hz:url>myserver:80</hz:url>
@@ -93,7 +91,7 @@
                               tenant-id="TENANT_ID"
                               subscription-id="SUB_ID"
                               cluster-id="HZLCAST001"
-                              cluster-name="CLUSTER-NAME"/>
+                              group-name="RESOURCE-GROUP-NAME"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
                                    service-name="MY-SERVICE-NAME"
@@ -183,7 +181,7 @@
                               tenant-id="TENANT_ID"
                               subscription-id="SUB_ID"
                               cluster-id="HZLCAST001"
-                              cluster-name="CLUSTER-NAME"/>
+                              group-name="RESOURCE-GROUP-NAME"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
                                    service-name="MY-SERVICE-NAME"
@@ -318,10 +316,6 @@
                 <hz:queue-store enabled="true" factory-implementation="dummyQueueStoreFactory"/>
             </hz:queue>
 
-            <hz:lock name="lock">
-                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-            </hz:lock>
-
             <hz:ringbuffer name="testRingbuffer"
                            in-memory-format="OBJECT"
                            capacity="100"
@@ -350,11 +344,6 @@
                 <hz:ringbuffer-store enabled="true" factory-implementation="dummyRingbufferStoreFactory"/>
             </hz:ringbuffer>
 
-            <hz:atomic-long name="testAtomicLong">
-                <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
-                <hz:merge-policy batch-size="2342">DiscardMergePolicy</hz:merge-policy>
-            </hz:atomic-long>
-
             <hz:reliable-topic name="testReliableTopic" topic-overload-policy="BLOCK" read-batch-size="10"
                                statistics-enabled="false">
                 <hz:message-listeners>
@@ -377,8 +366,17 @@
                 </hz:near-cache>
 
                 <hz:indexes>
-                    <hz:index attribute="name"/>
-                    <hz:index attribute="age" ordered="true"/>
+                    <hz:index type="HASH">
+                        <hz:attributes>
+                            <hz:attribute>name</hz:attribute>
+                        </hz:attributes>
+                    </hz:index>
+                    <hz:index name="sortedIndex">
+                        <hz:attributes>
+                            <hz:attribute>age</hz:attribute>
+                            <hz:attribute>name</hz:attribute>
+                        </hz:attributes>
+                    </hz:index>
                 </hz:indexes>
                 <hz:attributes>
                     <hz:attribute name="power" extractor-class-name="com.car.PowerExtractor"/>
@@ -475,7 +473,11 @@
                         <hz:in-memory-format>OBJECT</hz:in-memory-format>
                         <hz:include-value>false</hz:include-value>
                         <hz:indexes>
-                            <hz:index attribute="name" ordered="false"></hz:index>
+                            <hz:index type="HASH">
+                                <hz:attributes>
+                                    <hz:attribute>name</hz:attribute>
+                                </hz:attributes>
+                            </hz:index>
                         </hz:indexes>
                     </hz:query-cache>
                 </hz:query-caches>
@@ -629,6 +631,54 @@
                 <hz:size unit="MEGABYTES" value="256"/>
             </hz:native-memory>
             <hz:security>
+                <hz:realms>
+                    <hz:realm name="r1">
+                        <hz:authentication>
+                            <hz:tls roleAttribute="cn"/>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:username-password username="user" password="secret"/>
+                        </hz:identity>
+                    </hz:realm>
+                    <hz:realm name="r2">
+                        <hz:authentication>
+                            <hz:ldap>
+                                <hz:url>ldaps://server.hazelcast.com</hz:url>
+                                <hz:socket-factory-class-name>socketFactoryClassName</hz:socket-factory-class-name>
+                                <hz:parse-dn>true</hz:parse-dn>
+                                <hz:role-context>roleContext</hz:role-context>
+                                <hz:role-filter>roleFilter</hz:role-filter>
+                                <hz:role-mapping-attribute>roleMappingAttribute</hz:role-mapping-attribute>
+                                <hz:role-mapping-mode>reverse</hz:role-mapping-mode>
+                                <hz:role-name-attribute>roleNameAttribute</hz:role-name-attribute>
+                                <hz:role-recursion-max-depth>25</hz:role-recursion-max-depth>
+                                <hz:role-search-scope>object</hz:role-search-scope>
+                                <hz:user-name-attribute>userNameAttribute</hz:user-name-attribute>
+                                <hz:system-user-dn>systemUserDn</hz:system-user-dn>
+                                <hz:system-user-password>systemUserPassword</hz:system-user-password>
+                                <hz:password-attribute>passwordAttribute</hz:password-attribute>
+                                <hz:user-context>userContext</hz:user-context>
+                                <hz:user-filter>userFilter</hz:user-filter>
+                                <hz:user-search-scope>one-level</hz:user-search-scope>
+                            </hz:ldap>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:token>token_value</hz:token>
+                        </hz:identity>
+                    </hz:realm>
+                    <hz:realm name="r3">
+                        <hz:authentication>
+                            <hz:jaas>
+                                <hz:login-module class-name="com.example.LoginModule" usage="REQUIRED"/>
+                            </hz:jaas>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:token encoding="base64">aGF6ZWxjYXN0</hz:token>
+                        </hz:identity>
+                    </hz:realm>
+                </hz:realms>
+                <hz:member-authentication realm="r1"/>
+                <hz:client-authentication realm="r2"/>
                 <hz:client-permissions on-join-operation="SEND">
                     <hz:pn-counter-permission name="pnCounterPermission">
                         <hz:actions>
@@ -678,11 +728,6 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:set-permission>
-                    <hz:id-generator-permission name="*">
-                        <hz:actions>
-                            <hz:action>all</hz:action>
-                        </hz:actions>
-                    </hz:id-generator-permission>
                     <hz:flake-id-generator-permission name="*">
                         <hz:actions>
                             <hz:action>all</hz:action>
@@ -796,13 +841,28 @@
                 <hz:recently-active-split-brain-protection heartbeat-tolerance-millis="5123"/>
             </hz:split-brain-protection>
 
-            <hz:hot-restart-persistence enabled="true"
+            <hz:hot-restart-persistence enabled="false"
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
                                         auto-remove-stale-data="false"
                                         cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE">
                 <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
                 <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
+                <hz:encryption-at-rest enabled="true">
+                    <hz:algorithm>AES/CBC/PKCS5Padding</hz:algorithm>
+                    <hz:salt>sugar</hz:salt>
+                    <hz:key-size>16</hz:key-size>
+                    <hz:secure-store>
+                        <hz:vault>
+                            <hz:address>http://localhost:1234</hz:address>
+                            <hz:secret-path>secret/path</hz:secret-path>
+                            <hz:token>token</hz:token>
+                            <hz:polling-interval>60</hz:polling-interval>
+                            <hz:ssl enabled="true" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
+                                    factory-implementation="dummySSLContextFactory"/>
+                        </hz:vault>
+                    </hz:secure-store>
+                </hz:encryption-at-rest>
             </hz:hot-restart-persistence>
 
             <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10" idOffset="20"
@@ -822,6 +882,9 @@
                 <hz:session-heartbeat-interval-seconds>3</hz:session-heartbeat-interval-seconds>
                 <hz:missing-cp-member-auto-removal-seconds>120</hz:missing-cp-member-auto-removal-seconds>
                 <hz:fail-on-indeterminate-operation-state>true</hz:fail-on-indeterminate-operation-state>
+                <hz:persistence-enabled>false</hz:persistence-enabled>
+                <hz:base-dir>/custom-dir</hz:base-dir>
+                <hz:data-load-timeout-seconds>30</hz:data-load-timeout-seconds>
                 <hz:raft-algorithm>
                     <hz:leader-election-timeout-in-millis>500</hz:leader-election-timeout-in-millis>
                     <hz:leader-heartbeat-period-in-millis>100</hz:leader-heartbeat-period-in-millis>
@@ -835,10 +898,12 @@
                     <hz:semaphore>
                         <hz:name>sem1</hz:name>
                         <hz:jdk-compatible>true</hz:jdk-compatible>
+                        <hz:initial-permits>1</hz:initial-permits>
                     </hz:semaphore>
                     <hz:semaphore>
                         <hz:name>sem2</hz:name>
                         <hz:jdk-compatible>false</hz:jdk-compatible>
+                        <hz:initial-permits>2</hz:initial-permits>
                     </hz:semaphore>
                 </hz:semaphores>
                 <hz:locks>
@@ -870,7 +935,6 @@
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:scheduledExecutorService id="scheduledExec" instance-ref="instance" name="scheduledExec"/>
     <hz:durableExecutorService id="durableExec" instance-ref="instance" name="durableExec"/>
-    <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="instance" name="flakeIdGenerator"/>
     <hz:atomicLong id="atomicLong" instance-ref="instance" name="testAtomicLong"/>
     <hz:atomicReference id="atomicReference" instance-ref="instance" name="testAtomicReference"/>

@@ -16,8 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.config.cp.RaftAlgorithmConfig;
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.impl.dataservice.ApplyRaftRunnable;
@@ -29,31 +27,23 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
-import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newGroupWithService;
-import static org.hamcrest.Matchers.either;
-import static org.hamcrest.Matchers.is;
+import static com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder.newGroup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalQueryTest extends HazelcastTestSupport {
 
     private LocalRaftGroup group;
-
-    @Before
-    public void init() {
-    }
 
     @After
     public void destroy() {
@@ -64,7 +54,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromLeader_withoutAnyCommit_thenReturnDefaultValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -75,7 +65,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromFollower_withoutAnyCommit_thenReturnDefaultValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         group.waitUntilLeaderElected();
@@ -87,7 +77,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromLeader_onStableCluster_thenReadLatestValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -103,7 +93,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test(expected = NotLeaderException.class)
     public void when_queryFromFollower_withLeaderLocalPolicy_thenFail() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -111,12 +101,12 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
         RaftNodeImpl follower = group.getAnyFollowerNode();
 
-        follower.query(new QueryRaftRunnable(), QueryPolicy.LEADER_LOCAL).get();
+        follower.query(new QueryRaftRunnable(), QueryPolicy.LEADER_LOCAL).joinInternal();
     }
 
     @Test
     public void when_queryFromFollower_onStableCluster_thenReadLatestValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -126,17 +116,19 @@ public class LocalQueryTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("value" + i)).get();
         }
 
-        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        Object result0 = followers[0].query(new QueryRaftRunnable(), QueryPolicy.ANY_LOCAL).get();
-        Object result1 = followers[1].query(new QueryRaftRunnable(), QueryPolicy.ANY_LOCAL).get();
-
         String latestValue = "value" + count;
-        assertThat(latestValue, either(is(result0)).or(is(result1)));
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl follower : followers) {
+                Object result = follower.query(new QueryRaftRunnable(), QueryPolicy.ANY_LOCAL).get();
+                assertEquals(latestValue, result);
+            }
+        });
     }
 
     @Test
     public void when_queryFromSlowFollower_thenReadStaleValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -158,7 +150,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromSlowFollower_thenEventuallyReadLatestValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -180,7 +172,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromSplitLeader_thenReadStaleValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -199,7 +191,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
         group.split(leader.getLocalMember());
 
         assertTrueEventually(() -> {
-            Endpoint leaderEndpoint = getLeaderMember(followerNode);
+            RaftEndpoint leaderEndpoint = getLeaderMember(followerNode);
             assertNotNull(leaderEndpoint);
             assertNotEquals(leader.getLocalMember(), leaderEndpoint);
         });
@@ -217,7 +209,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
 
     @Test
     public void when_queryFromSplitLeader_thenEventuallyReadLatestValue() throws Exception {
-        group = newGroupWithService(3, new RaftAlgorithmConfig());
+        group = newGroup(3);
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
@@ -236,7 +228,7 @@ public class LocalQueryTest extends HazelcastTestSupport {
         group.split(leader.getLocalMember());
 
         assertTrueEventually(() -> {
-            Endpoint leaderEndpoint = getLeaderMember(followerNode);
+            RaftEndpoint leaderEndpoint = getLeaderMember(followerNode);
             assertNotNull(leaderEndpoint);
             assertNotEquals(leader.getLocalMember(), leaderEndpoint);
         });

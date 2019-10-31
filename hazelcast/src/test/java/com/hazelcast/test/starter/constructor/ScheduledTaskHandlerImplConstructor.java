@@ -37,23 +37,19 @@ public class ScheduledTaskHandlerImplConstructor extends AbstractStarterObjectCo
         String schedulerName = (String) getFieldValueReflectively(delegate, "schedulerName");
         String taskName = (String) getFieldValueReflectively(delegate, "taskName");
 
+        ClassLoader targetClassloader = targetClass.getClassLoader();
+        Class<?> addressClass = targetClassloader.loadClass("com.hazelcast.cluster.Address");
+
+        Constructor<?> constructor = targetClass.getDeclaredConstructor(addressClass, Integer.TYPE,
+                String.class, String.class);
+        constructor.setAccessible(true);
+
         if (address != null) {
-            ClassLoader targetClassloader = targetClass.getClassLoader();
-            Class<?> addressClass = targetClassloader.loadClass("com.hazelcast.nio.Address");
-
-            // obtain reference to constructor ScheduledTaskHandlerImpl(Address address, String schedulerName, String taskName)
-            Constructor<?> constructor = targetClass.getDeclaredConstructor(addressClass, String.class, String.class);
-            constructor.setAccessible(true);
-
-            Object[] args = new Object[]{address, schedulerName, taskName};
+            Object[] args = new Object[]{address, -1, schedulerName, taskName};
             Object[] proxiedArgs = proxyArgumentsIfNeeded(args, targetClassloader);
             return constructor.newInstance(proxiedArgs);
         } else {
-            // obtain reference to constructor ScheduledTaskHandlerImpl(int partitionId, String schedulerName, String taskName)
-            Constructor<?> constructor = targetClass.getDeclaredConstructor(Integer.TYPE, String.class, String.class);
-            constructor.setAccessible(true);
-
-            Object[] args = new Object[]{partitionId, schedulerName, taskName};
+            Object[] args = new Object[]{null, partitionId, schedulerName, taskName};
             return constructor.newInstance(args);
         }
     }

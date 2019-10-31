@@ -17,12 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CPAtomicLongAlterCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp.AlterResultType;
 import com.hazelcast.instance.impl.Node;
@@ -35,8 +34,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link AlterOp}
  */
-public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec.RequestParameters>
-        implements ExecutionCallback<Long> {
+public class AlterMessageTask extends AbstractCPMessageTask<AtomicLongAlterCodec.RequestParameters> {
 
     public AlterMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,22 +47,22 @@ public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .<Long>invoke(parameters.groupId, new AlterOp(parameters.name, function, resultType))
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
-    protected CPAtomicLongAlterCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CPAtomicLongAlterCodec.decodeRequest(clientMessage);
+    protected AtomicLongAlterCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongAlterCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CPAtomicLongAlterCodec.encodeResponse((Long) response);
+        return AtomicLongAlterCodec.encodeResponse((Long) response);
     }
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override
@@ -91,15 +89,5 @@ public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.function};
-    }
-
-    @Override
-    public void onResponse(Long response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

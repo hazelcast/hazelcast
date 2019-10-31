@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -38,14 +39,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-@Generated("18a8a98d3bfd5f6eb743d9c3e982496e")
+@Generated("5f80e3bcc7334f8e7deef3d0b31b3a44")
 public final class ReplicatedMapPutAllCodec {
-    //hex: 0x0E0800
-    public static final int REQUEST_MESSAGE_TYPE = 919552;
-    //hex: 0x0E0801
-    public static final int RESPONSE_MESSAGE_TYPE = 919553;
+    //hex: 0x0D0800
+    public static final int REQUEST_MESSAGE_TYPE = 854016;
+    //hex: 0x0D0801
+    public static final int RESPONSE_MESSAGE_TYPE = 854017;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ReplicatedMapPutAllCodec() {
     }
@@ -73,17 +74,17 @@ public final class ReplicatedMapPutAllCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        MapCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
         return clientMessage;
     }
 
     public static ReplicatedMapPutAllCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
         request.name = StringCodec.decode(iterator);
-        request.entries = MapCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return request;
     }
 
@@ -101,7 +102,7 @@ public final class ReplicatedMapPutAllCodec {
     }
 
     public static ReplicatedMapPutAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

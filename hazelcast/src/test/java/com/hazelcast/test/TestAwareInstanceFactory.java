@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
@@ -97,13 +98,15 @@ public class TestAwareInstanceFactory {
     /**
      * Creates new member instance with TCP join configured. Uses
      * {@link com.hazelcast.test.AbstractHazelcastClassRunner#getTestMethodName()}
-     * as the cluster group name.
+     * as the cluster name if it's not changed already.
      */
     public HazelcastInstance newHazelcastInstance(Config config, NodeContext nodeCtx) {
         if (config == null) {
             config = new Config();
         }
-        config.setClusterName(getTestMethodName());
+        if (DEFAULT_CLUSTER_NAME.equals(config.getClusterName())) {
+            config.setClusterName(getTestMethodName());
+        }
         List<HazelcastInstance> members = getOrInitInstances(perMethodMembers);
 
         // Prepare Unified Networking (legacy)

@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.monitor.impl.IndexOperationStats;
+import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;

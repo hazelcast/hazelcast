@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.CountDownOp;
 import com.hazelcast.instance.impl.Node;
@@ -33,8 +32,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link CountDownOp}
  */
-public class CountDownMessageTask extends AbstractMessageTask<CountDownLatchCountDownCodec.RequestParameters>
-        implements ExecutionCallback<Object> {
+public class CountDownMessageTask extends AbstractCPMessageTask<CountDownLatchCountDownCodec.RequestParameters> {
 
     public CountDownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,7 +43,7 @@ public class CountDownMessageTask extends AbstractMessageTask<CountDownLatchCoun
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
                .invoke(parameters.groupId, new CountDownOp(parameters.name, parameters.invocationUid, parameters.expectedRound))
-               .andThen(this);
+               .whenCompleteAsync(this);
     }
 
     @Override
@@ -81,15 +79,5 @@ public class CountDownMessageTask extends AbstractMessageTask<CountDownLatchCoun
     @Override
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

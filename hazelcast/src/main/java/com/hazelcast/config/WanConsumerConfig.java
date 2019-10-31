@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -71,7 +72,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * Returns the fully qualified class name of the class implementing
-     * WanReplicationConsumer.
+     * {@link com.hazelcast.wan.WanReplicationConsumer}.
      *
      * @return fully qualified class name
      */
@@ -81,7 +82,7 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * Sets the fully qualified class name of the class implementing
-     * WanReplicationConsumer.
+     * {@link com.hazelcast.wan.WanReplicationConsumer}.
      * The class name may be {@code null} in which case the implementation or
      * the default processing logic for incoming WAN events will be used.
      *
@@ -95,7 +96,8 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the implementation implementing WanReplicationConsumer.
+     * Returns the implementation implementing
+     * {@link com.hazelcast.wan.WanReplicationConsumer}.
      *
      * @return the implementation for this WAN consumer
      */
@@ -105,11 +107,11 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * Sets the implementation for this WAN consumer. The object must implement
-     * WanReplicationConsumer.
+     * {@link com.hazelcast.wan.WanReplicationConsumer}.
      * The implementation may be {@code null} in which case the class name or
      * the default processing logic for incoming WAN events will be used.
      *
-     * @param implementation the object implementing WanReplicationConsumer
+     * @param implementation the object implementing {@link com.hazelcast.wan.WanReplicationConsumer}
      * @return this config
      * @see #setClassName(String)
      */

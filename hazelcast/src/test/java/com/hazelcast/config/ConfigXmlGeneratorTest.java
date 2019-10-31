@@ -25,6 +25,14 @@ import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfi
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.LdapAuthenticationConfig;
+import com.hazelcast.config.security.LdapRoleMappingMode;
+import com.hazelcast.config.security.LdapSearchScope;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.TlsAuthenticationConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -35,6 +43,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.wan.WanPublisherState;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -92,7 +101,6 @@ public class ConfigXmlGeneratorTest {
         assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
         assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getClusterPassword(), MASK_FOR_SENSITIVE_DATA);
     }
 
     @Test
@@ -102,7 +110,7 @@ public class ConfigXmlGeneratorTest {
         String licenseKey = "HazelcastLicenseKey";
 
         Config cfg = new Config();
-        cfg.setClusterPassword(password);
+        cfg.getSecurityConfig().setMemberRealmConfig("mr", new RealmConfig().setUsernamePasswordIdentityConfig("user", password));
 
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", password)
@@ -127,7 +135,9 @@ public class ConfigXmlGeneratorTest {
         assertEquals(secPassword, password);
         assertEquals(theSalt, salt);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), licenseKey);
-        assertEquals(newConfigViaXMLGenerator.getClusterPassword(), password);
+        SecurityConfig securityConfig = newConfigViaXMLGenerator.getSecurityConfig();
+        RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
+        assertEquals(realmConfig.getUsernamePasswordIdentityConfig().getPassword(), password);
     }
 
     @Test
@@ -267,7 +277,123 @@ public class ConfigXmlGeneratorTest {
                 .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
                 .setParallelism(5).setAutoRemoveStaleData(false);
 
-        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenJavaKeyStore_andMaskingDisabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        JavaKeyStoreSecureStoreConfig secureStoreConfig =
+                new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile()).setPassword("keyStorePassword");
+        secureStoreConfig.setType("JCEKS");
+        secureStoreConfig.setPollingInterval(60);
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
+
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenJavaKeyStore_andMaskingEnabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        JavaKeyStoreSecureStoreConfig secureStoreConfig =
+                new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile()).setPassword("keyStorePassword");
+        secureStoreConfig.setType("JCEKS");
+        secureStoreConfig.setPollingInterval(60);
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+
+        EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
+        assertTrue(actualConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig);
+        JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) actualConfig.getSecureStoreConfig();
+        assertEquals(MASK_FOR_SENSITIVE_DATA, keyStoreConfig.getPassword());
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenVault_andMaskingEnabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        VaultSecureStoreConfig secureStoreConfig = new VaultSecureStoreConfig("http://address:1234",
+                "secret/path", "token");
+        secureStoreConfig.setPollingInterval(60);
+        SSLConfig sslConfig = new SSLConfig();
+        sslConfig.setProperty("keyStorePassword", "Hazelcast")
+                 .setProperty("trustStorePassword", "Hazelcast");
+        secureStoreConfig.setSSLConfig(sslConfig);
+
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+
+        EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
+        assertTrue(actualConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
+        VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) actualConfig.getSecureStoreConfig();
+        assertEquals(MASK_FOR_SENSITIVE_DATA, vaultConfig.getToken());
+        assertEquals(MASK_FOR_SENSITIVE_DATA, vaultConfig.getSSLConfig().getProperty("keyStorePassword"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, vaultConfig.getSSLConfig().getProperty("trustStorePassword"));
+    }
+
+    @Test
+    public void testHotRestartPersistenceEncryptionAtRestConfig_whenVault_andMaskingDisabled() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+        encryptionAtRestConfig.setEnabled(true);
+        encryptionAtRestConfig.setAlgorithm("AES");
+        encryptionAtRestConfig.setSalt("salt");
+        VaultSecureStoreConfig secureStoreConfig = new VaultSecureStoreConfig("http://address:1234",
+                "secret/path", "token");
+        secureStoreConfig.setPollingInterval(60);
+        SSLConfig sslConfig = new SSLConfig();
+        sslConfig.setProperty("keyStorePassword", "Hazelcast")
+                 .setProperty("trustStorePassword", "Hazelcast");
+        secureStoreConfig.setSSLConfig(sslConfig);
+
+        encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
+
+        expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
+
+        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -300,11 +426,24 @@ public class ConfigXmlGeneratorTest {
         Properties dummyprops = new Properties();
         dummyprops.put("a", "b");
 
+        RealmConfig memberRealm = new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
+                Arrays.asList(
+                        new LoginModuleConfig()
+                        .setClassName("member.f.o.o")
+                        .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                        new LoginModuleConfig()
+                        .setClassName("member.b.a.r")
+                        .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                        new LoginModuleConfig()
+                        .setClassName("member.l.o.l")
+                        .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                .setCredentialsFactoryConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops));
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
                       .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
                       .setClientBlockUnmappedActions(false)
-                      .setClientLoginModuleConfigs(Arrays.asList(
+                      .setClientRealmConfig("cr", new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
+                              Arrays.asList(
                               new LoginModuleConfig()
                                       .setClassName("f.o.o")
                                       .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
@@ -313,18 +452,9 @@ public class ConfigXmlGeneratorTest {
                                       .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
                               new LoginModuleConfig()
                                       .setClassName("l.o.l")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-                      .setMemberLoginModuleConfigs(Arrays.asList(
-                              new LoginModuleConfig()
-                                      .setClassName("member.f.o.o")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                              new LoginModuleConfig()
-                                      .setClassName("member.b.a.r")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                              new LoginModuleConfig()
-                                      .setClassName("member.l.o.l")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
-                      .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
+                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                              .setUsernamePasswordIdentityConfig("username", "password"))
+                      .setMemberRealmConfig("mr", memberRealm)
                       .setClientPermissionConfigs(new HashSet<>(singletonList(
                               new PermissionConfig()
                                       .setActions(newHashSet("read", "remove"))
@@ -335,7 +465,65 @@ public class ConfigXmlGeneratorTest {
 
         cfg.setSecurityConfig(expectedConfig);
 
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testLdapConfig() {
+        Config cfg = new Config();
+
+        RealmConfig realmConfig = new RealmConfig().setLdapAuthenticationConfig(new LdapAuthenticationConfig()
+                .setParseDn(true)
+                .setPasswordAttribute("passwordAttribute")
+                .setRoleContext("roleContext")
+                .setRoleFilter("roleFilter")
+                .setRoleMappingAttribute("roleMappingAttribute")
+                .setRoleMappingMode(LdapRoleMappingMode.REVERSE)
+                .setRoleNameAttribute("roleNameAttribute")
+                .setRoleRecursionMaxDepth(25)
+                .setRoleSearchScope(LdapSearchScope.OBJECT)
+                .setSocketFactoryClassName("socketFactoryClassName")
+                .setSystemUserDn("systemUserDn")
+                .setSystemUserPassword("systemUserPassword")
+                .setUrl("url")
+                .setUserContext("userContext")
+                .setUserFilter("userFilter")
+                .setUserNameAttribute("userNameAttribute")
+                .setUserSearchScope(LdapSearchScope.ONE_LEVEL)
+                );
+        SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
+        cfg.setSecurityConfig(expectedConfig);
+
         SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testTlsAuthenticationConfig() {
+        Config cfg = new Config();
+
+        RealmConfig realmConfig = new RealmConfig().setTlsAuthenticationConfig(new TlsAuthenticationConfig()
+                .setRoleAttribute("roleAttribute"));
+        SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("tlsRealm", realmConfig);
+        cfg.setSecurityConfig(expectedConfig);
+
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testTokenAuthenticationConfig() {
+        Config cfg = new Config();
+
+        SecurityConfig expectedConfig = new SecurityConfig()
+                .setClientRealmConfig("cRealm",
+                        new RealmConfig().setTokenIdentityConfig(new TokenIdentityConfig(TokenEncoding.NONE, "ahoj")))
+                .setMemberRealmConfig("mRealm",
+                        new RealmConfig().setTokenIdentityConfig(new TokenIdentityConfig(TokenEncoding.BASE64, "bmF6ZGFy")));
+        cfg.setSecurityConfig(expectedConfig);
+
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -438,7 +626,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testReplicatedMapConfigGenerator() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy("PassThroughMergePolicy")
@@ -697,29 +884,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testAtomicLong() {
-        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
-                .setPolicy(DiscardMergePolicy.class.getSimpleName())
-                .setBatchSize(1234);
-
-        AtomicLongConfig expectedConfig = new AtomicLongConfig("testAtomicLongConfig")
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setSplitBrainProtectionName("splitBrainProtection");
-
-        Config config = new Config()
-                .addAtomicLongConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        AtomicLongConfig actualConfig = xmlConfig.getAtomicLongConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-
-        MergePolicyConfig xmlMergePolicyConfig = actualConfig.getMergePolicyConfig();
-        assertEquals(DiscardMergePolicy.class.getSimpleName(), xmlMergePolicyConfig.getPolicy());
-        assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
-    }
-
-    @Test
     public void testList() {
         MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
                 .setPolicy(HigherHitsMergePolicy.class.getName())
@@ -883,7 +1047,6 @@ public class ConfigXmlGeneratorTest {
         testMap(mapStoreConfig);
     }
 
-    @SuppressWarnings("deprecation")
     private void testMap(MapStoreConfig mapStoreConfig) {
         AttributeConfig attrConfig = new AttributeConfig()
                 .setName("power")
@@ -893,9 +1056,7 @@ public class ConfigXmlGeneratorTest {
                 .setSize(10)
                 .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
 
-        MapIndexConfig mapIndexConfig = new MapIndexConfig()
-                .setAttribute("attribute")
-                .setOrdered(true);
+        IndexConfig indexConfig = new IndexConfig().addAttribute("attribute").setType(IndexType.SORTED);
 
         EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.entrylistener", false, false);
 
@@ -923,7 +1084,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionConfig(evictionConfig)
                 .setIncludeValue(false)
                 .setCoalesce(false)
-                .addIndexConfig(mapIndexConfig);
+                .addIndexConfig(indexConfig);
 
         QueryCacheConfig queryCacheConfig2 = new QueryCacheConfig()
                 .setName("queryCache2")
@@ -937,7 +1098,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionConfig(evictionConfig)
                 .setIncludeValue(true)
                 .setCoalesce(true)
-                .addIndexConfig(mapIndexConfig);
+                .addIndexConfig(indexConfig);
 
         MapConfig expectedConfig = new MapConfig()
                 .setName("carMap")
@@ -960,7 +1121,7 @@ public class ConfigXmlGeneratorTest {
                 .setHotRestartConfig(hotRestartConfig())
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .addEntryListenerConfig(listenerConfig)
-                .setMapIndexConfigs(singletonList(mapIndexConfig))
+                .setIndexConfigs(singletonList(indexConfig))
                 .addAttributeConfig(attrConfig)
                 .setPartitionLostListenerConfigs(singletonList(
                         new MapPartitionLostListenerConfig("partitionLostListener")));
@@ -1005,7 +1166,6 @@ public class ConfigXmlGeneratorTest {
         assertEquals(expectedConfig, actualConfig);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testMapNearCacheEvictionConfig() {
         NearCacheConfig expectedConfig = new NearCacheConfig()
@@ -1048,6 +1208,7 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testWanConfig() {
+        @SuppressWarnings("rawtypes")
         HashMap<String, Comparable> props = new HashMap<>();
         props.put("prop1", "val1");
         props.put("prop2", "val2");
@@ -1181,20 +1342,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testLock() {
-        String testLock = "TestLock";
-        Config cfg = new Config();
-
-        LockConfig expectedConfig = new LockConfig().setName(testLock).setSplitBrainProtectionName("splitBrainProtection");
-
-        cfg.addLockConfig(expectedConfig);
-
-        LockConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getLockConfig(testLock);
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testScheduledExecutor() {
         Config cfg = new Config();
         ScheduledExecutorConfig scheduledExecutorConfig =
@@ -1273,12 +1420,14 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config();
 
         config.getCPSubsystemConfig()
-                .setCPMemberCount(10)
-                .setGroupSize(5)
-                .setSessionTimeToLiveSeconds(15)
-                .setSessionHeartbeatIntervalSeconds(3)
-                .setMissingCPMemberAutoRemovalSeconds(120)
-                .setFailOnIndeterminateOperationState(true);
+              .setCPMemberCount(10)
+              .setGroupSize(5)
+              .setSessionTimeToLiveSeconds(15)
+              .setSessionHeartbeatIntervalSeconds(3)
+              .setMissingCPMemberAutoRemovalSeconds(120)
+              .setFailOnIndeterminateOperationState(true)
+              .setPersistenceEnabled(true)
+              .setBaseDir(new File("/custom-dir"));
 
         config.getCPSubsystemConfig()
                 .getRaftAlgorithmConfig()
@@ -1291,8 +1440,8 @@ public class ConfigXmlGeneratorTest {
                 .setAppendRequestBackoffTimeoutInMillis(50);
 
         config.getCPSubsystemConfig()
-                .addSemaphoreConfig(new SemaphoreConfig("sem1", true))
-                .addSemaphoreConfig(new SemaphoreConfig("sem2", false));
+                .addSemaphoreConfig(new SemaphoreConfig("sem1", true, 1))
+                .addSemaphoreConfig(new SemaphoreConfig("sem2", false, 2));
 
         config.getCPSubsystemConfig()
                 .addLockConfig(new FencedLockConfig("lock1", 1))
@@ -1528,16 +1677,16 @@ public class ConfigXmlGeneratorTest {
     }
 
     private AwsConfig getDummyAwsConfig() {
-        return new AwsConfig().setHostHeader("dummyHost")
-                .setRegion("dummyRegion")
+        return new AwsConfig().setProperty("host-header", "dummyHost")
+                .setProperty("region", "dummyRegion")
                 .setEnabled(false)
-                .setConnectionTimeoutSeconds(1)
-                .setAccessKey("dummyKey")
-                .setIamRole("dummyIam")
-                .setSecretKey("dummySecretKey")
-                .setSecurityGroupName("dummyGroupName")
-                .setTagKey("dummyTagKey")
-                .setTagValue("dummyTagValue");
+                .setProperty("connection-timeout-seconds", "1")
+                .setProperty("access-key", "dummyKey")
+                .setProperty("iam-role", "dummyIam")
+                .setProperty("secret-key", "dummySecretKey")
+                .setProperty("security-group-name", "dummyGroupName")
+                .setProperty("tag-key", "dummyTagKey")
+                .setProperty("tag-value", "dummyTagValue");
     }
 
     private static Config getNewConfigViaXMLGenerator(Config config) {

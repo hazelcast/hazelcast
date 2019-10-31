@@ -42,15 +42,12 @@ import java.util.function.Consumer;
 public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTracker {
 
     // Will be replaced by metrics
-    @Deprecated
     int getRunningOperationCount();
 
     // Will be replaced by metrics
-    @Deprecated
     int getQueueSize();
 
     // Will be replaced by metrics
-    @Deprecated
     int getPriorityQueueSize();
 
     /**

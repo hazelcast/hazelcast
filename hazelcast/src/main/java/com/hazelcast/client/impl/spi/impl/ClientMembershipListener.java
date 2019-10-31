@@ -29,7 +29,7 @@ import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 

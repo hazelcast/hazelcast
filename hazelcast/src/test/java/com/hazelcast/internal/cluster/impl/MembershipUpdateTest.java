@@ -25,7 +25,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.EndpointManager;
@@ -552,9 +552,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         HazelcastInstance hz4 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, hz3);
-
-        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
+        assertTrueEventually(() -> assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3)));
         assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz4));
     }
 
@@ -853,9 +851,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void connectionsToRemovedMember_shouldBeClosed() {
-        Config config = new Config()
-            .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10")
-            .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+        Config config = new Config();
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -872,6 +868,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         getEndpointManager(hz2).addConnectionListener(connListener2);
 
         dropOperationsBetween(hz3, hz1, F_ID, singletonList(HEARTBEAT));
+        // Artificially suspect from hz3
+        suspectMember(hz1, hz3);
         assertClusterSizeEventually(2, hz1, hz2);
 
         connListener1.assertConnectionRemoved();

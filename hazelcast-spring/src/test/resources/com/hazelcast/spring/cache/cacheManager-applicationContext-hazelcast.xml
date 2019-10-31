@@ -30,7 +30,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:cluster name="dev" password="dev-pass"/>
+            <hz:cluster-name>dev</hz:cluster-name>
             <hz:network port="5101" port-auto-increment="true">
                 <hz:join>
                     <hz:multicast enabled="false"/>

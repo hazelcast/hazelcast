@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.properties;
 
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -25,14 +26,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Defines the name and default value for Hazelcast Client properties.
  */
 public final class ClientProperty {
-
-    /**
-     * Client disallows doing invocations on client disconnected state. When this property is set to true, even client
-     * is not connected to all cluster, it allows invocations that can go thorough available ones.
-     */
-    public static final HazelcastProperty ALLOW_INVOCATIONS_WHEN_DISCONNECTED
-            = new HazelcastProperty("hazelcast.client.allow.invocations.when.disconnected", false);
-
 
     /**
      * Client shuffles the given member list to prevent all clients to connect to the same node when
@@ -164,7 +157,7 @@ public final class ClientProperty {
      * It is disabled by default.
      */
     public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
-            = new HazelcastProperty("hazelcast.client.io.write.through", false);
+            = new HazelcastProperty("hazelcast.client.io.write.through", true);
 
     /**
      * Property needed for concurrency detection so that write through and dynamic response handling
@@ -208,13 +201,43 @@ public final class ClientProperty {
      * increased performance and reduced memory usage.
      */
     public static final HazelcastProperty RESPONSE_THREAD_DYNAMIC
-            = new HazelcastProperty("hazelcast.client.response.thread.dynamic", false);
+            = new HazelcastProperty("hazelcast.client.response.thread.dynamic", true);
 
     /**
      * Token to use when discovering cluster via hazelcast.cloud
      */
     public static final HazelcastProperty HAZELCAST_CLOUD_DISCOVERY_TOKEN =
             new HazelcastProperty("hazelcast.client.cloud.discovery.token");
+
+    /**
+     * If an operation has backups, this property specifies how long the invocation will wait for acks from the backup replicas.
+     * If acks are not received from some backups, there will not be any rollback on other successful replicas.
+     */
+    public static final HazelcastProperty OPERATION_BACKUP_TIMEOUT_MILLIS
+            = new HazelcastProperty("hazelcast.client.operation.backup.timeout.millis", 5000, MILLISECONDS);
+
+    /**
+     * When this configuration is enabled, if an operation has sync backups and acks are not received from backup replicas
+     * in time, or the member which owns primary replica of the target partition leaves the cluster, then the invocation fails
+     * with {@link IndeterminateOperationStateException}. However, even if the invocation fails,
+     * there will not be any rollback on other successful replicas.
+     */
+    public static final HazelcastProperty FAIL_ON_INDETERMINATE_OPERATION_STATE
+            = new HazelcastProperty("hazelcast.client.operation.fail.on.indeterminate.state", false);
+
+    /**
+     * Use to enable the client statistics collection.
+     * <p>
+     * The default is false.
+     */
+    public static final HazelcastProperty STATISTICS_ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled",
+            false);
+
+    /**
+     * The period in seconds the statistics run.
+     */
+    public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new HazelcastProperty(
+            "hazelcast.client.statistics.period.seconds", 3, SECONDS);
 
     private ClientProperty() {
     }

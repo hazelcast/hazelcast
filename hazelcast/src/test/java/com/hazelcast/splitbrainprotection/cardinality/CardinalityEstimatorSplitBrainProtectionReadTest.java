@@ -78,13 +78,13 @@ public class CardinalityEstimatorSplitBrainProtectionReadTest extends AbstractSp
 
     @Test
     public void estimateAsync_splitBrainProtection() throws Exception {
-        estimator(0).estimateAsync().get();
+        estimator(0).estimateAsync().toCompletableFuture().get();
     }
 
     @Test
     public void estimateAsync_noSplitBrainProtection() throws Exception {
         expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        estimator(3).estimateAsync().get();
+        estimator(3).estimateAsync().toCompletableFuture().get();
     }
 
     protected CardinalityEstimator estimator(int index) {

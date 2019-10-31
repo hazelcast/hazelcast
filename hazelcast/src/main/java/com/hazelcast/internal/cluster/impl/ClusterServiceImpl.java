@@ -44,11 +44,10 @@ import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
@@ -57,6 +56,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
@@ -149,9 +149,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
-        metricsRegistry.scanAndRegister(clusterHeartbeatManager, "cluster.heartbeat");
-        metricsRegistry.scanAndRegister(this, "cluster");
+        metricsRegistry.registerStaticMetrics(clusterClock, "cluster.clock");
+        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, "cluster.heartbeat");
+        metricsRegistry.registerStaticMetrics(this, "cluster");
     }
 
     @Override
@@ -1034,9 +1034,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         PromoteLiteMemberOp op = new PromoteLiteMemberOp();
         op.setCallerUuid(member.getUuid());
 
-        InternalCompletableFuture<MembersView> future =
+        InvocationFuture<MembersView> future =
                 nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, master.getAddress());
-        MembersView view = future.join();
+        MembersView view = future.joinInternal();
 
         lock.lock();
         try {

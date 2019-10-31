@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -42,13 +43,15 @@ public final class ClientServiceProxy implements ClientService {
         this.nodeEngine = node.nodeEngine;
     }
 
+    @Nonnull
     @Override
     public Collection<Client> getConnectedClients() {
         return clientEngine.getClients();
     }
 
+    @Nonnull
     @Override
-    public UUID addClientListener(ClientListener clientListener) {
+    public UUID addClientListener(@Nonnull ClientListener clientListener) {
         checkNotNull(clientListener, "clientListener should not be null");
 
         EventService eventService = nodeEngine.getEventService();
@@ -58,7 +61,7 @@ public final class ClientServiceProxy implements ClientService {
     }
 
     @Override
-    public boolean removeClientListener(UUID registrationId) {
+    public boolean removeClientListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId should not be null");
 
         EventService eventService = nodeEngine.getEventService();

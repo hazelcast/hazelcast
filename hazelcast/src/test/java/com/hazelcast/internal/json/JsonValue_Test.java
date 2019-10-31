@@ -26,97 +26,17 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.json.JsonWriter;
-import com.hazelcast.internal.json.WriterConfig;
 import com.hazelcast.internal.json.TestUtil.RunnableEx;
 import com.hazelcast.test.annotation.QuickTest;
 
 @Category(QuickTest.class)
 public class JsonValue_Test {
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void testConstantsAreLiterals() {
-    assertEquals(Json.NULL, JsonValue.NULL);
-    assertEquals(Json.TRUE, JsonValue.TRUE);
-    assertEquals(Json.FALSE, JsonValue.FALSE);
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void valueOf_int() {
-    assertEquals(Json.value(23), JsonValue.valueOf(23));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void valueOf_long() {
-    assertEquals(Json.value(23l), JsonValue.valueOf(23l));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void valueOf_float() {
-    assertEquals(Json.value(23.5f), JsonValue.valueOf(23.5f));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void valueOf_double() {
-    assertEquals(Json.value(23.5d), JsonValue.valueOf(23.5d));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void valueOf_boolean() {
-    assertSame(Json.value(true), JsonValue.valueOf(true));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void valueOf_string() {
-    assertEquals(Json.value("foo"), JsonValue.valueOf("foo"));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void readFrom_string() {
-    assertEquals(new JsonArray(), JsonValue.readFrom("[]"));
-    assertEquals(new JsonObject(), JsonValue.readFrom("{}"));
-    assertEquals(Json.value(23), JsonValue.readFrom("23"));
-    assertSame(Json.NULL, JsonValue.readFrom("null"));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void readFrom_reader() throws IOException {
-    assertEquals(new JsonArray(), JsonValue.readFrom(new StringReader("[]")));
-    assertEquals(new JsonObject(), JsonValue.readFrom(new StringReader("{}")));
-    assertEquals(Json.value(23), JsonValue.readFrom(new StringReader("23")));
-    assertSame(Json.NULL, JsonValue.readFrom(new StringReader("null")));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void readFrom_reader_doesNotCloseReader() throws IOException {
-    Reader reader = spy(new StringReader("{}"));
-
-    JsonValue.readFrom(reader);
-
-    verify(reader, never()).close();
-  }
 
   @Test
   public void writeTo() throws IOException {

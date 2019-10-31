@@ -46,10 +46,8 @@
         </replacer>
     </config-replacers>
 
-    <cluster>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </cluster>
+    <cluster-name>dev</cluster-name>
+
     <instance-name>CLIENT_NAME</instance-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <properties>
@@ -65,6 +63,8 @@
         <label>foo</label>
     </client-labels>
 
+    <backup-ack-to-client-enabled>false</backup-ack-to-client-enabled>
+
     <network>
         <cluster-members>
             <address>127.0.0.1</address>
@@ -77,8 +77,6 @@
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
         <connection-timeout>60000</connection-timeout>
-        <connection-attempt-period>3000</connection-attempt-period>
-        <connection-attempt-limit>2</connection-attempt-limit>
         <socket-options>
             <tcp-no-delay>false</tcp-no-delay>
             <keep-alive>true</keep-alive>
@@ -102,7 +100,6 @@
                 <property name="trustStorePassword">secret.123456</property>
                 <property name="trustStoreType">JKS</property>
 
-                <!-- Following properties are only needed when the mutual authentication is used. -->
                 <property name="keyStore">/opt/hazelcast-client.keystore</property>
                 <property name="keyStorePassword">keystorePassword123</property>
                 <property name="keyStoreType">JKS</property>
@@ -127,7 +124,7 @@
             <tenant-id>TENANT_ID</tenant-id>
             <subscription-id>SUB_ID</subscription-id>
             <cluster-id>HZLCAST001</cluster-id>
-            <cluster-name>CLUSTER-NAME</cluster-name>
+            <group-name>RESOURCE-GROUP-NAME</group-name>
         </azure>
         <kubernetes enabled="false">
             <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -160,12 +157,11 @@
             </discovery-strategy>
         </discovery-strategies>
     </network>
+ 
 
     <executor-pool-size>40</executor-pool-size>
 
-
     <security>
-        <credentials>com.hazelcast.security.UsernamePasswordCredentials</credentials>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
             <properties>
                 <property name="property">value</property>
@@ -272,7 +268,11 @@
             <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"
                       comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
             <indexes>
-                <index ordered="false">name</index>
+                <index type="HASH">
+                    <attributes>
+                        <attribute>name</attribute>
+                    </attributes>
+                </index>
             </indexes>
         </query-cache>
         <query-cache name="query-cache-sql-predicate" mapName="map-name">
@@ -281,11 +281,11 @@
     </query-caches>
 
     <connection-strategy async-start="true" reconnect-mode="ASYNC">
-        <connection-retry enabled="true">
+        <connection-retry>
             <initial-backoff-millis>2000</initial-backoff-millis>
             <max-backoff-millis>60000</max-backoff-millis>
             <multiplier>3</multiplier>
-            <fail-on-max-backoff>true</fail-on-max-backoff>
+            <fail-on-max-backoff>false</fail-on-max-backoff>
             <jitter>0.5</jitter>
         </connection-retry>
     </connection-strategy>

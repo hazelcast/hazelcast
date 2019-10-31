@@ -26,7 +26,7 @@ import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
-import com.hazelcast.config.WanPublisherState;
+import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -74,7 +74,7 @@ public class WanBatchReplicationPublisherConfigDTOTest {
                 .setTargetEndpoints("a,b,c,d")
                 .setDiscoveryConfig(new DiscoveryConfig())
                 .setWanSyncConfig(new WanSyncConfig())
-                .setAwsConfig(new AwsConfig().setEnabled(true).setConnectionTimeoutSeconds(20))
+                .setAwsConfig(new AwsConfig().setEnabled(true).setProperty("connection-timeout-seconds", "20"))
                 .setGcpConfig(new GcpConfig().setEnabled(true).setProperty("gcp", "gcp-val"))
                 .setAzureConfig(new AzureConfig().setEnabled(true).setProperty("azure", "azure-val"))
                 .setKubernetesConfig(new KubernetesConfig().setEnabled(true).setProperty("kubernetes", "kubernetes-val"))

@@ -79,14 +79,10 @@
     </config-replacers>
 
     <!--
-        Specifies the name and password for a cluster you connect to.
-        Cluster configuration allow you to create separate sub-clusters with different names.
-        The password is only checked when security is enabled on Hazelcast members (Enterprise edition feature).
+        Specifies the cluster name. It's sent as part of the client authentication message to Hazelcast
+        member(s).
     -->
-    <cluster>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </cluster>
+    <cluster-name>dev</cluster-name>
 
     <!--
         When Hazelcast instances are created, they are put in a global registry with their creation names.
@@ -138,6 +134,13 @@
     </client-labels>
 
     <!--
+     The <backup-ack-to-client-enabled> element lets you enable/disable backups ack to client.
+     This feature reduces number of hops and increase performance for smart clients.
+     It is enabled by default for smart clients. This config has no effect for unisocket clients.
+    -->
+    <backup-ack-to-client-enabled>true</backup-ack-to-client-enabled>
+
+    <!--
         ===== HAZELCAST NETWORK CONFIGURATION =====
 
         The configuration to build your Hazelcast's network includes configuration for port, interface, discovery
@@ -169,14 +172,6 @@
         * <connection-timeout>:
             Connection timeout is the timeout value in milliseconds for members to accept client connection requests.
             The following are the example configurations. Its default value is 5000.
-        * <connection-attempt-limit>:
-            While the client is trying to connect initially to one of the members in the <cluster-members>, that
-            member might not  be available at that moment. Instead of giving up, throwing an exception and stopping
-            the client, the client retries as many the times configured by this setting. This is also the case
-            when the previously established connection between the client and that member goes down.
-        * <connection-attempt-period>:
-            Connection attempt period is the duration in milliseconds between the connection attempts defined by
-            <connection-attempt-limit>.
         * <socket-options>:
             You can configure the network socket options using this setting. It has the following sub-elements:
             - <tcp-no-delay>: Enables/disables the TCP_NODELAY socket option. Its default value is true.
@@ -292,8 +287,6 @@
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
         <connection-timeout>60000</connection-timeout>
-        <connection-attempt-period>3000</connection-attempt-period>
-        <connection-attempt-limit>2</connection-attempt-limit>
         <socket-options>
             <tcp-no-delay>false</tcp-no-delay>
             <keep-alive>true</keep-alive>
@@ -342,7 +335,7 @@
             <tenant-id>TENANT_ID</tenant-id>
             <subscription-id>SUB_ID</subscription-id>
             <cluster-id>HZLCAST001</cluster-id>
-            <cluster-name>CLUSTER-NAME</cluster-name>
+            <group-name>RESOURCE-GROUP-NAME</group-name>
         </azure>
         <kubernetes enabled="false">
             <namespace>MY-KUBERNETES-NAMESPACE</namespace>
@@ -365,7 +358,7 @@
             <discovery-token>EXAMPLE_TOKEN</discovery-token>
         </hazelcast-cloud>
         <discovery-strategies>
-            <node-filter class="DummyFilterClass" />
+            <node-filter class="DummyFilterClass"/>
             <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
                 <properties>
                     <property name="key-string">foo</property>
@@ -388,9 +381,7 @@
         ===== HAZELCAST SECURITY CONFIGURATION =====
 
         This feature is available only in Hazelcast Enterprise. Configuration element's name is <security>.
-        It has the following sub-elements:
-        * <credentials>:
-            The name of the class implementing Hazelcast's Credentials interface.
+        It has one of the following sub-elements:
         * <credentials-factory>:
             Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
             interface.
@@ -399,14 +390,23 @@
             With the <properties> sub-element, you can define properties for the factory class. The properties can be
             defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
             "name" used to define the name of the attribute. The value of the property is defined in the body.
+        * <username-password>
+            Defines a static UsernamePasswordCredentials instance as the client's identity. It has mandatory
+             "username" and "password" attributes.
+        * <token>
+            Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
+            Content of the element is token value in given encoding (or in plain text).
     -->
     <security>
-        <credentials>com.hazelcast.security.UsernamePasswordCredentials</credentials>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
             <properties>
                 <property name="property">value</property>
             </properties>
         </credentials-factory>
+        <!-- 
+        <username-password username="client1" password="s3crEt"/>
+        <token encoding="base64">SGF6ZWxjYXN0</token>
+         -->
     </security>
 
     <!--
@@ -703,10 +703,8 @@
                 - comparator-class-name: The comparator to be used while comparing entries to be evicted.
 
         * <indexes>:
-            You can define indexes for your map using this element's <index> sub-elements. Each <index> has
-            only the boolean "ordered" attribute. For example, if you will have a ranged query for a field of a map
-            entry, then this attribute should be set to true. But if the field has a boolean value, then it should
-            be set to false. Its default value is false.
+            You can define indexes for your map using this element's <index> sub-elements. Index definition consists
+            of type, optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
     -->
     <query-caches>
         <query-cache name="query-cache-class-name-predicate" mapName="map-name">
@@ -724,7 +722,11 @@
             <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"
                       comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
             <indexes>
-                <index ordered="false">name</index>
+                <index type="HASH">
+                    <attributes>
+                        <attribute>name</attribute>
+                    </attributes>
+                </index>
             </indexes>
         </query-cache>
         <query-cache name="query-cache-sql-predicate" mapName="map-name">
@@ -748,7 +750,6 @@
                     HazelcastClientOfflineException.
 
         It has the <connection-retry> sub-element, defining the configuration used when retrying to connect to the cluster.
-        It can be enabled by setting the "enabled" attribute to true.
         The <connection-retry> element has the following sub-elements:
             * <initial-backoff-millis>:
                 Specifies how long to wait (backoff) after the first failure before retrying in milliseconds.
@@ -761,7 +762,7 @@
             * <jitter>: Specifies by how much to randomize backoffs. Its default value is 0.2.
     -->
     <connection-strategy async-start="true" reconnect-mode="ASYNC">
-        <connection-retry enabled="true">
+        <connection-retry>
             <initial-backoff-millis>2000</initial-backoff-millis>
             <max-backoff-millis>60000</max-backoff-millis>
             <multiplier>3</multiplier>

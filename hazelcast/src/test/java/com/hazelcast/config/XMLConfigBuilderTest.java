@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -32,6 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.wan.WanPublisherState;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -121,10 +123,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         file.deleteOnExit();
 
         String xml = HAZELCAST_START_TAG
-                + "    <cluster>\n"
-                + "        <name>foobar</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n"
+                + "  <cluster-name>foobar</cluster-name>\n"
                 + HAZELCAST_END_TAG;
         Writer writer = new PrintWriter(file, "UTF-8");
         writer.write(xml);
@@ -166,35 +165,49 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <interceptor class-name=\"bar\"/>"
                 + "  </security-interceptors>"
                 + "  <client-block-unmapped-actions>false</client-block-unmapped-actions>"
-                + "  <member-credentials-factory class-name=\"MyCredentialsFactory\">\n"
-                + "    <properties>\n"
-                + "      <property name=\"property\">value</property>\n"
-                + "    </properties>\n"
-                + "  </member-credentials-factory>\n"
-                + "  <member-login-modules>\n"
-                + "    <login-module class-name=\"MyRequiredLoginModule\" usage=\"REQUIRED\">\n"
-                + "      <properties>\n"
-                + "        <property name=\"login-property\">login-value</property>\n"
-                + "      </properties>\n"
-                + "    </login-module>\n"
-                + "    <login-module class-name=\"MyRequiredLoginModule2\" usage=\"SUFFICIENT\">\n"
-                + "      <properties>\n"
-                + "        <property name=\"login-property2\">login-value2</property>\n"
-                + "      </properties>\n"
-                + "    </login-module>\n"
-                + "  </member-login-modules>\n"
-                + "  <client-login-modules>\n"
-                + "    <login-module class-name=\"MyOptionalLoginModule\" usage=\"OPTIONAL\">\n"
-                + "      <properties>\n"
-                + "        <property name=\"client-property\">client-value</property>\n"
-                + "      </properties>\n"
-                + "    </login-module>\n"
-                + "    <login-module class-name=\"MyRequiredLoginModule\" usage=\"REQUIRED\">\n"
-                + "      <properties>\n"
-                + "        <property name=\"client-property2\">client-value2</property>\n"
-                + "      </properties>\n"
-                + "    </login-module>\n"
-                + "  </client-login-modules>\n"
+                + "  <realms>"
+                + "    <realm name='mr'>"
+                + "      <authentication>"
+                + "        <jaas>"
+                + "          <login-module class-name=\"MyRequiredLoginModule\" usage=\"REQUIRED\">\n"
+                + "            <properties>\n"
+                + "              <property name=\"login-property\">login-value</property>\n"
+                + "            </properties>\n"
+                + "          </login-module>\n"
+                + "          <login-module class-name=\"MyRequiredLoginModule2\" usage=\"SUFFICIENT\">\n"
+                + "            <properties>\n"
+                + "              <property name=\"login-property2\">login-value2</property>\n"
+                + "            </properties>\n"
+                + "          </login-module>\n"
+                + "        </jaas>"
+                + "      </authentication>"
+                + "      <identity>"
+                + "        <credentials-factory class-name=\"MyCredentialsFactory\">\n"
+                + "          <properties>\n"
+                + "            <property name=\"property\">value</property>\n"
+                + "          </properties>\n"
+                + "        </credentials-factory>\n"
+                + "      </identity>"
+                + "    </realm>"
+                + "    <realm name='cr'>"
+                + "      <authentication>"
+                + "        <jaas>"
+                + "          <login-module class-name=\"MyOptionalLoginModule\" usage=\"OPTIONAL\">\n"
+                + "            <properties>\n"
+                + "              <property name=\"client-property\">client-value</property>\n"
+                + "            </properties>\n"
+                + "          </login-module>\n"
+                + "          <login-module class-name=\"MyRequiredLoginModule\" usage=\"REQUIRED\">\n"
+                + "            <properties>\n"
+                + "              <property name=\"client-property2\">client-value2</property>\n"
+                + "            </properties>\n"
+                + "          </login-module>\n"
+                + "        </jaas>"
+                + "      </authentication>"
+                + "    </realm>"
+                + "  </realms>"
+                + "  <member-authentication realm='mr'/>\n"
+                + "  <client-authentication realm='cr'/>\n"
                 + "  <client-permission-policy class-name=\"MyPermissionPolicy\">\n"
                 + "    <properties>\n"
                 + "      <property name=\"permission-property\">permission-value</property>\n"
@@ -212,14 +225,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("bar", interceptorConfigs.get(1).className);
         assertFalse(securityConfig.getClientBlockUnmappedActions());
 
-        // member-credentials-factory
-        CredentialsFactoryConfig memberCredentialsConfig = securityConfig.getMemberCredentialsConfig();
+        RealmConfig memberRealm = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
+        CredentialsFactoryConfig memberCredentialsConfig = memberRealm.getCredentialsFactoryConfig();
         assertEquals("MyCredentialsFactory", memberCredentialsConfig.getClassName());
         assertEquals(1, memberCredentialsConfig.getProperties().size());
         assertEquals("value", memberCredentialsConfig.getProperties().getProperty("property"));
 
-        // member-login-modules
-        List<LoginModuleConfig> memberLoginModuleConfigs = securityConfig.getMemberLoginModuleConfigs();
+        List<LoginModuleConfig> memberLoginModuleConfigs = memberRealm.getJaasAuthenticationConfig().getLoginModuleConfigs();
         assertEquals(2, memberLoginModuleConfigs.size());
         Iterator<LoginModuleConfig> memberLoginIterator = memberLoginModuleConfigs.iterator();
 
@@ -235,8 +247,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, memberLoginModuleCfg2.getProperties().size());
         assertEquals("login-value2", memberLoginModuleCfg2.getProperties().getProperty("login-property2"));
 
-        // client-login-modules
-        List<LoginModuleConfig> clientLoginModuleConfigs = securityConfig.getClientLoginModuleConfigs();
+        RealmConfig clientRealm = securityConfig.getRealmConfig(securityConfig.getClientRealm());
+        List<LoginModuleConfig> clientLoginModuleConfigs = clientRealm.getJaasAuthenticationConfig().getLoginModuleConfigs();
         assertEquals(2, clientLoginModuleConfigs.size());
         Iterator<LoginModuleConfig> clientLoginIterator = clientLoginModuleConfigs.iterator();
 
@@ -263,10 +275,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void readAwsConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <cluster>\n"
-                + "        <name>dev</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>dev</cluster-name>\n"
                 + "    <network>\n"
                 + "        <port auto-increment=\"true\">5701</port>\n"
                 + "        <join>\n"
@@ -405,10 +414,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void readDiscoveryConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <cluster>\n"
-                + "        <name>dev</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </cluster>\n"
+                + "    <cluster-name>dev</cluster-name>\n"
                 + "    <network>\n"
                 + "        <port auto-increment=\"true\">5701</port>\n"
                 + "        <join>\n"
@@ -667,25 +673,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readLockConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "  <lock name=\"default\">"
-                + "        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>"
-                + "  </lock>"
-                + "  <lock name=\"custom\">"
-                + "       <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "  </lock>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        LockConfig defaultConfig = config.getLockConfig("default");
-        LockConfig customConfig = config.getLockConfig("custom");
-        assertEquals("splitBrainProtectionRuleWithThreeNodes", defaultConfig.getSplitBrainProtectionName());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void readReliableTopic() {
         String xml = HAZELCAST_START_TAG
                 + "    <reliable-topic name=\"custom\">"
@@ -752,25 +739,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MergePolicyConfig mergePolicyConfig = ringbufferConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(2342, mergePolicyConfig.getBatchSize());
-    }
-
-    @Override
-    @Test
-    public void readAtomicLong() {
-        String xml = HAZELCAST_START_TAG
-                + "    <atomic-long name=\"custom\">"
-                + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
-                + "        <split-brain-protection-ref>customSplitBrainProtectionRule</split-brain-protection-ref>"
-                + "    </atomic-long>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
-        assertEquals("custom", atomicLongConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", atomicLongConfig.getSplitBrainProtectionName());
-
-        MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
     }
 
     @Override
@@ -2320,8 +2288,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <republishing-enabled>false</republishing-enabled>\n"
                 + "          </wan-replication-ref>"
                 + "        <indexes>\n"
-                + "            <index ordered=\"true\">age</index>\n"
-                + "          </indexes>"
+                + "          <index>\n"
+                + "            <attributes>\n"
+                + "              <attribute>age</attribute>\n"
+                + "            </attributes>\n"
+                + "          </index>\n"
+                + "        </indexes>"
                 + "        <attributes>\n"
                 + "            <attribute extractor-class-name=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
                 + "           </attributes>"
@@ -2351,9 +2323,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
         assertTrue(mapConfig.isReadBackupData());
-        assertEquals(1, mapConfig.getMapIndexConfigs().size());
-        assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
-        assertTrue(mapConfig.getMapIndexConfigs().get(0).isOrdered());
+        assertEquals(1, mapConfig.getIndexConfigs().size());
+        assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
+        assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
         assertEquals(1, mapConfig.getAttributeConfigs().size());
         assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
         assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
@@ -2409,8 +2381,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <indexes>\n"
-                + "           <index ordered=\"false\">name</index>\n"
-                + "           <index ordered=\"true\">age</index>\n"
+                + "           <index type=\"HASH\">\n"
+                + "               <attributes>\n"
+                + "                   <attribute>name</attribute>\n"
+                + "               </attributes>\n"
+                + "           </index>\n"
+                + "           <index>\n"
+                + "               <attributes>\n"
+                + "                   <attribute>age</attribute>\n"
+                + "               </attributes>\n"
+                + "           </index>\n"
                 + "       </indexes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2418,14 +2398,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getMapIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getMapIndexConfigs().get(1));
+        assertFalse(mapConfig.getIndexConfigs().isEmpty());
+        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
+        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
     }
 
-    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, MapIndexConfig indexConfig) {
-        assertEquals(expectedAttribute, indexConfig.getAttribute());
-        assertEquals(expectedOrdered, indexConfig.isOrdered());
+    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, IndexConfig indexConfig) {
+        assertEquals(expectedAttribute, indexConfig.getAttributes().get(0));
+        assertEquals(expectedOrdered, indexConfig.getType() == IndexType.SORTED);
     }
 
     @Override
@@ -2527,7 +2507,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<coalesce>false</coalesce>"
                 + "<populate>true</populate>"
                 + "<indexes>"
-                + "<index ordered=\"false\">name</index>"
+                + "<index type=\"HASH\"><attributes><attribute>name</attribute></attributes></index>"
                 + "</indexes>"
                 + "<predicate type=\"class-name\"> "
                 + "com.hazelcast.examples.SimplePredicate"
@@ -2643,9 +2623,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
-        for (MapIndexConfig mapIndexConfig : queryCacheConfig.getIndexConfigs()) {
-            assertEquals("name", mapIndexConfig.getAttribute());
-            assertFalse(mapIndexConfig.isOrdered());
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
+            assertEquals("name", indexConfig.getAttributes().get(0));
+            assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
     }
 
@@ -2812,6 +2792,110 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
+    }
+
+    @Override
+    @Test
+    public void testHotRestartEncryptionAtRest_whenJavaKeyStore() {
+        int keySize = 16;
+        String keyStorePath = "/tmp/keystore.p12";
+        String keyStoreType = "PKCS12";
+        String keyStorePassword = "password";
+        int pollingInterval = 60;
+        String currentKeyAlias = "current";
+        String xml = HAZELCAST_START_TAG
+                + "<hot-restart-persistence enabled=\"true\">"
+                + "    <encryption-at-rest enabled=\"true\">\n"
+                + "        <algorithm>AES</algorithm>\n"
+                + "        <salt>some-salt</salt>\n"
+                + "        <key-size>" + keySize + "</key-size>\n"
+                + "        <secure-store>\n"
+                + "            <keystore>\n"
+                + "                <path>" + keyStorePath + "</path>\n"
+                + "                <type>" + keyStoreType + "</type>\n"
+                + "                <password>" + keyStorePassword + "</password>\n"
+                + "                <polling-interval>" + pollingInterval + "</polling-interval>\n"
+                + "                <current-key-alias>" + currentKeyAlias + "</current-key-alias>\n"
+                + "            </keystore>\n"
+                + "        </secure-store>\n"
+                + "    </encryption-at-rest>"
+                + "</hot-restart-persistence>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
+        SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
+        assertTrue(secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig);
+        JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) secureStoreConfig;
+        assertEquals(new File(keyStorePath).getAbsolutePath(), keyStoreConfig.getPath().getAbsolutePath());
+        assertEquals(keyStoreType, keyStoreConfig.getType());
+        assertEquals(keyStorePassword, keyStoreConfig.getPassword());
+        assertEquals(pollingInterval, keyStoreConfig.getPollingInterval());
+        assertEquals(currentKeyAlias, keyStoreConfig.getCurrentKeyAlias());
+    }
+
+    @Override
+    @Test
+    public void testHotRestartEncryptionAtRest_whenVault() {
+        int keySize = 16;
+        String address = "https://localhost:1234";
+        String secretPath = "secret/path";
+        String token = "token";
+        int pollingInterval = 60;
+        String xml = HAZELCAST_START_TAG
+                + "<hot-restart-persistence enabled=\"true\">"
+                + "    <encryption-at-rest enabled=\"true\">\n"
+                + "        <algorithm>AES</algorithm>\n"
+                + "        <salt>some-salt</salt>\n"
+                + "        <key-size>" + keySize + "</key-size>\n"
+                + "        <secure-store>\n"
+                + "            <vault>\n"
+                + "                <address>" + address + "</address>\n"
+                + "                <secret-path>" + secretPath + "</secret-path>\n"
+                + "                <token>" + token + "</token>\n"
+                + "                <polling-interval>" + pollingInterval + "</polling-interval>\n"
+                + "                <ssl enabled=\"true\">\n"
+                + "                  <factory-class-name>\n"
+                + "                      com.hazelcast.nio.ssl.BasicSSLContextFactory\n"
+                + "                  </factory-class-name>\n"
+                + "                  <properties>\n"
+                + "                    <property name=\"protocol\">TLS</property>\n"
+                + "                  </properties>\n"
+                + "                </ssl>\n"
+                + "            </vault>\n"
+                + "        </secure-store>\n"
+                + "    </encryption-at-rest>"
+                + "</hot-restart-persistence>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
+        SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
+        assertTrue(secureStoreConfig instanceof VaultSecureStoreConfig);
+        VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) secureStoreConfig;
+        assertEquals(address, vaultConfig.getAddress());
+        assertEquals(secretPath, vaultConfig.getSecretPath());
+        assertEquals(token, vaultConfig.getToken());
+        assertEquals(pollingInterval, vaultConfig.getPollingInterval());
+        SSLConfig sslConfig = vaultConfig.getSSLConfig();
+        assertTrue(sslConfig.isEnabled());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
+        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
     }
 
     @Override
@@ -3019,6 +3103,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  <session-heartbeat-interval-seconds>3</session-heartbeat-interval-seconds>\n"
                 + "  <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>\n"
                 + "  <fail-on-indeterminate-operation-state>true</fail-on-indeterminate-operation-state>\n"
+                + "  <persistence-enabled>true</persistence-enabled>\n"
+                + "  <base-dir>/mnt/cp-data</base-dir>\n"
+                + "  <data-load-timeout-seconds>30</data-load-timeout-seconds>\n"
                 + "  <raft-algorithm>\n"
                 + "    <leader-election-timeout-in-millis>500</leader-election-timeout-in-millis>\n"
                 + "    <leader-heartbeat-period-in-millis>100</leader-heartbeat-period-in-millis>\n"
@@ -3032,10 +3119,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <semaphore>\n"
                 + "      <name>sem1</name>\n"
                 + "      <jdk-compatible>true</jdk-compatible>\n"
+                + "      <initial-permits>1</initial-permits>\n"
                 + "    </semaphore>\n"
                 + "    <semaphore>\n"
                 + "      <name>sem2</name>\n"
                 + "      <jdk-compatible>false</jdk-compatible>\n"
+                + "      <initial-permits>2</initial-permits>\n"
                 + "    </semaphore>\n"
                 + "  </semaphores>\n"
                 + "  <locks>\n"
@@ -3058,6 +3147,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
+        assertTrue(cpSubsystemConfig.isPersistenceEnabled());
+        assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
+        assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
@@ -3072,6 +3164,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());
         assertFalse(semaphoreConfig2.isJDKCompatible());
+        assertEquals(1, semaphoreConfig1.getInitialPermits());
+        assertEquals(2, semaphoreConfig2.getInitialPermits());
         FencedLockConfig lockConfig1 = cpSubsystemConfig.findLockConfig("lock1");
         FencedLockConfig lockConfig2 = cpSubsystemConfig.findLockConfig("lock2");
         assertNotNull(lockConfig1);

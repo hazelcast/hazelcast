@@ -20,15 +20,15 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
-import com.hazelcast.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
@@ -38,12 +38,14 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.security.Credentials;
+import com.hazelcast.query.impl.IndexUtils;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -57,7 +59,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
@@ -97,10 +99,9 @@ public final class ClientConfigXmlGenerator {
                 "xsi:schemaLocation", "http://www.hazelcast.com/schema/client-config "
                         + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd");
 
-        //Config
-        cluster(gen, clientConfig);
         //InstanceName
         gen.node("instance-name", clientConfig.getInstanceName());
+        gen.node("cluster-name", clientConfig.getClusterName());
         //attributes
         gen.appendLabels(clientConfig.getLabels());
         //Properties
@@ -111,6 +112,8 @@ public final class ClientConfigXmlGenerator {
         if (clientConfig.getExecutorPoolSize() > 0) {
             gen.node("executor-pool-size", clientConfig.getExecutorPoolSize());
         }
+        //Backup Ack To Client
+        gen.node("backup-ack-to-client-enabled", clientConfig.isBackupAckToClientEnabled());
         //Security
         security(gen, clientConfig.getSecurityConfig());
         //Listeners
@@ -128,9 +131,7 @@ public final class ClientConfigXmlGenerator {
         //QueryCaches
         queryCaches(gen, clientConfig.getQueryCacheConfigs());
         //ConnectionStrategy
-        ClientConnectionStrategyConfig connectionStrategy = clientConfig.getConnectionStrategyConfig();
-        gen.node("connection-strategy", null, "async-start", connectionStrategy.isAsyncStart(),
-                "reconnect-mode", connectionStrategy.getReconnectMode());
+        connectionStrategy(gen, clientConfig.getConnectionStrategyConfig());
         //UserCodeDeployment
         userCodeDeployment(gen, clientConfig.getUserCodeDeploymentConfig());
         //FlakeIdGenerator
@@ -194,23 +195,11 @@ public final class ClientConfigXmlGenerator {
         }
     }
 
-    private static void cluster(XmlGenerator gen, ClientConfig cluster) {
-        gen.open("cluster")
-                .node("name", cluster.getClusterName())
-                .node("password", cluster.getClusterPassword())
-                .close();
-    }
-
     private static void network(XmlGenerator gen, ClientNetworkConfig network) {
         gen.open("network")
                 .node("smart-routing", network.isSmartRouting())
                 .node("redo-operation", network.isRedoOperation())
-                .node("connection-timeout", network.getConnectionTimeout())
-                .node("connection-attempt-period", network.getConnectionAttemptPeriod());
-
-        if (network.getConnectionAttemptLimit() >= 0) {
-            gen.node("connection-attempt-limit", network.getConnectionAttemptLimit());
-        }
+                .node("connection-timeout", network.getConnectionTimeout());
 
         clusterMembers(gen, network.getAddresses());
         socketOptions(gen, network.getSocketOptions());
@@ -225,14 +214,27 @@ public final class ClientConfigXmlGenerator {
     }
 
     private static void security(XmlGenerator gen, ClientSecurityConfig security) {
-        String credentialsClassname = security.getCredentialsClassname();
-        Credentials credentials = security.getCredentials();
-        if (credentialsClassname == null && credentials == null) {
+        if (security == null || !security.hasIdentityConfig()) {
             return;
         }
-        gen.open("security")
-                .node("credentials", classNameOrImplClass(credentialsClassname, credentials))
-                .close();
+        gen.open("security");
+        UsernamePasswordIdentityConfig upConfig = security.getUsernamePasswordIdentityConfig();
+        if (upConfig != null) {
+            gen.node("username-password", null,
+                    "username", upConfig.getUsername(),
+                    "password", upConfig.getPassword());
+        }
+        TokenIdentityConfig tic = security.getTokenIdentityConfig();
+        if (tic != null) {
+            gen.node("token", tic.getTokenEncoded(), "encoding", tic.getEncoding());
+        }
+        CredentialsFactoryConfig cfConfig = security.getCredentialsFactoryConfig();
+        if (cfConfig != null) {
+            gen.open("credentials-factory", "class-name", cfConfig.getClassName())
+            .appendProperties(cfConfig.getProperties())
+            .close();
+        }
+        gen.close();
     }
 
     private static void listener(XmlGenerator gen, List<ListenerConfig> listeners) {
@@ -382,7 +384,7 @@ public final class ClientConfigXmlGenerator {
                                 "comparator-class-name", queryCache.getEvictionConfig().getComparatorClassName());
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
-                indexes(gen, queryCache.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCache.getIndexConfigs());
                 //close query-cache
                 gen.close();
             }
@@ -424,17 +426,6 @@ public final class ClientConfigXmlGenerator {
                     .node("prefetch-validity-millis", flakeIdGenerator.getPrefetchValidityMillis())
                     .close();
         }
-    }
-
-    private static void indexes(XmlGenerator gen, List<MapIndexConfig> indexes) {
-        if (indexes.isEmpty()) {
-            return;
-        }
-        gen.open("indexes");
-        for (MapIndexConfig index : indexes) {
-            gen.node("index", index.getAttribute(), "ordered", index.isOrdered());
-        }
-        gen.close();
     }
 
     private static void entryListeners(XmlGenerator gen, List<EntryListenerConfig> entryListeners) {
@@ -571,6 +562,22 @@ public final class ClientConfigXmlGenerator {
                         "store-initial-delay-seconds", preloader.getStoreInitialDelaySeconds(),
                         "store-interval-seconds", preloader.getStoreIntervalSeconds());
         //close near-cache
+        gen.close();
+    }
+
+    private static void connectionStrategy(XmlGenerator gen, ClientConnectionStrategyConfig connectionStrategy) {
+        ConnectionRetryConfig connectionRetry = connectionStrategy.getConnectionRetryConfig();
+        gen.open("connection-strategy", "async-start", connectionStrategy.isAsyncStart(),
+                "reconnect-mode", connectionStrategy.getReconnectMode());
+        gen.open("connection-retry")
+                .node("initial-backoff-millis", connectionRetry.getInitialBackoffMillis())
+                .node("max-backoff-millis", connectionRetry.getMaxBackoffMillis())
+                .node("multiplier", connectionRetry.getMultiplier())
+                .node("fail-on-max-backoff", connectionRetry.isFailOnMaxBackoff())
+                .node("jitter", connectionRetry.getJitter())
+                .close();
+
+        // close connection-strategy
         gen.close();
     }
 

@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -152,7 +151,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
-            map.getAsync(i).get();
+            map.getAsync(i).toCompletableFuture().get();
         }
 
         assertTrueEventually(() -> {

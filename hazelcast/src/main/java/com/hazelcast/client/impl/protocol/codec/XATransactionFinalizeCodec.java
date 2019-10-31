@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,15 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("b7de65e67b0059c9297856a10a7f9fac")
+@Generated("20e131c3ef7f37f13eb5447fcdc4c6cf")
 public final class XATransactionFinalizeCodec {
-    //hex: 0x160300
-    public static final int REQUEST_MESSAGE_TYPE = 1442560;
-    //hex: 0x160301
-    public static final int RESPONSE_MESSAGE_TYPE = 1442561;
+    //hex: 0x140300
+    public static final int REQUEST_MESSAGE_TYPE = 1311488;
+    //hex: 0x140301
+    public static final int RESPONSE_MESSAGE_TYPE = 1311489;
     private static final int REQUEST_IS_COMMIT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_IS_COMMIT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private XATransactionFinalizeCodec() {
     }
@@ -54,7 +55,7 @@ public final class XATransactionFinalizeCodec {
         /**
          * Java XA transaction id as defined in interface javax.transaction.xa.Xid.
          */
-        public javax.transaction.xa.Xid xid;
+        public com.hazelcast.transaction.impl.xa.SerializableXID xid;
 
         /**
          * If true, the transaction is committed else transaction is rolled back.
@@ -76,7 +77,7 @@ public final class XATransactionFinalizeCodec {
     }
 
     public static XATransactionFinalizeCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.isCommit = decodeBoolean(initialFrame.content, REQUEST_IS_COMMIT_FIELD_OFFSET);
@@ -98,7 +99,7 @@ public final class XATransactionFinalizeCodec {
     }
 
     public static XATransactionFinalizeCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

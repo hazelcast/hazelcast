@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
@@ -30,10 +30,15 @@ import java.util.List;
 import java.util.Map;
 
 public class GetPartitionsMessageTask
-        extends AbstractCallableMessageTask<ClientGetPartitionsCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<ClientGetPartitionsCodec.RequestParameters> implements UrgentMessageTask {
 
     public GetPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    public int getPartitionId() {
+        return -1;
     }
 
     /**
@@ -84,5 +89,4 @@ public class GetPartitionsMessageTask
     public Permission getRequiredPermission() {
         return null;
     }
-
 }

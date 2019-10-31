@@ -24,6 +24,9 @@ import com.hazelcast.core.HazelcastException;
 public class MaxMessageSizeExceeded
         extends HazelcastException {
     public MaxMessageSizeExceeded() {
-        super("The size of the message exceeds the maximum value of " + Integer.MAX_VALUE + " bytes.");
+    }
+
+    public MaxMessageSizeExceeded(String message) {
+        super(message);
     }
 }

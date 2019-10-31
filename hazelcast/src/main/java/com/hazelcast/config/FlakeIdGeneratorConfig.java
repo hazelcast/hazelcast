@@ -17,7 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -65,7 +66,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
     private boolean statisticsEnabled = true;
 
     // for deserialization
-    FlakeIdGeneratorConfig() {
+    public FlakeIdGeneratorConfig() {
     }
 
     public FlakeIdGeneratorConfig(String name) {

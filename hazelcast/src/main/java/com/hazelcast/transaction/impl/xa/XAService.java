@@ -19,14 +19,14 @@ package com.hazelcast.transaction.impl.xa;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.spi.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.xa.operations.XaReplicationOperation;
 
@@ -75,12 +75,12 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName) {
+    public DistributedObject createDistributedObject(String objectName, boolean local) {
         return xaResource;
     }
 
     @Override
-    public void destroyDistributedObject(String objectName) {
+    public void destroyDistributedObject(String objectName, boolean local) {
     }
 
     public TransactionContext newXATransactionContext(Xid xid, UUID ownerUuid, int timeout, boolean originatedFromClient) {

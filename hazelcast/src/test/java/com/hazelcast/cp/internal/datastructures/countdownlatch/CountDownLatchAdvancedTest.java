@@ -25,10 +25,10 @@ import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -89,10 +89,6 @@ public class CountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTe
             }
         });
 
-        for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
-            latch.trySetCount(1);
-        }
-
         CPGroupId groupId = getGroupId(latch);
 
         assertTrueEventually(() -> {
@@ -101,6 +97,10 @@ public class CountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTe
             ResourceRegistry registry = service.getRegistryOrNull(groupId);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
+
+        for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
+            latch.trySetCount(1);
+        }
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
@@ -123,7 +123,8 @@ public class CountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTe
         instances[1].shutdown();
 
         HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
-        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
+                   .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
             CountDownLatchService service = getNodeEngineImpl(newInstance).getService(CountDownLatchService.SERVICE_NAME);

@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -82,8 +83,8 @@ public class QueryBounceTest {
     private void prepareAndRunQueryTasks(boolean withIndexes) {
         IMap<String, SampleTestObjects.Employee> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
         if (withIndexes) {
-            map.addIndex("id", false);
-            map.addIndex("age", true);
+            map.addIndex(IndexType.HASH, "id");
+            map.addIndex(IndexType.SORTED, "age");
         }
         populateMap(map);
 

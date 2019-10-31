@@ -16,12 +16,12 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
-import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.MetadataRaftGroupManager;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.cp.internal.exception.CannotCreateRaftGroupException;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -50,12 +50,12 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
                                                                       IdentifiedDataSerializable {
 
     private String groupName;
-    private Collection<CPMemberInfo> members;
+    private Collection<RaftEndpoint> members;
 
     public CreateRaftGroupOp() {
     }
 
-    public CreateRaftGroupOp(String groupName, Collection<CPMemberInfo> members) {
+    public CreateRaftGroupOp(String groupName, Collection<RaftEndpoint> members) {
         this.groupName = groupName;
         this.members = members;
     }
@@ -84,7 +84,7 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(groupName);
         out.writeInt(members.size());
-        for (CPMemberInfo member : members) {
+        for (RaftEndpoint member : members) {
             out.writeObject(member);
         }
     }
@@ -93,9 +93,9 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
     public void readData(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
         int len = in.readInt();
-        members = new ArrayList<CPMemberInfo>(len);
+        members = new ArrayList<>(len);
         for (int i = 0; i < len; i++) {
-            CPMemberInfo member = in.readObject();
+            RaftEndpoint member = in.readObject();
             members.add(member);
         }
     }

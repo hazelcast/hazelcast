@@ -32,7 +32,8 @@ import java.util.UUID;
 /**
  * Transactional lock and get operation.
  */
-public class TxnLockAndGetOperation extends LockAwareOperation implements MutatingOperation {
+public class TxnLockAndGetOperation
+        extends LockAwareOperation implements MutatingOperation {
 
     private long ttl;
     private boolean shouldLoad;
@@ -43,8 +44,9 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, UUID ownerUuid,
-                                  boolean shouldLoad, boolean blockReads) {
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout,
+                                  long ttl, UUID ownerUuid, boolean shouldLoad,
+                                  boolean blockReads) {
         super(name, dataKey);
         this.ownerUuid = ownerUuid;
         this.shouldLoad = shouldLoad;

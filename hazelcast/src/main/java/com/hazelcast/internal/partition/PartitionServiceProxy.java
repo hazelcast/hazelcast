@@ -21,17 +21,18 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.internal.util.FutureUtil;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +44,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class PartitionServiceProxy implements PartitionService {
 
@@ -83,7 +85,8 @@ public class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public Partition getPartition(Object key) {
+    public Partition getPartition(@Nonnull Object key) {
+        checkNotNull(key, "key cannot be null");
         int partitionId = partitionService.getPartitionId(key);
         return partitionMap.get(partitionId);
     }
@@ -151,8 +154,8 @@ public class PartitionServiceProxy implements PartitionService {
         }
         final Address target = member.getAddress();
         final Operation operation = new SafeStateCheckOperation();
-        final InternalCompletableFuture future = nodeEngine.getOperationService()
-                .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
+        final InvocationFuture future = nodeEngine.getOperationService()
+                                                  .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
         boolean safe;
         try {
             final Object result = future.get(10, TimeUnit.SECONDS);

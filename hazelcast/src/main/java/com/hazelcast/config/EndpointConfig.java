@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -264,7 +265,8 @@ public class EndpointConfig implements NamedConfig {
         return this;
     }
 
-    EndpointConfig setProtocolType(ProtocolType protocolType) {
+    @PrivateApi
+    public EndpointConfig setProtocolType(ProtocolType protocolType) {
         this.protocolType = protocolType;
         return this;
     }

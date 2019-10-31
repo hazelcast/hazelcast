@@ -19,7 +19,7 @@ package com.hazelcast.aggregation;
 import java.io.Serializable;
 
 /**
- * Base class for all aggregators. Exposes API for parallel two-phase aggregations:
+ * Defines a contract for all aggregators. Exposes API for parallel two-phase aggregations:
  * - accumulation of input entries by multiple instance of aggregators
  * - combining all aggregators into one to calculate the final result
  * <p>
@@ -34,14 +34,14 @@ import java.io.Serializable;
  * @param <R> result type
  * @since 3.8
  */
-public abstract class Aggregator<I, R> implements Serializable {
+public interface Aggregator<I, R> extends Serializable {
 
     /**
      * Accumulates the given entries.
      *
      * @param input input to accumulate.
      */
-    public abstract void accumulate(I input);
+    void accumulate(I input);
 
     /**
      * Called after the last call to combine on a specific instance. Enables disposing of the intermediary state.
@@ -51,7 +51,7 @@ public abstract class Aggregator<I, R> implements Serializable {
      * It's caused by the fact that the aggregation may be run in a parallel way and each thread gets a clone of the
      * aggregator.
      */
-    public void onAccumulationFinished() {
+    default void onAccumulationFinished() {
     }
 
     /**
@@ -63,7 +63,7 @@ public abstract class Aggregator<I, R> implements Serializable {
      * @param aggregator aggregator providing intermediary results to be combined into the results of this aggregator.
      *                   The given aggregator has to be of the same class as the one that the method is being called on.
      */
-    public abstract void combine(Aggregator aggregator);
+    void combine(Aggregator aggregator);
 
     /**
      * Called after the last call to combine on a specific instance. Enables disposing of the intermediary state.
@@ -73,7 +73,7 @@ public abstract class Aggregator<I, R> implements Serializable {
      * It's caused by the fact that the aggregation may be run in a parallel way and each thread gets a clone of the
      * aggregator.
      */
-    public void onCombinationFinished() {
+    default void onCombinationFinished() {
     }
 
     /**
@@ -81,6 +81,6 @@ public abstract class Aggregator<I, R> implements Serializable {
      *
      * @return returns the result of the aggregation.
      */
-    public abstract R aggregate();
+    R aggregate();
 
 }

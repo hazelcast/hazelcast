@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -41,14 +42,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-@Generated("4c0cc9f27ec36117425b84fcf0d39592")
+@Generated("41d39207c126cb496bcc7bcda3b1d1bb")
 public final class MapPutAllCodec {
-    //hex: 0x013000
-    public static final int REQUEST_MESSAGE_TYPE = 77824;
-    //hex: 0x013001
-    public static final int RESPONSE_MESSAGE_TYPE = 77825;
+    //hex: 0x012D00
+    public static final int REQUEST_MESSAGE_TYPE = 77056;
+    //hex: 0x012D01
+    public static final int RESPONSE_MESSAGE_TYPE = 77057;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MapPutAllCodec() {
     }
@@ -76,17 +77,17 @@ public final class MapPutAllCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        MapCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
+        EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
         return clientMessage;
     }
 
     public static MapPutAllCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
         request.name = StringCodec.decode(iterator);
-        request.entries = MapCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
+        request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return request;
     }
 
@@ -104,7 +105,7 @@ public final class MapPutAllCodec {
     }
 
     public static MapPutAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

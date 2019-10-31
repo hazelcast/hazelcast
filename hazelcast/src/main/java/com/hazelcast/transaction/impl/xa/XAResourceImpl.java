@@ -21,7 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -29,7 +29,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.SerializableList;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
@@ -39,6 +39,7 @@ import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOpe
 import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOperation;
 import com.hazelcast.internal.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
@@ -295,6 +296,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         return SERVICE_NAME;
     }
 
+    @Nonnull
     @Override
     public TransactionContext getTransactionContext() {
         long threadId = Thread.currentThread().getId();

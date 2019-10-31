@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -30,6 +32,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.wan.WanPublisherState;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -151,28 +154,38 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      - foo\n"
                 + "      - bar\n"
                 + "    client-block-unmapped-actions: false\n"
-                + "    member-credentials-factory:\n"
-                + "      class-name: MyCredentialsFactory\n"
-                + "      properties:\n"
-                + "        property: value\n"
-                + "    member-login-modules:\n"
-                + "      - class-name: MyRequiredLoginModule\n"
-                + "        usage: REQUIRED\n"
-                + "        properties:\n"
-                + "          login-property: login-value\n"
-                + "      - class-name: MyRequiredLoginModule2\n"
-                + "        usage: SUFFICIENT\n"
-                + "        properties:\n"
-                + "          login-property2: login-value2\n"
-                + "    client-login-modules:\n"
-                + "      - class-name: MyOptionalLoginModule\n"
-                + "        usage: OPTIONAL\n"
-                + "        properties:\n"
-                + "          client-property: client-value\n"
-                + "      - class-name: MyRequiredLoginModule\n"
-                + "        usage: REQUIRED\n"
-                + "        properties:\n"
-                + "          client-property2: client-value2\n"
+                + "    member-authentication:\n"
+                + "      realm: mr\n"
+                + "    client-authentication:\n"
+                + "      realm: cr\n"
+                + "    realms:\n"
+                + "      - name: mr\n"
+                + "        authentication:\n"
+                + "          jaas:\n"
+                + "            - class-name: MyRequiredLoginModule\n"
+                + "              usage: REQUIRED\n"
+                + "              properties:\n"
+                + "                login-property: login-value\n"
+                + "            - class-name: MyRequiredLoginModule2\n"
+                + "              usage: SUFFICIENT\n"
+                + "              properties:\n"
+                + "                login-property2: login-value2\n"
+                + "        identity:\n"
+                + "          credentials-factory:\n"
+                + "            class-name: MyCredentialsFactory\n"
+                + "            properties:\n"
+                + "              property: value\n"
+                + "      - name: cr\n"
+                + "        authentication:\n"
+                + "          jaas:\n"
+                + "            - class-name: MyOptionalLoginModule\n"
+                + "              usage: OPTIONAL\n"
+                + "              properties:\n"
+                + "                client-property: client-value\n"
+                + "            - class-name: MyRequiredLoginModule\n"
+                + "              usage: REQUIRED\n"
+                + "              properties:\n"
+                + "                client-property2: client-value2\n"
                 + "    client-permission-policy:\n"
                 + "      class-name: MyPermissionPolicy\n"
                 + "      properties:\n"
@@ -187,46 +200,44 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("bar", interceptorConfigs.get(1).className);
         assertFalse(securityConfig.getClientBlockUnmappedActions());
 
-        // member-credentials-factory
-        CredentialsFactoryConfig memberCredentialsConfig = securityConfig.getMemberCredentialsConfig();
+        RealmConfig memberRealm = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
+        CredentialsFactoryConfig memberCredentialsConfig = memberRealm.getCredentialsFactoryConfig();
         assertEquals("MyCredentialsFactory", memberCredentialsConfig.getClassName());
         assertEquals(1, memberCredentialsConfig.getProperties().size());
         assertEquals("value", memberCredentialsConfig.getProperties().getProperty("property"));
 
-        // member-login-modules
-        List<LoginModuleConfig> memberLoginModuleConfigs = securityConfig.getMemberLoginModuleConfigs();
+        List<LoginModuleConfig> memberLoginModuleConfigs = memberRealm.getJaasAuthenticationConfig().getLoginModuleConfigs();
         assertEquals(2, memberLoginModuleConfigs.size());
         Iterator<LoginModuleConfig> memberLoginIterator = memberLoginModuleConfigs.iterator();
 
         LoginModuleConfig memberLoginModuleCfg1 = memberLoginIterator.next();
         assertEquals("MyRequiredLoginModule", memberLoginModuleCfg1.getClassName());
-        assertEquals(LoginModuleConfig.LoginModuleUsage.REQUIRED, memberLoginModuleCfg1.getUsage());
+        assertEquals(LoginModuleUsage.REQUIRED, memberLoginModuleCfg1.getUsage());
         assertEquals(1, memberLoginModuleCfg1.getProperties().size());
         assertEquals("login-value", memberLoginModuleCfg1.getProperties().getProperty("login-property"));
 
         LoginModuleConfig memberLoginModuleCfg2 = memberLoginIterator.next();
         assertEquals("MyRequiredLoginModule2", memberLoginModuleCfg2.getClassName());
-        assertEquals(LoginModuleConfig.LoginModuleUsage.SUFFICIENT, memberLoginModuleCfg2.getUsage());
+        assertEquals(LoginModuleUsage.SUFFICIENT, memberLoginModuleCfg2.getUsage());
         assertEquals(1, memberLoginModuleCfg2.getProperties().size());
         assertEquals("login-value2", memberLoginModuleCfg2.getProperties().getProperty("login-property2"));
 
-        // client-login-modules
-        List<LoginModuleConfig> clientLoginModuleConfigs = securityConfig.getClientLoginModuleConfigs();
+        RealmConfig clientRealm = securityConfig.getRealmConfig(securityConfig.getClientRealm());
+        List<LoginModuleConfig> clientLoginModuleConfigs = clientRealm.getJaasAuthenticationConfig().getLoginModuleConfigs();
         assertEquals(2, clientLoginModuleConfigs.size());
         Iterator<LoginModuleConfig> clientLoginIterator = clientLoginModuleConfigs.iterator();
 
         LoginModuleConfig clientLoginModuleCfg1 = clientLoginIterator.next();
         assertEquals("MyOptionalLoginModule", clientLoginModuleCfg1.getClassName());
-        assertEquals(LoginModuleConfig.LoginModuleUsage.OPTIONAL, clientLoginModuleCfg1.getUsage());
+        assertEquals(LoginModuleUsage.OPTIONAL, clientLoginModuleCfg1.getUsage());
         assertEquals(1, clientLoginModuleCfg1.getProperties().size());
         assertEquals("client-value", clientLoginModuleCfg1.getProperties().getProperty("client-property"));
 
         LoginModuleConfig clientLoginModuleCfg2 = clientLoginIterator.next();
         assertEquals("MyRequiredLoginModule", clientLoginModuleCfg2.getClassName());
-        assertEquals(LoginModuleConfig.LoginModuleUsage.REQUIRED, clientLoginModuleCfg2.getUsage());
+        assertEquals(LoginModuleUsage.REQUIRED, clientLoginModuleCfg2.getUsage());
         assertEquals(1, clientLoginModuleCfg2.getProperties().size());
         assertEquals("client-value2", clientLoginModuleCfg2.getProperties().getProperty("client-property2"));
-
         // client-permission-policy
         PermissionPolicyConfig permissionPolicyConfig = securityConfig.getClientPolicyConfig();
         assertEquals("MyPermissionPolicy", permissionPolicyConfig.getClassName());
@@ -652,24 +663,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readLockConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  lock:\n"
-                + "    default:\n"
-                + "      split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes\n"
-                + "    custom:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n";
-
-        Config config = buildConfig(yaml);
-        LockConfig defaultConfig = config.getLockConfig("default");
-        LockConfig customConfig = config.getLockConfig("custom");
-        assertEquals("splitBrainProtectionRuleWithThreeNodes", defaultConfig.getSplitBrainProtectionName());
-        assertEquals("customSplitBrainProtectionRule", customConfig.getSplitBrainProtectionName());
-    }
-
-    @Override
-    @Test
     public void readReliableTopic() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -751,33 +744,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         RingbufferConfig defaultRingBufferConfig = config.getRingbufferConfig("default");
         assertEquals(42, defaultRingBufferConfig.getCapacity());
-    }
-
-    @Override
-    @Test
-    public void readAtomicLong() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  atomic-long:\n"
-                + "    custom:\n"
-                + "      merge-policy:\n"
-                + "        class-name: CustomMergePolicy\n"
-                + "        batch-size: 23\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule\n"
-                + "    default:\n"
-                + "      split-brain-protection-ref: customSplitBrainProtectionRule2\n";
-
-        Config config = buildConfig(yaml);
-        AtomicLongConfig atomicLongConfig = config.getAtomicLongConfig("custom");
-        assertEquals("custom", atomicLongConfig.getName());
-        assertEquals("customSplitBrainProtectionRule", atomicLongConfig.getSplitBrainProtectionName());
-
-        MergePolicyConfig mergePolicyConfig = atomicLongConfig.getMergePolicyConfig();
-        assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
-        assertEquals(23, mergePolicyConfig.getBatchSize());
-
-        AtomicLongConfig defaultAtomicLongConfig = config.getAtomicLongConfig("default");
-        assertEquals("customSplitBrainProtectionRule2", defaultAtomicLongConfig.getSplitBrainProtectionName());
     }
 
     @Override
@@ -2351,8 +2317,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            - com.example.SampleFilter\n"
                 + "          republishing-enabled: false\n"
                 + "      indexes:\n"
-                + "        age:\n"
-                + "          ordered: true\n"
+                + "        - attributes:\n"
+                + "          - \"age\"\n"
                 + "      attributes:\n"
                 + "        currency:\n"
                 + "          extractor-class-name: com.bank.CurrencyExtractor\n"
@@ -2380,9 +2346,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
         assertTrue(mapConfig.isReadBackupData());
-        assertEquals(1, mapConfig.getMapIndexConfigs().size());
-        assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
-        assertTrue(mapConfig.getMapIndexConfigs().get(0).isOrdered());
+        assertEquals(1, mapConfig.getIndexConfigs().size());
+        assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
+        assertTrue(mapConfig.getIndexConfigs().get(0).getType() == IndexType.SORTED);
         assertEquals(1, mapConfig.getAttributeConfigs().size());
         assertEquals("com.bank.CurrencyExtractor", mapConfig.getAttributeConfigs().get(0).getExtractorClassName());
         assertEquals("currency", mapConfig.getAttributeConfigs().get(0).getName());
@@ -2441,17 +2407,18 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    people:\n"
                 + "      indexes:\n"
-                + "        name:\n"
-                + "          ordered: false\n"
-                + "        age:\n"
-                + "          ordered: true\n";
+                + "        - type: HASH\n"
+                + "          attributes:\n"
+                + "            - \"name\"\n"
+                + "        - attributes:\n"
+                + "          - \"age\"\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getMapIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getMapIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getMapIndexConfigs().get(1));
+        assertFalse(mapConfig.getIndexConfigs().isEmpty());
+        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
+        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
     }
 
     @Override
@@ -2551,8 +2518,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          coalesce: false\n"
                 + "          populate: true\n"
                 + "          indexes:\n"
-                + "            name:\n"
-                + "              ordered: false\n"
+                + "            - type: HASH\n"
+                + "              attributes:\n"
+                + "                - \"name\"\n"
                 + "          predicate:\n"
                 + "            class-name: com.hazelcast.examples.SimplePredicate\n"
                 + "          eviction:\n"
@@ -2583,9 +2551,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
-        for (MapIndexConfig mapIndexConfig : queryCacheConfig.getIndexConfigs()) {
-            assertEquals("name", mapIndexConfig.getAttribute());
-            assertFalse(mapIndexConfig.isOrdered());
+        for (IndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
+            assertEquals("name", indexConfig.getAttributes().get(0));
+            assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
     }
 
@@ -2675,9 +2643,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         fail();
     }
 
-    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, MapIndexConfig indexConfig) {
-        assertEquals(expectedAttribute, indexConfig.getAttribute());
-        assertEquals(expectedOrdered, indexConfig.isOrdered());
+    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, IndexConfig indexConfig) {
+        assertEquals(expectedAttribute, indexConfig.getAttributes().get(0));
+        assertEquals(expectedOrdered, indexConfig.getType() == IndexType.SORTED);
     }
 
     @Override
@@ -2844,6 +2812,102 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(validationTimeout, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
+    }
+
+    @Override
+    public void testHotRestartEncryptionAtRest_whenJavaKeyStore() {
+        int keySize = 16;
+        String keyStorePath = "/tmp/keystore.p12";
+        String keyStoreType = "PKCS12";
+        String keyStorePassword = "password";
+        int pollingInterval = 60;
+        String currentKeyAlias = "current";
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  hot-restart-persistence:\n"
+                + "    enabled: true\n"
+                + "    encryption-at-rest:\n"
+                + "      enabled: true\n"
+                + "      algorithm: AES\n"
+                + "      salt: some-salt\n"
+                + "      key-size: " + keySize + "\n"
+                + "      secure-store:\n"
+                + "        keystore:\n"
+                + "          path: " + keyStorePath + "\n"
+                + "          type: " + keyStoreType + "\n"
+                + "          password: " + keyStorePassword + "\n"
+                + "          polling-interval: " + pollingInterval + "\n"
+                + "          current-key-alias: " + currentKeyAlias + "\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
+        SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
+        assertTrue(secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig);
+        JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) secureStoreConfig;
+        assertEquals(new File(keyStorePath).getAbsolutePath(), keyStoreConfig.getPath().getAbsolutePath());
+        assertEquals(keyStoreType, keyStoreConfig.getType());
+        assertEquals(keyStorePassword, keyStoreConfig.getPassword());
+        assertEquals(pollingInterval, keyStoreConfig.getPollingInterval());
+        assertEquals(currentKeyAlias, keyStoreConfig.getCurrentKeyAlias());
+    }
+
+    @Override
+    @Test
+    public void testHotRestartEncryptionAtRest_whenVault() {
+        int keySize = 16;
+        String address = "https://localhost:1234";
+        String secretPath = "secret/path";
+        String token = "token";
+        int pollingInterval = 60;
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  hot-restart-persistence:\n"
+                + "    enabled: true\n"
+                + "    encryption-at-rest:\n"
+                + "      enabled: true\n"
+                + "      algorithm: AES\n"
+                + "      salt: some-salt\n"
+                + "      key-size: " + keySize + "\n"
+                + "      secure-store:\n"
+                + "        vault:\n"
+                + "          address: " + address + "\n"
+                + "          secret-path: " + secretPath + "\n"
+                + "          token: " + token + "\n"
+                + "          polling-interval: " + pollingInterval + "\n"
+                + "          ssl:\n"
+                + "            enabled: true\n"
+                + "            factory-class-name: com.hazelcast.nio.ssl.BasicSSLContextFactory\n"
+                + "            properties:\n"
+                + "              protocol: TLS\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
+        SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
+        assertTrue(secureStoreConfig instanceof VaultSecureStoreConfig);
+        VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) secureStoreConfig;
+        assertEquals(address, vaultConfig.getAddress());
+        assertEquals(secretPath, vaultConfig.getSecretPath());
+        assertEquals(token, vaultConfig.getToken());
+        assertEquals(pollingInterval, vaultConfig.getPollingInterval());
+        SSLConfig sslConfig = vaultConfig.getSSLConfig();
+        assertTrue(sslConfig.isEnabled());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
+        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
     }
 
     @Override
@@ -3315,6 +3379,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    session-heartbeat-interval-seconds: 3\n"
                 + "    missing-cp-member-auto-removal-seconds: 120\n"
                 + "    fail-on-indeterminate-operation-state: true\n"
+                + "    persistence-enabled: true\n"
+                + "    base-dir: /mnt/cp-data\n"
+                + "    data-load-timeout-seconds: 30\n"
                 + "    raft-algorithm:\n"
                 + "      leader-election-timeout-in-millis: 500\n"
                 + "      leader-heartbeat-period-in-millis: 100\n"
@@ -3326,8 +3393,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    semaphores:\n"
                 + "      sem1:\n"
                 + "        jdk-compatible: true\n"
+                + "        initial-permits: 1\n"
                 + "      sem2:\n"
                 + "        jdk-compatible: false\n"
+                + "        initial-permits: 2\n"
                 + "    locks:\n"
                 + "      lock1:\n"
                 + "        lock-acquire-limit: 1\n"
@@ -3341,6 +3410,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
         assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
+        assertTrue(cpSubsystemConfig.isPersistenceEnabled());
+        assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
+        assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
@@ -3355,6 +3427,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(semaphoreConfig2);
         assertTrue(semaphoreConfig1.isJDKCompatible());
         assertFalse(semaphoreConfig2.isJDKCompatible());
+        assertEquals(1, semaphoreConfig1.getInitialPermits());
+        assertEquals(2, semaphoreConfig2.getInitialPermits());
         FencedLockConfig lockConfig1 = cpSubsystemConfig.findLockConfig("lock1");
         FencedLockConfig lockConfig2 = cpSubsystemConfig.findLockConfig("lock2");
         assertNotNull(lockConfig1);

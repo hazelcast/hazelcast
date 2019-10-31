@@ -18,6 +18,7 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.dto.PermissionConfigDTO;
+import com.hazelcast.internal.management.operation.ChangeClusterStateOperation;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
@@ -44,8 +45,9 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
     public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 4;
     public static final int PERMISSION_CONFIG_DTO = 5;
     public static final int SET_LICENSE = 6;
+    public static final int CHANGE_CLUSTER_STATE = 7;
 
-    private static final int LEN = SET_LICENSE + 1;
+    private static final int LEN = CHANGE_CLUSTER_STATE + 1;
 
     @Override
     public int getFactoryId() {
@@ -65,6 +67,7 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
         constructors[UPDATE_PERMISSION_CONFIG_OPERATION] = arg -> new UpdatePermissionConfigOperation();
         constructors[PERMISSION_CONFIG_DTO] = arg -> new PermissionConfigDTO();
         constructors[SET_LICENSE] = arg -> new SetLicenseOperation();
+        constructors[CHANGE_CLUSTER_STATE] = arg -> new ChangeClusterStateOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

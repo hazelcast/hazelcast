@@ -99,7 +99,7 @@ hazelcast:
             tenant-id: TENANT_ID
             subscription-id: SUB_ID
             cluster-id: HZLCAST001
-            cluster-name: CLUSTER-NAME
+            group-name: RESOURCE-GROUP-NAME
           kubernetes:
             enabled: false
             namespace: MY-KUBERNETES-NAMESPACE
@@ -329,10 +329,11 @@ hazelcast:
           republishing-enabled: false
 
       indexes:
-        name:
-          ordered: false
-        age:
-          ordered: true
+        - type: HASH
+          attributes:
+            - "name"
+        - attributes:
+          - "age"
 
       attributes:
         currency:
@@ -368,10 +369,11 @@ hazelcast:
             max-size-policy: ENTRY_COUNT
             size: 10000
           indexes:
-            name:
-              ordered: false
-            age:
-              ordered: true
+            - type: HASH
+              attributes:
+                - "name"
+            - attributes:
+              - "age"
 
   multimap:
     default:
@@ -446,17 +448,6 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
-
-  lock:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-
-  atomic-long:
-    default:
-      split-brain-protection-ref: splitBrainProtectionRuleWithThreeMembers
-      merge-policy:
-        batch-size: 100
-        class-name: PutIfAbsentMergePolicy
 
   ringbuffer:
     default:
@@ -603,24 +594,34 @@ hazelcast:
 
   security:
     enabled: false
-    member-credentials-factory:
-      class-name: com.hazelcast.examples.MyCredentialsFactory
-      properties:
-        property: value
-    member-login-modules:
-      - class-name: com.hazelcast.examples.MyRequiredLoginModule
-        usage: REQUIRED
-        properties:
-          property: value
-    client-login-modules:
-      - class-name: com.hazelcast.examples.MyOptionalLoginModule
-        usage: OPTIONAL
-        properties:
-          property: value
-      - class-name: com.hazelcast.examples.MyRequiredLoginModule
-        usage: REQUIRED
-        properties:
-          property: value
+    realms:
+      - name: mr
+        authentication:
+          jaas:
+            - class-name: com.hazelcast.examples.MyRequiredLoginModule
+              usage: REQUIRED
+              properties:
+                property: value
+        identity:
+          credentials-factory:
+            class-name: com.hazelcast.examples.MyCredentialsFactory
+            properties:
+              property: value
+      - name: cr
+        authentication:
+          jaas:
+            - class-name: com.hazelcast.examples.MyOptionalLoginModule
+              usage: OPTIONAL
+              properties:
+                property: value
+            - class-name: com.hazelcast.examples.MyRequiredLoginModule
+              usage: REQUIRED
+              properties:
+                property: value
+    member-authentication:
+      realm: mr
+    client-authentication:
+      realm: cr
     client-permission-policy:
       class-name: com.hazelcast.examples.MyPermissionPolicy
       properties:
@@ -635,11 +636,6 @@ hazelcast:
         principal: deployer
       countdown-latch:
         - name: "*"
-          actions:
-            - all
-      id-generator:
-        - name: "*"
-          principal: "*"
           actions:
             - all
       set:
@@ -801,6 +797,9 @@ hazelcast:
     session-heartbeat-interval-seconds: 5
     missing-cp-member-auto-removal-seconds: 120
     fail-on-indeterminate-operation-state: false
+    persistence-enabled: false
+    base-dir: data
+    data-load-timeout-seconds: 30
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
       leader-heartbeat-period-in-millis: 5000

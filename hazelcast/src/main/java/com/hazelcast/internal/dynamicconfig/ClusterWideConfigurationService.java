@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
-import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ConfigPatternMatcher;
@@ -26,7 +25,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -39,20 +37,20 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.services.CoreService;
-import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
@@ -64,17 +62,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.Supplier;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.Versions.V3_11;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
-import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static java.lang.Boolean.getBoolean;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
@@ -103,8 +98,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
     private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
-    private final ConcurrentMap<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
-    private final ConcurrentMap<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
     private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
     private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
     private final ConcurrentMap<String, ReplicatedMapConfig> replicatedMapConfigs =
@@ -132,10 +125,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             multiMapConfigs,
             cardinalityEstimatorConfigs,
             ringbufferConfigs,
-            lockConfigs,
             listConfigs,
             setConfigs,
-            atomicLongConfigs,
             replicatedMapConfigs,
             topicConfigs,
             executorConfigs,
@@ -208,18 +199,11 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
-        ICompletableFuture<Object> future = broadcastConfigAsync(config);
-        try {
-            future.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            rethrow(e);
-        } catch (ExecutionException e) {
-            rethrow(e);
-        }
+        InternalCompletableFuture<Object> future = broadcastConfigAsync(config);
+        future.joinInternal();
     }
 
-    public ICompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
+    public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
         checkConfigVersion(config);
         // we create a defensive copy as local operation execution might use a fast-path
         // and avoid config serialization altogether.
@@ -280,12 +264,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof RingbufferConfig) {
             RingbufferConfig ringbufferConfig = (RingbufferConfig) newConfig;
             currentConfig = ringbufferConfigs.putIfAbsent(ringbufferConfig.getName(), ringbufferConfig);
-        } else if (newConfig instanceof LockConfig) {
-            LockConfig lockConfig = (LockConfig) newConfig;
-            currentConfig = lockConfigs.putIfAbsent(lockConfig.getName(), lockConfig);
-        } else if (newConfig instanceof AtomicLongConfig) {
-            AtomicLongConfig atomicLongConfig = (AtomicLongConfig) newConfig;
-            currentConfig = atomicLongConfigs.putIfAbsent(atomicLongConfig.getName(), atomicLongConfig);
         } else if (newConfig instanceof ListConfig) {
             ListConfig listConfig = (ListConfig) newConfig;
             currentConfig = listConfigs.putIfAbsent(listConfig.getName(), listConfig);
@@ -448,26 +426,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public AtomicLongConfig findAtomicLongConfig(String name) {
-        return lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
-    }
-
-    @Override
-    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
-        return atomicLongConfigs;
-    }
-
-    @Override
-    public LockConfig findLockConfig(String name) {
-        return lookupByPattern(configPatternMatcher, lockConfigs, name);
-    }
-
-    @Override
-    public Map<String, LockConfig> getLockConfigs() {
-        return lockConfigs;
-    }
-
-    @Override
     public ListConfig findListConfig(String name) {
         return lookupByPattern(configPatternMatcher, listConfigs, name);
     }
@@ -558,12 +516,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         @Override
         public void run() {
             try {
-                Future<Object> future = invokeOnStableClusterSerial(nodeEngine, new Supplier<Operation>() {
-                    @Override
-                    public Operation get() {
-                        return replicationOperation;
-                    }
-                }, CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+                Future<Object> future = invokeOnStableClusterSerial(nodeEngine,
+                        () -> replicationOperation, CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
                 waitForever(singleton(future), FutureUtil.RETHROW_EVERYTHING);
             } catch (Exception e) {
                 throw new HazelcastException("Error while merging configurations", e);
@@ -573,14 +527,13 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     private static Map<Class<? extends IdentifiedDataSerializable>, Version> initializeConfigToVersionMap() {
         Map<Class<? extends IdentifiedDataSerializable>, Version> configToVersion =
-                new HashMap<Class<? extends IdentifiedDataSerializable>, Version>();
+                new HashMap<>();
 
         // Since 3.9
         configToVersion.put(MapConfig.class, V3_9);
         configToVersion.put(MultiMapConfig.class, V3_9);
         configToVersion.put(CardinalityEstimatorConfig.class, V3_9);
         configToVersion.put(RingbufferConfig.class, V3_9);
-        configToVersion.put(LockConfig.class, V3_9);
         configToVersion.put(ListConfig.class, V3_9);
         configToVersion.put(SetConfig.class, V3_9);
         configToVersion.put(ReplicatedMapConfig.class, V3_9);
@@ -594,7 +547,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         configToVersion.put(EventJournalConfig.class, V3_9);
 
         // Since 3.10
-        configToVersion.put(AtomicLongConfig.class, V3_10);
         configToVersion.put(FlakeIdGeneratorConfig.class, V3_10);
         configToVersion.put(PNCounterConfig.class, V3_10);
 

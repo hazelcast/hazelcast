@@ -26,10 +26,11 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
@@ -54,6 +55,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSupport {
@@ -61,9 +63,15 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     protected ClientConfig defaultClientConfig;
 
     @Test
+    public void testBackupAckToClient() {
+        boolean backupAckToClientEnabled = fullClientConfig.isBackupAckToClientEnabled();
+        assertFalse(backupAckToClientEnabled);
+        assertTrue(defaultClientConfig.isBackupAckToClientEnabled());
+    }
+
+    @Test
     public void testNetworkConfig() {
         final ClientNetworkConfig networkConfig = fullClientConfig.getNetworkConfig();
-        assertEquals(2, networkConfig.getConnectionAttemptLimit());
         assertEquals(2, networkConfig.getAddresses().size());
         assertContains(networkConfig.getAddresses(), "127.0.0.1");
         assertContains(networkConfig.getAddresses(), "127.0.0.2");
@@ -242,9 +250,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(InMemoryFormat.BINARY, queryCacheClassPredicateConfig.getInMemoryFormat());
         assertFalse(queryCacheClassPredicateConfig.isCoalesce());
         assertTrue(queryCacheClassPredicateConfig.isPopulate());
-        for (MapIndexConfig mapIndexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
-            assertEquals("name", mapIndexConfig.getAttribute());
-            assertFalse(mapIndexConfig.isOrdered());
+        for (IndexConfig indexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
+            assertEquals("name", indexConfig.getAttributes().get(0));
+            assertFalse(indexConfig.getType() == IndexType.SORTED);
         }
 
         assertEquals("com.hazelcast.examples.ExamplePredicate",
@@ -272,8 +280,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig() {
         ClientConnectionStrategyConfig connectionStrategyConfig = fullClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertTrue(exponentialRetryConfig.isEnabled());
-        assertTrue(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertFalse(exponentialRetryConfig.isFailOnMaxBackoff());
         assertEquals(0.5, exponentialRetryConfig.getJitter(), 0);
         assertEquals(2000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(60000, exponentialRetryConfig.getMaxBackoffMillis());
@@ -284,8 +291,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig_defaults() {
         ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertFalse(exponentialRetryConfig.isEnabled());
-        assertFalse(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertTrue(exponentialRetryConfig.isFailOnMaxBackoff());
         assertEquals(0.2, exponentialRetryConfig.getJitter(), 0);
         assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());
@@ -393,7 +399,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test
     public void testSecurityConfig() {
         ClientSecurityConfig securityConfig = fullClientConfig.getSecurityConfig();
-        assertEquals("com.hazelcast.security.UsernamePasswordCredentials", securityConfig.getCredentialsClassname());
+        assertNull(securityConfig.getUsernamePasswordIdentityConfig());
         CredentialsFactoryConfig credentialsFactoryConfig = securityConfig.getCredentialsFactoryConfig();
         assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
         Properties properties = credentialsFactoryConfig.getProperties();
@@ -447,4 +453,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testWhitespaceInNonSpaceStrings();
+
+    @Test
+    public abstract void testTokenIdentityConfig();
 }

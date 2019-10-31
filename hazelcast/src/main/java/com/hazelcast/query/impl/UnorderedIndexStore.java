@@ -179,9 +179,6 @@ public class UnorderedIndexStore extends BaseIndexStore {
                     case GREATER_OR_EQUAL:
                         valid = result <= 0;
                         break;
-                    case NOT_EQUAL:
-                        valid = result != 0;
-                        break;
                     default:
                         throw new IllegalStateException("Unrecognized comparison: " + comparison);
                 }

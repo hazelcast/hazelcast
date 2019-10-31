@@ -76,6 +76,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             charBuffer = new char[UTF_BUFFER_SIZE * 8];
         }
         version = UNKNOWN;
+        wanProtocolVersion = UNKNOWN;
     }
 
     @Override
@@ -290,8 +291,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return Bits.readInt(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
-    @Deprecated
-    public final String readLine() throws EOFException {
+    @Override
+    public final String readLine() {
         throw new UnsupportedOperationException();
     }
 

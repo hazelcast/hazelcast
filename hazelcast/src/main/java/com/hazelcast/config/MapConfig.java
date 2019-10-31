@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.ObjectDataInput;
@@ -23,7 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.internal.partition.IPartition;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -88,8 +89,13 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      */
     public static final MetadataPolicy DEFAULT_METADATA_POLICY = MetadataPolicy.CREATE_ON_UPDATE;
 
+    /**
+     * Default value of whether statistics are enabled or not
+     */
+    public static final boolean DEFAULT_STATISTICS_ENABLED = true;
+
     private boolean readBackupData;
-    private boolean statisticsEnabled = true;
+    private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
@@ -107,7 +113,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
     private WanReplicationRef wanReplicationRef;
     private List<EntryListenerConfig> entryListenerConfigs;
     private List<MapPartitionLostListenerConfig> partitionLostListenerConfigs;
-    private List<MapIndexConfig> mapIndexConfigs;
+    private List<IndexConfig> indexConfigs;
     private List<AttributeConfig> attributeConfigs;
     private List<QueryCacheConfig> queryCacheConfigs;
     private PartitioningStrategyConfig partitioningStrategyConfig;
@@ -144,7 +150,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         this.entryListenerConfigs = new ArrayList<>(config.getEntryListenerConfigs());
         this.partitionLostListenerConfigs =
                 new ArrayList<>(config.getPartitionLostListenerConfigs());
-        this.mapIndexConfigs = new ArrayList<>(config.getMapIndexConfigs());
+        this.indexConfigs = new ArrayList<>(config.getIndexConfigs());
         this.attributeConfigs = new ArrayList<>(config.getAttributeConfigs());
         this.queryCacheConfigs = new ArrayList<>(config.getQueryCacheConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
@@ -517,21 +523,20 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         return this;
     }
 
-
-    public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
-        getMapIndexConfigs().add(mapIndexConfig);
+    public MapConfig addIndexConfig(IndexConfig indexConfig) {
+        getIndexConfigs().add(indexConfig);
         return this;
     }
 
-    public List<MapIndexConfig> getMapIndexConfigs() {
-        if (mapIndexConfigs == null) {
-            mapIndexConfigs = new ArrayList<>();
+    public List<IndexConfig> getIndexConfigs() {
+        if (indexConfigs == null) {
+            indexConfigs = new ArrayList<>();
         }
-        return mapIndexConfigs;
+        return indexConfigs;
     }
 
-    public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
-        this.mapIndexConfigs = mapIndexConfigs;
+    public MapConfig setIndexConfigs(List<IndexConfig> indexConfigs) {
+        this.indexConfigs = indexConfigs;
         return this;
     }
 
@@ -793,7 +798,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         if (!getPartitionLostListenerConfigs().equals(that.getPartitionLostListenerConfigs())) {
             return false;
         }
-        if (!getMapIndexConfigs().equals(that.getMapIndexConfigs())) {
+        if (!getIndexConfigs().equals(that.getIndexConfigs())) {
             return false;
         }
         if (!getAttributeConfigs().equals(that.getAttributeConfigs())) {
@@ -836,7 +841,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         result = 31 * result + metadataPolicy.hashCode();
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
         result = 31 * result + getEntryListenerConfigs().hashCode();
-        result = 31 * result + getMapIndexConfigs().hashCode();
+        result = 31 * result + getIndexConfigs().hashCode();
         result = 31 * result + getAttributeConfigs().hashCode();
         result = 31 * result + getQueryCacheConfigs().hashCode();
         result = 31 * result + getPartitionLostListenerConfigs().hashCode();
@@ -871,7 +876,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", entryListenerConfigs=" + entryListenerConfigs
-                + ", mapIndexConfigs=" + mapIndexConfigs
+                + ", indexConfigs=" + indexConfigs
                 + ", attributeConfigs=" + attributeConfigs
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", queryCacheConfigs=" + queryCacheConfigs
@@ -908,7 +913,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         out.writeObject(wanReplicationRef);
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(partitionLostListenerConfigs, out);
-        writeNullableList(mapIndexConfigs, out);
+        writeNullableList(indexConfigs, out);
         writeNullableList(attributeConfigs, out);
         writeNullableList(queryCacheConfigs, out);
         out.writeBoolean(statisticsEnabled);
@@ -939,7 +944,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         wanReplicationRef = in.readObject();
         entryListenerConfigs = readNullableList(in);
         partitionLostListenerConfigs = readNullableList(in);
-        mapIndexConfigs = readNullableList(in);
+        indexConfigs = readNullableList(in);
         attributeConfigs = readNullableList(in);
         queryCacheConfigs = readNullableList(in);
         statisticsEnabled = in.readBoolean();

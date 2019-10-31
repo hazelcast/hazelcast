@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("dee8e45688c6da5dfd2ba3acb5157694")
+@Generated("3dda2391ceb66647c196005113178c08")
 public final class MapClearNearCacheCodec {
-    //hex: 0x013B00
-    public static final int REQUEST_MESSAGE_TYPE = 80640;
-    //hex: 0x013B01
-    public static final int RESPONSE_MESSAGE_TYPE = 80641;
+    //hex: 0x013800
+    public static final int REQUEST_MESSAGE_TYPE = 79872;
+    //hex: 0x013801
+    public static final int RESPONSE_MESSAGE_TYPE = 79873;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MapClearNearCacheCodec() {
     }
@@ -58,10 +59,10 @@ public final class MapClearNearCacheCodec {
         /**
          * TODO DOC
          */
-        public com.hazelcast.nio.Address target;
+        public com.hazelcast.cluster.Address target;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.Address target) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.cluster.Address target) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -75,7 +76,7 @@ public final class MapClearNearCacheCodec {
     }
 
     public static MapClearNearCacheCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -98,7 +99,7 @@ public final class MapClearNearCacheCodec {
     }
 
     public static MapClearNearCacheCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

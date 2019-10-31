@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.spi.impl.discovery;
 
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.sun.net.httpserver.HttpExchange;

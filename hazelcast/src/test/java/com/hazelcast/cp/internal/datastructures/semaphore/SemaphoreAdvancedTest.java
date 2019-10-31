@@ -82,11 +82,6 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
             }
         });
 
-        for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
-            semaphore.acquire();
-            semaphore.release();
-        }
-
         CPGroupId groupId = getGroupId();
 
         assertTrueEventually(() -> {
@@ -95,6 +90,11 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
+
+        for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
+            semaphore.acquire();
+            semaphore.release();
+        }
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
@@ -117,7 +117,8 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
         instances[1].shutdown();
 
         HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
-        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
+                   .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
             SemaphoreService service = getNodeEngineImpl(newInstance).getService(SemaphoreService.SERVICE_NAME);
@@ -141,7 +142,8 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
         cpSubsystemConfig.setSessionTimeToLiveSeconds(10);
         cpSubsystemConfig.setSessionHeartbeatIntervalSeconds(1);
 
-        SemaphoreConfig semaphoreConfig = new SemaphoreConfig(objectName, false);
+        SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+        semaphoreConfig.setName(objectName);
         cpSubsystemConfig.addSemaphoreConfig(semaphoreConfig);
         return config;
     }

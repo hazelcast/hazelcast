@@ -24,7 +24,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -32,7 +32,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
@@ -40,6 +40,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 
 /**
@@ -254,17 +255,6 @@ public interface NodeEngine {
     <T> T toObject(Object object, Class klazz);
 
     /**
-     * Checks if the HazelcastInstance that this {@link NodeEngine} belongs to is still active.
-     * <p>
-     * A HazelcastInstance is not active when it is shutting down or already shut down.
-     * Also see {@link NodeEngine#isRunning()}.
-     *
-     * @return {@code true} if active, {@code false} otherwise
-     */
-    @Deprecated
-    boolean isActive();
-
-    /**
      * Indicates that node is not shutting down or it has not already shut down
      *
      * @return {@code true} if node is not shutting down or it has not already shut down, {@code false} otherwise
@@ -285,7 +275,7 @@ public interface NodeEngine {
      * @param <T>         the type of the service
      * @return the found service, or HazelcastException in case of failure ({@code null} will never be returned)
      */
-    <T> T getService(String serviceName);
+    <T> T getService(@Nonnull String serviceName);
 
     /**
      * Gets the service for the given serviceName if it exists or null otherwise.
@@ -295,7 +285,7 @@ public interface NodeEngine {
      * @return the found service, or null if the service was not found
      * @throws NullPointerException if the serviceName is {@code null}
      */
-    <T> T getServiceOrNull(String serviceName);
+    <T> T getServiceOrNull(@Nonnull String serviceName);
 
     /**
      * Returns the codebase version of the node. For example, when running on hazelcast-3.8.jar, this would resolve

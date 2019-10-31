@@ -65,7 +65,7 @@ public class HazelcastManifestTransformerTest {
 
         transformer = new HazelcastManifestTransformer();
 
-        transformer.mainClass = "com.hazelcast.core.server.StartServer";
+        transformer.mainClass = "com.hazelcast.core.server.HazelcastMemberStarter";
         transformer.manifestEntries = new HashMap<String, Attributes>();
         transformer.overrideInstructions = new HashMap<String, String>();
     }

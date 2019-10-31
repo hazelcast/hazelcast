@@ -18,16 +18,16 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessageTask<P>
-        implements ExecutionCallback<Map<Integer, Object>> {
+        implements BiConsumer<Map<Integer, Object>, Throwable> {
 
     public AbstractAllPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -37,7 +37,8 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
     protected void processMessage() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory).andThen(this);
+        operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory)
+                        .whenCompleteAsync(this);
     }
 
     protected abstract OperationFactory createOperationFactory();
@@ -45,16 +46,15 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
     protected abstract Object reduce(Map<Integer, Object> map);
 
     @Override
-    public final void onFailure(Throwable throwable) {
-        handleProcessingFailure(throwable);
-    }
-
-    @Override
-    public final void onResponse(Map<Integer, Object> map) {
-        try {
-            sendResponse(reduce(map));
-        } catch (Exception e) {
-            handleProcessingFailure(e);
+    public void accept(Map<Integer, Object> map, Throwable throwable) {
+        if (throwable == null) {
+            try {
+                sendResponse(reduce(map));
+            } catch (Exception e) {
+                handleProcessingFailure(e);
+            }
+        } else {
+            handleProcessingFailure(throwable);
         }
     }
 }

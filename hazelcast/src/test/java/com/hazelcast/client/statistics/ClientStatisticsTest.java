@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.statistics.Statistics;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -101,11 +102,11 @@ public class ClientStatisticsTest extends ClientTestSupport {
         Long connectionTimeStat = Long.valueOf(connStat);
         assertNotNull(format("connectionTimeStat should not be null (%s)", stats), connStat);
 
-        ClientConnection ownerConnection = client.getConnectionManager().getOwnerConnection();
-        String expectedClientAddress = format("%s:%d", ownerConnection.getLocalSocketAddress().getAddress().getHostAddress(),
-                ownerConnection.getLocalSocketAddress().getPort());
+        ClientConnection aConnection = client.getConnectionManager().getActiveConnections().iterator().next();
+        String expectedClientAddress = aConnection.getLocalSocketAddress().getAddress().getHostAddress();
         assertEquals(expectedClientAddress, stats.get("clientAddress"));
         assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), stats.get("clientVersion"));
+        assertEquals(client.getName(), stats.get("clientName"));
 
         // time measured by us after client connection should be greater than the connection time reported by the statistics
         assertTrue(format("connectionTimeStat was %d, clientConnectionTime was %d (%s)",
@@ -182,7 +183,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
-    public void testStatisticsClusterReconnect() {
+    public void testStatisticsClusterReconnect() throws InterruptedException {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         HazelcastClientInstanceImpl client = createHazelcastClient();
 
@@ -241,8 +242,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
         final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(Statistics.ENABLED.getName(), "false");
-        clientConfig.setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS));
+        clientConfig.setProperty(ClientProperty.STATISTICS_ENABLED.getName(), "false");
+        clientConfig.setProperty(ClientProperty.STATISTICS_PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS));
 
         hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -275,13 +276,13 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
     private HazelcastClientInstanceImpl createHazelcastClient() {
         ClientConfig clientConfig = new ClientConfig()
-                .setProperty(Statistics.ENABLED.getName(), "true")
-                .setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS))
+                .setProperty(ClientProperty.STATISTICS_ENABLED.getName(), "true")
+                .setProperty(ClientProperty.STATISTICS_PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS))
                 // add IMap and ICache with Near Cache config
                 .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
                 .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
 
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(20);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
 
         HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
         return getHazelcastClientInstanceImpl(clientInstance);

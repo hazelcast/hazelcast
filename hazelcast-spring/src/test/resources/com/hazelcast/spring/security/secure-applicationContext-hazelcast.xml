@@ -34,7 +34,7 @@
     </bean>
 
     <hz:config id="secure-config">
-        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network port="${cluster.port}" port-auto-increment="false">
             <hz:join>
                 <hz:multicast enabled="${boolean.true}"
@@ -43,31 +43,40 @@
         </hz:network>
 
         <hz:security enabled="${boolean.true}">
-            <hz:member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory"
-                                           implementation="dummyCredentialsFactory">
-                <hz:properties>
-                    <hz:property name="property">value</hz:property>
-                </hz:properties>
-            </hz:member-credentials-factory>
-            <hz:member-login-modules>
-                <hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-                    <hz:properties>
-                        <hz:property name="property">value</hz:property>
-                    </hz:properties>
-                </hz:login-module>
-            </hz:member-login-modules>
-            <hz:client-login-modules>
-                <hz:login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
-                    <hz:properties>
-                        <hz:property name="property">value</hz:property>
-                    </hz:properties>
-                </hz:login-module>
-                <hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-                    <hz:properties>
-                        <hz:property name="property">value</hz:property>
-                    </hz:properties>
-                </hz:login-module>
-            </hz:client-login-modules>
+            <hz:realms>
+                <hz:realm name="mr">
+                    <hz:identity>
+                        <hz:credentials-factory implementation="dummyCredentialsFactory"/>
+                    </hz:identity>
+                    <hz:authentication>
+                        <hz:jaas>
+                            <hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                                <hz:properties>
+                                    <hz:property name="property">value</hz:property>
+                                </hz:properties>
+                            </hz:login-module>
+                        </hz:jaas>
+                    </hz:authentication>
+                </hz:realm>
+                <hz:realm name="cr">
+                    <hz:authentication>
+                        <hz:jaas>
+                            <hz:login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
+                                <hz:properties>
+                                    <hz:property name="property">value</hz:property>
+                                </hz:properties>
+                            </hz:login-module>
+                            <hz:login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                                <hz:properties>
+                                    <hz:property name="property">value</hz:property>
+                                </hz:properties>
+                            </hz:login-module>
+                        </hz:jaas>
+                    </hz:authentication>
+                </hz:realm>
+            </hz:realms>
+            <hz:member-authentication realm="mr"/>
+            <hz:client-authentication realm="cr"/>
             <hz:client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy"
                                          implementation="dummyPermissionPolicy">
                 <hz:properties>
@@ -126,7 +135,10 @@
         </hz:security>
     </hz:config>
 
-    <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory"/>
+    <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory">
+        <constructor-arg index="0" value="${cluster.name}"/>
+        <constructor-arg index="1" value=""/>
+    </bean>
     <bean id="dummyPermissionPolicy" class="com.hazelcast.spring.security.DummyPermissionPolicy"/>
     <bean id="dummySecurityInterceptor" class="com.hazelcast.spring.security.DummySecurityInterceptor"/>
     <bean id="dummyLoginModule" class="com.hazelcast.spring.security.DummyLoginModule"/>

@@ -76,7 +76,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
         Data dataKey = mergingEntry.getKey();
 
         CacheRecord backupRecord = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
-        if (backupRecord != null) {
+        if (backupRecords != null && backupRecord != null) {
             backupRecords.put(dataKey, backupRecord);
         }
         if (recordStore.isWanReplicationEnabled()) {
@@ -90,7 +90,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
 
     @Override
     public Object getResponse() {
-        return !backupRecords.isEmpty();
+        return hasBackups && !backupRecords.isEmpty();
     }
 
     @Override
@@ -117,7 +117,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        mergingEntries = new ArrayList<CacheMergeTypes>(size);
+        mergingEntries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             CacheMergeTypes mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);

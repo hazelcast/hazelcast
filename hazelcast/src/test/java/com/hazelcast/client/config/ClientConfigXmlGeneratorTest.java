@@ -19,14 +19,16 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.config.NearCacheConfig;
@@ -37,6 +39,9 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,7 +63,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 
-import static com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
+import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.EvictionPolicy.LFU;
@@ -82,11 +87,18 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         //escape xml value
         //escape xml attribute
         NearCacheConfig nearCacheConfig = new NearCacheConfig(toEscape);
-        clientConfig.setClusterName(toEscape).setClusterPassword("pass").addNearCacheConfig(nearCacheConfig);
+        clientConfig.setClusterName(toEscape).addNearCacheConfig(nearCacheConfig);
 
         ClientConfig actual = newConfigViaGenerator();
         assertEquals(clientConfig.getClusterName(), actual.getClusterName());
         assertEquals(toEscape, actual.getNearCacheConfig(toEscape).getName());
+    }
+
+    @Test
+    public void backupAckToClient() {
+        clientConfig.setBackupAckToClientEnabled(false);
+        ClientConfig actual = newConfigViaGenerator();
+        assertFalse(actual.isBackupAckToClientEnabled());
     }
 
     @Test
@@ -109,11 +121,9 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void cluster() {
         String name = randomString();
-        String pass = randomString();
-        clientConfig.setClusterName(name).setClusterPassword(pass);
+        clientConfig.setClusterName(name);
         ClientConfig actual = newConfigViaGenerator();
         assertEquals(name, actual.getClusterName());
-        assertEquals(pass, actual.getClusterPassword());
     }
 
     @Test
@@ -133,8 +143,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setSmartRouting(false)
                 .setRedoOperation(true)
                 .setConnectionTimeout(randomInt())
-                .setConnectionAttemptPeriod(randomInt())
-                .setConnectionAttemptLimit(randomInt())
                 .addAddress(randomString())
                 .setOutboundPortDefinitions(Collections.singleton(randomString()));
 
@@ -145,8 +153,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertFalse(actual.isSmartRouting());
         assertTrue(actual.isRedoOperation());
         assertEquals(expected.getConnectionTimeout(), actual.getConnectionTimeout());
-        assertEquals(expected.getConnectionAttemptPeriod(), actual.getConnectionAttemptPeriod());
-        assertEquals(expected.getConnectionAttemptLimit(), actual.getConnectionAttemptLimit());
         assertCollection(expected.getAddresses(), actual.getAddresses());
         assertCollection(expected.getOutboundPortDefinitions(), actual.getOutboundPortDefinitions());
     }
@@ -263,11 +269,29 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void security() {
-        clientConfig.getSecurityConfig().setCredentialsClassname(randomString());
+    public void credentialsFactory() {
+        Properties props = new Properties();
+        props.setProperty("foo", "bar");
+        CredentialsFactoryConfig identityConfig = new CredentialsFactoryConfig("com.test.CFactory");
+        clientConfig.getSecurityConfig().setCredentialsFactoryConfig(identityConfig);
         ClientConfig actual = newConfigViaGenerator();
-        assertEquals(clientConfig.getSecurityConfig().getCredentialsClassname(),
-                actual.getSecurityConfig().getCredentialsClassname());
+        assertEquals(identityConfig, actual.getSecurityConfig().getCredentialsFactoryConfig());
+    }
+
+    @Test
+    public void usernamePasswordIdentity() {
+        UsernamePasswordIdentityConfig identityConfig = new UsernamePasswordIdentityConfig("tester", "s3cr3T");
+        clientConfig.getSecurityConfig().setUsernamePasswordIdentityConfig(identityConfig);
+        ClientConfig actual = newConfigViaGenerator();
+        assertEquals(identityConfig, actual.getSecurityConfig().getUsernamePasswordIdentityConfig());
+    }
+
+    @Test
+    public void tokenIdentity() {
+        TokenIdentityConfig identityConfig = new TokenIdentityConfig(TokenEncoding.BASE64, "bmF6ZGFy");
+        clientConfig.getSecurityConfig().setTokenIdentityConfig(identityConfig);
+        ClientConfig actual = newConfigViaGenerator();
+        assertEquals(identityConfig, actual.getSecurityConfig().getTokenIdentityConfig());
     }
 
     @Test
@@ -398,9 +422,9 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                                 //.setComparatorClassName(randomString())
                                 .setSize(randomInt())
                 ).addIndexConfig(
-                new MapIndexConfig()
-                        .setOrdered(true)
-                        .setAttribute(randomString())
+                new IndexConfig()
+                        .setType(IndexType.SORTED)
+                        .addAttribute(randomString())
         ).addEntryListenerConfig(
                 (EntryListenerConfig) new EntryListenerConfig()
                         .setIncludeValue(true)
@@ -416,12 +440,19 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void connectionStrategy() {
         ClientConnectionStrategyConfig expected = new ClientConnectionStrategyConfig();
         expected.setAsyncStart(true)
-                .setReconnectMode(ASYNC);
+                .setReconnectMode(ASYNC)
+                .setConnectionRetryConfig(new ConnectionRetryConfig()
+                        .setInitialBackoffMillis(1000)
+                        .setMaxBackoffMillis(30000)
+                        .setMultiplier(2.0)
+                        .setFailOnMaxBackoff(true)
+                        .setJitter(0.2));
         clientConfig.setConnectionStrategyConfig(expected);
 
         ClientConnectionStrategyConfig actual = newConfigViaGenerator().getConnectionStrategyConfig();
         assertEquals(expected.isAsyncStart(), actual.isAsyncStart());
         assertEquals(expected.getReconnectMode(), actual.getReconnectMode());
+        assertEquals(expected.getConnectionRetryConfig(), actual.getConnectionRetryConfig());
     }
 
     @Test

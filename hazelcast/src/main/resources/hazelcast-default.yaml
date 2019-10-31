@@ -69,7 +69,7 @@ hazelcast:
         tenant-id: TENANT_ID
         subscription-id: SUB_ID
         cluster-id: HZLCAST001
-        cluster-name: CLUSTER-NAME
+        group-name: RESOURCE-GROUP-NAME
       kubernetes:
         enabled: false
         namespace: MY-KUBERNETES-NAMESPACE
@@ -274,12 +274,6 @@ hazelcast:
       id-offset: 0
       node-id-offset: 0
       statistics-enabled: true
-
-  atomic-long:
-    default:
-      merge-policy:
-        batch-size: 100
-        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
 
   serialization:
     portable-version: 0

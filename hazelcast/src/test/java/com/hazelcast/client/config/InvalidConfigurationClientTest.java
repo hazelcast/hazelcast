@@ -94,13 +94,13 @@ public class InvalidConfigurationClientTest {
 
     @Test
     public void WhenValid_CredentialsClassName() {
-        buildConfig("credentials-class-name", "com.hazelcast.client.config.Credentials");
-        buildConfig("credentials-class-name", " com.hazelcast.client.config.Credentials");
+        buildConfig("credentials-factory-class-name", "com.hazelcast.security.ICredentialsFactory");
+        buildConfig("credentials-factory-class-name", " com.hazelcast.security.ICredentialsFactory");
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void WhenInvalid_CredentialsClassName() {
-        buildConfig("credentials-class-name", "com hazelcast.client.config.Credentials");
+        buildConfig("credentials-factory-class-name", "com hazelcast.security.ICredentialsFactory");
     }
 
     @Test
@@ -236,7 +236,7 @@ public class InvalidConfigurationClientTest {
                 + "  </network>\n"
                 + "  <executor-pool-size>${executor-pool-size}</executor-pool-size>\n"
                 + "  <security>\n"
-                + "    <credentials>${credentials-class-name}</credentials>\n"
+                + "    <credentials-factory class-name='${credentials-factory-class-name}'/>\n"
                 + "  </security>\n"
                 + "  <listeners>\n"
                 + "    <listener>${listener-class-name}</listener>\n"
@@ -271,7 +271,7 @@ public class InvalidConfigurationClientTest {
         properties.setProperty("aws-timeout", "10");
         properties.setProperty("inside-aws-enabled", "true");
         properties.setProperty("executor-pool-size", "40");
-        properties.setProperty("credentials-class-name", "com.hazelcast.security.UsernamePasswordCredentials");
+        properties.setProperty("credentials-factory-class-name", "com.hazelcast.security.impl.DefaultCredentialsFactory");
         properties.setProperty("listener-class-name", "com.hazelcast.examples.MembershipListener");
         properties.setProperty("use-native-byte-order", "true");
         properties.setProperty("byte-order", "BIG_ENDIAN");

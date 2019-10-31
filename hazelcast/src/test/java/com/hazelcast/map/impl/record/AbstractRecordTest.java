@@ -16,16 +16,17 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -89,11 +90,11 @@ public class AbstractRecordTest {
 
     @Test
     public void testSetSequence_doesNothing() {
-        assertEquals(AbstractRecord.NOT_AVAILABLE, record.getSequence());
+        assertEquals(UNSET, record.getSequence());
 
         record.setSequence(1250293);
 
-        assertEquals(AbstractRecord.NOT_AVAILABLE, record.getSequence());
+        assertEquals(UNSET, record.getSequence());
     }
 
     @Test

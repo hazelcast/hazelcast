@@ -113,16 +113,10 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void readSetConfig();
 
     @Test
-    public abstract void readLockConfig();
-
-    @Test
     public abstract void readReliableTopic();
 
     @Test
     public abstract void readRingbuffer();
-
-    @Test
-    public abstract void readAtomicLong();
 
     @Test
     public abstract void testCaseInsensitivityOfSettings();
@@ -368,6 +362,12 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testHotRestart();
+
+    @Test
+    public abstract void testHotRestartEncryptionAtRest_whenJavaKeyStore();
+
+    @Test
+    public abstract void testHotRestartEncryptionAtRest_whenVault();
 
     @Test
     public abstract void testMapEvictionPolicyClassName();

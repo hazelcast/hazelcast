@@ -28,8 +28,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
@@ -485,7 +485,7 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         // populate Near Cache
         for (int i = 0; i < mapSize; i++) {
-            Future future = map.getAsync(i);
+            Future future = map.getAsync(i).toCompletableFuture();
             future.get();
         }
         // generate Near Cache hits
@@ -680,11 +680,11 @@ public class NearCacheTest extends NearCacheTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
 
         IMap<Integer, Integer> map = instance.getMap(mapName);
-        map.getAsync(1).get();
+        map.getAsync(1).toCompletableFuture().get();
 
         sleepMillis(1000);
 
-        assertNull(map.getAsync(1).get());
+        assertNull(map.getAsync(1).toCompletableFuture().get());
     }
 
     /**

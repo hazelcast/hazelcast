@@ -22,8 +22,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,7 +34,7 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 /**
  * An operation to unlock and set (key,value) on the partition .
@@ -47,6 +45,7 @@ public class TxnSetOperation extends BasePutOperation
     private long ttl;
     private long version;
     private UUID ownerUuid;
+    private UUID transactionId;
 
     private transient boolean shouldBackup;
 
@@ -70,6 +69,7 @@ public class TxnSetOperation extends BasePutOperation
         super.innerBeforeRun();
 
         if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
+            wbqCapacityCounter().decrement(transactionId);
             throw new TransactionException("Cannot acquire lock UUID: " + ownerUuid + ", threadId: " + threadId);
         }
     }
@@ -84,7 +84,7 @@ public class TxnSetOperation extends BasePutOperation
                 oldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-            recordStore.set(dataKey, dataValue, ttl, RecordStore.DEFAULT_MAX_IDLE);
+            recordStore.setTxn(dataKey, dataValue, ttl, UNSET, transactionId);
             shouldBackup = true;
         }
     }
@@ -102,6 +102,11 @@ public class TxnSetOperation extends BasePutOperation
     @Override
     public void setOwnerUuid(UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
+    }
+
+    @Override
+    public void setTransactionId(UUID transactionId) {
+        this.transactionId = transactionId;
     }
 
     @Override
@@ -127,11 +132,8 @@ public class TxnSetOperation extends BasePutOperation
     @Override
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
-        RecordInfo replicationInfo = buildRecordInfo(record);
-        if (isPostProcessing(recordStore)) {
-            dataValue = mapServiceContext.toData(record.getValue());
-        }
-        return new TxnSetBackupOperation(name, dataKey, dataValue, replicationInfo);
+        dataValue = getValueOrPostProcessedValue(record, dataValue);
+        return new TxnSetBackupOperation(name, record, dataValue, transactionId);
     }
 
     @Override
@@ -143,16 +145,18 @@ public class TxnSetOperation extends BasePutOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
-        UUIDSerializationUtil.writeUUID(out, ownerUuid);
         out.writeLong(ttl);
+        UUIDSerializationUtil.writeUUID(out, ownerUuid);
+        UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
-        ownerUuid = UUIDSerializationUtil.readUUID(in);
         ttl = in.readLong();
+        ownerUuid = UUIDSerializationUtil.readUUID(in);
+        transactionId = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override

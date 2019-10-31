@@ -28,7 +28,6 @@ import com.hazelcast.client.impl.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.transaction.TransactionalList;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalMultiMap;
@@ -42,7 +41,6 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionalObjectKey;
 
-import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,7 +70,7 @@ public class XATransactionContextProxy implements ClientTransactionContext {
         try {
             connection = transactionManager.connect();
         } catch (Exception e) {
-            throw new HazelcastException("Could not obtain Connection!", e);
+            throw new TransactionException("Could not obtain Connection!", e);
         }
         this.transaction = new XATransactionProxy(client, connection, xid, timeout);
     }
@@ -173,10 +171,5 @@ public class XATransactionContextProxy implements ClientTransactionContext {
 
     public XATransactionProxy getTransaction() {
         return transaction;
-    }
-
-    @Override
-    public XAResource getXaResource() {
-        throw new UnsupportedOperationException("Use HazelcastInstance.getXAResource() instead!");
     }
 }

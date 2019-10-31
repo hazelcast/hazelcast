@@ -59,7 +59,7 @@ public class NetworkingServiceMBean
             return -1;
         }
 
-        return cem.getConnections().size();
+        return cem.getActiveConnections().size();
     }
 
     @ManagedAnnotation("activeConnectionCount")

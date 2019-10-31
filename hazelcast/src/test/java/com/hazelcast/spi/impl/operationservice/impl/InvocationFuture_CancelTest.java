@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -56,7 +55,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     @Test
     public void whenCallCancel_thenCancelled() {
         // Given
-        ICompletableFuture future = invoke();
+        InternalCompletableFuture future = invoke();
 
         // When
         boolean result = future.cancel(true);
@@ -70,7 +69,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     @Test
     public void whenCancelled_thenCantCancelAgain() {
         // Given
-        ICompletableFuture future = invoke();
+        InternalCompletableFuture future = invoke();
 
         // When
         future.cancel(true);
@@ -82,7 +81,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     @Test
     public void whenCancelled_thenGetThrowsCancelled() throws Exception {
         // Given
-        ICompletableFuture future = invoke();
+        InternalCompletableFuture future = invoke();
 
         // When
         future.cancel(true);

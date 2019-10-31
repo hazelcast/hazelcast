@@ -19,14 +19,20 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.LocalRetryableExecution;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -35,6 +41,7 @@ import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.journal.RingbufferMapEventJournalImpl;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.NodeWideUsedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
@@ -60,50 +67,38 @@ import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
-import com.hazelcast.map.impl.recordstore.EventJournalWriterRecordStoreMutationObserver;
-import com.hazelcast.map.impl.recordstore.JsonMetadataRecordStoreMutationObserver;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.IndexProvider;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ConcurrencyUtil;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.partition.IPartitionService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import static com.hazelcast.internal.util.SetUtil.immutablePartitionIdSet;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -114,7 +109,6 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
-import static com.hazelcast.internal.util.SetUtil.immutablePartitionIdSet;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -144,18 +138,12 @@ class MapServiceContextImpl implements MapServiceContext {
     private final InternalSerializationService serializationService;
     private final MapClearExpiredRecordsTask clearExpiredRecordsTask;
     private final PartitioningStrategyFactory partitioningStrategyFactory;
+    private final NodeWideUsedCapacityCounter nodeWideUsedCapacityCounter;
     private final ConstructorFunction<String, MapContainer> mapConstructor;
     private final IndexProvider indexProvider = new DefaultIndexProvider();
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
-    /**
-     * Per node global write behind queue item counter.
-     * Creating here because we want to have a counter per node.
-     * This is used by owner and backups together so it should be defined
-     * getting this into account.
-     */
-    private final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
 
     private MapService mapService;
 
@@ -180,6 +168,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
+        this.nodeWideUsedCapacityCounter = new NodeWideUsedCapacityCounter(nodeEngine.getProperties());
         this.logger = nodeEngine.getLogger(getClass());
     }
 
@@ -337,6 +326,24 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public void removeWbqCountersFromMatchingPartitionsWith(Predicate<RecordStore> predicate,
+                                                            int partitionId) {
+
+        PartitionContainer container = partitionContainers[partitionId];
+        if (container == null) {
+            return;
+        }
+
+        Iterator<RecordStore> partitionIterator = container.getMaps().values().iterator();
+        while (partitionIterator.hasNext()) {
+            RecordStore partition = partitionIterator.next();
+            if (predicate.test(partition)) {
+                partition.getMapDataStore().getTxnReservedCapacityCounter().releaseAllReservations();
+            }
+        }
+    }
+
+    @Override
     public MapService getService() {
         return mapService;
     }
@@ -476,11 +483,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public AtomicInteger getWriteBehindQueueItemCounter() {
-        return writeBehindQueueItemCounter;
-    }
-
-    @Override
     public ExpirationManager getExpirationManager() {
         return expirationManager;
     }
@@ -536,79 +538,99 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void interceptAfterGet(String mapName, Object value) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
-        if (!interceptors.isEmpty()) {
-            value = toObject(value);
-            for (MapInterceptor interceptor : interceptors) {
-                interceptor.afterGet(value);
-            }
-        }
-    }
-
-    @Override
-    public Object interceptPut(String mapName, Object oldValue, Object newValue) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
-        Object result = null;
-        if (!interceptors.isEmpty()) {
-            result = toObject(newValue);
-            oldValue = toObject(oldValue);
-            for (MapInterceptor interceptor : interceptors) {
-                Object temp = interceptor.interceptPut(oldValue, result);
-                if (temp != null) {
-                    result = temp;
-                }
-            }
-        }
-        return result == null ? newValue : result;
-    }
-
-    @Override
-    public void interceptAfterPut(String mapName, Object newValue) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
-        if (!interceptors.isEmpty()) {
-            newValue = toObject(newValue);
-            for (MapInterceptor interceptor : interceptors) {
-                interceptor.afterPut(newValue);
-            }
-        }
-    }
-
-    @Override
     public MapClearExpiredRecordsTask getClearExpiredRecordsTask() {
         return clearExpiredRecordsTask;
     }
 
+    // TODO: interceptors should get a wrapped object which includes the serialized version
     @Override
-    public Object interceptRemove(String mapName, Object value) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
-        Object result = null;
-        if (!interceptors.isEmpty()) {
-            result = toObject(value);
-            for (MapInterceptor interceptor : interceptors) {
-                Object temp = interceptor.interceptRemove(result);
-                if (temp != null) {
-                    result = temp;
-                }
+    public Object interceptGet(InterceptorRegistry interceptorRegistry, Object currentValue) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return currentValue;
+        }
+
+        Object result = toObject(currentValue);
+        for (MapInterceptor interceptor : interceptors) {
+            Object temp = interceptor.interceptGet(result);
+            if (temp != null) {
+                result = temp;
             }
         }
-        return result == null ? value : result;
+        return result == null ? currentValue : result;
     }
 
     @Override
-    public void interceptAfterRemove(String mapName, Object value) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
+    public void interceptAfterGet(InterceptorRegistry interceptorRegistry, Object value) {
         List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
-        if (!interceptors.isEmpty()) {
-            value = toObject(value);
-            for (MapInterceptor interceptor : interceptors) {
-                interceptor.afterRemove(value);
+        if (interceptors.isEmpty()) {
+            return;
+        }
+
+        value = toObject(value);
+        for (MapInterceptor interceptor : interceptors) {
+            interceptor.afterGet(value);
+        }
+    }
+
+    @Override
+    public Object interceptPut(InterceptorRegistry interceptorRegistry, Object oldValue, Object newValue) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return newValue;
+        }
+
+        Object result = toObject(newValue);
+        oldValue = toObject(oldValue);
+        for (MapInterceptor interceptor : interceptors) {
+            Object temp = interceptor.interceptPut(oldValue, result);
+            if (temp != null) {
+                result = temp;
             }
+        }
+        return result;
+    }
+
+    @Override
+    public void interceptAfterPut(InterceptorRegistry interceptorRegistry, Object newValue) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return;
+        }
+
+        newValue = toObject(newValue);
+        for (MapInterceptor interceptor : interceptors) {
+            interceptor.afterPut(newValue);
+        }
+    }
+
+    @Override
+    public Object interceptRemove(InterceptorRegistry interceptorRegistry, Object value) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return value;
+        }
+
+        Object result = toObject(value);
+        for (MapInterceptor interceptor : interceptors) {
+            Object temp = interceptor.interceptRemove(result);
+            if (temp != null) {
+                result = temp;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void interceptAfterRemove(InterceptorRegistry interceptorRegistry, Object value) {
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
+        if (interceptors.isEmpty()) {
+            return;
+        }
+
+        value = toObject(value);
+        for (MapInterceptor interceptor : interceptors) {
+            interceptor.afterRemove(value);
         }
     }
 
@@ -619,39 +641,14 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String generateInterceptorId(String mapName, MapInterceptor interceptor) {
-        return interceptor.getClass().getName() + interceptor.hashCode();
-    }
-
-    @Override
     public boolean removeInterceptor(String mapName, String id) {
         MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.getInterceptorRegistry().deregister(id);
     }
 
-    // TODO: interceptors should get a wrapped object which includes the serialized version
     @Override
-    public Object interceptGet(String mapName, Object value) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
-        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
-        Object result = null;
-        if (!interceptors.isEmpty()) {
-            result = toObject(value);
-            for (MapInterceptor interceptor : interceptors) {
-                Object temp = interceptor.interceptGet(result);
-                if (temp != null) {
-                    result = temp;
-                }
-            }
-        }
-        return result == null ? value : result;
-    }
-
-    @Override
-    public boolean hasInterceptor(String mapName) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        return !mapContainer.getInterceptorRegistry().getInterceptors().isEmpty();
+    public String generateInterceptorId(String mapName, MapInterceptor interceptor) {
+        return interceptor.getClass().getName() + interceptor.hashCode();
     }
 
     @Override
@@ -810,39 +807,12 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId) {
-        Collection<RecordStoreMutationObserver<Record>> observers = new LinkedList<>();
-        addEventJournalUpdaterObserver(observers, mapName, partitionId);
-        addMetadataInitializerObserver(observers, mapName, partitionId);
-
-        return observers;
-    }
-
-    protected void addMetadataInitializerObserver(Collection<RecordStoreMutationObserver<Record>> observers,
-                                                  String mapName, int partitionId) {
-        MapContainer mapContainer = getMapContainer(mapName);
-        MetadataPolicy policy = mapContainer.getMapConfig().getMetadataPolicy();
-        if (policy == MetadataPolicy.CREATE_ON_UPDATE) {
-            RecordStoreMutationObserver<Record> observer = new JsonMetadataRecordStoreMutationObserver(serializationService,
-                    JsonMetadataInitializer.INSTANCE);
-            observers.add(observer);
-        }
-    }
-
-    private void addEventJournalUpdaterObserver(Collection<RecordStoreMutationObserver<Record>> observers, String mapName, int
-            partitionId) {
-        RecordStoreMutationObserver<Record> observer = new EventJournalWriterRecordStoreMutationObserver(getEventJournal(),
-                getMapContainer(mapName), partitionId);
-        observers.add(observer);
-    }
-
-    @Override
     public ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat) {
         return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
     }
 
-    InternalSerializationService getSerializationService() {
-        return serializationService;
+    public NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter() {
+        return nodeWideUsedCapacityCounter;
     }
 
     // used only for testing purposes

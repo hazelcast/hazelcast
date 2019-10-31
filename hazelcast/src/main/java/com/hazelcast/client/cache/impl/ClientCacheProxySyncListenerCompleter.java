@@ -19,7 +19,7 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.AbstractCacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -45,7 +45,7 @@ class ClientCacheProxySyncListenerCompleter extends AbstractCacheSyncListenerCom
     }
 
     @Override
-    protected void awaitLatch(CountDownLatch countDownLatch, ICompletableFuture future)
+    protected void awaitLatch(CountDownLatch countDownLatch, InternalCompletableFuture future)
             throws ExecutionException {
         try {
             long currentTimeoutMs = MAX_COMPLETION_LATCH_WAIT_TIME;
@@ -58,10 +58,7 @@ class ClientCacheProxySyncListenerCompleter extends AbstractCacheSyncListenerCom
             while (currentTimeoutMs > 0
                     && !countDownLatch.await(COMPLETION_LATCH_WAIT_TIME_STEP, TimeUnit.MILLISECONDS)) {
                 if (future != null && future.isDone()) {
-                    Object response = future.get();
-                    if (response instanceof Throwable) {
-                        return;
-                    }
+                    future.get();
                 }
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
                 if (!clientCacheProxy.getContext().isActive()) {

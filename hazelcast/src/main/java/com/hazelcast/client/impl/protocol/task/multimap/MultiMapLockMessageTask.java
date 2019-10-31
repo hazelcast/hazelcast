@@ -19,8 +19,8 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.LockOperation;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.operations.LockOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.internal.nio.Connection;
@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_LOCK}
  */
 public class MultiMapLockMessageTask
         extends AbstractPartitionMessageTask<MultiMapLockCodec.RequestParameters> {
@@ -46,7 +45,8 @@ public class MultiMapLockMessageTask
     @Override
     protected Operation prepareOperation() {
         DistributedObjectNamespace namespace = getNamespace();
-        return new LockOperation(namespace, parameters.key, parameters.threadId, parameters.ttl, -1, parameters.referenceId);
+        return new LockOperation(namespace, parameters.key, parameters.threadId, parameters.ttl,
+                -1, parameters.referenceId, true);
     }
 
     private DistributedObjectNamespace getNamespace() {
@@ -65,7 +65,7 @@ public class MultiMapLockMessageTask
 
     @Override
     public String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return LockSupportService.SERVICE_NAME;
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 

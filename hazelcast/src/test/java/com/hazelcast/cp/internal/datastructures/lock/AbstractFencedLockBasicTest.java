@@ -21,7 +21,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.lock.proxy.AbstractRaftFencedLockProxy;
+import com.hazelcast.cp.internal.datastructures.lock.proxy.AbstractFencedLockProxy;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
@@ -208,8 +208,8 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
         });
 
         assertTrueEventually(() -> {
-            RaftLockService service = getNodeEngineImpl(instances[0]).getService(RaftLockService.SERVICE_NAME);
-            RaftLockRegistry registry = service.getRegistryOrNull(lock.getGroupId());
+            LockService service = getNodeEngineImpl(instances[0]).getService(LockService.SERVICE_NAME);
+            LockRegistry registry = service.getRegistryOrNull(lock.getGroupId());
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
@@ -316,7 +316,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     public void testTryLockLongTimeout_whenLockedByOther() {
         lockByOtherThread(lock);
 
-        long fence = lock.tryLockAndGetFence(RaftLockService.WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS + 1, TimeUnit.MILLISECONDS);
+        long fence = lock.tryLockAndGetFence(LockService.WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS + 1, TimeUnit.MILLISECONDS);
 
         assertInvalidFence(fence);
         assertTrue(lock.isLocked());
@@ -489,14 +489,14 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     private void assertNoLockedSessionId() {
-        if (lock instanceof AbstractRaftFencedLockProxy) {
-            assertNull(((AbstractRaftFencedLockProxy) lock).getLockedSessionId(getThreadId()));
+        if (lock instanceof AbstractFencedLockProxy) {
+            assertNull(((AbstractFencedLockProxy) lock).getLockedSessionId(getThreadId()));
         }
     }
 
     private void closeSession(HazelcastInstance instance, CPGroupId groupId, long sessionId) {
         RaftService service = getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager().invoke(groupId, new CloseSessionOp(sessionId)).join();
+        service.getInvocationManager().invoke(groupId, new CloseSessionOp(sessionId)).joinInternal();
     }
 
     static void assertValidFence(long fence) {

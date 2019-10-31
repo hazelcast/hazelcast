@@ -98,6 +98,7 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         clientUserCodeDeploymentConfig.addClass("usercodedeployment.IncrementingEntryProcessor");
         config.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         return config;
     }
 
@@ -137,18 +138,19 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWithMultipleNodes_clientReconnectsToNewNode() {
+    public void testWithMultipleNodes_clientReconnectsToNewNode() throws InterruptedException {
         ClientConfig clientConfig = createClientConfig();
         Config config = createNodeConfig();
 
-        HazelcastInstance firstInstance = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         factory.newHazelcastInstance(config);
 
         final CountDownLatch clientReconnectedLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new ClientReconnectionListener(clientReconnectedLatch));
 
-        firstInstance.getLifecycleService().shutdown();
+        factory.shutdownAllMembers();
+        factory.newHazelcastInstance(config);
 
         assertOpenEventually(clientReconnectedLatch);
         assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());

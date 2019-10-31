@@ -84,7 +84,10 @@ public class ConflictingConfigTest {
     @Ignore("https://github.com/hazelcast/hazelcast/issues/15576")
     public void testAwsEnabled_and_DiscoverySPIEnabled() {
         ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().getAwsConfig().setEnabled(true).setProperty("access-key", "12345").setSecretKey("56789");
+        config.getNetworkConfig().getAwsConfig()
+                .setEnabled(true)
+                .setProperty("access-key", "12345")
+                .setProperty("secret-key", "56789");
         config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         HazelcastClient.newHazelcastClient(config);
     }

@@ -31,14 +31,10 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cp.lock.ILock;
-import com.hazelcast.map.IMap;
-import com.hazelcast.topic.ITopic;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,13 +49,17 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -87,39 +87,14 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void cleanup() {
         hazelcastFactory.terminateAll();
-    }
-
-    /**
-     * Test for issues #267 and #493
-     */
-    @Test
-    public void testIssue493() {
-        final HazelcastInstance hz1 = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setRedoOperation(true);
-
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        final ILock lock = client.getLock("lock");
-
-        for (int k = 0; k < 10; k++) {
-            lock.lock();
-            try {
-                sleepMillis(100);
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        lock.lock();
-        hz1.shutdown();
-        lock.unlock();
     }
 
     @Test
@@ -282,7 +257,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         final ListenerConfig listenerConfig = new ListenerConfig(listener);
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(listenerConfig);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance hazelcastClient = hazelcastFactory.newHazelcastClient(clientConfig);
 
         hazelcastFactory.shutdownAllMembers();
@@ -390,14 +365,17 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @Test
     public void testCredentials() {
-        final Config config = new Config();
-        config.setClusterName("foo").setClusterPassword("bar");
+        Config config = new Config();
+        config.setClusterName("foo");
         hazelcastFactory.newHazelcastInstance(config);
 
-        final ClientConfig clientConfig = new ClientConfig();
-        final ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
-        securityConfig.setCredentialsClassname(MyCredentials.class.getName());
-
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName("foo");
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(0);
+        ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
+        securityConfig.setCredentials(new MyCredentials());
+        // not null username/password credentials are not allowed when Security is disabled
+        expectedException.expect(IllegalStateException.class);
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
@@ -486,7 +464,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         final String mapName = randomMapName();
 
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -512,35 +490,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 assertNull(map.get("a"));
             }
         });
-    }
-
-    @Category(NightlyTest.class)
-    @Test
-    public void testLock_WhenDummyClientAndOwnerNodeDiesTogether() throws Exception {
-        testLock_WhenClientAndOwnerNodeDiesTogether(false);
-    }
-
-    @Category(NightlyTest.class)
-    @Test
-    public void testLock_WhenSmartClientAndOwnerNodeDiesTogether() throws Exception {
-        testLock_WhenClientAndOwnerNodeDiesTogether(true);
-    }
-
-    private void testLock_WhenClientAndOwnerNodeDiesTogether(boolean smart) throws Exception {
-        hazelcastFactory.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(smart);
-
-        final int tryCount = 5;
-
-        for (int i = 0; i < tryCount; i++) {
-            final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-            final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-            final ILock lock = client.getLock("lock");
-            assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
-            client.getLifecycleService().terminate(); //with client is dead, lock should be released.
-            instance.getLifecycleService().terminate();
-        }
     }
 
     @Test
@@ -762,7 +711,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         //Retry all requests
         clientConfig.getNetworkConfig().setRedoOperation(true);
         //retry to connect to cluster forever(never shutdown the client)
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         //Retry all requests forever(until client is shutdown)
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);

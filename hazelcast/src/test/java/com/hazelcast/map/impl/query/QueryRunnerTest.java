@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -25,8 +26,8 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
-import com.hazelcast.spi.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -95,7 +96,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
     @Test
     public void verifyIndexedQueryFailureWhileMigrating() {
-        map.addIndex("this", false);
+        map.addIndex(IndexType.HASH, "this");
         Predicate predicate = new EqualPredicate("this", value);
 
         mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
@@ -107,7 +108,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
     @Test
     public void verifyIndexedQueryFailureWhileMigratingInFlight() {
-        map.addIndex("this", false);
+        map.addIndex(IndexType.HASH, "this");
 
         Predicate predicate = new EqualPredicate("this", value) {
             @Override

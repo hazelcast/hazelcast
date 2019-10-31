@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -59,12 +60,6 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
 
     public PartitioningStrategy getPartitioningStrategy() {
         return partitioningStrategy;
-    }
-
-    @Deprecated
-    public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
-        this.partitioningStrategy = partitionStrategy;
-        return this;
     }
 
     public PartitioningStrategyConfig setPartitioningStrategy(PartitioningStrategy partitionStrategy) {

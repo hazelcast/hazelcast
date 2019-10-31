@@ -18,6 +18,10 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import com.hazelcast.internal.config.ConfigLoader;
+import com.hazelcast.internal.config.ConfigReplacerHelper;
+import com.hazelcast.internal.config.DomConfigHelper;
+import com.hazelcast.internal.config.XmlDomVariableReplacer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -37,11 +41,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.ConfigSections.CONFIG_REPLACERS;
-import static com.hazelcast.config.ConfigSections.IMPORT;
-import static com.hazelcast.config.DomConfigHelper.asElementIterable;
-import static com.hazelcast.config.DomConfigHelper.childElements;
-import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.ConfigSections.CONFIG_REPLACERS;
+import static com.hazelcast.internal.config.ConfigSections.IMPORT;
+import static com.hazelcast.internal.config.DomConfigHelper.asElementIterable;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
@@ -99,13 +103,13 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
     private void replaceImportElementsWithActualFileContents(Node root) throws Exception {
         Document document = root.getOwnerDocument();
         NodeList misplacedImports = (NodeList) xpath.evaluate(
-                format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.name, getConfigType().name), document,
+                format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.getName(), getConfigType().name), document,
                 XPathConstants.NODESET);
         if (misplacedImports.getLength() > 0) {
             throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         }
         NodeList importTags = (NodeList) xpath.evaluate(
-                format("/hz:%s/hz:%s", getConfigType().name, IMPORT.name), document, XPathConstants.NODESET);
+                format("/hz:%s/hz:%s", getConfigType().name, IMPORT.getName()), document, XPathConstants.NODESET);
         for (Node node : asElementIterable(importTags)) {
             loadAndReplaceImportElement(root, node);
         }
@@ -190,8 +194,8 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
         replacers.add(propertyReplacer);
 
         // Add other replacers defined in the XML
-        Node node = (Node) xpath.evaluate(format("/hz:%s/hz:%s", getConfigType().name, CONFIG_REPLACERS.name), root,
-                XPathConstants.NODE);
+        Node node = (Node) xpath.evaluate(format("/hz:%s/hz:%s", getConfigType().name, CONFIG_REPLACERS.getName()),
+                root, XPathConstants.NODE);
         if (node != null) {
             String failFastAttr = getAttribute(node, "fail-if-value-missing");
             failFast = isNullOrEmpty(failFastAttr) || Boolean.parseBoolean(failFastAttr);

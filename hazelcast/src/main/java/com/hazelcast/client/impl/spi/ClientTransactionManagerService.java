@@ -20,6 +20,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
+import javax.annotation.Nonnull;
 import javax.transaction.xa.Xid;
 
 /**
@@ -29,13 +30,13 @@ import javax.transaction.xa.Xid;
  */
 public interface ClientTransactionManagerService {
 
-    <T> T executeTransaction(TransactionalTask<T> task);
+    <T> T executeTransaction(@Nonnull TransactionalTask<T> task);
 
-    <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task);
+    <T> T executeTransaction(@Nonnull TransactionOptions options, @Nonnull TransactionalTask<T> task);
 
     TransactionContext newTransactionContext();
 
-    TransactionContext newTransactionContext(TransactionOptions options);
+    TransactionContext newTransactionContext(@Nonnull TransactionOptions options);
 
     /**
      * @param xid              branch qualifier

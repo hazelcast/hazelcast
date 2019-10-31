@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.connection.nio;
 
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.core.LifecycleService;
@@ -25,11 +25,11 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.cluster.Address;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -61,7 +61,6 @@ public class ClientConnection implements Connection {
     private final ConcurrentMap attributeMap;
 
     private volatile Address remoteEndpoint;
-    private volatile boolean isAuthenticatedAsOwner;
     @Probe(level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
@@ -189,8 +188,6 @@ public class ClientConnection implements Connection {
         }
 
         connectionManager.onClose(this);
-
-        client.getMetricsRegistry().discardMetrics(this);
     }
 
     private void logClose() {
@@ -237,20 +234,14 @@ public class ClientConnection implements Connection {
     }
 
     public void handleClientMessage(ClientMessage message) {
-        if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.IS_EVENT_FLAG)) {
+        if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.BACKUP_EVENT_FLAG)) {
+            responseHandler.accept(message);
+        } else if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.IS_EVENT_FLAG)) {
             AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
-            listenerService.handleClientMessage(message);
+            listenerService.handleEventMessage(message);
         } else {
             responseHandler.accept(message);
         }
-    }
-
-    public boolean isAuthenticatedAsOwner() {
-        return isAuthenticatedAsOwner;
-    }
-
-    public void setIsAuthenticatedAsOwner() {
-        this.isAuthenticatedAsOwner = true;
     }
 
     public long getStartTime() {

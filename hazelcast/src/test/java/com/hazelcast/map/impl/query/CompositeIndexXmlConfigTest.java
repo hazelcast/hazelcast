@@ -57,7 +57,7 @@ public class CompositeIndexXmlConfigTest extends HazelcastTestSupport {
         Collection<Integer> result = map.values(Predicates.sql("__key = '10' and __key.length = 2"));
         assertEquals(1, result.size());
         assertEquals((Integer) 10, result.iterator().next());
-        assertEquals(1, map.getLocalMapStats().getIndexStats().get("__key, __key.length").getQueryCount());
+        assertEquals(1, map.getLocalMapStats().getIndexStats().get("testIndex").getQueryCount());
     }
 
 }

@@ -29,7 +29,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueEvent;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
+import com.hazelcast.internal.longregister.LongRegisterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -44,7 +44,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -289,7 +289,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
         assertSampleRunnable("IList 'listName' ADDED", listEventAdded, ListService.SERVICE_NAME);
         assertSampleRunnable("IList 'listName' REMOVED", listEventRemoved, ListService.SERVICE_NAME);
 
-        assertSampleRunnable("Object", new Object(), AtomicLongService.SERVICE_NAME);
+        assertSampleRunnable("Object", new Object(), LongRegisterService.SERVICE_NAME);
 
         assertSampleRunnable(new TestEvent(), TestEvent.class.getName());
     }

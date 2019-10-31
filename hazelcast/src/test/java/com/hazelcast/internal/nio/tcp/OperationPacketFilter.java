@@ -18,7 +18,7 @@ package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.internal.nio.Packet;
 

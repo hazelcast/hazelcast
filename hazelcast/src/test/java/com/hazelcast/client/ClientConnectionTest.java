@@ -27,7 +27,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.test.AssertTask;
@@ -69,7 +69,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
         hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().setConnectionAttemptPeriod(1);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         config.getNetworkConfig().addAddress(illegalAddress);
         hazelcastFactory.newHazelcastClient(config);
     }

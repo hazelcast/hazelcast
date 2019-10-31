@@ -23,11 +23,11 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalIndexStatsTest;
-import com.hazelcast.monitor.LocalIndexStats;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.impl.LocalIndexStatsImpl;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.query.LocalIndexStats;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.internal.monitor.impl.LocalIndexStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -92,7 +92,7 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
     @Test
     @Override
     public void testQueryCounting_WhenPartitionPredicateIsUsed() {
-        map.addIndex("this", false);
+        addIndex(map, "this", false);
 
         for (int i = 0; i < 100; ++i) {
             map.put(i, i);

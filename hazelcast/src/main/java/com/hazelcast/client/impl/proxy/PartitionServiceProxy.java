@@ -24,17 +24,20 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionService;
 
+import javax.annotation.Nonnull;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * @author mdogan 5/16/13
@@ -61,7 +64,8 @@ public final class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
-    public Partition getPartition(Object key) {
+    public Partition getPartition(@Nonnull Object key) {
+        checkNotNull(key, "key cannot be null");
         final int partitionId = partitionService.getPartitionId(key);
         return partitionService.getPartition(partitionId);
     }
@@ -142,7 +146,7 @@ public final class PartitionServiceProxy implements PartitionService {
 
         @Override
         public void handlePartitionLostEvent(int partitionId, int lostBackupCount, Address source) {
-            listener.partitionLost(new PartitionLostEvent(partitionId, lostBackupCount, source));
+            listener.partitionLost(new PartitionLostEventImpl(partitionId, lostBackupCount, source));
         }
 
         @Override

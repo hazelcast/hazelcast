@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InOrder;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
@@ -98,33 +97,6 @@ public class JsonArray_Test {
     JsonArray unmodifiableArray = JsonArray.unmodifiableArray(array);
 
     unmodifiableArray.add(23);
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void readFrom_reader() throws IOException {
-    assertEquals(new JsonArray(), JsonArray.readFrom(new StringReader("[]")));
-    assertEquals(new JsonArray().add("a").add(23),
-                 JsonArray.readFrom(new StringReader("[ \"a\", 23 ]")));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void readFrom_string() {
-    assertEquals(new JsonArray(), JsonArray.readFrom("[]"));
-    assertEquals(new JsonArray().add("a").add(23), JsonArray.readFrom("[ \"a\", 23 ]"));
-  }
-
-  @Test(expected = ParseException.class)
-  @SuppressWarnings("deprecation")
-  public void readFrom_illegalJson() {
-    JsonArray.readFrom("This is not JSON");
-  }
-
-  @Test(expected = UnsupportedOperationException.class)
-  @SuppressWarnings("deprecation")
-  public void readFrom_wrongJsonType() {
-    JsonArray.readFrom("\"This is not a JSON object\"");
   }
 
   @Test

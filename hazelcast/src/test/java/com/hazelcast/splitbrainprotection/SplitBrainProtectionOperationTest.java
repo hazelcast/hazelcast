@@ -16,11 +16,9 @@
 
 package com.hazelcast.splitbrainprotection;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.AbstractLockOperation;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.GetLockCountOperation;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.GetRemainingLeaseTimeOperation;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.operations.IsLockedOperation;
+import com.hazelcast.internal.locksupport.operations.AbstractLockOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
@@ -38,7 +36,6 @@ import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.ServiceLoader;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -114,9 +111,6 @@ public class SplitBrainProtectionOperationTest {
             IsPartitionLoadedOperation.class,
             TriggerLoadIfNeededOperation.class,
             IsKeyLoadFinishedOperation.class,
-            IsLockedOperation.class,
-            GetLockCountOperation.class,
-            GetRemainingLeaseTimeOperation.class,
             MapEventJournalSubscribeOperation.class
     );
 

@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("5ba631c327dd517a2a3792b7296f85ed")
+@Generated("989c7f1cc8230f3b2ed869898ccef4a6")
 public final class ClientDestroyProxyCodec {
-    //hex: 0x000600
-    public static final int REQUEST_MESSAGE_TYPE = 1536;
-    //hex: 0x000601
-    public static final int RESPONSE_MESSAGE_TYPE = 1537;
+    //hex: 0x000500
+    public static final int REQUEST_MESSAGE_TYPE = 1280;
+    //hex: 0x000501
+    public static final int RESPONSE_MESSAGE_TYPE = 1281;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientDestroyProxyCodec() {
     }
@@ -60,7 +61,6 @@ public final class ClientDestroyProxyCodec {
          * "hz:impl:listService"
          * "hz:impl:queueService"
          * "hz:impl:setService"
-         * "hz:impl:atomicLongService"
          * "hz:impl:idGeneratorService"
          * "hz:impl:executorService"
          * "hz:impl:mapService"
@@ -91,7 +91,7 @@ public final class ClientDestroyProxyCodec {
     }
 
     public static ClientDestroyProxyCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -114,7 +114,7 @@ public final class ClientDestroyProxyCodec {
     }
 
     public static ClientDestroyProxyCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

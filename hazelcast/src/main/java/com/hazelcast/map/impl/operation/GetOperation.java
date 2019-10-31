@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
@@ -38,19 +38,19 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     @Override
     protected void runInternal() {
-        Object record = recordStore.get(dataKey, false, getCallerAddress());
-        if (!executedLocally() && record instanceof Data) {
+        Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
+        if (!executedLocally() && currentValue instanceof Data) {
             // in case of a 'remote' call (e..g a client call) we prevent making an onheap copy of the offheap data
-            result = (Data) record;
+            result = (Data) currentValue;
         } else {
             // in case of a local call, we do make a copy so we can safely share it with e.g. near cache invalidation
-            result = mapService.getMapServiceContext().toData(record);
+            result = mapService.getMapServiceContext().toData(currentValue);
         }
     }
 
     @Override
     protected void afterRunInternal() {
-        mapServiceContext.interceptAfterGet(name, result);
+        mapServiceContext.interceptAfterGet(mapContainer.getInterceptorRegistry(), result);
     }
 
     @Override

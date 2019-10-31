@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.IMap;
@@ -31,13 +32,12 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -454,11 +454,14 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     }
 
     @Override
-    public void addIndex(String attribute, boolean ordered) {
-        checkNotNull(attribute, "attribute cannot be null");
+    public void addIndex(IndexConfig config) {
+        checkNotNull(config, "Index config cannot be null.");
 
         assert indexes.isGlobal();
-        getIndexes().addOrGetIndex(attribute, ordered, null);
+
+        IndexConfig config0 = getNormalizedIndexConfig(config);
+
+        indexes.addOrGetIndex(config0, null);
 
         InternalSerializationService serializationService = context.getSerializationService();
 
@@ -480,11 +483,6 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public IMap getDelegate() {
         return delegate;
-    }
-
-    @Override
-    public Indexes getIndexes() {
-        return indexes;
     }
 
     @Override

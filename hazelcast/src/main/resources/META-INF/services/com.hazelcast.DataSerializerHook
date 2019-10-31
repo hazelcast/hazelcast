@@ -25,8 +25,8 @@ com.hazelcast.collection.impl.collection.CollectionDataSerializerHook
 com.hazelcast.topic.impl.TopicDataSerializerHook
 com.hazelcast.executor.impl.ExecutorDataSerializerHook
 com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook
-com.hazelcast.cp.internal.datastructures.unsafe.lock.LockDataSerializerHook
-com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongDataSerializerHook
+com.hazelcast.internal.locksupport.LockDataSerializerHook
+com.hazelcast.internal.longregister.LongRegisterDataSerializerHook
 com.hazelcast.transaction.impl.TransactionDataSerializerHook
 com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook
 com.hazelcast.cache.impl.CacheDataSerializerHook
@@ -41,7 +41,7 @@ com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook
 com.hazelcast.internal.usercodedeployment.impl.UserCodeDeploymentSerializerHook
 com.hazelcast.aggregation.impl.AggregatorDataSerializerHook
 com.hazelcast.projection.impl.ProjectionDataSerializerHook
-com.hazelcast.config.ConfigDataSerializerHook
+com.hazelcast.internal.config.ConfigDataSerializerHook
 com.hazelcast.internal.journal.EventJournalDataSerializerHook
 com.hazelcast.flakeidgen.impl.FlakeIdGeneratorDataSerializerHook
 com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook
@@ -49,9 +49,9 @@ com.hazelcast.internal.crdt.CRDTDataSerializerHook
 com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook
 com.hazelcast.cp.internal.RaftServiceDataSerializerHook
 com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook
-com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongDataSerializerHook
+com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongDataSerializerHook
 com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook
-com.hazelcast.cp.internal.datastructures.lock.RaftLockDataSerializerHook
+com.hazelcast.cp.internal.datastructures.lock.LockDataSerializerHook
 com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook
 com.hazelcast.cp.internal.datastructures.RaftDataServiceDataSerializerHook
 com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook

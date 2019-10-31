@@ -34,7 +34,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.spi.impl.AbstractInvocationFuture.VOID;
+import static com.hazelcast.spi.impl.AbstractInvocationFuture.UNRESOLVED;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -85,7 +85,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         }
 
         // we need to make sure the thread is removed from the waiters.
-        assertSame(VOID, future.getState());
+        assertSame(UNRESOLVED, future.getState());
     }
 
     @Test
@@ -136,7 +136,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertNotSame(VOID, future.getState());
+                assertNotSame(UNRESOLVED, future.getState());
             }
         });
 
@@ -165,7 +165,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         }
 
         // we need to make sure the thread is removed from the waiters.
-        assertSame(VOID, future.getState());
+        assertSame(UNRESOLVED, future.getState());
     }
 
     @Test
@@ -187,7 +187,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertNotSame(VOID, future.getState());
+                assertNotSame(UNRESOLVED, future.getState());
             }
         });
 
@@ -219,7 +219,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertNotSame(VOID, future.getState());
+                assertNotSame(UNRESOLVED, future.getState());
             }
         });
 
@@ -248,7 +248,7 @@ public class AbstractInvocationFuture_GetWithTimeoutTest extends AbstractInvocat
         Thread[] threads = createThread(length);
         for (int k = 0; k < length; k++) {
             if (k == 0) {
-                future.compareAndSetState(VOID, threads[k]);
+                future.compareAndSetState(UNRESOLVED, threads[k]);
             } else {
                 WaitNode node = new WaitNode(threads[k], null);
                 node.next = future.getState();

@@ -16,60 +16,38 @@
 
 package com.hazelcast.cp;
 
-import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * IAtomicLong is a redundant and highly available distributed alternative to
  * the {@link java.util.concurrent.atomic.AtomicLong}.
  * <p>
  * Asynchronous variants of all methods have been introduced in version 3.7.
- * Async methods immediately return an {@link ICompletableFuture} from which
- * the operation's result can be obtained either in a blocking manner or by
- * registering a callback to be executed upon completion. For example:
+ * Async methods immediately return a {@link CompletionStage} which can be used to
+ * chain further computation stages or can be converted to a {@code CompletableFuture}
+ * from which the operation's result can be obtained in a blocking manner. For example:
  * <pre>
- * ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
- * future.andThen(new ExecutionCallback&lt;Long&gt;() {
- *     void onResponse(Long response) {
+ * CompletionStage&lt;Long&gt; stage = atomicLong.addAndGetAsync(13);
+ * stage.whenCompleteAsync((response, t) -> {
+ *     if (t == null) {
  *         // do something with the result
- *     }
- *
- *     void onFailure(Throwable t) {
+ *     } else {
  *         // handle failure
  *     }
  * });
  * </pre>
  * <p>
- * As of version 3.12, Hazelcast offers 2 different {@link IAtomicLong} impls.
- * Behaviour of {@link IAtomicLong} under failure scenarios, including network
- * partitions, depends on the impl. The first impl is the good old
- * {@link IAtomicLong} that is accessed via
- * {@link HazelcastInstance#getAtomicLong(String)}. It works on top of
- * Hazelcast's async replication algorithm and does not guarantee
- * linearizability during failures. It is possible for an {@link IAtomicLong}
- * instance to exist in each of the partitioned clusters or to not exist
- * at all. Under these circumstances, the values held in the
- * {@link IAtomicLong} instance may diverge. Once the network partition heals,
- * Hazelcast will use the configured split-brain merge policy to resolve
- * conflicting values.
- * <p>
- * This {@link IAtomicLong} impl also supports split brain protection {@link SplitBrainProtectionConfig}
- * in cluster versions 3.10 and higher. However, Hazelcast split brain protections do not
- * guarantee strong consistency under failure scenarios.
- * <p>
- * The second impl is a new one introduced with the {@link CPSubsystem} in
- * version 3.12. It is accessed via {@link CPSubsystem#getAtomicLong(String)}.
- * It has a major difference to the old implementation, that is, it works on
- * top of the Raft consensus algorithm. It offers linearizability during crash
+ * IAtomicLong is accessed via {@link CPSubsystem#getAtomicLong(String)}.
+ * It works on top of the Raft consensus algorithm. It offers linearizability during crash
  * failures and network partitions. It is CP with respect to the CAP principle.
  * If a network partition occurs, it remains available on at most one side
  * of the partition.
  * <p>
- * The CP IAtomicLong impl does not offer exactly-once / effectively-once
+ * IAtomicLong impl does not offer exactly-once / effectively-once
  * execution semantics. It goes with at-least-once execution semantics
  * by default and can cause an API call to be committed multiple times
  * in case of CP member failures. It can be tuned to offer at-most-once
@@ -201,178 +179,176 @@ public interface IAtomicLong extends DistributedObject {
     /**
      * Atomically adds the given value to the current value.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      * <p>
      * The operations result can be obtained in a blocking way, or a callback
      * can be provided for execution upon completion, as demonstrated in the
      * following examples:
      * <pre>
-     * ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
+     * CompletionStage&lt;Long&gt; stage = atomicLong.addAndGetAsync(13);
      * // do something else, then read the result
      *
      * // this method will block until the result is available
-     * Long result = future.get();
+     * Long result = stage.toCompletableFuture().get();
      * </pre>
      * <pre>
-     * ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
-     * future.andThen(new ExecutionCallback&lt;Long&gt;() {
-     *     void onResponse(Long response) {
+     * CompletionStage&lt;Long&gt; stage = atomicLong.addAndGetAsync(13);
+     * stage.whenCompleteAsync((response, t) -> {
+     *     if (t == null) {
      *         // do something with the result
-     *     }
-     *
-     *     void onFailure(Throwable t) {
+     *     } else {
      *         // handle failure
      *     }
      * });
      * </pre>
      *
      * @param delta the value to add
-     * @return an {@link ICompletableFuture} bearing the response
+     * @return a {@link CompletionStage} bearing the response
      * @since 3.7
      */
-    ICompletableFuture<Long> addAndGetAsync(long delta);
+    CompletionStage<Long> addAndGetAsync(long delta);
 
     /**
      * Atomically sets the value to the given updated value
      * only if the current value {@code ==} the expected value.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
      * @param expect the expected value
      * @param update the new value
-     * @return an {@link ICompletableFuture} with value {@code true} if successful;
+     * @return an {@link CompletionStage} with value {@code true} if successful;
      * or {@code false} if the actual value was not equal to the expected value
      * @since 3.7
      */
-    ICompletableFuture<Boolean> compareAndSetAsync(long expect, long update);
+    CompletionStage<Boolean> compareAndSetAsync(long expect, long update);
 
     /**
      * Atomically decrements the current value by one.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
-     * @return an {@link ICompletableFuture} with the updated value
+     * @return a {@link CompletionStage} with the updated value
      * @since 3.7
      */
-    ICompletableFuture<Long> decrementAndGetAsync();
+    CompletionStage<Long> decrementAndGetAsync();
 
     /**
      * Gets the current value. This method will dispatch a request and return
-     * immediately an {@link ICompletableFuture}.
+     * immediately a {@link CompletionStage}.
      *
-     * @return an {@link ICompletableFuture} with the current value
+     * @return a {@link CompletionStage} with the current value
      * @since 3.7
      */
-    ICompletableFuture<Long> getAsync();
+    CompletionStage<Long> getAsync();
 
     /**
      * Atomically adds the given value to the current value.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
      * @param delta the value to add
-     * @return an {@link ICompletableFuture} with the old value before the addition
+     * @return a {@link CompletionStage} with the old value before the addition
      * @since 3.7
      */
-    ICompletableFuture<Long> getAndAddAsync(long delta);
+    CompletionStage<Long> getAndAddAsync(long delta);
 
     /**
      * Atomically sets the given value and returns the old value.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
      * @param newValue the new value
-     * @return an {@link ICompletableFuture} with the old value
+     * @return a {@link CompletionStage} with the old value
      * @since 3.7
      */
-    ICompletableFuture<Long> getAndSetAsync(long newValue);
+    CompletionStage<Long> getAndSetAsync(long newValue);
 
     /**
      * Atomically increments the current value by one.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
-     * @return an {@link ICompletableFuture} with the updated value
+     * @return a {@link CompletionStage} with the updated value
      * @since 3.7
      */
-    ICompletableFuture<Long> incrementAndGetAsync();
+    CompletionStage<Long> incrementAndGetAsync();
 
     /**
      * Atomically increments the current value by one.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
-     * @return an {@link ICompletableFuture} with the old value
+     * @return a {@link CompletionStage} with the old value
      * @since 3.7
      */
-    ICompletableFuture<Long> getAndIncrementAsync();
+    CompletionStage<Long> getAndIncrementAsync();
 
     /**
      * Atomically sets the given value.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
      * @param newValue the new value
-     * @return an {@link ICompletableFuture}
+     * @return a {@link CompletionStage}
      * @since 3.7
      */
-    ICompletableFuture<Void> setAsync(long newValue);
+    CompletionStage<Void> setAsync(long newValue);
 
     /**
      * Alters the currently stored value by applying a function on it.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
      * @param function the function
-     * @return an {@link ICompletableFuture} with the new value
+     * @return a {@link CompletionStage} with the new value
      * @throws IllegalArgumentException if function is {@code null}
      * @since 3.7
      */
-    ICompletableFuture<Void> alterAsync(IFunction<Long, Long> function);
+    CompletionStage<Void> alterAsync(IFunction<Long, Long> function);
 
     /**
      * Alters the currently stored value by applying a function on it and gets
      * the result.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
      * @param function the function
-     * @return an {@link ICompletableFuture} with the new value
+     * @return a {@link CompletionStage} with the new value
      * @throws IllegalArgumentException if function is {@code null}
      * @since 3.7
      */
-    ICompletableFuture<Long> alterAndGetAsync(IFunction<Long, Long> function);
+    CompletionStage<Long> alterAndGetAsync(IFunction<Long, Long> function);
 
     /**
      * Alters the currently stored value by applying a function on it on and
      * gets the old value.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}.
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}.
      *
      * @param function the function
-     * @return an {@link ICompletableFuture} with the old value
+     * @return a {@link CompletionStage} with the old value
      * @throws IllegalArgumentException if function is {@code null}
      * @since 3.7
      */
-    ICompletableFuture<Long> getAndAlterAsync(IFunction<Long, Long> function);
+    CompletionStage<Long> getAndAlterAsync(IFunction<Long, Long> function);
 
     /**
      * Applies a function on the value, the actual stored value will not
      * change.
      * <p>
-     * This method will dispatch a request and return immediately an
-     * {@link ICompletableFuture}. For example:
+     * This method will dispatch a request and return immediately a
+     * {@link CompletionStage}. For example:
      * <pre>
      * class IsOneFunction implements IFunction&lt;Long, Boolean&gt; {
      *     &#64;Override
@@ -381,22 +357,20 @@ public interface IAtomicLong extends DistributedObject {
      *     }
      * }
      *
-     * ICompletableFuture&lt;Boolean&gt; future = atomicLong.applyAsync(new IsOneFunction());
-     * future.andThen(new ExecutionCallback&lt;Boolean&gt;() {
-     *    void onResponse(Boolean response) {
+     * CompletionStage&lt;Boolean&gt; stage = atomicLong.applyAsync(new IsOneFunction());
+     * stage.whenCompleteAsync((response, t) -> {
+     *    if (t == null) {
      *        // do something with the response
-     *    }
-     *
-     *    void onFailure(Throwable t) {
+     *    } else {
      *       // handle failure
      *    }
      * });
      * </pre>
      *
      * @param function the function
-     * @return an {@link ICompletableFuture} with the result of the function application
+     * @return a {@link CompletionStage} with the result of the function application
      * @throws IllegalArgumentException if function is {@code null}
      * @since 3.7
      */
-    <R> ICompletableFuture<R> applyAsync(IFunction<Long, R> function);
+    <R> CompletionStage<R> applyAsync(IFunction<Long, R> function);
 }

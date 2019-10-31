@@ -19,15 +19,16 @@ package com.hazelcast.client.connectionstrategy;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.nio.Address;
+import com.hazelcast.map.IMap;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,12 +37,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -104,7 +108,13 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         assertOpenEventually(connectedLatch);
 
-        client.getMap(randomMapName());
+        assertTrueEventually(() -> {
+            try {
+                client.getMap(randomMapName());
+            } catch (Exception e) {
+                fail();
+            }
+        });
     }
 
     @Test(expected = HazelcastClientNotActiveException.class)
@@ -113,13 +123,14 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
-                    disconnectedLatch.countDown();
+                    shutdownLatch.countDown();
                 }
             }
         });
@@ -129,7 +140,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         map.put(1, 5);
 
         hazelcastInstance.shutdown();
-        assertOpenEventually(disconnectedLatch);
+        assertOpenEventually(shutdownLatch);
 
         map.put(1, 5);
     }
@@ -140,14 +151,15 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (LifecycleEvent.LifecycleState.SHUTDOWN.equals(event.getState())) {
-                    disconnectedLatch.countDown();
+                    shutdownLatch.countDown();
                 }
             }
         });
@@ -156,11 +168,9 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         IMap<Integer, Integer> map = client.getMap(randomMapName());
         map.put(1, 5);
 
-        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, clientInstanceImpl);
-        ownerServer.shutdown();
+        hazelcastFactory.shutdownAllMembers();
+        assertOpenEventually(shutdownLatch);
 
-        assertOpenEventually(disconnectedLatch);
         map.put(1, 5);
     }
 
@@ -171,7 +181,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
@@ -219,7 +229,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         IMap<Object, Object> map = client.getMap(randomMapName());
@@ -247,7 +257,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -285,8 +295,6 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         hazelcastFactory.newInstances(getConfig(), 2);
 
         final CountDownLatch connectedLatch = new CountDownLatch(1);
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch reconnectedLatch = new CountDownLatch(1);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
@@ -307,23 +315,18 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         IMap<Integer, Integer> map = client.getMap(randomMapName());
         map.put(1, 5);
 
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+        hazelcastFactory.shutdownAllMembers();
+
+        HazelcastInstance[] instances = hazelcastFactory.newInstances(getConfig(), 2);
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED.equals(event.getState())) {
-                    disconnectedLatch.countDown();
-                }
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED.equals(event.getState())) {
-                    reconnectedLatch.countDown();
-                }
+            public void run() throws Exception {
+                Set<Member> actualMembers = client.getCluster().getMembers();
+                Set<Member> expectedMembers = instances[0].getCluster().getMembers();
+                assertEquals(expectedMembers, actualMembers);
             }
         });
-
-        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, clientInstanceImpl);
-        ownerServer.shutdown();
-
-        assertOpenEventually(reconnectedLatch);
 
         map.get(1);
     }

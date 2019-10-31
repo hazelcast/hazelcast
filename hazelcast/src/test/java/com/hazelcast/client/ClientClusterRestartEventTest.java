@@ -67,7 +67,7 @@ public class ClientClusterRestartEventTest {
 
     private ClientConfig newClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         return clientConfig;
     }
 
@@ -75,7 +75,7 @@ public class ClientClusterRestartEventTest {
     public void testSingleMemberRestart() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(newConfig());
         Member oldMember = instance.getCluster().getLocalMember();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(newClientConfig());
 
         final CountDownLatch memberAdded = new CountDownLatch(1);
         final CountDownLatch memberRemoved = new CountDownLatch(1);

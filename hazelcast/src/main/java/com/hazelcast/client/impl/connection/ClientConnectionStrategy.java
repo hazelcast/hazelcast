@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 /**
  * An abstract class called from {@link ClientConnectionManager} to customize
@@ -73,13 +73,6 @@ public abstract class ClientConnectionStrategy {
      * @param target address of the requested connection
      */
     public abstract void beforeOpenConnection(Address target);
-
-    /**
-     * If a cluster connection is established, this method will be called.
-     * @param target address of the requested connection
-     */
-    public abstract void beforeConnectToCluster(Address target);
-
 
     /**
      * If a cluster connection is established, this method will be called.

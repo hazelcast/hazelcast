@@ -16,9 +16,10 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,11 +44,22 @@ public class IndexFirstComponentDecoratorTest {
     public void before() {
         serializationService = new DefaultSerializationServiceBuilder().build();
         Extractors extractors = Extractors.newBuilder(serializationService).build();
-        expected = new IndexImpl("this", null, true, serializationService, extractors, IndexCopyBehavior.COPY_ON_READ,
-                PerIndexStats.EMPTY);
-        InternalIndex compositeIndex =
-                new IndexImpl("this, __key", new String[]{"this", "__key"}, true, serializationService, extractors,
-                        IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY);
+        expected = new IndexImpl(
+            IndexUtils.createTestIndexConfig(IndexType.SORTED, "this"),
+            serializationService,
+            extractors,
+            IndexCopyBehavior.COPY_ON_READ,
+            PerIndexStats.EMPTY
+        );
+
+        InternalIndex compositeIndex = new IndexImpl(
+            IndexUtils.createTestIndexConfig(IndexType.SORTED, "this", "__key"),
+            serializationService,
+            extractors,
+            IndexCopyBehavior.COPY_ON_READ,
+            PerIndexStats.EMPTY
+        );
+
         actual = new AttributeIndexRegistry.FirstComponentDecorator(compositeIndex);
 
         for (int i = 0; i < 100; ++i) {
@@ -73,9 +85,6 @@ public class IndexFirstComponentDecoratorTest {
         assertEquals(expected.getRecords(new Comparable[]{-1, -2, -3}), actual.getRecords(new Comparable[]{-1, -2, -3}));
         assertEquals(expected.getRecords(new Comparable[]{100, 101, 102}), actual.getRecords(new Comparable[]{100, 101, 102}));
         assertEquals(expected.getRecords(new Comparable[]{10, 20, 30, 30}), actual.getRecords(new Comparable[]{10, 20, 30, 30}));
-
-        assertEquals(expected.getRecords(Comparison.NOT_EQUAL, 50), actual.getRecords(Comparison.NOT_EQUAL, 50));
-        assertEquals(expected.getRecords(Comparison.NOT_EQUAL, -1), actual.getRecords(Comparison.NOT_EQUAL, -1));
 
         assertEquals(expected.getRecords(Comparison.LESS, 50), actual.getRecords(Comparison.LESS, 50));
         assertEquals(expected.getRecords(Comparison.LESS, 99), actual.getRecords(Comparison.LESS, 99));

@@ -20,23 +20,23 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.permission.ConfigPermission;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * Base implementation for dynamic add***Config methods.
  */
 public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTask<P>
-        implements ExecutionCallback<Object> {
+        implements BiConsumer<Object, Throwable> {
 
     private static final ConfigPermission CONFIG_PERMISSION = new ConfigPermission();
 
@@ -70,18 +70,17 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     public final void processMessage() {
         IdentifiedDataSerializable config = getConfig();
         ClusterWideConfigurationService service = getService(ClusterWideConfigurationService.SERVICE_NAME);
-        ICompletableFuture<Object> future = service.broadcastConfigAsync(config);
-        future.andThen(this);
+        InternalCompletableFuture<Object> future = service.broadcastConfigAsync(config);
+        future.whenCompleteAsync(this);
     }
 
     @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
+    public void accept(Object response, Throwable throwable) {
+        if (throwable == null) {
+            sendResponse(response);
+        } else {
+            handleProcessingFailure(throwable);
+        }
     }
 
     protected MergePolicyConfig mergePolicyConfig(String mergePolicy, int batchSize) {

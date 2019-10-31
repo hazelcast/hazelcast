@@ -47,7 +47,7 @@
 
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
-        <hazelcast.serverMainClass>com.hazelcast.core.server.StartServer</hazelcast.serverMainClass>
+        <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
 
         <!-- Not using 3.1 at the moment since it recompiles all classes every time -->
         <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->

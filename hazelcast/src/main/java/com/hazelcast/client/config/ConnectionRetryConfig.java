@@ -28,7 +28,7 @@ public class ConnectionRetryConfig {
     private int initialBackoffMillis = INITIAL_BACKOFF_MILLIS;
     private int maxBackoffMillis = MAX_BACKOFF_MILLIS;
     private double multiplier = 2;
-    private boolean failOnMaxBackoff;
+    private boolean failOnMaxBackoff = true;
     private double jitter = JITTER;
     private boolean enabled;
 
@@ -146,31 +146,6 @@ public class ConnectionRetryConfig {
         return this;
     }
 
-    /**
-     * enables connection retry logic.
-     * When disabled, old configurations are used:
-     * {@link ClientNetworkConfig#getConnectionAttemptLimit()}
-     * {@link ClientNetworkConfig#getConnectionAttemptPeriod()} ()}
-     *
-     * @return true if enabled
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
-     * enables connection retry logic.
-     * When disabled, old configurations are used:
-     * {@link ClientNetworkConfig#getConnectionAttemptLimit()}
-     * {@link ClientNetworkConfig#getConnectionAttemptPeriod()} ()}
-     *
-     * @param enabled
-     * @return updated ConnectionRetryConfig
-     */
-    public ConnectionRetryConfig setEnabled(boolean enabled) {
-        this.enabled = enabled;
-        return this;
-    }
 
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")

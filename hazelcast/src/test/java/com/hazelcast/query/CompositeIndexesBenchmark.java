@@ -17,8 +17,9 @@
 package com.hazelcast.query;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -54,13 +55,13 @@ public class CompositeIndexesBenchmark {
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig("map");
 
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f1", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f2", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f3, f4", false));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f1"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f2"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f3", "f4"));
 
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f5", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f6", true));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("f7, f8", true));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f5"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "f6"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "f7", "f8"));
 
         this.map = Hazelcast.newHazelcastInstance(config).getMap("map");
         for (int i = 0; i < 100000; ++i) {

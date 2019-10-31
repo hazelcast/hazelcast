@@ -80,22 +80,6 @@ public class ServiceConfig {
         return this;
     }
 
-    /**
-     * @deprecated use {@link #getImplementation()} instead
-     */
-    @Deprecated
-    public Object getServiceImpl() {
-        return getImplementation();
-    }
-
-    /**
-     * @deprecated use {@link #setImplementation(Object)} instead
-     */
-    @Deprecated
-    public ServiceConfig setServiceImpl(final Object serviceImpl) {
-        return setImplementation(serviceImpl);
-    }
-
     public Properties getProperties() {
         return properties;
     }

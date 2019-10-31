@@ -26,6 +26,11 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.config.ServicesConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.internal.datastructures.unsafe.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
 import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
@@ -39,17 +44,19 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.impl.MetricsService;
+import com.hazelcast.internal.crdt.CRDTReplicationMigrationService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.services.ConfigurableService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.internal.services.ConfigurableService;
-import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -58,13 +65,14 @@ import com.hazelcast.spi.impl.servicemanager.ServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptorProvider;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
+import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.wan.impl.WanReplicationService;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
@@ -144,7 +152,7 @@ public final class ServiceManagerImpl implements ServiceManager {
 
         logger.finest("Registering default services...");
         registerService(MapService.SERVICE_NAME, createService(MapService.class));
-        registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
+        registerService(LockSupportService.SERVICE_NAME, new LockSupportServiceImpl(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());
         registerService(ReliableTopicService.SERVICE_NAME, new ReliableTopicService(nodeEngine));
@@ -153,8 +161,6 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(SetService.SERVICE_NAME, new SetService(nodeEngine));
         registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
         registerService(DistributedDurableExecutorService.SERVICE_NAME, new DistributedDurableExecutorService(nodeEngine));
-        registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
-        registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(FlakeIdGeneratorService.SERVICE_NAME, new FlakeIdGeneratorService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
         registerService(RingbufferService.SERVICE_NAME, new RingbufferService(nodeEngine));
@@ -332,7 +338,7 @@ public final class ServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public ServiceInfo getServiceInfo(String serviceName) {
+    public ServiceInfo getServiceInfo(@Nonnull String serviceName) {
         return services.get(serviceName);
     }
 
@@ -353,7 +359,7 @@ public final class ServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public <T> T getService(String serviceName) {
+    public <T> T getService(@Nonnull String serviceName) {
         final ServiceInfo serviceInfo = getServiceInfo(serviceName);
         return serviceInfo != null ? (T) serviceInfo.getService() : null;
     }

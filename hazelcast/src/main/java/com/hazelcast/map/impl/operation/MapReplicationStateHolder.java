@@ -16,30 +16,29 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.impl.StoreAdapter;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordReplicationInfo;
-import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ThreadUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,11 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
-import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 
 /**
  * Holder for raw IMap key-value pairs and their metadata.
@@ -66,7 +62,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     protected transient Map<String, RecordStore<Record>> storesByMapName;
 
     // data for each map
-    protected transient Map<String, Collection<RecordReplicationInfo>> data;
+    protected transient Map<String, Collection<Record<Data>>> data;
 
     // propagates the information if the given record store has been already loaded with map-loaded
     // if so, the loading won't be triggered again after a migration to avoid duplicate loading.
@@ -95,7 +91,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
         storesByMapName = createHashMap(namespaces.size());
 
-        data = createHashMap(namespaces.size());
         loaded = createHashMap(namespaces.size());
         mapIndexInfos = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
@@ -115,23 +110,23 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             loaded.put(mapName, recordStore.isLoaded());
             storesByMapName.put(mapName, recordStore);
 
-            Set<IndexInfo> indexInfos = new HashSet<>();
+            Set<IndexConfig> indexConfigs = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
                 // global-index
                 for (Index index : mapContainer.getIndexes().getIndexes()) {
-                    indexInfos.add(new IndexInfo(index.getName(), index.isOrdered()));
+                    indexConfigs.add(index.getConfig());
                 }
             } else {
                 // partitioned-index
                 final Indexes indexes = mapContainer.getIndexes(container.getPartitionId());
                 if (indexes != null && indexes.haveAtLeastOneIndex()) {
                     for (Index index : indexes.getIndexes()) {
-                        indexInfos.add(new IndexInfo(index.getName(), index.isOrdered()));
+                        indexConfigs.add(index.getConfig());
                     }
                 }
             }
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapName);
-            mapIndexInfo.addIndexInfos(indexInfos);
+            mapIndexInfo.addIndexCofigs(indexConfigs);
             mapIndexInfos.add(mapIndexInfo);
         }
     }
@@ -142,9 +137,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
         applyIndexesState();
 
-        if (data != null) {
-            for (Map.Entry<String, Collection<RecordReplicationInfo>> dataEntry : data.entrySet()) {
-                Collection<RecordReplicationInfo> recordReplicationInfos = dataEntry.getValue();
+        if (!isNullOrEmpty(data)) {
+            for (Map.Entry<String, Collection<Record<Data>>> dataEntry : data.entrySet()) {
+                Collection<Record<Data>> records = dataEntry.getValue();
                 final String mapName = dataEntry.getKey();
                 RecordStore recordStore = operation.getRecordStore(mapName);
                 recordStore.reset();
@@ -154,50 +149,32 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 MapContainer mapContainer = recordStore.getMapContainer();
                 PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
                         .getPartitionContainer(operation.getPartitionId());
-                for (Map.Entry<String, Boolean> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
+                for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
                     Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                    indexes.addOrGetIndex(indexDefinition.getKey(), indexDefinition.getValue(),
-                            indexes.isGlobal() ? null : storeAdapter);
+                    indexes.addOrGetIndex(indexDefinition.getValue(), indexes.isGlobal() ? null : storeAdapter);
                 }
 
                 final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                final SerializationService serializationService = mapContainer.getMapServiceContext().getNodeEngine()
-                        .getSerializationService();
-                final boolean indexesMustBePopulated = indexesMustBePopulated(indexes, operation);
-                if (indexesMustBePopulated) {
+                final boolean populateIndexes = indexesMustBePopulated(indexes, operation);
+                if (populateIndexes) {
                     // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
                     indexes.clearAll();
                 }
 
+                long nowInMillis = Clock.currentTimeMillis();
                 final InternalIndex[] indexesSnapshot = indexes.getIndexes();
-                for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
-                    Data key = recordReplicationInfo.getKey();
-                    final Data value = recordReplicationInfo.getValue();
-                    Record newRecord = recordStore.createRecord(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE,
-                            Clock.currentTimeMillis());
-                    applyRecordInfo(newRecord, recordReplicationInfo);
-                    recordStore.putRecord(key, newRecord);
-
-                    if (indexesMustBePopulated) {
-                        final Object valueToIndex = getValueOrCachedValue(newRecord, serializationService);
-                        if (valueToIndex != null) {
-                            final QueryableEntry queryableEntry = mapContainer.newQueryEntry(newRecord.getKey(), valueToIndex);
-                            queryableEntry.setRecord(newRecord);
-                            queryableEntry.setStoreAdapter(storeAdapter);
-                            indexes.putEntry(queryableEntry, null, Index.OperationSource.SYSTEM);
-                        }
-                    }
-
+                for (Record<Data> record : records) {
+                    Record newRecord = recordStore.putReplicatedRecord(record, nowInMillis, populateIndexes);
                     if (recordStore.shouldEvict()) {
                         // No need to continue replicating records anymore.
                         // We are already over eviction threshold, each put record will cause another eviction.
-                        recordStore.evictEntries(key);
+                        recordStore.evictEntries(newRecord.getKey());
                         break;
                     }
                     recordStore.disposeDeferredBlocks();
                 }
 
-                if (indexesMustBePopulated) {
+                if (populateIndexes) {
                     Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
                 }
             }
@@ -207,33 +184,33 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     private void applyIndexesState() {
         if (mapIndexInfos != null) {
             for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
-                addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexInfos());
+                addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexConfigs());
             }
         }
     }
 
-    private void addIndexes(String mapName, Collection<IndexInfo> indexInfos) {
-        if (indexInfos == null) {
+    private void addIndexes(String mapName, Collection<IndexConfig> indexConfigs) {
+        if (indexConfigs == null) {
             return;
         }
         RecordStore recordStore = operation.getRecordStore(mapName);
         MapContainer mapContainer = recordStore.getMapContainer();
         if (mapContainer.isGlobalIndexEnabled()) {
             // creating global indexes on partition thread in case they do not exist
-            for (IndexInfo indexInfo : indexInfos) {
+            for (IndexConfig indexConfig : indexConfigs) {
                 Indexes indexes = mapContainer.getIndexes();
                 StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new RecordStoreAdapter(recordStore);
 
                 // optimisation not to synchronize each partition thread on the addOrGetIndex method
-                if (indexes.getIndex(indexInfo.getName()) == null) {
-                    indexes.addOrGetIndex(indexInfo.getName(), indexInfo.isOrdered(), recordStoreAdapter);
+                if (indexes.getIndex(indexConfig.getName()) == null) {
+                    indexes.addOrGetIndex(indexConfig, recordStoreAdapter);
                 }
             }
         } else {
             Indexes indexes = mapContainer.getIndexes(operation.getPartitionId());
             StoreAdapter recordStoreAdapter = indexes.isGlobal() ? null : new RecordStoreAdapter(recordStore);
-            for (IndexInfo indexInfo : indexInfos) {
-                indexes.addOrGetIndex(indexInfo.getName(), indexInfo.isOrdered(), recordStoreAdapter);
+            for (IndexConfig indexConfig : indexConfigs) {
+                indexes.addOrGetIndex(indexConfig, recordStoreAdapter);
             }
         }
     }
@@ -244,18 +221,15 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
         for (Map.Entry<String, RecordStore<Record>> entry : storesByMapName.entrySet()) {
             String mapName = entry.getKey();
-            RecordStore recordStore = entry.getValue();
-
-            SerializationService ss = getSerializationService(recordStore);
-
             out.writeUTF(mapName);
-            out.writeInt(recordStore.size());
 
+            SerializationService ss = getSerializationService(operation.getRecordStore(mapName).getMapContainer());
+            RecordStore recordStore = entry.getValue();
+            out.writeInt(recordStore.size());
             Iterator<Record> iterator = recordStore.iterator();
             while (iterator.hasNext()) {
                 Record record = iterator.next();
-                RecordReplicationInfo replicationInfo = operation.toReplicationInfo(record, ss);
-                out.writeObject(replicationInfo);
+                Records.writeRecord(out, record, ss.toData(record.getValue()));
             }
         }
 
@@ -271,8 +245,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         }
     }
 
-    private static SerializationService getSerializationService(RecordStore recordStore) {
-        return recordStore.getMapContainer().getMapServiceContext().getNodeEngine().getSerializationService();
+    private static SerializationService getSerializationService(MapContainer mapContainer) {
+        return mapContainer.getMapServiceContext()
+                .getNodeEngine().getSerializationService();
     }
 
     @Override
@@ -282,14 +257,13 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
-            int recordStoreSize = in.readInt();
-            Collection<RecordReplicationInfo> recordReplicationInfos
-                    = new ArrayList<>(recordStoreSize);
-            for (int j = 0; j < recordStoreSize; j++) {
-                RecordReplicationInfo recordReplicationInfo = in.readObject();
-                recordReplicationInfos.add(recordReplicationInfo);
+            int numOfRecords = in.readInt();
+            Collection<Record<Data>> allRecords = new ArrayList<>(numOfRecords);
+            for (int j = 0; j < numOfRecords; j++) {
+                Record record = Records.readRecord(in);
+                allRecords.add(record);
             }
-            data.put(name, recordReplicationInfos);
+            data.put(name, allRecords);
         }
 
         int loadedSize = in.readInt();
@@ -298,9 +272,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             loaded.put(in.readUTF(), in.readBoolean());
         }
 
-        int mapIndexInfosSize = in.readInt();
-        mapIndexInfos = new ArrayList<>(mapIndexInfosSize);
-        for (int i = 0; i < mapIndexInfosSize; i++) {
+        int mapIndexInfoSize = in.readInt();
+        mapIndexInfos = new ArrayList<>(mapIndexInfoSize);
+        for (int i = 0; i < mapIndexInfoSize; i++) {
             MapIndexInfo mapIndexInfo = in.readObject();
             mapIndexInfos.add(mapIndexInfo);
         }

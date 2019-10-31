@@ -20,10 +20,7 @@
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd">
 
-    <cluster>
-        <name>cluster2</name>
-        <password>cluster2pass</password>
-    </cluster>
+    <cluster-name>cluster2</cluster-name>
 
     <network>
         <cluster-members>

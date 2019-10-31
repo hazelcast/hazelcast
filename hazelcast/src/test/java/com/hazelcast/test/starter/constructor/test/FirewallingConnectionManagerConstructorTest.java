@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.constructor.test;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;

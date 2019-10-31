@@ -16,8 +16,6 @@
 
 package com.hazelcast.cp.internal.operation;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -29,10 +27,14 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
+
+import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 
 /**
  * The base class that replicates the given {@link RaftOp}
@@ -42,7 +44,7 @@ import java.util.concurrent.Executor;
  * so it is not handled via the Raft layer.
  */
 public abstract class RaftReplicateOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation,
-                                                                   ExecutionCallback {
+                                                                   BiConsumer<Object, Throwable> {
 
     static final Executor CALLER_RUNS_EXECUTOR = Runnable::run;
 
@@ -64,28 +66,27 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
             if (service.isRaftGroupDestroyed(groupId)) {
                 sendResponse(new CPGroupDestroyedException(groupId));
             } else {
-                sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+                sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
             }
             return;
         } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
-            service.stepDownRaftNode(groupId);
-            sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
+            sendResponse(new NotLeaderException(groupId, service.getLocalCPEndpoint(), null));
+            getNodeEngine().getExecutionService().execute(CP_SUBSYSTEM_EXECUTOR, () -> service.stepDownRaftNode(groupId));
             return;
         }
 
-        replicate(raftNode).andThen(this, CALLER_RUNS_EXECUTOR);
+        replicate(raftNode).whenCompleteAsync(this, CALLER_RUNS_EXECUTOR);
     }
 
-    protected abstract ICompletableFuture replicate(RaftNode raftNode);
+    protected abstract InternalCompletableFuture replicate(RaftNode raftNode);
 
     @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        sendResponse(t);
+    public void accept(Object response, Throwable throwable) {
+        if (throwable == null) {
+            sendResponse(response);
+        } else {
+            sendResponse(throwable);
+        }
     }
 
     @Override

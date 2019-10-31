@@ -20,12 +20,13 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.datastructures.lock.AcquireResult;
+import com.hazelcast.cp.internal.datastructures.lock.Lock;
 import com.hazelcast.cp.internal.datastructures.lock.LockInvocationKey;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockDataSerializerHook;
-import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.lock.LockDataSerializerHook;
+import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -37,7 +38,7 @@ import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.Acquir
 /**
  * Operation for {@link FencedLock#lock()}
  *
- * @see com.hazelcast.cp.internal.datastructures.lock.RaftLock#acquire(LockInvocationKey, boolean)
+ * @see Lock#acquire(LockInvocationKey, boolean)
  */
 public class LockOp extends AbstractLockOp implements CallerAware, IndeterminateOperationStateAware {
 
@@ -53,7 +54,7 @@ public class LockOp extends AbstractLockOp implements CallerAware, Indeterminate
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
-        RaftLockService service = getService();
+        LockService service = getService();
         LockInvocationKey key = new LockInvocationKey(commitIndex, invocationUid, callerAddress, callId, getLockEndpoint());
         AcquireResult result = service.acquire(groupId, name, key, -1L);
         if (result.status() == WAIT_KEY_ADDED) {
@@ -91,7 +92,7 @@ public class LockOp extends AbstractLockOp implements CallerAware, Indeterminate
 
     @Override
     public int getClassId() {
-        return RaftLockDataSerializerHook.LOCK_OP;
+        return LockDataSerializerHook.LOCK_OP;
     }
 
     @Override

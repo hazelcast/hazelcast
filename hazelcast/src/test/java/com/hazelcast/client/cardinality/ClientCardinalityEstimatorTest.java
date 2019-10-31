@@ -79,7 +79,7 @@ public class ClientCardinalityEstimatorTest extends HazelcastTestSupport {
     @Test
     public void estimateAsync() throws Exception {
         estimator = client.getCardinalityEstimator("estimateAsync");
-        assertEquals(0, estimator.estimateAsync().get().longValue());
+        assertEquals(0, estimator.estimateAsync().toCompletableFuture().get().longValue());
     }
 
     @Test
@@ -100,16 +100,16 @@ public class ClientCardinalityEstimatorTest extends HazelcastTestSupport {
     @Test
     public void addAsync() throws Exception {
         estimator = client.getCardinalityEstimator("aggregateAsync");
-        estimator.addAsync(1L).get();
-        assertEquals(1L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync(1L).get();
-        estimator.addAsync(1L).get();
-        assertEquals(1L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync(2L).get();
+        estimator.addAsync(1L).toCompletableFuture().get();
+        assertEquals(1L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync(1L).toCompletableFuture().get();
+        estimator.addAsync(1L).toCompletableFuture().get();
+        assertEquals(1L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync(2L).toCompletableFuture().get();
         estimator.addAsync(3L);
-        assertEquals(3L, estimator.estimateAsync().get().longValue());
-        estimator.addAsync("Test").get();
-        assertEquals(4L, estimator.estimateAsync().get().longValue());
+        assertEquals(3L, estimator.estimateAsync().toCompletableFuture().get().longValue());
+        estimator.addAsync("Test").toCompletableFuture().get();
+        assertEquals(4L, estimator.estimateAsync().toCompletableFuture().get().longValue());
     }
 
     @Test
@@ -122,8 +122,8 @@ public class ClientCardinalityEstimatorTest extends HazelcastTestSupport {
     @Test
     public void addStringAsync() throws Exception {
         estimator = client.getCardinalityEstimator("aggregateStringAsync");
-        estimator.addAsync("String1").get();
-        assertEquals(1L, estimator.estimateAsync().get().longValue());
+        estimator.addAsync("String1").toCompletableFuture().get();
+        assertEquals(1L, estimator.estimateAsync().toCompletableFuture().get().longValue());
     }
 
     @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)

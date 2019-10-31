@@ -17,7 +17,8 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -112,9 +113,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
 
         IMap<String, Employee> map = instance.getMap(mapName);
-        map.addIndex("name", false);
-        map.addIndex("age", false);
-        map.addIndex("active", true);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         int passiveEmployees = 5;
         int activeEmployees = 5;
@@ -160,9 +161,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
         IMap<String, Employee> map = instance1.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         for (int i = 0; i < 500; i++) {
             Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
@@ -171,9 +172,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertClusterSize(2, instance1, instance2);
 
         map = instance2.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         Collection<Employee> entries = map.values(Predicates.sql("name='name3' and city='city3' and age > 2"));
         assertEquals(5, entries.size());
@@ -206,10 +207,10 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
         IMap<String, Employee> map = instance1.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("city", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.HASH, "city");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         for (int i = 0; i < 5000; i++) {
             Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
@@ -218,10 +219,10 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertClusterSize(2, instance1, instance2);
 
         map = instance2.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("city", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.HASH, "city");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         Collection<Employee> entries = map.values(Predicates.sql("name='name3' and city='city3' and age > 2"));
         assertEquals(50, entries.size());
@@ -257,9 +258,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testOneMemberWithIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Employee> map = instance.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
         QueryBasicTest.doFunctionalQueryTest(map);
     }
 
@@ -276,9 +277,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testOneMemberSQLWithIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Employee> map = instance.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
         QueryBasicTest.doFunctionalSQLQueryTest(map);
     }
 
@@ -301,9 +302,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         nodeFactory.newHazelcastInstance(config);
 
         IMap<String, Employee> map = instance.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
         QueryBasicTest.doFunctionalQueryTest(map);
     }
 
@@ -315,9 +316,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
         IMap<String, Employee> map = instance1.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         QueryBasicTest.doFunctionalQueryTest(map);
         assertEquals(101, map.size());
@@ -341,9 +342,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
         IMap<String, Employee> map = instance1.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         QueryBasicTest.doFunctionalQueryTest(map);
         assertEquals(101, map.size());
@@ -367,9 +368,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
         IMap<String, Employee> map = instance1.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
         QueryBasicTest.doFunctionalQueryTest(map);
 
         assertEquals(101, map.size());
@@ -395,9 +396,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         IMap<String, Employee> map = instance.getMap("employees");
-        map.addIndex("name", false);
-        map.addIndex("age", true);
-        map.addIndex("active", false);
+        map.addIndex(IndexType.HASH, "name");
+        map.addIndex(IndexType.SORTED, "age");
+        map.addIndex(IndexType.HASH, "active");
 
         nodeFactory.newHazelcastInstance(config);
         QueryBasicTest.doFunctionalQueryTest(map);
@@ -407,7 +408,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testMapWithIndexAfterShutDown() {
         Config config = getConfig();
         String mapName = "default";
-        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("typeName", false));
+        config.getMapConfig(mapName).addIndexConfig(new IndexConfig(IndexType.HASH, "typeName"));
 
         HazelcastInstance[] instances = createHazelcastInstanceFactory(3).newInstances(config);
 
@@ -522,8 +523,8 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             }
         });
         config.getMapConfig(mapName)
-                .addMapIndexConfig(new MapIndexConfig("notExist", false))
-                .addMapIndexConfig(new MapIndexConfig("n", false));
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "notExist"))
+                .addIndexConfig(new IndexConfig(IndexType.HASH, "n"));
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
 

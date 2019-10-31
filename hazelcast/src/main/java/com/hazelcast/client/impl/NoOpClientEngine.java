@@ -22,17 +22,19 @@ import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientType;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -44,6 +46,7 @@ public class NoOpClientEngine implements ClientEngine {
         return true;
     }
 
+    @Nonnull
     @Override
     public Collection<Client> getClients() {
         return emptyList();
@@ -85,11 +88,6 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public UUID getThisUuid() {
-        return null;
-    }
-
-    @Override
     public ClientEndpointManager getEndpointManager() {
         return null;
     }
@@ -125,11 +123,6 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public UUID getOwnerUuid(UUID clientUuid) {
-        return null;
-    }
-
-    @Override
     public boolean isClientAllowed(Client client) {
         return true;
     }
@@ -154,5 +147,25 @@ public class NoOpClientEngine implements ClientEngine {
     public Address clientAddressOf(Address clientAddress) {
         throw new TargetNotMemberException("NoOpClientEngine does not supply translation from member to "
                 + "client address");
+    }
+
+    @Override
+    public void onClientAcquiredResource(UUID uuid) {
+
+    }
+
+    @Override
+    public void addBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
+
+    }
+
+    @Override
+    public void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId) {
+
+    }
+
+    @Override
+    public boolean deregisterBackupListener(UUID clientUUID) {
+        return false;
     }
 }

@@ -177,12 +177,9 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     public static void assertWriteBehindQueuesEmpty(final String mapName, final List<HazelcastInstance> nodes) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance instance : nodes) {
-                    assertEquals(0, writeBehindQueueSize(instance, mapName));
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : nodes) {
+                assertEquals(0, writeBehindQueueSize(instance, mapName));
             }
         }, 240);
     }

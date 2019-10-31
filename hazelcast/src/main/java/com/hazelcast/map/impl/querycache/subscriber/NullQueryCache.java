@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.Collection;
@@ -62,11 +62,6 @@ public final class NullQueryCache implements InternalQueryCache {
 
     @Override
     public IMap getDelegate() {
-        return null;
-    }
-
-    @Override
-    public Indexes getIndexes() {
         return null;
     }
 
@@ -130,7 +125,8 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public void addIndex(String attribute, boolean ordered) {
+    public void addIndex(IndexConfig config) {
+        // No-op.
     }
 
     @Override

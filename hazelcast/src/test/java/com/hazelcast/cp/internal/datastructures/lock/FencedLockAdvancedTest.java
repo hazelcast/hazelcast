@@ -88,17 +88,18 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
 
         CPGroupId groupId = this.lock.getGroupId();
 
+        assertTrueEventually(() -> {
+            HazelcastInstance leader = getLeaderInstance(instances, groupId);
+            LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+            ResourceRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
+            assertFalse(registry.getWaitTimeouts().isEmpty());
+        });
+
         spawn(() -> {
             for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
                 lock.isLocked();
             }
-        });
-
-        assertTrueEventually(() -> {
-            HazelcastInstance leader = getLeaderInstance(instances, groupId);
-            RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
-            ResourceRegistry registry = service.getRegistryOrNull(groupId);
-            assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 
         assertTrueEventually(() -> {
@@ -109,7 +110,7 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
                 assertTrue(snapshotEntry.index() > 0);
                 List<RestoreSnapshotOp> ops = (List<RestoreSnapshotOp>) snapshotEntry.operation();
                 for (RestoreSnapshotOp op : ops) {
-                    if (op.getServiceName().equals(RaftLockService.SERVICE_NAME)) {
+                    if (op.getServiceName().equals(LockService.SERVICE_NAME)) {
                         ResourceRegistry registry = (ResourceRegistry) op.getSnapshot();
                         assertFalse(registry.getWaitTimeouts().isEmpty());
                         return;
@@ -123,18 +124,19 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
         instanceToShutdown.shutdown();
 
         HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
-        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
+                   .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
             RaftNodeImpl raftNode = getRaftNode(newInstance, groupId);
             assertNotNull(raftNode);
             assertTrue(getSnapshotEntry(raftNode).index() > 0);
 
-            RaftLockService service = getNodeEngineImpl(newInstance).getService(RaftLockService.SERVICE_NAME);
-            RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+            LockService service = getNodeEngineImpl(newInstance).getService(LockService.SERVICE_NAME);
+            LockRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
-            RaftLockOwnershipState ownership = registry.getLockOwnershipState(objectName);
+            LockOwnershipState ownership = registry.getLockOwnershipState(objectName);
             assertTrue(ownership.isLocked());
             assertTrue(ownership.getLockCount() > 0);
             assertEquals(fence, ownership.getFence());

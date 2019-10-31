@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
@@ -341,7 +342,7 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, groupPassword);
     }
 
-    public ConnectionResponse removeCPMember(String cpMemberUid, String clusterName, String groupPassword) throws IOException {
+    public ConnectionResponse removeCPMember(UUID cpMemberUid, String clusterName, String groupPassword) throws IOException {
         String url = address + "cp-subsystem/members/" + cpMemberUid + "/remove";
         return doPost(url, clusterName, groupPassword);
     }
@@ -352,7 +353,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse restart(String clusterName, String groupPassword) throws IOException {
-        String url = address + "cp-subsystem/restart";
+        String url = address + "cp-subsystem/reset";
         return doPost(url, clusterName, groupPassword);
     }
 
@@ -424,7 +425,7 @@ public class HTTPCommunicator {
 
         List<NameValuePair> nameValuePairs = new ArrayList<>(params.length);
         for (String param : params) {
-            nameValuePairs.add(new BasicNameValuePair(param, null));
+            nameValuePairs.add(new BasicNameValuePair(param == null ? "" : param, null));
         }
         String data = URLEncodedUtils.format(nameValuePairs, Consts.UTF_8);
 

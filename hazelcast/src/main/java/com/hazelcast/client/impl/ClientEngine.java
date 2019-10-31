@@ -16,19 +16,20 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.impl.protocol.ClientExceptions;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientType;
+import com.hazelcast.client.impl.protocol.ClientExceptions;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -55,6 +56,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      */
     boolean bind(ClientEndpoint endpoint);
 
+    @Nonnull
     Collection<Client> getClients();
 
     int getClientEndpointCount();
@@ -74,8 +76,6 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * is in use, it will be different from the MEMBER listening address reported eg by {@code Node.getThisAddress()}
      */
     Address getThisAddress();
-
-    UUID getThisUuid();
 
     ClientEndpointManager getEndpointManager();
 
@@ -112,7 +112,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * clusterConnectionTimestamp
      * credentials.principal
      * clientAddress
-     * clientName
+     * clusterName
      * enterprise
      * lastStatisticsCollectionTime
      * nearcache.&lt;example\.fastmap&gt;.creationTime
@@ -163,8 +163,6 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      */
     Map<UUID, String> getClientStatistics();
 
-    UUID getOwnerUuid(UUID clientUuid);
-
     /**
      * @param client to check if allowed through current ClientSelector
      * @return true if allowed, false otherwise
@@ -201,4 +199,18 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * @return the client address of the member
      */
     Address clientAddressOf(Address memberAddress);
+
+    /**
+     * Notify client engine that a client with given uuid required a resource (lock) on this member
+     *
+     * @param uuid client uuid
+     */
+    void onClientAcquiredResource(UUID uuid);
+
+    void addBackupListener(UUID clientUUID, Consumer<Long> backupListener);
+
+    boolean deregisterBackupListener(UUID clientUUID);
+
+    void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId);
+
 }

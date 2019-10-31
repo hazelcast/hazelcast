@@ -225,6 +225,37 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
         assertNull(maxLongValue);
     }
 
+    @Test
+    public void test_nested_json() {
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, new HazelcastJsonValue(nestedJsonString()));
+        Long sum = map.aggregate(Aggregators.longSum("list[any].secondLevelItem.thirdLevelItem"));
+
+        assertEquals(6L, sum.longValue());
+    }
+
+    private static String nestedJsonString() {
+        return "{\n"
+                + "  \"list\": [\n"
+                + "    {\n"
+                + "      \"secondLevelItem\": {\n"
+                + "        \"thirdLevelItem\": 1\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"secondLevelItem\": {\n"
+                + "        \"thirdLevelItem\": 2\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"secondLevelItem\": {\n"
+                + "        \"thirdLevelItem\": 3\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+    }
+
     private String createJsonString(String stringValue, long longValue, double doubleValue, long nestedLongValue) {
         JsonObject object = Json.object();
 

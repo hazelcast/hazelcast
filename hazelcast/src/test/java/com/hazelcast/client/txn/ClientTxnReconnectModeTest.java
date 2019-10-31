@@ -64,7 +64,7 @@ public class ClientTxnReconnectModeTest {
     @Test(expected = OperationTimeoutException.class)
     public void testNewTransactionContext_ReconnectMode_ON() throws Throwable {
         ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         config.getNetworkConfig().setSmartRouting(smartRouting);
         config.getConnectionStrategyConfig().setAsyncStart(true);
         config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
@@ -80,7 +80,7 @@ public class ClientTxnReconnectModeTest {
     @Test(expected = HazelcastClientOfflineException.class)
     public void testNewTransactionContext_ReconnectMode_ASYNC() throws Throwable {
         ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         config.getNetworkConfig().setSmartRouting(smartRouting);
         config.getConnectionStrategyConfig().setAsyncStart(true);
 
@@ -96,7 +96,7 @@ public class ClientTxnReconnectModeTest {
     @Test(expected = HazelcastClientNotActiveException.class)
     public void testNewTransactionContext_After_shutdown() throws Throwable {
         ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         config.getNetworkConfig().setSmartRouting(smartRouting);
         config.getConnectionStrategyConfig().setAsyncStart(true);
 

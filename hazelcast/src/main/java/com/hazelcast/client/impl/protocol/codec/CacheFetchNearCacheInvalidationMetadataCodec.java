@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("8809f845b4f70befc3f7f86bd1bf3c1f")
+@Generated("477013fd0d1bc9d472cc99214cddca44")
 public final class CacheFetchNearCacheInvalidationMetadataCodec {
-    //hex: 0x151F00
-    public static final int REQUEST_MESSAGE_TYPE = 1384192;
-    //hex: 0x151F01
-    public static final int RESPONSE_MESSAGE_TYPE = 1384193;
+    //hex: 0x131F00
+    public static final int REQUEST_MESSAGE_TYPE = 1253120;
+    //hex: 0x131F01
+    public static final int RESPONSE_MESSAGE_TYPE = 1253121;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private CacheFetchNearCacheInvalidationMetadataCodec() {
     }
@@ -58,10 +59,10 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
         /**
          * TODO DOC
          */
-        public com.hazelcast.nio.Address address;
+        public com.hazelcast.cluster.Address address;
     }
 
-    public static ClientMessage encodeRequest(java.util.Collection<java.lang.String> names, com.hazelcast.nio.Address address) {
+    public static ClientMessage encodeRequest(java.util.Collection<java.lang.String> names, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -75,7 +76,7 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
     }
 
     public static CacheFetchNearCacheInvalidationMetadataCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -104,18 +105,18 @@ public final class CacheFetchNearCacheInvalidationMetadataCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, namePartitionSequenceList, StringCodec::encode, MapIntegerLongCodec::encode);
-        MapIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
+        EntryListCodec.encode(clientMessage, namePartitionSequenceList, StringCodec::encode, EntryListIntegerLongCodec::encode);
+        EntryListIntegerUUIDCodec.encode(clientMessage, partitionUuidList);
         return clientMessage;
     }
 
     public static CacheFetchNearCacheInvalidationMetadataCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.namePartitionSequenceList = MapCodec.decode(iterator, StringCodec::decode, MapIntegerLongCodec::decode);
-        response.partitionUuidList = MapIntegerUUIDCodec.decode(iterator);
+        response.namePartitionSequenceList = EntryListCodec.decode(iterator, StringCodec::decode, EntryListIntegerLongCodec::decode);
+        response.partitionUuidList = EntryListIntegerUUIDCodec.decode(iterator);
         return response;
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.client.listeners.leak;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
@@ -50,7 +51,9 @@ import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -240,7 +243,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         //we are testing if any event handler of internal listeners are leaking
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(smartRouting);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         hazelcast.shutdown();
@@ -250,5 +253,18 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         assertTrueEventually(() -> {
             assertEquals(0, listenerService.getEventHandlers().size());
         });
+    }
+
+    @Test
+    public void testBackupListenerRemoved_afterClientShutdown() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(smartRouting);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        client.shutdown();
+        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
+        assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.servicemanager;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -29,7 +30,7 @@ public interface ServiceManager {
      * @param serviceName the name of the service.
      * @return the found ServiceInfo or null if nothing is found.
      */
-    ServiceInfo getServiceInfo(String serviceName);
+    ServiceInfo getServiceInfo(@Nonnull String serviceName);
 
     /**
      * Gets all the service info's for services that implement a given class/interface.
@@ -46,7 +47,7 @@ public interface ServiceManager {
      * @param <T>
      * @return the found service or null if nothing is found.
      */
-    <T> T getService(String serviceName);
+    <T> T getService(@Nonnull String serviceName);
 
     /**
      * Gets all services implementing a certain class/interface.

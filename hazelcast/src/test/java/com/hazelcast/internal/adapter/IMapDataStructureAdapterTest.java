@@ -20,7 +20,6 @@ import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -110,7 +109,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     public void testGetAsync() throws Exception {
         map.put(42, "foobar");
 
-        Future<String> future = adapter.getAsync(42);
+        Future<String> future = adapter.getAsync(42).toCompletableFuture();
         String result = future.get();
         assertEquals("foobar", result);
     }
@@ -126,7 +125,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     public void testSetAsync() throws Exception {
         map.put(42, "oldValue");
 
-        ICompletableFuture<Void> future = adapter.setAsync(42, "newValue");
+        Future<Void> future = adapter.setAsync(42, "newValue").toCompletableFuture();
         Void oldValue = future.get();
 
         assertNull(oldValue);
@@ -165,7 +164,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     public void testPutAsync() throws Exception {
         map.put(42, "oldValue");
 
-        ICompletableFuture<String> future = adapter.putAsync(42, "newValue");
+        Future<String> future = adapter.putAsync(42, "newValue").toCompletableFuture();
         String oldValue = future.get();
 
         assertEquals("oldValue", oldValue);
@@ -176,7 +175,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     public void testPutAsyncWithTtl() throws Exception {
         map.put(42, "oldValue");
 
-        ICompletableFuture<String> future = adapter.putAsync(42, "newValue", 1000, TimeUnit.MILLISECONDS);
+        Future<String> future = adapter.putAsync(42, "newValue", 1000, TimeUnit.MILLISECONDS).toCompletableFuture();
         String oldValue = future.get();
         String newValue = map.get(42);
 
@@ -268,7 +267,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         map.put(23, "value-23");
         assertTrue(map.containsKey(23));
 
-        String value = adapter.removeAsync(23).get();
+        String value = adapter.removeAsync(23).toCompletableFuture().get();
         assertEquals("value-23", value);
 
         assertFalse(map.containsKey(23));

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.config.AbstractBasicConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
@@ -520,6 +519,9 @@ public final class ConfigValidator {
         checkTrue(config.getMissingCPMemberAutoRemovalSeconds() == 0
                         || config.getSessionTimeToLiveSeconds() <= config.getMissingCPMemberAutoRemovalSeconds(),
                 "Session TTL must be smaller than or equal to missing CP member auto-removal seconds!");
+
+        checkTrue(!config.isPersistenceEnabled() || config.getCPMemberCount() > 0,
+                "CP member count must be greater than 0 to use CP persistence feature!");
     }
 
     /**

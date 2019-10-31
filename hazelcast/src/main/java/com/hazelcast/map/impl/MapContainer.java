@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanConsumerConfig;
@@ -52,7 +53,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
@@ -425,16 +426,16 @@ public class MapContainer {
         return objectNamespace;
     }
 
-    public Map<String, Boolean> getIndexDefinitions() {
-        Map<String, Boolean> definitions = new HashMap<>();
+    public Map<String, IndexConfig> getIndexDefinitions() {
+        Map<String, IndexConfig> definitions = new HashMap<>();
         if (isGlobalIndexEnabled()) {
             for (Index index : globalIndexes.getIndexes()) {
-                definitions.put(index.getName(), index.isOrdered());
+                definitions.put(index.getName(), index.getConfig());
             }
         } else {
             for (PartitionContainer container : mapServiceContext.getPartitionContainers()) {
                 for (Index index : container.getIndexes(name).getIndexes()) {
-                    definitions.put(index.getName(), index.isOrdered());
+                    definitions.put(index.getName(), index.getConfig());
                 }
             }
         }

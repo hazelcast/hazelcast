@@ -19,22 +19,21 @@ package com.hazelcast.client.impl.connection.nio;
 import com.hazelcast.client.ClientNotAllowedInClusterException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
-import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
-import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientDiscoveryService;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
+import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
@@ -56,13 +55,11 @@ import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
- * Helper to ClientConnectionManager.
- * Implemented in this class: selecting owner connection, connecting and disconnecting from the cluster.
+ * selects a connection to listen cluster state(membership and partition listener),
+ * Keeps those listeners available when connection disconnected by picking a new connection.
+ * Changing cluster is also handled in this class(Blue/green feature)
  */
 public class ClusterConnectorServiceImpl implements ClusterConnectorService, ConnectionListener {
-
-    private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC = 2;
-    private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC = 20;
 
     private final ILogger logger;
     private final HazelcastClientInstanceImpl client;
@@ -72,8 +69,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
     private final ClientDiscoveryService discoveryService;
-    private volatile Address ownerConnectionAddress;
-    private volatile Address previousOwnerConnectionAddress;
+    private volatile ClientConnection clusterListeningConnection;
 
     public ClusterConnectorServiceImpl(HazelcastClientInstanceImpl client,
                                        ClientConnectionManagerImpl connectionManager,
@@ -92,28 +88,11 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
     private WaitStrategy initializeWaitStrategy(ClientConfig clientConfig) {
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig expoRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        if (expoRetryConfig.isEnabled()) {
-            return new ExponentialWaitStrategy(expoRetryConfig.getInitialBackoffMillis(),
-                    expoRetryConfig.getMaxBackoffMillis(),
-                    expoRetryConfig.getMultiplier(),
-                    expoRetryConfig.isFailOnMaxBackoff(),
-                    expoRetryConfig.getJitter());
-        }
-        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-
-        int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-
-        boolean isAsync = connectionStrategyConfig.isAsyncStart();
-
-        int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
-        if (connectionAttemptLimit < 0) {
-            connectionAttemptLimit = isAsync ? DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC
-                    : DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC;
-        } else {
-            connectionAttemptLimit = connectionAttemptLimit == 0 ? Integer.MAX_VALUE : connectionAttemptLimit;
-        }
-
-        return new DefaultWaitStrategy(connectionAttemptPeriod, connectionAttemptLimit);
+        return new WaitStrategy(expoRetryConfig.getInitialBackoffMillis(),
+                expoRetryConfig.getMaxBackoffMillis(),
+                expoRetryConfig.getMultiplier(),
+                expoRetryConfig.isFailOnMaxBackoff(),
+                expoRetryConfig.getJitter());
     }
 
     @Override
@@ -126,46 +105,44 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
     }
 
     @Override
-    public boolean isClusterAvailable() {
-        return getOwnerConnectionAddress() != null;
+    public boolean mainConnectionExists() {
+        return clusterListeningConnection != null;
     }
 
-    public Address getOwnerConnectionAddress() {
-        return ownerConnectionAddress;
+    @Override
+    public ClientConnection getClusterConnection() {
+        return clusterListeningConnection;
     }
 
-    public void setOwnerConnectionAddress(Address ownerConnectionAddress) {
-        if (this.ownerConnectionAddress != null) {
-            this.previousOwnerConnectionAddress = this.ownerConnectionAddress;
-        }
-        this.ownerConnectionAddress = ownerConnectionAddress;
+    private void setClusterConnection(ClientConnection connection) {
+        clusterListeningConnection = connection;
     }
 
-    private Connection connectAsOwner(Address address) {
+    private Connection connect(Address address) {
         Connection connection = null;
         try {
-            logger.info("Trying to connect to " + address + " as owner member");
-            connection = connectionManager.getOrConnect(address, true);
-            setOwnerConnectionAddress(connection.getEndPoint());
+            logger.info("Trying to connect to " + address + " as main member");
+            connection = connectionManager.getOrConnect(address);
+            setClusterConnection((ClientConnection) connection);
             client.onClusterConnect(connection);
             fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onClusterConnect();
         } catch (InvalidConfigurationException e) {
-            setOwnerConnectionAddress(null);
+            setClusterConnection(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            setOwnerConnectionAddress(null);
+            setClusterConnection(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw e;
         } catch (Exception e) {
-            setOwnerConnectionAddress(null);
+            setClusterConnection(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
@@ -188,7 +165,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
     private void connectToClusterInternal() {
         CandidateClusterContext currentClusterContext = discoveryService.current();
-        logger.info("Trying to connect to cluster with name: " + currentClusterContext.getName());
+        logger.info("Trying to connect to cluster with cluster name: " + currentClusterContext.getClusterName());
         if (connectToCandidate(currentClusterContext)) {
             return;
         }
@@ -199,7 +176,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         while (discoveryService.hasNext() && client.getLifecycleService().isRunning()) {
             CandidateClusterContext candidateClusterContext = discoveryService.next();
             beforeClusterSwitch(candidateClusterContext);
-            logger.info("Trying to connect to next cluster with name: " + candidateClusterContext.getName());
+            logger.info("Trying to connect to next cluster with cluster name: " + candidateClusterContext.getClusterName());
 
             if (connectToCandidate(candidateClusterContext)) {
                 //reset queryCache context, publishes eventLostEvent to all caches
@@ -231,7 +208,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         //retryable client messages will be retried but they will wait for new partition table
         client.getConnectionManager().beforeClusterSwitch(context);
         //update logger with new cluster name
-        ((ClientLoggingService) client.getLoggingService()).updateClusterName(context.getName());
+        ((ClientLoggingService) client.getLoggingService()).updateClusterName(context.getClusterName());
     }
 
     private boolean connectToCandidate(CandidateClusterContext context) {
@@ -249,7 +226,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
                 }
                 triedAddresses.add(address);
                 try {
-                    Connection connection = connectAsOwner(address);
+                    Connection connection = connect(address);
                     if (connection != null) {
                         return true;
                     }
@@ -265,7 +242,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             }
 
         } while (waitStrategy.sleep());
-        logger.warning("Unable to connect to any address for cluster: " + context.getName()
+        logger.warning("Unable to connect to any address for cluster name: " + context.getClusterName()
                 + ". The following addresses were tried: " + triedAddresses);
         return false;
     }
@@ -330,14 +307,15 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
         addresses.addAll(providedAddresses);
 
-        if (previousOwnerConnectionAddress != null) {
+        if (clusterListeningConnection != null) {
             /*
-             * Previous owner address is moved to last item in set so that client will not try to connect to same one immediately.
+             * Previous address is moved to last item in set so that client will not try to connect to same one immediately.
              * It could be the case that address is removed because it is healthy(it not responding to heartbeat/pings)
              * In that case, trying other addresses first to upgrade make more sense.
              */
-            addresses.remove(previousOwnerConnectionAddress);
-            addresses.add(previousOwnerConnectionAddress);
+            Address endPoint = clusterListeningConnection.getEndPoint();
+            addresses.remove(endPoint);
+            addresses.add(endPoint);
         }
 
         return addresses;
@@ -361,18 +339,16 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
     @Override
     public void connectionRemoved(Connection connection) {
         final ClientConnection clientConnection = (ClientConnection) connection;
-        if (clientConnection.isAuthenticatedAsOwner()) {
+        // if cluster listening connection is disconnected
+        if (clientConnection == clusterListeningConnection) {
             clusterConnectionExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    Address endpoint = clientConnection.getEndPoint();
-                    // it may be possible that while waiting on executor queue, the client got connected (another connection),
-                    // then we do not need to do anything for cluster disconnect.
-                    if (endpoint == null || !endpoint.equals(ownerConnectionAddress)) {
+                    if (clientConnection != clusterListeningConnection) {
                         return;
                     }
 
-                    setOwnerConnectionAddress(null);
+                    setClusterConnection(null);
                     connectionStrategy.onDisconnectFromCluster();
                     client.onClusterDisconnect();
 
@@ -385,53 +361,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
     }
 
-    interface WaitStrategy {
 
-        void reset();
-
-        boolean sleep();
-
-    }
-
-    class DefaultWaitStrategy implements WaitStrategy {
-
-        private final int connectionAttemptPeriod;
-        private final int connectionAttemptLimit;
-        private int attempt;
-
-        DefaultWaitStrategy(int connectionAttemptPeriod, int connectionAttemptLimit) {
-            this.connectionAttemptPeriod = connectionAttemptPeriod;
-            this.connectionAttemptLimit = connectionAttemptLimit;
-        }
-
-        @Override
-        public void reset() {
-            attempt = 0;
-        }
-
-        @Override
-        public boolean sleep() {
-            attempt++;
-            if (attempt >= connectionAttemptLimit) {
-                logger.warning(String.format("Unable to get live cluster connection, attempt %d of %d.", attempt,
-                        connectionAttemptLimit));
-                return false;
-            }
-            logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt %d of %d.",
-                    connectionAttemptPeriod, attempt, connectionAttemptLimit));
-
-            try {
-                Thread.sleep(connectionAttemptPeriod);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return false;
-            }
-            return true;
-        }
-
-    }
-
-    class ExponentialWaitStrategy implements WaitStrategy {
+    class WaitStrategy {
 
         private final int initialBackoffMillis;
         private final int maxBackoffMillis;
@@ -442,8 +373,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         private int attempt;
         private int currentBackoffMillis;
 
-        ExponentialWaitStrategy(int initialBackoffMillis, int maxBackoffMillis,
-                                double multiplier, boolean failOnMaxBackoff, double jitter) {
+        WaitStrategy(int initialBackoffMillis, int maxBackoffMillis,
+                     double multiplier, boolean failOnMaxBackoff, double jitter) {
             this.initialBackoffMillis = initialBackoffMillis;
             this.maxBackoffMillis = maxBackoffMillis;
             this.multiplier = multiplier;
@@ -451,13 +382,11 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             this.jitter = jitter;
         }
 
-        @Override
         public void reset() {
             attempt = 0;
             currentBackoffMillis = Math.min(maxBackoffMillis, initialBackoffMillis);
         }
 
-        @Override
         public boolean sleep() {
             attempt++;
             if (failOnMaxBackoff && currentBackoffMillis >= maxBackoffMillis) {

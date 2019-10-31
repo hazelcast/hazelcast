@@ -22,8 +22,7 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class SetOperation extends BasePutOperation implements MutatingOperation {
 
@@ -43,11 +42,11 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
     }
 
     protected long getTtl() {
-        return DEFAULT_TTL;
+        return UNSET;
     }
 
     protected long getMaxIdle() {
-        return DEFAULT_MAX_IDLE;
+        return UNSET;
     }
 
     @Override

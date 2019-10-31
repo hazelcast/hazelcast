@@ -22,10 +22,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
+import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -100,15 +100,15 @@ public class BindHandlerTest {
     @Parameter
     public ProtocolType protocolType;
 
-    // connection type of TcpIpConnection for which ExtendedBindMessage is processed
+    // connection type of TcpIpConnection for which BindMessage is processed
     @Parameter(1)
     public ConnectionType connectionType;
 
-    // this map populates ExtendedBindMessage.localAddresses map
+    // this map populates BindMessage.localAddresses map
     @Parameter(2)
     public Map<ProtocolType, Collection<Address>> localAddresses;
 
-    // ExtendedBindMessage.reply (true to test ExtendedBindMessage from connection initiator to server,
+    // BindMessage.reply (true to test BindMessage from connection initiator to server,
     // false when the other way around)
     @Parameter(3)
     public boolean reply;
@@ -179,7 +179,7 @@ public class BindHandlerTest {
 
     @Test
     public void process() throws IllegalAccessException {
-        bindHandler.process(extendedBind());
+        bindHandler.process(bindMessage());
         assertExpectedAddressesRegistered();
     }
 
@@ -198,11 +198,11 @@ public class BindHandlerTest {
         }
     }
 
-    private Packet extendedBind() {
-        ExtendedBindMessage extendedBindMessage =
-                new ExtendedBindMessage((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply);
+    private Packet bindMessage() {
+        BindMessage bindMessage =
+                new BindMessage((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply);
 
-        Packet packet = new Packet(serializationService.toBytes(extendedBindMessage));
+        Packet packet = new Packet(serializationService.toBytes(bindMessage));
         TcpIpConnection connection = new TcpIpConnection(endpointManager, null, 1, channel);
         if (connectionType != null) {
             connection.setType(connectionType);

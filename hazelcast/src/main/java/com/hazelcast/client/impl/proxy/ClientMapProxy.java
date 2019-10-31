@@ -98,19 +98,18 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
 import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
-import com.hazelcast.internal.util.SimpleCompletedFuture;
+import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
@@ -126,22 +125,22 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.util.CollectionUtil;
-import com.hazelcast.internal.util.IterationType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -158,12 +157,8 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
-import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
-import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
-import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -174,6 +169,10 @@ import static com.hazelcast.internal.util.SortingUtil.getSortedQueryResultSet;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrTimeIfNullUnit;
+import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -261,7 +260,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
+        return putInternal(UNSET, MILLISECONDS, null, null, key, value);
     }
 
     @Override
@@ -341,7 +340,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public ICompletableFuture<V> getAsync(@Nonnull K key) {
+    public InternalCompletableFuture<V> getAsync(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         return new ClientDelegatingFuture<>(getAsyncInternal(key),
@@ -365,15 +364,15 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value) {
+    public InternalCompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putAsyncInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
+        return putAsyncInternal(UNSET, MILLISECONDS, null, null, key, value);
     }
 
     @Override
-    public ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit timeunit) {
+    public InternalCompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
@@ -382,9 +381,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public ICompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value,
-                                          long ttl, @Nonnull TimeUnit ttlUnit,
-                                          long maxIdle, @Nonnull TimeUnit maxIdleUnit) {
+    public InternalCompletableFuture<V> putAsync(@Nonnull K key, @Nonnull V value,
+                                                 long ttl, @Nonnull TimeUnit ttlUnit,
+                                                 long maxIdle, @Nonnull TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(ttlUnit, NULL_TTL_UNIT_IS_NOT_ALLOWED);
@@ -393,8 +392,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return putAsyncInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
 
-    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
-                                                     Object key, Object value) {
+    protected InternalCompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
+                                                            Object key, Object value) {
         try {
             Data keyData = toData(key);
             Data valueData = toData(value);
@@ -415,12 +414,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value) {
-        return setAsync(key, value, DEFAULT_TTL, MILLISECONDS);
+    public InternalCompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value) {
+        return setAsync(key, value, UNSET, MILLISECONDS);
     }
 
     @Override
-    public ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit timeunit) {
+    public InternalCompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
@@ -429,9 +428,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public ICompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value,
-                                             long ttl, @Nonnull TimeUnit ttlUnit,
-                                             long maxIdle, @Nonnull TimeUnit maxIdleUnit) {
+    public InternalCompletableFuture<Void> setAsync(@Nonnull K key, @Nonnull V value,
+                                                    long ttl, @Nonnull TimeUnit ttlUnit,
+                                                    long maxIdle, @Nonnull TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(ttlUnit, NULL_TTL_UNIT_IS_NOT_ALLOWED);
@@ -440,8 +439,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return setAsyncInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
 
-    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
-                                                        Object key, Object value) {
+    protected InternalCompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
+                                                               Object key, Object value) {
         try {
             Data keyData = toData(key);
             Data valueData = toData(value);
@@ -462,12 +461,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public ICompletableFuture<V> removeAsync(@Nonnull K key) {
+    public InternalCompletableFuture<V> removeAsync(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return removeAsyncInternal(key);
     }
 
-    protected ICompletableFuture<V> removeAsyncInternal(Object key) {
+    protected InternalCompletableFuture<V> removeAsyncInternal(Object key) {
         try {
             Data keyData = toData(key);
             ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, getThreadId());
@@ -580,7 +579,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        return putIfAbsentInternal(DEFAULT_TTL, MILLISECONDS, null, null, key, value);
+        return putIfAbsentInternal(UNSET, MILLISECONDS, null, null, key, value);
     }
 
     @Override
@@ -696,7 +695,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public void lock(@Nonnull K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        lockInternal(key, timeInMsOrTimeIfNullUnit(DEFAULT_TTL, MILLISECONDS));
+        lockInternal(key, timeInMsOrTimeIfNullUnit(UNSET, MILLISECONDS));
     }
 
     @Override
@@ -789,37 +788,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
+    public UUID addLocalEntryListener(@Nonnull MapListener listener,
+                                      @Nonnull Predicate<K, V> predicate,
+                                      boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override
     public UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                        @Nonnull Predicate<K, V> predicate,
-                                        boolean includeValue) {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!");
-    }
-
-    @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
-                                        @Nonnull Predicate<K, V> predicate,
-                                        boolean includeValue) {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!");
-    }
-
-    @Override
-    public UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                        @Nonnull Predicate<K, V> predicate,
-                                        @Nullable K key,
-                                        boolean includeValue) {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!");
-    }
-
-    @Override
-    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener,
-                                        @Nonnull Predicate<K, V> predicate,
-                                        @Nullable K key,
-                                        boolean includeValue) {
+                                      @Nonnull Predicate<K, V> predicate,
+                                      @Nullable K key,
+                                      boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
@@ -844,14 +823,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public UUID addEntryListener(@Nonnull MapListener listener, boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return addEntryListenerInternal(listenerAdaptor, includeValue);
-    }
-
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                   boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, includeValue);
@@ -938,16 +909,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return addEntryListenerInternal(listenerAdaptor, key, includeValue);
     }
 
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                   @Nonnull K key,
-                                   boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return addEntryListenerInternal(listenerAdaptor, key, includeValue);
-    }
-
     private UUID addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdaptor, K key, boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         Data keyData = toData(key);
@@ -982,22 +943,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public UUID addEntryListener(@Nonnull MapListener listener,
-                                   @Nonnull Predicate<K, V> predicate,
-                                   @Nullable K key,
-                                   boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return key == null
-                ? addEntryListenerInternal(listenerAdaptor, predicate, includeValue)
-                : addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
-    }
-
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                   @Nonnull Predicate<K, V> predicate,
-                                   @Nullable K key,
-                                   boolean includeValue) {
+                                 @Nonnull Predicate<K, V> predicate,
+                                 @Nullable K key,
+                                 boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
@@ -1007,9 +955,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private UUID addEntryListenerInternal(@Nonnull ListenerAdapter<IMapEvent> listenerAdaptor,
-                                            @Nonnull Predicate<K, V> predicate,
-                                            @Nullable K key,
-                                            boolean includeValue) {
+                                          @Nonnull Predicate<K, V> predicate,
+                                          @Nullable K key,
+                                          boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         Data keyData = toData(key);
         Data predicateData = toData(predicate);
@@ -1047,18 +995,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public UUID addEntryListener(@Nonnull MapListener listener,
-                                   @Nonnull Predicate<K, V> predicate,
-                                   boolean includeValue) {
-        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
-        return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
-    }
-
-    @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                   @Nonnull Predicate<K, V> predicate,
-                                   boolean includeValue) {
+                                 @Nonnull Predicate<K, V> predicate,
+                                 boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
@@ -1066,8 +1004,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private UUID addEntryListenerInternal(ListenerAdapter<IMapEvent> listenerAdapter,
-                                            Predicate<K, V> predicate,
-                                            boolean includeValue) {
+                                          Predicate<K, V> predicate,
+                                          boolean includeValue) {
         int listenerFlags = setAndGetListenerFlags(listenerAdapter);
         Data predicateData = toData(predicate);
         EventHandler<ClientMessage> handler = new ClientMapWithPredicateEventHandler(listenerAdapter);
@@ -1317,9 +1255,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @SuppressWarnings("unchecked")
     private Set<K> keySetWithPagingPredicate(Predicate predicate) {
-        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
+        pagingPredicate.setIterationType(IterationType.KEY);
 
-        PagingPredicateAccessor.setIterationType(pagingPredicate, IterationType.KEY);
         ClientMessage request = MapKeySetWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
 
         ClientMessage response = invokeWithPredicate(request, predicate);
@@ -1357,9 +1295,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private Set entrySetWithPagingPredicate(Predicate predicate, IterationType iterationType) {
-        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
-
-        PagingPredicateAccessor.setIterationType(pagingPredicate, IterationType.ENTRY);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
+        pagingPredicate.setIterationType(IterationType.ENTRY);
 
         ClientMessage request = MapEntriesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
 
@@ -1403,8 +1340,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @SuppressWarnings("unchecked")
     private Collection<V> valuesForPagingPredicate(Predicate predicate) {
-        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
-        PagingPredicateAccessor.setIterationType(pagingPredicate, IterationType.VALUE);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
+        pagingPredicate.setIterationType(IterationType.VALUE);
 
         ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
@@ -1431,9 +1368,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public void addIndex(@Nonnull String attribute, boolean ordered) {
-        validateIndexAttribute(attribute);
-        ClientMessage request = MapAddIndexCodec.encodeRequest(name, attribute, ordered);
+    public void addIndex(IndexConfig indexConfig) {
+        checkNotNull(indexConfig, "Index config cannot be null.");
+
+        IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
+
+        ClientMessage request = MapAddIndexCodec.encodeRequest(name, indexConfig0);
         invoke(request);
     }
 
@@ -1493,22 +1433,28 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             SerializationService ss = getSerializationService();
-            new ClientDelegatingFuture(future, ss, message -> MapSubmitToKeyCodec.decodeResponse(message).response)
-                    .andThen(callback);
+            new ClientDelegatingFuture<R>(future, ss, message -> MapSubmitToKeyCodec.decodeResponse(message).response)
+                    .whenCompleteAsync((response, throwable) -> {
+                        if (throwable == null) {
+                            callback.onResponse(response);
+                        } else {
+                            callback.onFailure(throwable);
+                        }
+                    });
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
 
     @Override
-    public <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
-                                                 @Nonnull EntryProcessor<K, V, R> entryProcessor) {
+    public <R> InternalCompletableFuture<R> submitToKey(@Nonnull K key,
+                                                        @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return submitToKeyInternal(key, entryProcessor);
     }
 
-    public <R> ICompletableFuture<R> submitToKeyInternal(Object key,
-                                                         EntryProcessor<K, V, R> entryProcessor) {
+    public <R> InternalCompletableFuture<R> submitToKeyInternal(Object key,
+                                                                EntryProcessor<K, V, R> entryProcessor) {
         try {
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
@@ -1670,11 +1616,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
     /**
      * Async version of {@link #executeOnKeys}.
      */
-    public <R> ICompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
-                                                          @Nonnull EntryProcessor<K, V, R> entryProcessor) {
+    public <R> InternalCompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
+                                                                 @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
         if (keys.isEmpty()) {
-            return new SimpleCompletedFuture<>(Collections.emptyMap());
+            return InternalCompletableFuture.newCompletedFuture(Collections.emptyMap());
         }
 
         Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
@@ -1687,7 +1633,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void set(@Nonnull K key, @Nonnull V value) {
-        set(key, value, DEFAULT_TTL, MILLISECONDS);
+        set(key, value, UNSET, MILLISECONDS);
     }
 
     @Override
@@ -1712,18 +1658,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     // used by Jet
-    public ICompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
-        SimpleCompletableFuture<Void> future = new SimpleCompletableFuture<>(
-                getClient().getClientExecutionService().getUserExecutor(),
-                getClient().getLoggingService().getLogger(ClientMapProxy.class));
+    public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
         putAllInternal(m, future);
         return future;
     }
 
-    private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map, @Nullable SimpleCompletableFuture<Void> future) {
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map, @Nullable InternalCompletableFuture<Void> future) {
         if (map.isEmpty()) {
             if (future != null) {
-                future.setResult(null);
+                future.complete(null);
             }
             return;
         }
@@ -1747,23 +1692,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
         assert entryMap.size() > 0;
         AtomicInteger counter = new AtomicInteger(entryMap.size());
-        SimpleCompletableFuture<Void> resultFuture =
-                future != null ? future : new SimpleCompletableFuture<>(
-                        getClient().getClientExecutionService().getUserExecutor(),
-                        getClient().getLoggingService().getLogger(ClientMapProxy.class));
-        ExecutionCallback<ClientMessage> callback = new ExecutionCallback<ClientMessage>() {
-            @Override
-            public void onResponse(ClientMessage response) {
-                if (counter.decrementAndGet() == 0) {
-                    finalizePutAll(map, entryMap);
-                    resultFuture.setResult(null);
-                }
+        InternalCompletableFuture<Void> resultFuture =
+                future != null ? future : new InternalCompletableFuture<>();
+        BiConsumer<ClientMessage, Throwable> callback = (response, t) -> {
+            if (t != null) {
+                resultFuture.completeExceptionally(t);
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                resultFuture.setResult(t);
-                onResponse(null);
+            if (counter.decrementAndGet() == 0) {
+                finalizePutAll(map, entryMap);
+                if (!resultFuture.isDone()) {
+                    resultFuture.complete(null);
+                }
             }
         };
         for (Entry<Integer, List<Map.Entry<Data, Data>>> entry : entryMap.entrySet()) {
@@ -1773,7 +1712,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
-                    .andThen(callback);
+                    .whenCompleteAsync(callback);
         }
         // if executing in sync mode, block for the responses
         if (future == null) {
@@ -1865,7 +1804,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
+    public InternalCompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = MapEventJournalSubscribeCodec.encodeRequest(name);
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<>(fut, getSerializationService(), message -> {
@@ -1875,7 +1814,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+    public <T> InternalCompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
             int minSize,
             int maxSize,
@@ -1922,23 +1861,23 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private static boolean containsPagingPredicate(Predicate predicate) {
-        if (predicate instanceof PagingPredicate) {
+        if (predicate instanceof PagingPredicateImpl) {
             return true;
         }
         if (!(predicate instanceof PartitionPredicate)) {
             return false;
         }
         PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
-        return partitionPredicate.getTarget() instanceof PagingPredicate;
+        return partitionPredicate.getTarget() instanceof PagingPredicateImpl;
     }
 
-    private static PagingPredicate unwrapPagingPredicate(Predicate predicate) {
-        if (predicate instanceof PagingPredicate) {
-            return (PagingPredicate) predicate;
+    private static PagingPredicateImpl unwrapPagingPredicate(Predicate predicate) {
+        if (predicate instanceof PagingPredicateImpl) {
+            return (PagingPredicateImpl) predicate;
         }
 
         Predicate unwrappedPredicate = ((PartitionPredicate) predicate).getTarget();
-        return (PagingPredicate) unwrappedPredicate;
+        return (PagingPredicateImpl) unwrappedPredicate;
     }
 
     private class ClientMapToKeyWithPredicateEventHandler extends AbstractClientMapEventHandler {

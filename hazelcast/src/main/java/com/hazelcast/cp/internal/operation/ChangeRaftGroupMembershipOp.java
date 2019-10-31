@@ -16,16 +16,16 @@
 
 package com.hazelcast.cp.internal.operation;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.io.IOException;
 
@@ -38,13 +38,13 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
     private static final int NAN_MEMBERS_COMMIT_INDEX = -1;
 
     private long membersCommitIndex;
-    private CPMemberInfo member;
+    private RaftEndpoint member;
     private MembershipChangeMode membershipChangeMode;
 
     public ChangeRaftGroupMembershipOp() {
     }
 
-    public ChangeRaftGroupMembershipOp(CPGroupId groupId, long membersCommitIndex, CPMemberInfo member,
+    public ChangeRaftGroupMembershipOp(CPGroupId groupId, long membersCommitIndex, RaftEndpoint member,
                                        MembershipChangeMode membershipChangeMode) {
         super(groupId);
         this.membersCommitIndex = membersCommitIndex;
@@ -53,7 +53,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
     }
 
     @Override
-    protected ICompletableFuture replicate(RaftNode raftNode) {
+    protected InternalCompletableFuture replicate(RaftNode raftNode) {
         if (membersCommitIndex == NAN_MEMBERS_COMMIT_INDEX) {
             return raftNode.replicateMembershipChange(member, membershipChangeMode);
         } else {

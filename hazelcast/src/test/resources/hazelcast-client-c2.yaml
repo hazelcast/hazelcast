@@ -14,9 +14,7 @@
 
 hazelcast-client:
 
-  cluster:
-    name: cluster2
-    password: cluster2pass
+  cluster-name: cluster2
 
   network:
     cluster-members:

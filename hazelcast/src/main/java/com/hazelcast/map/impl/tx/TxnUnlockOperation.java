@@ -53,7 +53,8 @@ public class TxnUnlockOperation extends LockAwareOperation
         super.innerBeforeRun();
 
         if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
-            throw new TransactionException("Cannot acquire lock UUID: " + ownerUuid + ", threadId: " + threadId);
+            throw new TransactionException("Cannot acquire lock UUID: "
+                    + ownerUuid + ", threadId: " + threadId);
         }
     }
 
@@ -110,6 +111,11 @@ public class TxnUnlockOperation extends LockAwareOperation
     @Override
     public void setOwnerUuid(UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
+    }
+
+    @Override
+    public void setTransactionId(UUID transactionId) {
+        // NOP
     }
 
     @Override

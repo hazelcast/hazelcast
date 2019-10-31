@@ -16,15 +16,13 @@
 
 package com.hazelcast.client.impl.connection.nio;
 
-import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.spi.ClientContext;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 
 import java.util.concurrent.RejectedExecutionException;
 
-import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 
 /**
@@ -32,7 +30,6 @@ import static com.hazelcast.client.config.ClientConnectionStrategyConfig.Reconne
  */
 public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
-    private volatile boolean disconnectedFromCluster;
     private boolean asyncStart;
     private ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
     private ClusterConnectorService clusterConnectorService;
@@ -56,29 +53,10 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void beforeGetConnection(Address target) {
-        if (clusterConnectorService.isClusterAvailable()) {
-            return;
-        }
-        if (asyncStart && !disconnectedFromCluster) {
-            throw new HazelcastClientOfflineException("Client is connecting to cluster.");
-        }
-        if (reconnectMode == ASYNC && disconnectedFromCluster) {
-            throw new HazelcastClientOfflineException("Client is offline.");
-        }
     }
 
     @Override
     public void beforeOpenConnection(Address target) {
-        if (clusterConnectorService.isClusterAvailable()) {
-            return;
-        }
-        if (reconnectMode == ASYNC && disconnectedFromCluster) {
-            throw new HazelcastClientOfflineException("Client is offline");
-        }
-    }
-
-    @Override
-    public void beforeConnectToCluster(Address target) {
     }
 
     @Override
@@ -87,7 +65,6 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void onDisconnectFromCluster() {
-        disconnectedFromCluster = true;
         if (reconnectMode == OFF) {
             shutdownWithExternalThread();
             return;

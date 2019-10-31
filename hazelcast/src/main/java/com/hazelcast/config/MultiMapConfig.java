@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -194,17 +195,6 @@ public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDa
 
     public MultiMapConfig setBinary(boolean binary) {
         this.binary = binary;
-        return this;
-    }
-
-    @Deprecated
-    public int getSyncBackupCount() {
-        return backupCount;
-    }
-
-    @Deprecated
-    public MultiMapConfig setSyncBackupCount(int syncBackupCount) {
-        this.backupCount = syncBackupCount;
         return this;
     }
 

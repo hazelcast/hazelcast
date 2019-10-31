@@ -16,18 +16,19 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
-import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raft.impl.state.QueryState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
-import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+
+import java.util.UUID;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
@@ -41,10 +42,10 @@ public class QueryTask implements Runnable {
     private final RaftNodeImpl raftNode;
     private final Object operation;
     private final QueryPolicy queryPolicy;
-    private final SimpleCompletableFuture resultFuture;
+    private final InternalCompletableFuture resultFuture;
     private final ILogger logger;
 
-    public QueryTask(RaftNodeImpl raftNode, Object operation, QueryPolicy policy, SimpleCompletableFuture resultFuture) {
+    public QueryTask(RaftNodeImpl raftNode, Object operation, QueryPolicy policy, InternalCompletableFuture resultFuture) {
         this.raftNode = raftNode;
         this.operation = operation;
         this.logger = raftNode.getLogger(getClass());
@@ -74,18 +75,21 @@ public class QueryTask implements Runnable {
                     handleLinearizableRead();
                     break;
                 default:
-                    resultFuture.setResult(new IllegalArgumentException("Invalid query policy: " + queryPolicy));
+                    resultFuture.completeExceptionally(new IllegalArgumentException("Invalid query policy: " + queryPolicy));
             }
         } catch (Throwable t) {
             logger.severe(queryPolicy + " query failed", t);
-            resultFuture.setResult(new CPSubsystemException("Internal failure", raftNode.getLeader(), t));
+            RaftEndpoint leader = raftNode.getLeader();
+            UUID leaderUuid = leader != null ? leader.getUuid() : null;
+            resultFuture.completeExceptionally(new CPSubsystemException("Internal failure", t, leaderUuid));
         }
     }
 
     private void handleLeaderLocalRead() {
         RaftState state = raftNode.state();
         if (state.role() != LEADER) {
-            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
+            resultFuture.completeExceptionally(
+                    new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
             return;
         }
 
@@ -113,12 +117,13 @@ public class QueryTask implements Runnable {
 
         RaftState state = raftNode.state();
         if (state.role() != LEADER) {
-            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
+            resultFuture.completeExceptionally(
+                    new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
             return;
         }
 
         if (!raftNode.canQueryLinearizable()) {
-            resultFuture.setResult(new CannotReplicateException(state.leader()));
+            resultFuture.completeExceptionally(new CannotReplicateException(state.leader()));
             return;
         }
 
@@ -136,7 +141,7 @@ public class QueryTask implements Runnable {
 
     private boolean verifyOperation() {
         if (operation instanceof RaftGroupCmd) {
-            resultFuture.setResult(new IllegalArgumentException("cannot run query: " + operation));
+            resultFuture.completeExceptionally(new IllegalArgumentException("cannot run query: " + operation));
             return false;
         }
 
@@ -144,15 +149,18 @@ public class QueryTask implements Runnable {
     }
 
     private boolean verifyRaftNodeStatus() {
-        if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
-            resultFuture.setResult(new CPGroupDestroyedException(raftNode.getGroupId()));
-            return false;
-        } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
-            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
-            return false;
+        switch (raftNode.getStatus()) {
+            case INITIAL:
+                resultFuture.completeExceptionally(new CannotReplicateException(null));
+                return false;
+            case TERMINATED:
+            case STEPPED_DOWN:
+                resultFuture.completeExceptionally(
+                        new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
+                return false;
+            default:
+                return true;
         }
-
-        return true;
     }
 
 }

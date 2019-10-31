@@ -18,7 +18,9 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeAware;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
 
@@ -42,7 +44,7 @@ import static java.lang.String.format;
 /**
  * A FieldProbe is a {@link ProbeFunction} that reads out a field that is annotated with {@link Probe}.
  */
-abstract class FieldProbe implements ProbeFunction {
+abstract class FieldProbe implements ProbeFunction, ProbeAware {
 
     final Probe probe;
     final Field field;
@@ -55,18 +57,23 @@ abstract class FieldProbe implements ProbeFunction {
         field.setAccessible(true);
     }
 
+    @Override
+    public Probe getProbe() {
+        return probe;
+    }
+
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = namePrefix + '.' + getProbeOrFieldName();
-        metricsRegistry.registerInternal(source, name, probe.level(), this);
+        MetricTagger tagger = metricsRegistry
+                .newMetricTagger(namePrefix)
+                .withMetricTag(getProbeOrFieldName());
+        metricsRegistry.registerInternal(source, tagger, probe.level(), this);
     }
 
-    void register(ProbeBuilderImpl builder, Object source) {
-        builder
-                .withTag("unit", probe.unit().name().toLowerCase())
-                .register(source, getProbeOrFieldName(), probe.level(), this);
+    void register(MetricsRegistryImpl metricsRegistry, MetricTagger tagger, Object source) {
+        metricsRegistry.registerStaticProbe(source, tagger, getProbeOrFieldName(), probe.level(), probe.unit(), this);
     }
 
-    private String getProbeOrFieldName() {
+    String getProbeOrFieldName() {
         return probe.name().length() != 0 ? probe.name() : field.getName();
     }
 

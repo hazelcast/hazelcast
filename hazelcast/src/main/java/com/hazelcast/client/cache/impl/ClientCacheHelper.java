@@ -28,7 +28,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.FutureUtil;
 
 import java.util.ArrayList;
@@ -85,7 +85,7 @@ final class ClientCacheHelper {
      * @param <K>                type of the key of the cache
      * @param <V>                type of the value of the cache
      * @return the created cache configuration
-     * @see com.hazelcast.cache.impl.operation.CacheCreateConfigOperation
+     * @see com.hazelcast.cache.impl.operation.AddCacheConfigOperation
      */
     static <K, V> CacheConfig<K, V> createCacheConfig(HazelcastClientInstanceImpl client,
                                                       CacheConfig<K, V> newCacheConfig) {

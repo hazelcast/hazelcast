@@ -20,12 +20,11 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
-import com.hazelcast.cp.internal.datastructures.unsafe.idgen.IdGeneratorService;
-import com.hazelcast.cp.internal.datastructures.unsafe.lock.LockService;
+import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.map.impl.MapService;
@@ -94,7 +93,7 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_AtomicLong() {
-        Permission permission = ActionConstants.getPermission("foo", RaftAtomicLongService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", AtomicLongService.SERVICE_NAME);
 
         assertNotNull(permission);
         assertTrue(permission instanceof AtomicLongPermission);
@@ -118,7 +117,7 @@ public class ActionConstantsTest {
 
     @Test
     public void getPermission_Lock() {
-        Permission permission = ActionConstants.getPermission("foo", LockService.SERVICE_NAME);
+        Permission permission = ActionConstants.getPermission("foo", LockSupportService.SERVICE_NAME);
 
         assertNotNull(permission);
         assertTrue(permission instanceof LockPermission);
@@ -130,14 +129,6 @@ public class ActionConstantsTest {
 
         assertNotNull(permission);
         assertTrue(permission instanceof ExecutorServicePermission);
-    }
-
-    @Test
-    public void getPermission_IdGenerator() {
-        Permission permission = ActionConstants.getPermission("foo", IdGeneratorService.SERVICE_NAME);
-
-        assertNotNull(permission);
-        assertTrue(permission instanceof AtomicLongPermission);
     }
 
     @Test

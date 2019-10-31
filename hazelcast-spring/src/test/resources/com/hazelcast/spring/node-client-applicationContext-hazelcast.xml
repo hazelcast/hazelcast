@@ -35,9 +35,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:cluster
-                    name="${cluster.name}"
-                    password="${cluster.password}"/>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -59,13 +57,11 @@
     </hz:hazelcast>
 
     <hz:client id="client">
-        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:properties>
             <hz:property name="hazelcast.client.retry.count">13</hz:property>
         </hz:properties>
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+        <hz:network connection-timeout="1000"
                     redo-operation="true"
                     smart-routing="true">
             <hz:member>127.0.0.1:5700</hz:member>
@@ -80,10 +76,9 @@
         </hz:network>
     </hz:client>
 
-    <hz:client id="client2" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+    <hz:client id="client2">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
 
@@ -95,13 +90,12 @@
                                reuse-address="false"
                                tcp-no-delay="false"/>
         </hz:network>
+
     </hz:client>
 
-    <hz:client id="client3"
-               credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+    <hz:client id="client3">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
             <hz:member>127.0.0.1:5700</hz:member>
@@ -175,11 +169,9 @@
         </hz:near-cache>
     </hz:client>
 
-    <hz:client id="client4"
-               credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+    <hz:client id="client4">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
             <hz:member>127.0.0.1:5700</hz:member>
@@ -197,18 +189,23 @@
 
     </hz:client>
 
-    <hz:client id="client5"
-               credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+    <hz:client id="client5">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:connection-strategy>
+            <hz:connection-retry>
+                <hz:fail-on-max-backoff>false</hz:fail-on-max-backoff>
+            </hz:connection-retry>
+        </hz:connection-strategy>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
 
     </hz:client>
 
-    <hz:client id="client6"
-               credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+    <hz:client id="client6">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -228,17 +225,26 @@
                 <hz:in-memory-format>OBJECT</hz:in-memory-format>
                 <hz:include-value>false</hz:include-value>
                 <hz:indexes>
-                    <hz:index attribute="name" ordered="false"></hz:index>
+                    <hz:index type="HASH">
+                        <hz:attributes>
+                            <hz:attribute>name</hz:attribute>
+                        </hz:attributes>
+                    </hz:index>
+                    <hz:index name="sortedIndex">
+                        <hz:attributes>
+                            <hz:attribute>age</hz:attribute>
+                            <hz:attribute>name</hz:attribute>
+                        </hz:attributes>
+                    </hz:index>
                 </hz:indexes>
             </hz:query-cache>
         </hz:query-caches>
 
     </hz:client>
 
-    <hz:client id="client7-empty-serialization-config" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="3"
-                    connection-attempt-period="3000"
-                    connection-timeout="1000"
+    <hz:client id="client7-empty-serialization-config">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
 
@@ -250,20 +256,23 @@
                                reuse-address="false"
                                tcp-no-delay="false"/>
         </hz:network>
+
         <hz:serialization></hz:serialization>
     </hz:client>
 
-    <hz:client id="client8"
-               credentials-ref="credentials">
-        <hz:network connection-attempt-limit="2">
+    <hz:client id="client8">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
+
         <hz:connection-strategy async-start="true" reconnect-mode="ASYNC"/>
     </hz:client>
 
-    <hz:client id="client9-user-code-deployment-test" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+    <hz:client id="client9-user-code-deployment-test">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
@@ -279,16 +288,19 @@
         </hz:user-code-deployment>
     </hz:client>
 
-    <hz:client id="client10-flakeIdGenerator" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+    <hz:client id="client10-flakeIdGenerator">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
+
         <hz:flake-id-generator name="gen1" prefetchCount="3" prefetchValidityMillis="3000"/>
     </hz:client>
 
-    <hz:client id="client11-icmp-ping" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+    <hz:client id="client11-icmp-ping">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:icmp-ping enabled="false">
@@ -299,25 +311,30 @@
                 <hz:echo-fail-fast-on-startup>false</hz:echo-fail-fast-on-startup>
             </hz:icmp-ping>
         </hz:network>
+
     </hz:client>
 
-    <hz:client id="client12-hazelcast-cloud" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+    <hz:client id="client12-hazelcast-cloud">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:hazelcast-cloud enabled="false">
                 <hz:discovery-token>EXAMPLE_TOKEN</hz:discovery-token>
             </hz:hazelcast-cloud>
         </hz:network>
+
     </hz:client>
 
-    <hz:client id="client13-exponential-connection-retry" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+    <hz:client id="client13-exponential-connection-retry">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
+
         <hz:connection-strategy async-start="true" reconnect-mode="ASYNC">
-            <hz:connection-retry enabled="true">
+            <hz:connection-retry>
                 <hz:initial-backoff-millis>2000</hz:initial-backoff-millis>
                 <hz:max-backoff-millis>60000</hz:max-backoff-millis>
                 <hz:multiplier>3</hz:multiplier>
@@ -327,11 +344,13 @@
         </hz:connection-strategy>
     </hz:client>
 
-    <hz:client id="client14-reliable-topic" credentials-ref="credentials">
-        <hz:network connection-attempt-limit="0">
+    <hz:client id="client14-reliable-topic">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
+
         <!--<hz:reliable-topic name="rel-topic" topic-overload-policy="DISCARD_NEWEST" read-batch-size="100"/>-->
         <hz:reliable-topic name="rel-topic">
             <hz:topic-overload-policy>DISCARD_NEWEST</hz:topic-overload-policy>
@@ -339,32 +358,25 @@
         </hz:reliable-topic>
     </hz:client>
 
-    <hz:client id="client15-credentials-factory">
-        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
-        <hz:network connection-attempt-limit="0">
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
-        </hz:network>
-        <hz:security>
-            <hz:credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory"
-                                    implementation="dummyCredentialsFactory">
-                <hz:properties>
-                    <hz:property name="property">value</hz:property>
-                </hz:properties>
-            </hz:credentials-factory>
-        </hz:security>
-    </hz:client>
-
     <hz:client id="client16-name-and-labels">
-        <hz:cluster name="${cluster.name}" password="${cluster.password}"/>
-        <hz:network connection-attempt-limit="0">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
-        <hz:instance-name>clientName</hz:instance-name>
+        <hz:instance-name>clusterName</hz:instance-name>
         <hz:labels>
             <hz:label>foo</hz:label>
         </hz:labels>
+    </hz:client>
+
+    <hz:client id="client17-backupAckToClient">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:backup-ack-to-client-enabled>false</hz:backup-ack-to-client-enabled>
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
@@ -380,7 +392,6 @@
     <hz:set id="set" instance-ref="client" name="set"/>
     <hz:list id="list" instance-ref="client" name="list"/>
     <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
-    <hz:idGenerator id="idGenerator" instance-ref="client" name="idGenerator"/>
     <hz:flakeIdGenerator id="flakeIdGenerator" instance-ref="client" name="flakeIdGenerator"/>
     <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
     <hz:atomicReference id="atomicReference" instance-ref="client" name="atomicReference"/>
@@ -389,5 +400,8 @@
     <hz:reliableTopic id="reliableTopic" instance-ref="client" name="reliableTopic"/>
 
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
-    <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory"/>
+    <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory">
+        <constructor-arg index="0" value="${cluster.name}"/>
+        <constructor-arg index="1" value=""/>
+    </bean>
 </beans>

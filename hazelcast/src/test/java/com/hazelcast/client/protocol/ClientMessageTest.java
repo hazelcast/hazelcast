@@ -25,8 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ListIterator;
-
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
 import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +46,7 @@ public class ClientMessageTest {
                 .setCorrelationId(0x1234567812345678L)
                 .setPartitionId(0x11223344);
 
-        ClientMessage cmDecode = ClientMessage.createForDecode(cmEncode);
+        ClientMessage cmDecode = ClientMessage.createForDecode(cmEncode.getStartFrame());
 
         assertEquals(cmEncode.getMessageType(), cmDecode.getMessageType());
         assertEquals(cmEncode.getHeaderFlags(), cmDecode.getHeaderFlags());
@@ -60,16 +58,16 @@ public class ClientMessageTest {
     @Test
     public void testFastForwardToEndFrame_whenCustomTypeIsExtendedWithCustomTypeField() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
 
         // New custom-typed parameter with its own begin and end frames
-        clientMessage.add(BEGIN_FRAME);
+        clientMessage.add(BEGIN_FRAME.copy());
         clientMessage.add(new ClientMessage.Frame(new byte[0]));
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
 
-        clientMessage.add(END_FRAME);
+        clientMessage.add(END_FRAME.copy());
 
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         // begin frame
         iterator.next();
         CodecUtil.fastForwardToEndFrame(iterator);
@@ -99,7 +97,14 @@ public class ClientMessageTest {
         int newCorrelationId = 2;
         ClientMessage copyMessage = clientMessage.copyWithNewCorrelationId(newCorrelationId);
         assertEquals(clientMessage.getMessageType(), copyMessage.getMessageType());
-        assertEquals(clientMessage.get(1), copyMessage.get(1));
+        // get the frame after the start frame for comparison
+        ClientMessage.ForwardFrameIterator originalIterator = clientMessage.frameIterator();
+        originalIterator.next();
+        ClientMessage.ForwardFrameIterator copyIterator = copyMessage.frameIterator();
+        copyIterator.next();
+        ClientMessage.Frame originalFrame = originalIterator.next();
+        ClientMessage.Frame copyFrame = copyIterator.next();
+        assertEquals(originalFrame, copyFrame);
         assertEquals(newCorrelationId, copyMessage.getCorrelationId());
         assertEquals(clientMessage.getPartitionId(), copyMessage.getPartitionId());
         assertEquals(clientMessage.isRetryable(), copyMessage.isRetryable());

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -70,7 +70,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * dealing with the response and especially notifying the invocation future can be
  * very expensive.
  */
-public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier<Consumer<Packet>> {
+public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Supplier<Consumer<Packet>> {
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
@@ -141,7 +141,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[normal]", level = MANDATORY)
+    @Probe(name = "responses.normalCount", level = MANDATORY)
     long responsesNormal() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -150,7 +150,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[timeout]", level = MANDATORY)
+    @Probe(name = "responses.timeoutCount", level = MANDATORY)
     long responsesTimeout() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -159,7 +159,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[backup]", level = MANDATORY)
+    @Probe(name = "responses.backupCount", level = MANDATORY)
     long responsesBackup() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -168,7 +168,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[error]", level = MANDATORY)
+    @Probe(name = "responses.errorCount", level = MANDATORY)
     long responsesError() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -177,7 +177,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         return result;
     }
 
-    @Probe(name = "responses[missing]", level = MANDATORY)
+    @Probe(name = "responses.missingCount", level = MANDATORY)
     long responsesMissing() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -187,8 +187,8 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "operation");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "operation");
     }
 
     @Override

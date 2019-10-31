@@ -16,11 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
-import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
 
-import java.util.ListIterator;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -35,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("5bfd01ae03273982d905d893b4f4a59e")
+@Generated("c5a87fe3238dcdde7fff4fcb940974f3")
 public final class MapKeySetWithPagingPredicateCodec {
-    //hex: 0x013800
-    public static final int REQUEST_MESSAGE_TYPE = 79872;
-    //hex: 0x013801
-    public static final int RESPONSE_MESSAGE_TYPE = 79873;
+    //hex: 0x013500
+    public static final int REQUEST_MESSAGE_TYPE = 79104;
+    //hex: 0x013501
+    public static final int RESPONSE_MESSAGE_TYPE = 79105;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MapKeySetWithPagingPredicateCodec() {
     }
@@ -75,7 +76,7 @@ public final class MapKeySetWithPagingPredicateCodec {
     }
 
     public static MapKeySetWithPagingPredicateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -104,7 +105,7 @@ public final class MapKeySetWithPagingPredicateCodec {
     }
 
     public static MapKeySetWithPagingPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ListIterator<ClientMessage.Frame> iterator = clientMessage.listIterator();
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();

@@ -22,17 +22,36 @@ public enum EvictionPolicy {
     /**
      * Least Recently Used
      */
-    LRU,
+    LRU(0),
     /**
      * Least Frequently Used
      */
-    LFU,
+    LFU(1),
     /**
      * None
      */
-    NONE,
+    NONE(2),
     /**
      * Randomly
      */
-    RANDOM
+    RANDOM(3);
+
+    private final byte id;
+
+    EvictionPolicy(int id) {
+        this.id = (byte) id;
+    }
+
+    public byte getId() {
+        return id;
+    }
+
+    public static EvictionPolicy getById(int id) {
+        for (EvictionPolicy ep : values()) {
+            if (ep.getId() == id) {
+                return ep;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID value");
+    }
 }

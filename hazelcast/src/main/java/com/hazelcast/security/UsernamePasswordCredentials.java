@@ -16,8 +16,6 @@
 
 package com.hazelcast.security;
 
-import static java.util.Objects.requireNonNull;
-
 import java.io.IOException;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -42,8 +40,8 @@ public class UsernamePasswordCredentials implements PasswordCredentials, Portabl
     }
 
     public UsernamePasswordCredentials(String username, String password) {
-        this.name = requireNonNull(username, "Username has to be provided.");
-        this.password = requireNonNull(password, "Password has to be provided.");
+        this.name = username;
+        this.password = password;
     }
 
     /**

@@ -27,7 +27,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -112,7 +112,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
 
         final CacheService cacheService = getNode(instance).getNodeEngine().getService(CacheService.SERVICE_NAME);
         final int partitionId = 5;
-        cacheService.onPartitionLost(new IPartitionLostEvent(partitionId, 0, null));
+        cacheService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
 
         assertCachePartitionLostEventEventually(listener, partitionId);
     }
@@ -146,8 +146,8 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         final CacheService cacheService1 = getNode(instance1).getNodeEngine().getService(CacheService.SERVICE_NAME);
         final CacheService cacheService2 = getNode(instance2).getNodeEngine().getService(CacheService.SERVICE_NAME);
         final int partitionId = 5;
-        cacheService1.onPartitionLost(new IPartitionLostEvent(partitionId, 0, null));
-        cacheService2.onPartitionLost(new IPartitionLostEvent(partitionId, 0, null));
+        cacheService1.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
+        cacheService2.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
 
         assertCachePartitionLostEventEventually(listener, partitionId);
     }

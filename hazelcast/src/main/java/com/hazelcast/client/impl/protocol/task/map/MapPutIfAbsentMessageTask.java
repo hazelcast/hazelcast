@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class MapPutIfAbsentMessageTask
         extends AbstractMapPutMessageTask<MapPutIfAbsentCodec.RequestParameters> {
@@ -48,7 +48,7 @@ public class MapPutIfAbsentMessageTask
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         MapOperation op = operationProvider.createPutIfAbsentOperation(parameters.name, parameters.key,
-                parameters.value, parameters.ttl, DEFAULT_MAX_IDLE);
+                parameters.value, parameters.ttl, UNSET);
         op.setThreadId(parameters.threadId);
         return op;
     }

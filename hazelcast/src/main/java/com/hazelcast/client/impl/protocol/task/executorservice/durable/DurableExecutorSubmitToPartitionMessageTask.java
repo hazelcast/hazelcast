@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.task.executorservice.durable;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
@@ -34,8 +33,7 @@ import java.util.concurrent.Callable;
 import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
 
 public class DurableExecutorSubmitToPartitionMessageTask
-        extends AbstractPartitionMessageTask<DurableExecutorSubmitToPartitionCodec.RequestParameters>
-        implements ExecutionCallback {
+        extends AbstractPartitionMessageTask<DurableExecutorSubmitToPartitionCodec.RequestParameters> {
 
     public DurableExecutorSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

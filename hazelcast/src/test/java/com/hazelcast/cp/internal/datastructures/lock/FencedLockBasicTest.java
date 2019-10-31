@@ -91,7 +91,8 @@ public class FencedLockBasicTest extends AbstractFencedLockBasicTest {
     public void test_lockFailsAfterCPGroupDestroyed() throws ExecutionException, InterruptedException {
         instances[0].getCPSubsystem()
                     .getCPSubsystemManagementService()
-                    .forceDestroyCPGroup(lock.getGroupId().name())
+                    .forceDestroyCPGroup(lock.getGroupId().getName())
+                    .toCompletableFuture()
                     .get();
 
         try {

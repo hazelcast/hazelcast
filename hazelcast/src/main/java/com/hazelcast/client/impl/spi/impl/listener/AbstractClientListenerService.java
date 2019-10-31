@@ -29,7 +29,7 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -64,7 +64,7 @@ import java.util.concurrent.ThreadFactory;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public abstract class AbstractClientListenerService implements ClientListenerService, MetricsProvider, ConnectionListener {
+public abstract class AbstractClientListenerService implements ClientListenerService, StaticMetricsProvider, ConnectionListener {
 
     protected final HazelcastClientInstanceImpl client;
     protected final SerializationService serializationService;
@@ -162,8 +162,8 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
     }
 
     @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        registry.scanAndRegister(this, "listeners");
+    public void provideStaticMetrics(MetricsRegistry registry) {
+        registry.registerStaticMetrics(this, "listeners");
     }
 
     @Probe(level = MANDATORY)
@@ -180,12 +180,23 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         eventHandlerMap.put(callId, handler);
     }
 
-    public void handleClientMessage(ClientMessage clientMessage) {
+    public void handleEventMessage(ClientMessage clientMessage) {
         try {
             eventExecutor.execute(new ClientEventProcessor(clientMessage));
         } catch (RejectedExecutionException e) {
             logger.warning("Event clientMessage could not be handled", e);
         }
+    }
+
+    public void handleEventMessageOnCallingThread(ClientMessage clientMessage) {
+        long correlationId = clientMessage.getCorrelationId();
+        EventHandler eventHandler = eventHandlerMap.get(correlationId);
+        if (eventHandler == null) {
+            logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+            return;
+        }
+
+        eventHandler.handle(clientMessage);
     }
 
     protected void invoke(ClientRegistrationKey registrationKey, Connection connection) throws Exception {
@@ -369,14 +380,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
         @Override
         public void run() {
-            long correlationId = clientMessage.getCorrelationId();
-            final EventHandler eventHandler = eventHandlerMap.get(correlationId);
-            if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
-                return;
-            }
-
-            eventHandler.handle(clientMessage);
+            handleEventMessageOnCallingThread(clientMessage);
         }
 
         @Override

@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.nio.tcp;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
@@ -81,6 +82,11 @@ public class ClientViewUnifiedEndpointManager
     @Override
     public boolean transmit(Packet packet, Address target) {
         return unifiedEndpointManager.transmit(packet, target);
+    }
+
+    @Override
+    public NetworkStats getNetworkStats() {
+        return unifiedEndpointManager.getNetworkStats();
     }
 
     @Override

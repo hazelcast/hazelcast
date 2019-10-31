@@ -16,12 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.internal.partition.IPartition;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -1042,23 +1043,47 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
                  */
-                CREATED,
+                CREATED(0),
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.ModifiedExpiryPolicy}.
                  */
-                MODIFIED,
+                MODIFIED(1),
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.AccessedExpiryPolicy}.
                  */
-                ACCESSED,
+                ACCESSED(2),
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.TouchedExpiryPolicy}.
                  */
-                TOUCHED,
+                TOUCHED(3),
                 /**
                  * Expiry policy type for the {@link javax.cache.expiry.EternalExpiryPolicy}.
                  */
-                ETERNAL
+                ETERNAL(4);
+
+                private static final int MIN_ID = CREATED.id;
+                private static final int MAX_ID = ETERNAL.id;
+                private static final ExpiryPolicyType[] CACHED_VALUES = values();
+
+                private int id;
+
+                ExpiryPolicyType(int id) {
+                    this.id = id;
+                }
+
+                /**
+                 * @return unique ID for the expiry policy type
+                 */
+                public int getId() {
+                    return id;
+                }
+
+                public static ExpiryPolicyType getById(int id) {
+                    if (MIN_ID <= id && id <= MAX_ID) {
+                        return CACHED_VALUES[id];
+                    }
+                    return null;
+                }
             }
 
             @Override
@@ -1074,7 +1099,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
                 if (expiryPolicyType != that.expiryPolicyType) {
                     return false;
                 }
-                return durationConfig != null ? durationConfig.equals(that.durationConfig) : that.durationConfig == null;
+                return Objects.equals(durationConfig, that.durationConfig);
             }
 
             @Override

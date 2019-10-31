@@ -21,21 +21,21 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.config.XmlClientConfigLocator;
+import com.hazelcast.client.config.impl.XmlClientConfigLocator;
 import com.hazelcast.client.config.XmlClientFailoverConfigBuilder;
-import com.hazelcast.client.config.XmlClientFailoverConfigLocator;
+import com.hazelcast.client.config.impl.XmlClientFailoverConfigLocator;
 import com.hazelcast.client.config.YamlClientConfigBuilder;
-import com.hazelcast.client.config.YamlClientConfigLocator;
+import com.hazelcast.client.config.impl.YamlClientConfigLocator;
 import com.hazelcast.client.config.YamlClientFailoverConfigBuilder;
-import com.hazelcast.client.config.YamlClientFailoverConfigLocator;
+import com.hazelcast.client.config.impl.YamlClientFailoverConfigLocator;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 
 import java.util.List;
 
-import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
-import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
-import static com.hazelcast.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 
 /**
  * Static methods to resolve and validate multiple client configs for blue green feature
@@ -66,7 +66,8 @@ public final class FailoverClientConfigSupport {
      *
      * @param clientFailoverConfig provided via {@link HazelcastClient#newHazelcastFailoverClient(ClientFailoverConfig)}
      * @return resolvedConfigs
-     * @throws HazelcastException  if {@code clientFailoverConfig} is {@code null} and no failover configuration is found
+     * @throws HazelcastException            if {@code clientFailoverConfig} is {@code null} and
+     *                                       no failover configuration is found
      * @throws InvalidConfigurationException when given config is not valid
      */
     public static ClientFailoverConfig resolveClientFailoverConfig(ClientFailoverConfig clientFailoverConfig) {
@@ -258,6 +259,9 @@ public final class FailoverClientConfigSupport {
         if (notEqual(mainConfig.getMetricsConfig(), alternativeConfig.getMetricsConfig())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "metricsConfig");
         }
+        if (mainConfig.isBackupAckToClientEnabled() != alternativeConfig.isBackupAckToClientEnabled()) {
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "isBackupAckToClientEnabled");
+        }
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
@@ -284,12 +288,6 @@ public final class FailoverClientConfigSupport {
         }
         if (mainNetworkConfig.getConnectionTimeout() != alternativeNetworkConfig.getConnectionTimeout()) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:connectionTimeout");
-        }
-        if (mainNetworkConfig.getConnectionAttemptLimit() != alternativeNetworkConfig.getConnectionAttemptLimit()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:connectionAttemptLimit");
-        }
-        if (mainNetworkConfig.getConnectionAttemptPeriod() != alternativeNetworkConfig.getConnectionAttemptPeriod()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:connectionAttemptPeriod");
         }
         if (notEqual(mainNetworkConfig.getSocketOptions(), alternativeNetworkConfig.getSocketOptions())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:socketOptions");

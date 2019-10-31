@@ -465,6 +465,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     public int hashCode() {
         int result = cacheLoaderFactory != null ? cacheLoaderFactory.hashCode() : 0;
         result = 31 * result + listenerConfigurations.hashCode();
@@ -483,6 +484,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public boolean equals(final Object o) {
         if (this == o) {
             return true;

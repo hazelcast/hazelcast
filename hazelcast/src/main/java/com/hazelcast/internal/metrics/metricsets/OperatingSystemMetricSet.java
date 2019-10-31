@@ -67,13 +67,8 @@ public final class OperatingSystemMetricSet {
         // value will be between 0.0 and 1.0 or a negative value, if not available
         registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad", PERCENTAGE_MULTIPLIER);
 
-        metricsRegistry.register(mxBean, "os.systemLoadAverage", MANDATORY,
-                new DoubleProbeFunction<OperatingSystemMXBean>() {
-                    @Override
-                    public double get(OperatingSystemMXBean bean) {
-                        return bean.getSystemLoadAverage();
-                    }
-                }
+        metricsRegistry.registerStaticProbe(mxBean, "os.systemLoadAverage", MANDATORY,
+                OperatingSystemMXBean::getSystemLoadAverage
         );
     }
 
@@ -90,10 +85,10 @@ public final class OperatingSystemMetricSet {
         }
 
         if (long.class.equals(method.getReturnType())) {
-            metricsRegistry.register(osBean, name, MANDATORY,
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY,
                     (LongProbeFunction) bean -> (Long) method.invoke(bean, EMPTY_ARGS) * multiplier);
         } else {
-            metricsRegistry.register(osBean, name, MANDATORY,
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY,
                     (DoubleProbeFunction) bean -> (Double) method.invoke(bean, EMPTY_ARGS) * multiplier);
         }
     }

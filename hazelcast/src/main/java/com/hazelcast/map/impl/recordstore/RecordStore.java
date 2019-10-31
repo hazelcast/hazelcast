@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
@@ -29,8 +30,7 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.monitor.LocalRecordStoreStats;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -47,29 +47,24 @@ import java.util.UUID;
  */
 public interface RecordStore<R extends Record> {
 
-    /**
-     * Default TTL value of a record.
-     */
-    long DEFAULT_TTL = -1L;
-
-    /**
-     * Default Max Idle value of a record.
-     */
-    long DEFAULT_MAX_IDLE = -1L;
-
     LocalRecordStoreStats getLocalRecordStoreStats();
 
     String getName();
 
     /**
-     * @return oldValue only if it exists in memory, otherwise just returns
-     * null and doesn't try to load it from {@link MapLoader}
+     * @return old value
      */
     Object set(Data dataKey, Object value, long ttl, long maxIdle);
 
     /**
-     * @return oldValue if it exists in memory otherwise tries to load oldValue
-     * by using {@link MapLoader}
+     * @return old value
+     */
+    Object setTxn(Data dataKey, Object value, long ttl, long maxIdle, UUID transactionId);
+
+    Object removeTxn(Data dataKey, CallerProvenance callerProvenance, UUID transactionId);
+
+    /**
+     * @return old value
      */
     Object put(Data dataKey, Object dataValue, long ttl, long maxIdle);
 
@@ -79,20 +74,20 @@ public interface RecordStore<R extends Record> {
      * @param key        the key
      * @param value      the value to put backup
      * @param provenance origin of call to this method.
-     * @return current record object associated to the key
+     * @return current record after put.
      */
     R putBackup(Data key, Object value, CallerProvenance provenance);
 
     /**
-     * @param key          the key to be processed.
-     * @param value        the value to be processed.
-     * @param ttl          milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
-     * @param maxIdle      milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
-     * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
-     * @param provenance   origin of call to this method.
-     * @return previous record if exists otherwise null.
+     * @return current record after put.
      */
-    R putBackup(Data key, Object value, long ttl, long maxIdle, boolean putTransient, CallerProvenance provenance);
+    R putBackup(Record record, boolean putTransient, CallerProvenance provenance);
+
+    /**
+     * @return current record after put.
+     */
+    R putBackupTxn(Record newRecord, boolean putTransient,
+                   CallerProvenance provenance, UUID transactionId);
 
     /**
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
@@ -116,10 +111,11 @@ public interface RecordStore<R extends Record> {
 
     boolean remove(Data dataKey, Object testValue);
 
-    boolean setTtl(Data key, long ttl);
+    boolean setTtl(Data key, long ttl, boolean backup);
 
     /**
      * Checks whether ttl or maxIdle are set on the record.
+     *
      * @param record the record to be checked
      * @return {@code true} if ttl or maxIdle are defined on the {@code record}, otherwise {@code false}.
      */
@@ -129,11 +125,11 @@ public interface RecordStore<R extends Record> {
      * Callback which is called when the record is being accessed from the record or index store.
      * <p>
      * An implementation is not supposed to be thread safe.
+     *
      * @param record the accessed record
-     * @param now the current time
+     * @param now    the current time
      */
     void accessRecord(Record record, long now);
-
 
     /**
      * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
@@ -141,15 +137,27 @@ public interface RecordStore<R extends Record> {
      */
     void removeBackup(Data dataKey, CallerProvenance provenance);
 
+    void removeBackupTxn(Data dataKey, CallerProvenance callerProvenance, UUID transactionId);
+
     /**
      * Gets record from {@link RecordStore}.
      * Loads missing keys from map store.
      *
      * @param dataKey key.
-     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
+     * @param touch   when {@code true}, if an existing record was found for the given key,
+     *                then its last access time is updated.
      * @return value of an entry in {@link RecordStore}
      */
-    Object get(Data dataKey, boolean backup, Address callerAddress);
+    Object get(Data dataKey, boolean backup, Address callerAddress, boolean touch);
+
+    /**
+     * Same as {@link #get(Data, boolean, Address, boolean)} with parameter {@code touch}
+     * set {@code true}.
+     */
+    default Object get(Data dataKey, boolean backup, Address callerAddress) {
+        return get(dataKey, backup, callerAddress, true);
+    }
 
     /**
      * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
@@ -239,11 +247,13 @@ public interface RecordStore<R extends Record> {
      * Puts a data key and a record value to record-store.
      * Used in replication operations.
      *
-     * @param key    the data key to put record store.
-     * @param record the value for record store.
+     * @param record      the value for record store.
+     * @param nowInMillis nowInMillis
+     * @param indexesMustBePopulated
+     * @return current record after put
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
-    void putRecord(Data key, R record);
+    Record putReplicatedRecord(R record, long nowInMillis, boolean indexesMustBePopulated);
 
     /**
      * Iterates over record store entries.
@@ -395,7 +405,7 @@ public interface RecordStore<R extends Record> {
     R getOrNullIfExpired(R record, long now, boolean backup);
 
 
-   /**
+    /**
      * Evicts entries from this record-store.
      *
      * @param excludedKey this key has lowest priority to be selected for eviction
@@ -412,6 +422,12 @@ public interface RecordStore<R extends Record> {
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
     Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now);
+
+    /**
+     * Creates a new record from a replicated record
+     * by making memory format related conversions.
+     */
+    Record createRecord(Record fromRecord, long nowInMillis);
 
     Record loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 
@@ -465,8 +481,7 @@ public interface RecordStore<R extends Record> {
      */
     boolean isLoaded();
 
-    void checkIfLoaded()
-            throws RetryableHazelcastException;
+    void checkIfLoaded() throws RetryableHazelcastException;
 
     /**
      * Triggers key and value loading if there is no ongoing or completed
@@ -553,4 +568,6 @@ public interface RecordStore<R extends Record> {
      * Destroys data in this record store.
      */
     void destroy();
+
+    InMemoryFormat getInMemoryFormat();
 }

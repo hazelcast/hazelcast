@@ -41,14 +41,14 @@ public class DataRecordFactory implements RecordFactory<Data> {
     public Record<Data> newRecord(Data key, Object value) {
         assert value != null : "value can not be null";
 
-        final Data data = serializationService.toData(value, partitionStrategy);
+        final Data valueData = serializationService.toData(value, partitionStrategy);
         Record<Data> record;
         switch (cacheDeserializedValues) {
             case NEVER:
-                record = statisticsEnabled ? new DataRecordWithStats(data) : new DataRecord(data);
+                record = statisticsEnabled ? new DataRecordWithStats(valueData) : new DataRecord(valueData);
                 break;
             default:
-                record = statisticsEnabled ? new CachedDataRecordWithStats(data) : new CachedDataRecord(data);
+                record = statisticsEnabled ? new CachedDataRecordWithStats(valueData) : new CachedDataRecord(valueData);
         }
         record.setKey(key);
         return record;
