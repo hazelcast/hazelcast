@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.CacheEventType;
-import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.EventJournalConfig;
@@ -35,7 +35,7 @@ import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;

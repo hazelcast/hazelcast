@@ -16,7 +16,7 @@
 
 package integration;
 
-import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Jet;
@@ -29,7 +29,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;

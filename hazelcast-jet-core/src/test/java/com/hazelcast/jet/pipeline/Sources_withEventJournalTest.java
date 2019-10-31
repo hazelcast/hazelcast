@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -28,7 +28,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;

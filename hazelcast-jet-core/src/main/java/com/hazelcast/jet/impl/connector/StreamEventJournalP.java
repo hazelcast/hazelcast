@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
@@ -41,7 +41,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
-import com.hazelcast.map.impl.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.ringbuffer.ReadResultSet;
