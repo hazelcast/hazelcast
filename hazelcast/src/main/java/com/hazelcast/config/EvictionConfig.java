@@ -33,16 +33,17 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for eviction.
- * ß
+ *
  * You can set a limit for number of
  * entries or total memory cost of entries.
  * <p>
- * The default values of the eviction configuration are
+ * The default values of the eviction configuration are:
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
  * <li>{@link MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
+ * <li>{@value MapConfig#DEFAULT_MAX_SIZE as maximum size for on-heap {@link com.hazelcast.map.IMap}</li>
  * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size
- * for all other data structures and configurations</li>
+ *      for all other data structures and configurations</li>
  * </ul>
  */
 @BinaryInterface
