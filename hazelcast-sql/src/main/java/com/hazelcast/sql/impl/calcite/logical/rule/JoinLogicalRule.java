@@ -42,7 +42,6 @@ import java.util.List;
  * Convert abstract join to logical join. Optional filter pullout is performed for equi-joins.
  */
 
-// TODO: Should it be an instance of ConverterRule?
 public final class JoinLogicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new JoinLogicalRule();
 
