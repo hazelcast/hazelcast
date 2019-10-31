@@ -1357,7 +1357,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 } else {
                     if (throwable instanceof CPGroupDestroyedException) {
                         CPGroupId destroyedGroupId = ((CPGroupDestroyedException) throwable).getGroupId();
-                        destroyedGroupIds.add(destroyedGroupId);
+                        terminateRaftNode(destroyedGroupId, true);
                     }
 
                     if (logger.isFineEnabled()) {
