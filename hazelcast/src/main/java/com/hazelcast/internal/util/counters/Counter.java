@@ -34,6 +34,11 @@ public interface Counter {
     long get();
 
     /**
+     * Sets the current value of the counter.
+     */
+    void set(long value);
+
+    /**
      * Increments the counter by one.
      * @return the new counter state
      */
