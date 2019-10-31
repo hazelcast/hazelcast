@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.journal;
-
-import com.hazelcast.cache.CacheEventType;
+package com.hazelcast.cache;
 
 /**
  * The event for the cache event journal.

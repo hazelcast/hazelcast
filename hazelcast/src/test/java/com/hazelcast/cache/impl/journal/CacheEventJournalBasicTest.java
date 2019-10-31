@@ -18,14 +18,14 @@ package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
-import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;

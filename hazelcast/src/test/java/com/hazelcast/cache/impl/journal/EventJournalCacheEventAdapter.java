@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl.journal;
 
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.journal.EventJournalEventAdapter;
 
 public class EventJournalCacheEventAdapter<K, V> implements EventJournalEventAdapter<K, V, EventJournalCacheEvent<K, V>> {
