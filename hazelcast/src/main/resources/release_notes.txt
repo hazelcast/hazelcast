@@ -1,5 +1,11 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for 3.10.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.10.6 - STRIIM ====
+
+1. Enhancements
+
+- Configurable Backoff Strategy for Client Reconnections: Introduced a highly configurable exponential backoff mechanism for the client with which you can set the duration for waiting after connection failures, upper limit for the wait, etc. See the Client Connection Retry Configuration section.
+
 ==== 3.10.6 ====
 
 1. Enhancements 
