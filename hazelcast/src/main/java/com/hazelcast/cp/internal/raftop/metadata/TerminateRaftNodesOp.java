@@ -91,7 +91,7 @@ public class TerminateRaftNodesOp extends Operation implements IdentifiedDataSer
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int count = in.readInt();
-        groupIds = new ArrayList<CPGroupId>();
+        groupIds = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             CPGroupId groupId = in.readObject();
             groupIds.add(groupId);

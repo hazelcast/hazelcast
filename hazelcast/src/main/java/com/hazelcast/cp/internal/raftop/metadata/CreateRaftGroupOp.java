@@ -93,7 +93,7 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
     public void readData(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
         int len = in.readInt();
-        members = new ArrayList<RaftEndpoint>(len);
+        members = new ArrayList<>(len);
         for (int i = 0; i < len; i++) {
             RaftEndpoint member = in.readObject();
             members.add(member);

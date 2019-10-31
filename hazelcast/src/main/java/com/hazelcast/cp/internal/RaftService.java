@@ -142,7 +142,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     public static final String SERVICE_NAME = "hz:core:raft";
 
-    static final String CP_SUBSYSTEM_EXECUTOR = "hz:cpSubsystem";
+    public static final String CP_SUBSYSTEM_EXECUTOR = "hz:cpSubsystem";
     static final String CP_SUBSYSTEM_MANAGEMENT_EXECUTOR = "hz:cpSubsystemManagement";
 
     private static final long REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS = 1;

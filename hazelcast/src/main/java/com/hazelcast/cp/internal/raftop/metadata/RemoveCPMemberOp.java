@@ -27,10 +27,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * When a CP member is shutting down gracefully, or a crashed CP member is
- * removed from CP Subsystem via {@link RaftService#removeCPMember(String)},
+ * removed from CP Subsystem via {@link RaftService#removeCPMember(UUID)},
  * this operation is committed to the Metadata Raft group.
  */
 public class RemoveCPMemberOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,

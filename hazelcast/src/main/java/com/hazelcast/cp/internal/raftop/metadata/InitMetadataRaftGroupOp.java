@@ -89,7 +89,7 @@ public class InitMetadataRaftGroupOp extends MetadataRaftGroupOp implements Inde
     public void readData(ObjectDataInput in) throws IOException {
         callerCPMember = in.readObject();
         int len = in.readInt();
-        discoveredCPMembers = new ArrayList<CPMemberInfo>(len);
+        discoveredCPMembers = new ArrayList<>(len);
         for (int i = 0; i < len; i++) {
             CPMemberInfo member = in.readObject();
             discoveredCPMembers.add(member);
