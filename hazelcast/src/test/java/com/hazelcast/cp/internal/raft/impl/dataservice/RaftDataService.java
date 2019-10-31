@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.raft.impl.dataservice;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -53,6 +54,13 @@ public class RaftDataService implements SnapshotAwareService<Map<Long, Object>> 
 
     public Set<Object> values() {
         return new HashSet<>(values.values());
+    }
+
+    public Object[] valuesArray() {
+        return values.entrySet().stream()
+                .sorted(Comparator.comparingLong(Entry::getKey))
+                .map(Entry::getValue)
+                .toArray();
     }
 
     @Override
