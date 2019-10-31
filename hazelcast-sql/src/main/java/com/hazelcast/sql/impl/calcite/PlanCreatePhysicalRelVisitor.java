@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.nio.Address;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryFragmentMapping;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.nio.Address;
 
 import java.util.List;
 import java.util.Map;

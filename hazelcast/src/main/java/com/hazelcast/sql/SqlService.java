@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.sql.impl.operation.QueryOperation;
 
 /**

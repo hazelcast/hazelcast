@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlTransientException;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Connection;
@@ -24,7 +25,6 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlCursor;
