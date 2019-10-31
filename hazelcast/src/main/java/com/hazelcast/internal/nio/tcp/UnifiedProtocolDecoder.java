@@ -43,7 +43,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.nio.IOService.KILO_BYTE;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.IOUtil.newByteBuffer;
-import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY_NEW;
+import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE;
@@ -97,7 +97,7 @@ public class UnifiedProtocolDecoder
                 .log();
             if (CLUSTER.equals(protocol)) {
                 initChannelForCluster();
-            } else if (CLIENT_BINARY_NEW.equals(protocol)) {
+            } else if (CLIENT_BINARY.equals(protocol)) {
                 initChannelForClient();
             } else if (RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
                 RestApiConfig restApiConfig = ioService.getRestApiConfig();
