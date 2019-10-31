@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.statistics;
 
+/**
+ * Simple table statistics.
+ */
 public class TableStatistics extends TableStatisticAdapter {
     /** Row count. */
     private final Long rowCount;
@@ -31,5 +34,10 @@ public class TableStatistics extends TableStatisticAdapter {
     @Override
     public Double getRowCount() {
         return rowCount != null ? (double) rowCount : null;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{rowCount=" + rowCount + '}';
     }
 }

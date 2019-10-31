@@ -18,6 +18,9 @@ package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
@@ -96,9 +99,26 @@ public class SchemaUtils {
 
             long rowCount = statisticProvider.getRowCount(map);
             
-            TableStatistics statistics = new TableStatistics(rowCount);
+            String distributionField;
+            Map<String, String> aliases;
             
-            HazelcastTable table = new HazelcastTable(mapName, partitioned, map, statistics);
+            if (partitioned) {
+                MapProxyImpl map0 = (MapProxyImpl)map;
+
+                PartitioningStrategy strategy = map0.getPartitionStrategy();
+
+                if (strategy instanceof DeclarativePartitioningStrategy) {
+                    distributionField = ((DeclarativePartitioningStrategy) strategy).getField();
+                } else
+                    distributionField = null;
+                
+                aliases = map0.getAttributeAliases();
+            } else {
+                distributionField = null;
+                aliases = null;
+            }
+            
+            HazelcastTable table = new HazelcastTable(mapName, partitioned, distributionField, aliases, new TableStatistics(rowCount));
 
             res.put(mapName, table);
         }

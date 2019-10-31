@@ -57,37 +57,6 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         return assertClass(node, RootLogicalRel.class);
     }
 
-    protected static void assertScan(RelNode node, List<String> expFields, List<Integer> expProjects, Expression expFilter) {
-        MapScanLogicalRel scan = assertClass(node, MapScanLogicalRel.class);
-
-        assertFields(expFields, scan.getTable().getRowType().getFieldNames());
-        assertProjectedFields(expProjects, scan.getProjects());
-
-        Expression filter = scan.getFilter() != null ? scan.getFilter().accept(ExpressionConverterRexVisitor.INSTANCE) : null;
-
-        assertEquals(expFilter, filter);
-    }
-
-    protected static void assertFields(List<String> expFields, List<String> fields) {
-        if (fields == null) {
-            fields = new ArrayList<>();
-        } else {
-            fields = new ArrayList<>(fields);
-        }
-
-        assertEquals(expFields, fields);
-    }
-
-    protected static void assertProjectedFields(List<Integer> expProjects, List<Integer> projects) {
-        if (projects == null) {
-            projects = new ArrayList<>();
-        } else {
-            projects = new ArrayList<>(projects);
-        }
-
-        assertEquals(expProjects, projects);
-    }
-
     protected ProjectLogicalRel assertProject(RelNode rel, List<Expression> expProjects) {
         ProjectLogicalRel project = assertClass(rel, ProjectLogicalRel.class);
 
@@ -102,6 +71,17 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         assertEquals(expProjects, projects);
 
         return project;
+    }
+
+    protected static void assertScan(RelNode node, List<String> expFields, List<Integer> expProjects, Expression expFilter) {
+        MapScanLogicalRel scan = assertClass(node, MapScanLogicalRel.class);
+
+        assertFieldNames(expFields, scan.getTable().getRowType().getFieldNames());
+        assertFieldIndexes(expProjects, scan.getProjects());
+
+        Expression filter = scan.getFilter() != null ? scan.getFilter().accept(ExpressionConverterRexVisitor.INSTANCE) : null;
+
+        assertEquals(expFilter, filter);
     }
 
     @SuppressWarnings("unchecked")

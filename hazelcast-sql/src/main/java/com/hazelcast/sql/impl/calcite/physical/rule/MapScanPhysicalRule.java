@@ -16,9 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.physical.rule;
 
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
@@ -132,14 +129,12 @@ public final class MapScanPhysicalRule extends RelOptRule {
             return Collections.emptyList();
         }
 
-        MapProxyImpl map = hazelcastTable.getContainer();
-
-        String distributionFieldName = getDistributionFieldName(map);
+        String distributionFieldName = hazelcastTable.getDistributionField();
 
         int index = 0;
 
         for (RelDataTypeField field : hazelcastTable.getFieldList()) {
-            String path = map.normalizeAttributePath(field.getName());
+            String path = SqlUtils.normalizeAttributePath(field.getName(), hazelcastTable.getAliases());
 
             if (path.equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
                 // If there is no distribution field, use the whole key.
@@ -172,20 +167,5 @@ public final class MapScanPhysicalRule extends RelOptRule {
         }
 
         return Collections.emptyList();
-    }
-
-    /**
-     * Get distribution field name if possible.
-     *
-     * @return Distribution field or {@code null} if none available.
-     */
-    private static String getDistributionFieldName(MapProxyImpl map) {
-        PartitioningStrategy strategy = map.getPartitionStrategy();
-
-        if (strategy instanceof DeclarativePartitioningStrategy) {
-            return ((DeclarativePartitioningStrategy) strategy).getField();
-        }
-
-        return null;
     }
 }

@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static junit.framework.TestCase.assertEquals;
+
 /**
  * Base class to test optimizers.
  */
@@ -97,7 +99,7 @@ public abstract class OptimizerTestSupport {
 
     private static HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("p", new HazelcastTable("p", true, null, new TableStatistics(100)));
+        tableMap.put("p", new HazelcastTable("p", true, null, null, new TableStatistics(100)));
 
         return new HazelcastSchema(tableMap);
     }
@@ -109,6 +111,26 @@ public abstract class OptimizerTestSupport {
         } else {
             return new ArrayList<>(Arrays.asList(vals));
         }
+    }
+
+    protected static void assertFieldNames(List<String> expFields, List<String> fields) {
+        if (fields == null) {
+            fields = new ArrayList<>();
+        } else {
+            fields = new ArrayList<>(fields);
+        }
+
+        assertEquals(expFields, fields);
+    }
+
+    protected static void assertFieldIndexes(List<Integer> expProjects, List<Integer> projects) {
+        if (projects == null) {
+            projects = new ArrayList<>();
+        } else {
+            projects = new ArrayList<>(projects);
+        }
+
+        assertEquals(expProjects, projects);
     }
 
     /**

@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -135,7 +136,7 @@ public class MapScanExec extends AbstractMapScanExec {
 
     @Override
     protected String normalizePath(String path) {
-        return map.normalizeAttributePath(path);
+        return SqlUtils.normalizeAttributePath(path, map.getAttributeAliases());
     }
 
     @Override

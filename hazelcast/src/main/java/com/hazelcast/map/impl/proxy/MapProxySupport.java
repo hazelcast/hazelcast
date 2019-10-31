@@ -1428,20 +1428,8 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext;
     }
 
-    /**
-     * Normalize attribute name by replacing it with it's extractor path.
-     *
-     * @param name Attribute name.
-     * @return Extractor path for the given attribute name.
-     */
-    public String normalizeAttributePath(String name) {
-        String res = aliases.get(name);
-
-        if (res == null) {
-            res = name;
-        }
-
-        return res;
+    public Map<String, String> getAttributeAliases() {
+        return aliases;
     }
 
     private class IncrementStatsExecutionCallback<T> implements ExecutionCallback<T> {

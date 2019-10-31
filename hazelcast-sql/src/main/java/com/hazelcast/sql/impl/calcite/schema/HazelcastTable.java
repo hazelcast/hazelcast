@@ -16,14 +16,15 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.core.DistributedObject;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTable;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Hazelcast table which can register fields dynamically.
@@ -35,8 +36,11 @@ public class HazelcastTable extends AbstractTable {
     /** Whether this is a partitioned map. */
     private final boolean partitioned;
 
-    /** Data container. */
-    private final DistributedObject container;
+    /** Distribution field name. */
+    private final String distributionField;
+
+    /** Field aliases. */
+    private final Map<String, String> aliases;
 
     /** Table statistic. */
     private final Statistic statistic;
@@ -44,10 +48,11 @@ public class HazelcastTable extends AbstractTable {
     /** Fields. */
     private final HazelcastTableFields fields = new HazelcastTableFields();
 
-    public HazelcastTable(String name, boolean partitioned, DistributedObject container, Statistic statistic) {
+    public HazelcastTable(String name, boolean partitioned, String distributionField, Map<String, String> aliases, Statistic statistic) {
         this.name = name;
         this.partitioned = partitioned;
-        this.container = container;
+        this.distributionField = distributionField;
+        this.aliases = aliases != null ? aliases : Collections.emptyMap();
         this.statistic = statistic;
     }
 
@@ -63,9 +68,12 @@ public class HazelcastTable extends AbstractTable {
         return !isPartitioned();
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends DistributedObject> T getContainer() {
-        return (T) container;
+    public String getDistributionField() {
+        return distributionField;
+    }
+
+    public Map<String, String> getAliases() {
+        return aliases;
     }
 
     public List<RelDataTypeField> getFieldList() {
