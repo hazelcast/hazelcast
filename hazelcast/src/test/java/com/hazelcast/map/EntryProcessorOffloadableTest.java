@@ -25,7 +25,9 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -73,8 +75,6 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
 
-    private static final int HEARTBEATS_INTERVAL_SEC = 2;
-
     private HazelcastInstance[] instances;
 
     @Parameter(0)
@@ -110,8 +110,6 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         mapConfig.setAsyncBackupCount(asyncBackupCount);
         mapConfig.setBackupCount(syncBackupCount);
         config.addMapConfig(mapConfig);
-        config.getProperties().setProperty("hazelcast.operation.call.timeout.millis",
-                String.valueOf(HEARTBEATS_INTERVAL_SEC * 4 * 1000));
         return config;
     }
 
@@ -829,17 +827,25 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     /**
      * <pre>
-     * Given: Heart beats are configured to come each few seconds (i.e. one quarter of hazelcast.operation.call.timeout.millis
-     *        - set in the {@code getConfig()} method)
+     * Given: Operation heartbeats are sent four times per {@link GroupProperty#OPERATION_CALL_TIMEOUT_MILLIS}
+     *        (see {@link InvocationMonitor#getHeartbeatBroadcastPeriodMillis()})
      * When: An offloaded EntryProcessor takes a long time to run.
-     * Then: Heart beats are still coming during the task is offloaded.
+     * Then: Heartbeats are still coming while the task is offloaded.
      * </pre>
-     *
-     * @see #getConfig()
-     * @see #HEARTBEATS_INTERVAL_SEC
      */
     @Test
-    public void testHeartBeatsComingWhenEntryPropcessorOffloaded() {
+    public void testHeartBeatsComingWhenEntryProcessorOffloaded() {
+        /* Shut down the cluster since we want to use a different
+         * OPERATION_CALL_TIMEOUT_MILLIS value in this test. */
+        shutdownNodeFactory();
+
+        int heartbeatsIntervalSec = 2;
+        Config config = getConfig();
+        config.getProperties().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+                String.valueOf(heartbeatsIntervalSec * 4 * 1000));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        instances = factory.newInstances(config);
+
         final String key = generateKeyOwnedBy(instances[1]);
         TimestampedSimpleValue givenValue = new TimestampedSimpleValue(1);
 
