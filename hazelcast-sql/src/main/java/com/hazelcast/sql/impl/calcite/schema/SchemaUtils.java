@@ -16,7 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -28,9 +30,12 @@ import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Table;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Utility classes for schema creation.
@@ -105,6 +110,7 @@ public final class SchemaUtils {
 
             String distributionField;
             Map<String, String> aliases;
+            List<HazelcastTableIndex> indexes;
 
             if (partitioned) {
                 MapProxyImpl map0 = (MapProxyImpl) map;
@@ -118,20 +124,59 @@ public final class SchemaUtils {
                 }
 
                 aliases = map0.getAttributeAliases();
+
+                indexes = getIndexes(map0);
             } else {
                 distributionField = null;
                 aliases = null;
+                indexes = null;
             }
 
             HazelcastTable table = new HazelcastTable(
                 mapName,
                 partitioned,
                 distributionField,
-                aliases,
+                indexes, aliases,
                 new TableStatistics(rowCount)
             );
 
             res.put(mapName, table);
+        }
+
+        return res;
+    }
+
+    /**
+     * Get indexes from the map config.
+     *
+     * @param map Map.
+     * @return Indexes.
+     */
+    private static List<HazelcastTableIndex> getIndexes(MapProxyImpl map) {
+        MapContainer mapContainer = map.getMapServiceContext().getMapContainer(map.getName());
+
+        Collection<IndexConfig> indexConfigs = mapContainer.getIndexDefinitions().values();
+
+        List<HazelcastTableIndex> res = new ArrayList<>(indexConfigs.size());
+
+        for (IndexConfig indexConfig : indexConfigs) {
+            boolean duplicate = false;
+
+            for (HazelcastTableIndex index : res) {
+                //
+                if (Objects.equals(indexConfig.getType(), index.getType())
+                    && Objects.equals(indexConfig.getAttributes(), index.getAttributes())) {
+                    duplicate = true;
+
+                    break;
+                }
+            }
+
+            if (duplicate) {
+                continue;
+            }
+
+            res.add(new HazelcastTableIndex(indexConfig.getName(), indexConfig.getType(), indexConfig.getAttributes()));
         }
 
         return res;

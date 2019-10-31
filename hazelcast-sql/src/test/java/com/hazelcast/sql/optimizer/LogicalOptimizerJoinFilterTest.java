@@ -41,11 +41,11 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("r", new HazelcastTable("r", true, null, null, new TableStatistics(100)));
-        tableMap.put("s", new HazelcastTable("s", true, null, null, new TableStatistics(100)));
+        tableMap.put("r", new HazelcastTable("r", true, null, null, null, new TableStatistics(100)));
+        tableMap.put("s", new HazelcastTable("s", true, null, null, null, new TableStatistics(100)));
 
-        tableMap.put("person", new HazelcastTable("person", true, null, null, new TableStatistics(100)));
-        tableMap.put("department", new HazelcastTable("department", true, null, null, new TableStatistics(100)));
+        tableMap.put("person", new HazelcastTable("person", true, null, null, null, new TableStatistics(100)));
+        tableMap.put("department", new HazelcastTable("department", true, null, null, null, new TableStatistics(100)));
 
         return new HazelcastSchema(tableMap);
     }

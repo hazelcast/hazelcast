@@ -104,7 +104,7 @@ public abstract class OptimizerTestSupport {
      */
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("p", new HazelcastTable("p", true, null, null, new TableStatistics(100)));
+        tableMap.put("p", new HazelcastTable("p", true, null, null, null, new TableStatistics(100)));
 
         return new HazelcastSchema(tableMap);
     }

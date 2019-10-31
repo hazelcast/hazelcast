@@ -42,6 +42,9 @@ public class HazelcastTable extends AbstractTable {
     /** Field aliases. */
     private final Map<String, String> aliases;
 
+    /** Indxes. */
+    private final List<HazelcastTableIndex> indexes;
+
     /** Table statistic. */
     private final Statistic statistic;
 
@@ -52,13 +55,14 @@ public class HazelcastTable extends AbstractTable {
         String name,
         boolean partitioned,
         String distributionField,
-        Map<String, String> aliases,
+        List<HazelcastTableIndex> indexes, Map<String, String> aliases,
         Statistic statistic
     ) {
         this.name = name;
         this.partitioned = partitioned;
         this.distributionField = distributionField;
         this.aliases = aliases != null ? aliases : Collections.emptyMap();
+        this.indexes = indexes != null ? indexes : Collections.emptyList();
         this.statistic = statistic;
     }
 
@@ -82,6 +86,10 @@ public class HazelcastTable extends AbstractTable {
         return aliases;
     }
 
+    public List<HazelcastTableIndex> getIndexes() {
+        return indexes;
+    }
+
     public List<RelDataTypeField> getFieldList() {
         return fields.getFieldList();
     }
@@ -98,6 +106,7 @@ public class HazelcastTable extends AbstractTable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{name=" + name + ", partitioned=" + partitioned + '}';
+        return getClass().getSimpleName() + "{name=" + name + ", partitioned=" + partitioned
+            + ", distributionField=" + distributionField + ", indexes=" + indexes + ", aliases=" + aliases + '}';
     }
 }
