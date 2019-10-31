@@ -157,6 +157,7 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         RaftNodeImpl raftNode = raftNodeRef[0];
         waitUntilLeaderElected(raftNode);
         RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
+        assertNotNull(leaderEndpoint);
 
         for (HazelcastInstance instance : instances) {
             CPMember cpMember = instance.getCPSubsystem().getLocalCPMember();
@@ -184,6 +185,7 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         RaftNodeImpl raftNode = raftNodeRef[0];
         waitUntilLeaderElected(raftNode);
         RaftEndpoint leaderEndpoint = getLeaderMember(raftNode);
+        assertNotNull(leaderEndpoint);
 
         for (HazelcastInstance instance : instances) {
             CPMember cpMember = instance.getCPSubsystem().getLocalCPMember();
