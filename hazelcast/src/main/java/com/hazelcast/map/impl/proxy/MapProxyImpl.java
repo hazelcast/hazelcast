@@ -42,7 +42,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.map.impl.journal.EventJournalMapEvent;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.serialization.Data;
