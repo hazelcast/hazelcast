@@ -51,27 +51,31 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
     }
 
     @Test
-    public void testJoinOnFilterPush(){
-        RelNode rootInput = optimizeLogical("SELECT r.r_f1, s.s_f1 FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2");
-
-        // TODO: Implement me.
-        System.out.println(rootInput);
-    }
-
-    @Test
-    public void testJoinWhereFilterPush(){
-        RelNode rootInput = optimizeLogical("SELECT r.r_f1, s.s_f1 FROM r, s WHERE r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2");
-
-        // TODO: Implement me.
-        System.out.println(rootInput);
-    }
-
-    @Test
-    public void testJoinOnAndWhereFilterPush(){
+    public void testJoinOnFilterPush() {
         RelNode rootInput = optimizeLogical(
-            "SELECT r.r_f1, s.s_f1 " +
-                "FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2" +
-                "WHERE s.s_f4 = 3 AND r.r_f4 = 4");
+            "SELECT r.r_f1, s.s_f1 FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2"
+        );
+
+        // TODO: Implement me.
+        System.out.println(rootInput);
+    }
+
+    @Test
+    public void testJoinWhereFilterPush() {
+        RelNode rootInput = optimizeLogical(
+            "SELECT r.r_f1, s.s_f1 FROM r, s WHERE r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2"
+        );
+
+        // TODO: Implement me.
+        System.out.println(rootInput);
+    }
+
+    @Test
+    public void testJoinOnAndWhereFilterPush() {
+        RelNode rootInput = optimizeLogical(
+            "SELECT r.r_f1, s.s_f1 "
+                + "FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2"
+                + "WHERE s.s_f4 = 3 AND r.r_f4 = 4");
 
         // TODO: Implement me.
         System.out.println(rootInput);

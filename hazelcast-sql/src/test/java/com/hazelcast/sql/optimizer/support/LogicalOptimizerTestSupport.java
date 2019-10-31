@@ -45,7 +45,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
      * @param sql SQL.
      * @return Input of the root node
      */
-    protected RelNode optimizeLogical(String sql){
+    protected RelNode optimizeLogical(String sql) {
         LogicalRel rel = optimize(sql).getLogical();
 
         RootLogicalRel root = assertRoot(rel);
@@ -88,6 +88,6 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
     protected static <T> T assertClass(RelNode rel, Class<? extends LogicalRel> expClass) {
         assertEquals(expClass, rel.getClass());
 
-        return (T)rel;
+        return (T) rel;
     }
 }

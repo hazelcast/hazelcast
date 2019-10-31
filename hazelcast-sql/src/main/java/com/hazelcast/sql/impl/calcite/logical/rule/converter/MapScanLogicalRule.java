@@ -34,7 +34,7 @@ public final class MapScanLogicalRule extends ConverterRule {
 
     @Override
     public RelNode convert(RelNode rel) {
-        LogicalTableScan scan = (LogicalTableScan)rel;
+        LogicalTableScan scan = (LogicalTableScan) rel;
 
         return new MapScanLogicalRel(
             scan.getCluster(),

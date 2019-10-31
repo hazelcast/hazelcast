@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Extended RelOptCluster with Hazelcast-specific data.
  */
-public class HazelcastRelOptCluster extends RelOptCluster {
+public final class HazelcastRelOptCluster extends RelOptCluster {
     /** Number of members. */
     private final int memberCount;
 
@@ -58,7 +58,7 @@ public class HazelcastRelOptCluster extends RelOptCluster {
     public static HazelcastRelOptCluster cast(RelOptCluster cluster) {
         assert cluster instanceof HazelcastRelOptCluster;
 
-        return (HazelcastRelOptCluster)cluster;
+        return (HazelcastRelOptCluster) cluster;
     }
 
     public int getMemberCount() {

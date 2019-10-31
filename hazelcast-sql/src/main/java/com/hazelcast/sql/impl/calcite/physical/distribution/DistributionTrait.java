@@ -141,8 +141,9 @@ public class DistributionTrait implements RelTrait {
             // Otherwise compare every pair of source and target field group.
             for (List<DistributionField> currentGroup : currentTrait.getFieldGroups()) {
                 for (List<DistributionField> targetGroup : targetTrait.getFieldGroups()) {
-                    if (satisfiesDistributed(currentGroup, targetGroup))
+                    if (satisfiesDistributed(currentGroup, targetGroup)) {
                         return true;
+                    }
                 }
             }
 
@@ -168,8 +169,9 @@ public class DistributionTrait implements RelTrait {
         List<DistributionField> currentFields,
         List<DistributionField> targetFields
     ) {
-        if (currentFields.size() > targetFields.size())
+        if (currentFields.size() > targetFields.size()) {
             return false;
+        }
 
         for (DistributionField currentField : currentFields) {
             if (!targetFields.contains(currentField)) {

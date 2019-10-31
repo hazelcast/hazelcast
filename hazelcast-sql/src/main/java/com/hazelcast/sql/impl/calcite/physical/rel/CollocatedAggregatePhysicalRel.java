@@ -56,7 +56,16 @@ public class CollocatedAggregatePhysicalRel extends AbstractAggregatePhysicalRel
         List<ImmutableBitSet> groupSets,
         List<AggregateCall> aggCalls
     ) {
-        return new CollocatedAggregatePhysicalRel(getCluster(), traitSet, input, indicator, groupSet, groupSets, aggCalls, sorted);
+        return new CollocatedAggregatePhysicalRel(
+            getCluster(),
+            traitSet,
+            input,
+            indicator,
+            groupSet,
+            groupSets,
+            aggCalls,
+            sorted
+        );
     }
 
     @Override

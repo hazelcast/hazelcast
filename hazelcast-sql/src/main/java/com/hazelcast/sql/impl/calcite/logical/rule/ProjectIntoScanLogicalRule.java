@@ -96,7 +96,8 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
     }
 
     /**
-     * Process complex project with expressions. Projection will remain as is, but the number of returned fields might be decreased in scan.
+     * Process complex project with expressions. Projection will remain as is, but the number of returned fields might be
+     * decreased in scan.
      *
      * @param project Project.
      * @param scan Scan.
@@ -112,7 +113,8 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
             projectExp.accept(projectFieldVisitor);
         }
 
-        // Get new scan fields. These are the only fields which are accessed by the project operator, so the rest could be removed.
+        // Get new scan fields. These are the only fields which are accessed by the project operator, so the rest could be
+        // removed.
         List<Integer> newScanFields = projectFieldVisitor.createNewScanFields();
         RexNode filter = getScanFilter(scan);
 
@@ -158,7 +160,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      * @return Field indexes.
      */
     private static List<Integer> getScanProjects(TableScan scan) {
-        return scan instanceof MapScanLogicalRel ? ((MapScanLogicalRel)scan).getProjects() : scan.identity();
+        return scan instanceof MapScanLogicalRel ? ((MapScanLogicalRel) scan).getProjects() : scan.identity();
     }
 
     /**
@@ -168,7 +170,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      * @return Filter or null.
      */
     private static RexNode getScanFilter(TableScan scan) {
-        return scan instanceof MapScanLogicalRel ? ((MapScanLogicalRel)scan).getFilter() : null;
+        return scan instanceof MapScanLogicalRel ? ((MapScanLogicalRel) scan).getFilter() : null;
     }
 
     /**

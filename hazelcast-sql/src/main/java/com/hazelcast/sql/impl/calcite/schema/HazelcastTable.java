@@ -48,7 +48,13 @@ public class HazelcastTable extends AbstractTable {
     /** Fields. */
     private final HazelcastTableFields fields = new HazelcastTableFields();
 
-    public HazelcastTable(String name, boolean partitioned, String distributionField, Map<String, String> aliases, Statistic statistic) {
+    public HazelcastTable(
+        String name,
+        boolean partitioned,
+        String distributionField,
+        Map<String, String> aliases,
+        Statistic statistic
+    ) {
         this.name = name;
         this.partitioned = partitioned;
         this.distributionField = distributionField;

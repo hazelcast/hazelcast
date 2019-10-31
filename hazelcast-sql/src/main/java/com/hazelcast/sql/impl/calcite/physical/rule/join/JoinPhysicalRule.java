@@ -47,7 +47,7 @@ import static com.hazelcast.sql.impl.calcite.physical.distribution.DistributionT
 /**
  * General rule for join processing.
  */
-public class JoinPhysicalRule extends RelOptRule {
+public final class JoinPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new JoinPhysicalRule();
 
     private JoinPhysicalRule() {
@@ -132,6 +132,7 @@ public class JoinPhysicalRule extends RelOptRule {
      * @param right Right input.
      * @return Transformations.
      */
+    @SuppressWarnings("checkstyle:MethodLength")
     private List<RelNode> createTransformsEquiJoin(
         JoinType type,
         JoinLogicalRel logicalJoin,
@@ -582,10 +583,11 @@ public class JoinPhysicalRule extends RelOptRule {
 
             case FULL:
                 return JoinType.FULL;
-        }
 
-        // TODO: Handle right join through transposition: r RIGHT JOIN s == s LEFT JOIN r.
-        return null;
+            default:
+                // TODO: Handle right join through transposition: r RIGHT JOIN s == s LEFT JOIN r.
+                return null;
+        }
     }
 
     /**

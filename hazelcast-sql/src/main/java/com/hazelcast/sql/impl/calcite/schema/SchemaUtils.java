@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * Utility classes for schema creation.
  */
-public class SchemaUtils {
+public final class SchemaUtils {
     /** Name of partitioned schema. */
     public static final String SCHEMA_NAME_PARTITIONED = "partitioned";
 
@@ -87,7 +87,11 @@ public class SchemaUtils {
      *     if replicated tables.
      * @return List of tables.
      */
-    private static Map<String, Table> prepareSchemaTables(NodeEngine nodeEngine, StatisticProvider statisticProvider, boolean partitioned) {
+    private static Map<String, Table> prepareSchemaTables(
+        NodeEngine nodeEngine,
+        StatisticProvider statisticProvider,
+        boolean partitioned
+    ) {
         String serviceName = partitioned ? MapService.SERVICE_NAME : ReplicatedMapService.SERVICE_NAME;
 
         Collection<String> mapNames = nodeEngine.getProxyService().getDistributedObjectNames(serviceName);
@@ -98,27 +102,34 @@ public class SchemaUtils {
             DistributedObject map = nodeEngine.getProxyService().getDistributedObject(serviceName, mapName);
 
             long rowCount = statisticProvider.getRowCount(map);
-            
+
             String distributionField;
             Map<String, String> aliases;
-            
+
             if (partitioned) {
-                MapProxyImpl map0 = (MapProxyImpl)map;
+                MapProxyImpl map0 = (MapProxyImpl) map;
 
                 PartitioningStrategy strategy = map0.getPartitionStrategy();
 
                 if (strategy instanceof DeclarativePartitioningStrategy) {
                     distributionField = ((DeclarativePartitioningStrategy) strategy).getField();
-                } else
+                } else {
                     distributionField = null;
-                
+                }
+
                 aliases = map0.getAttributeAliases();
             } else {
                 distributionField = null;
                 aliases = null;
             }
-            
-            HazelcastTable table = new HazelcastTable(mapName, partitioned, distributionField, aliases, new TableStatistics(rowCount));
+
+            HazelcastTable table = new HazelcastTable(
+                mapName,
+                partitioned,
+                distributionField,
+                aliases,
+                new TableStatistics(rowCount)
+            );
 
             res.put(mapName, table);
         }

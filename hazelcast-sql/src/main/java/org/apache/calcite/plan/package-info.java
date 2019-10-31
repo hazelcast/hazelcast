@@ -14,30 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.statistics;
-
 /**
- * Simple table statistics.
+ * Contains Calcite-related classes.
  */
-public class TableStatistics extends TableStatisticAdapter {
-    /** Row count. */
-    private final Long rowCount;
-
-    public TableStatistics(long rowCount) {
-        this((Long) rowCount);
-    }
-
-    public TableStatistics(Long rowCount) {
-        this.rowCount = rowCount;
-    }
-
-    @Override
-    public Double getRowCount() {
-        return rowCount != null ? (double) rowCount : null;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{rowCount=" + rowCount + '}';
-    }
-}
+package org.apache.calcite.plan;

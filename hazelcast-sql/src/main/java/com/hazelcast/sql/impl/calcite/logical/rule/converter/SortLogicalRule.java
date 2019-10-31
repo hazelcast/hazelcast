@@ -58,7 +58,7 @@ public final class SortLogicalRule extends ConverterRule {
 
     @Override
     public RelNode convert(RelNode rel) {
-        Sort sort = (Sort)rel;
+        Sort sort = (Sort) rel;
         RelNode input = sort.getInput();
 
         return new SortLogicalRel(

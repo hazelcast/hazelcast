@@ -76,10 +76,7 @@ import java.util.Properties;
 /**
  * Optimizer context which holds the whole environment for the given optimization session.
  */
-public class OptimizerContext {
-    // TODO: Remove me.
-    public static volatile boolean DEBUG = false;
-
+public final class OptimizerContext {
     /** Basic Calcite config. */
     private final VolcanoPlanner planner;
 
@@ -88,6 +85,12 @@ public class OptimizerContext {
 
     /** SQL converter. */
     private final SqlToRelConverter sqlToRelConverter;
+
+    private OptimizerContext(SqlValidator validator, SqlToRelConverter sqlToRelConverter, VolcanoPlanner planner) {
+        this.validator = validator;
+        this.sqlToRelConverter = sqlToRelConverter;
+        this.planner = planner;
+    }
 
     /**
      * Create new context for the given node engine.
@@ -120,12 +123,6 @@ public class OptimizerContext {
         SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(catalogReader, validator, cluster);
 
         return new OptimizerContext(validator, sqlToRelConverter, planner);
-    }
-
-    private OptimizerContext(SqlValidator validator, SqlToRelConverter sqlToRelConverter, VolcanoPlanner planner) {
-        this.validator = validator;
-        this.sqlToRelConverter = sqlToRelConverter;
-        this.planner = planner;
     }
 
     public SqlNode parse(String sql) {

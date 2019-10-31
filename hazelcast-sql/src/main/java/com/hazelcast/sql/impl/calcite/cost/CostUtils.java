@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.cost;
 /**
  * Utility methods for cost estimation.
  */
-public class CostUtils {
+public final class CostUtils {
     /** Multiplier to be applied to a CPU cost a project outside a scan operator. */
     public static final double CPU_PROJECT_OUTSIDE_MULTIPLIER = 1.0d;
 

@@ -32,7 +32,12 @@ public class ReplicatedToDistributedPhysicalRel extends SingleRel implements Phy
     /** Fields which should be used for hashing. */
     private final List<Integer> hashFields;
 
-    public ReplicatedToDistributedPhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input, List<Integer> hashFields) {
+    public ReplicatedToDistributedPhysicalRel(
+        RelOptCluster cluster,
+        RelTraitSet traits,
+        RelNode input,
+        List<Integer> hashFields
+    ) {
         super(cluster, traits, input);
 
         this.hashFields = hashFields;

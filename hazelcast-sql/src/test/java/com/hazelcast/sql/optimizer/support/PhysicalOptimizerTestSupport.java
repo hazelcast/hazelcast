@@ -37,7 +37,7 @@ public class PhysicalOptimizerTestSupport extends OptimizerTestSupport {
      * @param sql SQL.
      * @return Input of the root node.
      */
-    protected RelNode optimizePhysical(String sql){
+    protected RelNode optimizePhysical(String sql) {
         PhysicalRel rel = optimize(sql).getPhysical();
 
         RootPhysicalRel root = assertRoot(rel);
@@ -53,6 +53,6 @@ public class PhysicalOptimizerTestSupport extends OptimizerTestSupport {
     protected static <T> T assertClass(RelNode rel, Class<? extends PhysicalRel> expClass) {
         assertEquals(expClass, rel.getClass());
 
-        return (T)rel;
+        return (T) rel;
     }
 }
