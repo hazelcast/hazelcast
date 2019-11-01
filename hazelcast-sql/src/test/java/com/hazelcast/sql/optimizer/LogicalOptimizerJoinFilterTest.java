@@ -44,9 +44,6 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
         tableMap.put("r", new HazelcastTable("r", true, null, null, null, new TableStatistics(100)));
         tableMap.put("s", new HazelcastTable("s", true, null, null, null, new TableStatistics(100)));
 
-        tableMap.put("person", new HazelcastTable("person", true, null, null, null, new TableStatistics(100)));
-        tableMap.put("department", new HazelcastTable("department", true, null, null, null, new TableStatistics(100)));
-
         return new HazelcastSchema(tableMap);
     }
 

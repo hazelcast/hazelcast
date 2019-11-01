@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
@@ -240,10 +239,6 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
             String mapName = node.getMapName();
 
             MapProxyImpl map = (MapProxyImpl) nodeEngine.getHazelcastInstance().getMap(mapName);
-
-            if (map == null) {
-                throw new HazelcastSqlException(-1, "IMap doesn't exist: " + mapName);
-            }
 
             res = new MapScanExec(
                 map,

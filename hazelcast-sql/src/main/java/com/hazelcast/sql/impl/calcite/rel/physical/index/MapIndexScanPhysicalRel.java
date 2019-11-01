@@ -14,51 +14,79 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rel.physical;
+package com.hazelcast.sql.impl.calcite.rel.physical.index;
 
 import com.hazelcast.sql.impl.calcite.cost.CostUtils;
+import com.hazelcast.sql.impl.calcite.rel.AbstractScanRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Physical scan over partitioned map.
- * <p>
- * Traits:
- * <ul>
- *     <li><b>Collation</b>: empty, as map is not sorted</li>
- *     <li><b>Distribution</b>: DISTRIBUTED or DISTRIBUTED_PARTITIONED depending on partitioning strategy
- *     and projected fields. If distribution field is present in returned fields, then DISTRIBUTED_PARTITIONED
- *     is used. Otherwise information about concrete distribution is lost, and we use DISTRIBUTED instead</li>
- * </ul>
+ * Map index scan operator.
  */
-public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
-    public MapScanPhysicalRel(
+public class MapIndexScanPhysicalRel extends AbstractScanRel implements PhysicalRel {
+    /** Target index. */
+    private final HazelcastTableIndex index;
+
+    /** Disjunctive set of index conditions. */
+    private final List<IndexFilter> filters;
+
+    /** Original filter. */
+    private final RexNode originalFilter;
+
+    public MapIndexScanPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelOptTable table,
         List<Integer> projects,
-        RexNode filter
+        HazelcastTableIndex index,
+        List<IndexFilter> filters,
+        RexNode originalFilter
     ) {
-        super(cluster, traitSet, table, projects, filter);
+        super(cluster, traitSet, table, projects);
+
+        this.index = index;
+        this.filters = filters;
+        this.originalFilter = originalFilter;
+    }
+
+    public HazelcastTableIndex getIndex() {
+        return index;
+    }
+
+    public List<IndexFilter> getFilters() {
+        return filters != null ? filters : Collections.emptyList();
     }
 
     @Override
-    public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new MapScanPhysicalRel(getCluster(), traitSet, getTable(), projects, filter);
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new MapIndexScanPhysicalRel(getCluster(), traitSet, getTable(), projects, index, filters, originalFilter);
     }
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
-        visitor.onMapScan(this);
+        visitor.onMapIndexScan(this);
+    }
+
+    @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+           .item("index", index)
+           .itemIf("indexFilters", filters, filters != null);
     }
 
     // TODO: Dedup with logical scan
@@ -72,22 +100,17 @@ public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
         }
 
         // 2. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
-        double filterRowCount = scanCost.getRows();
-
-        if (filter != null) {
-            double filterSelectivity = mq.getSelectivity(this, filter);
-
-            filterRowCount = filterRowCount * filterSelectivity;
-        }
+        double filterSelectivity = mq.getSelectivity(this, originalFilter);
+        double filterRowCount = scanCost.getRows() * filterSelectivity;
 
         int expressionCount = getProjects().size();
 
         double projectCpu = CostUtils.adjustProjectCpu(filterRowCount * expressionCount, true);
 
-        // 3. Finally, return sum of both scan and project.
+        // 3. Finally, return sum of both scan and project. Note that we decrease the cost of the scan by selectivity factor.
         RelOptCost totalCost = planner.getCostFactory().makeCost(
             filterRowCount,
-            scanCost.getCpu() + projectCpu,
+            scanCost.getCpu() * filterSelectivity + projectCpu,
             scanCost.getIo()
         );
 

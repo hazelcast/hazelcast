@@ -16,25 +16,42 @@
 
 package com.hazelcast.sql.impl.calcite.rule.physical;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.RuleUtils;
-import com.hazelcast.sql.impl.calcite.rel.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.rel.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.ReplicatedMapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.index.IndexFilter;
+import com.hazelcast.sql.impl.calcite.rel.physical.index.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUtil;
+import org.apache.calcite.sql.SqlKind;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.DISTRIBUTED;
 
@@ -55,35 +72,343 @@ public final class MapScanPhysicalRule extends RelOptRule {
     public void onMatch(RelOptRuleCall call) {
         MapScanLogicalRel scan = call.rel(0);
 
-        RelOptTable table = scan.getTable();
-
-        HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
-
-        List<Integer> projects = scan.getProjects();
-
-        PhysicalRel newScan;
-
-        if (hazelcastTable.isReplicated()) {
-            newScan = new ReplicatedMapScanPhysicalRel(
+        if (scan.isReplicated()) {
+            PhysicalRel newScan = new ReplicatedMapScanPhysicalRel(
                 scan.getCluster(),
                 RuleUtils.toPhysicalConvention(scan.getTraitSet(), DistributionTrait.REPLICATED_DIST),
-                table,
-                projects,
+                scan.getTable(),
+                scan.getProjects(),
                 scan.getFilter()
             );
-        } else {
-            DistributionTrait distributionTrait = getDistributionTrait(hazelcastTable, projects);
 
-            newScan = new MapScanPhysicalRel(
+            call.transformTo(newScan);
+        } else {
+            HazelcastTable table = scan.getTableUnwrapped();
+
+            DistributionTrait distribution = getDistributionTrait(table, scan.getProjects());
+
+            List<RelNode> transforms = new ArrayList<>(1);
+
+            // Add normal map scan.
+            transforms.add(new MapScanPhysicalRel(
                 scan.getCluster(),
-                RuleUtils.toPhysicalConvention(scan.getTraitSet(), distributionTrait),
-                table,
-                projects,
+                RuleUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
+                scan.getTable(),
+                scan.getProjects(),
                 scan.getFilter()
+            ));
+
+            // Try adding index scans.
+            addIndexScans(
+                scan,
+                distribution,
+                table.getIndexes(),
+                transforms
             );
+
+            for (RelNode transform : transforms) {
+                call.transformTo(transform);
+            }
+        }
+    }
+
+    private void addIndexScans(
+        MapScanLogicalRel scan,
+        DistributionTrait distribution,
+        List<HazelcastTableIndex> indexes,
+        List<RelNode> transforms
+    ) {
+        RexNode filter = scan.getFilter();
+
+        if (filter == null) {
+            return;
         }
 
-        call.transformTo(newScan);
+        List<RexNode> orExps = new ArrayList<>(1);
+
+        RelOptUtil.decomposeDisjunction(filter, orExps);
+
+        for (HazelcastTableIndex index : indexes) {
+            RelNode transform = tryCreateIndexScan(scan, distribution, index, orExps);
+
+            if (transform != null) {
+                transforms.add(transform);
+            }
+        }
+    }
+
+    private RelNode tryCreateIndexScan(
+        MapScanLogicalRel scan,
+        DistributionTrait distribution,
+        HazelcastTableIndex index,
+        List<RexNode> orExps
+    ) {
+        List<IndexFilter> filters = tryCreateIndexFilters(scan, index, orExps);
+
+        if (filters == null) {
+            return null;
+        }
+
+        // TODO: Fix me: collation should be inferred from the index filter!
+        // TODO: This is the prefix of a single disjunctive expression.
+        RelCollation collation = createIndexCollation(scan, index);
+
+        // TODO: We must add collation here. Somehow it breaks the planner.
+        RelTraitSet traitSet = RuleUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
+
+        return new MapIndexScanPhysicalRel(
+            scan.getCluster(),
+            traitSet,
+            scan.getTable(),
+            scan.getProjects(),
+            index,
+            filters,
+            scan.getFilter()
+        );
+    }
+
+    /**
+     * Try create an index filter for the given index description and scan filter.
+     *
+     * @param index Index.
+     * @param orExps Disjunctive expressions.
+     * @return Index filters for every expression in the disjunctive set, or {@code null} if failed to create.
+     */
+    private List<IndexFilter> tryCreateIndexFilters(MapScanLogicalRel scan, HazelcastTableIndex index, List<RexNode> orExps) {
+        // Map index fields to scan fields. Since not all index might be involved in
+        List<String> indexAttributes = index.getAttributes();
+        List<Integer> indexAttributes0 = new ArrayList<>(indexAttributes.size());
+
+        List<String> scanFieldNames = scan.getTable().getRowType().getFieldNames();
+
+        for (String indexAttribute : indexAttributes) {
+            int pos = scanFieldNames.indexOf(indexAttribute);
+
+            if (pos == -1) {
+                break;
+            }
+
+            indexAttributes0.add(pos);
+        }
+
+        // If the very first index attribute is not present in the scan row type, then this field is never requested, and hence
+        // index cannot be used.
+        if (indexAttributes0.isEmpty()) {
+            return null;
+        }
+
+        // TODO: Validate that with Sergey.
+        // If at least one of the fields of hash index is never referred, then it cannot be used for sure.
+        if (index.getType() == IndexType.HASH && indexAttributes0.size() != indexAttributes.size()) {
+            return null;
+        }
+
+        // Iterate over disjunctive expressions and try to create an index condition.
+        List<IndexFilter> filters = new ArrayList<>(orExps.size());
+
+        for (RexNode exp : orExps) {
+            IndexFilter filter = tryCreateIndexFilter(index.getType(), indexAttributes0, exp, scan.getCluster().getRexBuilder());
+
+            if (filter == null) {
+                return null;
+            }
+
+            filters.add(filter);
+        }
+
+        return filters;
+    }
+
+    /**
+     * Try creating an index filter from the given conjunctive expression.
+     *
+     * @param indexType Index type.
+     * @param indexAttributes Index attribute.
+     * @param baseExp Base conjunctive expression.
+     * @return Index filter or {@code null} if an expression cannot be used with the given index.
+     */
+    private IndexFilter tryCreateIndexFilter(
+        IndexType indexType,
+        List<Integer> indexAttributes,
+        RexNode baseExp,
+        RexBuilder rexBuilder
+    ) {
+        // Decompose conjunctive predicates.
+        List<RexNode> exps = new ArrayList<>(1);
+
+        RelOptUtil.decomposeConjunction(baseExp, exps);
+
+        // TODO: Remember to handle IN condition here! Perhaps we should return List<IndexFilter> instead.
+
+        // TODO: We do not bother with ranges at the moment (x > 1 AND x < 3). Do that for production implementation
+
+        // TODO: Use indexes not only for plain comparisons, but for monotonic expressions as well (e.g. "x + A > B")!
+
+        // Now we iterate over single expressions in hope to find a match for a prefix of index attributes.
+        List<RexNode> indexExps = new ArrayList<>(1);
+
+        for (int i = 0; i < indexAttributes.size(); i++) {
+            indexExps.add(null);
+        }
+
+        List<RexNode> remainderExps = new ArrayList<>(Math.min(exps.size() - 1, 1));
+
+        for (RexNode exp : exps) {
+            boolean remainder = false;
+
+            Integer indexAttributePosition = getIndexAttributePositionForExpression(exp, indexType, indexAttributes);
+
+            if (indexAttributePosition == null) {
+                // Expression cannot be used with index.
+                remainder = true;
+            } else {
+                // Expression could be used with index. Add it to the appropriate position.
+                assert indexAttributePosition < indexAttributes.size();
+
+                RexNode oldIndexExp = indexExps.get(indexAttributePosition);
+
+                if (oldIndexExp != null) {
+                    remainder = true;
+                } else {
+                    indexExps.set(indexAttributePosition, exp);
+                }
+            }
+
+            if (remainder) {
+                remainderExps.add(exp);
+            }
+        }
+
+        // Get final index expressions.
+
+        List<RexNode> preparedIndexExps = new ArrayList<>(indexExps.size());
+
+        for (RexNode indexExp : indexExps) {
+            if (indexExp == null) {
+                break;
+            }
+
+            preparedIndexExps.add(indexExp);
+        }
+
+        // If the leading part of the index expression is empty, then we cannot use that index.
+        if (!preparedIndexExps.isEmpty()) {
+            RexNode finalIndexExp = RexUtil.composeConjunction(rexBuilder, preparedIndexExps);
+            RexNode finalRemainderExp = RexUtil.composeConjunction(rexBuilder, remainderExps);
+
+            return new IndexFilter(finalIndexExp, finalRemainderExp);
+        }
+
+        return null;
+    }
+
+    @SuppressWarnings({"checkstyle:FallThrough", "checkstyle:CyclomaticComplexity"})
+    private static Integer getIndexAttributePositionForExpression(
+        RexNode exp,
+        IndexType indexType,
+        List<Integer> indexAttributes
+    ) {
+        RexNode operand1;
+        RexNode operand2;
+
+        switch (exp.getKind()) {
+            case GREATER_THAN:
+            case GREATER_THAN_OR_EQUAL:
+            case LESS_THAN:
+            case LESS_THAN_OR_EQUAL:
+                if (indexType == IndexType.HASH) {
+                    return null;
+                }
+
+            case EQUALS:
+                operand1 = ((RexCall) exp).getOperands().get(0);
+                operand2 = ((RexCall) exp).getOperands().get(1);
+
+                break;
+
+            default:
+                return null;
+        }
+
+        // At this point operation is supported by the index. Let's look at arguments. We are looking for RexInputRef on the
+        // one side, and literal or argument on the other.
+
+        // TODO: Make sure that parameter placeholders are supported
+
+        // TODO: Think how to support the case a=b, when both a and b are part of the index! Seems that we need to return
+        // TODO: all possible combinations from that method.
+
+        if (operand1.getKind() == SqlKind.INPUT_REF && operand2.getKind() == SqlKind.LITERAL) {
+            int index = indexAttributes.indexOf(((RexInputRef) operand1).getIndex());
+
+            if (index != -1) {
+                return index;
+            }
+        }
+
+        if (operand2.getKind() == SqlKind.INPUT_REF && operand1.getKind() == SqlKind.LITERAL) {
+            int index = indexAttributes.indexOf(((RexInputRef) operand2).getIndex());
+
+            if (index != -1) {
+                return index;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Create collation trait for the given scan and index.
+     *
+     * @param scan Scan.
+     * @param index Index.
+     * @return Collation trait.
+     */
+    private static RelCollation createIndexCollation(MapScanLogicalRel scan, HazelcastTableIndex index) {
+        if (index.getType() == IndexType.HASH) {
+            // Hash index doesn't enforce any collation.
+            return RelCollations.EMPTY;
+        }
+
+        assert index.getType() == IndexType.SORTED;
+
+        // Map scan field names to relevant outputs.
+        Map<String, Integer> fieldToProjectIndex = new HashMap<>();
+
+        List<String> scanFieldNames = scan.getTable().getRowType().getFieldNames();
+        List<Integer> scanProjects = scan.getProjects();
+
+        for (int i = 0; i < scanFieldNames.size(); i++) {
+            int projectIndex = scanProjects.indexOf(i);
+
+            if (projectIndex == -1) {
+                // Scan field is not projected out.
+                continue;
+            }
+
+            String fieldName = scanFieldNames.get(i);
+
+            fieldToProjectIndex.put(fieldName, projectIndex);
+        }
+
+        // Now add prefix of index attributes.
+        List<RelFieldCollation> fieldCollations = new ArrayList<>(index.getAttributes().size());
+
+        for (String attribute : index.getAttributes()) {
+            Integer projectIndex = fieldToProjectIndex.get(attribute);
+
+            if (projectIndex == null) {
+                // Collation field is not present in the output. Further sorting is impossible.
+                break;
+            }
+
+            // We support only ascending direction at the moment.
+            RelFieldCollation fieldCollation = new RelFieldCollation(projectIndex, RelFieldCollation.Direction.ASCENDING);
+
+            fieldCollations.add(fieldCollation);
+        }
+
+        return fieldCollations.isEmpty() ? RelCollations.EMPTY : RelCollations.of(fieldCollations);
     }
 
     /**

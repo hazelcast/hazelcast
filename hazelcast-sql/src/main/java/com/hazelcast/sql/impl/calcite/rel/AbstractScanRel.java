@@ -21,36 +21,28 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
 
 import java.util.List;
 
 /**
- * Base class for map scans.
+ * Base class for scans.
  */
-public abstract class AbstractMapScanRel extends AbstractScanRel {
-    /** Filter. */
-    protected final RexNode filter;
+public abstract class AbstractScanRel extends TableScan {
+    /** Projection. */
+    protected final List<Integer> projects;
 
-    public AbstractMapScanRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelOptTable table,
-        List<Integer> projects,
-        RexNode filter
-    ) {
-        super(cluster, traitSet, table, projects);
+    protected AbstractScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, List<Integer> projects) {
+        super(cluster, traitSet, table);
 
-        this.filter = filter;
+        this.projects = projects;
     }
 
     public List<Integer> getProjects() {
         return projects != null ? projects : identity();
-    }
-
-    public RexNode getFilter() {
-        return filter;
     }
 
     /**
@@ -65,21 +57,19 @@ public abstract class AbstractMapScanRel extends AbstractScanRel {
     }
 
     @Override
-    public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw)
-            .itemIf("filter", filter, filter != null);
+    public final RelDataType deriveRowType() {
+        RelDataTypeFactory.Builder builder = getCluster().getTypeFactory().builder();
+        List<RelDataTypeField> fieldList = table.getRowType().getFieldList();
+
+        for (int project : getProjects()) {
+            builder.add(fieldList.get(project));
+        }
+
+        return builder.build();
     }
 
     @Override
-    public final double estimateRowCount(RelMetadataQuery mq) {
-        double rowCount = super.estimateRowCount(mq);
-
-        if (filter != null) {
-            double selectivity = mq.getSelectivity(this, filter);
-
-            rowCount = rowCount * selectivity;
-        }
-
-        return rowCount;
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw).item("projects", getProjects());
     }
 }

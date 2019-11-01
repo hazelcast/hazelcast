@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.rel.physical.CollocatedAggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.FilterPhysicalRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.MapIndexScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.index.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.MaterializedInputPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRelVisitor;
