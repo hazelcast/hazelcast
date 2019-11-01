@@ -22,12 +22,13 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
+import com.hazelcast.client.config.ConnectionRetryConfig;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -112,6 +113,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client11-icmp-ping")
     private HazelcastClientProxy icmpPingTestClient;
+
+    @Resource(name = "client13-exponential-connection-retry")
+    private HazelcastClientProxy connectionRetryClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -399,6 +403,18 @@ public class TestClientApplicationContext {
         assertEquals(50, icmpPingConfig.getTtl());
         assertEquals(5, icmpPingConfig.getMaxAttempts());
         assertEquals(false, icmpPingConfig.isEchoFailFastOnStartup());
+    }
+
+    @Test
+    public void testConnectionRetry() {
+        ConnectionRetryConfig connectionRetryConfig = connectionRetryClient
+                .getClientConfig().getConnectionStrategyConfig().getConnectionRetryConfig();
+        assertTrue(connectionRetryConfig.isEnabled());
+        assertTrue(connectionRetryConfig.isFailOnMaxBackoff());
+        assertEquals(0.5, connectionRetryConfig.getJitter(), 0);
+        assertEquals(2000, connectionRetryConfig.getInitialBackoffMillis());
+        assertEquals(60000, connectionRetryConfig.getMaxBackoffMillis());
+        assertEquals(3, connectionRetryConfig.getMultiplier(), 0);
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {

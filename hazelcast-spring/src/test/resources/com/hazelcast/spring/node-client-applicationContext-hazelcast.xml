@@ -296,6 +296,34 @@
         </hz:network>
     </hz:client>
 
+<!--
+    <hz:client id="client12-hazelcast-cloud" credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:hazelcast-cloud enabled="false">
+                <hz:discovery-token>EXAMPLE_TOKEN</hz:discovery-token>
+            </hz:hazelcast-cloud>
+        </hz:network>
+    </hz:client>
+-->
+
+    <hz:client id="client13-exponential-connection-retry" credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:connection-strategy async-start="true" reconnect-mode="ASYNC">
+            <hz:connection-retry enabled="true">
+                <hz:initial-backoff-millis>2000</hz:initial-backoff-millis>
+                <hz:max-backoff-millis>60000</hz:max-backoff-millis>
+                <hz:multiplier>3</hz:multiplier>
+                <hz:fail-on-max-backoff>true</hz:fail-on-max-backoff>
+                <hz:jitter>0.5</hz:jitter>
+            </hz:connection-retry>
+        </hz:connection-strategy>
+    </hz:client>
+
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="username" value="spring-group"/>
         <property name="password" value="spring-group-pass"/>

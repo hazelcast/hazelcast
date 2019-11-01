@@ -352,6 +352,37 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testConnectionStrategyConfig_defaults() {
+        ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
+        assertFalse(connectionStrategyConfig.isAsyncStart());
+        assertEquals(ClientConnectionStrategyConfig.ReconnectMode.ON, connectionStrategyConfig.getReconnectMode());
+    }
+
+    @Test
+    public void testExponentialConnectionRetryConfig() {
+        ClientConnectionStrategyConfig connectionStrategyConfig = fullClientConfig.getConnectionStrategyConfig();
+        ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
+        assertTrue(exponentialRetryConfig.isEnabled());
+        assertTrue(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertEquals(0.5, exponentialRetryConfig.getJitter(), 0);
+        assertEquals(2000, exponentialRetryConfig.getInitialBackoffMillis());
+        assertEquals(60000, exponentialRetryConfig.getMaxBackoffMillis());
+        assertEquals(3, exponentialRetryConfig.getMultiplier(), 0);
+    }
+
+    @Test
+    public void testExponentialConnectionRetryConfig_defaults() {
+        ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
+        ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
+        assertFalse(exponentialRetryConfig.isEnabled());
+        assertFalse(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertEquals(0.2, exponentialRetryConfig.getJitter(), 0);
+        assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
+        assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());
+        assertEquals(2, exponentialRetryConfig.getMultiplier(), 0);
+    }
+
+    @Test
     public void testLeftovers() {
         assertEquals(40, fullClientConfig.getExecutorPoolSize());
 
