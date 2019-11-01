@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+
+    <native-memory allocator-type="POOLED" enabled="true">
+        <size unit="MEGABYTES" value="256"/>
+        <min-block-size>32</min-block-size>
+        <page-size>4194304</page-size>
+        <metadata-space-percentage>12.5</metadata-space-percentage>
+        <persistent-memory-directory>/mnt/optane</persistent-memory-directory>
+    </native-memory>
+
+</hazelcast>

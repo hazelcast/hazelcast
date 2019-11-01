@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
@@ -46,8 +47,15 @@ import static org.mockito.Mockito.when;
 
 public class TestNodeContext implements NodeContext {
 
+    public static NetworkingService mockNs() {
+        NetworkingService ns = mock(NetworkingService.class);
+        when(ns.getEndpointManager(ArgumentMatchers.<EndpointQualifier>any())).thenReturn(mock(EndpointManager.class));
+        when(ns.getAggregateEndpointManager()).thenReturn(mock(AggregateEndpointManager.class));
+        return ns;
+    }
+
     private final Address address;
-    private final NodeExtension nodeExtension = mock(NodeExtension.class);
+    private final NodeExtension nodeExtension;
     private final NetworkingService networkingService;
 
     public TestNodeContext() throws UnknownHostException {
@@ -59,7 +67,12 @@ public class TestNodeContext implements NodeContext {
     }
 
     public TestNodeContext(Address address, NetworkingService networkingService) {
+        this(address, mock(NodeExtension.class), networkingService);
+    }
+
+    public TestNodeContext(Address address, NodeExtension nodeExtension, NetworkingService networkingService) {
         this.address = address;
+        this.nodeExtension = nodeExtension;
         this.networkingService = networkingService;
     }
 
@@ -135,9 +148,4 @@ public class TestNodeContext implements NodeContext {
         }
     }
 
-    private static NetworkingService mockNs() {
-        NetworkingService ns = mock(NetworkingService.class);
-        when(ns.getEndpointManager(ArgumentMatchers.<EndpointQualifier>any())).thenReturn(mock(EndpointManager.class));
-        return ns;
-    }
 }

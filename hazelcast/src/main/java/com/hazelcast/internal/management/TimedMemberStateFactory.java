@@ -114,6 +114,7 @@ public class TimedMemberStateFactory {
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
 
         TimedMemberState timedMemberState = new TimedMemberState();
+        timedMemberState.setNativeMemoryEnabled(instance.node.config.getNativeMemoryConfig().isEnabled());
         createMemberState(memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<>());
