@@ -46,6 +46,9 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
+/**
+ * Only works for smart clients, i.e. doesn't work for unisocket clients.
+ */
 public class ManagementCenterService {
 
     private final HazelcastClientInstanceImpl client;

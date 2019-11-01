@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Takes a thread dump of the member's JVM.
+ * Takes a thread dump of the member it's called on.
  */
-@Generated("8d9e9513bcd00c5d01a038c8751efade")
+@Generated("09950b141bca73381abc911d677d0908")
 public final class MCGetThreadDumpCodec {
     //hex: 0x200700
     public static final int REQUEST_MESSAGE_TYPE = 2098944;

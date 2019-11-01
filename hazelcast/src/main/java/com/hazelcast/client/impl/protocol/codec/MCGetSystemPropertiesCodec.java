@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the system properties of a member.
+ * Gets the system properties of the member it's called on.
  */
-@Generated("d53001a729fbfeaea742457d0740ac18")
+@Generated("a99355d6664908341c2fad990a927668")
 public final class MCGetSystemPropertiesCodec {
     //hex: 0x200A00
     public static final int REQUEST_MESSAGE_TYPE = 2099712;

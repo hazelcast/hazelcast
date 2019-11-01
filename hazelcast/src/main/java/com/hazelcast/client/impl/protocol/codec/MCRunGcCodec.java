@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Requests garbage collection to be performed on the member's JVM.
+ * Requests garbage collection to be performed on the member it's called on.
  */
-@Generated("766a85dd1f36f238a9fe5333e4f2c8d3")
+@Generated("dcddfb4fda0631299739c1e6c758f7eb")
 public final class MCRunGcCodec {
     //hex: 0x200600
     public static final int REQUEST_MESSAGE_TYPE = 2098688;
