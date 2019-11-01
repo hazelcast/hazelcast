@@ -81,7 +81,7 @@ import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTas
 import com.hazelcast.client.impl.protocol.task.management.GetMemberConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetSystemPropertiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetThreadDumpMessageTask;
-import com.hazelcast.client.impl.protocol.task.management.PromoteMemberMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunGcMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ShutdownMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
@@ -169,6 +169,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
@@ -2231,10 +2232,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                         return new ShutdownMemberMessageTask(clientMessage, node, connection);
                     }
                 });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MCPromoteMemberCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec.REQUEST_MESSAGE_TYPE,
                 new MessageTaskFactory() {
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new PromoteMemberMessageTask(clientMessage, node, connection);
+                        return new PromoteLiteMemberMessageTask(clientMessage, node, connection);
                     }
                 });
         factories.put(com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec.REQUEST_MESSAGE_TYPE,

@@ -19,30 +19,25 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.operation.RunGcOperation;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class RunGcMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+public class RunGcMessageTask extends AbstractCallableMessageTask<RequestParameters> {
     public RunGcMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
+    @SuppressFBWarnings("DM_GC")
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(),
-                op, nodeEngine.getThisAddress());
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new RunGcOperation();
+    protected Object call() throws Exception {
+        System.gc();
+        return null;
     }
 
     @Override

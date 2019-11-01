@@ -26,7 +26,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
-public class PromoteMemberOperation extends AbstractLocalOperation {
+public class PromoteLiteMemberOperation extends AbstractLocalOperation {
     @Override
     public void run() throws Exception {
         ILogger logger = getNodeEngine().getLogger(getClass());

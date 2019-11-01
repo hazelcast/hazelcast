@@ -17,21 +17,21 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCPromoteMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCPromoteMemberCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.operation.PromoteMemberOperation;
+import com.hazelcast.internal.management.operation.PromoteLiteMemberOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class PromoteMemberMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class PromoteLiteMemberMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
-    public PromoteMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public PromoteLiteMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -43,17 +43,17 @@ public class PromoteMemberMessageTask extends AbstractInvocationMessageTask<Requ
 
     @Override
     protected Operation prepareOperation() {
-        return new PromoteMemberOperation();
+        return new PromoteLiteMemberOperation();
     }
 
     @Override
     protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCPromoteMemberCodec.decodeRequest(clientMessage);
+        return MCPromoteLiteMemberCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCPromoteMemberCodec.encodeResponse();
+        return MCPromoteLiteMemberCodec.encodeResponse();
     }
 
     @Override

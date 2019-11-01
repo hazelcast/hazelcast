@@ -25,7 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
-import com.hazelcast.client.impl.protocol.codec.MCPromoteMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
@@ -260,12 +260,12 @@ public class ManagementCenterService {
      * @param member {@link Member} to promote
      */
     @Nonnull
-    public CompletableFuture<Void> promoteMember(Member member) {
+    public CompletableFuture<Void> promoteLiteMember(Member member) {
         checkNotNull(member);
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCPromoteMemberCodec.encodeRequest(),
+                MCPromoteLiteMemberCodec.encodeRequest(),
                 null,
                 member.getAddress()
         );

@@ -19,30 +19,26 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.operation.GetMemberConfigOperation;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class GetMemberConfigMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class GetMemberConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+
     public GetMemberConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(),
-                op, nodeEngine.getThisAddress());
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new GetMemberConfigOperation();
+    protected Object call() throws Exception {
+        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true);
+        Config config = nodeEngine.getHazelcastInstance().getConfig();
+        return configXmlGenerator.generate(config);
     }
 
     @Override

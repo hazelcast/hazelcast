@@ -19,32 +19,29 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.operation.GetSystemPropertiesOperation;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 
-public class GetSystemPropertiesMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+import static java.util.stream.Collectors.toList;
+
+public class GetSystemPropertiesMessageTask extends AbstractCallableMessageTask<RequestParameters> {
     public GetSystemPropertiesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(),
-                op, nodeEngine.getThisAddress());
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new GetSystemPropertiesOperation();
+    protected Object call() throws Exception {
+        return System.getProperties().entrySet().stream()
+                .map(e -> new SimpleEntry<>(Objects.toString(e.getKey()), Objects.toString(e.getValue())))
+                .collect(toList());
     }
 
     @Override

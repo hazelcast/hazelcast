@@ -174,7 +174,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     public void promoteMember() throws Exception {
         assertTrue(members[2].isLiteMember());
 
-        resolve(managementCenterService.promoteMember(members[2]));
+        resolve(managementCenterService.promoteLiteMember(members[2]));
 
         assertFalse(hazelcastInstances[2].getCluster().getLocalMember().isLiteMember());
     }
@@ -185,7 +185,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
         assertThrows(IllegalStateException.class, () -> {
             try {
-                resolve(managementCenterService.promoteMember(members[0]));
+                resolve(managementCenterService.promoteLiteMember(members[0]));
             } catch (Exception e) {
                 //noinspection ThrowableNotThrown
                 rethrow(e);

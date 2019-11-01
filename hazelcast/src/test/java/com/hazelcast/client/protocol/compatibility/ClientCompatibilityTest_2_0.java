@@ -6757,18 +6757,18 @@ public class ClientCompatibilityTest_2_0 {
     }
 
     @Test
-    public void test_MCPromoteMemberCodec_encodeRequest() {
+    public void test_MCPromoteLiteMemberCodec_encodeRequest() {
         int fileClientMessageIndex = 797;
-        ClientMessage encoded = MCPromoteMemberCodec.encodeRequest();
+        ClientMessage encoded = MCPromoteLiteMemberCodec.encodeRequest();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_MCPromoteMemberCodec_decodeResponse() {
+    public void test_MCPromoteLiteMemberCodec_decodeResponse() {
         int fileClientMessageIndex = 798;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCPromoteMemberCodec.ResponseParameters parameters = MCPromoteMemberCodec.decodeResponse(fromFile);
+        MCPromoteLiteMemberCodec.ResponseParameters parameters = MCPromoteLiteMemberCodec.decodeResponse(fromFile);
     }
 
     @Test

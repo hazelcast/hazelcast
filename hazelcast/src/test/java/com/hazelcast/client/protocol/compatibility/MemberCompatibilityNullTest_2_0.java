@@ -7203,16 +7203,16 @@ public class MemberCompatibilityNullTest_2_0 {
     }
 
     @Test
-    public void test_MCPromoteMemberCodec_decodeRequest() {
+    public void test_MCPromoteLiteMemberCodec_decodeRequest() {
         int fileClientMessageIndex = 797;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCPromoteMemberCodec.RequestParameters parameters = MCPromoteMemberCodec.decodeRequest(fromFile);
+        MCPromoteLiteMemberCodec.RequestParameters parameters = MCPromoteLiteMemberCodec.decodeRequest(fromFile);
     }
 
     @Test
-    public void test_MCPromoteMemberCodec_encodeResponse() {
+    public void test_MCPromoteLiteMemberCodec_encodeResponse() {
         int fileClientMessageIndex = 798;
-        ClientMessage encoded = MCPromoteMemberCodec.encodeResponse();
+        ClientMessage encoded = MCPromoteLiteMemberCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

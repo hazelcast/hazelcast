@@ -19,30 +19,22 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.operation.ShutdownMemberOperation;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class ShutdownMemberMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class ShutdownMemberMessageTask extends AbstractCallableMessageTask<RequestParameters> {
     public ShutdownMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(),
-                op, nodeEngine.getThisAddress());
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new ShutdownMemberOperation();
+    protected Object call() throws Exception {
+        nodeEngine.getHazelcastInstance().shutdown();
+        return null;
     }
 
     @Override
