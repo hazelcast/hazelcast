@@ -22,21 +22,22 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryPlan;
-import com.hazelcast.sql.impl.calcite.physical.rel.CollocatedAggregatePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.FilterPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.MapScanPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.MaterializedInputPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRelVisitor;
-import com.hazelcast.sql.impl.calcite.physical.rel.ProjectPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedMapScanPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.ReplicatedToDistributedPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.SortPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.exchange.BroadcastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.exchange.SingletonSortMergeExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.exchange.UnicastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.join.HashJoinPhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.join.NestedLoopJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.CollocatedAggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.FilterPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.MapIndexScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.MapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.MaterializedInputPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRelVisitor;
+import com.hazelcast.sql.impl.calcite.rel.physical.ProjectPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.ReplicatedMapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.ReplicatedToDistributedPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.SortPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.exchange.BroadcastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.exchange.SingletonSortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.exchange.UnicastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.join.HashJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.join.NestedLoopJoinPhysicalRel;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
@@ -150,7 +151,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
         MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(
-            rel.getMapName(),
+            rel.getTableUnwrapped().getName(),
             rel.getTable().getRowType().getFieldNames(),
             rel.getProjects(),
             convertFilter(rel.getFilter())
@@ -162,13 +163,19 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     @Override
     public void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel) {
         ReplicatedMapScanPhysicalNode mapScanNode = new ReplicatedMapScanPhysicalNode(
-            rel.getMapName(),
+            rel.getTableUnwrapped().getName(),
             rel.getTable().getRowType().getFieldNames(),
             rel.getProjects(),
             convertFilter(rel.getFilter())
         );
 
         pushUpstream(mapScanNode);
+    }
+
+    @Override
+    public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
+        // TODO
+        throw new UnsupportedOperationException("Implement me");
     }
 
     @Override

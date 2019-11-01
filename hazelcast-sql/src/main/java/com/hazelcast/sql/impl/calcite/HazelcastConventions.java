@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 

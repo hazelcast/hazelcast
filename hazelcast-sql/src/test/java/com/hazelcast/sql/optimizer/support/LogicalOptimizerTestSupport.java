@@ -17,10 +17,10 @@
 package com.hazelcast.sql.optimizer.support;
 
 import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
-import com.hazelcast.sql.impl.calcite.logical.rel.LogicalRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.MapScanLogicalRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.ProjectLogicalRel;
-import com.hazelcast.sql.impl.calcite.logical.rel.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.rel.logical.MapScanLogicalRel;
+import com.hazelcast.sql.impl.calcite.rel.logical.ProjectLogicalRel;
+import com.hazelcast.sql.impl.calcite.rel.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rex.RexNode;

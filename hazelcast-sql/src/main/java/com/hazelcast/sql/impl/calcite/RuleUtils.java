@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTrait;
-import com.hazelcast.sql.impl.calcite.physical.distribution.DistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.distribution.DistributionTraitDef;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;

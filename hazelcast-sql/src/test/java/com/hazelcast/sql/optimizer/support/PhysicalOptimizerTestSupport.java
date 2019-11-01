@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.optimizer.support;
 
-import com.hazelcast.sql.impl.calcite.physical.rel.PhysicalRel;
-import com.hazelcast.sql.impl.calcite.physical.rel.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.RootPhysicalRel;
 import org.apache.calcite.rel.RelNode;
 
 import static junit.framework.TestCase.assertEquals;
