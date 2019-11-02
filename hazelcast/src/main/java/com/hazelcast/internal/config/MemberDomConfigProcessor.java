@@ -205,6 +205,8 @@ import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkIMapEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementsWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -1847,7 +1849,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addMapConfig(mapConfig);
     }
 
-    @SuppressWarnings("deprecation")
     private NearCacheConfig handleNearCacheConfig(Node node) {
         String name = getAttribute(node, "name");
         NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
@@ -2029,7 +2030,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private EvictionConfig getEvictionConfig(Node node, boolean isNearCache, boolean isIMap) {
         EvictionConfig evictionConfig = new EvictionConfig();
         if (isIMap) {
-            // set impa defaults
+            // Set IMap defaults
             evictionConfig
                     .setEvictionPolicy(MapConfig.DEFAULT_EVICTION_POLICY)
                     .setMaxSizePolicy(MapConfig.DEFAULT_MAX_SIZE_POLICY)
@@ -2058,11 +2059,28 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
 
         try {
-            checkEvictionConfig(evictionConfig, isNearCache, isIMap);
+            doEvictionConfigChecks(evictionConfig, isIMap, isNearCache);
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException(e.getMessage());
         }
         return evictionConfig;
+    }
+
+    private static void doEvictionConfigChecks(EvictionConfig evictionConfig,
+                                               boolean isIMap,
+                                               boolean isNearCache) {
+        if (isIMap) {
+            checkIMapEvictionConfig(evictionConfig.getMaxSizePolicy());
+            return;
+        }
+
+        if (isNearCache) {
+            checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
+                    evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
+            return;
+        }
+
+        checkEvictionConfig(evictionConfig);
     }
 
     private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {

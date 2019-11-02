@@ -21,7 +21,6 @@ import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
-import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -35,6 +34,7 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -55,10 +55,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkIMapEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
@@ -454,9 +456,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
 
             try {
-                checkEvictionConfig(maxSizePolicyValue,
-                        evictionPolicyValue, comparatorClassNameValue,
-                        comparatorBean, isNearCache, isIMap);
+                doEvictionConfigChecks(maxSizePolicyValue, evictionPolicyValue,
+                        comparatorClassNameValue, comparatorBeanValue, isIMap, isNearCache);
             } catch (IllegalArgumentException e) {
                 throw new InvalidConfigurationException(e.getMessage());
             }
@@ -643,5 +644,25 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             filterListBuilder.addPropertyValue("prefixes", prefixes);
             return filterListBuilder.getBeanDefinition();
         }
+    }
+
+    private static void doEvictionConfigChecks(MaxSizePolicy maxSizePolicyValue,
+                                               EvictionPolicy evictionPolicyValue,
+                                               String comparatorClassNameValue,
+                                               String comparatorBeanValue,
+                                               boolean isIMap, boolean isNearCache) {
+        if (isIMap) {
+            checkIMapEvictionConfig(maxSizePolicyValue);
+            return;
+        }
+
+        if (isNearCache) {
+            checkNearCacheEvictionConfig(evictionPolicyValue,
+                    comparatorClassNameValue, comparatorBeanValue);
+            return;
+        }
+
+        checkEvictionConfig(evictionPolicyValue,
+                comparatorClassNameValue, comparatorBeanValue);
     }
 }

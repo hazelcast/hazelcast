@@ -147,7 +147,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.metadataPolicy = config.metadataPolicy;
-        this.evictionConfig = config.evictionConfig;
+        this.evictionConfig = new EvictionConfig(config.evictionConfig);
         this.mapEvictionPolicy = config.mapEvictionPolicy;
         this.inMemoryFormat = config.inMemoryFormat;
         this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;

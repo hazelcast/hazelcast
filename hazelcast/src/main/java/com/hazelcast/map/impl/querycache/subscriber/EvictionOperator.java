@@ -81,7 +81,7 @@ class EvictionOperator {
     }
 
     private EvictionPolicyEvaluator<Data, QueryCacheRecord> createEvictionPolicyEvaluator() {
-        checkEvictionConfig(evictionConfig, false, false);
+        checkEvictionConfig(evictionConfig);
         return getEvictionPolicyEvaluator(evictionConfig, classLoader);
     }
 }

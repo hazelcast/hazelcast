@@ -23,12 +23,12 @@ import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -57,6 +57,9 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 
+import static com.hazelcast.config.EvictionPolicy.LFU;
+import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
 import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_SIZE;
 import static com.hazelcast.config.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE;
@@ -67,9 +70,6 @@ import static com.hazelcast.config.MaxSizePolicy.USED_HEAP_PERCENTAGE;
 import static com.hazelcast.config.MaxSizePolicy.USED_HEAP_SIZE;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
-import static com.hazelcast.config.EvictionPolicy.LFU;
-import static com.hazelcast.config.EvictionPolicy.LRU;
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
@@ -89,7 +89,7 @@ import static java.lang.String.format;
  * Validates a Hazelcast configuration in a specific
  * context like OS vs. EE or client vs. member nodes.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class ConfigValidator {
 
     private static final EnumSet<MaxSizePolicy> SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES
@@ -262,7 +262,9 @@ public final class ConfigValidator {
                                             NativeMemoryConfig nativeMemoryConfig, boolean isClient) {
         checkNotNativeWhenOpenSource(nearCacheConfig.getInMemoryFormat());
         checkLocalUpdatePolicy(mapName, nearCacheConfig.getLocalUpdatePolicy());
-        checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true, false);
+        EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
+        checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
+                evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
         checkOnHeapNearCacheMaxSizePolicy(nearCacheConfig);
         checkNearCacheNativeMemoryConfig(nearCacheConfig.getInMemoryFormat(),
                 nativeMemoryConfig, getBuildInfo().isEnterprise());
@@ -294,8 +296,7 @@ public final class ConfigValidator {
      * @param isNearCache    {@code true} if the config is for a Near Cache, {@code false} otherwise
      */
     @SuppressWarnings("ConstantConditions")
-    public static void checkEvictionConfig(EvictionConfig evictionConfig,
-                                           boolean isNearCache, boolean isIMap) {
+    public static void checkEvictionConfig(EvictionConfig evictionConfig) {
         if (evictionConfig == null) {
             throw new IllegalArgumentException("Eviction config cannot be null!");
         }
@@ -303,8 +304,15 @@ public final class ConfigValidator {
         String comparatorClassName = evictionConfig.getComparatorClassName();
         EvictionPolicyComparator comparator = evictionConfig.getComparator();
 
-        checkEvictionConfig(evictionConfig.getMaxSizePolicy(),
-                evictionPolicy, comparatorClassName, comparator, isNearCache, isIMap);
+        checkEvictionConfig(evictionPolicy, comparatorClassName, comparator);
+    }
+
+    public static void checkIMapEvictionConfig(MaxSizePolicy maxSizePolicy) {
+        if (!IMAP_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
+            String msg = format("IMap eviction config doesn't support max size policy `%s`. "
+                    + "Please select a valid one: %s.", maxSizePolicy, IMAP_MAX_SIZE_POLICIES);
+            throw new IllegalArgumentException(msg);
+        }
     }
 
     private static void checkOnHeapNearCacheMaxSizePolicy(NearCacheConfig nearCacheConfig) {
@@ -345,32 +353,16 @@ public final class ConfigValidator {
     /**
      * Checks if parameters for an {@link EvictionConfig} are valid in their context.
      *
-     * @param maxSizePolicy       the max size policy
      * @param evictionPolicy      the {@link EvictionPolicy} for the {@link EvictionConfig}
      * @param comparatorClassName the comparator class name for the {@link EvictionConfig}
      * @param comparator          the comparator implementation for the {@link EvictionConfig}
-     * @param isNearCache         {@code true} if the config is for a Near Cache, {@code false} otherwise
-     * @param isIMap
      */
-    public static void checkEvictionConfig(MaxSizePolicy maxSizePolicy,
-                                           EvictionPolicy evictionPolicy,
+    public static void checkEvictionConfig(EvictionPolicy evictionPolicy,
                                            String comparatorClassName,
-                                           Object comparator,
-                                           boolean isNearCache, boolean isIMap) {
-        if (isIMap) {
-            if (!IMAP_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
-                String msg = format("IMap eviction config doesn't support max size policy `%s`. "
-                        + "Please select a valid one: %s.", maxSizePolicy, IMAP_MAX_SIZE_POLICIES);
-                throw new IllegalArgumentException(msg);
-            }
-            return;
-        }
+                                           Object comparator) {
+        checkComparatorDefinedOnlyOnce(comparatorClassName, comparator);
 
-        if (comparatorClassName != null && comparator != null) {
-            throw new IllegalArgumentException("Only one of the `comparator class name` and `comparator`"
-                    + " can be configured in the eviction configuration!");
-        }
-        if (!isNearCache && !SUPPORTED_EVICTION_POLICIES.contains(evictionPolicy)) {
+        if (!SUPPORTED_EVICTION_POLICIES.contains(evictionPolicy)) {
             if (isNullOrEmpty(comparatorClassName) && comparator == null) {
                 String msg = format("Eviction policy `%s` is not supported. Either you can provide a custom one or "
                         + "can use one of the supported: %s.", evictionPolicy, SUPPORTED_EVICTION_POLICIES);
@@ -378,14 +370,33 @@ public final class ConfigValidator {
                 throw new IllegalArgumentException(msg);
             }
         } else {
-            if (evictionPolicy != EvictionConfig.DEFAULT_EVICTION_POLICY) {
-                if (!isNullOrEmpty(comparatorClassName)) {
-                    throw new IllegalArgumentException(
-                            "Only one of the `eviction policy` and `comparator class name` can be configured!");
-                }
-                if (comparator != null) {
-                    throw new IllegalArgumentException("Only one of the `eviction policy` and `comparator` can be configured!");
-                }
+            checkEvictionPolicyConfiguredOnlyOnce(evictionPolicy, comparatorClassName, comparator);
+        }
+    }
+
+    private static void checkComparatorDefinedOnlyOnce(String comparatorClassName, Object comparator) {
+        if (comparatorClassName != null && comparator != null) {
+            throw new IllegalArgumentException("Only one of the `comparator class name` and `comparator`"
+                    + " can be configured in the eviction configuration!");
+        }
+    }
+
+    public static void checkNearCacheEvictionConfig(EvictionPolicy evictionPolicy,
+                                                    String comparatorClassName,
+                                                    Object comparator) {
+        checkComparatorDefinedOnlyOnce(comparatorClassName, comparator);
+        checkEvictionPolicyConfiguredOnlyOnce(evictionPolicy, comparatorClassName, comparator);
+    }
+
+    protected static void checkEvictionPolicyConfiguredOnlyOnce(EvictionPolicy evictionPolicy,
+                                                                String comparatorClassName, Object comparator) {
+        if (evictionPolicy != EvictionConfig.DEFAULT_EVICTION_POLICY) {
+            if (!isNullOrEmpty(comparatorClassName)) {
+                throw new IllegalArgumentException(
+                        "Only one of the `eviction policy` and `comparator class name` can be configured!");
+            }
+            if (comparator != null) {
+                throw new IllegalArgumentException("Only one of the `eviction policy` and `comparator` can be configured!");
             }
         }
     }

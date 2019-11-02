@@ -108,7 +108,7 @@ public class EvictionConfig implements EvictionConfiguration,
      * The interpretation of the value depends
      * on the configured {@link MaxSizePolicy}.
      * <p>
-     * Accepts any positive number. The default
+     * Accepts any non-negative number. The default
      * value is {@value #DEFAULT_MAX_ENTRY_COUNT}.
      *
      * @param size the size which is used by the {@link MaxSizePolicy}
@@ -117,7 +117,7 @@ public class EvictionConfig implements EvictionConfiguration,
     public EvictionConfig setSize(int size) {
         this.sizeConfigured = true;
         this.size = checkNotNegative(size,
-                "size must be positive number!");
+                "size cannot be a negative number!");
         return this;
     }
 

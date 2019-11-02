@@ -111,7 +111,7 @@ public class MapConfigTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setting_max_size_to_a_negative_value_throws_exception() {
+    public void testSetMaxSizeCannotBeNegative() {
         new MapConfig().getEvictionConfig().setSize(-1);
     }
 
