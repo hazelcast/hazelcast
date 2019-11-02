@@ -42,8 +42,8 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
     /** Target index. */
     private final HazelcastTableIndex index;
 
-    /** Disjunctive set of index conditions. */
-    private final List<IndexFilter> filters;
+    /** Index filter. */
+    private final IndexFilter filter;
 
     /** Original filter. */
     private final RexNode originalFilter;
@@ -54,13 +54,13 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
         RelOptTable table,
         List<Integer> projects,
         HazelcastTableIndex index,
-        List<IndexFilter> filters,
+        IndexFilter filter,
         RexNode originalFilter
     ) {
         super(cluster, traitSet, table, projects);
 
         this.index = index;
-        this.filters = filters;
+        this.filter = filter;
         this.originalFilter = originalFilter;
     }
 
@@ -68,13 +68,13 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
         return index;
     }
 
-    public List<IndexFilter> getFilters() {
-        return filters != null ? filters : Collections.emptyList();
+    public IndexFilter getFilter() {
+        return filter;
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new MapIndexScanPhysicalRel(getCluster(), traitSet, getTable(), projects, index, filters, originalFilter);
+        return new MapIndexScanPhysicalRel(getCluster(), traitSet, getTable(), projects, index, filter, originalFilter);
     }
 
     @Override
@@ -86,7 +86,7 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
            .item("index", index)
-           .itemIf("indexFilters", filters, filters != null);
+           .item("indexFilter", filter.getIndexFilter()).item("remainderFilter", filter.getRemainderFilter());
     }
 
     // TODO: Dedup with logical scan

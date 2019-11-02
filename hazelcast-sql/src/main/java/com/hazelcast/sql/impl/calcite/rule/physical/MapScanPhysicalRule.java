@@ -124,12 +124,26 @@ public final class MapScanPhysicalRule extends RelOptRule {
             return;
         }
 
-        List<RexNode> orExps = new ArrayList<>(1);
+        List<RexNode> disjunctions = new ArrayList<>(1);
 
-        RelOptUtil.decomposeDisjunction(filter, orExps);
+        RelOptUtil.decomposeDisjunction(filter, disjunctions);
+
+        if (disjunctions.size() > 1) {
+            // TODO: Currently we do not support disjunctions. In order to process disjunction with indexes, we must evaluate
+            //  every expression separately, and then *PERFORM DEDUP* on results returned from all disjunctions. This easily
+            //  converts innocent non-blocking scan into blocking operation requiring potentially large amount of RAM.
+            //  In production-ready implementation we must implement two additional optimizations:
+            //  1) Convert OR to UNION - this is widely known database technique which will allow us to employ indexes
+            //  on isolated subexpressions at the cost of additional memory usage.
+            //  2) Analyze OR predicates, and see if they use the same column, and values forms disjunctive ranges. In this
+            //  case we know for sure that they will not return duplicates! E.g. (a < 5 or a > 10) - there will be no
+            //  duplicates. Or (a IN (1, 2, 3)). But in principle we go even further and try to rewrite overlapping ranges
+            //  to non-overlapping ranges. But this will not work for parameters.
+            return;
+        }
 
         for (HazelcastTableIndex index : indexes) {
-            RelNode transform = tryCreateIndexScan(scan, distribution, index, orExps);
+            RelNode transform = tryCreateIndexScan(scan, distribution, index, disjunctions.get(0));
 
             if (transform != null) {
                 transforms.add(transform);
@@ -141,40 +155,8 @@ public final class MapScanPhysicalRule extends RelOptRule {
         MapScanLogicalRel scan,
         DistributionTrait distribution,
         HazelcastTableIndex index,
-        List<RexNode> orExps
+        RexNode exp
     ) {
-        List<IndexFilter> filters = tryCreateIndexFilters(scan, index, orExps);
-
-        if (filters == null) {
-            return null;
-        }
-
-        // TODO: Fix me: collation should be inferred from the index filter!
-        // TODO: This is the prefix of a single disjunctive expression.
-        RelCollation collation = createIndexCollation(scan, index);
-
-        // TODO: We must add collation here. Somehow it breaks the planner.
-        RelTraitSet traitSet = RuleUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
-
-        return new MapIndexScanPhysicalRel(
-            scan.getCluster(),
-            traitSet,
-            scan.getTable(),
-            scan.getProjects(),
-            index,
-            filters,
-            scan.getFilter()
-        );
-    }
-
-    /**
-     * Try create an index filter for the given index description and scan filter.
-     *
-     * @param index Index.
-     * @param orExps Disjunctive expressions.
-     * @return Index filters for every expression in the disjunctive set, or {@code null} if failed to create.
-     */
-    private List<IndexFilter> tryCreateIndexFilters(MapScanLogicalRel scan, HazelcastTableIndex index, List<RexNode> orExps) {
         // Map index fields to scan fields. Since not all index might be involved in
         List<String> indexAttributes = index.getAttributes();
         List<Integer> indexAttributes0 = new ArrayList<>(indexAttributes.size());
@@ -197,26 +179,32 @@ public final class MapScanPhysicalRule extends RelOptRule {
             return null;
         }
 
-        // TODO: Validate that with Sergey.
         // If at least one of the fields of hash index is never referred, then it cannot be used for sure.
         if (index.getType() == IndexType.HASH && indexAttributes0.size() != indexAttributes.size()) {
             return null;
         }
 
-        // Iterate over disjunctive expressions and try to create an index condition.
-        List<IndexFilter> filters = new ArrayList<>(orExps.size());
+        IndexFilter filter = tryCreateIndexFilter(index.getType(), indexAttributes0, exp, scan.getCluster().getRexBuilder());
 
-        for (RexNode exp : orExps) {
-            IndexFilter filter = tryCreateIndexFilter(index.getType(), indexAttributes0, exp, scan.getCluster().getRexBuilder());
-
-            if (filter == null) {
-                return null;
-            }
-
-            filters.add(filter);
+        if (filter == null) {
+            return null;
         }
 
-        return filters;
+        RelCollation collation = createIndexCollation(scan, index);
+
+        // TODO: We must add collation here (see commented line). Somehow it breaks the planner.
+        RelTraitSet traitSet = RuleUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
+        //  RelTraitSet traitSet = RuleUtils.toPhysicalConvention(scan.getTraitSet(), distribution).plus(collation);
+
+        return new MapIndexScanPhysicalRel(
+            scan.getCluster(),
+            traitSet,
+            scan.getTable(),
+            scan.getProjects(),
+            index,
+            filter,
+            scan.getFilter()
+        );
     }
 
     /**

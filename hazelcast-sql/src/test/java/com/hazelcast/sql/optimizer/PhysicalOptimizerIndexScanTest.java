@@ -55,7 +55,7 @@ public class PhysicalOptimizerIndexScanTest extends PhysicalOptimizerTestSupport
 
     @Test
     public void testAnd() {
-        RelNode rootInput = optimizePhysical("SELECT f1, f2 FROM p WHERE 1 < f1 AND f2 < 3 OR f1 > 5");
+        RelNode rootInput = optimizePhysical("SELECT f1, f2 FROM p WHERE 1 < f1 AND f2 < 3 AND f3 = 5");
 
         System.out.println("Done");
     }
