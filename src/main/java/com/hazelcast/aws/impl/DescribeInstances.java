@@ -24,6 +24,7 @@ import com.hazelcast.aws.utility.Environment;
 import com.hazelcast.aws.utility.MetadataUtil;
 import com.hazelcast.aws.utility.RetryUtils;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 
 import java.io.BufferedReader;
@@ -177,7 +178,7 @@ public class DescribeInstances {
      * @param json The JSON representation of the IAM (Task) Role.
      */
     private void parseAndStoreRoleCreds(String json) {
-        JsonObject roleAsJson = JsonObject.readFrom(json);
+        JsonObject roleAsJson = Json.parse(json).asObject();
         awsConfig.setAccessKey(roleAsJson.getString("AccessKeyId", null));
         awsConfig.setSecretKey(roleAsJson.getString("SecretAccessKey", null));
         attributes.put("X-Amz-Security-Token", roleAsJson.getString("Token", null));
