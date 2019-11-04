@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -107,7 +108,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
             cache.removeAsync(key);
         }
 
-        assertHasStatsEventually("/hz/" + CACHE_NAME, "cache.");
+        assertHasStatsEventually(getDistributedObjectName(CACHE_NAME), "cache.");
     }
 
     @Test
