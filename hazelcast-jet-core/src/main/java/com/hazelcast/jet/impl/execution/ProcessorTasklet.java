@@ -218,7 +218,7 @@ public class ProcessorTasklet implements Tasklet {
         assert !processorClosed : "processor already closed";
         try {
             processor.close();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.severe(jobNameAndExecutionId(context.jobConfig().getName(), context.executionId())
                     + " encountered an exception in Processor.close(), ignoring it", e);
         }

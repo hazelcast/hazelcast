@@ -22,13 +22,13 @@ import com.hazelcast.jet.core.AbstractProcessor.FlatMapper;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
@@ -72,8 +72,7 @@ public class AbstractProcessorTest {
         int[] capacities = new int[OUTBOX_BUCKET_COUNT];
         Arrays.fill(capacities, 1);
         outbox = new TestOutbox(capacities);
-        final Processor.Context ctx = mock(Processor.Context.class);
-        Mockito.when(ctx.logger()).thenReturn(mock(ILogger.class));
+        final Processor.Context ctx = new TestProcessorContext();
 
         p = new RegisteringMethodCallsP();
         p.init(outbox, ctx);
@@ -100,7 +99,7 @@ public class AbstractProcessorTest {
     @Test(expected = UnknownHostException.class)
     public void when_customInitThrows_then_initRethrows() throws Exception {
         new MockP().setInitError(new UnknownHostException())
-                .init(mock(Outbox.class), mock(Processor.Context.class));
+                .init(mock(Outbox.class), new TestProcessorContext());
     }
 
     @Test

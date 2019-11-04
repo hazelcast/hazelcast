@@ -177,7 +177,7 @@ public class ExecutionContext {
                 s.close(error);
             } catch (Throwable e) {
                 logger.severe(jobNameAndExecutionId()
-                        + " encountered an exception in ProcessorSupplier.complete(), ignoring it", e);
+                        + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
             }
         }
     }

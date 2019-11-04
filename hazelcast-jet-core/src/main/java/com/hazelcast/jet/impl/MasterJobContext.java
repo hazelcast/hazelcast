@@ -213,7 +213,7 @@ public class MasterJobContext {
                     Util.doWithClassLoader(classLoader, () ->
                             mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, dag, mc.jobId(),
                                     mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId())));
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     throw new UserCausedException(e);
                 }
                 logger.fine("Built execution plans for " + mc.jobIdString());
@@ -284,8 +284,8 @@ public class MasterJobContext {
 
     // Used only in tryStartJob() and its callees, should never escape that method.
     private static class UserCausedException extends Exception {
-        UserCausedException(Exception cause) {
-            super("", cause, false, false);
+        UserCausedException(Throwable cause) {
+            super(cause);
         }
     }
 
@@ -709,9 +709,9 @@ public class MasterJobContext {
             for (Vertex vertex : vertices) {
                 try {
                     vertex.getMetaSupplier().close(failure);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.severe(mc.jobIdString()
-                            + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
+                            + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
                 }
             }
         }

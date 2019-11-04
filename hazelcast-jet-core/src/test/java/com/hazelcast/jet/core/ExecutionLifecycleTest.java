@@ -63,6 +63,7 @@ import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -123,7 +124,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_pmsInitThrows_then_jobFails() {
         // Given
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setInitError(e)));
 
@@ -138,7 +139,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_oneOfTwoJobsFails_then_theOtherContinues() throws Exception {
         // Given
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         DAG dagFaulty = new DAG().vertex(new Vertex("faulty",
                 new MockPMS(() -> new MockPS(() -> new MockP().setCompleteError(e), MEMBER_COUNT))));
         DAG dagGood = new DAG();
@@ -158,7 +159,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_pmsGetThrows_then_jobFails() {
         // Given
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         DAG dag = new DAG().vertex(new Vertex("faulty",
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setGetError(e)));
 
@@ -173,7 +174,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_pmsCloseThrows_then_jobSucceeds() {
         // Given
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setCloseError(e)));
 
@@ -191,7 +192,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psInitThrows_then_jobFails() {
         // Given
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setInitError(e))));
 
@@ -207,7 +208,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psGetThrows_then_jobFails() {
         // Given
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         DAG dag = new DAG().vertex(new Vertex("faulty",
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setGetError(e))));
 
@@ -223,29 +224,30 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psGetOnOtherNodeThrows_then_jobFails() throws Throwable {
         // Given
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         final int localPort = instance().getCluster().getLocalMember().getAddress().getPort();
 
         DAG dag = new DAG().vertex(new Vertex("faulty",
                 ProcessorMetaSupplier.of(
                         (Address address) -> ProcessorSupplier.of(
                                 address.getPort() == localPort ? noopP() : () -> {
-                                    throw e;
+                                    throw sneakyThrow(e);
                                 })
                 )));
 
-        // Then
-        expectedException.expect(e.getClass());
-        expectedException.expectMessage(e.getMessage());
-
         // When
-        executeAndPeel(instance().newJob(dag));
+        try {
+            executeAndPeel(instance().newJob(dag));
+        } catch (Throwable caught) {
+            // Then
+            assertExceptionInCauses(e, caught);
+        }
     }
 
     @Test
     public void when_psCloseThrows_then_jobSucceeds() {
         // Given
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         DAG dag = new DAG().vertex(new Vertex("faulty",
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setCloseError(e))));
 
@@ -264,7 +266,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_processorInitThrows_then_failJob() {
         // Given
         DAG dag = new DAG();
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         dag.newVertex("faulty",
                 new MockPMS(() -> new MockPS(() -> new MockP().setInitError(e), MEMBER_COUNT)));
 
@@ -282,7 +284,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_processorProcessThrows_then_failJob() {
         // Given
         DAG dag = new DAG();
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         Vertex source = dag.newVertex("source", ListSource.supplier(singletonList(1)));
         Vertex process = dag.newVertex("faulty",
                 new MockPMS(() -> new MockPS(() -> new MockP().setProcessError(e), MEMBER_COUNT)));
@@ -302,7 +304,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_processorCooperativeCompleteThrows_then_failJob() {
         // Given
         DAG dag = new DAG();
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         dag.newVertex("faulty",
                 new MockPMS(() -> new MockPS(() -> new MockP().setCompleteError(e), MEMBER_COUNT)));
 
@@ -320,7 +322,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_processorNonCooperativeCompleteThrows_then_failJob() {
         // Given
         DAG dag = new DAG();
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         dag.newVertex("faulty", new MockPMS(() -> new MockPS(() ->
                 new MockP().nonCooperative().setCompleteError(e), MEMBER_COUNT)));
 
@@ -338,7 +340,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_processorCloseThrows_then_jobSucceeds() {
         // Given
         DAG dag = new DAG();
-        RuntimeException e = new RuntimeException("mock error");
+        Throwable e = new AssertionError("mock error");
         dag.newVertex("faulty",
                 new MockPMS(() -> new MockPS(() -> new MockP().setCloseError(e), MEMBER_COUNT)));
 
@@ -354,7 +356,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_executionCancelled_then_jobCompletedWithCancellationException() throws Throwable {
+    public void when_executionCancelled_then_jobCompletedWithCancellationException() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(() -> new MockPS(NoOutputSourceP::new, MEMBER_COUNT))));
@@ -484,7 +486,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         Vertex noop = dag.newVertex("noop", (SupplierEx<Processor>) NoOutputSourceP::new)
                 .localParallelism(1);
-        Vertex faulty = dag.newVertex("faulty", () -> new MockP().setCompleteError(new RuntimeException("error")))
+        Vertex faulty = dag.newVertex("faulty", () -> new MockP().setCompleteError(new AssertionError("error")))
                 .localParallelism(1);
         dag.edge(between(noop, faulty));
 
@@ -542,7 +544,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
     }
 
-    private Job runJobExpectFailure(@Nonnull DAG dag, @Nonnull RuntimeException expectedException) {
+    private Job runJobExpectFailure(@Nonnull DAG dag, @Nonnull Throwable expectedException) {
         Job job = null;
         try {
             job = instance().newJob(dag);
@@ -561,7 +563,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertNull("receivedCloseError", MockPMS.receivedCloseError.get());
     }
 
-    private void assertPmsClosedWithError(RuntimeException e) {
+    private void assertPmsClosedWithError(Throwable e) {
         assertTrue("initCalled", MockPMS.initCalled.get());
         assertTrue("closeCalled", MockPMS.closeCalled.get());
         assertExceptionInCauses(e, MockPMS.receivedCloseError.get());

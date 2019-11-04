@@ -40,6 +40,7 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -133,26 +134,26 @@ public final class TestProcessors {
         static AtomicBoolean closeCalled = new AtomicBoolean();
         static AtomicReference<Throwable> receivedCloseError = new AtomicReference<>();
 
-        private RuntimeException initError;
-        private RuntimeException getError;
-        private RuntimeException closeError;
+        private Throwable initError;
+        private Throwable getError;
+        private Throwable closeError;
         private final SupplierEx<ProcessorSupplier> supplierFn;
 
         public MockPMS(SupplierEx<ProcessorSupplier> supplierFn) {
             this.supplierFn = supplierFn;
         }
 
-        public MockPMS setInitError(RuntimeException initError) {
+        public MockPMS setInitError(Throwable initError) {
             this.initError = initError;
             return this;
         }
 
-        public MockPMS setGetError(RuntimeException getError) {
+        public MockPMS setGetError(Throwable getError) {
             this.getError = getError;
             return this;
         }
 
-        public MockPMS setCloseError(RuntimeException closeError) {
+        public MockPMS setCloseError(Throwable closeError) {
             this.closeError = closeError;
             return this;
         }
@@ -163,14 +164,14 @@ public final class TestProcessors {
                     initCalled.compareAndSet(false, true)
             );
             if (initError != null) {
-                throw initError;
+                throw sneakyThrow(initError);
             }
         }
 
         @Nonnull @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (getError != null) {
-                throw getError;
+                throw sneakyThrow(getError);
             }
             return a -> supplierFn.get();
         }
@@ -188,7 +189,7 @@ public final class TestProcessors {
             );
 
             if (closeError != null) {
-                throw closeError;
+                throw sneakyThrow(closeError);
             }
         }
     }
@@ -199,9 +200,9 @@ public final class TestProcessors {
         static AtomicInteger closeCount = new AtomicInteger();
         static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
 
-        private RuntimeException initError;
-        private RuntimeException getError;
-        private RuntimeException closeError;
+        private Throwable initError;
+        private Throwable getError;
+        private Throwable closeError;
 
         private final SupplierEx<Processor> supplier;
         private final int nodeCount;
@@ -213,17 +214,17 @@ public final class TestProcessors {
             this.nodeCount = nodeCount;
         }
 
-        public MockPS setInitError(RuntimeException initError) {
+        public MockPS setInitError(Throwable initError) {
             this.initError = initError;
             return this;
         }
 
-        public MockPS setGetError(RuntimeException getError) {
+        public MockPS setGetError(Throwable getError) {
             this.getError = getError;
             return this;
         }
 
-        public MockPS setCloseError(RuntimeException closeError) {
+        public MockPS setCloseError(Throwable closeError) {
             this.closeError = closeError;
             return this;
         }
@@ -234,14 +235,14 @@ public final class TestProcessors {
             initCount.incrementAndGet();
 
             if (initError != null) {
-                throw initError;
+                throw sneakyThrow(initError);
             }
         }
 
         @Nonnull @Override
         public List<Processor> get(int count) {
             if (getError != null) {
-                throw getError;
+                throw sneakyThrow(getError);
             }
             return Stream.generate(supplier).limit(count).collect(toList());
         }
@@ -260,7 +261,7 @@ public final class TestProcessors {
                     + initCount.get() + " times!", closeCount.get() <= initCount.get());
 
             if (closeError != null) {
-                throw closeError;
+                throw sneakyThrow(closeError);
             }
         }
     }
@@ -270,10 +271,10 @@ public final class TestProcessors {
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger closeCount = new AtomicInteger();
 
-        private Exception initError;
-        private Exception processError;
-        private RuntimeException completeError;
-        private Exception closeError;
+        private Throwable initError;
+        private Throwable processError;
+        private Throwable completeError;
+        private Throwable closeError;
         private boolean isCooperative;
 
         @Override
@@ -281,22 +282,22 @@ public final class TestProcessors {
             return isCooperative;
         }
 
-        public MockP setInitError(Exception initError) {
+        public MockP setInitError(Throwable initError) {
             this.initError = initError;
             return this;
         }
 
-        public MockP setProcessError(Exception processError) {
+        public MockP setProcessError(Throwable processError) {
             this.processError = processError;
             return this;
         }
 
-        public MockP setCompleteError(RuntimeException completeError) {
+        public MockP setCompleteError(Throwable completeError) {
             this.completeError = completeError;
             return this;
         }
 
-        public MockP setCloseError(Exception closeError) {
+        public MockP setCloseError(Throwable closeError) {
             this.closeError = closeError;
             return this;
         }
@@ -307,17 +308,17 @@ public final class TestProcessors {
         }
 
         @Override
-        protected void init(@Nonnull Context context) throws Exception {
+        protected void init(@Nonnull Context context) {
             initCount.incrementAndGet();
             if (initError != null) {
-                throw initError;
+                throw sneakyThrow(initError);
             }
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             if (processError != null) {
-                throw processError;
+                throw sneakyThrow(processError);
             }
             return tryEmit(item);
         }
@@ -325,16 +326,16 @@ public final class TestProcessors {
         @Override
         public boolean complete() {
             if (completeError != null) {
-                throw completeError;
+                throw sneakyThrow(completeError);
             }
             return true;
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
             closeCount.incrementAndGet();
             if (closeError != null) {
-                throw closeError;
+                throw sneakyThrow(closeError);
             }
         }
     }
