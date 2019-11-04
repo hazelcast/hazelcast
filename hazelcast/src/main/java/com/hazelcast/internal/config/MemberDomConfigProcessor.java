@@ -204,8 +204,8 @@ import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMapMaxSizePolicyConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementsWithName;
@@ -2070,7 +2070,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                                                boolean isIMap,
                                                boolean isNearCache) {
         if (isIMap) {
-            checkMapMaxSizePolicyConfig(evictionConfig.getMaxSizePolicy());
+            checkMapEvictionConfig(evictionConfig);
             return;
         }
 
@@ -2080,7 +2080,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             return;
         }
 
-        checkEvictionConfig(evictionConfig);
+        checkCacheEvictionConfig(evictionConfig);
     }
 
     private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {

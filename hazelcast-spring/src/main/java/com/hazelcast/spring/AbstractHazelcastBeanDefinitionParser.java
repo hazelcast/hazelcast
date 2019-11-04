@@ -55,8 +55,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMapMaxSizePolicyConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -652,7 +653,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                                                String comparatorBeanValue,
                                                boolean isIMap, boolean isNearCache) {
         if (isIMap) {
-            checkMapMaxSizePolicyConfig(maxSizePolicyValue);
+            checkMapEvictionConfig(maxSizePolicyValue, evictionPolicyValue,
+                    comparatorClassNameValue, comparatorBeanValue);
             return;
         }
 
@@ -663,6 +665,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         checkEvictionConfig(evictionPolicyValue,
-                comparatorClassNameValue, comparatorBeanValue);
+                comparatorClassNameValue, comparatorBeanValue,
+                COMMONLY_SUPPORTED_EVICTION_POLICIES);
     }
 }

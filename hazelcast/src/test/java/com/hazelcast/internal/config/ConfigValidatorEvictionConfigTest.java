@@ -30,9 +30,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheMaxSizePolicy;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMapMaxSizePolicyConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -41,7 +41,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
 
     @Test
     public void checkEvictionConfig_forCache() {
-        checkEvictionConfig(getEvictionConfig(false, false));
+        checkCacheEvictionConfig(getEvictionConfig(false, false));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -57,7 +57,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         EvictionConfig evictionConfig = getEvictionConfig(false, false);
         evictionConfig.setMaxSizePolicy(MaxSizePolicy.PER_PARTITION);
 
-        checkMapMaxSizePolicyConfig(evictionConfig.getMaxSizePolicy());
+        ConfigValidator.checkMapEvictionConfig(evictionConfig);
     }
 
     @Test
@@ -210,7 +210,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void checkEvictionConfig_whenNoneOfTheComparatorAndComparatorClassNameAreSetIfEvictionPolicyIsNull() {
-        checkEvictionConfig(null, null, null);
+        ConfigValidator.checkEvictionConfig(null, null, null, COMMONLY_SUPPORTED_EVICTION_POLICIES);
     }
 
     @Test
@@ -265,5 +265,9 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         }
         evictionConfig.setEvictionPolicy(evictionPolicy);
         return evictionConfig;
+    }
+
+    private static void checkEvictionConfig(EvictionConfig evictionConfig) {
+        ConfigValidator.checkEvictionConfig(evictionConfig, COMMONLY_SUPPORTED_EVICTION_POLICIES);
     }
 }

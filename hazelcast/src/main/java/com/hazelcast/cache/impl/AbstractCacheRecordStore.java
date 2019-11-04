@@ -92,7 +92,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.cache.impl.record.CacheRecord.TIME_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -331,7 +331,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
-        checkEvictionConfig(evictionConfig);
+        checkCacheEvictionConfig(evictionConfig);
 
         Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false);
         try {

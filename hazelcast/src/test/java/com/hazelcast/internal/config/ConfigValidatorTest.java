@@ -76,12 +76,12 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(MAP_NAME, getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(MAP_NAME, getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     /**
@@ -89,7 +89,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = IllegalArgumentException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(MAP_NAME, getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
