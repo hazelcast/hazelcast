@@ -43,7 +43,7 @@ public final class MapUtil {
      */
     public static <K, V> Map<K, V> createHashMap(int expectedMapSize) {
         final int initialCapacity = calculateInitialCapacity(expectedMapSize);
-        return new HashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
+        return new HashMap<>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
     }
 
     /**
@@ -52,7 +52,7 @@ public final class MapUtil {
      */
     public static <K, V> Map<K, V> createLinkedHashMap(int expectedMapSize) {
         final int initialCapacity = calculateInitialCapacity(expectedMapSize);
-        return new LinkedHashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
+        return new LinkedHashMap<>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
     }
 
     /**
@@ -61,7 +61,7 @@ public final class MapUtil {
      */
     public static <K, V> ConcurrentMap<K, V> createConcurrentHashMap(int expectedMapSize) {
         //concurrent hash map will size itself to accomodate this many elements
-        return new ConcurrentHashMap<K, V>(expectedMapSize);
+        return new ConcurrentHashMap<>(expectedMapSize);
     }
 
     /**
@@ -70,7 +70,7 @@ public final class MapUtil {
      */
     public static <V> Int2ObjectHashMap<V> createInt2ObjectHashMap(int expectedMapSize) {
         final int initialCapacity = (int) (expectedMapSize / Int2ObjectHashMap.DEFAULT_LOAD_FACTOR) + 1;
-        return new Int2ObjectHashMap<V>(initialCapacity, Int2ObjectHashMap.DEFAULT_LOAD_FACTOR);
+        return new Int2ObjectHashMap<>(initialCapacity, Int2ObjectHashMap.DEFAULT_LOAD_FACTOR);
     }
 
     /**
