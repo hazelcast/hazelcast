@@ -137,16 +137,15 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
 
     @Test
     public void testImportResourceWithNestedImportsAndProperties() throws Exception {
+        ConfigReplacerBuilder testReplacer = new ConfigReplacerBuilder()
+            .withClass(TestReplacer.class)
+            .addProperty("p1", "${p1}")
+            .addProperty("p2", "")
+            .addProperty("p3", "another property")
+            .addProperty("p4", "&lt;test/&gt;");
         String configReplacer = HAZELCAST_START_TAG
             + "    <config-replacers fail-if-value-missing='false'>\n"
-            + "        <replacer class-name='" + TestReplacer.class.getName() + "'>\n"
-            + "            <properties>\n"
-            + "                <property name='p1'>${p1}</property>\n"
-            + "                <property name='p2'/>\n"
-            + "                <property name='p3'>another property</property>\n"
-            + "                <property name='p4'>&lt;test/&gt;</property>\n"
-            + "            </properties>\n"
-            + "        </replacer>\n"
+            + testReplacer.build()
             + "    </config-replacers>\n"
             + HAZELCAST_END_TAG;
         String configReplacerLocation = createFileWithContent("config-replacer", "xml", configReplacer);
@@ -336,7 +335,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 .withTimeToLive(mapTimeToLiveSeconds)
                 .withStore(new MapXmlStoreConfigBuilder()
                                    .enabled()
-                                   .withInitialMode("LAZY")
+                                   .withInitialMode(MapStoreConfig.InitialLoadMode.LAZY)
                                    .withClassName("com.hazelcast.examples.MyMapStore")
                                    .withWriteDelay(mapStoreWriteDelaySeconds)
                                    .withWriteBatchSize(mapStoreWriteBatchSize));
@@ -371,7 +370,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 .withBackupCount(mapBackupCount)
                 .withStore(new MapXmlStoreConfigBuilder()
                                    .enabled()
-                                   .withInitialMode("LAZY")
+                                   .withInitialMode(MapStoreConfig.InitialLoadMode.LAZY)
                                    .withClassName("com.hazelcast.examples.MyMapStore")
                                    .withWriteDelay(mapStoreWriteDelaySeconds)
                                    .withWriteBatchSize(mapStoreWriteBatchSize));
@@ -414,7 +413,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 .withBackupCount(6)
                 .withTimeToLive(10)
                 .withStore(new MapXmlStoreConfigBuilder().enabled()
-                                   .withInitialMode("LAZY")
+                                   .withInitialMode(MapStoreConfig.InitialLoadMode.LAZY)
                                    .withClassName("com.hazelcast.examples.MyMapStore")
                                    .withWriteDelay(10)
                                    .withWriteBatchSize(100));
@@ -477,6 +476,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 .addProperty("secretKeyAlgorithm", "DES");
         ConfigReplacerBuilder identityReplacer = new ConfigReplacerBuilder()
                 .withClass(IdentityReplacer.class);
+
         String xml = HAZELCAST_START_TAG
                 + "    <config-replacers>\n"
                 + encryptionReplacer.build()
@@ -515,16 +515,15 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Override
     @Test
     public void testReplacerProperties() {
+        ConfigReplacerBuilder testReplacer = new ConfigReplacerBuilder()
+            .withClass(TestReplacer.class)
+            .addProperty("p1", "a property")
+            .addProperty("p2", "")
+            .addProperty("p3", "another property")
+            .addProperty("p4", "&lt;test/&gt;");
         String xml = HAZELCAST_START_TAG
                 + "    <config-replacers fail-if-value-missing='false'>\n"
-                + "        <replacer class-name='" + TestReplacer.class.getName() + "'>\n"
-                + "            <properties>\n"
-                + "                <property name='p1'>a property</property>\n"
-                + "                <property name='p2'/>\n"
-                + "                <property name='p3'>another property</property>\n"
-                + "                <property name='p4'>&lt;test/&gt;</property>\n"
-                + "            </properties>\n"
-                + "        </replacer>\n"
+                + testReplacer.build()
                 + "    </config-replacers>\n"
                 + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
                 + HAZELCAST_END_TAG;

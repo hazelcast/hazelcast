@@ -16,9 +16,11 @@
 
 package com.hazelcast.config.test.builders;
 
+import com.hazelcast.config.MapStoreConfig;
+
 public class MapXmlStoreConfigBuilder {
     private boolean enabled;
-    private String initialMode;
+    private MapStoreConfig.InitialLoadMode initialMode;
     private String className;
     private int writeDelaySeconds;
     private int writeBatchSize;
@@ -33,7 +35,7 @@ public class MapXmlStoreConfigBuilder {
         return this;
     }
 
-    public MapXmlStoreConfigBuilder withInitialMode(String initialMode) {
+    public MapXmlStoreConfigBuilder withInitialMode(MapStoreConfig.InitialLoadMode initialMode) {
         this.initialMode = initialMode;
         return this;
     }

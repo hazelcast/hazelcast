@@ -97,7 +97,7 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
 
     protected void process(Node root) throws Exception {
         replaceImports(root);
-        traverseChildrenAndReplaceVariables(root);
+        replaceVariables(root);
     }
 
     private void replaceVariables(Node root) throws Exception {
