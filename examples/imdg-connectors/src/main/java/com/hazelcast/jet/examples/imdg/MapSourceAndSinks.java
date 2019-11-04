@@ -65,17 +65,22 @@ public class MapSourceAndSinks {
     }
 
     /**
-     * This will take the contents of source map, converts values to the string and
-     * suffixes the value with {@code odd} if the key is odd and with {@code event} if the key is even.
+     * This will take the contents of a map and suffixes the value with
+     * {@code odd} if the key is odd and with {@code even} if the key is even.
      */
-    private static Pipeline mapWithUpdating(String sourceMapName, String sinkMapName) {
+    private static Pipeline mapWithUpdating(String mapName) {
         Pipeline pipeline = Pipeline.create();
 
-        pipeline.drawFrom(Sources.<Integer, Integer>map(sourceMapName))
-                .map(e -> entry(e.getKey(), String.valueOf(e.getValue())))
+        // Note that we use the same map for source and sink. The map reader
+        // requires the map to not change while reading or it might produce
+        // incorrect results. But our job does not add or remove any keys in
+        // the map, it only changes the values, so we can use it. Note that
+        // you can also use IMap.executeOnEntries() for this simple case,
+        // but Jet pipeline has more features.
+        pipeline.drawFrom(Sources.<Integer, String>map(mapName))
                 .drainTo(
                         Sinks.mapWithUpdating(
-                                sinkMapName,
+                                mapName,
                                 (oldValue, item) ->
                                         item.getKey() % 2 == 0
                                                 ? oldValue + "-even"
@@ -134,7 +139,7 @@ public class MapSourceAndSinks {
         try {
 
             System.out.println("----------Map Source and Sink ----------------");
-            // insert sequence 1..10 into map as (1,1) , (2,2) .... ( 9,9)
+            // insert sequence 0..9 into map as (0,0) , (1,1) .... ( 9,9)
             prepareSampleInput(jet, MAP_SOURCE);
             // execute the pipeline
             jet.newJob(mapSourceAndSink(MAP_SOURCE, MAP_SINK)).join();
@@ -144,7 +149,7 @@ public class MapSourceAndSinks {
 
 
             System.out.println("--------------Map with Merging----------------");
-            // insert sequence 1..10 into map as (1,1) , (2,2) .... ( 9,9)
+            // insert sequence 0..9 into map as (0,0) , (1,1) .... ( 9,9)
             prepareSampleInput(jet, MAP_WITH_MERGING_SOURCE);
             // execute the pipeline
             jet.newJob(mapWithMerging(MAP_WITH_MERGING_SOURCE, MAP_WITH_MERGING_SINK)).join();
@@ -154,17 +159,17 @@ public class MapSourceAndSinks {
 
 
             System.out.println("------------Map with Updating ----------------");
-            // insert sequence 1..10 into map as (1,1) , (2,2) .... ( 9,9)
-            prepareSampleInput(jet, MAP_WITH_UPDATING_SOURCE_SINK);
+            // insert sequence 0..9 into map as (0,"0") , (1,"1") .... ( 9,"9")
+            prepareMapWithUpdatingSampleInput(jet, MAP_WITH_UPDATING_SOURCE_SINK);
             // execute the pipeline
-            jet.newJob(mapWithUpdating(MAP_WITH_UPDATING_SOURCE_SINK, MAP_WITH_UPDATING_SOURCE_SINK)).join();
+            jet.newJob(mapWithUpdating(MAP_WITH_UPDATING_SOURCE_SINK)).join();
             // print contents of the sink map
             dumpMap(jet, MAP_WITH_UPDATING_SOURCE_SINK);
             System.out.println("----------------------------------------------");
 
 
             System.out.println("----------Map with EntryProcessor ------------");
-            // insert sequence 1..10 into map as (1,1) , (2,2) .... ( 9,9)
+            // insert sequence 0..9 into map as (0,0) , (1,1) .... ( 9,9)
             prepareSampleInput(jet, MAP_WITH_ENTRYPROCESSOR_SOURCE_SINK);
             // execute the pipeline
             jet.newJob(mapWithEntryProcessor(MAP_WITH_ENTRYPROCESSOR_SOURCE_SINK,
@@ -191,12 +196,24 @@ public class MapSourceAndSinks {
     }
 
     /**
-     * Inserts the sequence 1..ITEM_COUNT into {@code sourceMapName} as (1,1) , (2,2) ....( ITEM_COUNT-1, ITEM_COUNT-1)
+     * Inserts the sequence 0..ITEM_COUNT into {@code sourceMapName} as
+     * (0,0) , (1,1) ....( ITEM_COUNT-1, ITEM_COUNT-1)
      */
     private static void prepareSampleInput(JetInstance instance, String sourceMapName) {
         IMap<Integer, Integer> sourceMap = instance.getMap(sourceMapName);
         for (int i = 0; i < ITEM_COUNT; i++) {
             sourceMap.put(i, i);
+        }
+    }
+
+    /**
+     * Inserts the sequence 0..ITEM_COUNT into {@code sourceMapName} as
+     * (0,"0") , (1,"1") ....(ITEM_COUNT-1, "ITEM_COUNT-1")
+     */
+    private static void prepareMapWithUpdatingSampleInput(JetInstance instance, String sourceMapName) {
+        IMap<Integer, String> sourceMap = instance.getMap(sourceMapName);
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            sourceMap.put(i, Integer.toString(i));
         }
     }
 
