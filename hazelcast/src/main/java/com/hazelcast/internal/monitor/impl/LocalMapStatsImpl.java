@@ -146,6 +146,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe
     private volatile long indexedQueryCount;
 
+    private boolean nativeMemoryUsed;
+
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
@@ -372,6 +374,15 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Override
     public long getIndexedQueryCount() {
         return indexedQueryCount;
+    }
+
+    @Override
+    public boolean isNativeMemoryUsed() {
+        return nativeMemoryUsed;
+    }
+
+    public void setNativeMemoryUsed(boolean nativeMemoryUsed) {
+        this.nativeMemoryUsed = nativeMemoryUsed;
     }
 
     /**

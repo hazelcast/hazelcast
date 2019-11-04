@@ -10,6 +10,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
 import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Test;
 
@@ -22,22 +23,20 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TimedMemberStateFactoryTest {
+public class TimedMemberStateFactoryTest
+        extends HazelcastTestSupport {
 
     HazelcastInstance instance;
 
     private TimedMemberStateFactory createTimedMemberStateFactory(String xmlConfigRelativeFileName) {
-        try {
-            Config config = new ClasspathXmlConfig("com/hazelcast/internal/management/" + xmlConfigRelativeFileName);
-            NodeExtension nodeExtension = mock(NodeExtension.class);
-            when(nodeExtension.getHotRestartService()).thenReturn(new NoOpHotRestartService());
-            when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
-            NodeContext context = new TestNodeContext(new Address("127.0.0.1", 5000), nodeExtension, mockNs());
-            instance = HazelcastInstanceFactory.newHazelcastInstance(config, "name", context);
-            return new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        Config config = new ClasspathXmlConfig("com/hazelcast/internal/management/" + xmlConfigRelativeFileName);
+        //            NodeExtension nodeExtension = mock(NodeExtension.class);
+        //            when(nodeExtension.getHotRestartService()).thenReturn(new NoOpHotRestartService());
+        //            when(nodeExtension.getInternalHotRestartService()).thenReturn(new NoopInternalHotRestartService());
+        //            NodeContext context = new TestNodeContext(new Address("127.0.0.1", 5000), nodeExtension, mockNs());
+        //            instance = HazelcastInstanceFactory.newHazelcastInstance(config, "name", context);
+        instance = createHazelcastInstance(config);
+        return new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
     }
 
     @After
@@ -61,5 +60,16 @@ public class TimedMemberStateFactoryTest {
         TimedMemberState actual = memberStateFactory.createTimedMemberState();
 
         assertFalse(actual.isNativeMemoryEnabled());
+    }
+
+    @Test
+    public void nativeMemoryEnabledForMap_withPositiveSize() {
+
+        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-map.xml");
+        TimedMemberState actual = memberStateFactory.createTimedMemberState();
+
+        instance.getMap("myMap");
+
+        assertTrue(actual.getMemberState().getLocalMapStats("myMap").isNativeMemoryUsed());
     }
 }

@@ -202,6 +202,11 @@ public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats {
     }
 
     @Override
+    public boolean isNativeMemoryUsed() {
+        return false;
+    }
+
+    @Override
     public long getSetOperationCount() {
         throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
     }

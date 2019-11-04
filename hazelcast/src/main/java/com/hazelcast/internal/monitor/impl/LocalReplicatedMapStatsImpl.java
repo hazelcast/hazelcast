@@ -104,6 +104,8 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     @Probe
     private volatile long ownedEntryMemoryCost;
 
+    private boolean nativeMemoryUsed;
+
     public LocalReplicatedMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
@@ -201,6 +203,15 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     // TODO: unused
     public void setDirtyEntryCount(long dirtyEntryCount) {
+    }
+
+    @Override
+    public boolean isNativeMemoryUsed() {
+        return nativeMemoryUsed;
+    }
+
+    public void setNativeMemoryUsed(boolean nativeMemoryUsed) {
+        this.nativeMemoryUsed = nativeMemoryUsed;
     }
 
     @Probe

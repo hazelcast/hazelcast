@@ -274,4 +274,6 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     Map<String, LocalIndexStats> getIndexStats();
 
+    boolean isNativeMemoryUsed();
+
 }
