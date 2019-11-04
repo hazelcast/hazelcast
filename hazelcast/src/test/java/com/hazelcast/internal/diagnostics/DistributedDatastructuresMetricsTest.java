@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -56,6 +58,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     private static final int EVENT_COUNTER = 1000;
 
     private static final String MAP_NAME = "myMap";
+    private static final String CACHE_NAME = "myCache";
     private static final String EXECUTOR_NAME = "myExecutor";
     private static final String QUEUE_NAME = "myQueue";
     private static final String REPLICATED_MAP_NAME = "myReplicatedMap";
@@ -70,6 +73,9 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         config.getMetricsConfig()
               .setMetricsForDataStructuresEnabled(true)
               .setMinimumLevel(ProbeLevel.INFO);
+        config.addCacheConfig(new CacheSimpleConfig()
+                .setName(CACHE_NAME)
+                .setStatisticsEnabled(true));
 
         hz = createHazelcastInstance(config);
 
@@ -88,6 +94,20 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
 
         assertHasStatsEventually(MAP_NAME, "map.");
+    }
+
+    @Test
+    public void testCache() {
+        final ICache<Object, Object> cache = hz.getCacheManager().getCache(CACHE_NAME);
+
+        Random random = new Random();
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            int key = random.nextInt(Integer.MAX_VALUE);
+            cache.putAsync(key, 23);
+            cache.removeAsync(key);
+        }
+
+        assertHasStatsEventually("/hz/" + CACHE_NAME, "cache.");
     }
 
     @Test
