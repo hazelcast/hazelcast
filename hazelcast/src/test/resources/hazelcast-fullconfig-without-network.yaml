@@ -490,7 +490,7 @@ hazelcast:
       eviction:
         comparator-class-name: DummyClass
         eviction-policy: LRU
-        max-size-policy: FREE_NATIVE_MEMORY_PERCENTAGE
+        max-size-policy: ENTRY_COUNT
         size: 50
       wan-replication-ref:
         name: my-wan-cluster

@@ -60,6 +60,7 @@ import java.util.Map;
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
 import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_SIZE;
 import static com.hazelcast.config.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE;
@@ -76,7 +77,7 @@ import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static com.hazelcast.instance.ProtocolType.REST;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicy;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergeTypeProviderHasRequiredTypes;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.spi.properties.GroupProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
@@ -95,13 +96,20 @@ public final class ConfigValidator {
     private static final EnumSet<MaxSizePolicy> SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES
             = EnumSet.of(MaxSizePolicy.ENTRY_COUNT);
 
-    private static final EnumSet<MaxSizePolicy> SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+    private static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
             = EnumSet.of(PER_NODE, PER_PARTITION, USED_NATIVE_MEMORY_PERCENTAGE,
             FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
 
-    private static final EnumSet<MaxSizePolicy> IMAP_MAX_SIZE_POLICIES
+    private static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_ALL_MAX_SIZE_POLICIES
             = EnumSet.of(PER_NODE, PER_PARTITION, USED_HEAP_SIZE, USED_HEAP_PERCENTAGE,
             FREE_HEAP_SIZE, FREE_HEAP_PERCENTAGE, USED_NATIVE_MEMORY_PERCENTAGE,
+            FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
+
+    private static final EnumSet<MaxSizePolicy> CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
+            = EnumSet.of(ENTRY_COUNT);
+
+    private static final EnumSet<MaxSizePolicy> CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+            = EnumSet.of(USED_NATIVE_MEMORY_PERCENTAGE,
             FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
 
     private static final EnumSet<EvictionPolicy> SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
@@ -116,16 +124,20 @@ public final class ConfigValidator {
      *
      * @param mapConfig the {@link MapConfig}
      */
-    public static void checkMapConfig(MapConfig mapConfig, NativeMemoryConfig nativeMemoryConfig,
+    public static void checkMapConfig(String mapName,
+                                      MapConfig mapConfig,
+                                      NativeMemoryConfig nativeMemoryConfig,
                                       SplitBrainMergePolicyProvider mergePolicyProvider,
                                       HazelcastProperties properties) {
+
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
 
-        boolean enterprise = getBuildInfo().isEnterprise();
-        if (enterprise) {
-            checkNativeConfig(mapConfig, nativeMemoryConfig);
+        if (getBuildInfo().isEnterprise()) {
+            checkMapNativeConfig(mapConfig, nativeMemoryConfig);
             checkHotRestartSpecificConfig(mapConfig, properties);
         }
+
+        checkMapMaxSizePolicyConfig(mapConfig.getEvictionConfig().getMaxSizePolicy());
         checkMapMergePolicy(mapConfig, mergePolicyProvider);
     }
 
@@ -135,21 +147,22 @@ public final class ConfigValidator {
      * @param mapConfig          the mapConfig
      * @param nativeMemoryConfig the nativeMemoryConfig
      */
-    private static void checkNativeConfig(MapConfig mapConfig, NativeMemoryConfig nativeMemoryConfig) {
+    private static void checkMapNativeConfig(MapConfig mapConfig, NativeMemoryConfig nativeMemoryConfig) {
         if (NATIVE != mapConfig.getInMemoryFormat()) {
             return;
         }
         checkTrue(nativeMemoryConfig.isEnabled(),
-                format("Enable native memory config to use NATIVE in-memory-format for the map [%s]", mapConfig.getName()));
-        checkNativeMaxSizePolicy(mapConfig);
+                format("Enable native memory config to use NATIVE"
+                        + " in-memory-format for the map [%s]", mapConfig.getName()));
+        checkMapNativeMaxSizePolicy(mapConfig);
     }
 
-    private static void checkNativeMaxSizePolicy(MapConfig mapConfig) {
+    private static void checkMapNativeMaxSizePolicy(MapConfig mapConfig) {
         MaxSizePolicy maxSizePolicy = mapConfig.getEvictionConfig().getMaxSizePolicy();
-        if (!SUPPORTED_NATIVE_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
-            throw new IllegalArgumentException("Map maximum size policy " + maxSizePolicy
-                    + " cannot be used with NATIVE in memory format."
-                    + " Supported maximum size policies are: " + SUPPORTED_NATIVE_MAX_SIZE_POLICIES);
+        if (!MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
+            throw new IllegalArgumentException("Maximum size policy " + maxSizePolicy
+                    + " cannot be used with NATIVE in memory format backed Map."
+                    + " Supported maximum size policies are: " + MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES);
         }
     }
 
@@ -293,13 +306,13 @@ public final class ConfigValidator {
      * Checks if a {@link EvictionConfig} is valid in its context.
      *
      * @param evictionConfig the {@link EvictionConfig}
-     * @param isNearCache    {@code true} if the config is for a Near Cache, {@code false} otherwise
      */
     @SuppressWarnings("ConstantConditions")
     public static void checkEvictionConfig(EvictionConfig evictionConfig) {
         if (evictionConfig == null) {
             throw new IllegalArgumentException("Eviction config cannot be null!");
         }
+
         EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
         String comparatorClassName = evictionConfig.getComparatorClassName();
         EvictionPolicyComparator comparator = evictionConfig.getComparator();
@@ -307,10 +320,10 @@ public final class ConfigValidator {
         checkEvictionConfig(evictionPolicy, comparatorClassName, comparator);
     }
 
-    public static void checkIMapEvictionConfig(MaxSizePolicy maxSizePolicy) {
-        if (!IMAP_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
+    public static void checkMapMaxSizePolicyConfig(MaxSizePolicy maxSizePolicy) {
+        if (!MAP_SUPPORTED_ALL_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
             String msg = format("IMap eviction config doesn't support max size policy `%s`. "
-                    + "Please select a valid one: %s.", maxSizePolicy, IMAP_MAX_SIZE_POLICIES);
+                    + "Please select a valid one: %s.", maxSizePolicy, MAP_SUPPORTED_ALL_MAX_SIZE_POLICIES);
             throw new IllegalArgumentException(msg);
         }
     }
@@ -388,8 +401,8 @@ public final class ConfigValidator {
         checkEvictionPolicyConfiguredOnlyOnce(evictionPolicy, comparatorClassName, comparator);
     }
 
-    protected static void checkEvictionPolicyConfiguredOnlyOnce(EvictionPolicy evictionPolicy,
-                                                                String comparatorClassName, Object comparator) {
+    private static void checkEvictionPolicyConfiguredOnlyOnce(EvictionPolicy evictionPolicy,
+                                                              String comparatorClassName, Object comparator) {
         if (evictionPolicy != EvictionConfig.DEFAULT_EVICTION_POLICY) {
             if (!isNullOrEmpty(comparatorClassName)) {
                 throw new IllegalArgumentException(
@@ -416,12 +429,16 @@ public final class ConfigValidator {
     /**
      * Validates the given {@link CacheConfig}.
      *
-     * @param cacheConfig         the {@link CacheConfig} to check
-     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
+     * @param cacheConfig the {@link CacheConfig}
+     *                    to check @param mergePolicyProvider the {@link
+     *                    SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkCacheConfig(CacheConfig cacheConfig, SplitBrainMergePolicyProvider mergePolicyProvider) {
+    public static void checkCacheConfig(CacheConfig cacheConfig,
+                                        SplitBrainMergePolicyProvider mergePolicyProvider) {
+
         checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(),
                 cacheConfig.getMergePolicyConfig().getPolicy(), cacheConfig, mergePolicyProvider);
+
     }
 
     /**
@@ -433,35 +450,38 @@ public final class ConfigValidator {
      * @param mergeTypeProvider    the {@link SplitBrainMergeTypeProvider} of the cache
      * @param mergePolicyProvider  the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkCacheConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig,
+    public static void checkCacheConfig(InMemoryFormat inMemoryFormat,
+                                        EvictionConfig evictionConfig,
                                         String mergePolicyClassname,
                                         SplitBrainMergeTypeProvider mergeTypeProvider,
                                         SplitBrainMergePolicyProvider mergePolicyProvider) {
         checkNotNativeWhenOpenSource(inMemoryFormat);
-        checkEvictionConfig(inMemoryFormat, evictionConfig);
-        checkMergePolicy(mergeTypeProvider, mergePolicyProvider, mergePolicyClassname);
+        checkEvictionConfig(evictionConfig);
+        checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), inMemoryFormat);
+        // mergePolicyProvider is null when creating cache on client side.
+        if (mergePolicyProvider != null) {
+            checkMergeTypeProviderHasRequiredTypes(mergeTypeProvider, mergePolicyProvider, mergePolicyClassname);
+        }
     }
 
-    /**
-     * Checks the merge policy configuration in the context of an {@link ICache}.
-     *
-     * @param inMemoryFormat the {@link InMemoryFormat} of the cache
-     * @param evictionConfig the {@link EvictionConfig} of the cache
-     */
-    static void checkEvictionConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig) {
+    // package private for testing.
+    static void checkCacheMaxSizePolicy(MaxSizePolicy maxSizePolicy,
+                                        InMemoryFormat inMemoryFormat) {
         if (inMemoryFormat == NATIVE) {
-            MaxSizePolicy maxSizePolicy = evictionConfig.getMaxSizePolicy();
-            if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
-                throw new IllegalArgumentException("Invalid max-size policy "
-                        + '(' + maxSizePolicy + ") for NATIVE in-memory format! Only "
-                        + USED_NATIVE_MEMORY_SIZE + ", "
-                        + USED_NATIVE_MEMORY_PERCENTAGE + ", "
-                        + FREE_NATIVE_MEMORY_SIZE + ", "
-                        + FREE_NATIVE_MEMORY_PERCENTAGE
-                        + " are supported.");
+            if (!CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
+                throw new IllegalArgumentException("Maximum size policy " + maxSizePolicy
+                        + " cannot be used with NATIVE in memory format backed Cache."
+                        + " Supported maximum size policies are: " + CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES);
+            }
+        } else {
+            if (!CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
+                String msg = format("Cache eviction config doesn't support max size policy `%s`. "
+                        + "Please select a valid one: %s.", maxSizePolicy, CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES);
+                throw new IllegalArgumentException(msg);
             }
         }
     }
+
 
     /**
      * Validates the given {@link ReplicatedMapConfig}.
@@ -472,7 +492,8 @@ public final class ConfigValidator {
      */
     public static void checkReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig,
                                                 SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergePolicy(replicatedMapConfig, mergePolicyProvider, replicatedMapConfig.getMergePolicyConfig().getPolicy());
+        checkMergeTypeProviderHasRequiredTypes(replicatedMapConfig, mergePolicyProvider,
+                replicatedMapConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
@@ -483,7 +504,8 @@ public final class ConfigValidator {
      */
     public static void checkMultiMapConfig(MultiMapConfig multiMapConfig,
                                            SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergePolicy(multiMapConfig, mergePolicyProvider, multiMapConfig.getMergePolicyConfig().getPolicy());
+        checkMergeTypeProviderHasRequiredTypes(multiMapConfig, mergePolicyProvider,
+                multiMapConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
@@ -492,8 +514,10 @@ public final class ConfigValidator {
      * @param queueConfig         the {@link QueueConfig} to check
      * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkQueueConfig(QueueConfig queueConfig, SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergePolicy(queueConfig, mergePolicyProvider, queueConfig.getMergePolicyConfig().getPolicy());
+    public static void checkQueueConfig(QueueConfig queueConfig,
+                                        SplitBrainMergePolicyProvider mergePolicyProvider) {
+        checkMergeTypeProviderHasRequiredTypes(queueConfig, mergePolicyProvider,
+                queueConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
@@ -504,7 +528,9 @@ public final class ConfigValidator {
      */
     public static void checkCollectionConfig(CollectionConfig collectionConfig,
                                              SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergePolicy(collectionConfig, mergePolicyProvider, collectionConfig.getMergePolicyConfig().getPolicy());
+        checkMergeTypeProviderHasRequiredTypes(collectionConfig, mergePolicyProvider,
+
+                collectionConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
@@ -515,19 +541,8 @@ public final class ConfigValidator {
      */
     public static void checkRingbufferConfig(RingbufferConfig ringbufferConfig,
                                              SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergePolicy(ringbufferConfig, mergePolicyProvider, ringbufferConfig.getMergePolicyConfig().getPolicy());
-    }
-
-    /**
-     * Validates the given {@link AbstractBasicConfig} implementation.
-     *
-     * @param basicConfig         the {@link AbstractBasicConfig} to check
-     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
-     * @param <C>                 type of the {@link AbstractBasicConfig}
-     */
-    public static <C extends AbstractBasicConfig> void checkBasicConfig(C basicConfig,
-                                                                        SplitBrainMergePolicyProvider mergePolicyProvider) {
-        checkMergePolicy(basicConfig, mergePolicyProvider, basicConfig.getMergePolicyConfig().getPolicy());
+        checkMergeTypeProviderHasRequiredTypes(ringbufferConfig, mergePolicyProvider,
+                ringbufferConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
@@ -539,7 +554,7 @@ public final class ConfigValidator {
     public static void checkScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig,
                                                     SplitBrainMergePolicyProvider mergePolicyProvider) {
         String mergePolicyClassName = scheduledExecutorConfig.getMergePolicyConfig().getPolicy();
-        checkMergePolicy(scheduledExecutorConfig, mergePolicyProvider, mergePolicyClassName);
+        checkMergeTypeProviderHasRequiredTypes(scheduledExecutorConfig, mergePolicyProvider, mergePolicyClassName);
     }
 
     public static void checkCPSubsystemConfig(CPSubsystemConfig config) {

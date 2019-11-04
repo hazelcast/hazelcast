@@ -1733,7 +1733,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .setComparatorClassName("comparatorClassName")
                 .setSize(10)
-                .setMaxSizePolicy(MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
     }
 
     private static TcpIpConfig tcpIpConfig() {

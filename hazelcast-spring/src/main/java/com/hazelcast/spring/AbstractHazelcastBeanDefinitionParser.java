@@ -56,7 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkIMapEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapMaxSizePolicyConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -652,7 +652,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                                                String comparatorBeanValue,
                                                boolean isIMap, boolean isNearCache) {
         if (isIMap) {
-            checkIMapEvictionConfig(maxSizePolicyValue);
+            checkMapMaxSizePolicyConfig(maxSizePolicyValue);
             return;
         }
 

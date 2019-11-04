@@ -173,7 +173,8 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
-        checkCacheConfig(cacheConfig, null);
+        checkCacheConfig(cacheConfig, null
+        );
     }
 
     @Override

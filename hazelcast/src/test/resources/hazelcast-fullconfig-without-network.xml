@@ -492,8 +492,8 @@
         <in-memory-format>OBJECT</in-memory-format>
         <backup-count>2</backup-count>
         <async-backup-count>2</async-backup-count>
-        <eviction comparator-class-name="DummyClass" eviction-policy="LRU" max-size-policy="FREE_NATIVE_MEMORY_PERCENTAGE"
-                  size="50"/>
+        <eviction comparator-class-name="DummyClass" eviction-policy="LRU"
+                  max-size-policy="ENTRY_COUNT" size="50"/>
         <wan-replication-ref name="my-wan-cluster">
             <merge-policy>hz.PASS_THROUGH</merge-policy>
             <filters>

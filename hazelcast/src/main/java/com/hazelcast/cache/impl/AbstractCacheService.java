@@ -37,6 +37,10 @@ import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
@@ -58,10 +62,6 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionAwareService;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.wan.impl.WanReplicationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -87,7 +87,6 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
@@ -258,11 +257,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             }
 
             checkCacheConfig(cacheConfig, mergePolicyProvider);
-
-            String mergePolicyName = cacheConfig.getMergePolicyConfig().getPolicy();
-            Object mergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
-            checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(), true,
-                    logger);
 
             if (putCacheConfigIfAbsent(cacheConfig) == null && !local) {
                 // if the cache config was not previously known, ensure the new cache config
@@ -586,12 +580,12 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener,
-                                   EventFilter eventFilter, boolean isLocal) {
+                                 EventFilter eventFilter, boolean isLocal) {
         return registerListenerInternal(cacheNameWithPrefix, listener, eventFilter, isLocal);
     }
 
     protected UUID registerListenerInternal(String cacheNameWithPrefix, CacheEventListener listener,
-                                              EventFilter eventFilter, boolean isLocal) {
+                                            EventFilter eventFilter, boolean isLocal) {
         EventService eventService = getNodeEngine().getEventService();
         EventRegistration reg;
         if (isLocal) {

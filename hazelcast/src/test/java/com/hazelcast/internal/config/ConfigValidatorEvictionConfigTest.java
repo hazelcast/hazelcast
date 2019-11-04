@@ -30,8 +30,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheMaxSizePolicy;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkIMapEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapMaxSizePolicyConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -43,12 +44,20 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkEvictionConfig(getEvictionConfig(false, false));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void checkEvictionConfig_forCache_when_wrong_max_size_policy() {
+        EvictionConfig evictionConfig = getEvictionConfig(false, false);
+        evictionConfig.setMaxSizePolicy(MaxSizePolicy.PER_PARTITION);
+
+        checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), InMemoryFormat.NATIVE);
+    }
+
     @Test
     public void checkEvictionConfig_forMap() {
         EvictionConfig evictionConfig = getEvictionConfig(false, false);
         evictionConfig.setMaxSizePolicy(MaxSizePolicy.PER_PARTITION);
 
-        checkIMapEvictionConfig(evictionConfig.getMaxSizePolicy());
+        checkMapMaxSizePolicyConfig(evictionConfig.getMaxSizePolicy());
     }
 
     @Test
@@ -214,7 +223,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
 
-        checkEvictionConfig(InMemoryFormat.OBJECT, evictionConfig);
+        checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), InMemoryFormat.OBJECT);
     }
 
     @Test
@@ -222,7 +231,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
 
-        checkEvictionConfig(InMemoryFormat.BINARY, evictionConfig);
+        checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), InMemoryFormat.BINARY);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -230,7 +239,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
 
-        checkEvictionConfig(InMemoryFormat.NATIVE, evictionConfig);
+        checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), InMemoryFormat.NATIVE);
     }
 
     private EvictionConfig getEvictionConfig(boolean setComparatorClass, boolean setComparator) {

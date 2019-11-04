@@ -50,6 +50,8 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigValidatorTest extends HazelcastTestSupport {
 
+    private static final String MAP_NAME = "map-name";
+
     private HazelcastProperties properties;
     private NativeMemoryConfig nativeMemoryConfig;
     private SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
@@ -74,12 +76,12 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(MAP_NAME, getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(MAP_NAME, getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     /**
@@ -87,7 +89,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = IllegalArgumentException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(MAP_NAME, getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
