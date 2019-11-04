@@ -19,6 +19,7 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -47,7 +48,7 @@ public class ClientMapInMemoryFormatTest extends HazelcastTestSupport {
         factory.shutdownAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testIMapCreation_throwsException_whenInMemoryFormat_NATIVE() throws Exception {
         Config config = getConfig();
         config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.NATIVE);
@@ -58,7 +59,7 @@ public class ClientMapInMemoryFormatTest extends HazelcastTestSupport {
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNearCacheCreation_throwsException_whenInMemoryFormat_NATIVE() throws Exception {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.NATIVE);

@@ -19,6 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
@@ -44,7 +45,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkCacheEvictionConfig(getEvictionConfig(false, false));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_forCache_when_wrong_max_size_policy() {
         EvictionConfig evictionConfig = getEvictionConfig(false, false);
         evictionConfig.setMaxSizePolicy(MaxSizePolicy.PER_PARTITION);
@@ -66,24 +67,24 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(), null, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_withNull() {
         checkEvictionConfig(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenBothOfComparatorAndComparatorClassNameAreSet() {
         checkEvictionConfig(getEvictionConfig(true, true));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenBothOfComparatorAndComparatorClassNameAreSet_forNearCache() {
         EvictionConfig evictionConfig = getEvictionConfig(true, true);
         checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenNoneOfTheComparatorAndComparatorClassNameAreSetIfEvictionPolicyIsNone() {
         EvictionConfig evictionConfig = getEvictionConfig(false, false, EvictionPolicy.NONE);
         checkEvictionConfig(evictionConfig);
@@ -99,7 +100,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkEvictionConfig(getEvictionConfig(false, true, EvictionPolicy.NONE));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenNoneOfTheComparatorAndComparatorClassNameAreSetIfEvictionPolicyIsRandom() {
         checkEvictionConfig(getEvictionConfig(false, false, EvictionPolicy.RANDOM));
     }
@@ -124,13 +125,13 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkEvictionConfig(getEvictionConfig(false, true));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenComparatorClassNameIsSetIfEvictionPolicyIsAlsoSet() {
         // default eviction policy is LRU (see EvictionConfig.DEFAULT_EVICTION_POLICY)
         checkEvictionConfig(getEvictionConfig(true, false, EvictionPolicy.LFU));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenComparatorIsSetIfEvictionPolicyIsAlsoSet() {
         // default eviction policy is LRU (see EvictionConfig.DEFAULT_EVICTION_POLICY)
         checkEvictionConfig(getEvictionConfig(false, true, EvictionPolicy.LFU));
@@ -143,14 +144,14 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenComparatorClassNameIsSetIfEvictionPolicyIsNone_forNearCache() {
         EvictionConfig evictionConfig = getEvictionConfig(true, false, EvictionPolicy.NONE);
         checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenComparatorIsSetIfEvictionPolicyIsNone_forNearCache() {
         EvictionConfig evictionConfig = getEvictionConfig(false, true, EvictionPolicy.NONE);
         checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
@@ -164,14 +165,14 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenComparatorClassNameIsSetIfEvictionPolicyIsRandom_forNearCache() {
         EvictionConfig evictionConfig = getEvictionConfig(true, false, EvictionPolicy.RANDOM);
         checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenComparatorIsSetIfEvictionPolicyIsRandom_forNearCache() {
         EvictionConfig evictionConfig = getEvictionConfig(false, true, EvictionPolicy.RANDOM);
         checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
@@ -192,7 +193,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenComparatorClassNameIsSetIfEvictionPolicyIsAlsoSet_forNearCache() {
         // default eviction policy is LRU (see EvictionConfig.DEFAULT_EVICTION_POLICY)
         EvictionConfig evictionConfig = getEvictionConfig(true, false, EvictionPolicy.LFU);
@@ -200,7 +201,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenComparatorIsSetIfEvictionPolicyIsAlsoSet_forNearCache() {
         // default eviction policy is LRU (see EvictionConfig.DEFAULT_EVICTION_POLICY)
         EvictionConfig evictionConfig = getEvictionConfig(false, true, EvictionPolicy.LFU);
@@ -208,7 +209,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_whenNoneOfTheComparatorAndComparatorClassNameAreSetIfEvictionPolicyIsNull() {
         ConfigValidator.checkEvictionConfig(null, null, null, COMMONLY_SUPPORTED_EVICTION_POLICIES);
     }
@@ -234,7 +235,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), InMemoryFormat.BINARY);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void checkEvictionConfig_withEntryCountMaxSizePolicy_NATIVE() {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);

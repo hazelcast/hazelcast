@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.nearcache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
@@ -811,7 +812,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         assertNearCacheExpiration(nearCachedMap, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNearCache_whenInMemoryFormatIsNative_thenThrowIllegalArgumentException() {
         String mapName = randomMapName();
 

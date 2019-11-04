@@ -25,6 +25,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -1201,7 +1202,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         assertNull(map.getAsync(1).toCompletableFuture().get());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNearCache_whenInMemoryFormatIsNative_thenThrowIllegalArgumentException() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig()
                 .setInMemoryFormat(InMemoryFormat.NATIVE);
