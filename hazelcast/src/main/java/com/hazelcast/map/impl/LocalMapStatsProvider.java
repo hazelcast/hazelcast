@@ -158,7 +158,7 @@ public class LocalMapStatsProvider {
         Collection<String> mapNames = proxyService.getDistributedObjectNames(SERVICE_NAME);
         for (String mapName : mapNames) {
             if (!statsPerMap.containsKey(mapName)) {
-                statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
+                statsPerMap.put(mapName, initializeLocalMapStats(mapName));
             }
         }
     }
