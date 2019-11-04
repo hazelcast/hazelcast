@@ -16,6 +16,10 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.cache.CacheUtil;
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -43,7 +47,11 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        hz = createHazelcastInstance();
+        Config config = smallInstanceConfig();
+        config.addCacheConfig(new CacheSimpleConfig()
+                                  .setName("test-cache")
+                                  .setStatisticsEnabled(true));
+        hz = createHazelcastInstance(config);
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         timedMemberState = timedMemberStateFactory.createTimedMemberState();
@@ -90,5 +98,14 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         hz.getReplicatedMap("replicatedMap");
         ReplicatedMapService replicatedMapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
         assertNotNull(replicatedMapService.getStats().get("replicatedMap"));
+    }
+
+    @Test
+    public void testCacheGetStats() {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        hz.getCacheManager().getCache("test-cache");
+        CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
+        assertNotNull(cacheService.getStats()
+                          .get(CacheUtil.getDistributedObjectName("test-cache")));
     }
 }
