@@ -29,14 +29,12 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -64,7 +62,6 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-@Ignore
 public class ClientMessageProtectionTest {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
@@ -129,7 +126,7 @@ public class ClientMessageProtectionTest {
                 List<ClientMessage> subFrames = ClientMessageSplitter.getFragments(50, clientMessage);
                 assertTrue(subFrames.size() > 1);
                 writeClientMessage(os, subFrames.get(0));
-                expected.expect(EOFException.class);
+                expected.expect(IOException.class);
                 readResponse(is);
             }
         }
@@ -149,7 +146,7 @@ public class ClientMessageProtectionTest {
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY_NEW.getBytes(UTF8_CHARSET));
                 writeClientMessage(os, clientMessage);
-                expected.expect(EOFException.class);
+                expected.expect(IOException.class);
                 readResponse(is);
             }
         }
@@ -174,7 +171,7 @@ public class ClientMessageProtectionTest {
                 buffer.put(frame.content);
                 os.write(byteBufferToBytes(buffer));
                 os.flush();
-                expected.expect(EOFException.class);
+                expected.expect(IOException.class);
                 readResponse(is);
             }
         }
@@ -207,7 +204,7 @@ public class ClientMessageProtectionTest {
                 buffer.putShort((short) frame.flags);
                 os.write(byteBufferToBytes(buffer));
                 os.flush();
-                expected.expect(EOFException.class);
+                expected.expect(IOException.class);
                 readResponse(is);
             }
         }
@@ -218,7 +215,7 @@ public class ClientMessageProtectionTest {
                 (byte) 1, clientName, "xxx", emptyList(), -1, null);
     }
 
-    private ClientMessage readResponse(InputStream is) throws IOException, EOFException {
+    private ClientMessage readResponse(InputStream is) throws IOException {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         while (true) {
             ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
