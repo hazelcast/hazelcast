@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.IOUtils;
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
 import org.junit.Rule;
@@ -37,25 +38,12 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     protected static File createConfigFile(String filename, String suffix) throws Exception {
-        File file = File.createTempFile(filename, suffix);
-        file.setWritable(true);
-        file.deleteOnExit();
-        return file;
+        return IOUtils.createConfigFile(filename, suffix);
     }
 
     protected static void writeStringToStreamAndClose(FileOutputStream os, String string) throws Exception {
-        os.write(string.getBytes());
-        os.flush();
-        os.close();
-    }
-
-    static String createFileWithContent(String filename, String suffix, String content) throws Exception {
-        File file = createConfigFile(filename, suffix);
-        FileOutputStream os = new FileOutputStream(file);
-        writeStringToStreamAndClose(os, content);
-        return file.getAbsolutePath();
+        IOUtils.writeStringToStreamAndClose(os, string);
     }
 
     @Test
