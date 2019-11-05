@@ -36,11 +36,16 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static java.util.Arrays.asList;
@@ -205,6 +210,208 @@ public class MetricsTest extends JetTestSupport {
         job.join();
     }
 
+    @Test
+    public void availableDuringJobExecution() {
+        int generatedItems = 1000;
+
+        pipeline.drawFrom(TestSources.itemStream(1_000))
+                .withIngestionTimestamps()
+                .filter(l -> l.sequence() < generatedItems)
+                .map(t -> {
+                    Metrics.metric("total").increment();
+                    return t;
+                })
+                .drainTo(Sinks.logger());
+
+        Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
+        assertTrueEventually(() -> {
+            assertMetricsProduced(job, "total", generatedItems);
+        });
+    }
+
+    @Test
+    public void when_metricsDisabled_then_unavailableDuringJobExecution() {
+        int generatedItems = 1000;
+
+        pipeline.drawFrom(TestSources.itemStream(1_000))
+                .withIngestionTimestamps()
+                .filter(l -> l.sequence() < generatedItems)
+                .map(t -> {
+                    Metrics.metric("total").increment();
+                    return t;
+                })
+                .drainTo(Sinks.list("sink"));
+
+        Job job = instance.newJob(pipeline, new JobConfig().setMetricsEnabled(false));
+        List<Object> list = instance.getList("sink");
+        assertTrueEventually(() -> {
+            assertTrue(!list.isEmpty());
+        });
+        assertTrue(job.getMetrics().get("total").isEmpty());
+    }
+
+    @Test
+    public void when_jetMetricNameIsUsed_then_itIsNotOverwritten() {
+        pipeline.drawFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
+                .filter(l -> {
+                    Metrics.metric("emittedCount").increment(1000);
+                    return true;
+                })
+                .drainTo(Sinks.logger());
+
+        Job job = runPipeline(pipeline.toDag());
+        // expected value is number_of_emitted_items (5) * number_of_vertex (2) = 10
+        assertJetMetricsProduced(job, "emittedCount", 10);
+        // expected value is number_of_emitted_items (5) * 1000 + expected_jet_metric_value (10)
+        assertMetricsProduced(job, "emittedCount", 10 + 5 * 1000);
+    }
+
+    @Test
+    public void metricInFusedStages() {
+        int inputSize = 100_000;
+        Integer[] inputs = new Integer[inputSize];
+        Arrays.setAll(inputs, i -> i);
+
+        pipeline.drawFrom(TestSources.items(inputs))
+                .filter(l -> {
+                    Metrics.metric("onlyInFilter").increment();
+                    Metrics.metric("inBoth").increment();
+                    return true;
+                })
+                .map(t -> {
+                    Metrics.metric("onlyInMap").increment();
+                    Metrics.metric("inBoth").increment();
+                    return t;
+                })
+                .drainTo(Sinks.logger());
+
+        Job job = runPipeline(pipeline.toDag());
+        assertMetricsProduced(job, "onlyInFilter", inputSize, "onlyInMap", inputSize, "inBoth", 2 * inputSize);
+    }
+
+    @Test
+    public void metricInNotFusedStages() {
+        int inputSize = 100_000;
+        Integer[] inputs = new Integer[inputSize];
+        Arrays.setAll(inputs, i -> i);
+
+        pipeline.drawFrom(TestSources.items(inputs))
+                .filter(l -> {
+                    Metrics.metric("onlyInFilter").increment();
+                    Metrics.metric("inBoth").increment();
+                    return true;
+                })
+                .groupingKey(t -> t)
+                .aggregate(counting())
+                .map(t -> {
+                    Metrics.metric("onlyInMap").increment();
+                    Metrics.metric("inBoth").increment();
+                    return t;
+                })
+                .drainTo(Sinks.logger());
+
+        Job job = runPipeline(pipeline.toDag());
+        assertMetricsProduced(job, "onlyInFilter", inputSize, "onlyInMap", inputSize, "inBoth", 2 * inputSize);
+    }
+
+    @Test
+    public void metricsAreRestartedIfPipelineIsRunTwice() {
+        pipeline.drawFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
+                .filter(l -> {
+                    Metrics.metric("total").increment();
+                    return true;
+                })
+                .drainTo(Sinks.logger());
+
+        Job job = runPipeline(pipeline.toDag());
+        assertMetricsProduced(job, "total", 5);
+        job = runPipeline(pipeline.toDag());
+        assertMetricsProduced(job, "total", 5);
+    }
+
+    @Test
+    public void metricsAreJobIndependent() {
+        pipeline.drawFrom(TestSources.itemStream(1_000))
+                .withIngestionTimestamps()
+                .filter(l -> l.sequence() < 4000)
+                .map(t -> {
+                    if (t.sequence() % 4 == 0) {
+                        Metrics.metric("total").increment();
+                    }
+                    return t;
+                })
+                .drainTo(Sinks.logger());
+
+        Pipeline pipeline2 = Pipeline.create();
+        pipeline2.drawFrom(TestSources.itemStream(1_000))
+                .withIngestionTimestamps()
+                .filter(l -> l.sequence() < 4000)
+                .map(t -> {
+                    if (t.sequence() % 4 != 0) {
+                        Metrics.metric("total").increment();
+                    }
+                    return t;
+                })
+                .drainTo(Sinks.logger());
+
+        Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
+        Job job2 = instance.newJob(pipeline2, JOB_CONFIG_WITH_METRICS);
+        assertTrueEventually(() -> {
+            assertMetricsProduced(job, "total", 1000);
+        });
+        assertTrueEventually(() -> {
+            assertMetricsProduced(job2, "total", 3000);
+        });
+    }
+
+    @Test
+    public void availableViaJmx() throws Exception {
+        MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
+
+        int generatedItems = 1000;
+
+        pipeline.drawFrom(TestSources.itemStream(1_000))
+                .withIngestionTimestamps()
+                .filter(l -> l.sequence() < generatedItems)
+                .map(t -> {
+                    Metrics.metric("total").increment();
+                    return t;
+                })
+                .drainTo(Sinks.logger());
+
+        Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
+        assertTrueEventually(() -> {
+            assertMetricsProduced(job, "total", generatedItems);
+        });
+
+        List<String> mBeanNames = new ArrayList<>();
+        String memberName = instance.getHazelcastInstance().getName();
+        String jobId = job.getIdString();
+        String execId = job.getMetrics().get("total").get(0).getTag("exec");
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        for (int i = 0; i < availableProcessors; i++) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("com.hazelcast.jet:type=Metrics,instance=")
+                    .append(memberName)
+                    .append(",tag0=\"job=")
+                    .append(jobId)
+                    .append("\",tag1=\"exec=")
+                    .append(execId)
+                    .append("\",tag2=\"vertex=fused(filter, map)\",tag3=\"procType=TransformP\",tag4=\"proc=")
+                    .append(i)
+                    .append("\",tag5=\"user=true\"");
+            mBeanNames.add(sb.toString());
+        }
+
+        long sum = 0;
+        for (String mBeanName : mBeanNames) {
+            ObjectName objectName = new ObjectName(mBeanName);
+            long attributeValue = (long) platformMBeanServer.getAttribute(objectName, "total");
+            sum += attributeValue;
+        }
+        assertEquals(generatedItems, sum);
+    }
+
     private Job runPipeline(DAG dag) {
         Job job = instance.newJob(dag, JOB_CONFIG_WITH_METRICS);
         job.join();
@@ -216,6 +423,16 @@ public class MetricsTest extends JetTestSupport {
         for (int i = 0; i < expected.length; i += 2) {
             String name = (String) expected[i];
             List<Measurement> measurements = metrics.get(name);
+            assertMetricValue(name, measurements, expected[i + 1]);
+        }
+    }
+
+    private void assertJetMetricsProduced(Job job, Object... expected) {
+        JobMetrics metrics = job.getMetrics();
+        for (int i = 0; i < expected.length; i += 2) {
+            String name = (String) expected[i];
+            List<Measurement> measurements = metrics.filter(
+                    MeasurementPredicates.tagValueEquals("user", "true").negate()).get(name);
             assertMetricValue(name, measurements, expected[i + 1]);
         }
     }
