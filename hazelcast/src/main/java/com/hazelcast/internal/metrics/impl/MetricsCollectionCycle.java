@@ -30,6 +30,8 @@ import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
 import java.util.Map;
@@ -54,6 +56,7 @@ class MetricsCollectionCycle {
     private final ProbeLevel minimumLevel;
     private final MetricsContext metricsContext = new MetricsContext();
     private final long collectionId = System.nanoTime();
+    private final ILogger logger = Logger.getLogger(MetricsCollectionCycle.class);
 
     MetricsCollectionCycle(Function<Class, SourceMetadata> lookupMetadataFn,
                            Function<String, MetricValueCatcher> lookupMetricValueCatcherFn,
@@ -86,7 +89,11 @@ class MetricsCollectionCycle {
 
     void collectDynamicMetrics(Collection<DynamicMetricsProvider> metricsSources) {
         for (DynamicMetricsProvider metricsSource : metricsSources) {
-            metricsSource.provideDynamicMetrics(taggerSupplier, metricsContext);
+            try {
+                metricsSource.provideDynamicMetrics(taggerSupplier, metricsContext);
+            } catch (Throwable t) {
+                logger.warning("Collecting metrics from source " + metricsSource.getClass().getName() + " failed", t);
+            }
         }
     }
 
