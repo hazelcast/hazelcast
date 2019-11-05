@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
 import com.hazelcast.spi.merge.MergingValue;
@@ -33,10 +31,6 @@ import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.internal.cluster.Versions.V3_10;
-import static java.lang.String.format;
-
 /**
  * Validates a merge policy instance.
  */
@@ -46,45 +40,15 @@ public final class MergePolicyValidator {
     }
 
     /**
-     * Checks if the given {@link InMemoryFormat} can be merged by the given
-     * {@code mergePolicy} instance.
-     * <p>
-     * When a wrong policy is detected, it does one of two things:
-     * if {@code failFast} is {@code true} and the cluster version is 3.10 or later,
-     * it throws an {@link InvalidConfigurationException}, otherwise it logs a warning.
+     * Checks the merge policy configuration
+     * of the given {@link MapConfig}.
      *
-     * @return {@code true} if the given {@code inMemoryFormat} can be merged by
-     * the supplied {@code mergePolicy}, {@code false} otherwise
+     * @param mapConfig           the {@link MapConfig}
+     * @param mergePolicyProvider the {@link
+     *                            SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static boolean checkMergePolicySupportsInMemoryFormat(String name, Object mergePolicy, InMemoryFormat inMemoryFormat,
-                                                                 boolean failFast, ILogger logger) {
-        if (inMemoryFormat != NATIVE) {
-            return true;
-        }
-        if (mergePolicy instanceof SplitBrainMergePolicy) {
-            return true;
-        }
-        if (failFast) {
-            throw new InvalidConfigurationException(createSplitRecoveryWarningMsg(name, mergePolicy.getClass().getName()));
-        }
-        logger.warning(createSplitRecoveryWarningMsg(name, mergePolicy.getClass().getName()));
-        return false;
-    }
-
-    private static String createSplitRecoveryWarningMsg(String name, String mergePolicy) {
-        String messageTemplate = "Split brain recovery is not supported for '%s',"
-                + " because it's using merge policy `%s` to merge `%s` data."
-                + " To fix this, use an implementation of `%s` with a cluster version `%s` or later";
-        return format(messageTemplate, name, mergePolicy, NATIVE, SplitBrainMergePolicy.class.getName(), V3_10);
-    }
-
-    /**
-     * Checks the merge policy configuration of the given {@link MapConfig}.
-     *
-     * @param mapConfig the {@link MapConfig}
-     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
-     */
-    static void checkMapMergePolicy(MapConfig mapConfig, SplitBrainMergePolicyProvider mergePolicyProvider) {
+    static void checkMapMergePolicy(MapConfig mapConfig,
+                                    SplitBrainMergePolicyProvider mergePolicyProvider) {
         String mergePolicyClassName = mapConfig.getMergePolicyConfig().getPolicy();
         SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName);
         List<Class> requiredMergeTypes = checkSplitBrainMergePolicy(mapConfig, mergePolicyInstance);
@@ -94,12 +58,14 @@ public final class MergePolicyValidator {
     }
 
     /**
-     * Checks if the configured merge policy requires merge types, which are just available if map statistics are enabled.
+     * Checks if the configured merge policy requires merge types,
+     * which are just available if map statistics are enabled.
      *
      * @param mergePolicyClass   the name of the configured merge policy class
      * @param requiredMergeTypes the required merge types of the configured merge policy
      */
-    private static void checkMapMergePolicyWhenStatisticsAreDisabled(String mergePolicyClass, List<Class> requiredMergeTypes) {
+    private static void checkMapMergePolicyWhenStatisticsAreDisabled(String mergePolicyClass,
+                                                                     List<Class> requiredMergeTypes) {
         for (Class<?> requiredMergeType : requiredMergeTypes) {
             if (MergingLastStoredTime.class.isAssignableFrom(requiredMergeType)
                     || MergingExpirationTime.class.isAssignableFrom(requiredMergeType)) {
@@ -118,9 +84,9 @@ public final class MergePolicyValidator {
      * @param mergePolicyClassName the merge policy class name
      * @throws InvalidConfigurationException if the given merge policy is no {@link SplitBrainMergePolicy}
      */
-    static void checkMergePolicy(SplitBrainMergeTypeProvider mergeTypeProvider,
-                                 SplitBrainMergePolicyProvider mergePolicyProvider,
-                                 String mergePolicyClassName) {
+    static void checkMergeTypeProviderHasRequiredTypes(SplitBrainMergeTypeProvider mergeTypeProvider,
+                                                       SplitBrainMergePolicyProvider mergePolicyProvider,
+                                                       String mergePolicyClassName) {
         if (mergePolicyProvider == null) {
             return;
         }
@@ -155,7 +121,8 @@ public final class MergePolicyValidator {
         String mergePolicyClassName = mergePolicyClass.getName();
         // iterate over the complete class hierarchy of a merge policy, to check all its generics
         do {
-            checkSplitBrainMergePolicyGenerics(requiredMergeTypes, providedMergeTypes, mergePolicyClassName, mergePolicyClass);
+            checkSplitBrainMergePolicyGenerics(requiredMergeTypes,
+                    providedMergeTypes, mergePolicyClassName, mergePolicyClass);
             mergePolicyClass = mergePolicyClass.getSuperclass();
         } while (mergePolicyClass != null);
         return requiredMergeTypes;

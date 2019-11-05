@@ -80,7 +80,6 @@ import static java.lang.System.getProperty;
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
 public class MapContainer {
-
     protected final String name;
     protected final String splitBrainProtectionName;
     // on-heap indexes are global, meaning there is only one index per map,
@@ -95,8 +94,8 @@ public class MapContainer {
     protected final EventJournalConfig eventJournalConfig;
     protected final PartitioningStrategy partitioningStrategy;
     protected final InternalSerializationService serializationService;
-    protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final Function<Object, Data> toDataFunction = new ObjectToData();
+    protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
@@ -177,11 +176,12 @@ public class MapContainer {
     }
 
     public MapEvictionPolicy getMapEvictionPolicy() {
+        // TODO get this over eviction config
         MapEvictionPolicy mapEvictionPolicy = mapConfig.getMapEvictionPolicy();
         if (mapEvictionPolicy != null) {
             return mapEvictionPolicy;
         }
-        EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
+        EvictionPolicy evictionPolicy = mapConfig.getEvictionConfig().getEvictionPolicy();
         if (evictionPolicy == null) {
             return null;
         }

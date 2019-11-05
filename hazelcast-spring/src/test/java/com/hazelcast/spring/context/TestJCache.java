@@ -26,6 +26,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -97,8 +98,8 @@ public class TestJCache {
         assertEquals(InMemoryFormat.OBJECT, simpleConfig.getInMemoryFormat());
         assertNotNull(simpleConfig.getEvictionConfig());
         assertEquals(50, simpleConfig.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
-                simpleConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT,
+                simpleConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(EvictionPolicy.LRU, simpleConfig.getEvictionConfig().getEvictionPolicy());
     }
 

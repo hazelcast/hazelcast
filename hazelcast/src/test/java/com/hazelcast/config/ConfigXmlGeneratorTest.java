@@ -313,7 +313,7 @@ public class ConfigXmlGeneratorTest {
 
         HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
         expectedConfig.setEnabled(true)
-                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
 
         EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
         encryptionAtRestConfig.setEnabled(true);
@@ -341,7 +341,7 @@ public class ConfigXmlGeneratorTest {
 
         HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
         expectedConfig.setEnabled(true)
-                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
 
         EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
         encryptionAtRestConfig.setEnabled(true);
@@ -352,7 +352,7 @@ public class ConfigXmlGeneratorTest {
         secureStoreConfig.setPollingInterval(60);
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
-                 .setProperty("trustStorePassword", "Hazelcast");
+                .setProperty("trustStorePassword", "Hazelcast");
         secureStoreConfig.setSSLConfig(sslConfig);
 
         encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
@@ -375,7 +375,7 @@ public class ConfigXmlGeneratorTest {
 
         HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
         expectedConfig.setEnabled(true)
-                      .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
 
         EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
         encryptionAtRestConfig.setEnabled(true);
@@ -386,7 +386,7 @@ public class ConfigXmlGeneratorTest {
         secureStoreConfig.setPollingInterval(60);
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
-                 .setProperty("trustStorePassword", "Hazelcast");
+                .setProperty("trustStorePassword", "Hazelcast");
         secureStoreConfig.setSSLConfig(sslConfig);
 
         encryptionAtRestConfig.setSecureStoreConfig(secureStoreConfig);
@@ -429,39 +429,39 @@ public class ConfigXmlGeneratorTest {
         RealmConfig memberRealm = new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
                 Arrays.asList(
                         new LoginModuleConfig()
-                        .setClassName("member.f.o.o")
-                        .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                                .setClassName("member.f.o.o")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
                         new LoginModuleConfig()
-                        .setClassName("member.b.a.r")
-                        .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                                .setClassName("member.b.a.r")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
                         new LoginModuleConfig()
-                        .setClassName("member.l.o.l")
-                        .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                                .setClassName("member.l.o.l")
+                                .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
                 .setCredentialsFactoryConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops));
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
-                      .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
-                      .setClientBlockUnmappedActions(false)
-                      .setClientRealmConfig("cr", new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
-                              Arrays.asList(
-                              new LoginModuleConfig()
-                                      .setClassName("f.o.o")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
-                              new LoginModuleConfig()
-                                      .setClassName("b.a.r")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
-                              new LoginModuleConfig()
-                                      .setClassName("l.o.l")
-                                      .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
-                              .setUsernamePasswordIdentityConfig("username", "password"))
-                      .setMemberRealmConfig("mr", memberRealm)
-                      .setClientPermissionConfigs(new HashSet<>(singletonList(
-                              new PermissionConfig()
-                                      .setActions(newHashSet("read", "remove"))
-                                      .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
-                                      .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
-                                      .setName("mycounter")
-                                      .setPrincipal("devos"))));
+                .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
+                .setClientBlockUnmappedActions(false)
+                .setClientRealmConfig("cr", new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
+                        Arrays.asList(
+                                new LoginModuleConfig()
+                                        .setClassName("f.o.o")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                                new LoginModuleConfig()
+                                        .setClassName("b.a.r")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                                new LoginModuleConfig()
+                                        .setClassName("l.o.l")
+                                        .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED))))
+                        .setUsernamePasswordIdentityConfig("username", "password"))
+                .setMemberRealmConfig("mr", memberRealm)
+                .setClientPermissionConfigs(new HashSet<>(singletonList(
+                        new PermissionConfig()
+                                .setActions(newHashSet("read", "remove"))
+                                .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
+                                .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
+                                .setName("mycounter")
+                                .setPrincipal("devos"))));
 
         cfg.setSecurityConfig(expectedConfig);
 
@@ -491,7 +491,7 @@ public class ConfigXmlGeneratorTest {
                 .setUserFilter("userFilter")
                 .setUserNameAttribute("userNameAttribute")
                 .setUserSearchScope(LdapSearchScope.ONE_LEVEL)
-                );
+        );
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
@@ -1052,16 +1052,16 @@ public class ConfigXmlGeneratorTest {
                 .setName("power")
                 .setExtractorClassName("com.car.PowerExtractor");
 
-        MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
+        EvictionConfig evictionConfig1 = new EvictionConfig()
                 .setSize(10)
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
+                .setMaxSizePolicy(MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
 
         IndexConfig indexConfig = new IndexConfig().addAttribute("attribute").setType(IndexType.SORTED);
 
         EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.entrylistener", false, false);
 
-        EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE)
+        EvictionConfig evictionConfig2 = new EvictionConfig()
+                .setMaxSizePolicy(MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE)
                 .setSize(100)
                 .setComparatorClassName("comparatorClassName")
                 .setEvictionPolicy(EvictionPolicy.LRU);
@@ -1081,7 +1081,7 @@ public class ConfigXmlGeneratorTest {
                 .setPopulate(false)
                 .setBufferSize(8)
                 .setInMemoryFormat(InMemoryFormat.BINARY)
-                .setEvictionConfig(evictionConfig)
+                .setEvictionConfig(evictionConfig2)
                 .setIncludeValue(false)
                 .setCoalesce(false)
                 .addIndexConfig(indexConfig);
@@ -1095,16 +1095,16 @@ public class ConfigXmlGeneratorTest {
                 .setPopulate(true)
                 .setBufferSize(10)
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setEvictionConfig(evictionConfig)
+                .setEvictionConfig(evictionConfig2)
                 .setIncludeValue(true)
                 .setCoalesce(true)
                 .addIndexConfig(indexConfig);
 
         MapConfig expectedConfig = new MapConfig()
                 .setName("carMap")
+                .setEvictionConfig(evictionConfig1)
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
                 .setMetadataPolicy(MetadataPolicy.CREATE_ON_UPDATE)
-                .setEvictionPolicy(EvictionPolicy.LRU)
                 .setMaxIdleSeconds(100)
                 .setTimeToLiveSeconds(1000)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
@@ -1113,18 +1113,17 @@ public class ConfigXmlGeneratorTest {
                 .setBackupCount(2)
                 .setAsyncBackupCount(3)
                 .setMapStoreConfig(mapStoreConfig)
-                .setMaxSizeConfig(maxSizeConfig)
                 .setWanReplicationRef(wanReplicationRef())
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("partitionStrategyClass"))
                 .setMerkleTreeConfig(merkleTreeConfig())
                 .setEventJournalConfig(eventJournalConfig())
                 .setHotRestartConfig(hotRestartConfig())
-                .setEvictionPolicy(EvictionPolicy.LRU)
                 .addEntryListenerConfig(listenerConfig)
                 .setIndexConfigs(singletonList(indexConfig))
                 .addAttributeConfig(attrConfig)
                 .setPartitionLostListenerConfigs(singletonList(
-                        new MapPartitionLostListenerConfig("partitionLostListener")));
+                        new MapPartitionLostListenerConfig("partitionLostListener"))
+                );
 
         expectedConfig.setQueryCacheConfigs(asList(queryCacheConfig1, queryCacheConfig2));
 
@@ -1240,7 +1239,7 @@ public class ConfigXmlGeneratorTest {
                 .setProperties(props);
 
         batchPublisher.getWanSyncConfig()
-                      .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
+                .setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
 
         CustomWanPublisherConfig customPublisher = new CustomWanPublisherConfig()
                 .setPublisherId("dummyPublisherId")
@@ -1253,8 +1252,8 @@ public class ConfigXmlGeneratorTest {
                 .setPersistWanReplicatedData(false);
 
         wanConfig.setWanConsumerConfig(wanConsumerConfig)
-                 .addWanBatchReplicationPublisherConfig(batchPublisher)
-                 .addCustomPublisherConfig(customPublisher);
+                .addWanBatchReplicationPublisherConfig(batchPublisher)
+                .addCustomPublisherConfig(customPublisher);
 
         Config config = new Config().addWanReplicationConfig(wanConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
@@ -1420,14 +1419,14 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config();
 
         config.getCPSubsystemConfig()
-              .setCPMemberCount(10)
-              .setGroupSize(5)
-              .setSessionTimeToLiveSeconds(15)
-              .setSessionHeartbeatIntervalSeconds(3)
-              .setMissingCPMemberAutoRemovalSeconds(120)
-              .setFailOnIndeterminateOperationState(true)
-              .setPersistenceEnabled(true)
-              .setBaseDir(new File("/custom-dir"));
+                .setCPMemberCount(10)
+                .setGroupSize(5)
+                .setSessionTimeToLiveSeconds(15)
+                .setSessionHeartbeatIntervalSeconds(3)
+                .setMissingCPMemberAutoRemovalSeconds(120)
+                .setFailOnIndeterminateOperationState(true)
+                .setPersistenceEnabled(true)
+                .setBaseDir(new File("/custom-dir"));
 
         config.getCPSubsystemConfig()
                 .getRaftAlgorithmConfig()
@@ -1458,13 +1457,13 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config();
 
         config.getMetricsConfig()
-              .setEnabled(false)
-              .setMcEnabled(false)
-              .setJmxEnabled(false)
-              .setCollectionIntervalSeconds(10)
-              .setRetentionSeconds(11)
-              .setMetricsForDataStructuresEnabled(true)
-              .setMinimumLevel(DEBUG);
+                .setEnabled(false)
+                .setMcEnabled(false)
+                .setJmxEnabled(false)
+                .setCollectionIntervalSeconds(10)
+                .setRetentionSeconds(11)
+                .setMetricsForDataStructuresEnabled(true)
+                .setMinimumLevel(DEBUG);
 
         MetricsConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMetricsConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getMetricsConfig(),
@@ -1734,7 +1733,7 @@ public class ConfigXmlGeneratorTest {
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .setComparatorClassName("comparatorClassName")
                 .setSize(10)
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
     }
 
     private static TcpIpConfig tcpIpConfig() {

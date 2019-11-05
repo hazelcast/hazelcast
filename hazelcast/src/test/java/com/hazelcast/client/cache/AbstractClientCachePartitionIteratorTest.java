@@ -19,7 +19,7 @@ package com.hazelcast.client.cache;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -122,7 +122,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         String cacheName = randomString();
         CacheManager cacheManager = cachingProvider.getCacheManager();
         CacheConfig<K, V> config = new CacheConfig<K, V>();
-        config.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
+        config.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
         return (ICacheInternal<K, V>) cacheManager.createCache(cacheName, config);
     }
 }

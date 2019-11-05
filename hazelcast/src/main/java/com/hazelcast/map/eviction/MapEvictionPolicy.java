@@ -22,25 +22,26 @@ import com.hazelcast.map.IMap;
 import java.util.Comparator;
 
 /**
- * An eviction policy takes its role after the decision that a map needs to free some memory
- * according to one of {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy MaxSizePolicies}
- * and it helps to find most appropriate entries to remove.
- *
- * {@link IMap IMap} has out-of-the-box eviction policies like {@link LRUEvictionPolicy},
- * {@link LFUEvictionPolicy} and {@link RandomEvictionPolicy} but if there is a need to define another eviction policy,
- * users can introduce a custom one by extending {@link MapEvictionPolicy} class.
+ * Helps to find most appropriate entries
+ * to remove when memory is needed.
+ * <p>
+ * {@link IMap IMap} has out-of-the-box eviction policies
+ * like {@link LRUEvictionPolicy}, {@link LFUEvictionPolicy}
+ * and {@link RandomEvictionPolicy} but if there is a
+ * need to define a custom eviction policy, it can be
+ * done by extending {@link MapEvictionPolicy} class.
  *
  * <p>Implementation:</p>
- * {@link MapEvictionPolicy#compare(EntryView, EntryView)} method must be implemented to provide an ascending order
- * of entries. Because internal eviction algorithm will evict the smallest entry from {@link IMap IMap}
+ * {@link MapEvictionPolicy#compare(EntryView, EntryView)}
+ * method must be implemented to provide an ascending
+ * order of entries. Because internal eviction algorithm
+ * will evict the smaller entry from {@link IMap IMap}
  *
  * @param <K> the type of keys maintained by IMap
  * @param <V> the type of mapped values
- *
  * @see LRUEvictionPolicy
  * @see LFUEvictionPolicy
  * @see RandomEvictionPolicy
- *
  * @since 3.7
  */
 public abstract class MapEvictionPolicy<K, V> implements Comparator<EntryView<K, V>> {
@@ -49,8 +50,10 @@ public abstract class MapEvictionPolicy<K, V> implements Comparator<EntryView<K,
      * {@inheritDoc}
      *
      * <p>
-     * If you prefer to evict the 1st entry then return negative number, if the 2nd entry is a better candidate
-     * then return a positive number or return 0 if both entries are equally good candidates for eviction
+     * If you prefer to evict the 1st entry then return
+     * negative number, if the 2nd entry is a better candidate
+     * then return a positive number or return 0 if both
+     * entries are equally good candidates for eviction
      * </p>
      */
     @Override

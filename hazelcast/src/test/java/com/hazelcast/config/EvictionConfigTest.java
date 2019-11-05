@@ -28,8 +28,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
@@ -45,8 +45,8 @@ public class EvictionConfigTest {
                 .allFieldsShouldBeUsedExcept("sizeConfigured")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(EvictionConfig.class,
-                        new EvictionConfig().setSize(1000).setMaximumSizePolicy(ENTRY_COUNT).setEvictionPolicy(LFU),
-                        new EvictionConfig().setSize(300).setMaximumSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE).setEvictionPolicy(LRU))
+                        new EvictionConfig().setSize(1000).setMaxSizePolicy(ENTRY_COUNT).setEvictionPolicy(LFU),
+                        new EvictionConfig().setSize(300).setMaxSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE).setEvictionPolicy(LRU))
                 .withPrefabValues(EvictionPolicyComparator.class,
                         new LFUEvictionPolicyComparator(), new LRUEvictionPolicyComparator())
                 .verify();

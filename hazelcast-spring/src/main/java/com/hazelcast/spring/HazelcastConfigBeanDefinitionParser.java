@@ -18,7 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
-import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -52,13 +52,10 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MCMutualAuthConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
@@ -110,6 +107,9 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
@@ -120,18 +120,16 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
-import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.config.cp.FencedLockConfig;
-import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -1230,19 +1228,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             Node attName = node.getAttributes().getNamedItem("name");
             String name = getTextContent(attName);
             mapConfigBuilder.addPropertyValue("name", name);
-            fillAttributeValues(node, mapConfigBuilder, "maxSize", "maxSizePolicy");
-            BeanDefinitionBuilder maxSizeConfigBuilder = createBeanBuilder(MaxSizeConfig.class);
-            AbstractBeanDefinition maxSizeConfigBeanDefinition = maxSizeConfigBuilder.getBeanDefinition();
-            mapConfigBuilder.addPropertyValue("maxSizeConfig", maxSizeConfigBeanDefinition);
-            Node maxSizeNode = node.getAttributes().getNamedItem("max-size");
-            if (maxSizeNode != null) {
-                maxSizeConfigBuilder.addPropertyValue("size", getTextContent(maxSizeNode));
-            }
-            Node maxSizePolicyNode = node.getAttributes().getNamedItem("max-size-policy");
-            if (maxSizePolicyNode != null) {
-                maxSizeConfigBuilder.addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode)),
-                        MaxSizePolicy.valueOf(getTextContent(maxSizePolicyNode)));
-            }
+            fillAttributeValues(node, mapConfigBuilder);
+
             Node cacheDeserializedValueNode = node.getAttributes().getNamedItem("cache-deserialized-values");
             if (cacheDeserializedValueNode != null) {
                 mapConfigBuilder.addPropertyValue("cacheDeserializedValues", getTextContent(cacheDeserializedValueNode));
@@ -1291,6 +1278,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleEventJournalConfig(mapConfigBuilder, childNode);
                 } else if ("map-eviction-policy".equals(nodeName)) {
                     handleMapEvictionPolicyConfig(mapConfigBuilder, childNode);
+                } else if ("eviction".equals(nodeName)) {
+                    handleEvictionConfig(childNode, mapConfigBuilder, false, true);
                 } else if ("partition-strategy".equals(nodeName)) {
                     PartitioningStrategyConfig psConfig = new PartitioningStrategyConfig(getTextContent(childNode));
                     mapConfigBuilder.addPropertyValue("partitioningStrategyConfig", psConfig);
@@ -1415,7 +1404,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     builder.addPropertyValue("indexConfigs", indexes);
                 } else if ("eviction".equals(nodeName)) {
-                    builder.addPropertyValue("evictionConfig", getEvictionConfig(node, false));
+                    builder.addPropertyValue("evictionConfig", getEvictionConfig(node, false, false));
                 }
             }
             return builder;
@@ -1429,7 +1418,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("eviction".equals(nodeName)) {
-                    cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode, false));
+                    cacheConfigBuilder.addPropertyValue("evictionConfig",
+                            getEvictionConfig(childNode, false, false));
                 } else if ("expiry-policy-factory".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("expiryPolicyFactoryConfig", getExpiryPolicyFactoryConfig(childNode));
                 } else if ("cache-entry-listeners".equals(nodeName)) {
@@ -1624,14 +1614,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : childElements(node)) {
                 String nodeName = cleanNodeName(childNode);
                 if ("eviction".equals(nodeName)) {
-                    handleEvictionConfig(childNode, nearCacheConfigBuilder, true);
+                    handleEvictionConfig(childNode, nearCacheConfigBuilder, true, false);
                 }
             }
             configBuilder.addPropertyValue("nearCacheConfig", nearCacheConfigBuilder.getBeanDefinition());
         }
 
-        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder, boolean isNearCache) {
-            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node, isNearCache));
+        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder,
+                                          boolean isNearCache, boolean isIMap) {
+            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node, isNearCache, isIMap));
         }
 
         private ExpiryPolicyFactoryConfig getExpiryPolicyFactoryConfig(Node node) {

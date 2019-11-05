@@ -1269,8 +1269,7 @@
         <async-backup-count>0</async-backup-count>
         <time-to-live-seconds>0</time-to-live-seconds>
         <max-idle-seconds>0</max-idle-seconds>
-        <eviction-policy>NONE</eviction-policy>
-        <max-size policy="PER_NODE">0</max-size>
+        <eviction eviction-policy="NONE" max-size-policy="PER_NODE" size="0"/>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <read-backup-data>false</read-backup-data>
         <merkle-tree enabled="false">

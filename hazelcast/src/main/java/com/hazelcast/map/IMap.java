@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Offloadable;
@@ -192,7 +193,7 @@ import java.util.concurrent.TimeUnit;
  * map grows larger than the maximum allowed size, an eviction policy decides
  * which item to evict from the map to reduce its size. The maximum allowed
  * size may be configured using the
- * {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy max-size} setting
+ * {@link MaxSizePolicy max-size} setting
  * and the eviction policy may be configured using the
  * {@link com.hazelcast.config.EvictionPolicy eviction-policy} setting as well.
  * By default, maps have no restrictions on the size and may grow arbitrarily
@@ -846,8 +847,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
     CompletionStage<V> putAsync(@Nonnull K key, @Nonnull V value,
-                                   long ttl, @Nonnull TimeUnit ttlUnit,
-                                   long maxIdle, @Nonnull TimeUnit maxIdleUnit);
+                                long ttl, @Nonnull TimeUnit ttlUnit,
+                                long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * Asynchronously puts the given key and value.
@@ -1041,8 +1042,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see CompletionStage
      */
     CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value,
-                                      long ttl, @Nonnull TimeUnit ttlUnit,
-                                      long maxIdle, @Nonnull TimeUnit maxIdleUnit);
+                                   long ttl, @Nonnull TimeUnit ttlUnit,
+                                   long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
      * Asynchronously removes the given key, returning an {@link CompletionStage}
@@ -1928,8 +1929,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 boolean includeValue);
+                               @Nonnull Predicate<K, V> predicate,
+                               boolean includeValue);
 
     /**
      * Adds a local entry listener for this map.
@@ -1949,9 +1950,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addLocalEntryListener(@Nonnull MapListener listener,
-                                 @Nonnull Predicate<K, V> predicate,
-                                 @Nullable K key,
-                                 boolean includeValue);
+                               @Nonnull Predicate<K, V> predicate,
+                               @Nullable K key,
+                               boolean includeValue);
 
     /**
      * Adds an interceptor for this map.
@@ -2070,8 +2071,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addEntryListener(@Nonnull MapListener listener,
-                            @Nonnull Predicate<K, V> predicate,
-                            boolean includeValue);
+                          @Nonnull Predicate<K, V> predicate,
+                          boolean includeValue);
 
     /**
      * Adds a {@link MapListener} for this map.
@@ -2087,9 +2088,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see MapListener
      */
     UUID addEntryListener(@Nonnull MapListener listener,
-                            @Nonnull Predicate<K, V> predicate,
-                            @Nullable K key,
-                            boolean includeValue);
+                          @Nonnull Predicate<K, V> predicate,
+                          @Nullable K key,
+                          boolean includeValue);
 
     /**
      * Returns the {@code EntryView} for the specified key.
@@ -2332,10 +2333,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Convenient method to add an index to this map with the given type and attributes.
      * Attributes are indexed in ascending order.
      * <p>
-     * @see #addIndex(IndexConfig)
      *
-     * @param type Index type.
+     * @param type       Index type.
      * @param attributes Attributes to be indexed.
+     * @see #addIndex(IndexConfig)
      */
     default void addIndex(IndexType type, String... attributes) {
         IndexConfig config = IndexUtils.createIndexConfig(type, attributes);

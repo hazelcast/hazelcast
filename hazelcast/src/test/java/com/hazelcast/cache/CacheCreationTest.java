@@ -49,7 +49,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -202,7 +202,7 @@ public class CacheCreationTest extends HazelcastTestSupport {
                 .setName("test")
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
                 .setEvictionConfig(new EvictionConfig().setSize(1000)
-                        .setMaximumSizePolicy(ENTRY_COUNT).setEvictionPolicy(EvictionPolicy.LFU));
+                        .setMaxSizePolicy(ENTRY_COUNT).setEvictionPolicy(EvictionPolicy.LFU));
 
         return createBasicConfig()
                 .addCacheConfig(cacheSimpleConfig);
@@ -213,7 +213,7 @@ public class CacheCreationTest extends HazelcastTestSupport {
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
                 .setEvictionConfig(new EvictionConfig()
                         .setSize(1000)
-                        .setMaximumSizePolicy(ENTRY_COUNT)
+                        .setMaxSizePolicy(ENTRY_COUNT)
                         .setEvictionPolicy(EvictionPolicy.LFU));
     }
 

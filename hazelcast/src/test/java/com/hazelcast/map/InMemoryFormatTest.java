@@ -18,14 +18,15 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -206,7 +207,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNativeIMap_throwsException() throws Exception {
         Config config = getConfig();
         config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.NATIVE);
@@ -215,7 +216,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         member.getMap("default");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNativeNearCache_throwsException() throws Exception {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.NATIVE);

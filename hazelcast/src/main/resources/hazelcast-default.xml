@@ -194,21 +194,8 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
         <max-idle-seconds>0</max-idle-seconds>
-        <!--
-            Valid values are:
-            NONE (no eviction),
-            LRU (Least Recently Used),
-            LFU (Least Frequently Used).
-            NONE is the default.
-        -->
-        <eviction-policy>NONE</eviction-policy>
-        <!--
-            Maximum size of the map. When max size is reached,
-            map is evicted based on the policy defined.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            Integer.MAX_VALUE. Default is 0.
-        -->
-        <max-size policy="PER_NODE">0</max-size>
+
+        <eviction eviction-policy="NONE" max-size-policy="PER_NODE" size="0"/>
         <!--
             While recovering from split-brain (network partitioning),
             map entries in the small cluster will merge into the bigger cluster

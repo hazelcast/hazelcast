@@ -38,7 +38,7 @@ public class EvictionConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setMaxSizePolicyOnReadOnlyEvictionConfigShouldFail() {
-        getReadOnlyConfig().setMaximumSizePolicy(null);
+        getReadOnlyConfig().setMaxSizePolicy(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)

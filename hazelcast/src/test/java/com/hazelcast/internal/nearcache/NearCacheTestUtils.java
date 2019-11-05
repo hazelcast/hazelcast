@@ -18,7 +18,7 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -47,7 +47,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -133,7 +133,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                                          MaxSizePolicy maxSizePolicy, int maxSize) {
         nearCacheConfig.getEvictionConfig()
                 .setEvictionPolicy(evictionPolicy)
-                .setMaximumSizePolicy(maxSizePolicy)
+                .setMaxSizePolicy(maxSizePolicy)
                 .setSize(maxSize);
     }
 

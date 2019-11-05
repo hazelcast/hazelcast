@@ -58,7 +58,7 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
@@ -266,7 +266,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
     @SuppressWarnings("unchecked")
     protected CacheConfig<Integer, Integer> createCacheConfig(InMemoryFormat inMemoryFormat) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(Integer.MAX_VALUE);
 
         return (CacheConfig<Integer, Integer>) super.createCacheConfig(inMemoryFormat)
@@ -276,7 +276,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
     @Override
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(Integer.MAX_VALUE);
 
         return super.createNearCacheConfig(inMemoryFormat)

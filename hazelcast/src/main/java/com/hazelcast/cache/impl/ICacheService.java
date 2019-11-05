@@ -16,12 +16,13 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -36,7 +37,8 @@ import java.util.UUID;
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
         extends ManagedService, RemoteService, FragmentedMigrationAwareService,
-        EventPublishingService<Object, CacheEventListener> {
+        EventPublishingService<Object, CacheEventListener>,
+        StatisticsAwareService<LocalCacheStats> {
 
     String CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE =
             "There is no valid JCache API library at classpath. "
@@ -109,8 +111,6 @@ public interface ICacheService
     boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId);
 
     void deregisterAllListener(String cacheNameWithPrefix);
-
-    CacheStatistics getStatistics(String cacheNameWithPrefix);
 
     ExpirationManager getExpirationManager();
 

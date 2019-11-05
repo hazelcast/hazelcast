@@ -137,8 +137,8 @@ public class ConfigXmlGenerator {
         wanReplicationXmlGenerator(gen, config);
         networkConfigXmlGenerator(gen, config);
         advancedNetworkConfigXmlGenerator(gen, config);
-        mapConfigXmlGenerator(gen, config);
         replicatedMapConfigXmlGenerator(gen, config);
+        mapConfigXmlGenerator(gen, config);
         cacheConfigXmlGenerator(gen, config);
         queueXmlGenerator(gen, config);
         multiMapXmlGenerator(gen, config);
@@ -701,21 +701,22 @@ public class ConfigXmlGenerator {
         String publisherId = c.getPublisherId();
         gen.open("batch-publisher");
         gen.node("cluster-name", c.getClusterName())
-           .node("batch-size", c.getBatchSize())
-           .node("batch-max-delay-millis", c.getBatchMaxDelayMillis())
-           .node("response-timeout-millis", c.getResponseTimeoutMillis())
-           .node("acknowledge-type", c.getAcknowledgeType())
-           .node("initial-publisher-state", c.getInitialPublisherState())
-           .node("snapshot-enabled", c.isSnapshotEnabled())
-           .node("idle-max-park-ns", c.getIdleMaxParkNs())
-           .node("idle-min-park-ns", c.getIdleMinParkNs())
-           .node("max-concurrent-invocations", c.getMaxConcurrentInvocations())
-           .node("discovery-period-seconds", c.getDiscoveryPeriodSeconds())
-           .node("use-endpoint-private-address", c.isUseEndpointPrivateAddress())
-           .node("queue-full-behavior", c.getQueueFullBehavior())
-           .node("max-target-endpoints", c.getMaxTargetEndpoints())
-           .node("queue-capacity", c.getQueueCapacity())
-           .appendProperties(c.getProperties());
+                .node("batch-size", c.getBatchSize())
+                .node("batch-max-delay-millis", c.getBatchMaxDelayMillis())
+                .node("response-timeout-millis", c.getResponseTimeoutMillis())
+                .node("acknowledge-type", c.getAcknowledgeType())
+                .node("initial-publisher-state", c.getInitialPublisherState())
+                .node("snapshot-enabled", c.isSnapshotEnabled())
+                .node("idle-max-park-ns", c.getIdleMaxParkNs())
+                .node("idle-min-park-ns", c.getIdleMinParkNs())
+                .node("max-concurrent-invocations", c.getMaxConcurrentInvocations())
+                .node("discovery-period-seconds", c.getDiscoveryPeriodSeconds())
+                .node("use-endpoint-private-address", c.isUseEndpointPrivateAddress())
+                .node("queue-full-behavior", c.getQueueFullBehavior())
+                .node("max-target-endpoints", c.getMaxTargetEndpoints())
+                .node("queue-capacity", c.getQueueCapacity())
+                .appendProperties(c.getProperties());
+
         if (!isNullOrEmptyAfterTrim(publisherId)) {
             gen.node("publisher-id", publisherId);
         }
@@ -734,10 +735,10 @@ public class ConfigXmlGenerator {
     private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, CustomWanPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("custom-publisher")
-           .appendProperties(c.getProperties())
-           .node("class-name", c.getClassName())
-           .node("publisher-id", publisherId)
-           .close();
+                .appendProperties(c.getProperties())
+                .node("class-name", c.getClassName())
+                .node("publisher-id", publisherId)
+                .close();
     }
 
     private static void wanReplicationSyncGenerator(XmlGenerator gen, WanSyncConfig c) {
@@ -900,15 +901,13 @@ public class ConfigXmlGenerator {
                     .node("async-backup-count", m.getAsyncBackupCount())
                     .node("time-to-live-seconds", m.getTimeToLiveSeconds())
                     .node("max-idle-seconds", m.getMaxIdleSeconds())
-                    .node("eviction-policy", m.getEvictionPolicy())
-                    .node("max-size", m.getMaxSizeConfig().getSize(),
-                            "policy", m.getMaxSizeConfig().getMaxSizePolicy())
                     .node("merge-policy", mergePolicyConfig.getPolicy(),
                             "batch-size", mergePolicyConfig.getBatchSize())
                     .node("split-brain-protection-ref", m.getSplitBrainProtectionName())
                     .node("read-backup-data", m.isReadBackupData())
                     .node("metadata-policy", m.getMetadataPolicy());
 
+            evictionConfigXmlGenerator(gen, m.getEvictionConfig());
             appendMerkleTreeConfig(gen, m.getMerkleTreeConfig());
             appendEventJournalConfig(gen, m.getEventJournalConfig());
             appendHotRestartConfig(gen, m.getHotRestartConfig());
@@ -1208,7 +1207,7 @@ public class ConfigXmlGenerator {
         String comparatorClassName = !isNullOrEmpty(e.getComparatorClassName()) ? e.getComparatorClassName() : null;
         gen.node("eviction", null,
                 "size", e.getSize(),
-                "max-size-policy", e.getMaximumSizePolicy(),
+                "max-size-policy", e.getMaxSizePolicy(),
                 "eviction-policy", e.getEvictionPolicy(),
                 "comparator-class-name", comparatorClassName);
     }
@@ -1555,11 +1554,11 @@ public class ConfigXmlGenerator {
                 "enabled", metricsConfig.isEnabled(),
                 "mc-enabled", metricsConfig.isMcEnabled(),
                 "jmx-enabled", metricsConfig.isJmxEnabled())
-           .node("collection-interval-seconds", metricsConfig.getCollectionIntervalSeconds())
-           .node("retention-seconds", metricsConfig.getRetentionSeconds())
-           .node("metrics-for-data-structures", metricsConfig.isMetricsForDataStructuresEnabled())
-           .node("minimum-level", metricsConfig.getMinimumLevel())
-           .close();
+                .node("collection-interval-seconds", metricsConfig.getCollectionIntervalSeconds())
+                .node("retention-seconds", metricsConfig.getRetentionSeconds())
+                .node("metrics-for-data-structures", metricsConfig.isMetricsForDataStructuresEnabled())
+                .node("minimum-level", metricsConfig.getMinimumLevel())
+                .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {
@@ -1602,7 +1601,7 @@ public class ConfigXmlGenerator {
         } else {
             gen.node("function-class-name",
                     classNameOrImplClass(splitBrainProtectionConfig.getFunctionClassName(),
-                    splitBrainProtectionConfig.getFunctionImplementation()));
+                            splitBrainProtectionConfig.getFunctionImplementation()));
         }
     }
 
@@ -1616,8 +1615,8 @@ public class ConfigXmlGenerator {
                 "enabled", nativeMemoryConfig.isEnabled(),
                 "allocator-type", nativeMemoryConfig.getAllocatorType())
                 .node("size", null,
-                    "unit", nativeMemoryConfig.getSize().getUnit(),
-                               "value", nativeMemoryConfig.getSize().getValue())
+                        "unit", nativeMemoryConfig.getSize().getUnit(),
+                        "value", nativeMemoryConfig.getSize().getValue())
                 .node("min-block-size", nativeMemoryConfig.getMinBlockSize())
                 .node("page-size", nativeMemoryConfig.getPageSize())
                 .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage())

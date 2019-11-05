@@ -422,7 +422,6 @@ public class InvalidConfigurationTest {
 
                 + "<queue name=\"default\">\n"
                 + "<split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>"
-                + "<max-size>0</max-size>\n"
                 + "<backup-count>${queue-backup-count}</backup-count>\n"
                 + "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n"
                 + "<empty-queue-ttl>${empty-queue-ttl}</empty-queue-ttl>\n"
@@ -434,7 +433,7 @@ public class InvalidConfigurationTest {
                 + "<async-backup-count>${map-async-backup-count}</async-backup-count>\n"
                 + "<time-to-live-seconds>${map-time-to-live-seconds}</time-to-live-seconds>\n"
                 + "<max-idle-seconds>${map-max-idle-seconds}</max-idle-seconds>\n"
-                + "<eviction-policy>${map-eviction-policy}</eviction-policy>\n"
+                + "<eviction size=\"0\" eviction-policy=\"${map-eviction-policy}\"/>"
                 + "</map>\n"
 
                 + "<cache name=\"default\">\n"

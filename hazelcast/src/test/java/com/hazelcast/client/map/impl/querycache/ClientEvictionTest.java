@@ -18,8 +18,8 @@ package com.hazelcast.client.map.impl.querycache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -70,7 +70,7 @@ public class ClientEvictionTest extends HazelcastTestSupport {
         cacheConfig.getEvictionConfig()
                 .setSize(maxSize)
                 .setEvictionPolicy(EvictionPolicy.LFU)
-                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addQueryCacheConfig(mapName, cacheConfig);

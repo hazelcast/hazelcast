@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.management;
 
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizePolicy;
 
 public class UpdateMapConfigParameters {
     private final String map;
@@ -26,7 +26,7 @@ public class UpdateMapConfigParameters {
     private final EvictionPolicy evictionPolicy;
     private final boolean readBackupData;
     private final int maxSize;
-    private final MaxSizeConfig.MaxSizePolicy maxSizePolicy;
+    private final MaxSizePolicy maxSizePolicy;
 
     public UpdateMapConfigParameters(String map,
                                      int timeToLiveSeconds,
@@ -34,7 +34,7 @@ public class UpdateMapConfigParameters {
                                      EvictionPolicy evictionPolicy,
                                      boolean readBackupData,
                                      int maxSize,
-                                     MaxSizeConfig.MaxSizePolicy maxSizePolicy) {
+                                     MaxSizePolicy maxSizePolicy) {
         this.map = map;
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxIdleSeconds = maxIdleSeconds;
@@ -68,7 +68,7 @@ public class UpdateMapConfigParameters {
         return maxSize;
     }
 
-    public MaxSizeConfig.MaxSizePolicy getMaxSizePolicy() {
+    public MaxSizePolicy getMaxSizePolicy() {
         return maxSizePolicy;
     }
 }
