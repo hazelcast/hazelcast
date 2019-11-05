@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.rel.physical.index;
 
+import com.hazelcast.sql.impl.exec.index.IndexCondition;
 import org.apache.calcite.rex.RexNode;
 
 /**
@@ -24,21 +25,26 @@ import org.apache.calcite.rex.RexNode;
  */
 public class IndexFilter {
     /** Index condition. */
-    private final RexNode indexFilter;
+    private final IndexCondition indexFilter;
 
     /** Remainder. */
     private final RexNode remainderFilter;
 
-    public IndexFilter(RexNode indexFilter, RexNode remainderFilter) {
+    public IndexFilter(IndexCondition indexFilter, RexNode remainderFilter) {
         this.indexFilter = indexFilter;
         this.remainderFilter = remainderFilter;
     }
 
-    public RexNode getIndexFilter() {
+    public IndexCondition getIndexFilter() {
         return indexFilter;
     }
 
     public RexNode getRemainderFilter() {
         return remainderFilter;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{indexFilter=" + indexFilter + ", remainderFilter=" + remainderFilter + '}';
     }
 }

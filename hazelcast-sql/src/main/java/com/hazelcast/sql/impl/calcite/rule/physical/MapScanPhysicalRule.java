@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.rule.physical;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
@@ -31,6 +32,8 @@ import com.hazelcast.sql.impl.calcite.rel.physical.index.IndexFilter;
 import com.hazelcast.sql.impl.calcite.rel.physical.index.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
+import com.hazelcast.sql.impl.exec.index.IndexCondition;
+import com.hazelcast.sql.impl.exec.index.IndexConditionType;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptUtil;
@@ -43,6 +46,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlKind;
@@ -159,6 +163,13 @@ public final class MapScanPhysicalRule extends RelOptRule {
     ) {
         // Map index fields to scan fields. Since not all index might be involved in
         List<String> indexAttributes = index.getAttributes();
+
+        if (indexAttributes.size() > 1) {
+            // TODO: Do not support composite index in the prototype for the sake of simplicity. Should be supported in
+            //  production implementation.
+            return null;
+        }
+
         List<Integer> indexAttributes0 = new ArrayList<>(indexAttributes.size());
 
         List<String> scanFieldNames = scan.getTable().getRowType().getFieldNames();
@@ -233,10 +244,10 @@ public final class MapScanPhysicalRule extends RelOptRule {
         // TODO: Use indexes not only for plain comparisons, but for monotonic expressions as well (e.g. "x + A > B")!
 
         // Now we iterate over single expressions in hope to find a match for a prefix of index attributes.
-        List<RexNode> indexExps = new ArrayList<>(1);
+        List<IndexCondition> indexConditions = new ArrayList<>(1);
 
         for (int i = 0; i < indexAttributes.size(); i++) {
-            indexExps.add(null);
+            indexConditions.add(null);
         }
 
         List<RexNode> remainderExps = new ArrayList<>(Math.min(exps.size() - 1, 1));
@@ -244,21 +255,25 @@ public final class MapScanPhysicalRule extends RelOptRule {
         for (RexNode exp : exps) {
             boolean remainder = false;
 
-            Integer indexAttributePosition = getIndexAttributePositionForExpression(exp, indexType, indexAttributes);
+            BiTuple<Integer, IndexCondition> positionAndCondition =
+                getIndexAttributePositionForExpression(exp, indexType, indexAttributes);
 
-            if (indexAttributePosition == null) {
+            if (positionAndCondition == null) {
                 // Expression cannot be used with index.
                 remainder = true;
             } else {
                 // Expression could be used with index. Add it to the appropriate position.
-                assert indexAttributePosition < indexAttributes.size();
+                int position = positionAndCondition.element1();
+                IndexCondition condition = positionAndCondition.element2();
 
-                RexNode oldIndexExp = indexExps.get(indexAttributePosition);
+                assert position < indexAttributes.size();
 
-                if (oldIndexExp != null) {
+                IndexCondition oldIndexCondition = indexConditions.get(position);
+
+                if (oldIndexCondition != null) {
                     remainder = true;
                 } else {
-                    indexExps.set(indexAttributePosition, exp);
+                    indexConditions.set(position, condition);
                 }
             }
 
@@ -268,38 +283,43 @@ public final class MapScanPhysicalRule extends RelOptRule {
         }
 
         // Get final index expressions.
+        IndexCondition finalIndexCondition = composeIndexConditions(indexConditions);
 
-        List<RexNode> preparedIndexExps = new ArrayList<>(indexExps.size());
-
-        for (RexNode indexExp : indexExps) {
-            if (indexExp == null) {
-                break;
-            }
-
-            preparedIndexExps.add(indexExp);
+        if (finalIndexCondition == null) {
+            return null;
         }
 
-        // If the leading part of the index expression is empty, then we cannot use that index.
-        if (!preparedIndexExps.isEmpty()) {
-            RexNode finalIndexExp = RexUtil.composeConjunction(rexBuilder, preparedIndexExps);
-            RexNode finalRemainderExp = RexUtil.composeConjunction(rexBuilder, remainderExps);
+        RexNode finalRemainderExp = RexUtil.composeConjunction(rexBuilder, remainderExps);
 
-            return new IndexFilter(finalIndexExp, finalRemainderExp);
+        return new IndexFilter(finalIndexCondition, finalRemainderExp);
+    }
+
+    private static IndexCondition composeIndexConditions(List<IndexCondition> indexConditions) {
+        if (indexConditions.size() > 1) {
+            // TODO: Properly compose condition for composite indexes.
+            throw new UnsupportedOperationException("Composite indexes are not supported at the moment.");
         }
 
-        return null;
+        if (indexConditions.get(0) == null) {
+            // TODO: Refactor this when composite index support is added. We should check for not-null prefix here.
+            return null;
+        }
+
+        return indexConditions.get(0);
     }
 
     @SuppressWarnings({"checkstyle:FallThrough", "checkstyle:CyclomaticComplexity"})
-    private static Integer getIndexAttributePositionForExpression(
+    private static BiTuple<Integer, IndexCondition> getIndexAttributePositionForExpression(
         RexNode exp,
         IndexType indexType,
         List<Integer> indexAttributes
     ) {
+        SqlKind kind = exp.getKind();
+
         RexNode operand1;
         RexNode operand2;
 
-        switch (exp.getKind()) {
+        switch (kind) {
             case GREATER_THAN:
             case GREATER_THAN_OR_EQUAL:
             case LESS_THAN:
@@ -329,20 +349,74 @@ public final class MapScanPhysicalRule extends RelOptRule {
         if (operand1.getKind() == SqlKind.INPUT_REF && operand2.getKind() == SqlKind.LITERAL) {
             int index = indexAttributes.indexOf(((RexInputRef) operand1).getIndex());
 
-            if (index != -1) {
-                return index;
+            if (index == -1) {
+                return null;
             }
+
+            IndexConditionType type = inferConditionType(kind);
+            Object value = ((RexLiteral)operand2).getValue();
+
+            return BiTuple.of(index, new IndexCondition(type, value));
         }
 
         if (operand2.getKind() == SqlKind.INPUT_REF && operand1.getKind() == SqlKind.LITERAL) {
             int index = indexAttributes.indexOf(((RexInputRef) operand2).getIndex());
 
-            if (index != -1) {
-                return index;
+            if (index == -1) {
+                return null;
             }
+
+            IndexConditionType type = inferConditionType(inverseIndexConditionKind(kind));
+            Object value = ((RexLiteral)operand1).getValue();
+
+            return BiTuple.of(index, new IndexCondition(type, value));
         }
 
         return null;
+    }
+
+    private static IndexConditionType inferConditionType(SqlKind kind) {
+        switch (kind) {
+            case GREATER_THAN:
+                return IndexConditionType.GREATER_THAN;
+
+            case GREATER_THAN_OR_EQUAL:
+                return IndexConditionType.GREATER_THAN_OR_EQUAL;
+
+            case LESS_THAN:
+                return IndexConditionType.LESS_THAN;
+
+            case LESS_THAN_OR_EQUAL:
+                return IndexConditionType.LESS_THAN_OR_EQUAL;
+
+            case EQUALS:
+                return IndexConditionType.EQUALS;
+
+            default:
+                throw new UnsupportedOperationException("Unexpected kind: " + kind);
+        }
+    }
+
+    private static SqlKind inverseIndexConditionKind(SqlKind kind) {
+        switch (kind) {
+            case GREATER_THAN:
+                return SqlKind.LESS_THAN;
+
+            case GREATER_THAN_OR_EQUAL:
+                return SqlKind.LESS_THAN_OR_EQUAL;
+
+            case LESS_THAN:
+                return SqlKind.GREATER_THAN;
+
+            case LESS_THAN_OR_EQUAL:
+                return SqlKind.GREATER_THAN_OR_EQUAL;
+
+            case EQUALS:
+                return kind;
+
+            default:
+                throw new UnsupportedOperationException("Unexpected kind: " + kind);
+        }
     }
 
     /**
