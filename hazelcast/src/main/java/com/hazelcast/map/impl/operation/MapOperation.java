@@ -37,6 +37,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;
@@ -51,6 +53,13 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
         implements IdentifiedDataSerializable, ServiceNamespaceAware {
+
+    private static final int DEFAULT_FORCED_EVICTION_RETRY_COUNT = 5;
+    private static final String PROP_FORCED_EVICTION_RETRY_COUNT
+        = "hazelcast.internal.forced.eviction.retry.count";
+    private static final HazelcastProperty FORCED_EVICTION_RETRY_COUNT
+        = new HazelcastProperty(PROP_FORCED_EVICTION_RETRY_COUNT,
+                                DEFAULT_FORCED_EVICTION_RETRY_COUNT);
 
     private static final boolean ASSERTION_ENABLED = MapOperation.class.desiredAssertionStatus();
 
@@ -70,6 +79,39 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public MapOperation(String name) {
         this.name = name;
+    }
+
+    private int getRetryCount() {
+        HazelcastProperties properties = getNodeEngine().getProperties();
+        return properties.getInteger(FORCED_EVICTION_RETRY_COUNT);
+    }
+
+    private void runEvictionStrategies() {
+        final ILogger logger = this.logger();
+        final int forcedEvictionRetryCount = getRetryCount();
+
+        final Eviction[] evictions = new Eviction[] {
+            new RecordStoreForcedEviction(forcedEvictionRetryCount, logger, this),
+            new PartitionRecordStoreForcedEviction(forcedEvictionRetryCount, logger, this),
+            new AllEntriesEviction(logger, this),
+            new PartitionAllEntriesEviction(logger, this)
+        };
+
+        for (Eviction eviction : evictions) {
+            eviction.execute();
+            if (eviction.isSuccessful()) {
+                return;
+            }
+        }
+    }
+
+    private void rerun() {
+        try {
+            runEvictionStrategies();
+        } catch (NativeOutOfMemoryError e) {
+            disposeDeferredBlocks();
+            throw e;
+        }
     }
 
     @Override
@@ -109,7 +151,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         try {
             runInternal();
         } catch (NativeOutOfMemoryError e) {
-            WithForcedEviction.rerun(this);
+            rerun();
         }
     }
 
