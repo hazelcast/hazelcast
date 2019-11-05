@@ -29,7 +29,6 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -95,12 +94,9 @@ public class JoinStressTest extends HazelcastTestSupport {
 
         for (int i = 0; i < count; i++) {
             final int index = i;
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    instances[index] = factory.newHazelcastInstance(createConfig());
-                    latch.countDown();
-                }
+            new Thread(() -> {
+                instances[index] = factory.newHazelcastInstance(createConfig());
+                latch.countDown();
             }).start();
         }
 
@@ -119,17 +115,15 @@ public class JoinStressTest extends HazelcastTestSupport {
         ExecutorService ex = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() * 2);
         for (int i = 0; i < nodeCount; i++) {
             final int portSeed = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    sleepRandom(1, 1000);
+            ex.execute(() -> {
+                sleepRandom(1, 1000);
 
-                    Config config = createConfig();
-                    initNetworkConfig(config.getNetworkConfig(), basePort, portSeed, multicast, nodeCount);
+                Config config = createConfig();
+                initNetworkConfig(config.getNetworkConfig(), basePort, portSeed, multicast, nodeCount);
 
-                    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-                    instances.set(portSeed, h);
-                    latch.countDown();
-                }
+                HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                instances.set(portSeed, h);
+                latch.countDown();
             });
         }
 
@@ -174,9 +168,9 @@ public class JoinStressTest extends HazelcastTestSupport {
         final int groupCount = 3;
         final int basePort = 12301;
         final CountDownLatch latch = new CountDownLatch(nodeCount);
-        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(nodeCount);
+        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<>(nodeCount);
 
-        final Map<String, AtomicInteger> groups = new HashMap<String, AtomicInteger>(groupCount);
+        final Map<String, AtomicInteger> groups = new HashMap<>(groupCount);
         for (int i = 0; i < groupCount; i++) {
             groups.put("group-" + i, new AtomicInteger(0));
         }
@@ -184,22 +178,20 @@ public class JoinStressTest extends HazelcastTestSupport {
         ExecutorService ex = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() * 2);
         for (int i = 0; i < nodeCount; i++) {
             final int portSeed = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    sleepRandom(1, 1000);
+            ex.execute(() -> {
+                sleepRandom(1, 1000);
 
-                    Config config = createConfig();
-                    String name = "group-" + (int) (Math.random() * groupCount);
-                    config.setClusterName(name);
+                Config config = createConfig();
+                String name = "group-" + (int) (Math.random() * groupCount);
+                config.setClusterName(name);
 
-                    groups.get(name).incrementAndGet();
+                groups.get(name).incrementAndGet();
 
-                    initNetworkConfig(config.getNetworkConfig(), basePort, portSeed, multicast, nodeCount);
+                initNetworkConfig(config.getNetworkConfig(), basePort, portSeed, multicast, nodeCount);
 
-                    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-                    instances.set(portSeed, h);
-                    latch.countDown();
-                }
+                HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                instances.set(portSeed, h);
+                latch.countDown();
             });
         }
         try {
@@ -213,15 +205,10 @@ public class JoinStressTest extends HazelcastTestSupport {
             assertNotNull(hz);
             logEvaluatedMember(hz);
 
-            final int clusterSize = hz.getCluster().getMembers().size();
             final String clusterName = hz.getConfig().getClusterName();
             final int shouldBeClusterSize = groups.get(clusterName).get();
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run()
-                        throws Exception {
-                    assertEquals(clusterName + ": ", shouldBeClusterSize, clusterSize);
-                }
+            assertTrueEventually(() -> {
+                assertEquals(clusterName + ": ", shouldBeClusterSize, hz.getCluster().getMembers().size());
             });
         }
     }
@@ -246,7 +233,7 @@ public class JoinStressTest extends HazelcastTestSupport {
         tcpIpConfig.setEnabled(!multicast);
         tcpIpConfig.setConnectionTimeoutSeconds(5);
 
-        List<String> members = new ArrayList<String>(nodeCount);
+        List<String> members = new ArrayList<>(nodeCount);
         for (int i = 0; i < nodeCount; i++) {
             members.add("127.0.0.1:" + (basePort + i));
         }
@@ -270,22 +257,20 @@ public class JoinStressTest extends HazelcastTestSupport {
 
         Thread[] threads = new Thread[numThreads];
         for (int i = 0; i < numThreads; i++) {
-            threads[i] = new Thread(new Runnable() {
-                public void run() {
-                    Random random = new Random();
-                    for (int j = 0; j < loop; j++) {
-                        int op = random.nextInt(3);
-                        if (op == 0) {
-                            map.put(j, j);
-                        } else if (op == 1) {
-                            Integer val = map.remove(j);
-                            assert val == null || val.equals(j);
-                        } else {
-                            Integer val = map.get(j);
-                            assert val == null || val.equals(j);
-                        }
-
+            threads[i] = new Thread(() -> {
+                Random random = new Random();
+                for (int j = 0; j < loop; j++) {
+                    int op = random.nextInt(3);
+                    if (op == 0) {
+                        map.put(j, j);
+                    } else if (op == 1) {
+                        Integer val = map.remove(j);
+                        assert val == null || val.equals(j);
+                    } else {
+                        Integer val = map.get(j);
+                        assert val == null || val.equals(j);
                     }
+
                 }
             });
             threads[i].start();
@@ -338,13 +323,10 @@ public class JoinStressTest extends HazelcastTestSupport {
         Future<HazelcastInstance> future1 = spawn(newInstanceTask);
         Future<HazelcastInstance> future2 = spawn(newInstanceTask);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : instances) {
-                    sleepRandom(500, 1000);
-                    instance.getLifecycleService().terminate();
-                }
+        spawn(() -> {
+            for (HazelcastInstance instance : instances) {
+                sleepRandom(500, 1000);
+                instance.getLifecycleService().terminate();
             }
         });
 
