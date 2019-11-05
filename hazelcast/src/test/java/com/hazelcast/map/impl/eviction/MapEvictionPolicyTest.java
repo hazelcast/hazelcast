@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -35,7 +34,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
+import static com.hazelcast.config.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.impl.eviction.Evictor.SAMPLE_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.lang.String.format;
@@ -57,7 +56,7 @@ public class MapEvictionPolicyTest extends HazelcastTestSupport {
         config.setProperty(PARTITION_COUNT.getName(), "1");
         config.getMapConfig(mapName)
                 .setMapEvictionPolicy(new OddEvictor())
-                .getMaxSizeConfig()
+                .getEvictionConfig()
                 .setMaxSizePolicy(PER_PARTITION).setSize(sampleCount);
 
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -65,12 +64,9 @@ public class MapEvictionPolicyTest extends HazelcastTestSupport {
 
         final CountDownLatch eventLatch = new CountDownLatch(1);
         final Queue<Integer> evictedKeys = new ConcurrentLinkedQueue<Integer>();
-        map.addEntryListener(new EntryEvictedListener<Integer, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-                evictedKeys.add(event.getKey());
-                eventLatch.countDown();
-            }
+        map.addEntryListener((EntryEvictedListener<Integer, Integer>) event -> {
+            evictedKeys.add(event.getKey());
+            eventLatch.countDown();
         }, false);
 
         for (int i = 0; i < sampleCount + 1; i++) {

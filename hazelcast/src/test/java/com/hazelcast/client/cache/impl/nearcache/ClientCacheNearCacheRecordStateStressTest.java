@@ -50,7 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
@@ -101,7 +101,7 @@ public class ClientCacheNearCacheRecordStateStressTest extends HazelcastTestSupp
                 .addNearCacheConfig(newNearCacheConfig(cacheName));
 
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
 
         CacheConfig<Integer, Integer> cacheConfig = new CacheConfig<Integer, Integer>()
@@ -187,7 +187,7 @@ public class ClientCacheNearCacheRecordStateStressTest extends HazelcastTestSupp
 
     private NearCacheConfig newNearCacheConfig(String cacheName) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
 
         return new NearCacheConfig(cacheName)

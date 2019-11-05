@@ -22,7 +22,7 @@
 
     <map name="testQueryCacheXmlConfigWithWildCardMap*">
         <backup-count>1</backup-count>
-        <eviction-policy>LRU</eviction-policy>
+        <eviction eviction-policy="LRU"/>
 
         <query-caches>
             <query-cache name="queryCacheName*">

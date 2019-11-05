@@ -17,10 +17,7 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -32,17 +29,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MergePolicyValidatorTest extends HazelcastTestSupport {
-
-    private static final ILogger LOGGER = Logger.getLogger(MergePolicyValidatorTest.class);
 
     private SplitBrainMergePolicyProvider mapMergePolicyProvider;
 
@@ -60,17 +51,4 @@ public class MergePolicyValidatorTest extends HazelcastTestSupport {
     public void testConstructor() {
         assertUtilityConstructor(MergePolicyValidator.class);
     }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_OBJECT() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, OBJECT, false, LOGGER));
-    }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_NATIVE() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, NATIVE, false, LOGGER));
-    }
-
 }

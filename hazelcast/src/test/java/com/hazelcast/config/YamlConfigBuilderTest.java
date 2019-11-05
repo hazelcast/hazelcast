@@ -17,12 +17,12 @@
 package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
-import com.hazelcast.config.cp.SemaphoreConfig;
-import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -55,7 +55,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
@@ -758,10 +758,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      async-backup-count: 0\n"
                 + "      time-to-live-seconds: 0\n"
                 + "      max-idle-seconds: 0\n"
-                + "      eviction-policy: NONE\n"
-                + "      max-size:\n"
-                + "        policy: per_partition\n"
-                + "        max-size: 0\n"
+                + "      eviction:\n"
+                + "         eviction-policy: NONE\n"
+                + "         max-size-policy: per_partition\n"
+                + "         size: 0\n"
                 + "      merge-policy:\n"
                 + "        class-name: CustomMergePolicy\n"
                 + "        batch-size: 2342\n";
@@ -770,8 +770,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         MapConfig mapConfig = config.getMapConfig("testCaseInsensitivity");
 
         assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
-        assertEquals(EvictionPolicy.NONE, mapConfig.getEvictionPolicy());
-        assertEquals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
+        assertEquals(EvictionPolicy.NONE, mapConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(MaxSizePolicy.PER_PARTITION, mapConfig.getEvictionConfig().getMaxSizePolicy());
 
         MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -949,23 +949,27 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    lruMap:\n"
-                + "      eviction-policy: LRU\n"
+                + "         eviction:\n"
+                + "             eviction-policy: LRU\n"
                 + ""
                 + "    lfuMap:\n"
-                + "      eviction-policy: LFU\n"
+                + "          eviction:\n"
+                + "             eviction-policy: LFU\n"
                 + ""
                 + "    noneMap:\n"
-                + "      eviction-policy: NONE\n"
+                + "         eviction:\n"
+                + "             eviction-policy: NONE\n"
                 + ""
                 + "    randomMap:\n"
-                + "      eviction-policy: RANDOM\n";
+                + "        eviction:\n"
+                + "             eviction-policy: RANDOM\n";
 
         Config config = buildConfig(yaml);
 
-        assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionPolicy());
-        assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionPolicy());
+        assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionConfig().getEvictionPolicy());
     }
 
     @Override
@@ -1265,7 +1269,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(nearCacheConfig.isInvalidateOnChange());
         assertFalse(nearCacheConfig.isCacheLocalEntries());
         assertEquals(LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(3333, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals("test", nearCacheConfig.getName());
     }
@@ -1967,8 +1971,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, cacheConfig.getBackupCount());
         assertEquals(0, cacheConfig.getAsyncBackupCount());
         assertEquals(1000, cacheConfig.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
-                cacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT,
+                cacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals("LatestAccessMergePolicy",
                 cacheConfig.getMergePolicyConfig().getPolicy());
@@ -2276,10 +2280,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      async-backup-count: 1\n"
                 + "      time-to-live-seconds: 42\n"
                 + "      max-idle-seconds: 42\n"
-                + "      eviction-policy: RANDOM\n"
-                + "      max-size:\n"
-                + "        policy: PER_NODE\n"
-                + "        max-size: 42\n"
+                + "      eviction:\n"
+                + "         eviction-policy: RANDOM\n"
+                + "         max-size-policy: PER_NODE\n"
+                + "         size: 42\n"
                 + "      read-backup-data: true\n"
                 + "      merkle-tree:\n"
                 + "        enabled: true\n"
@@ -2342,9 +2346,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, mapConfig.getAsyncBackupCount());
         assertEquals(42, mapConfig.getTimeToLiveSeconds());
         assertEquals(42, mapConfig.getMaxIdleSeconds());
-        assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionPolicy());
-        assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
-        assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
+        assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(MaxSizePolicy.PER_NODE, mapConfig.getEvictionConfig().getMaxSizePolicy());
+        assertEquals(42, mapConfig.getEvictionConfig().getSize());
         assertTrue(mapConfig.isReadBackupData());
         assertEquals(1, mapConfig.getIndexConfigs().size());
         assertEquals("age", mapConfig.getIndexConfigs().get(0).getAttributes().get(0));
@@ -2389,7 +2393,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertEquals(1000, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaxSizePolicy());
 
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
@@ -2546,7 +2550,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertIndexesEqual(queryCacheConfig);
         assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
         assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(133, queryCacheConfig.getEvictionConfig().getSize());
     }
 
@@ -2656,21 +2660,26 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  map:\n"
                 + "    mymap:\n"
                 + "      in-memory-format: NATIVE\n"
-                + "      max-size:\n"
-                + "        policy: \"{0}\"\n"
-                + "        max-size: 9991\n";
+                + "      eviction:\n"
+                + "        max-size-policy: \"{0}\"\n"
+                + "        size: 9991\n";
+
         MessageFormat messageFormat = new MessageFormat(yamlFormat);
 
-        MaxSizeConfig.MaxSizePolicy[] maxSizePolicies = MaxSizeConfig.MaxSizePolicy.values();
-        for (MaxSizeConfig.MaxSizePolicy maxSizePolicy : maxSizePolicies) {
+        MaxSizePolicy[] maxSizePolicies = MaxSizePolicy.values();
+        for (MaxSizePolicy maxSizePolicy : maxSizePolicies) {
+            if (maxSizePolicy == ENTRY_COUNT) {
+                // imap does not support ENTRY_COUNT
+                continue;
+            }
             Object[] objects = {maxSizePolicy.toString()};
             String yaml = messageFormat.format(objects);
             Config config = buildConfig(yaml);
             MapConfig mapConfig = config.getMapConfig("mymap");
-            MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+            EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
 
-            assertEquals(9991, maxSizeConfig.getSize());
-            assertEquals(maxSizePolicy, maxSizeConfig.getMaxSizePolicy());
+            assertEquals(9991, evictionConfig.getSize());
+            assertEquals(maxSizePolicy, evictionConfig.getMaxSizePolicy());
         }
     }
 

@@ -34,7 +34,7 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.client.config.XmlClientConfigBuilderTest.buildConfig;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static java.lang.Integer.MAX_VALUE;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -70,7 +70,7 @@ public class ClientCacheNearCacheConfigTest {
     private CacheConfig newCacheConfig() {
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.getEvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
         return cacheConfig;
     }

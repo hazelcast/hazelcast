@@ -39,7 +39,6 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -443,18 +442,6 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node filter : childElements(wanChild)) {
             wanReplicationRef.addFilter(getTextContent(filter));
         }
-    }
-
-    @Override
-    protected void handleMaxSizeConfig(MapConfig mapConfig, Node node, String value) {
-        MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
-        NamedNodeMap attributes = node.getAttributes();
-        Node maxSizePolicy = attributes.getNamedItem("policy");
-        if (maxSizePolicy != null) {
-            msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
-                    upperCaseInternal(getTextContent(maxSizePolicy))));
-        }
-        msc.setSize(getIntegerValue("max-size", getTextContent(attributes.getNamedItem("max-size"))));
     }
 
     @Override

@@ -94,7 +94,7 @@ public class PartitionContainer {
         MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
                 execService, mapContainer.toData());
         keyLoader.setMaxBatch(hazelcastProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
-        keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
+        keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
 

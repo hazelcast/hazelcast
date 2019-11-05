@@ -18,6 +18,7 @@ package com.hazelcast.client.internal.diagnostics.config;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -56,7 +57,7 @@ public class ClientConfigValidatorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        thrown.expect(IllegalArgumentException.class);
+        thrown.expect(InvalidConfigurationException.class);
         thrown.expectMessage(containsString("Wrong `local-update-policy`"));
 
         client.getMap(MAP_NAME);

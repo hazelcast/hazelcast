@@ -27,7 +27,7 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigTest;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import java.util.Collections;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 
@@ -36,21 +36,21 @@ public abstract class CacheConfigHelper {
     public static EvictionConfig getEvictionConfigByPolicy() {
         return new EvictionConfig()
                 .setSize(39)
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setEvictionPolicy(RANDOM);
     }
 
     public static EvictionConfig getEvictionConfigByClassName() {
         return new EvictionConfig()
                 .setSize(39)
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setComparatorClassName("com.hazelcast.Comparator");
     }
 
     public static EvictionConfig getEvictionConfigByImplementation() {
         return new EvictionConfig()
                 .setSize(39)
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setComparator(new DynamicConfigTest.SampleEvictionPolicyComparator());
     }
 

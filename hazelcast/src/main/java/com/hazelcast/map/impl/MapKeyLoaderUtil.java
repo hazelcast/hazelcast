@@ -16,11 +16,13 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UnmodifiableIterator;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Iterator;
 import java.util.List;
@@ -29,7 +31,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -127,19 +129,19 @@ public final class MapKeyLoaderUtil {
 
     /**
      * Returns the configured maximum entry count per node if the max
-     * size policy is {@link MaxSizeConfig.MaxSizePolicy#PER_NODE}
+     * size policy is {@link MaxSizePolicy#PER_NODE}
      * and is not the default, otherwise returns {@code -1}.
      *
-     * @param maxSizeConfig the max size configuration
-     * @return the max size per node or {@code -1} if not configured or is the default
-     * @see MaxSizeConfig#getMaxSizePolicy()
-     * @see MaxSizeConfig#getSize()
+     * @param evictionConfig eviction config
+     * @return the max size per node or {@code
+     * -1} if not configured or is the default
      */
-    public static int getMaxSizePerNode(MaxSizeConfig maxSizeConfig) {
+    public static int getMaxSizePerNode(EvictionConfig evictionConfig) {
         // max size or -1 if policy is different or not set
-        double maxSizePerNode = maxSizeConfig.getMaxSizePolicy() == PER_NODE ? maxSizeConfig.getSize() : -1D;
+        double maxSizePerNode = evictionConfig.getMaxSizePolicy() == PER_NODE
+                ? evictionConfig.getSize() : -1D;
 
-        if (maxSizePerNode == MaxSizeConfig.DEFAULT_MAX_SIZE) {
+        if (maxSizePerNode == MapConfig.DEFAULT_MAX_SIZE) {
             // unlimited
             return -1;
         }

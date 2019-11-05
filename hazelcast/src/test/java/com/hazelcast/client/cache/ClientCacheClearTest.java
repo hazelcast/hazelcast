@@ -31,7 +31,7 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -71,7 +71,7 @@ public class ClientCacheClearTest extends CacheClearTest {
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCacheLocalEntries(false)
                 .setEvictionConfig(new EvictionConfig().setSize(10000)
-                        .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT).setEvictionPolicy(EvictionPolicy.LFU))
+                        .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT).setEvictionPolicy(EvictionPolicy.LFU))
                 .setInvalidateOnChange(true)
                 .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE)
                 .setMaxIdleSeconds(600)

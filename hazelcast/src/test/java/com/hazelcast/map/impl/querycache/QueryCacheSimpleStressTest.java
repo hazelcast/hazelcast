@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -55,7 +56,7 @@ public class QueryCacheSimpleStressTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         EvictionConfig evictionConfig = new EvictionConfig();
-        evictionConfig.setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        evictionConfig.setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
         evictionConfig.setSize(Integer.MAX_VALUE);
         evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
 

@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
@@ -37,7 +37,7 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -55,12 +55,12 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
                 ? USED_NATIVE_MEMORY_SIZE
                 : DEFAULT_MAX_SIZE_POLICY;
         nonEvictingCache.getEvictionConfig()
-                        .setMaximumSizePolicy(maxSizePolicy)
+                        .setMaxSizePolicy(maxSizePolicy)
                         .setSize(Integer.MAX_VALUE);
 
         final CacheSimpleConfig evictingCache = config.getCacheConfig(EVICTING_CACHE)
                                                       .setInMemoryFormat(getInMemoryFormat());
-        evictingCache.getEvictionConfig().setMaximumSizePolicy(maxSizePolicy);
+        evictingCache.getEvictionConfig().setMaxSizePolicy(maxSizePolicy);
 
         return config;
     }

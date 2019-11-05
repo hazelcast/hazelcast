@@ -252,9 +252,9 @@
             <hz:map name="simpleMap"
                     backup-count="3"
                     async-backup-count="1"
-                    time-to-live-seconds="1"
-                    max-size="10"
-                    eviction-policy="LRU"/>
+                    time-to-live-seconds="1">
+                <hz:eviction size="10" eviction-policy="LRU"/>
+            </hz:map>
 
             <hz:member-attributes>
                 <hz:attribute name="cluster.name">spring-cluster</hz:attribute>

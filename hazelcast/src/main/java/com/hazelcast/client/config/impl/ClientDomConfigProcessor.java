@@ -41,6 +41,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SSLConfig;
@@ -343,7 +344,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
         if (maxSizePolicy != null) {
             evictionConfig
-                    .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy)))
+                    .setMaxSizePolicy(MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy)))
                     );
         }
         if (evictionPolicy != null) {

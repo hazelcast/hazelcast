@@ -59,7 +59,7 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
@@ -131,12 +131,12 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -156,6 +156,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
+import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMode;
+import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
 import static com.hazelcast.internal.config.ConfigSections.CACHE;
@@ -197,6 +203,10 @@ import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementsWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -205,14 +215,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
-import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMode;
-import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
@@ -1786,10 +1788,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
-            } else if ("eviction-policy".equals(nodeName)) {
-                mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
-            } else if ("max-size".equals(nodeName)) {
-                handleMaxSizeConfig(mapConfig, node, value);
+            } else if ("eviction".equals(nodeName)) {
+                mapConfig.setEvictionConfig(getEvictionConfig(node, false, true));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
             } else if ("max-idle-seconds".equals(nodeName)) {
@@ -1849,17 +1849,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addMapConfig(mapConfig);
     }
 
-    protected void handleMaxSizeConfig(MapConfig mapConfig, Node node, String value) {
-        MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
-        Node maxSizePolicy = node.getAttributes().getNamedItem("policy");
-        if (maxSizePolicy != null) {
-            msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
-                    upperCaseInternal(getTextContent(maxSizePolicy))));
-        }
-        msc.setSize(getIntegerValue("max-size", value));
-    }
-
-    @SuppressWarnings("deprecation")
     private NearCacheConfig handleNearCacheConfig(Node node) {
         String name = getAttribute(node, "name");
         NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
@@ -1884,7 +1873,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             } else if ("eviction".equals(nodeName)) {
-                nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true));
+                nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true, false));
             }
         }
         if (serializeKeys != null && !serializeKeys && nearCacheConfig.getInMemoryFormat() == InMemoryFormat.NATIVE) {
@@ -1954,7 +1943,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("wan-replication-ref".equals(nodeName)) {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
-                cacheConfig.setEvictionConfig(getEvictionConfig(n, false));
+                cacheConfig.setEvictionConfig(getEvictionConfig(n, false, false));
             } else if ("split-brain-protection-ref".equals(nodeName)) {
                 cacheConfig.setSplitBrainProtectionName(value);
             } else if ("partition-lost-listeners".equals(nodeName)) {
@@ -2038,34 +2027,60 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig(expiryPolicyType, durationConfig);
     }
 
-    private EvictionConfig getEvictionConfig(Node node, boolean isNearCache) {
+    private EvictionConfig getEvictionConfig(Node node, boolean isNearCache, boolean isIMap) {
         EvictionConfig evictionConfig = new EvictionConfig();
+        if (isIMap) {
+            // Set IMap defaults
+            evictionConfig
+                    .setEvictionPolicy(MapConfig.DEFAULT_EVICTION_POLICY)
+                    .setMaxSizePolicy(MapConfig.DEFAULT_MAX_SIZE_POLICY)
+                    .setSize(MapConfig.DEFAULT_MAX_SIZE);
+        }
+
         Node size = node.getAttributes().getNamedItem("size");
         Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
         Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
         Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
+
         if (size != null) {
             evictionConfig.setSize(parseInt(getTextContent(size)));
+            if (isIMap && evictionConfig.getSize() == 0) {
+                evictionConfig.setSize(MapConfig.DEFAULT_MAX_SIZE);
+            }
         }
         if (maxSizePolicy != null) {
-            evictionConfig
-                    .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy)))
-                    );
+            evictionConfig.setMaxSizePolicy(MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
         }
         if (evictionPolicy != null) {
-            evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy)))
-            );
+            evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy))));
         }
         if (comparatorClassName != null) {
             evictionConfig.setComparatorClassName(getTextContent(comparatorClassName));
         }
 
         try {
-            checkEvictionConfig(evictionConfig, isNearCache);
+            doEvictionConfigChecks(evictionConfig, isIMap, isNearCache);
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException(e.getMessage());
         }
         return evictionConfig;
+    }
+
+    private static void doEvictionConfigChecks(EvictionConfig evictionConfig,
+                                               boolean isIMap,
+                                               boolean isNearCache) {
+        if (isIMap) {
+            checkMapEvictionConfig(evictionConfig);
+            return;
+        }
+
+        if (isNearCache) {
+            checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
+                    evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
+            return;
+        }
+
+        checkCacheEvictionConfig(evictionConfig);
     }
 
     private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {
@@ -2240,7 +2255,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else if ("predicate".equals(nodeName)) {
                     queryCachePredicateHandler(childNode, queryCacheConfig);
                 } else if ("eviction".equals(nodeName)) {
-                    queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false));
+                    queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode, false, false));
                 }
             }
         }

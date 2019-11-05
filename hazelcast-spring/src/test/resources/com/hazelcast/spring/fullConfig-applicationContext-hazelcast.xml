@@ -353,15 +353,19 @@
 
             <hz:map name="testMap"
                     backup-count="2"
-                    max-size="0"
                     read-backup-data="true"
-                    eviction-policy="NONE"
                     in-memory-format="BINARY"
                     metadata-policy="OFF">
-                <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"
-                              initial-mode="EAGER" write-batch-size="10"/>
-                <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
-                               invalidate-on-change="true" serialize-keys="false">
+                <hz:eviction size="0" eviction-policy="NONE"/>
+                <hz:map-store enabled="true"
+                              class-name="com.hazelcast.spring.DummyStore"
+                              write-delay-seconds="0"
+                              initial-mode="EAGER"
+                              write-batch-size="10"/>
+                <hz:near-cache time-to-live-seconds="0"
+                               max-idle-seconds="60"
+                               invalidate-on-change="true"
+                               serialize-keys="false">
                     <hz:eviction size="5000" eviction-policy="LRU"/>
                 </hz:near-cache>
 
@@ -392,11 +396,12 @@
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
-                    max-size="1000"
-                    max-size-policy="PER_NODE"
-                    read-backup-data="true"
-                    eviction-policy="NONE">
-                <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"
+                    read-backup-data="true">
+                <hz:eviction size="1000" max-size-policy="PER_NODE"
+                             eviction-policy="NONE"/>
+                <hz:map-store enabled="true"
+                              implementation="dummyMapStore"
+                              write-delay-seconds="0"
                               initial-mode="LAZY"/>
                 <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"/>
 
@@ -410,10 +415,18 @@
                 <hz:wan-replication-ref name="testWan" />
             </hz:map>
 
-            <hz:map name="lfuEvictionMap" eviction-policy="LFU"/>
-            <hz:map name="lruEvictionMap" eviction-policy="LRU"/>
-            <hz:map name="noneEvictionMap" eviction-policy="NONE"/>
-            <hz:map name="randomEvictionMap" eviction-policy="RANDOM"/>
+            <hz:map name="lfuEvictionMap">
+                <hz:eviction eviction-policy="LFU"/>
+            </hz:map>
+            <hz:map name="lruEvictionMap">
+                <hz:eviction eviction-policy="LRU"/>
+            </hz:map>
+            <hz:map name="noneEvictionMap">
+                <hz:eviction eviction-policy="NONE"/>
+            </hz:map>
+            <hz:map name="randomEvictionMap">
+                <hz:eviction eviction-policy="RANDOM"/>
+            </hz:map>
 
             <hz:map name="lfuNearCacheEvictionMap">
                 <hz:near-cache>
@@ -438,11 +451,11 @@
 
             <hz:map name="testMap3"
                     backup-count="2"
-                    max-size="0"
-                    max-size-policy="PER_NODE"
-                    read-backup-data="true"
-                    eviction-policy="NONE">
-                <hz:map-store enabled="true" factory-class-name="com.hazelcast.spring.DummyStoreFactory"
+                    read-backup-data="true">
+                <hz:eviction eviction-policy="NONE"
+                             max-size-policy="PER_NODE" size="0"/>
+                <hz:map-store enabled="true"
+                              factory-class-name="com.hazelcast.spring.DummyStoreFactory"
                               write-delay-seconds="0">
                     <hz:properties>
                         <hz:property name="dummy.property">value</hz:property>
@@ -452,10 +465,11 @@
             </hz:map>
             <hz:map name="testMap4"
                     backup-count="2"
-                    max-size="0"
-                    read-backup-data="true"
-                    eviction-policy="NONE">
-                <hz:map-store enabled="true" factory-implementation="dummyMapStoreFactory" write-delay-seconds="0"/>
+                    read-backup-data="true">
+                <hz:eviction eviction-policy="NONE" size="0"/>
+                <hz:map-store enabled="true"
+                              factory-implementation="dummyMapStoreFactory"
+                              write-delay-seconds="0"/>
             </hz:map>
             <hz:map name="map-with-query-cache">
                 <hz:query-caches>
@@ -486,15 +500,16 @@
             <hz:map name="simpleMap"
                     backup-count="3"
                     async-backup-count="1"
-                    time-to-live-seconds="1"
-                    max-size="10"
-                    eviction-policy="LRU"/>
+                    time-to-live-seconds="1">
+                <hz:eviction eviction-policy="LRU" size="10"/>
+            </hz:map>
 
             <hz:map name="mapWithValueCachingSetToNever" cache-deserialized-values="NEVER"/>
             <hz:map name="mapWithValueCachingSetToAlways" cache-deserialized-values="${map.conf.cache.deserialized.values}"/>
             <hz:map name="mapWithDefaultValueCaching"/>
-            <hz:map name="map-with-native-max-size-policy" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"
-                    in-memory-format="NATIVE"/>
+            <hz:map name="map-with-native-max-size-policy" in-memory-format="NATIVE">
+                <hz:eviction max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"/>
+            </hz:map>
 
             <hz:map name="mapWithPartitionLostListener">
                 <hz:partition-lost-listeners>
@@ -514,8 +529,10 @@
                 <hz:map-eviction-policy implementation="dummyMapEvictionPolicy"/>
             </hz:map>
 
-            <hz:map name="mapBothMapEvictionPolicyClassNameAndEvictionPolicy" eviction-policy="LRU">
-                <hz:map-eviction-policy class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
+            <hz:map name="mapBothMapEvictionPolicyClassNameAndEvictionPolicy">
+                <hz:eviction eviction-policy="LRU"/>
+                <hz:map-eviction-policy
+                        class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
             </hz:map>
 
             <hz:cache name="testCache" disable-per-entry-invalidation-events="true">

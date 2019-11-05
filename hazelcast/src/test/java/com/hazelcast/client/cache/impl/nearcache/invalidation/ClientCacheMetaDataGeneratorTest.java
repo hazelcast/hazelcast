@@ -45,7 +45,7 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertNotNull;
@@ -125,7 +125,7 @@ public class ClientCacheMetaDataGeneratorTest extends HazelcastTestSupport {
 
     protected CacheConfig<Integer, Integer> getCacheConfig(String cacheName) {
         EvictionConfig evictionConfig = new EvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setMaxSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
 
         return new CacheConfig<Integer, Integer>()

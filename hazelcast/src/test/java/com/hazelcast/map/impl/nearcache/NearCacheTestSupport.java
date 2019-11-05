@@ -47,7 +47,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
@@ -184,7 +184,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         return newNearCacheConfig()
                 .setCacheLocalEntries(true)
                 .setEvictionConfig(new EvictionConfig().setSize(size)
-                        .setMaximumSizePolicy(ENTRY_COUNT).setEvictionPolicy(evictionPolicy));
+                        .setMaxSizePolicy(ENTRY_COUNT).setEvictionPolicy(evictionPolicy));
     }
 
     protected NearCacheConfig newNearCacheConfig() {

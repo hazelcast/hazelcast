@@ -39,19 +39,7 @@ public class MapConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void getMaxSizeConfigOfReadOnlyMapConfigShouldReturnUnmodifiable() {
-        MapConfig config = new MapConfig();
-
-        MaxSizeConfig maxSizeConfig = new MapConfigReadOnly(config).getMaxSizeConfig();
-        maxSizeConfig.setSize(2342);
-    }
-
-    @Test
-    public void getMaxSizeConfigOfReadOnlyMapConfigShouldReturnNullIfConfigIsNull() {
-        MapConfig config = new MapConfig()
-                .setMaxSizeConfig(null);
-
-        MaxSizeConfig maxSizeConfig = new MapConfigReadOnly(config).getMaxSizeConfig();
-        assertNull(maxSizeConfig);
+        new MapConfigReadOnly(new MapConfig()).getEvictionConfig().setSize(2342);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -203,12 +191,12 @@ public class MapConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setMaxSizeConfigOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setMaxSizeConfig(new MaxSizeConfig());
+        getReadOnlyConfig().getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.PER_PARTITION);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void setEvictionPolicyOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setEvictionPolicy(EvictionPolicy.NONE);
+        getReadOnlyConfig().getEvictionConfig().setEvictionPolicy(EvictionPolicy.NONE);
     }
 
     @Test(expected = UnsupportedOperationException.class)

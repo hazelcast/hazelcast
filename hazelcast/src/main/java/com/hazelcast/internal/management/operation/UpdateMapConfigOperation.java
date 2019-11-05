@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.map.impl.MapContainer;
@@ -34,27 +34,27 @@ import java.io.IOException;
  */
 public class UpdateMapConfigOperation extends AbstractManagementOperation {
 
-    private String mapName;
+    private boolean readBackupData;
     private int timeToLiveSeconds;
     private int maxIdleSeconds;
     private int maxSize;
-    private int maxSizePolicy;
-    private boolean readBackupData;
-    private int evictionPolicy;
+    private int maxSizePolicyId;
+    private int evictionPolicyId;
+    private String mapName;
 
     public UpdateMapConfigOperation() {
     }
 
     public UpdateMapConfigOperation(String mapName, int timeToLiveSeconds, int maxIdleSeconds,
-                                    int maxSize, int maxSizePolicy, boolean readBackupData,
-                                    int evictionPolicy) {
+                                    int maxSize, int maxSizePolicyId, boolean readBackupData,
+                                    int evictionPolicyId) {
         this.mapName = mapName;
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxIdleSeconds = maxIdleSeconds;
         this.maxSize = maxSize;
-        this.maxSizePolicy = maxSizePolicy;
+        this.maxSizePolicyId = maxSizePolicyId;
         this.readBackupData = readBackupData;
-        this.evictionPolicy = evictionPolicy;
+        this.evictionPolicyId = evictionPolicyId;
     }
 
     @Override
@@ -64,9 +64,13 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         MapConfig newConfig = new MapConfig(oldConfig);
         newConfig.setTimeToLiveSeconds(timeToLiveSeconds);
         newConfig.setMaxIdleSeconds(maxIdleSeconds);
-        newConfig.setEvictionPolicy(EvictionPolicy.getById(evictionPolicy));
         newConfig.setReadBackupData(readBackupData);
-        newConfig.setMaxSizeConfig(new MaxSizeConfig(maxSize, MaxSizePolicy.getById(maxSizePolicy)));
+
+        EvictionConfig evictionConfig = newConfig.getEvictionConfig();
+        evictionConfig.setEvictionPolicy(EvictionPolicy.getById(evictionPolicyId));
+        evictionConfig.setMaxSizePolicy(MaxSizePolicy.getById(maxSizePolicyId));
+        evictionConfig.setSize(maxSize);
+
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
         mapContainer.setMapConfig(new MapConfigReadOnly(newConfig));
         mapContainer.initEvictor();
@@ -78,9 +82,9 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxIdleSeconds);
         out.writeInt(maxSize);
-        out.writeInt(maxSizePolicy);
+        out.writeInt(maxSizePolicyId);
         out.writeBoolean(readBackupData);
-        out.writeInt(evictionPolicy);
+        out.writeInt(evictionPolicyId);
     }
 
     @Override
@@ -89,9 +93,9 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         timeToLiveSeconds = in.readInt();
         maxIdleSeconds = in.readInt();
         maxSize = in.readInt();
-        maxSizePolicy = in.readInt();
+        maxSizePolicyId = in.readInt();
         readBackupData = in.readBoolean();
-        evictionPolicy = in.readInt();
+        evictionPolicyId = in.readInt();
     }
 
     @Override

@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.management.request;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
-import com.hazelcast.internal.json.JsonObject;
 
 import java.util.Set;
 
@@ -37,15 +37,15 @@ import static com.hazelcast.internal.util.JsonUtil.getString;
 public class MapConfigRequest implements ConsoleRequest {
 
     private String mapName;
-    private MapConfigDTO config;
+    private MapConfigDTO mapConfigDTO;
     private boolean update;
 
     public MapConfigRequest() {
     }
 
-    public MapConfigRequest(String mapName, MapConfigDTO config, boolean update) {
+    public MapConfigRequest(String mapName, MapConfigDTO mapConfigDTO, boolean update) {
         this.mapName = mapName;
-        this.config = config;
+        this.mapConfigDTO = mapConfigDTO;
         this.update = update;
     }
 
@@ -63,12 +63,12 @@ public class MapConfigRequest implements ConsoleRequest {
             for (Member member : members) {
                 UpdateMapConfigOperation operation = new UpdateMapConfigOperation(
                         mapName,
-                        config.getConfig().getTimeToLiveSeconds(),
-                        config.getConfig().getMaxIdleSeconds(),
-                        config.getConfig().getMaxSizeConfig().getSize(),
-                        config.getConfig().getMaxSizeConfig().getMaxSizePolicy().getId(),
-                        config.getConfig().isReadBackupData(),
-                        config.getConfig().getEvictionPolicy().getId());
+                        mapConfigDTO.getConfig().getTimeToLiveSeconds(),
+                        mapConfigDTO.getConfig().getMaxIdleSeconds(),
+                        mapConfigDTO.getConfig().getEvictionConfig().getSize(),
+                        mapConfigDTO.getConfig().getEvictionConfig().getMaxSizePolicy().getId(),
+                        mapConfigDTO.getConfig().isReadBackupData(),
+                        mapConfigDTO.getConfig().getEvictionConfig().getEvictionPolicy().getId());
                 resolveFuture(mcs.callOnMember(member, operation));
             }
             result.add("updateResult", "success");
@@ -88,7 +88,7 @@ public class MapConfigRequest implements ConsoleRequest {
     public void fromJson(JsonObject json) {
         mapName = getString(json, "mapName");
         update = getBoolean(json, "update");
-        config = new MapConfigDTO();
-        config.fromJson(getObject(json, "config"));
+        mapConfigDTO = new MapConfigDTO();
+        mapConfigDTO.fromJson(getObject(json, "config"));
     }
 }

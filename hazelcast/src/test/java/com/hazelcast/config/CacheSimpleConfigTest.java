@@ -85,10 +85,10 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .withPrefabValues(EvictionConfig.class,
                         new EvictionConfig().setSize(1000)
-                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                                 .setEvictionPolicy(EvictionPolicy.LFU),
                         new EvictionConfig().setSize(300)
-                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE)
+                                .setMaxSizePolicy(MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE)
                                 .setEvictionPolicy(EvictionPolicy.LRU))
                 .withPrefabValues(WanReplicationRef.class,
                         new WanReplicationRef("red", null, null, false),

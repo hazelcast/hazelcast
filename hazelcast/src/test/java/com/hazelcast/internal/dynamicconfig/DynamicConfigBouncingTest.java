@@ -16,18 +16,19 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -93,9 +94,8 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .setEnabled(true)
                 .setFsync(true);
 
-        MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
-                .setSize(1000)
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE);
+        EvictionConfig evictionConfig = new EvictionConfig();
+        evictionConfig.setSize(1000).setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_SIZE);
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
@@ -125,7 +125,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setHotRestartConfig(hotRestartConfig)
-                .setMaxSizeConfig(maxSizeConfig)
+                .setEvictionConfig(evictionConfig)
                 .setMapStoreConfig(mapStoreConfig)
                 .setWanReplicationRef(wanRef)
                 .addEntryListenerConfig(classEntryListener)

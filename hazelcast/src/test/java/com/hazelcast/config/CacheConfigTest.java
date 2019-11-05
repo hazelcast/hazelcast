@@ -141,7 +141,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertNotNull(evictionConfig);
         assertEquals(EvictionPolicy.LFU, evictionConfig.getEvictionPolicy());
         assertEquals(50, evictionConfig.getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaxSizePolicy());
 
         List<CacheSimpleEntryListenerConfig> cacheEntryListeners = cacheConfig1.getCacheEntryListeners();
         assertEquals(2, cacheEntryListeners.size());
@@ -184,7 +184,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         EvictionConfig evictionConfig = cacheConfig.getEvictionConfig();
         assertNotNull(evictionConfig);
         assertEquals(50, evictionConfig.getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaxSizePolicy());
         assertEquals("my-custom-eviction-policy-comparator", evictionConfig.getComparatorClassName());
     }
 
@@ -335,7 +335,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         assertNotNull(cacheConfig1.getEvictionConfig());
         assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig1.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(MaxSizePolicy.ENTRY_COUNT, cacheConfig1.getEvictionConfig().getMaxSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig1.getEvictionConfig().getEvictionPolicy());
 
         assertTrue(cacheConfig1.isDisablePerEntryInvalidationEvents());

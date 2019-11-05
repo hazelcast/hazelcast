@@ -22,12 +22,13 @@ import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -42,11 +43,14 @@ import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -54,10 +58,6 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -92,13 +92,13 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.cache.impl.record.CacheRecord.TIME_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -192,7 +192,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         this.cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
         this.records = createRecordCacheMap();
-        this.evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
+        this.evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         this.evictionStrategy = createEvictionStrategy(evictionConfig);
         this.objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
@@ -331,7 +331,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
-        checkEvictionConfig(evictionConfig, false);
+        checkCacheEvictionConfig(evictionConfig);
+
         Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false);
         try {
             return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, nodeEngine.getConfigClassLoader());

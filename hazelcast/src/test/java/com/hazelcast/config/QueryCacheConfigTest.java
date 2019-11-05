@@ -121,10 +121,10 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
                         new PredicateConfig("red"), new PredicateConfig("black"))
                 .withPrefabValues(EvictionConfig.class,
                         new EvictionConfig().setSize(1000)
-                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                                .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                                 .setEvictionPolicy(EvictionPolicy.LFU),
                         new EvictionConfig().setSize(300)
-                                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE)
+                                .setMaxSizePolicy(MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE)
                                 .setEvictionPolicy(EvictionPolicy.LRU))
                 .withPrefabValues(QueryCacheConfigReadOnly.class,
                         new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
