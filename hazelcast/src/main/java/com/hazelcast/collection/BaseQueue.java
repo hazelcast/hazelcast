@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * @see java.util.concurrent.BlockingQueue
  * @see IQueue
  * @see TransactionalQueue
- * @param <E>
+ * @param <E> queue item type
  */
 public interface BaseQueue<E> extends DistributedObject {
 

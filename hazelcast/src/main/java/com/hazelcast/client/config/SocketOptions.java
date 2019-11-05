@@ -70,7 +70,7 @@ public class SocketOptions {
     /**
      * Enable/disable TCP_NODELAY socket option.
      *
-     * @param tcpNoDelay
+     * @param tcpNoDelay the TCP_NODELAY socket option
      * @return SocketOptions configured
      */
     public SocketOptions setTcpNoDelay(boolean tcpNoDelay) {
