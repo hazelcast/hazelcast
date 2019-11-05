@@ -28,8 +28,8 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -55,6 +56,8 @@ import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Collections.emptyList;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -64,7 +67,6 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-@Ignore
 public class ClientMessageProtectionTest {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
@@ -129,7 +131,7 @@ public class ClientMessageProtectionTest {
                 List<ClientMessage> subFrames = ClientMessageSplitter.getFragments(50, clientMessage);
                 assertTrue(subFrames.size() > 1);
                 writeClientMessage(os, subFrames.get(0));
-                expected.expect(EOFException.class);
+                expected.expect(connectionClosedException());
                 readResponse(is);
             }
         }
@@ -149,7 +151,7 @@ public class ClientMessageProtectionTest {
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY_NEW.getBytes(UTF8_CHARSET));
                 writeClientMessage(os, clientMessage);
-                expected.expect(EOFException.class);
+                expected.expect(connectionClosedException());
                 readResponse(is);
             }
         }
@@ -174,7 +176,7 @@ public class ClientMessageProtectionTest {
                 buffer.put(frame.content);
                 os.write(byteBufferToBytes(buffer));
                 os.flush();
-                expected.expect(EOFException.class);
+                expected.expect(connectionClosedException());
                 readResponse(is);
             }
         }
@@ -207,7 +209,7 @@ public class ClientMessageProtectionTest {
                 buffer.putShort((short) frame.flags);
                 os.write(byteBufferToBytes(buffer));
                 os.flush();
-                expected.expect(EOFException.class);
+                expected.expect(connectionClosedException());
                 readResponse(is);
             }
         }
@@ -218,7 +220,7 @@ public class ClientMessageProtectionTest {
                 (byte) 1, clientName, "xxx", emptyList(), -1, null);
     }
 
-    private ClientMessage readResponse(InputStream is) throws IOException, EOFException {
+    private ClientMessage readResponse(InputStream is) throws IOException {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         while (true) {
             ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
@@ -267,4 +269,7 @@ public class ClientMessageProtectionTest {
         return requestBytes;
     }
 
+    private <T> org.hamcrest.Matcher<T> connectionClosedException() {
+        return anyOf(instanceOf(SocketException.class), instanceOf(EOFException.class));
+    }
 }
