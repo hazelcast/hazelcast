@@ -46,7 +46,7 @@ public abstract class ListAbstractTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addListConfig(new ListConfig("testAdd_whenCapacityReached_thenItemNotAdded*").setMaxSize(10));
 
         instances = newInstances(config);
