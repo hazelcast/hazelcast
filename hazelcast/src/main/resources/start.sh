@@ -3,7 +3,6 @@
 PRG="$0"
 PRGDIR=`dirname "$PRG"`
 HAZELCAST_HOME=`cd "$PRGDIR/.." >/dev/null; pwd`
-PID_FILE=$HAZELCAST_HOME/bin/hazelcast_instance.pid
 
 if [ $JAVA_HOME ]
 then
@@ -48,12 +47,4 @@ echo "# JAVA_OPTS=$JAVA_OPTS"
 echo "# starting now...."
 echo "########################################"
 
-PID=$(cat "${PID_FILE}");
-if [ -z "${PID}" ]; then
-    echo "Process ID for Hazelcast instance is written to location: {$PID_FILE}"
-    $RUN_JAVA -server $JAVA_OPTS com.hazelcast.core.server.HazelcastMemberStarter &
-    echo $! > ${PID_FILE}
-else
-    echo "Another Hazelcast instance (PID=${PID}) is already started in this folder. To start a new instance, please unzip hazelcast-${project.version}.zip/tar.gz in a new folder."
-    exit 0
-fi
+$RUN_JAVA -server $JAVA_OPTS com.hazelcast.core.server.HazelcastMemberStarter &

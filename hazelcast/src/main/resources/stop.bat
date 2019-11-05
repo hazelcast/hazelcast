@@ -1,7 +1,5 @@
 @echo off
 
-SETLOCAL
+REM ******* This script kills all the instances started with start.bat script.
 
-set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar"
-
-taskkill /F /FI "WINDOWTITLE eq hazelcast %CLASSPATH%"
+taskkill /F /FI "WINDOWTITLE eq hazelcast-imdg"

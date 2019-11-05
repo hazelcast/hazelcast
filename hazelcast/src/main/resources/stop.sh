@@ -1,21 +1,12 @@
 #!/bin/sh
-PRG="$0"
-PRGDIR=`dirname "$PRG"`
-HAZELCAST_HOME=`cd "$PRGDIR/.." >/dev/null; pwd`
-PID_FILE="${HAZELCAST_HOME}"/bin/hazelcast_instance.pid
 
-if [ ! -f "${PID_FILE}" ]; then
-    echo "No hazelcast instance is running."
-    exit 0
-fi
+#### This script kills all the instances started with start.sh script.
 
-PID=$(cat "${PID_FILE}");
-if [ -z "${PID}" ]; then
-    echo "No hazelcast instance is running."
-    exit 0
+PIDS=$(ps ax | grep com.hazelcast.core.server.HazelcastMemberStarter | grep -v grep | awk '{print $1}')
+
+if [ -z "$PIDS" ]; then
+  echo "No Hazelcast IMDG member found to stop"
+  exit 1
 else
-   kill -15 "${PID}"
-   rm "${PID_FILE}"
-   echo "Hazelcast Instance with PID ${PID} shutdown."
-   exit 0
+  kill -s TERM $PIDS
 fi
