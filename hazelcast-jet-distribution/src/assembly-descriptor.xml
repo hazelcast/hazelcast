@@ -29,6 +29,7 @@
             <includes>
                 <include>com.hazelcast.jet:hazelcast-jet</include>
                 <include>log4j:log4j</include>
+                <include>org.slf4j:*</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
