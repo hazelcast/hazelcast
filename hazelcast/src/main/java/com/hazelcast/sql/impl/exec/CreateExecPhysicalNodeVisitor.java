@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
+import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
@@ -34,6 +35,7 @@ import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
@@ -252,7 +254,32 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
         push(res);
     }
 
-    @Override
+     @Override
+     public void onMapIndexScanNode(MapIndexScanPhysicalNode node) {
+         Exec res;
+
+         if (localParts == null) {
+             res = EmptyScanExec.INSTANCE;
+         } else {
+             String mapName = node.getMapName();
+
+             MapProxyImpl map = (MapProxyImpl) nodeEngine.getHazelcastInstance().getMap(mapName);
+
+             res = new MapIndexScanExec(
+                 map,
+                 localParts,
+                 node.getFieldNames(),
+                 node.getProjects(),
+                 node.getFilter(),
+                 node.getIndexName(),
+                 node.getIndexFilter()
+             );
+         }
+
+         push(res);
+     }
+
+     @Override
     public void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node) {
         Exec res = new ReplicatedMapScanExec(
             node.getMapName(),

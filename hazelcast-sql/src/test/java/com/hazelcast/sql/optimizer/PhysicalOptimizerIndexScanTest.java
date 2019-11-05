@@ -26,7 +26,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

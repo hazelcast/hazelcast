@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.calcite.rel.physical;
 import com.hazelcast.sql.impl.calcite.rel.physical.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.exchange.SingletonSortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.exchange.UnicastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.index.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.join.NestedLoopJoinPhysicalRel;
 

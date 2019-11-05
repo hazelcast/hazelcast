@@ -32,6 +32,7 @@ public interface PhysicalNodeVisitor {
     void onUnicastSendNode(UnicastSendPhysicalNode node);
     void onBroadcastSendNode(BroadcastSendPhysicalNode node);
     void onMapScanNode(MapScanPhysicalNode node);
+    void onMapIndexScanNode(MapIndexScanPhysicalNode node);
     void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node);
     void onSortNode(SortPhysicalNode node);
     void onReceiveSortMergeNode(ReceiveSortMergePhysicalNode node);

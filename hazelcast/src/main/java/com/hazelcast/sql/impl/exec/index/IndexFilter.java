@@ -23,25 +23,25 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * Index condition which is transferred over a wire.
+ * Index filter which is transferred over a wire.
  */
-public class IndexCondition implements DataSerializable {
+public class IndexFilter implements DataSerializable {
     /** Condition type. */
-    private IndexConditionType type;
+    private IndexFilterType type;
 
     /** Value. */
     private Object value;
 
-    public IndexCondition() {
+    public IndexFilter() {
         // No-op.
     }
 
-    public IndexCondition(IndexConditionType type, Object value) {
+    public IndexFilter(IndexFilterType type, Object value) {
         this.type = type;
         this.value = value;
     }
 
-    public IndexConditionType getType() {
+    public IndexFilterType getType() {
         return type;
     }
 
@@ -57,7 +57,7 @@ public class IndexCondition implements DataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        type = IndexConditionType.getById(in.readInt());
+        type = IndexFilterType.getById(in.readInt());
         value = in.readObject();
     }
 

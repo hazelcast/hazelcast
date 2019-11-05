@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.rel.physical.CollocatedAggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.FilterPhysicalRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.index.MapIndexScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.rel.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.MaterializedInputPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRelVisitor;
@@ -45,6 +45,7 @@ import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
 import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
@@ -150,32 +151,40 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
-        MapScanPhysicalNode mapScanNode = new MapScanPhysicalNode(
+        MapScanPhysicalNode scanNode = new MapScanPhysicalNode(
             rel.getTableUnwrapped().getName(),
             rel.getTable().getRowType().getFieldNames(),
             rel.getProjects(),
             convertFilter(rel.getFilter())
         );
 
-        pushUpstream(mapScanNode);
+        pushUpstream(scanNode);
     }
+
+     @Override
+     public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
+         MapIndexScanPhysicalNode scanNode = new MapIndexScanPhysicalNode(
+             rel.getTableUnwrapped().getName(),
+             rel.getTable().getRowType().getFieldNames(),
+             rel.getProjects(),
+             rel.getIndex().getName(),
+             rel.getIndexFilter(),
+             convertFilter(rel.getRemainderFilter())
+         );
+
+         pushUpstream(scanNode);
+     }
 
     @Override
     public void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel) {
-        ReplicatedMapScanPhysicalNode mapScanNode = new ReplicatedMapScanPhysicalNode(
+        ReplicatedMapScanPhysicalNode scanNode = new ReplicatedMapScanPhysicalNode(
             rel.getTableUnwrapped().getName(),
             rel.getTable().getRowType().getFieldNames(),
             rel.getProjects(),
             convertFilter(rel.getFilter())
         );
 
-        pushUpstream(mapScanNode);
-    }
-
-    @Override
-    public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
-        // TODO
-        throw new UnsupportedOperationException("Implement me");
+        pushUpstream(scanNode);
     }
 
     @Override

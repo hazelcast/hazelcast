@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.exec.index;
 
 /**
- * Index condition type.
+ * Index filter type.
  */
-public enum IndexConditionType {
+public enum IndexFilterType {
     EQUALS(0),
     GREATER_THAN(1),
     GREATER_THAN_OR_EQUAL(2),
@@ -28,7 +28,7 @@ public enum IndexConditionType {
 
     private final int id;
 
-    IndexConditionType(int id) {
+    IndexFilterType(int id) {
         this.id = id;
     }
 
@@ -36,9 +36,9 @@ public enum IndexConditionType {
         return id;
     }
 
-    public static IndexConditionType getById(int id) {
+    public static IndexFilterType getById(int id) {
         // TODO: AFAIK values() creates an intermediate array, isn't it?
-        for (IndexConditionType value : values()) {
+        for (IndexFilterType value : values()) {
             if (value.id == id) {
                 return value;
             }

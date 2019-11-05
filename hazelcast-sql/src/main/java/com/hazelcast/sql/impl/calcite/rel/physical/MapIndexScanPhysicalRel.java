@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.rel.physical.index;
+package com.hazelcast.sql.impl.calcite.rel.physical;
 
 import com.hazelcast.sql.impl.calcite.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.rel.AbstractScanRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
+import com.hazelcast.sql.impl.exec.index.IndexFilter;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -32,7 +31,6 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -43,7 +41,10 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
     private final HazelcastTableIndex index;
 
     /** Index filter. */
-    private final IndexFilter filter;
+    private final IndexFilter indexFilter;
+
+    /** Remainder filter. */
+    private final RexNode remainderFilter;
 
     /** Original filter. */
     private final RexNode originalFilter;
@@ -54,13 +55,15 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
         RelOptTable table,
         List<Integer> projects,
         HazelcastTableIndex index,
-        IndexFilter filter,
+        IndexFilter indexFilter,
+        RexNode remainderFilter,
         RexNode originalFilter
     ) {
         super(cluster, traitSet, table, projects);
 
         this.index = index;
-        this.filter = filter;
+        this.indexFilter = indexFilter;
+        this.remainderFilter = remainderFilter;
         this.originalFilter = originalFilter;
     }
 
@@ -68,13 +71,26 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
         return index;
     }
 
-    public IndexFilter getFilter() {
-        return filter;
+    public IndexFilter getIndexFilter() {
+        return indexFilter;
+    }
+
+    public RexNode getRemainderFilter() {
+        return remainderFilter;
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new MapIndexScanPhysicalRel(getCluster(), traitSet, getTable(), projects, index, filter, originalFilter);
+        return new MapIndexScanPhysicalRel(
+            getCluster(),
+            traitSet,
+            getTable(),
+            projects,
+            index,
+            indexFilter,
+            remainderFilter,
+            originalFilter
+        );
     }
 
     @Override
@@ -86,7 +102,8 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
            .item("index", index)
-           .item("indexFilter", filter.getIndexFilter()).item("remainderFilter", filter.getRemainderFilter());
+           .item("indexFilter", indexFilter)
+           .item("remainderFilter", remainderFilter);
     }
 
     // TODO: Dedup with logical scan

@@ -30,16 +30,16 @@ import java.util.Objects;
  */
 public abstract class AbstractMapScanPhysicalNode implements PhysicalNode {
     /** Map name. */
-    private String mapName;
+    protected String mapName;
 
     /** Field names. */
-    private List<String> fieldNames;
+    protected List<String> fieldNames;
 
     /** Projects. */
-    private List<Integer> projects;
+    protected List<Integer> projects;
 
     /** Filter. */
-    private Expression<Boolean> filter;
+    protected Expression<Boolean> filter;
 
     protected AbstractMapScanPhysicalNode() {
         // No-op.

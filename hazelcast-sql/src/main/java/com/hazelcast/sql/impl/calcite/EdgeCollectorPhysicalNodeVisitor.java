@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
@@ -75,6 +76,11 @@ public class EdgeCollectorPhysicalNodeVisitor implements PhysicalNodeVisitor {
 
     @Override
     public void onMapScanNode(MapScanPhysicalNode node) {
+        onNode(node);
+    }
+
+    @Override
+    public void onMapIndexScanNode(MapIndexScanPhysicalNode node) {
         onNode(node);
     }
 
