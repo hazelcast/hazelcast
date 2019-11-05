@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
@@ -463,6 +464,23 @@ public class JetConfig {
     @Nonnull
     public Config getHazelcastConfig() {
         return hazelcastConfig;
+    }
+
+
+    /**
+     * Convenience method for for configuring underlying Hazelcast IMDG instance.
+     * Example:
+     * <pre>{@code
+     * JetConfig config = new JetConfig().configureHazelcast(c -> {
+     *   c.getNetworkConfig().setPort(8000);
+     *   c.setClusterName("jet-dev");
+     * });
+     * Jet.newJetInstance(config);
+     * }</pre>
+     */
+    public JetConfig configureHazelcast(Consumer<Config> configConsumer) {
+        configConsumer.accept(hazelcastConfig);
+        return this;
     }
 
     /**

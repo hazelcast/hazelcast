@@ -67,17 +67,15 @@ public class CacheJournalSource {
     }
 
     private static JetConfig getJetConfig() {
-        JetConfig cfg = new JetConfig();
-        cfg.getHazelcastConfig().addCacheConfig(new CacheSimpleConfig().setName(CACHE_NAME));
-        // Add an event journal config for cache which has custom capacity of 1000 (default 10_000)
-        // and time to live seconds as 10 seconds (default 0 which means infinite)
-        cfg.getHazelcastConfig()
-           .getCacheConfig(CACHE_NAME)
-           .getEventJournalConfig()
-           .setEnabled(true)
-           .setCapacity(1000)
-           .setTimeToLiveSeconds(10);
-        return cfg;
+        return new JetConfig().configureHazelcast(c -> c.addCacheConfig(new CacheSimpleConfig().setName(CACHE_NAME))
+                // Add an event journal config for cache which has custom capacity of 1000 (default 10_000)
+                // and time to live seconds as 10 seconds (default 0 which means infinite)
+                .getCacheConfig(CACHE_NAME)
+                .getEventJournalConfig()
+                .setEnabled(true)
+                .setCapacity(1000)
+                .setTimeToLiveSeconds(10)
+        );
     }
 
 }

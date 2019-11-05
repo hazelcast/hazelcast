@@ -77,8 +77,7 @@ public class ScaleUpTest extends JetTestSupport {
         instances[0].newJob(dag);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig().setLiteMember(true);
+        JetConfig config = new JetConfig().configureHazelcast(c -> c.setLiteMember(true));
         createJetMember(config);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
     }
