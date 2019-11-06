@@ -154,10 +154,6 @@ public interface Processor {
      * If the call returns {@code false}, it will be called again before
      * proceeding to call any other method. Default implementation returns
      * {@code true}.
-     * <p>
-     * If this method tried to offer to the outbox and the offer call returned
-     * false, this method must also return false and retry to offer in the
-     * next call.
      */
     default boolean tryProcess() {
         return true;

@@ -255,14 +255,13 @@ public class ProcessorTasklet implements Tasklet {
             case PROCESS_INBOX:
                 progTracker.notDone();
                 if (inbox.isEmpty()) {
-                    if (isSnapshotInbox() || processor.tryProcess()) {
-                        assert !outbox.hasUnfinishedItem() : isSnapshotInbox()
-                                ? "Unfinished item before fillInbox call"
-                                : "Processor.tryProcess() returned true, but there's unfinished item in the outbox";
-                        fillInbox();
-                    } else {
-                        return;
+                    if (!isSnapshotInbox()) {
+                        if (!processor.tryProcess()) {
+                            return;
+                        }
+                        outbox.reset();
                     }
+                    fillInbox();
                 }
                 if (!inbox.isEmpty()) {
                     if (isSnapshotInbox()) {
@@ -296,8 +295,8 @@ public class ProcessorTasklet implements Tasklet {
                 progTracker.notDone();
                 if (isSnapshotInbox()
                         ? processor.finishSnapshotRestore() : processor.completeEdge(currInstream.ordinal())) {
-                    assert !outbox.hasUnfinishedItem() :
-                            "outbox has unfinished item after successful completeEdge() or finishSnapshotRestore()";
+                    assert !outbox.hasUnfinishedItem() || !isSnapshotInbox() :
+                            "outbox has an unfinished item after successful finishSnapshotRestore()";
                     progTracker.madeProgress();
                     state = initialProcessingState();
                 }

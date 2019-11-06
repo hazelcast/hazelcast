@@ -33,8 +33,10 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class MetricsTest extends JetTestSupport {
 
     private static final JobConfig JOB_CONFIG_WITH_METRICS = new JobConfig().setStoreMetricsAfterJobCompletion(true);
@@ -200,7 +203,7 @@ public class MetricsTest extends JetTestSupport {
                             );
                         }
                 )
-                .drainTo(Sinks.logger());
+                .drainTo(Sinks.noop());
 
         Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
         assertTrueEventually(() -> assertEquals(inputSize,

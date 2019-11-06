@@ -62,7 +62,6 @@ public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractP
     private Traverser<?> currentTraverser = Traversers.empty();
     private int maxAsyncOps;
     private ResettableSingletonTraverser<Watermark> watermarkTraverser = new ResettableSingletonTraverser<>();
-    private boolean tryProcessSucceeded;
 
     @Probe(name = "numInFlightOps")
     private final AtomicInteger asyncOpsCounterMetric = new AtomicInteger();
@@ -124,13 +123,9 @@ public final class AsyncTransformUsingServiceOrderedP<S, T, R> extends AbstractP
 
     @Override
     public boolean tryProcess() {
-        if (tryProcessSucceeded) {
-            tryFlushQueue();
-        } else {
-            emitFromTraverser(currentTraverser);
-        }
+        tryFlushQueue();
         asyncOpsCounterMetric.lazySet(queue.size());
-        return tryProcessSucceeded = !getOutbox().hasUnfinishedItem();
+        return true;
     }
 
     @Override

@@ -85,7 +85,6 @@ public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends Abst
     private final Map<T, Integer> inFlightItems = new IdentityHashMap<>();
     private Traverser<Object> currentTraverser = Traversers.empty();
     private Traverser<Entry> snapshotTraverser;
-    private boolean tryProcessSucceeded;
 
     private Long lastReceivedWm = Long.MIN_VALUE;
     private long lastEmittedWm = Long.MIN_VALUE;
@@ -168,6 +167,9 @@ public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends Abst
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        if (getOutbox().hasUnfinishedItem() && !emitFromTraverser(currentTraverser)) {
+            return false;
+        }
         assert lastEmittedWm <= lastReceivedWm : "lastEmittedWm=" + lastEmittedWm + ", lastReceivedWm=" + lastReceivedWm;
         // Ignore a watermark that is going back. This is possible after restoring from a snapshot
         // taken in at-least-once mode.
@@ -186,13 +188,9 @@ public final class AsyncTransformUsingServiceUnorderedP<S, T, K, R> extends Abst
 
     @Override
     public boolean tryProcess() {
-        if (tryProcessSucceeded) {
-            tryFlushQueue();
-        } else {
-            // if we're running tryProcess for the second time, emit just the current traverser
-            emitFromTraverser(currentTraverser);
-        }
-        return tryProcessSucceeded = !getOutbox().hasUnfinishedItem();
+        tryFlushQueue();
+        asyncOpsCounterMetric.lazySet(asyncOpsCounter);
+        return true;
     }
 
     @Override
