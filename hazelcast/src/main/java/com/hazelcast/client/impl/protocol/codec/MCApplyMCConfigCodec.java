@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies given MC config (client filter list).
  */
-@Generated("c2f3024356728f479b674f616bf1851a")
+@Generated("08ff1a6bf148019f4b6ae1718ef59314")
 public final class MCApplyMCConfigCodec {
     //hex: 0x200600
     public static final int REQUEST_MESSAGE_TYPE = 2098688;
@@ -53,6 +53,11 @@ public final class MCApplyMCConfigCodec {
     public static class RequestParameters {
 
         /**
+         * ETag value of the config.
+         */
+        public java.lang.String eTag;
+
+        /**
          * The mode for client filtering:
          * 0 - DISABLED
          * 1 - WHITELIST
@@ -66,7 +71,7 @@ public final class MCApplyMCConfigCodec {
         public @Nullable java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries;
     }
 
-    public static ClientMessage encodeRequest(int clientBwListMode, @Nullable java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
+    public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, @Nullable java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -75,6 +80,7 @@ public final class MCApplyMCConfigCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET, clientBwListMode);
         clientMessage.add(initialFrame);
+        StringCodec.encode(clientMessage, eTag);
         ListMultiFrameCodec.encodeNullable(clientMessage, clientBwListEntries, ClientBwListEntryCodec::encode);
         return clientMessage;
     }
@@ -84,6 +90,7 @@ public final class MCApplyMCConfigCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.clientBwListMode = decodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET);
+        request.eTag = StringCodec.decode(iterator);
         request.clientBwListEntries = ListMultiFrameCodec.decodeNullable(iterator, ClientBwListEntryCodec::decode);
         return request;
     }

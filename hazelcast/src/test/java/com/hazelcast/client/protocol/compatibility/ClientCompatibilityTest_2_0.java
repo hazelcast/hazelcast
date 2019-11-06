@@ -6713,7 +6713,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCApplyMCConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 791;
-        ClientMessage encoded = MCApplyMCConfigCodec.encodeRequest(anInt, aListOfClientBwListEntries);
+        ClientMessage encoded = MCApplyMCConfigCodec.encodeRequest(aString, anInt, aListOfClientBwListEntries);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

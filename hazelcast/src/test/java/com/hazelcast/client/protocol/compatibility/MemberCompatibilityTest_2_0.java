@@ -7162,6 +7162,7 @@ public class MemberCompatibilityTest_2_0 {
         int fileClientMessageIndex = 791;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCApplyMCConfigCodec.RequestParameters parameters = MCApplyMCConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.eTag));
         assertTrue(isEqual(anInt, parameters.clientBwListMode));
         assertTrue(isEqual(aListOfClientBwListEntries, parameters.clientBwListEntries));
     }
