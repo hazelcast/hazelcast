@@ -49,9 +49,11 @@ import static com.hazelcast.config.MapConfig.DEFAULT_TTL_SECONDS;
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -198,9 +200,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Test
     public void getSystemProperties() throws Exception {
         Map<String, String> entries = resolve(managementCenterService.getSystemProperties(members[0]));
-        assertTrue(entries.containsKey("user.dir"));
-        assertNotNull(entries.get("user.dir"));
-        assertFalse(entries.get("user.dir").isEmpty());
+        assertThat(entries.get("user.dir"), not(isEmptyOrNullString()));
     }
 
     private <T> T resolve(CompletableFuture<T> future) throws Exception {
