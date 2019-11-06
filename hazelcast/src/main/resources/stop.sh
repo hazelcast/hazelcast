@@ -9,4 +9,6 @@ if [ -z "$PIDS" ]; then
   exit 1
 else
   kill -s TERM $PIDS
+  echo "Stopped Hazelcast instances with the following PIDs:"
+  echo "$PIDS"
 fi
