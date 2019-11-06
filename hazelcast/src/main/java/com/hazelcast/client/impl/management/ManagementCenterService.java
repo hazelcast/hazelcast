@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -161,6 +162,32 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> null
+        );
+    }
+
+    /**
+     * Checks if local MC config (client filter list) on a given member has the same ETag as provided.
+     */
+    @Nonnull
+    public CompletableFuture<Boolean> matchMCConfig(Member member, String eTag) {
+        checkNotNull(member);
+        checkNotNull(eTag);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCMatchMCConfigCodec.encodeRequest(eTag),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    MCMatchMCConfigCodec.ResponseParameters response =
+                            MCMatchMCConfigCodec.decodeResponse(clientMessage);
+                    return response.response;
+                },
+                true
         );
     }
 }

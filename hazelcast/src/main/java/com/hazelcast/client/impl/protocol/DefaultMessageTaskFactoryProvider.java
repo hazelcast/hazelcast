@@ -78,6 +78,7 @@ import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableEx
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.MatchMCConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
@@ -2199,6 +2200,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 new MessageTaskFactory() {
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new UpdateMapConfigMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new MatchMCConfigMessageTask(clientMessage, node, connection);
                     }
                 });
     }

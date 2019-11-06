@@ -127,6 +127,7 @@ public class ManagementCenterService {
     private volatile boolean taskPollFailed;
     private volatile boolean eventSendFailed;
     private volatile ManagementCenterEventListener eventListener;
+    private volatile String lastConfigETag;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -324,6 +325,10 @@ public class ManagementCenterService {
                 eventListener.onEventLogged(event);
             }
         }
+    }
+
+    public String getLastConfigETag() {
+        return lastConfigETag;
     }
 
     private boolean isRunning() {

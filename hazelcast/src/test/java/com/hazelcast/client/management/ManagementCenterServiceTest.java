@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -45,6 +46,7 @@ import static com.hazelcast.config.MapConfig.DEFAULT_MAX_SIZE;
 import static com.hazelcast.config.MapConfig.DEFAULT_TTL_SECONDS;
 import static com.hazelcast.config.MaxSizePolicy.PER_PARTITION;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -54,11 +56,16 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     private TestHazelcastFactory factory;
     private ManagementCenterService managementCenterService;
     private HazelcastInstance[] hazelcastInstances;
+    private Member[] members;
 
     @Before
     public void setUp() {
         factory = new TestHazelcastFactory(NODE_COUNT);
         hazelcastInstances = factory.newInstances(getConfig(), NODE_COUNT);
+
+        members = Arrays.stream(hazelcastInstances)
+                        .map(instance -> instance.getCluster().getLocalMember())
+                        .toArray(Member[]::new);
 
         HazelcastInstance client = factory.newHazelcastClient();
         managementCenterService = ((HazelcastClientProxy) client).client.getManagementCenterService();
@@ -129,5 +136,11 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
             assertEquals(DEFAULT_MAX_SIZE, retrievedConfig2.getMaxSize());
         }, 10);
 
+    }
+
+    @Test
+    public void matchMCConfig() throws Exception {
+        boolean result = managementCenterService.matchMCConfig(members[0], "test-etag").get();
+        assertFalse(result);
     }
 }
