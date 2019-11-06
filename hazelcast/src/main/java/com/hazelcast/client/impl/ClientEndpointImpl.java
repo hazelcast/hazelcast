@@ -19,12 +19,12 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
@@ -39,6 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
@@ -60,7 +61,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private Credentials credentials;
     private volatile boolean authenticated;
     private String clientVersion;
-    private volatile String stats;
+    private final AtomicReference<ClientStatistics> statsRef = new AtomicReference<>();
     private String clientName;
     private Set<String> labels;
 
@@ -126,13 +127,14 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void setClientStatistics(String stats) {
-        this.stats = stats;
+    public void setClientStatistics(ClientStatistics stats) {
+        statsRef.set(stats);
     }
 
     @Override
-    public String getClientStatistics() {
-        return stats;
+    public String getClientAttributes() {
+        ClientStatistics statistics = statsRef.get();
+        return statistics != null ? statistics.clientAttributes() : null;
     }
 
     @Override
@@ -272,7 +274,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersion
                 + ", creationTime=" + creationTime
-                + ", latest statistics=" + stats
+                + ", latest clientAttributes=" + getClientAttributes()
                 + '}';
     }
 }

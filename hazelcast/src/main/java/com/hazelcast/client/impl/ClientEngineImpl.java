@@ -544,7 +544,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         Collection<ClientEndpoint> clientEndpoints = endpointManager.getEndpoints();
         Map<UUID, String> statsMap = new HashMap<>(clientEndpoints.size());
         for (ClientEndpoint e : clientEndpoints) {
-            String statistics = e.getClientStatistics();
+            String statistics = e.getClientAttributes();
             if (null != statistics) {
                 statsMap.put(e.getUuid(), statistics);
             }

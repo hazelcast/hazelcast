@@ -333,7 +333,9 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 31;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientStatisticsCodec.RequestParameters parameters = ClientStatisticsCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aString, parameters.stats));
+        assertTrue(isEqual(aLong, parameters.timestamp));
+        assertTrue(isEqual(aString, parameters.clientAttributes));
+        assertTrue(isEqual(aByteArray, parameters.metricsBlob));
     }
 
     @Test
@@ -7228,21 +7230,6 @@ public class MemberCompatibilityNullTest_2_0 {
     public void test_MCGetSystemPropertiesCodec_encodeResponse() {
         int fileClientMessageIndex = 800;
         ClientMessage encoded = MCGetSystemPropertiesCodec.encodeResponse(aListOfStringToString);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_MCGetTimedMemberStateCodec_decodeRequest() {
-        int fileClientMessageIndex = 801;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCGetTimedMemberStateCodec.RequestParameters parameters = MCGetTimedMemberStateCodec.decodeRequest(fromFile);
-    }
-
-    @Test
-    public void test_MCGetTimedMemberStateCodec_encodeResponse() {
-        int fileClientMessageIndex = 802;
-        ClientMessage encoded = MCGetTimedMemberStateCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
