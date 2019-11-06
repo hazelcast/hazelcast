@@ -18,9 +18,8 @@ public class GetTimedMemberStateMessageTask extends AbstractCallableMessageTask<
 
     @Override
     protected Object call() throws Exception {
-        return nodeEngine.getManagementCenterService()
-                .getTimedMemberStateJson()
-                .orElse(null);
+        ManagementCenterService mcs = nodeEngine.getManagementCenterService();
+        return mcs != null ? mcs.getTimedMemberStateJson().orElse(null) : null;
     }
 
     @Override
