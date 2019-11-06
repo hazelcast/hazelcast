@@ -33,6 +33,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
@@ -478,6 +479,16 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         Map<String, ClientFlakeIdGeneratorConfig> actual = newConfigViaGenerator().getFlakeIdGeneratorConfigMap();
         assertMap(clientConfig.getFlakeIdGeneratorConfigMap(), actual);
+    }
+
+    @Test
+    public void map() {
+        ClientMapConfig expected = new ClientMapConfig(randomString());
+        expected.setPartitioningStrategyConfig(new PartitioningStrategyConfig(randomString()));
+        clientConfig.addMapConfig(expected);
+
+        Map<String, ClientMapConfig> actual = newConfigViaGenerator().getMapConfigs();
+        assertMap(clientConfig.getMapConfigs(), actual);
     }
 
     private ClientConfig newConfigViaGenerator() {

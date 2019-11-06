@@ -973,8 +973,8 @@ hazelcast:
   #
   # ===== HAZELCAST MAP CONFIGURATION =====
   #
-  # Configuration element's name is "map". It has the optional attribute "name" with which you
-  # can specify the name of your map. Its default value is "default".
+  # Configuration element's name is "map". It has the attribute "name" with which you
+  # can specify the name of your map.
   # It has the following sub-elements:
   # * "in-memory-format":
   # Specifies in which format data will be stored in your map. Available values are as follows:
@@ -1246,6 +1246,9 @@ hazelcast:
   #     "local" to true if you want to listen to the entries on the local member.
   # * "partition-lost-listeners":
   #     Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface.
+  # * partition-strategy:
+  #     The fully qualified name of the class implementing the PartitioningStrategy interface
+  #     to allow you to store related data on the same location.
   # * "split-brain-protection-ref":
   # Adds the split brain protection for this map which you configure using the "split-brain-protection" element.
   # You should set the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
@@ -1319,6 +1322,7 @@ hazelcast:
           local: false
       partition-lost-listeners:
         - com.your-package.YourPartitionLostListener
+      partition-strategy: com.hazelcast.examples.MyPartitioningStrategy
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       #
       # ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====

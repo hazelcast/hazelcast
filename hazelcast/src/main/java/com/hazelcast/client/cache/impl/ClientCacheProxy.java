@@ -242,7 +242,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         }
 
         List<Data> dataKeys = new ArrayList<>(keys.size());
-        objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
+        objectToDataCollection(keys, dataKeys, getSerializationService()::toData, NULL_KEY_IS_NOT_ALLOWED);
         removeAllKeysInternal(keys, dataKeys, startNanos);
     }
 

@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
+import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
@@ -30,6 +31,7 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.config.AbstractDomConfigProcessor;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
@@ -65,6 +67,7 @@ import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_NAM
 import static com.hazelcast.client.config.impl.ClientConfigSections.LABELS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LISTENERS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LOAD_BALANCER;
+import static com.hazelcast.client.config.impl.ClientConfigSections.MAP;
 import static com.hazelcast.client.config.impl.ClientConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.client.config.impl.ClientConfigSections.NEAR_CACHE;
 import static com.hazelcast.client.config.impl.ClientConfigSections.NETWORK;
@@ -140,6 +143,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleNetwork(node);
         } else if (LOAD_BALANCER.isEqual(nodeName)) {
             handleLoadBalancer(node);
+        } else if(MAP.isEqual(nodeName)) {
+            handleMap(node);
         } else if (NEAR_CACHE.isEqual(nodeName)) {
             handleNearCache(node);
         } else if (QUERY_CACHES.isEqual(nodeName)) {
@@ -252,6 +257,24 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     private void handleExecutorPoolSize(Node node) {
         int poolSize = Integer.parseInt(getTextContent(node));
         clientConfig.setExecutorPoolSize(poolSize);
+    }
+
+    protected void handleMap(Node node) {
+        String name = getAttribute(node, "name");
+        ClientMapConfig mapConfig = new ClientMapConfig();
+        mapConfig.setName(name);
+        handleMapNode(node, mapConfig);
+    }
+
+    protected void handleMapNode(Node node, final ClientMapConfig mapConfig) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("partition-strategy".equals(nodeName)) {
+                mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
+            }
+        }
+        clientConfig.addMapConfig(mapConfig);
     }
 
     protected void handleNearCache(Node node) {

@@ -28,7 +28,8 @@
                 <xs:element name="config-replacers" type="config-replacers" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cluster-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+                <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                            default="true"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="executor-pool-size" type="executor-pool-size" minOccurs="0" maxOccurs="1"
@@ -49,6 +50,7 @@
                             maxOccurs="unbounded"/>
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0"
                             maxOccurs="unbounded"/>
+                <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -114,11 +116,11 @@
             <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="icmp-ping" type="icmp-ping" minOccurs="0" maxOccurs="1"/>
@@ -819,8 +821,8 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="username-password">
-        <xs:attribute name="username" type="xs:string" use="required" />
-        <xs:attribute name="password" type="xs:string" use="required" />
+        <xs:attribute name="username" type="xs:string" use="required"/>
+        <xs:attribute name="password" type="xs:string" use="required"/>
     </xs:complexType>
     <xs:complexType name="token">
         <xs:simpleContent>
@@ -835,5 +837,27 @@
                 </xs:attribute>
             </xs:extension>
         </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="map">
+        <xs:all>
+            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The fully qualified name of the class implementing the
+                        com.hazelcast.partition.PartitioningStrategy interface.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the map.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

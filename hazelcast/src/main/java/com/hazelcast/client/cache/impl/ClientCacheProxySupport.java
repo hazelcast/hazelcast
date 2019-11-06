@@ -695,7 +695,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     protected void getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys, ExpiryPolicy expiryPolicy,
                                   List<Object> resultingKeyValuePairs, long startNanos) {
         if (dataKeys.isEmpty()) {
-            objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
+            objectToDataCollection(keys, dataKeys, getSerializationService()::toData, NULL_KEY_IS_NOT_ALLOWED);
         }
         Data expiryPolicyData = toData(expiryPolicy);
 

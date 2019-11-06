@@ -262,6 +262,9 @@ public final class FailoverClientConfigSupport {
         if (mainConfig.isBackupAckToClientEnabled() != alternativeConfig.isBackupAckToClientEnabled()) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "isBackupAckToClientEnabled");
         }
+        if (notEqual(mainConfig.getMapConfigs(), alternativeConfig.getMapConfigs())) {
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "map");
+        }
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})

@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -105,31 +106,31 @@ public final class CollectionUtil {
      * Converts a collection of any type to a collection of {@link Data}.
      *
      * @param collection           the given collection
-     * @param serializationService will be used for converting object to {@link Data}
+     * @param serializer Function that will be used for converting object to {@link Data}
      * @return collection of data
      * @throws NullPointerException if collection is {@code null} or contains a {@code null} item
      */
     public static <C> Collection<Data> objectToDataCollection(Collection<C> collection,
-                                                              SerializationService serializationService) {
-        List<Data> dataCollection = new ArrayList<Data>(collection.size());
-        objectToDataCollection(collection, dataCollection, serializationService, null);
+                                                              Function<C, Data> serializer) {
+        List<Data> dataCollection = new ArrayList<>(collection.size());
+        objectToDataCollection(collection, dataCollection, serializer, null);
         return dataCollection;
     }
 
     /**
      * Converts a collection of any type to a collection of {@link Data}.
      *
-     * @param objectCollection     object items
-     * @param dataCollection       data items
-     * @param serializationService will be used for converting object to {@link Data}
-     * @param errorMessage         the errorMessage when an item is null
+     * @param objectCollection  object items
+     * @param dataCollection    data items
+     * @param serializer        Function that will be used for converting object to {@link Data}
+     * @param errorMessage      the errorMessage when an item is null
      * @throws NullPointerException if collection is {@code null} or contains a {@code null} item
      */
     public static <C> void objectToDataCollection(Collection<C> objectCollection, Collection<Data> dataCollection,
-                                                  SerializationService serializationService, String errorMessage) {
+                                                  Function<C, Data> serializer, String errorMessage) {
         for (C item : objectCollection) {
             checkNotNull(item, errorMessage);
-            dataCollection.add(serializationService.toData(item));
+            dataCollection.add(serializer.apply(item));
         }
     }
 

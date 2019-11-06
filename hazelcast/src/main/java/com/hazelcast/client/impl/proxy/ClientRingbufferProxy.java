@@ -183,7 +183,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkFalse(collection.isEmpty(), "collection can't be empty");
         checkTrue(collection.size() <= MAX_BATCH_SIZE, "collection can't be larger than " + MAX_BATCH_SIZE);
 
-        Collection<Data> dataCollection = objectToDataCollection(collection, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(collection, getSerializationService()::toData);
         ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, dataCollection, overflowPolicy.getId());
 
         try {

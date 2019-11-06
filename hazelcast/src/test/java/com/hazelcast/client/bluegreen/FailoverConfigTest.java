@@ -63,13 +63,15 @@ public class FailoverConfigTest {
                 "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
                 "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
                 "setUserContext", "getUserContext", "setMetricsConfig",
-                "setBackupAckToClientEnabled", "isBackupAckToClientEnabled", "getMetricsConfig", "equals", "hashCode", "toString");
+                "setBackupAckToClientEnabled", "isBackupAckToClientEnabled", "getMetricsConfig", "getMapConfigs",
+                "findMapConfig", "getMapConfig", "addMapConfig", "setMapConfigs",
+                "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             String methodName = method.getName();
             if (!methodName.startsWith("$") && !allClientConfigMethods.contains(methodName)) {
                 throw new IllegalStateException("There is a new method on client config. " + methodName
-                        + "Handle it on FailoverClientConfigSupport first, and add it to  allClientConfigMethods set above.");
+                        + ". Handle it on FailoverClientConfigSupport first, and add it to  allClientConfigMethods set above.");
             }
         }
     }

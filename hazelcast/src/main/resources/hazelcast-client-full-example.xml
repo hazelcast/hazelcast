@@ -561,6 +561,20 @@
     <load-balancer type="random"/>
 
     <!--
+        ===== HAZELCAST MAP CONFIGURATION =====
+
+        Configuration element's name is <map>. It has the attribute "name" with which you
+        can specify the name of your map.
+        It has the following sub-elements:
+        * <partition-strategy>:
+            The fully qualified name of the class implementing the PartitioningStrategy interface
+            to allow you to store related data on the same location.
+    -->
+    <map name="default">
+        <partition-strategy>com.hazelcast.examples.MyPartitioningStrategy</partition-strategy>
+    </map>
+
+    <!--
         ===== HAZELCAST NEAR CACHE CONFIGURATION =====
 
         Configuration element's name is <near-cache>.

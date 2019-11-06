@@ -110,7 +110,7 @@ public class ClientConfig {
     private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
     private MetricsConfig metricsConfig = new MetricsConfig();
-    private final Map<String, ClientMapConfig> mapConfigMap;
+    private final Map<String, ClientMapConfig> mapConfigs;
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -121,7 +121,7 @@ public class ClientConfig {
         queryCacheConfigs = new ConcurrentHashMap<>();
         labels = new HashSet<>();
         userContext = new ConcurrentHashMap<>();
-        mapConfigMap = new ConcurrentHashMap<>();
+        mapConfigs = new ConcurrentHashMap<>();
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
@@ -175,9 +175,9 @@ public class ClientConfig {
         labels = new HashSet<>(config.labels);
         userContext = new ConcurrentHashMap<>(config.userContext);
         metricsConfig = new MetricsConfig(config.metricsConfig);
-        mapConfigMap = new ConcurrentHashMap<>();
-        for (Entry<String, ClientMapConfig> entry : config.mapConfigMap.entrySet()) {
-            mapConfigMap.put(entry.getKey(), new ClientMapConfig(entry.getValue()));
+        mapConfigs = new ConcurrentHashMap<>();
+        for (Entry<String, ClientMapConfig> entry : config.mapConfigs.entrySet()) {
+            mapConfigs.put(entry.getKey(), new ClientMapConfig(entry.getValue()));
         }
     }
 
@@ -920,8 +920,8 @@ public class ClientConfig {
      *
      * @return the map of {@link com.hazelcast.map.IMap} configurations mapped by the configuration name.
      */
-    public Map<String, ClientMapConfig> getMapConfigMap() {
-        return mapConfigMap;
+    public Map<String, ClientMapConfig> getMapConfigs() {
+        return mapConfigs;
     }
 
     /**
@@ -943,7 +943,7 @@ public class ClientConfig {
      */
     public ClientMapConfig findMapConfig(String name) {
         name = getBaseName(name);
-        ClientMapConfig config = lookupByPattern(configPatternMatcher, mapConfigMap, name);
+        ClientMapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
         if (config != null) {
             return config;
         }
@@ -979,7 +979,7 @@ public class ClientConfig {
      * @see #getConfigPatternMatcher()
      */
     public ClientMapConfig getMapConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapConfigMap, name, ClientMapConfig.class);
+        return ConfigUtils.getConfig(configPatternMatcher, mapConfigs, name, ClientMapConfig.class);
     }
 
     /**
@@ -991,7 +991,7 @@ public class ClientConfig {
      * @return the configured {@link ClientConfig} for chaining.
      */
     public ClientConfig addMapConfig(ClientMapConfig mapConfig) {
-        mapConfigMap.put(mapConfig.getName(), mapConfig);
+        mapConfigs.put(mapConfig.getName(), mapConfig);
         return this;
     }
 
@@ -1003,10 +1003,10 @@ public class ClientConfig {
      * @param map the {@link ClientMapConfig} map to set.
      * @return the configured {@link ClientConfig} for chaining.
      */
-    public ClientConfig setMapConfigMap(Map<String, ClientMapConfig> map) {
-        isNotNull(map, "mapConfigMap cannot be null.");
-        mapConfigMap.clear();
-        mapConfigMap.putAll(map);
+    public ClientConfig setMapConfigs(Map<String, ClientMapConfig> map) {
+        isNotNull(map, "mapConfigs cannot be null.");
+        mapConfigs.clear();
+        mapConfigs.putAll(map);
         for (Entry<String, ClientMapConfig> entry : map.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
@@ -1019,7 +1019,7 @@ public class ClientConfig {
                 executorPoolSize, flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext, mapConfigMap);
+                userCodeDeploymentConfig, userContext, mapConfigs);
     }
 
     @Override
@@ -1054,7 +1054,7 @@ public class ClientConfig {
                 && Objects.equals(serializationConfig, other.serializationConfig)
                 && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
                 && Objects.equals(userContext, other.userContext)
-                && Objects.equals(mapConfigMap, other.mapConfigMap);
+                && Objects.equals(mapConfigs, other.mapConfigs);
     }
 
     @Override
@@ -1081,7 +1081,7 @@ public class ClientConfig {
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig
-                + ", mapConfigMap=" + mapConfigMap
+                + ", mapConfigs=" + mapConfigs
                 + '}';
     }
 }

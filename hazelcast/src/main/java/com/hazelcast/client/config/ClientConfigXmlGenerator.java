@@ -126,6 +126,8 @@ public final class ClientConfigXmlGenerator {
         proxyFactory(gen, clientConfig.getProxyFactoryConfigs());
         //LoadBalancer
         loadBalancer(gen, clientConfig.getLoadBalancer());
+        //Map
+        map(gen, clientConfig.getMapConfigs());
         //NearCache
         nearCaches(gen, clientConfig.getNearCacheConfigMap());
         //QueryCaches
@@ -231,8 +233,8 @@ public final class ClientConfigXmlGenerator {
         CredentialsFactoryConfig cfConfig = security.getCredentialsFactoryConfig();
         if (cfConfig != null) {
             gen.open("credentials-factory", "class-name", cfConfig.getClassName())
-            .appendProperties(cfConfig.getProperties())
-            .close();
+                    .appendProperties(cfConfig.getProperties())
+                    .close();
         }
         gen.close();
     }
@@ -579,6 +581,15 @@ public final class ClientConfigXmlGenerator {
 
         // close connection-strategy
         gen.close();
+    }
+
+    private static void map(XmlGenerator gen, Map<String, ClientMapConfig> mapConfigs) {
+        for (Map.Entry<String, ClientMapConfig> entry : mapConfigs.entrySet()) {
+            ClientMapConfig mapConfig = entry.getValue();
+            gen.open("map", "name", entry.getKey())
+                    .node("partition-strategy", mapConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass())
+                    .close();
+        }
     }
 
     private static String classNameOrImplClass(String className, Object impl) {

@@ -17,6 +17,7 @@
 package com.hazelcast.client.config.impl;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
@@ -290,5 +291,14 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     protected void handleTokenIdentity(ClientSecurityConfig clientSecurityConfig, Node node) {
         clientSecurityConfig.setTokenIdentityConfig(new TokenIdentityConfig(
                 getTokenEncoding(getAttribute(node, "encoding")), getAttribute(node, "value")));
+    }
+
+    @Override
+    protected void handleMap(Node node) {
+        for (Node child : childElements(node)) {
+            ClientMapConfig mapConfig = new ClientMapConfig();
+            mapConfig.setName(child.getNodeName());
+            handleMapNode(child, mapConfig);
+        }
     }
 }

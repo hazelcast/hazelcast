@@ -160,7 +160,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
         list.add(1);
         list.add("foo");
 
-        Collection<Data> dataCollection = objectToDataCollection(list, serializationService);
+        Collection<Data> dataCollection = objectToDataCollection(list, serializationService::toData);
 
         assertEquals(list.size(), dataCollection.size());
     }
@@ -171,14 +171,14 @@ public class CollectionUtilTest extends HazelcastTestSupport {
         Collection<Object> list = new ArrayList<Object>();
         list.add(null);
 
-        objectToDataCollection(list, serializationService);
+        objectToDataCollection(list, serializationService::toData);
     }
 
     @Test(expected = NullPointerException.class)
     public void testObjectToDataCollection_withNullCollection() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
-        objectToDataCollection(null, serializationService);
+        objectToDataCollection(null, serializationService::toData);
     }
 
     @Test
@@ -188,7 +188,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
         list.add(1);
         list.add("foo");
 
-        Collection<Data> dataCollection = objectToDataCollection(list, serializationService);
+        Collection<Data> dataCollection = objectToDataCollection(list, serializationService::toData);
 
         Iterator<Data> it1 = dataCollection.iterator();
         Iterator it2 = list.iterator();

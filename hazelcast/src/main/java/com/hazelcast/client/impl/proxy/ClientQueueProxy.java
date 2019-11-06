@@ -374,7 +374,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public boolean containsAll(@Nonnull Collection<?> c) {
         checkNotNull(c, "Null collection is not allowed!");
 
-        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService()::toData);
         ClientMessage request = QueueContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueContainsAllCodec.ResponseParameters resultParameters = QueueContainsAllCodec.decodeResponse(response);
@@ -385,7 +385,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public boolean addAll(@Nonnull Collection<? extends E> c) {
         checkNotNull(c, "Null collection is not allowed!");
 
-        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService()::toData);
         ClientMessage request = QueueAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueAddAllCodec.ResponseParameters resultParameters = QueueAddAllCodec.decodeResponse(response);
@@ -396,7 +396,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public boolean removeAll(@Nonnull Collection<?> c) {
         checkNotNull(c, "Null collection is not allowed!");
 
-        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService()::toData);
         ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters =
@@ -408,7 +408,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public boolean retainAll(@Nonnull Collection<?> c) {
         checkNotNull(c, "Null collection is not allowed!");
 
-        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService()::toData);
         ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueCompareAndRetainAllCodec.ResponseParameters resultParameters =

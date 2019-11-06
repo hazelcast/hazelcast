@@ -407,6 +407,12 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals("value", properties.getProperty("property"));
     }
 
+    @Test
+    public void testMapConfig() {
+        ClientMapConfig mapConfig = fullClientConfig.getMapConfig("default");
+        assertEquals("com.hazelcast.examples.MyPartitioningStrategy", mapConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
+    }
+
     @Test(expected = HazelcastException.class)
     public abstract void loadingThroughSystemProperty_nonExistingFile() throws IOException;
 
