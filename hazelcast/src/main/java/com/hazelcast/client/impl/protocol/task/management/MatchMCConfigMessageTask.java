@@ -19,31 +19,23 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.operation.MatchMCConfigOperation;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class MatchMCConfigMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
     public MatchMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(),
-                op, nodeEngine.getThisAddress());
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new MatchMCConfigOperation(parameters.eTag);
+    protected Object call() throws Exception {
+        ManagementCenterService mcService = nodeEngine.getManagementCenterService();
+        return mcService != null && parameters.eTag.equals(mcService.getLastConfigETag());
     }
 
     @Override
