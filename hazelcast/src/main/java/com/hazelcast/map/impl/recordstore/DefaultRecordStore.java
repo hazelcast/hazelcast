@@ -197,7 +197,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record, null, true);
         } else {
-            updateRecord(key, record, null, value, now, true,
+            updateRecord(key, record, record.getValue(), value, now, true,
                     ttl, maxIdle, false, transactionId, true);
         }
 
