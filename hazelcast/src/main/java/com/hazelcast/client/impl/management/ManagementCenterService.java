@@ -22,20 +22,33 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
+import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.MapUtil;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
+/**
+ * Only works for smart clients, i.e. doesn't work for unisocket clients.
+ */
 public class ManagementCenterService {
 
     private final HazelcastClientInstanceImpl client;
@@ -161,6 +174,141 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> null
+        );
+    }
+
+    /**
+     * Gets the config of a given member rendered as XML.
+     */
+    @Nonnull
+    public CompletableFuture<String> getMemberConfig(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetMemberConfigCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCGetMemberConfigCodec.decodeResponse(clientMessage).configXml
+        );
+    }
+
+    /**
+     * Runs GC on a given member.
+     */
+    @Nonnull
+    public CompletableFuture<Void> runGc(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCRunGcCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Gets thread dump of a given member.
+     *
+     * @param member        {@link Member} to get the thread dump of
+     * @param dumpDeadLocks whether only dead-locked threads or all threads should be dumped.
+     */
+    @Nonnull
+    public CompletableFuture<String> getThreadDump(Member member, boolean dumpDeadLocks) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetThreadDumpCodec.encodeRequest(dumpDeadLocks),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCGetThreadDumpCodec.decodeResponse(clientMessage).threadDump
+        );
+    }
+
+    /**
+     * Shuts down a given member.
+     *
+     * @param member {@link Member} to shut down
+     */
+    public void shutdownMember(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCShutdownMemberCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+        invocation.invoke();
+    }
+
+    /**
+     * Promotes a lite member to a data member.
+     *
+     * @param member {@link Member} to promote
+     */
+    @Nonnull
+    public CompletableFuture<Void> promoteLiteMember(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCPromoteLiteMemberCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Gets system properties of a given member.
+     *
+     * @param member {@link Member} to get system properties of.
+     */
+    @Nonnull
+    public CompletableFuture<Map<String, String>> getSystemProperties(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetSystemPropertiesCodec.encodeRequest(),
+                null,
+                member.getAddress()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    List<Entry<String, String>> systemProperties
+                            = MCGetSystemPropertiesCodec.decodeResponse(clientMessage).systemProperties;
+
+                    Map<String, String> result = MapUtil.createHashMap(systemProperties.size());
+                    for (Entry<String, String> property : systemProperties) {
+                        result.put(property.getKey(), property.getValue());
+                    }
+                    return result;
+                }
         );
     }
 }

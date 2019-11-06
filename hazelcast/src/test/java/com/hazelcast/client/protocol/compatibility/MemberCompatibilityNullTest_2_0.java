@@ -7141,6 +7141,97 @@ public class MemberCompatibilityNullTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_MCGetMemberConfigCodec_decodeRequest() {
+        int fileClientMessageIndex = 789;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetMemberConfigCodec.RequestParameters parameters = MCGetMemberConfigCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCGetMemberConfigCodec_encodeResponse() {
+        int fileClientMessageIndex = 790;
+        ClientMessage encoded = MCGetMemberConfigCodec.encodeResponse(aString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCRunGcCodec_decodeRequest() {
+        int fileClientMessageIndex = 791;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCRunGcCodec.RequestParameters parameters = MCRunGcCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCRunGcCodec_encodeResponse() {
+        int fileClientMessageIndex = 792;
+        ClientMessage encoded = MCRunGcCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCGetThreadDumpCodec_decodeRequest() {
+        int fileClientMessageIndex = 793;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetThreadDumpCodec.RequestParameters parameters = MCGetThreadDumpCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aBoolean, parameters.dumpDeadLocks));
+    }
+
+    @Test
+    public void test_MCGetThreadDumpCodec_encodeResponse() {
+        int fileClientMessageIndex = 794;
+        ClientMessage encoded = MCGetThreadDumpCodec.encodeResponse(aString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCShutdownMemberCodec_decodeRequest() {
+        int fileClientMessageIndex = 795;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCShutdownMemberCodec.RequestParameters parameters = MCShutdownMemberCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCShutdownMemberCodec_encodeResponse() {
+        int fileClientMessageIndex = 796;
+        ClientMessage encoded = MCShutdownMemberCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCPromoteLiteMemberCodec_decodeRequest() {
+        int fileClientMessageIndex = 797;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCPromoteLiteMemberCodec.RequestParameters parameters = MCPromoteLiteMemberCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCPromoteLiteMemberCodec_encodeResponse() {
+        int fileClientMessageIndex = 798;
+        ClientMessage encoded = MCPromoteLiteMemberCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCGetSystemPropertiesCodec_decodeRequest() {
+        int fileClientMessageIndex = 799;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetSystemPropertiesCodec.RequestParameters parameters = MCGetSystemPropertiesCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCGetSystemPropertiesCodec_encodeResponse() {
+        int fileClientMessageIndex = 800;
+        ClientMessage encoded = MCGetSystemPropertiesCodec.encodeResponse(aListOfStringToString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
      private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
