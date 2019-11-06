@@ -807,4 +807,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.createDistributedObjectsOnCluster();
         queryCacheContext.recreateAllCaches();
     }
+
+    // visible for testing
+    public Statistics getStatistics() {
+        return statistics;
+    }
 }

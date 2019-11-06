@@ -17,7 +17,14 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricConsumer;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
@@ -39,10 +46,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
+import static java.util.Arrays.asList;
+
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
  */
-public final class ClientEndpointImpl implements ClientEndpoint {
+public final class ClientEndpointImpl
+    implements ClientEndpoint, DynamicMetricsProvider {
+    private static final String METRICS_TAG_CLIENT = "client";
+    private static final String METRICS_TAG_TIMESTAMP = "timestamp";
 
     private final ClientEngine clientEngine;
     private final ILogger logger;
@@ -71,6 +84,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.socketAddress = connection.getRemoteSocketAddress();
         this.clientVersion = "Unknown";
         this.creationTime = System.currentTimeMillis();
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     @Override
@@ -128,6 +142,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     public String getClientAttributes() {
         ClientStatistics statistics = statsRef.get();
         return statistics != null ? statistics.clientAttributes() : null;
+    }
+
+    @Override
+    public ClientStatistics getClientStatistics() {
+        return statsRef.get();
     }
 
     @Override
@@ -235,5 +254,37 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", creationTime=" + creationTime
                 + ", latest clientAttributes=" + getClientAttributes()
                 + '}';
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        ClientStatistics clientStatistics = statsRef.get();
+        if (clientStatistics != null && clientStatistics.metricsBlob() != null) {
+            long timestamp = clientStatistics.timestamp();
+            byte[] metricsBlob = clientStatistics.metricsBlob();
+            MetricConsumer consumer = new MetricConsumer() {
+                @Override
+                public void consumeLong(MetricDescriptor descriptor, long value) {
+                    context.collect(enhanceDescriptor(descriptor, timestamp), value);
+                }
+
+                @Override
+                public void consumeDouble(MetricDescriptor descriptor, double value) {
+                    context.collect(enhanceDescriptor(descriptor, timestamp), value);
+                }
+
+                private MetricDescriptor enhanceDescriptor(MetricDescriptor descriptor, long timestamp) {
+                    return descriptor
+                        // we exclude all metric targets here besides MANAGEMENT_CENTER
+                        // since we want to send the client-side metrics only to MC
+                        .withExcludedTargets(asList(MetricTarget.values()))
+                        .withIncludedTarget(MANAGEMENT_CENTER)
+                        // we add "client" and "timestamp" tags for MC
+                        .withTag(METRICS_TAG_CLIENT, getUuid().toString())
+                        .withTag(METRICS_TAG_TIMESTAMP, Long.toString(timestamp));
+                }
+            };
+            MetricsCompressor.extractMetrics(metricsBlob, consumer);
+        }
     }
 }

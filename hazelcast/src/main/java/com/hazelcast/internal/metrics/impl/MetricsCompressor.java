@@ -476,7 +476,7 @@ public class MetricsCompressor {
                         consumer.consumeLong(descriptor, dis.readLong());
                         break;
                     case DOUBLE:
-                            consumer.consumeDouble(descriptor, dis.readDouble());
+                        consumer.consumeDouble(descriptor, dis.readDouble());
                         break;
                     default:
                         throw new IllegalStateException("Unexpected metric value type: " + type + " with ordinal " + typeOrdinal);
