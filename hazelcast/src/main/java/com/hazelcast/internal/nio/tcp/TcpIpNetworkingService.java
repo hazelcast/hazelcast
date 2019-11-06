@@ -390,7 +390,9 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
                 }
             }
 
-            unifiedEndpointManager.provideDynamicMetrics(taggerSupplier, context);
+            if (unifiedEndpointManager != null) {
+                unifiedEndpointManager.provideDynamicMetrics(taggerSupplier, context);
+            }
         }
     }
 
