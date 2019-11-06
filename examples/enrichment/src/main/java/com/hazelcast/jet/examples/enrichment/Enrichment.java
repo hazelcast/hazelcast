@@ -211,7 +211,7 @@ public final class Enrichment {
                                      .map(entryValue());
 
         // The enriching streams: products and brokers
-        String resourcesPath = getClasspathDirectory(".").toString();
+        String resourcesPath = getClasspathDirectory("/").toString();
         BatchSource<Map.Entry<Integer, Product>> products = Sources
                 .filesBuilder(resourcesPath)
                 .sharedFileSystem(true)
@@ -257,7 +257,6 @@ public final class Enrichment {
             // comment out the code to try the appropriate enrichment method
             Pipeline p = enrichUsingIMap();
 //            Pipeline p = enrichUsingReplicatedMap();
-//            Pipeline p = enrichUsingAsyncService();
 //            Pipeline p = enrichUsingHashJoin();
             Job job = jet.newJob(p);
             eventGenerator.generateEventsForFiveSeconds();
