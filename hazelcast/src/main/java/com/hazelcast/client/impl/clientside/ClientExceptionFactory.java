@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -86,6 +87,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.UTFDataFormatException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
@@ -118,9 +121,12 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WAIT_K
 public class ClientExceptionFactory {
 
     private final Map<Integer, ExceptionFactory> intToFactory = new HashMap<Integer, ExceptionFactory>();
+    private final ClassLoader classLoader;
 
-    public ClientExceptionFactory(boolean jcacheAvailable) {
-        if (jcacheAvailable) {
+    public ClientExceptionFactory(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+        boolean jCacheAvailable = JCacheDetector.isJCacheAvailable(classLoader);
+        if (jCacheAvailable) {
             register(ClientProtocolErrorCodes.CACHE, CacheException.class, new ExceptionFactory() {
                 @Override
                 public Throwable createException(String message, Throwable cause) {
@@ -694,7 +700,18 @@ public class ClientExceptionFactory {
         ExceptionFactory exceptionFactory = intToFactory.get(errorHolder.getErrorCode());
         Throwable throwable;
         if (exceptionFactory == null) {
-            throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), errorHolder.getClassName());
+            // use reflection to create the exception
+            String className = errorHolder.getClassName();
+
+            try {
+                Class<?> clazz = Class.forName(className, false, classLoader);
+                Constructor<?> constructor = clazz.getDeclaredConstructor(String.class, Throwable.class);
+                throwable = (Throwable) constructor.newInstance(errorHolder.getMessage(), createException(iterator));
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException
+                    | InvocationTargetException e) {
+                // Fallback
+                throwable = new UndefinedErrorCodeException(errorHolder.getMessage(), className);
+            }
         } else {
             throwable = exceptionFactory.createException(errorHolder.getMessage(), createException(iterator));
         }

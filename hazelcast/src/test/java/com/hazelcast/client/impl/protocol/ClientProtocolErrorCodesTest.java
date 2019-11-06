@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.clientside.ClientExceptionFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -26,11 +25,31 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientProtocolErrorCodesTest extends HazelcastTestSupport {
+    private static final String dummyIoErrorMessage = "dummy io error";
+
+    public static class MyException extends Exception {
+        public MyException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!obj.getClass().equals(MyException.class)) {
+                return false;
+            }
+
+            MyException other = (MyException) obj;
+            return getMessage().equals(other.getMessage()) && other.getCause().getClass().equals(IOException.class) && other
+                    .getCause().getMessage().equals(dummyIoErrorMessage);
+        }
+    }
 
     @Test
     public void testConstructor() {
@@ -38,14 +57,13 @@ public class ClientProtocolErrorCodesTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testUndefinedException() {
+    public void testUserException() {
         ClientExceptions exceptions = new ClientExceptions(false);
-        ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(false);
-        class MyException extends Exception {
-        }
+        ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(getClass().getClassLoader());
 
-        ClientMessage exceptionMessage = exceptions.createExceptionMessage(new MyException());
+        MyException userThrowable = new MyException("User exception with a cause", new IOException(dummyIoErrorMessage));
+        ClientMessage exceptionMessage = exceptions.createExceptionMessage(userThrowable);
         Throwable resurrectedThrowable = exceptionFactory.createException(exceptionMessage);
-        assertEquals(UndefinedErrorCodeException.class, resurrectedThrowable.getClass());
+        assertEquals(userThrowable, resurrectedThrowable);
     }
 }

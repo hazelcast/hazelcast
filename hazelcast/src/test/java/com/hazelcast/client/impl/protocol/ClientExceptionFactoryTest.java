@@ -104,7 +104,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
     public Throwable throwable;
 
     private ClientExceptions exceptions = new ClientExceptions(true);
-    private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true);
+    private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(getClass().getClassLoader());
 
     @Test
     public void testException() {

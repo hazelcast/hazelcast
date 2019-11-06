@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.Client;
@@ -245,7 +244,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         queryCacheContext = new ClientQueryCacheContext(this);
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
-        clientExceptionFactory = initClientExceptionFactory();
+        clientExceptionFactory = initClientExceptionFactory(classLoader);
         statistics = new Statistics(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
@@ -810,9 +809,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return lockReferenceIdGenerator;
     }
 
-    private ClientExceptionFactory initClientExceptionFactory() {
-        boolean jCacheAvailable = JCacheDetector.isJCacheAvailable(getClientConfig().getClassLoader());
-        return new ClientExceptionFactory(jCacheAvailable);
+    private ClientExceptionFactory initClientExceptionFactory(ClassLoader classLoader) {
+        return new ClientExceptionFactory(classLoader);
     }
 
     public ClientExceptionFactory getClientExceptionFactory() {
