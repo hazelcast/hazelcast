@@ -5,6 +5,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
@@ -20,6 +22,11 @@ public class TimedMemberStateFactoryTest
         Config config = new ClasspathXmlConfig("com/hazelcast/internal/management/" + xmlConfigRelativeFileName);
         instance = createHazelcastInstance(config);
         return new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
+    }
+
+    @Before
+    public void before() {
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
     }
 
     @After
@@ -47,13 +54,33 @@ public class TimedMemberStateFactoryTest
     }
 
     @Test
-    public void nativeMemoryEnabledForMap_withPositiveSize() {
-        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
+    public void nativeMemoryEnabledForMap() {
         TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-map.xml");
         instance.getMap("myMap");
 
         TimedMemberState actual = memberStateFactory.createTimedMemberState();
 
         assertTrue(actual.getMemberState().getLocalMapStats("myMap").isNativeMemoryUsed());
+    }
+
+    @Test
+    @Ignore("native memory is not supported yet for replicated map")
+    public void nativeMemoryEnabledForReplicatedMap() {
+        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-replicatedmap.xml");
+        instance.getReplicatedMap("myReplicatedMap");
+
+        TimedMemberState actual = memberStateFactory.createTimedMemberState();
+
+        assertTrue(actual.getMemberState().getLocalReplicatedMapStats("myReplicatedMap").isNativeMemoryUsed());
+    }
+
+    @Test
+    public void nativeMemoryEnabledForCache() {
+        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-replicatedmap.xml");
+        instance.getCacheManager().getCache("myCache");
+
+        TimedMemberState actual = memberStateFactory.createTimedMemberState();
+
+        assertTrue(actual.getMemberState().getLocalReplicatedMapStats("myCache").isNativeMemoryUsed());
     }
 }

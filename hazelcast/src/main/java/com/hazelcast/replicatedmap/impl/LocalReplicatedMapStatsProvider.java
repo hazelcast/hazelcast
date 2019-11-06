@@ -30,6 +30,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
 
@@ -44,8 +45,13 @@ class LocalReplicatedMapStatsProvider {
 
     private final ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
             new ConcurrentHashMap<>();
-    private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction =
-            arg -> new LocalReplicatedMapStatsImpl();
+    private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction = this::createEmptyMapStats;
+
+    private LocalReplicatedMapStatsImpl createEmptyMapStats(String mapName) {
+        LocalReplicatedMapStatsImpl stats = new LocalReplicatedMapStatsImpl();
+        stats.setNativeMemoryUsed(config.getReplicatedMapConfig(mapName).getInMemoryFormat() == NATIVE);
+        return stats;
+    }
 
     private final Config config;
     private final PartitionContainer[] partitionContainers;

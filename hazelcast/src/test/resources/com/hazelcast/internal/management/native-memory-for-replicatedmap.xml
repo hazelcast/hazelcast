@@ -4,10 +4,22 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <map name="myMap">
+    <replicatedmap name="myReplicatedMap">
         <statistics-enabled>true</statistics-enabled>
         <in-memory-format>NATIVE</in-memory-format>
-    </map>
+    </replicatedmap>
+
+    <cache name="myCache">
+        <key-type class-name="java.lang.Object"/>
+        <value-type class-name="java.lang.Object"/>
+        <statistics-enabled>true</statistics-enabled>
+        <in-memory-format>NATIVE</in-memory-format>
+        <eviction eviction-policy="LRU" size="20" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"/>
+    </cache>
+
+    <multimap name="myMultiMap">
+        <statistics-enabled>true</statistics-enabled>
+    </multimap>
 
     <native-memory allocator-type="POOLED" enabled="true">
         <size unit="MEGABYTES" value="256"/>
