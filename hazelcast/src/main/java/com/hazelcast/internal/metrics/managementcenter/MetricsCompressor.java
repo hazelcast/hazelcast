@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics.managementcenter;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
@@ -98,7 +99,9 @@ public class MetricsCompressor {
     @SuppressWarnings("checkstyle:MagicNumber")
     private static final int MASK_UNIT = 1 << 4;
     @SuppressWarnings("checkstyle:MagicNumber")
-    private static final int MASK_TAG_COUNT = 1 << 5;
+    private static final int MASK_EXCLUDED_TARGETS = 1 << 5;
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final int MASK_TAG_COUNT = 1 << 6;
 
     private static final int BITS_IN_BYTE = 8;
     private static final int BYTE_MASK = 0xff;
@@ -183,6 +186,9 @@ public class MetricsCompressor {
                 tmpDos.writeByte(NULL_UNIT);
             }
         }
+        if ((mask & MASK_EXCLUDED_TARGETS) == 0) {
+            tmpDos.writeByte(MetricTarget.bitset(descriptor.excludedTargets()));
+        }
         if ((mask & MASK_TAG_COUNT) == 0) {
             tmpDos.writeByte(descriptor.tagCount());
         }
@@ -212,6 +218,9 @@ public class MetricsCompressor {
             }
             if (descriptor.unit() == lastDescriptor.unit()) {
                 mask |= MASK_UNIT;
+            }
+            if (Objects.equals(descriptor.excludedTargets(), lastDescriptor.excludedTargets())) {
+                mask |= MASK_EXCLUDED_TARGETS;
             }
             if (descriptor.tagCount() == lastDescriptor.tagCount()) {
                 mask |= MASK_TAG_COUNT;
@@ -409,6 +418,7 @@ public class MetricsCompressor {
                 }
             }
 
+            @SuppressWarnings("checkstyle:NPathComplexity")
             private void moveNext() {
                 ProbeUnit[] units = ProbeUnit.values();
                 MutableMetricDescriptor newDescriptor = supplier.get();
@@ -451,6 +461,14 @@ public class MetricsCompressor {
                         int unitOrdinal = dis.readByte();
                         ProbeUnit unit = unitOrdinal != NULL_UNIT ? units[unitOrdinal] : null;
                         newDescriptor.withUnit(unit);
+                    }
+
+                    // excluded targets
+                    if ((mask & MASK_EXCLUDED_TARGETS) != 0) {
+                        newDescriptor.withExcludedTargets(lastDescriptor.excludedTargets());
+                    } else {
+                        int excludedMetricsBitset = dis.readByte();
+                        newDescriptor.withExcludedTargets(MetricTarget.asSet(excludedMetricsBitset));
                     }
 
                     // tags

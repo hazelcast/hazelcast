@@ -32,7 +32,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
-import static java.util.Collections.EMPTY_SET;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -72,8 +71,8 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectLong(metricDescriptor("foo"), 10, EMPTY_SET);
-        verify(renderer).collectLong(metricDescriptor("bar"), 20, EMPTY_SET);
+        verify(renderer).collectLong(metricDescriptor("foo"), 10);
+        verify(renderer).collectLong(metricDescriptor("bar"), 20);
         verifyNoMoreInteractions(renderer);
     }
 
@@ -91,8 +90,8 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectDouble(metricDescriptor("foo"), 10, EMPTY_SET);
-        verify(renderer).collectDouble(metricDescriptor("bar"), 20, EMPTY_SET);
+        verify(renderer).collectDouble(metricDescriptor("foo"), 10);
+        verify(renderer).collectDouble(metricDescriptor("bar"), 20);
         verifyNoMoreInteractions(renderer);
     }
 
@@ -109,7 +108,7 @@ public class RenderTest {
 
         metricsRegistry.collect(renderer);
 
-        verify(renderer).collectException(metricDescriptor("foo"), ex, EMPTY_SET);
+        verify(renderer).collectException(metricDescriptor("foo"), ex);
         verifyNoMoreInteractions(renderer);
     }
 }

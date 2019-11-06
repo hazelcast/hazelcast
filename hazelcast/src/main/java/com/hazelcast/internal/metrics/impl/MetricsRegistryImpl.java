@@ -21,6 +21,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeFunction;
@@ -48,6 +49,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.EnumSet.of;
 
@@ -234,6 +236,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             return;
         }
 
+        descriptor.withExcludedTargets(getExcludedTargets(function));
+
         MetricDescriptorImpl.LookupView descriptorLookupView = ((MetricDescriptorImpl) descriptor).lookupView();
         ProbeInstance probeInstance = probeInstances
                 .computeIfAbsent(descriptorLookupView, k -> new ProbeInstance<>(descriptor, source, function));
@@ -252,6 +256,15 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         if (gauge != null) {
             gauge.onProbeInstanceSet(probeInstance);
         }
+    }
+
+    private Set<MetricTarget> getExcludedTargets(Object object) {
+        if (object instanceof ProbeAware) {
+            CachedProbe probe = ((ProbeAware) object).getProbe();
+            return MetricTarget.asSet(probe.excludedTargets());
+        }
+
+        return emptySet();
     }
 
     private void logOverwrite(ProbeInstance probeInstance) {

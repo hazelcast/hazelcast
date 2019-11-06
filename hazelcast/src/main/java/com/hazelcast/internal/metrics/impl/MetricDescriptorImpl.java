@@ -18,12 +18,15 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeUnit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -48,6 +51,7 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
     private String discriminator;
     private String discriminatorValue;
     private ProbeUnit unit;
+    private Collection<MetricTarget> excludedTargets = EnumSet.noneOf(MetricTarget.class);
 
     public MetricDescriptorImpl(Supplier<MetricDescriptorImpl> supplier) {
         this.supplier = requireNonNull(supplier);
@@ -106,6 +110,7 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
         copy.discriminator = discriminator;
         copy.discriminatorValue = discriminatorValue;
         copy.unit = unit;
+        copy.excludedTargets = excludedTargets;
         copy.tagPtr = tagPtr;
         ensureCapacity(tagPtr - 1);
         System.arraycopy(tags, 0, copy.tags, 0, tags.length);
@@ -123,6 +128,7 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
         this.discriminator = descriptor.discriminator();
         this.discriminatorValue = descriptor.discriminatorValue();
         this.unit = descriptor.unit();
+        this.excludedTargets = descriptor.excludedTargets();
         descriptor.readTags(this::withTag);
 
         return this;
@@ -174,6 +180,11 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
     @Override
     @Nonnull
     public String metricName() {
+        return buildMetricString(false);
+    }
+
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    private String buildMetricString(boolean includeExcludedTargets) {
         StringBuilder sb = new StringBuilder().append('[');
 
         if (discriminatorValue != null) {
@@ -209,9 +220,61 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
             sb.append(tag).append('=').append(tagValue);
         }
 
+        if (includeExcludedTargets) {
+            if (sb.length() > 1) {
+                sb.append(',');
+            }
+            sb.append("excludedTargets={");
+            int i = 0;
+            for (MetricTarget target : excludedTargets) {
+                if (i++ != 0) {
+                    sb.append(',');
+                }
+                sb.append(target.name());
+            }
+            sb.append('}');
+        }
+
         sb.append(']');
 
         return sb.toString();
+    }
+
+    @Nonnull
+    @Override
+    public Collection<MetricTarget> excludedTargets() {
+        return excludedTargets;
+    }
+
+    @Override
+    public boolean isTargetExcluded(MetricTarget target) {
+        return excludedTargets.contains(target);
+    }
+
+    @Override
+    public boolean isTargetIncluded(MetricTarget target) {
+        return !isTargetExcluded(target);
+    }
+
+    @Override
+    @Nonnull
+    public MetricDescriptorImpl withExcludedTarget(MetricTarget target) {
+        excludedTargets = MetricTarget.asSetWith(excludedTargets, target);
+        return this;
+    }
+
+    @Override
+    @Nonnull
+    public MetricDescriptorImpl withIncludedTarget(MetricTarget target) {
+        excludedTargets = MetricTarget.asSetWithout(excludedTargets, target);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public MetricDescriptorImpl withExcludedTargets(Collection<MetricTarget> excludedTargets) {
+        this.excludedTargets = excludedTargets;
+        return this;
     }
 
     LookupView lookupView() {
@@ -259,8 +322,10 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
         if (!Objects.equals(discriminatorValue, that.discriminatorValue)) {
             return false;
         }
-
         if (!Objects.equals(this.discriminator, that.discriminator)) {
+            return false;
+        }
+        if (!Objects.equals(this.excludedTargets, that.excludedTargets)) {
             return false;
         }
 
@@ -293,6 +358,7 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
         result = 31 * result + (discriminator != null ? discriminator.hashCode() : 0);
         result = 31 * result + (discriminatorValue != null ? discriminatorValue.hashCode() : 0);
         result = 31 * result + (unit != null ? unit.hashCode() : 0);
+        result = 31 * result + excludedTargets.hashCode();
 
         return result;
     }
@@ -320,7 +386,7 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
 
     @Override
     public String toString() {
-        return metricName();
+        return buildMetricString(true);
     }
 
     /**

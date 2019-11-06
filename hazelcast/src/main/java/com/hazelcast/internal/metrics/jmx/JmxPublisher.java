@@ -18,7 +18,6 @@ package com.hazelcast.internal.metrics.jmx;
 
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.ProbeUnit;
 
@@ -31,7 +30,6 @@ import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -81,17 +79,17 @@ public class JmxPublisher implements MetricsPublisher {
     }
 
     @Override
-    public void publishLong(MetricDescriptor descriptor, long value, Set<MetricTarget> excludedTargets) {
-        publishNumber(descriptor, value, excludedTargets);
+    public void publishLong(MetricDescriptor descriptor, long value) {
+        publishNumber(descriptor, value);
     }
 
     @Override
-    public void publishDouble(MetricDescriptor descriptor, double value, Set<MetricTarget> excludedTargets) {
-        publishNumber(descriptor, value, excludedTargets);
+    public void publishDouble(MetricDescriptor descriptor, double value) {
+        publishNumber(descriptor, value);
     }
 
-    private void publishNumber(MetricDescriptor originalDescriptor, Number value, Set<MetricTarget> excludedTargets) {
-        if (excludedTargets.contains(JMX)) {
+    private void publishNumber(MetricDescriptor originalDescriptor, Number value) {
+        if (originalDescriptor.isTargetExcluded(JMX)) {
             return;
         }
 

@@ -113,7 +113,8 @@ class MetricsCollectionCycle {
                 MutableMetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(methodProbe.probe.unit())
-                        .withMetric(methodProbe.getProbeOrMethodName());
+                        .withMetric(methodProbe.getProbeOrMethodName())
+                        .withExcludedTargets(getExcludedTargets(methodProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, methodProbe);
                 collect(descriptorCopy, source, methodProbe);
@@ -125,7 +126,8 @@ class MetricsCollectionCycle {
                 MutableMetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(fieldProbe.probe.unit())
-                        .withMetric(fieldProbe.getProbeOrFieldName());
+                        .withMetric(fieldProbe.getProbeOrFieldName())
+                        .withExcludedTargets(getExcludedTargets(fieldProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, fieldProbe);
                 collect(descriptorCopy, source, fieldProbe);
@@ -134,10 +136,8 @@ class MetricsCollectionCycle {
     }
 
     private void collect(MutableMetricDescriptor descriptor, Object source, ProbeFunction function) {
-        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
-
         if (function == null || source == null) {
-            metricsCollector.collectNoValue(descriptor, excludedTargets);
+            metricsCollector.collectNoValue(descriptor);
             return;
         }
 
@@ -155,22 +155,20 @@ class MetricsCollectionCycle {
     }
 
     private void collectDouble(Object source, MetricDescriptor descriptor, DoubleProbeFunction function) {
-        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
         try {
             double value = function.get(source);
-            metricsCollector.collectDouble(descriptor, value, excludedTargets);
+            metricsCollector.collectDouble(descriptor, value);
         } catch (Exception ex) {
-            metricsCollector.collectException(descriptor, ex, excludedTargets);
+            metricsCollector.collectException(descriptor, ex);
         }
     }
 
     private void collectLong(Object source, MetricDescriptor descriptor, LongProbeFunction function) {
-        Set<MetricTarget> excludedTargets = getExcludedTargets(function);
         try {
             long value = function.get(source);
-            metricsCollector.collectLong(descriptor, value, excludedTargets);
+            metricsCollector.collectLong(descriptor, value);
         } catch (Exception ex) {
-            metricsCollector.collectException(descriptor, ex, excludedTargets);
+            metricsCollector.collectException(descriptor, ex);
         }
     }
 
@@ -202,7 +200,7 @@ class MetricsCollectionCycle {
                         .withMetric(name);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
-                metricsCollector.collectLong(descriptorCopy, value, emptySet());
+                metricsCollector.collectLong(descriptorCopy, value);
             }
         }
 
@@ -216,7 +214,7 @@ class MetricsCollectionCycle {
                         .withMetric(name);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
-                metricsCollector.collectDouble(descriptorCopy, value, emptySet());
+                metricsCollector.collectDouble(descriptorCopy, value);
             }
         }
     }

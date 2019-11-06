@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -25,14 +26,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.EnumSet;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
+import static com.hazelcast.internal.metrics.MetricTarget.JMX;
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -164,6 +171,36 @@ public class MetricDescriptorImplTest {
                 + "tag2=tag2Value]", descriptor.metricName());
         assertEquals("[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metric2,tag0=tag0Value,tag1=tag1Value,"
                 + "tag2=tag2Value,tag3=tag3Value,tag4=tag4Value,tag5=tag5Value]", descriptorCopy.metricName());
+    }
+
+    @Test
+    public void testMetricName_doesntIncludeExcludedTargets() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
+                .withPrefix("prefix")
+                .withMetric("metricValue")
+                .withDiscriminator("discriminatorTag", "discriminatorValue")
+                .withUnit(MS)
+                .withTag("tag0", "tag0Value")
+                .withExcludedTarget(MANAGEMENT_CENTER);
+
+        assertEquals("[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metricValue,tag0=tag0Value]",
+                descriptor.metricName());
+    }
+
+    @Test
+    public void testToString_includesExcludedTargets() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
+                .withPrefix("prefix")
+                .withMetric("metricValue")
+                .withDiscriminator("discriminatorTag", "discriminatorValue")
+                .withUnit(MS)
+                .withTag("tag0", "tag0Value")
+                .withExcludedTarget(MANAGEMENT_CENTER)
+                .withExcludedTarget(JMX);
+
+        assertEquals("[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metricValue,tag0=tag0Value,"
+                        + "excludedTargets={MANAGEMENT_CENTER,JMX}]",
+                descriptor.toString());
     }
 
     @Test
@@ -314,6 +351,43 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
+    public void testEqualsSameExcludedTargets() {
+        MetricDescriptorImpl metricDescriptor1 = new MetricDescriptorImpl(mock(Supplier.class));
+        MetricDescriptorImpl metricDescriptor2 = new MetricDescriptorImpl(mock(Supplier.class));
+
+        metricDescriptor1
+                .withMetric("metricName")
+                .withExcludedTarget(MANAGEMENT_CENTER)
+                .withExcludedTarget(JMX);
+
+        metricDescriptor2
+                .withMetric("metricName")
+                .withExcludedTarget(JMX)
+                .withExcludedTarget(MANAGEMENT_CENTER);
+
+        assertEquals(metricDescriptor1, metricDescriptor2);
+        assertEquals(metricDescriptor1.hashCode(), metricDescriptor2.hashCode());
+    }
+
+    @Test
+    public void testEqualsDifferentExcludedTargets() {
+        MetricDescriptorImpl metricDescriptor1 = new MetricDescriptorImpl(mock(Supplier.class));
+        MetricDescriptorImpl metricDescriptor2 = new MetricDescriptorImpl(mock(Supplier.class));
+
+        metricDescriptor1
+                .withMetric("metricName")
+                .withExcludedTarget(MANAGEMENT_CENTER);
+
+        metricDescriptor2
+                .withMetric("metricName")
+                .withExcludedTarget(JMX)
+                .withExcludedTarget(MANAGEMENT_CENTER);
+
+        assertNotEquals(metricDescriptor1, metricDescriptor2);
+        assertNotEquals(metricDescriptor1.hashCode(), metricDescriptor2.hashCode());
+    }
+
+    @Test
     public void testCopyOfAnotherDescriptor() {
         MetricDescriptorImpl original = new MetricDescriptorImpl(mock(Supplier.class))
                 .withPrefix("prefix")
@@ -324,10 +398,57 @@ public class MetricDescriptorImplTest {
                 .withTag("tag1", "tag1Value")
                 .withTag("tag2", "tag2Value")
                 .withTag("tag3", "tag3Value")
-                .withTag("tag4", "tag4Value");
+                .withTag("tag4", "tag4Value")
+                .withExcludedTarget(JMX);
         MetricDescriptorImpl target = new MetricDescriptorImpl(mock(Supplier.class))
                 .copy(original);
 
         assertEquals(original, target);
+    }
+
+    @Test
+    public void testTargetExclusion() {
+        MetricDescriptorImpl original = new MetricDescriptorImpl(mock(Supplier.class))
+                .withExcludedTarget(MANAGEMENT_CENTER)
+                .withExcludedTarget(JMX);
+
+        assertTrue(original.isTargetExcluded(MANAGEMENT_CENTER));
+        assertTrue(original.isTargetExcluded(JMX));
+
+        EnumSet<MetricTarget> expectedIncludedTargets = EnumSet.complementOf(EnumSet.of(MANAGEMENT_CENTER, JMX));
+        for (MetricTarget metricTarget : expectedIncludedTargets) {
+            assertFalse(original.isTargetExcluded(metricTarget));
+        }
+    }
+
+    @Test
+    public void testExcludeThanIncludeIncludesTarget() {
+        MetricDescriptorImpl original = new MetricDescriptorImpl(mock(Supplier.class))
+                .withExcludedTarget(MANAGEMENT_CENTER)
+                .withIncludedTarget(MANAGEMENT_CENTER);
+
+        assertFalse(original.isTargetExcluded(MANAGEMENT_CENTER));
+        assertTrue(original.isTargetIncluded(MANAGEMENT_CENTER));
+    }
+
+    @Test
+    public void testIncludeThanExcludeExcludesTarget() {
+        MetricDescriptorImpl original = new MetricDescriptorImpl(mock(Supplier.class))
+                .withIncludedTarget(MANAGEMENT_CENTER)
+                .withExcludedTarget(MANAGEMENT_CENTER);
+
+        assertTrue(original.isTargetExcluded(MANAGEMENT_CENTER));
+        assertFalse(original.isTargetIncluded(MANAGEMENT_CENTER));
+    }
+
+    @Test
+    public void testWithExcludedTargetsOverwrites() {
+        MetricDescriptorImpl original = new MetricDescriptorImpl(mock(Supplier.class))
+                .withExcludedTarget(JMX)
+                .withExcludedTargets(MetricTarget.asSet(MANAGEMENT_CENTER, DIAGNOSTICS));
+
+        assertTrue(original.isTargetExcluded(MANAGEMENT_CENTER));
+        assertTrue(original.isTargetExcluded(DIAGNOSTICS));
+        assertTrue(original.isTargetIncluded(JMX));
     }
 }

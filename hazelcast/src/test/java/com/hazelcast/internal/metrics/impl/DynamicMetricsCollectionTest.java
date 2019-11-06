@@ -33,7 +33,6 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
-import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -95,16 +94,16 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
 
         verify(collectorMock, never()).collectLong(registry.newMetricDescriptor()
                                                            .withPrefix("test")
-                                                           .withMetric("longField"), 42, emptySet());
+                                                           .withMetric("longField"), 42);
         verify(collectorMock, never()).collectDouble(registry.newMetricDescriptor()
                                                              .withPrefix("test")
-                                                             .withMetric("doubleField"), 42.42D, emptySet());
+                                                             .withMetric("doubleField"), 42.42D);
         verify(collectorMock, never()).collectLong(registry.newMetricDescriptor()
                                                            .withPrefix("test")
-                                                           .withMetric("longMethod"), 43, emptySet());
+                                                           .withMetric("longMethod"), 43);
         verify(collectorMock, never()).collectDouble(registry.newMetricDescriptor()
                                                              .withPrefix("test")
-                                                             .withMetric("doubleMethod"), 43.52D, emptySet());
+                                                             .withMetric("doubleMethod"), 43.52D);
     }
 
     @Test
@@ -143,7 +142,7 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
                 .withPrefix("test")
                 .withUnit(BYTES)
                 .withMetric("someMetric");
-        verify(collectorMock, never()).collectLong(expectedDescriptor, 42, emptySet());
+        verify(collectorMock, never()).collectLong(expectedDescriptor, 42);
     }
 
     @Test
@@ -181,7 +180,7 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
                 .withPrefix("test")
                 .withUnit(BYTES)
                 .withMetric("someMetric");
-        verify(collectorMock, never()).collectDouble(expectedDescriptor, 42.42D, emptySet());
+        verify(collectorMock, never()).collectDouble(expectedDescriptor, 42.42D);
     }
 
     @Test

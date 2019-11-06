@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.function.BiConsumer;
 
 /**
@@ -76,6 +77,57 @@ public interface MutableMetricDescriptor extends MetricDescriptor {
      */
     @Nonnull
     MutableMetricDescriptor withTag(String tag, String value);
+
+    /**
+     * Excludes the given targets for this metric.
+     * <p>
+     * Note1: Calling this method overwrites the previously set excluded targets
+     * Note2: The excluded targets are not part of the textual
+     * representation of the metric returned by {@link #metricName()}, but
+     * part of its {@link #toString()}.
+     *
+     * @param excludedTargets The targets to exclude
+     * @return the descriptor instance
+     * @see #withExcludedTarget(MetricTarget)
+     * @see #withIncludedTarget(MetricTarget)
+     * @see MetricDescriptor#isTargetExcluded(MetricTarget)
+     * @see MetricDescriptor#isTargetIncluded(MetricTarget)
+     */
+    @Nonnull
+    MutableMetricDescriptor withExcludedTargets(Collection<MetricTarget> excludedTargets);
+
+    /**
+     * Excludes the given target for this metric.
+     * <p>
+     * Note: The excluded targets are not part of the textual
+     * representation of the metric returned by {@link #metricName()}, but
+     * part of its {@link #toString()}.
+     *
+     * @param target The target to exclude
+     * @return the descriptor instance
+     * @see #withIncludedTarget(MetricTarget)
+     * @see MetricDescriptor#isTargetExcluded(MetricTarget)
+     * @see MetricDescriptor#isTargetIncluded(MetricTarget)
+     */
+    @Nonnull
+    MutableMetricDescriptor withExcludedTarget(MetricTarget target);
+
+    /**
+     * Includes the given target for this metric.
+     * <p>
+     * Note1: This is the invert method for {@link #withExcludedTarget(MetricTarget)}
+     * Note2: The excluded targets are not part of the textual
+     * representation of the metric returned by {@link #metricName()}, but
+     * part of its {@link #toString()}.
+     *
+     * @param target The target to exclude
+     * @return the descriptor instance
+     * @see #withExcludedTarget(MetricTarget)
+     * @see MetricDescriptor#isTargetExcluded(MetricTarget)
+     * @see MetricDescriptor#isTargetIncluded(MetricTarget)
+     */
+    @Nonnull
+    MutableMetricDescriptor withIncludedTarget(MetricTarget target);
 
     /**
      * Takes a mutable copy of this instance.

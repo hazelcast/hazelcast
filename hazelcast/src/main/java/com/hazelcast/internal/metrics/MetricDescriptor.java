@@ -18,6 +18,7 @@ package com.hazelcast.internal.metrics;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.function.BiConsumer;
 
 /**
@@ -88,9 +89,36 @@ public interface MetricDescriptor {
 
     /**
      * Returns a textual representation of this descriptor.
+     * <p>
+     * Note: The excluded targets are not part of the textual
+     * representation of the metric returned by this method, but
+     * part of its {@link #toString()}.
      *
      * @return the textual representation
      */
     @Nonnull
     String metricName();
+
+    @Nonnull
+    Collection<MetricTarget> excludedTargets();
+
+    /**
+     * Returns {@code true} if this metric should be excluded on the given
+     * {@link MetricTarget}
+     *
+     * @param target The target to check
+     * @return {@code true} if the metric should be excluded on the target,
+     * {@code false} otherwise
+     */
+    boolean isTargetExcluded(MetricTarget target);
+
+    /**
+     * Returns {@code true} if this metric should be included on the given
+     * {@link MetricTarget}
+     *
+     * @param target The target to check
+     * @return {@code true} if the metric should be included on the target,
+     * {@code false} otherwise
+     */
+    boolean isTargetIncluded(MetricTarget target);
 }

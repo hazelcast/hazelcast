@@ -59,7 +59,6 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
-import static java.util.Collections.EMPTY_SET;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -141,14 +140,14 @@ public class MetricsServiceTest extends HazelcastTestSupport {
                                                           .withPrefix("test")
                                                           .withUnit(COUNT);
         MutableMetricDescriptor descLongValue = descRoot.copy().withMetric("longValue");
-        inOrderLong.verify(metricsCollectorMock).collectLong(descLongValue, 1, EMPTY_SET);
-        inOrderLong.verify(metricsCollectorMock).collectLong(descLongValue, 2, EMPTY_SET);
-        inOrderLong.verify(metricsCollectorMock, never()).collectLong(eq(descLongValue), anyLong(), any());
+        inOrderLong.verify(metricsCollectorMock).collectLong(descLongValue, 1);
+        inOrderLong.verify(metricsCollectorMock).collectLong(descLongValue, 2);
+        inOrderLong.verify(metricsCollectorMock, never()).collectLong(eq(descLongValue), anyLong());
 
         MutableMetricDescriptor descDoubleValue = descRoot.copy().withMetric("doubleValue");
-        inOrderDouble.verify(metricsCollectorMock).collectDouble(descDoubleValue, 1.5D, EMPTY_SET);
-        inOrderDouble.verify(metricsCollectorMock).collectDouble(descDoubleValue, 5.5D, EMPTY_SET);
-        inOrderDouble.verify(metricsCollectorMock, never()).collectDouble(eq(descDoubleValue), anyDouble(), any());
+        inOrderDouble.verify(metricsCollectorMock).collectDouble(descDoubleValue, 1.5D);
+        inOrderDouble.verify(metricsCollectorMock).collectDouble(descDoubleValue, 5.5D);
+        inOrderDouble.verify(metricsCollectorMock, never()).collectDouble(eq(descDoubleValue), anyDouble());
     }
 
     @Test
@@ -273,8 +272,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         metricsService.registerPublisher(nodeEngine -> publisherMock);
 
         assertTrueEventually(() -> {
-            verify(publisherMock, atLeastOnce()).publishDouble(any(), anyDouble(), any());
-            verify(publisherMock, atLeastOnce()).publishLong(any(), anyLong(), any());
+            verify(publisherMock, atLeastOnce()).publishDouble(any(), anyDouble());
+            verify(publisherMock, atLeastOnce()).publishLong(any(), anyLong());
         });
     }
 
@@ -304,8 +303,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         metricsService.collectMetrics();
 
-        verify(publisherMock, atLeastOnce()).publishDouble(any(), anyDouble(), any());
-        verify(publisherMock, atLeastOnce()).publishLong(any(), anyLong(), any());
+        verify(publisherMock, atLeastOnce()).publishDouble(any(), anyDouble());
+        verify(publisherMock, atLeastOnce()).publishLong(any(), anyLong());
     }
 
     @Test
@@ -319,8 +318,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         metricsService.collectMetrics();
 
-        verify(publisherMock, never()).publishDouble(any(), anyDouble(), any());
-        verify(publisherMock, never()).publishLong(any(), anyLong(), any());
+        verify(publisherMock, never()).publishDouble(any(), anyDouble());
+        verify(publisherMock, never()).publishLong(any(), anyLong());
     }
 
     @Test

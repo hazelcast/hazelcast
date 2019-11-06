@@ -18,7 +18,6 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -37,7 +36,6 @@ import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -245,10 +243,10 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
      */
     private class PublisherMetricsCollector implements MetricsCollector {
         @Override
-        public void collectLong(MetricDescriptor descriptor, long value, Set<MetricTarget> excludedTargets) {
+        public void collectLong(MetricDescriptor descriptor, long value) {
             for (MetricsPublisher publisher : publishers) {
                 try {
-                    publisher.publishLong(descriptor, value, excludedTargets);
+                    publisher.publishLong(descriptor, value);
                 } catch (Exception e) {
                     logError(descriptor, value, publisher, e);
                 }
@@ -256,10 +254,10 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
         }
 
         @Override
-        public void collectDouble(MetricDescriptor descriptor, double value, Set<MetricTarget> excludedTargets) {
+        public void collectDouble(MetricDescriptor descriptor, double value) {
             for (MetricsPublisher publisher : publishers) {
                 try {
-                    publisher.publishDouble(descriptor, value, excludedTargets);
+                    publisher.publishDouble(descriptor, value);
                 } catch (Exception e) {
                     logError(descriptor, value, publisher, e);
                 }
@@ -267,12 +265,12 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
         }
 
         @Override
-        public void collectException(MetricDescriptor descriptor, Exception e, Set<MetricTarget> excludedTargets) {
+        public void collectException(MetricDescriptor descriptor, Exception e) {
             logger.warning("Error when rendering '" + descriptor.toString() + '\'', e);
         }
 
         @Override
-        public void collectNoValue(MetricDescriptor descriptor, Set<MetricTarget> excludedTargets) {
+        public void collectNoValue(MetricDescriptor descriptor) {
             // noop
         }
 

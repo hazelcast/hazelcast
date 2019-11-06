@@ -17,14 +17,12 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static java.util.Collections.unmodifiableList;
@@ -35,24 +33,24 @@ public class CapturingCollector implements MetricsCollector {
     private final Map<MetricDescriptor, Capture> captures = new HashMap<>();
 
     @Override
-    public void collectLong(MetricDescriptor descriptor, long value, Set<MetricTarget> excludedTargets) {
+    public void collectLong(MetricDescriptor descriptor, long value) {
         captures.computeIfAbsent(DEFAULT_DESCRIPTOR_SUPPLIER.get().copy(descriptor), d -> new Capture())
                 .capture(value);
     }
 
     @Override
-    public void collectDouble(MetricDescriptor descriptor, double value, Set<MetricTarget> excludedTargets) {
+    public void collectDouble(MetricDescriptor descriptor, double value) {
         captures.computeIfAbsent(DEFAULT_DESCRIPTOR_SUPPLIER.get().copy(descriptor), d -> new Capture())
                 .capture(value);
     }
 
     @Override
-    public void collectException(MetricDescriptor descriptor, Exception e, Set<MetricTarget> excludedTargets) {
+    public void collectException(MetricDescriptor descriptor, Exception e) {
         // nop
     }
 
     @Override
-    public void collectNoValue(MetricDescriptor descriptor, Set<MetricTarget> excludedTargets) {
+    public void collectNoValue(MetricDescriptor descriptor) {
         // nop
     }
 

@@ -23,7 +23,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
 import javax.annotation.Nonnull;
-import java.util.Set;
 import java.util.function.ObjLongConsumer;
 
 /**
@@ -48,15 +47,15 @@ public class ManagementCenterPublisher implements MetricsPublisher {
     }
 
     @Override
-    public void publishLong(MetricDescriptor descriptor, long value, Set<MetricTarget> excludedTargets) {
-        if (!excludedTargets.contains(MetricTarget.MANAGEMENT_CENTER)) {
+    public void publishLong(MetricDescriptor descriptor, long value) {
+        if (descriptor.isTargetIncluded(MetricTarget.MANAGEMENT_CENTER)) {
             compressor.addLong(descriptor, value);
         }
     }
 
     @Override
-    public void publishDouble(MetricDescriptor descriptor, double value, Set<MetricTarget> excludedTargets) {
-        if (!excludedTargets.contains(MetricTarget.MANAGEMENT_CENTER)) {
+    public void publishDouble(MetricDescriptor descriptor, double value) {
+        if (descriptor.isTargetIncluded(MetricTarget.MANAGEMENT_CENTER)) {
             compressor.addDouble(descriptor, value);
         }
     }

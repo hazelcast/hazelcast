@@ -23,11 +23,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
+
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -51,6 +54,43 @@ public class MetricTargetTest {
         assertSame(
                 MetricTarget.asSet(new MetricTarget[]{JMX, MANAGEMENT_CENTER}),
                 MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, JMX})
+        );
+    }
+
+    @Test
+    public void testAsSetWith_returnsSameObjects() {
+        Set<MetricTarget> targetsWithoutJmx = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER});
+        Set<MetricTarget> targetsWithJmx = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, JMX});
+        assertSame(
+                targetsWithJmx,
+                MetricTarget.asSetWith(targetsWithoutJmx, JMX)
+        );
+    }
+
+    @Test
+    public void testAsSetWithout_returnsSameObjects() {
+        Set<MetricTarget> targetsWithoutJmx = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER});
+        Set<MetricTarget> targetsWithJmx = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, JMX});
+        assertSame(
+                targetsWithoutJmx,
+                MetricTarget.asSetWithout(targetsWithJmx, JMX)
+        );
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:IllegalTokenText")
+    public void testBitset() {
+        Set<MetricTarget> targets = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, DIAGNOSTICS});
+        assertEquals(0b101, MetricTarget.bitset(targets));
+    }
+
+    @Test
+    @SuppressWarnings("checkstyle:IllegalTokenText")
+    public void testAsSet_bitset() {
+        Set<MetricTarget> expectedTargets = MetricTarget.asSet(new MetricTarget[]{MANAGEMENT_CENTER, DIAGNOSTICS});
+        assertSame(
+                expectedTargets,
+                MetricTarget.asSet(0b101)
         );
     }
 

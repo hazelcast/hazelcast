@@ -17,7 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -25,8 +24,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-
-import java.util.Set;
 
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -93,30 +90,30 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         private long timeMillis;
 
         @Override
-        public void collectLong(MetricDescriptor descriptor, long value, Set<MetricTarget> excludedMetricTargets) {
-            if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
+        public void collectLong(MetricDescriptor descriptor, long value) {
+            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), value);
             }
         }
 
         @Override
-        public void collectDouble(MetricDescriptor descriptor, double value, Set<MetricTarget> excludedMetricTargets) {
-            if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
+        public void collectDouble(MetricDescriptor descriptor, double value) {
+            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), value);
             }
         }
 
         @Override
-        public void collectException(MetricDescriptor descriptor, Exception e, Set<MetricTarget> excludedMetricTargets) {
-            if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
+        public void collectException(MetricDescriptor descriptor, Exception e) {
+            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(),
                         e.getClass().getName() + ':' + e.getMessage());
             }
         }
 
         @Override
-        public void collectNoValue(MetricDescriptor descriptor, Set<MetricTarget> excludedMetricTargets) {
-            if (!excludedMetricTargets.contains(DIAGNOSTICS)) {
+        public void collectNoValue(MetricDescriptor descriptor) {
+            if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
                 writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), "NA");
             }
         }

@@ -27,6 +27,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 
+import static com.hazelcast.internal.metrics.MetricTarget.JMX;
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static org.mockito.Mockito.mock;
@@ -202,6 +204,62 @@ public class MetricsCompressorTest {
         MetricDescriptorImpl metric2 = metric1.copy()
                                               .withMetric("metricName2");
         metric1.withTag("tag0", "tag0Value");
+
+        compressor.addLong(metric1, 42L);
+        compressor.addLong(metric2, 43L);
+        byte[] blob = compressor.getBlobAndReset();
+
+        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
+        MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
+        while (metricIterator.hasNext()) {
+            Metric metric = metricIterator.next();
+            metric.provide(metricConsumerMock);
+        }
+
+        verify(metricConsumerMock).consumeLong(metric1, 42L);
+        verify(metricConsumerMock).consumeLong(metric2, 43L);
+        verifyNoMoreInteractions(metricConsumerMock);
+    }
+
+    @Test
+    public void testTwoMetrics_sameExcludedTargets() {
+        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
+        MetricsCompressor compressor = new MetricsCompressor();
+
+        MetricDescriptorImpl metric1 = supplier.get()
+                                               .withPrefix("prefix")
+                                               .withMetric("metricName")
+                                               .withExcludedTarget(JMX)
+                                               .withExcludedTarget(MANAGEMENT_CENTER);
+        MetricDescriptorImpl metric2 = metric1.copy();
+
+        compressor.addLong(metric1, 42L);
+        compressor.addLong(metric2, 43L);
+        byte[] blob = compressor.getBlobAndReset();
+
+        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
+        MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
+        while (metricIterator.hasNext()) {
+            Metric metric = metricIterator.next();
+            metric.provide(metricConsumerMock);
+        }
+
+        verify(metricConsumerMock).consumeLong(metric1, 42L);
+        verify(metricConsumerMock).consumeLong(metric2, 43L);
+        verifyNoMoreInteractions(metricConsumerMock);
+    }
+
+    @Test
+    public void testTwoMetrics_differentExcludedTargets() {
+        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
+        MetricsCompressor compressor = new MetricsCompressor();
+
+        MetricDescriptorImpl metric1 = supplier.get()
+                                               .withPrefix("prefix")
+                                               .withMetric("metricName")
+                                               .withExcludedTarget(JMX);
+        MetricDescriptorImpl metric2 = metric1.copy()
+                                              .withExcludedTarget(MANAGEMENT_CENTER);
 
         compressor.addLong(metric1, 42L);
         compressor.addLong(metric2, 43L);
