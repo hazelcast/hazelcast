@@ -26,6 +26,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.cluster.Address;
@@ -165,5 +166,11 @@ public final class CustomTypeFactory {
         IndexType type0 = IndexType.getById(type);
 
         return new IndexConfig().setName(name).setType(type0).setAttributes(attributes);
+    }
+
+    public static ClientBwListEntryDTO createClientBwListEntry(int type, String value) {
+        // TODO handle null case???
+        ClientBwListEntryDTO.Type entryType = ClientBwListEntryDTO.Type.getById(type);
+        return new ClientBwListEntryDTO(entryType, value);
     }
 }

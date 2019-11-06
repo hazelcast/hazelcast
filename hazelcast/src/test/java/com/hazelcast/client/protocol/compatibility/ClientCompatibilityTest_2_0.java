@@ -6694,6 +6694,37 @@ public class ClientCompatibilityTest_2_0 {
         MCUpdateMapConfigCodec.ResponseParameters parameters = MCUpdateMapConfigCodec.decodeResponse(fromFile);
     }
 
+    @Test
+    public void test_MCMatchMCConfigCodec_encodeRequest() {
+        int fileClientMessageIndex = 789;
+        ClientMessage encoded = MCMatchMCConfigCodec.encodeRequest(aString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCMatchMCConfigCodec_decodeResponse() {
+        int fileClientMessageIndex = 790;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCMatchMCConfigCodec.ResponseParameters parameters = MCMatchMCConfigCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aBoolean, parameters.response));
+    }
+
+    @Test
+    public void test_MCApplyMCConfigCodec_encodeRequest() {
+        int fileClientMessageIndex = 791;
+        ClientMessage encoded = MCApplyMCConfigCodec.encodeRequest(anInt, aListOfClientBwListEntries);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCApplyMCConfigCodec_decodeResponse() {
+        int fileClientMessageIndex = 792;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCApplyMCConfigCodec.ResponseParameters parameters = MCApplyMCConfigCodec.decodeResponse(fromFile);
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
