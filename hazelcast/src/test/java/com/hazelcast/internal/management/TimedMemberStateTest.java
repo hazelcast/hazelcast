@@ -17,11 +17,13 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.CacheUtil;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -36,12 +38,17 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TimedMemberStateTest extends HazelcastTestSupport {
 
+    private static final String CACHE_WITH_STATS_PREFIX = "cache-with-stats-";
+    private static final String CACHE_WITHOUT_STATS_PREFIX = "other-cache-";
+
+    private TimedMemberStateFactory timedMemberStateFactory;
     private TimedMemberState timedMemberState;
     private HazelcastInstance hz;
 
@@ -49,17 +56,13 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
     public void setUp() {
         Config config = smallInstanceConfig();
         config.addCacheConfig(new CacheSimpleConfig()
-                                  .setName("test-cache")
+                                  .setName(CACHE_WITH_STATS_PREFIX + "*")
                                   .setStatisticsEnabled(true));
+        config.addCacheConfig(new CacheSimpleConfig()
+                                  .setName(CACHE_WITHOUT_STATS_PREFIX + "*"));
         hz = createHazelcastInstance(config);
-        TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
-
-        timedMemberState = timedMemberStateFactory.createTimedMemberState();
-        timedMemberState.setClusterName("ClusterName");
-        timedMemberState.setTime(1827731);
-        timedMemberState.setSslEnabled(true);
-        timedMemberState.setLite(true);
-        timedMemberState.setScriptingEnabled(false);
+        timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+        timedMemberState = createState();
     }
 
     @Test
@@ -103,9 +106,39 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
     @Test
     public void testCacheGetStats() {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        hz.getCacheManager().getCache("test-cache");
+        hz.getCacheManager().getCache(CACHE_WITH_STATS_PREFIX + "1");
         CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
         assertNotNull(cacheService.getStats()
-                          .get(CacheUtil.getDistributedObjectName("test-cache")));
+                          .get(CacheUtil.getDistributedObjectName(CACHE_WITH_STATS_PREFIX + "1")));
+    }
+
+    @Test
+    public void testOnlyCachesWithStatsEnabled_areReportedInTimedMemberState() {
+        // create 100 caches with stats enabled
+        for (int i = 0; i < 100; i++) {
+            hz.getCacheManager().getCache(CACHE_WITH_STATS_PREFIX + i);
+        }
+        // create 50 caches with stats disabled
+        for (int i = 0; i < 50; i++) {
+            ICache cacheWithoutStats = hz.getCacheManager().getCache(CACHE_WITHOUT_STATS_PREFIX + i);
+            // explicitly request local stats -> this registers an empty stats object in CacheService
+            cacheWithoutStats.getLocalCacheStatistics();
+        }
+
+        MemberStateImpl memberState = createState().getMemberState();
+        for (int i = 0; i < 100; i++) {
+            assertNotNull(memberState.getLocalCacheStats(CacheUtil.getDistributedObjectName(CACHE_WITH_STATS_PREFIX + i)));
+            assertNull(memberState.getLocalCacheStats(CacheUtil.getDistributedObjectName(CACHE_WITHOUT_STATS_PREFIX + i)));
+        }
+    }
+
+    private TimedMemberState createState() {
+        TimedMemberState state = timedMemberStateFactory.createTimedMemberState();
+        state.setClusterName("ClusterName");
+        state.setTime(1827731);
+        state.setSslEnabled(true);
+        state.setLite(true);
+        state.setScriptingEnabled(false);
+        return state;
     }
 }
