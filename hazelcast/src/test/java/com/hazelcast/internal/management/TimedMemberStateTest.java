@@ -23,7 +23,6 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -35,8 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -116,28 +113,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAllCachesWithStatsEnabled_arePresent() {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        // create 100 caches with stats enabled
-        for (int i = 0; i < 100; i++) {
-            hz.getCacheManager().getCache(CACHE_WITH_STATS_PREFIX + i);
-        }
-        // create 50 caches with stats disabled
-        for (int i = 0; i < 50; i++) {
-            hz.getCacheManager().getCache(CACHE_WITHOUT_STATS_PREFIX + i);
-        }
-
-        CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
-        Map<String, LocalCacheStats> stats = cacheService.getStats();
-        for (String cacheNameWithPrefix : stats.keySet()) {
-            assertContains(cacheNameWithPrefix, CACHE_WITH_STATS_PREFIX);
-        }
-    }
-
-    @Test
     public void testOnlyCachesWithStatsEnabled_areReportedInTimedMemberState() {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-
         // create 100 caches with stats enabled
         for (int i = 0; i < 100; i++) {
             hz.getCacheManager().getCache(CACHE_WITH_STATS_PREFIX + i);
