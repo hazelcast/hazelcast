@@ -16,21 +16,21 @@
 
 package com.hazelcast.client.impl.statistics;
 
+import com.hazelcast.client.ClientType;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.ClientType;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -109,6 +109,8 @@ public class Statistics {
         client.getClientExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
+                long collectionTimestamp = System.currentTimeMillis();
+
                 ClientConnection mainConnection = getConnection();
                 if (mainConnection == null) {
                     logger.finest("Cannot send client statistics to the server. No owner connection.");
@@ -117,11 +119,11 @@ public class Statistics {
 
                 final StringBuilder stats = new StringBuilder();
 
-                periodicStats.fillMetrics(stats, mainConnection);
+                periodicStats.fillMetrics(collectionTimestamp, stats, mainConnection);
 
                 addNearCacheStats(stats);
 
-                sendStats(stats.toString(), mainConnection);
+                sendStats(collectionTimestamp, stats.toString(), mainConnection);
             }
         }, 0, periodSeconds, SECONDS);
     }
@@ -284,8 +286,8 @@ public class Statistics {
         return result;
     }
 
-    private void sendStats(String newStats, ClientConnection ownerConnection) {
-        ClientMessage request = ClientStatisticsCodec.encodeRequest(newStats);
+    private void sendStats(long collectionTimestamp, String newStats, ClientConnection ownerConnection) {
+        ClientMessage request = ClientStatisticsCodec.encodeRequest(collectionTimestamp, newStats, new byte[]{});
         try {
             new ClientInvocation(client, request, null, ownerConnection).invoke();
         } catch (Exception e) {
@@ -316,8 +318,8 @@ public class Statistics {
                 metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
         };
 
-        void fillMetrics(final StringBuilder stats, final ClientConnection mainConnection) {
-            stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
+        void fillMetrics(long collectionTimestamp, final StringBuilder stats, final ClientConnection mainConnection) {
+            stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(collectionTimestamp);
             addStat(stats, "enterprise", enterprise);
             addStat(stats, "clientType", ClientType.JAVA.toString());
             addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
