@@ -42,6 +42,7 @@ class PartitionAllEntriesEviction implements Eviction {
 
     @Override
     public void execute() {
+        successful = false;
         if (logger.isInfoEnabled()) {
             logger.info("Evicting all entries in other RecordStores owned by the same partition thread"
                             + " because forced eviction was not enough!");

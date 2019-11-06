@@ -46,6 +46,7 @@ class RecordStoreForcedEviction implements Eviction {
 
     @Override
     public void execute() {
+        successful = false;
         RecordStore recordStore = mapOperation.recordStore;
         if (recordStore == null) {
             return;

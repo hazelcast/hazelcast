@@ -71,13 +71,24 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
+    private transient Eviction[] evictions;
 
     private transient boolean canPublishWanEvent;
 
     public MapOperation() {
+        final ILogger logger = this.logger();
+        final int forcedEvictionRetryCount = getRetryCount();
+
+        evictions = new Eviction[]{
+            new RecordStoreForcedEviction(forcedEvictionRetryCount, logger, this),
+            new PartitionRecordStoreForcedEviction(forcedEvictionRetryCount, logger, this),
+            new AllEntriesEviction(logger, this),
+            new PartitionAllEntriesEviction(logger, this)
+        };
     }
 
     public MapOperation(String name) {
+        this();
         this.name = name;
     }
 
@@ -87,16 +98,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     private void runEvictionStrategies() {
-        final ILogger logger = this.logger();
-        final int forcedEvictionRetryCount = getRetryCount();
-
-        final Eviction[] evictions = new Eviction[] {
-            new RecordStoreForcedEviction(forcedEvictionRetryCount, logger, this),
-            new PartitionRecordStoreForcedEviction(forcedEvictionRetryCount, logger, this),
-            new AllEntriesEviction(logger, this),
-            new PartitionAllEntriesEviction(logger, this)
-        };
-
         for (Eviction eviction : evictions) {
             eviction.execute();
             if (eviction.isSuccessful()) {

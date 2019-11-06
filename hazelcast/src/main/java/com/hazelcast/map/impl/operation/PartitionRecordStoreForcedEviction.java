@@ -49,6 +49,7 @@ class PartitionRecordStoreForcedEviction implements Eviction {
 
     @Override
     public void execute() {
+        successful = false;
         for (int i = 0; i < retries; i++) {
             try {
                 if (logger.isFineEnabled()) {
