@@ -401,8 +401,8 @@ public abstract class AbstractClientMapPartitioningStrategyTest extends Hazelcas
         Map<String, String> map = new HashMap<>();
         map.put(key, "value2");
         ValueUpdater updater = new ValueUpdater("value2");
-        assertEquals(Collections.emptyMap(), ((ClientMapProxy<String, String>)clientMapWithoutStrategy).submitToKeys(keys, updater).toCompletableFuture().get());
-        assertEquals(map, ((ClientMapProxy<String, String>)clientMap).submitToKeys(keys, updater).toCompletableFuture().get());
+        assertEquals(Collections.emptyMap(), ((ClientMapProxy<String, String>) clientMapWithoutStrategy).submitToKeys(keys, updater).toCompletableFuture().get());
+        assertEquals(map, ((ClientMapProxy<String, String>) clientMap).submitToKeys(keys, updater).toCompletableFuture().get());
     }
 
     @Test
@@ -437,7 +437,8 @@ public abstract class AbstractClientMapPartitioningStrategyTest extends Hazelcas
     // depending on whether the StringPartitioningStrategy set or not.
     private String generateKey() {
         String key;
-        int partitionIdOfFullKey, partitionIdOfPartitionKey;
+        int partitionIdOfFullKey;
+        int partitionIdOfPartitionKey;
         do {
             key = generateRandomString(5) + "@" + generateRandomString(5);
             partitionIdOfFullKey = getPartitionId(key);

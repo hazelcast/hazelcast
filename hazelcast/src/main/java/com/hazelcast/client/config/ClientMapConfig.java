@@ -110,11 +110,15 @@ public class ClientMapConfig implements NamedConfig {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ClientMapConfig that = (ClientMapConfig) o;
-        return name.equals(that.name) &&
-                Objects.equals(partitioningStrategyConfig, that.partitioningStrategyConfig);
+        return name.equals(that.name)
+                && Objects.equals(partitioningStrategyConfig, that.partitioningStrategyConfig);
     }
 
     @Override

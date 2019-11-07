@@ -143,7 +143,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleNetwork(node);
         } else if (LOAD_BALANCER.isEqual(nodeName)) {
             handleLoadBalancer(node);
-        } else if(MAP.isEqual(nodeName)) {
+        } else if (MAP.isEqual(nodeName)) {
             handleMap(node);
         } else if (NEAR_CACHE.isEqual(nodeName)) {
             handleNearCache(node);
