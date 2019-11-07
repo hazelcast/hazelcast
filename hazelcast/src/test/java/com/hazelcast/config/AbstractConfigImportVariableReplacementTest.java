@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.IOUtils;
+import com.hazelcast.config.helpers.IOUtils;
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
 import org.junit.Rule;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.IOUtils;
+import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -25,6 +25,9 @@ import com.hazelcast.config.test.builders.ConfigReplacerBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,6 +45,18 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class XmlClientConfigImportVariableReplacementTest extends AbstractClientConfigImportVariableReplacementTest {
+
+    private DeclarativeConfigFileHelper helper;
+
+    @Before
+    public void setUp() {
+        helper = new DeclarativeConfigFileHelper();
+    }
+
+    @After
+    public void tearDown() {
+        helper.ensureTestConfigDeleted();
+    }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
@@ -84,7 +99,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
             + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
             + "    </config-replacers>\n"
             + HAZELCAST_CLIENT_END_TAG;
-        String configLocation = IOUtils.createFileWithContent("foo", "bar", configReplacer);
+        String configLocation = helper.givenConfigFileInWorkDir("config-replacers.xml", configReplacer).getAbsolutePath();
 
         String xml = HAZELCAST_CLIENT_START_TAG
             + "    <import resource=\"${config.location}\"/>\n"
@@ -104,14 +119,14 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
             + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
             + "    </config-replacers>\n"
             + HAZELCAST_CLIENT_END_TAG;
-        String configReplacerLocation = IOUtils.createFileWithContent("config-replacer", "xml", configReplacer);
+        String configReplacerLocation = helper.givenConfigFileInWorkDir("config-replacers.xml", configReplacer).getAbsolutePath();
 
         String clusterName = HAZELCAST_CLIENT_START_TAG
-            + "    <import resource=\""+ "file:///" + configReplacerLocation +"\"/>\n"
+            + "    <import resource=\"" + "file:///" + configReplacerLocation + "\"/>\n"
             + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
             + HAZELCAST_CLIENT_END_TAG;
 
-        String clusterNameLocation = IOUtils.createFileWithContent("cluster-name", "xml", clusterName);
+        String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.xml", clusterName).getAbsolutePath();
 
         String xml = HAZELCAST_CLIENT_START_TAG
             + "    <import resource=\"${config.location}\"/>\n"
@@ -136,14 +151,14 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
             + testReplacer.build()
             + "    </config-replacers>\n"
             + HAZELCAST_CLIENT_END_TAG;
-        String configReplacerLocation = IOUtils.createFileWithContent("config-replacer", "xml", configReplacer);
+        String configReplacerLocation = helper.givenConfigFileInWorkDir("config-replacer.xml", configReplacer).getAbsolutePath();
 
         String clusterName = HAZELCAST_CLIENT_START_TAG
-            + "    <import resource=\""+ "file:///" + configReplacerLocation +"\"/>\n"
+            + "    <import resource=\"" + "file:///" + configReplacerLocation + "\"/>\n"
             + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
             + HAZELCAST_CLIENT_END_TAG;
 
-        String clusterNameLocation = IOUtils.createFileWithContent("cluster-name", "xml", clusterName);
+        String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.xml", clusterName).getAbsolutePath();
 
         String xml = HAZELCAST_CLIENT_START_TAG
             + "    <import resource=\"${config.location}\"/>\n"
@@ -175,7 +190,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "    </socket-interceptor>"
                 + "  </network>"
                 + HAZELCAST_CLIENT_END_TAG;
-        String configLocationPath = IOUtils.createFileWithContent("foo", "bar", networkConfig);
+        String configLocationPath = helper.givenConfigFileInWorkDir("config-network.xml", networkConfig).getAbsolutePath();
 
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
@@ -198,7 +213,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "    </cluster-members>"
                 + "  </network>"
                 + HAZELCAST_CLIENT_END_TAG;
-        String configLocationPath = IOUtils.createFileWithContent("foo", "bar", networkConfig);
+        String configLocationPath = helper.givenConfigFileInWorkDir("config-network.xml", networkConfig).getAbsolutePath();
 
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
@@ -220,10 +235,10 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
-        String xmlWithCyclicImport = IOUtils.createFilesWithCycleImports(
+        String xmlWithCyclicImport = helper.createFilesWithCycleImports(
             this::xmlContentWithImportResource,
-            IOUtils.createFileWithContent("hz1", "xml", ""),
-            IOUtils.createFileWithContent("hz2", "xml", "")
+            helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz2.xml", "").getAbsolutePath()
         );
 
         buildConfig(xmlWithCyclicImport);
@@ -232,11 +247,11 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
-        String xmlWithCyclicImport = IOUtils.createFilesWithCycleImports(
+        String xmlWithCyclicImport = helper.createFilesWithCycleImports(
             this::xmlContentWithImportResource,
-            IOUtils.createFileWithContent("hz1", "xml", ""),
-            IOUtils.createFileWithContent("hz2", "xml", ""),
-            IOUtils.createFileWithContent("hz3", "xml", "")
+            helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz2.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz3.xml", "").getAbsolutePath()
         );
 
         buildConfig(xmlWithCyclicImport);
@@ -253,7 +268,7 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     }
 
     private String createEmptyFile() throws Exception {
-        return IOUtils.createFileWithContent("hz1", "xml", "");
+        return helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath();
     }
 
     @Override
@@ -279,11 +294,10 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Override
     @Test
     public void testReplacers() throws Exception {
-        String pathToFileWithPassword = IOUtils.createFileWithContent(
-            getClass().getSimpleName(),
-            ".pwd",
+        String pathToFileWithPassword = helper.givenConfigFileInWorkDir(
+            getClass().getSimpleName() + ".pwd",
             "This is a password"
-        );
+        ).getAbsolutePath();
 
         ConfigReplacerBuilder encryptionReplacer = new ConfigReplacerBuilder()
             .withClass(EncryptionReplacer.class)

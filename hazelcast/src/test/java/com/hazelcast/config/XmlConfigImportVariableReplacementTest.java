@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.IOUtils;
+import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.config.test.builders.ConfigReplacerBuilder;
 import com.hazelcast.config.test.builders.MapXmlConfigBuilder;
@@ -25,6 +25,8 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,6 +45,18 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlConfigImportVariableReplacementTest extends AbstractConfigImportVariableReplacementTest {
+
+    private DeclarativeConfigFileHelper helper;
+
+    @Before
+    public void setUp() {
+        helper = new DeclarativeConfigFileHelper();
+    }
+
+    @After
+    public void tearDown() {
+        helper.ensureTestConfigDeleted();
+    }
 
     @Test(expected = InvalidConfigurationException.class)
     public void testImportElementOnlyAppearsInTopLevel() {
@@ -96,7 +110,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
                 + "    </config-replacers>\n"
                 + HAZELCAST_END_TAG;
-        String configLocation = IOUtils.createFileWithContent("foo", "bar", configReplacer);
+        String configLocation = helper.givenConfigFileInWorkDir("config-replacer.xml", configReplacer).getAbsolutePath();
 
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
@@ -116,22 +130,14 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
             + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
             + "    </config-replacers>\n"
             + HAZELCAST_END_TAG;
-        String configReplacerLocation = IOUtils.createFileWithContent(
-            "config-replacer",
-            "xml",
-            configReplacer
-        );
+        String configReplacerLocation = helper.givenConfigFileInWorkDir("config-replacer.xml", configReplacer).getAbsolutePath();
 
         String clusterName = HAZELCAST_START_TAG
-            + "    <import resource=\""+ "file:///" + configReplacerLocation +"\"/>\n"
+            + "    <import resource=\"" + "file:///" + configReplacerLocation + "\"/>\n"
             + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
             + HAZELCAST_END_TAG;
 
-        String clusterNameLocation = IOUtils.createFileWithContent(
-            "cluster-name",
-            "xml",
-            clusterName
-        );
+        String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.xml", clusterName).getAbsolutePath();
 
         String xml = HAZELCAST_START_TAG
             + "    <import resource=\"${config.location}\"/>\n"
@@ -156,22 +162,14 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
             + testReplacer.build()
             + "    </config-replacers>\n"
             + HAZELCAST_END_TAG;
-        String configReplacerLocation = IOUtils.createFileWithContent(
-            "config-replacer",
-            "xml",
-            configReplacer
-        );
+        String configReplacerLocation = helper.givenConfigFileInWorkDir("config-replacer.xml", configReplacer).getAbsolutePath();
 
         String clusterName = HAZELCAST_START_TAG
-            + "    <import resource=\""+ "file:///" + configReplacerLocation +"\"/>\n"
+            + "    <import resource=\"" + "file:///" + configReplacerLocation + "\"/>\n"
             + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
             + HAZELCAST_END_TAG;
 
-        String clusterNameLocation = IOUtils.createFileWithContent(
-            "cluster-name",
-            "xml",
-            clusterName
-        );
+        String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.xml", clusterName).getAbsolutePath();
 
         String xml = HAZELCAST_START_TAG
             + "    <import resource=\"${config.location}\"/>\n"
@@ -195,7 +193,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        </join>\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
-        String configLocation = IOUtils.createFileWithContent("foo", "bar", networkConfig);
+        String configLocation = helper.givenConfigFileInWorkDir("config-network.xml", networkConfig).getAbsolutePath();
 
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
@@ -217,7 +215,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        </join>\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
-        String configLocation = IOUtils.createFileWithContent("foo", "bar", networkConfig);
+        String configLocation = helper.givenConfigFileInWorkDir("config-network.xml", networkConfig).getAbsolutePath();
 
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
@@ -236,10 +234,10 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
 
-        String xmlWithCyclicImport = IOUtils.createFilesWithCycleImports(
+        String xmlWithCyclicImport = helper.createFilesWithCycleImports(
             this::xmlContentWithImportResource,
-            IOUtils.createFileWithContent("hz1", "xml", ""),
-            IOUtils.createFileWithContent("hz2", "xml", "")
+            helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz2.xml", "").getAbsolutePath()
         );
 
         buildConfig(xmlWithCyclicImport, null);
@@ -248,11 +246,11 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
-        String xmlWithCyclicImport = IOUtils.createFilesWithCycleImports(
+        String xmlWithCyclicImport = helper.createFilesWithCycleImports(
             this::xmlContentWithImportResource,
-            IOUtils.createFileWithContent("hz1", "xml", ""),
-            IOUtils.createFileWithContent("hz2", "xml", ""),
-            IOUtils.createFileWithContent("hz3", "xml", "")
+            helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz2.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz3.xml", "").getAbsolutePath()
         );
 
         buildConfig(xmlWithCyclicImport, null);
@@ -272,7 +270,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     }
 
     private String createEmptyFile() throws Exception {
-        return IOUtils.createFileWithContent("hz1", "xml", "");
+        return helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath();
     }
 
     @Override
@@ -292,11 +290,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         String xmlContent = new MapXmlConfigBuilder()
             .withName("mymap")
             .build();
-        String pathTo = IOUtils.createFileWithContent(
-            "mymap",
-            "config",
-            HAZELCAST_START_TAG + xmlContent + HAZELCAST_END_TAG
-        );
+        String pathTo = helper.givenConfigFileInWorkDir("mymap.xml", HAZELCAST_START_TAG + xmlContent + HAZELCAST_END_TAG).getAbsolutePath();
 
         String nonHazelcastXml = "<non-hazelcast>\n"
                 + "    <import resource=\"file:///" + pathTo + "\"/>\n"
@@ -316,7 +310,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        </join>\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
-        String path = IOUtils.createFileWithContent("foo", "bar", networkConfig);
+        String path = helper.givenConfigFileInWorkDir("config-netword.xml", networkConfig).getAbsolutePath();
 
         Config config = buildConfig(xmlContentWithImportResource("file:///" + path), null);
         JoinConfig join = config.getNetworkConfig().getJoin();
@@ -346,7 +340,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         String mapConfig = HAZELCAST_START_TAG
                 + mapXmlConfigBuilder.build()
                 + HAZELCAST_END_TAG;
-        String path = IOUtils.createFileWithContent("mymap", "config", mapConfig);
+        String path = helper.givenConfigFileInWorkDir("mymap.xml", mapConfig).getAbsolutePath();
 
         Config config = buildConfig(xmlContentWithImportResource("file://" + path), null);
 
@@ -379,7 +373,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                                    .withWriteBatchSize(mapStoreWriteBatchSize));
 
         final String mapConfigXml = HAZELCAST_START_TAG + importedMapConfig.build() + HAZELCAST_END_TAG;
-        String path = IOUtils.createFileWithContent("mymap", "config", mapConfigXml);
+        String path = helper.givenConfigFileInWorkDir("mymap.xml", mapConfigXml).getAbsolutePath();
 
         final int mapTimeToLiveSeconds = 10;
         MapXmlConfigBuilder mainMapConfig = new MapXmlConfigBuilder()
@@ -423,7 +417,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         String mapConfig = HAZELCAST_START_TAG
                 + importedMapConfig.build()
                 + HAZELCAST_END_TAG;
-        String path = IOUtils.createFileWithContent("imported_map", "config", mapConfig);
+        String path = helper.givenConfigFileInWorkDir("imported_map.xml", mapConfig).getAbsolutePath();
 
         MapXmlConfigBuilder mapInMain = new MapXmlConfigBuilder()
             .withName("mapInMain")
@@ -463,11 +457,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Override
     @Test
     public void testReplacers() throws Exception {
-        String pathToFileWithPassword = IOUtils.createFileWithContent(
-            getClass().getSimpleName(),
-            ".pwd",
-            "This is a password"
-        );
+        String pathToFileWithPassword = helper.givenConfigFileInWorkDir(getClass().getSimpleName() + ".pwd", "This is a password").getAbsolutePath();
 
         ConfigReplacerBuilder encryptionReplacer = new ConfigReplacerBuilder()
                 .withClass(EncryptionReplacer.class)
@@ -570,7 +560,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "    </properties>\n"
                 + HAZELCAST_END_TAG;
 
-        String pathToFile = IOUtils.createFileWithContent("foo", "bar", networkConfig);
+        String pathToFile = helper.givenConfigFileInWorkDir("config-properties.xml", networkConfig).getAbsolutePath();
 
         String xml = HAZELCAST_START_TAG
                 + "    <import resource=\"file:///" + "${file}" + "\"/>\n"
@@ -589,7 +579,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "    </properties>\n"
                 + HAZELCAST_END_TAG;
 
-        String pathToFile = IOUtils.createFileWithContent("foo", "bar", configXml);
+        String pathToFile = helper.givenConfigFileInWorkDir("config-properties.xml", configXml).getAbsolutePath();
 
         Properties properties = new Properties();
         properties.put("variable", "foobar");
@@ -632,7 +622,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        <property name=\"prop\">${variable}</property>\n"
                 + "    </properties>\n"
                 + HAZELCAST_END_TAG;
-        String path = IOUtils.createFileWithContent("foo", "bar", configXml);
+        String path = helper.givenConfigFileInWorkDir("config-properties.xml", configXml).getAbsolutePath();
 
         Properties properties = new Properties();
         properties.put("variable", "foobar");

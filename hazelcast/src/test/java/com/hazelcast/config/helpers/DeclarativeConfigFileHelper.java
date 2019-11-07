@@ -19,10 +19,12 @@ package com.hazelcast.config.helpers;
 import com.hazelcast.config.Config;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 public class DeclarativeConfigFileHelper {
     private static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
@@ -150,10 +152,10 @@ public class DeclarativeConfigFileHelper {
         return givenConfigFileOnClasspath(filename, yaml);
     }
 
-    public File givenConfigFileInWorkDir(String filename, String content) throws Exception {
+    public File givenConfigFileInWorkDir(String filename, String content) throws IOException {
         File file = new File(filename);
         PrintWriter writer = new PrintWriter(file, "UTF-8");
-        writer.println(content);
+        writer.print(content);
         writer.close();
 
         testConfigPaths.add(file.getAbsolutePath());
@@ -172,6 +174,22 @@ public class DeclarativeConfigFileHelper {
         testConfigPaths.add(file.getAbsolutePath());
 
         return getClass().getClassLoader().getResource(filename);
+    }
+
+    public String createFilesWithCycleImports(Function<String, String> fileContentWithImportResource, String... paths) throws Exception {
+        for (int i = 1; i < paths.length; i++) {
+            createFileWithDependencyImport(paths[i - 1], paths[i], fileContentWithImportResource);
+        }
+        return createFileWithDependencyImport(paths[0], paths[1], fileContentWithImportResource);
+    }
+
+    private String createFileWithDependencyImport(
+        String dependent,
+        String pathToDependency,
+        Function<String, String> fileContentWithImportResource) throws Exception {
+        final String xmlContent = fileContentWithImportResource.apply(pathToDependency);
+        givenConfigFileInWorkDir(dependent, xmlContent);
+        return xmlContent;
     }
 
     private String xmlConfig(String instanceName) {

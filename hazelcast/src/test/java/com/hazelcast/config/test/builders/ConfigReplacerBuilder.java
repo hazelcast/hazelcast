@@ -47,7 +47,7 @@ public class ConfigReplacerBuilder {
 
         public String build() {
             if (properties.isEmpty()) {
-                return "<replacer class-name='" + className + "' />";
+                return "<replacer class-name='" + className + "' />\n";
             } else {
                 return "<replacer class-name='" + className + "'>\n"
                         + "<properties>"
