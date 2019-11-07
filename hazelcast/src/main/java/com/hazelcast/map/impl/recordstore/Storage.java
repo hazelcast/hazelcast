@@ -82,7 +82,9 @@ public interface Storage<K, R> {
 
     void setEntryCostEstimator(EntryCostEstimator entryCostEstimator);
 
-    void disposeDeferredBlocks();
+    default void disposeDeferredBlocks() {
+        // NOP intentionally.
+    }
 
     /**
      * Used for sampling based eviction, returns sampled entries.
