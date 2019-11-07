@@ -207,10 +207,6 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         assertThat(entries.get("user.dir"), not(isEmptyOrNullString()));
     }
 
-    private <T> T resolve(CompletableFuture<T> future) throws Exception {
-        return future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-    }
-
     @Test
     public void testGetTimedMemberState() {
         assertTrueEventually(() -> {
@@ -225,5 +221,9 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         Optional<String> timedMemberStateJson = managementCenterService.getTimedMemberState(members[0])
                 .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
         assertFalse(timedMemberStateJson.isPresent());
+    }
+
+    private <T> T resolve(CompletableFuture<T> future) throws Exception {
+        return future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
     }
 }
