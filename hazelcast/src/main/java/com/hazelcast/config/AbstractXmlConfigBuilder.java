@@ -161,44 +161,6 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
         }
     }
 
-    private void replaceImportElementsWithActualFileContents(Node root) throws Exception {
-        Document document = root.getOwnerDocument();
-        NodeList misplacedImports = (NodeList) xpath.evaluate(
-                format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.getName(), getConfigType().name), document,
-                XPathConstants.NODESET);
-        if (misplacedImports.getLength() > 0) {
-            throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
-        }
-        NodeList importTags = (NodeList) xpath.evaluate(
-                format("/hz:%s/hz:%s", getConfigType().name, IMPORT.getName()), document, XPathConstants.NODESET);
-        for (Node node : asElementIterable(importTags)) {
-            loadAndReplaceImportElement(root, node);
-        }
-    }
-
-    private void loadAndReplaceImportElement(Node root, Node node) throws Exception {
-        NamedNodeMap attributes = node.getAttributes();
-        Node resourceAttribute = attributes.getNamedItem("resource");
-        String resource = resourceAttribute.getTextContent();
-        URL url = ConfigLoader.locateConfig(resource);
-        if (url == null) {
-            throw new InvalidConfigurationException("Failed to load resource: " + resource);
-        }
-        if (!currentlyImportedFiles.add(url.getPath())) {
-            throw new InvalidConfigurationException("Resource '" + url.getPath() + "' is already loaded! This can be due to"
-                    + " duplicate or cyclic imports.");
-        }
-        Document doc = parse(url.openStream());
-        Element importedRoot = doc.getDocumentElement();
-        traverseChildrenAndReplaceVariables(importedRoot);
-        replaceImportElementsWithActualFileContents(importedRoot);
-        for (Node fromImportedDoc : childElements(importedRoot)) {
-            Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
-            root.insertBefore(importedNode, node);
-        }
-        root.removeChild(node);
-    }
-
     /**
      * Reads XML from InputStream and parses.
      *
