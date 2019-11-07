@@ -42,11 +42,13 @@ public class ExecuteOnKeyInvalidationTest extends HazelcastTestSupport {
 
   private final TestHazelcastFactory factory = new TestHazelcastFactory();
   private HazelcastInstance client;
+  private HazelcastInstance serializedKeyClient;
 
   @Before
   public void setUp() {
     startHazelcastInstance();
     client = clientWithNearCache();
+    serializedKeyClient = clientWithSerializedKeysNearCache();
   }
 
   @After
@@ -59,8 +61,29 @@ public class ExecuteOnKeyInvalidationTest extends HazelcastTestSupport {
     return factory.newHazelcastClient(clientConfig);
   }
 
+  private HazelcastInstance clientWithSerializedKeysNearCache() {
+    ClientConfig clientConfig = new ClientConfig().addNearCacheConfig(
+        new NearCacheConfig("serializedKeyMap").setSerializeKeys(true));
+    return factory.newHazelcastClient(clientConfig);
+  }
+
   private void startHazelcastInstance() {
     factory.newHazelcastInstance();
+  }
+
+  @Test
+  public void testExecuteOnKeysInvalidation_withSerializedKeys() {
+    IMap<String, String> serializedKeyMap = serializedKeyClient.getMap("serializedKeyMap");
+    serializedKeyMap.put("key", "old-value");
+    serializedKeyMap.get("key");
+    serializedKeyMap.executeOnKeys(
+        Collections.singleton("key"),
+        entry -> {
+          entry.setValue("new-value");
+          return null;
+        }
+    );
+    assertEquals("new-value", serializedKeyMap.get("key"));
   }
 
   @Test

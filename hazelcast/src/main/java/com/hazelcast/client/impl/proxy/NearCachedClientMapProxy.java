@@ -52,6 +52,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
@@ -488,11 +489,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                                                                  @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
 
+        Set<?> nearCacheKeys = serializeKeys
+            ? keys.stream().map(this::toNearCacheKey).collect(Collectors.toSet())
+            : keys;
+
         InternalCompletableFuture<Map<K, R>> response;
         try {
             response = super.submitToKeys(keys, entryProcessor);
         } finally {
-            keys.forEach(this::invalidateNearCache);
+            nearCacheKeys.forEach(this::invalidateNearCache);
         }
         return response;
     }
