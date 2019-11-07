@@ -33,9 +33,9 @@ import java.util.Map;
 import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulators;
 
 /**
- * Reads all available items from the accumulator of the partition and resets it.
- * This operation is used to retrieve the events which are buffered during the initial
- * snapshot taking phase.
+ * Reads all available items from the accumulator of the partition
+ * and resets it. This operation is used to retrieve the events
+ * which are buffered during the initial snapshot taking phase.
  *
  * @see com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation
  */
