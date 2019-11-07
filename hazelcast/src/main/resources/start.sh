@@ -1,22 +1,22 @@
 #!/bin/sh
 
 PRG="$0"
-PRGDIR=`dirname "$PRG"`
-HAZELCAST_HOME=`cd "$PRGDIR/.." >/dev/null; pwd`
+PRGDIR=$(dirname "$PRG")
+HAZELCAST_HOME=$(cd "$PRGDIR/.." >/dev/null; pwd)
 
-if [ $JAVA_HOME ]
+if [ "$JAVA_HOME" ]
 then
 	echo "JAVA_HOME found at $JAVA_HOME"
-	RUN_JAVA=$JAVA_HOME/bin/java
+	RUN_JAVA="$JAVA_HOME/bin/java"
 else
 	echo "JAVA_HOME environment variable not available."
-    RUN_JAVA=`which java 2>/dev/null`
+    RUN_JAVA=$(command -v java 2>/dev/null)
 fi
 
-if [ -z $RUN_JAVA ]
+if [ -z "$RUN_JAVA" ]
 then
     echo "JAVA could not be found in your system."
-    echo "please install Java 1.6 or higher!!!"
+    echo "Please install Java 1.8 or higher!!!"
     exit 1
 fi
 
@@ -47,4 +47,4 @@ echo "# JAVA_OPTS=$JAVA_OPTS"
 echo "# starting now...."
 echo "########################################"
 
-$RUN_JAVA -server $JAVA_OPTS com.hazelcast.core.server.HazelcastMemberStarter &
+"$RUN_JAVA" -server $JAVA_OPTS com.hazelcast.core.server.HazelcastMemberStarter

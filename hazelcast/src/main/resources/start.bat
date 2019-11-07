@@ -2,9 +2,18 @@
 
 SETLOCAL
 
-if NOT DEFINED JAVA_HOME goto error
-set RUN_JAVA=%JAVA_HOME%\bin\java
+if "x%JAVA_HOME%" == "x" (
+    echo JAVA_HOME environment variable not available.
+    set RUN_JAVA=java
+) else (
+    set "RUN_JAVA=%JAVA_HOME%\bin\java"
+)
 
+"%RUN_JAVA%" -version 1>nul 2>nul || (
+    echo JAVA could not be found in your system.
+    echo Please install Java 1.8 or higher!!!
+    exit /b 2
+)
 
 REM ******* you can enable following variables by uncommenting them
 
@@ -32,12 +41,5 @@ ECHO # starting now...."
 ECHO ########################################
 
 start "hazelcast-imdg" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.HazelcastMemberStarter"
-goto endofscript
-
-:error
-ECHO JAVA_HOME environment variable must be set!
-pause
-
-:endofscript
 
 ENDLOCAL
