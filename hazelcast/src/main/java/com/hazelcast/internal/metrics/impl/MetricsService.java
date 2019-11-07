@@ -17,9 +17,9 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.MetricsConfig;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;

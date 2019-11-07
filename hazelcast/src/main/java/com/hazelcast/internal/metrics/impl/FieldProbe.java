@@ -18,7 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
@@ -71,7 +71,7 @@ abstract class FieldProbe implements ProbeFunction, ProbeAware {
         metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, MutableMetricDescriptor descriptor, Object source) {
+    void register(MetricsRegistryImpl metricsRegistry, MetricDescriptor descriptor, Object source) {
         metricsRegistry.registerStaticProbe(source, descriptor, getProbeOrFieldName(), probe.level(), probe.unit(), this);
     }
 

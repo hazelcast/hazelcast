@@ -25,11 +25,10 @@ import org.junit.runner.RunWith;
 
 import java.util.Set;
 
+import static com.google.common.math.IntMath.factorial;
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
-import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -96,18 +95,13 @@ public class MetricTargetTest {
 
     @Test
     public void testAsSet_supportsAllCombinations() {
-        assertAsSetContainsAll();
-        assertAsSetContainsAll(MANAGEMENT_CENTER);
-        assertAsSetContainsAll(JMX);
-        assertAsSetContainsAll(DIAGNOSTICS);
-        assertAsSetContainsAll(DIAGNOSTICS, JMX);
-        assertAsSetContainsAll(DIAGNOSTICS, MANAGEMENT_CENTER);
-        assertAsSetContainsAll(MANAGEMENT_CENTER, JMX);
-        assertAsSetContainsAll(MANAGEMENT_CENTER, JMX, DIAGNOSTICS);
-    }
+        int all = MetricTarget.values().length;
+        int allCombinations = 0;
+        for (int choose = 0; choose <= all; choose++) {
+            // C(n,r) = n!/r!(n-r)!
+            allCombinations += factorial(all) / (factorial(choose) * factorial(all - choose));
+        }
 
-    private void assertAsSetContainsAll(MetricTarget... targets) {
-        assertContainsAll(MetricTarget.asSet(targets), asList(targets));
+        assertEquals(allCombinations, MetricTarget.BITSET_TO_SET_CACHE.size());
     }
-
 }

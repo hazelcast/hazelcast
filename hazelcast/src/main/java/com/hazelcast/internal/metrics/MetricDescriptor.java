@@ -22,11 +22,19 @@ import java.util.Collection;
 import java.util.function.BiConsumer;
 
 /**
- * Read-only interface for describing a metric.
- *
- * @see MutableMetricDescriptor
+ * Mutable interface for describing a metric.
  */
 public interface MetricDescriptor {
+    /**
+     * Sets the prefix of the descriptor's metric.
+     *
+     * @param prefix The prefix to set
+     * @return the descriptor instance
+     * @see MetricDescriptor#prefix()
+     */
+    @Nonnull
+    MetricDescriptor withPrefix(String prefix);
+
     /**
      * Returns the prefix of the metric denoted by this instance.
      *
@@ -36,12 +44,33 @@ public interface MetricDescriptor {
     String prefix();
 
     /**
+     * Sets the metric field of the descriptor.
+     *
+     * @param metric The metric to set
+     * @return the descriptor instance
+     * @see MetricDescriptor#metric()
+     */
+    @Nonnull
+    MetricDescriptor withMetric(String metric);
+
+    /**
      * Returns the name of the metric denoted by this instance.
      *
      * @return the name
      */
-    @Nonnull
     String metric();
+
+    /**
+     * Sets the discriminator tag of the descriptor.
+     *
+     * @param discriminatorTag   The name of the discriminator tag
+     * @param discriminatorValue The value of the discriminator tag
+     * @return the descriptor instance
+     * @see MetricDescriptor#discriminator()
+     * @see MetricDescriptor#discriminatorValue()
+     */
+    @Nonnull
+    MetricDescriptor withDiscriminator(String discriminatorTag, String discriminatorValue);
 
     /**
      * Returns the discriminator tag's name of the metric denoted by
@@ -66,12 +95,36 @@ public interface MetricDescriptor {
     String discriminatorValue();
 
     /**
+     * Sets the unit of the descriptor.
+     *
+     * @param unit The unit to set
+     * @return the descriptor instance
+     * @see  interface for describing a metric#unit()
+     */
+    @Nonnull
+    MetricDescriptor withUnit(ProbeUnit unit);
+
+    /**
      * Returns the unit of the metric denoted by this instance.
      *
      * @return the unit
      */
     @Nullable
     ProbeUnit unit();
+
+    /**
+     * Adds the given tag to the descriptor with the given value.
+     *
+     * @param tag   The tag to add
+     * @param value The value of the tag
+     * @return the descriptor instance
+     * @see MetricDescriptor#readTags(BiConsumer)
+     */
+    @Nonnull
+    MetricDescriptor withTag(String tag, String value);
+
+    @Nullable
+    String tag(String tag);
 
     /**
      * Calls the given {@code tagReader} with all tags in this descriptor.
@@ -99,8 +152,64 @@ public interface MetricDescriptor {
     @Nonnull
     String metricName();
 
+    /**
+     * Returns the excluded targets.
+     *
+     * @return the excluded targets
+     */
     @Nonnull
     Collection<MetricTarget> excludedTargets();
+
+    /**
+     * Excludes the given target for this metric.
+     * <p>
+     * Note: The excluded targets are not part of the textual
+     * representation of the metric returned by {@link #metricName()}, but
+     * part of its {@link #toString()}.
+     *
+     * @param target The target to exclude
+     * @return the descriptor instance
+     * @see #withIncludedTarget(MetricTarget)
+     * @see MetricDescriptor#isTargetExcluded(MetricTarget)
+     * @see MetricDescriptor#isTargetIncluded(MetricTarget)
+     */
+    @Nonnull
+    MetricDescriptor withExcludedTarget(MetricTarget target);
+
+    /**
+     * Excludes the given targets for this metric.
+     * <p>
+     * Note1: Calling this method overwrites the previously set excluded targets
+     * Note2: The excluded targets are not part of the textual
+     * representation of the metric returned by {@link #metricName()}, but
+     * part of its {@link #toString()}.
+     *
+     * @param excludedTargets The targets to exclude
+     * @return the descriptor instance
+     * @see #withExcludedTarget(MetricTarget)
+     * @see #withIncludedTarget(MetricTarget)
+     * @see MetricDescriptor#isTargetExcluded(MetricTarget)
+     * @see MetricDescriptor#isTargetIncluded(MetricTarget)
+     */
+    @Nonnull
+    MetricDescriptor withExcludedTargets(Collection<MetricTarget> excludedTargets);
+
+    /**
+     * Includes the given target for this metric.
+     * <p>
+     * Note1: This is the invert method for {@link #withExcludedTarget(MetricTarget)}
+     * Note2: The excluded targets are not part of the textual
+     * representation of the metric returned by {@link #metricName()}, but
+     * part of its {@link #toString()}.
+     *
+     * @param target The target to exclude
+     * @return the descriptor instance
+     * @see #withExcludedTarget(MetricTarget)
+     * @see MetricDescriptor#isTargetExcluded(MetricTarget)
+     * @see MetricDescriptor#isTargetIncluded(MetricTarget)
+     */
+    @Nonnull
+    MetricDescriptor withIncludedTarget(MetricTarget target);
 
     /**
      * Returns {@code true} if this metric should be excluded on the given
@@ -121,4 +230,23 @@ public interface MetricDescriptor {
      * {@code false} otherwise
      */
     boolean isTargetIncluded(MetricTarget target);
+
+    /**
+     * Takes a mutable copy of this instance.
+     *
+     * @return the copy of this instance
+     */
+    @Nonnull
+    MetricDescriptor copy();
+
+    /**
+     * Copies the given {@code descriptor}'s fields into this mutable
+     * descriptor.
+     *
+     * @param descriptor The descriptor to copy
+     * @return the this instance containing the fields of the
+     * {@code descriptor} argument
+     */
+    @Nonnull
+    MetricDescriptor copy(MetricDescriptor descriptor);
 }

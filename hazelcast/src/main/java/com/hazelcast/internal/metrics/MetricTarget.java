@@ -34,20 +34,33 @@ public enum MetricTarget {
     // thus if it ever gets bigger than 32 values, start using 64-bit bitset
     MANAGEMENT_CENTER,
     JMX,
-    DIAGNOSTICS;
+    DIAGNOSTICS,
+    JET_JOB;
+
+    static final Int2ObjectHashMap<Set<MetricTarget>> BITSET_TO_SET_CACHE = new Int2ObjectHashMap<>();
 
     private static final int MASK_ALL_TARGETS = bitset(values());
 
-    private static final Int2ObjectHashMap<Set<MetricTarget>> BITSET_TO_SET_CACHE = new Int2ObjectHashMap<>();
-
     static {
-        putInSetCache(MANAGEMENT_CENTER);
-        putInSetCache(JMX);
-        putInSetCache(DIAGNOSTICS);
-        putInSetCache(MANAGEMENT_CENTER, JMX);
-        putInSetCache(MANAGEMENT_CENTER, DIAGNOSTICS);
-        putInSetCache(JMX, DIAGNOSTICS);
-        putInSetCache(MANAGEMENT_CENTER, JMX, DIAGNOSTICS);
+        // building BITSET_TO_SET_CACHE using a recursive algorithm for generating all combinations
+        for (int i = 0; i <= values().length; i++) {
+            generateCombinations(new int[i], 0, values().length - 1, 0);
+        }
+    }
+
+    private static void generateCombinations(int[] ordinals, int start, int end, int index) {
+        if (index == ordinals.length) {
+            MetricTarget[] allTargets = values();
+            MetricTarget[] combination = new MetricTarget[ordinals.length];
+            for (int i = 0; i < ordinals.length; i++) {
+                combination[i] = allTargets[ordinals[i]];
+            }
+            putInSetCache(combination);
+        } else if (start <= end) {
+            ordinals[index] = start;
+            generateCombinations(ordinals, start + 1, end, index + 1);
+            generateCombinations(ordinals, start + 1, end, index);
+        }
     }
 
     /**
@@ -126,7 +139,6 @@ public enum MetricTarget {
     private static void putInSetCache(MetricTarget... targets) {
         EnumSet<MetricTarget> targetsSet = EnumSet.noneOf(MetricTarget.class);
         Collections.addAll(targetsSet, targets);
-        BITSET_TO_SET_CACHE.put(0, emptySet());
         BITSET_TO_SET_CACHE.put(bitset(targets), targetsSet);
     }
 

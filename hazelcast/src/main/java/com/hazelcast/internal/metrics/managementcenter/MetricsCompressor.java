@@ -17,9 +17,8 @@
 package com.hazelcast.internal.metrics.managementcenter;
 
 import com.hazelcast.function.BiConsumerEx;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -360,7 +359,7 @@ public class MetricsCompressor {
     }
 
     @SuppressFBWarnings("RR_NOT_CHECKED")
-    public static Iterator<Metric> decompressingIterator(byte[] bytes, Supplier<? extends MutableMetricDescriptor> supplier) {
+    public static Iterator<Metric> decompressingIterator(byte[] bytes, Supplier<? extends MetricDescriptor> supplier) {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         int version = (bais.read() << BITS_IN_BYTE) + bais.read();
         if (version != BINARY_FORMAT_VERSION) {
@@ -392,11 +391,11 @@ public class MetricsCompressor {
 
     @SuppressWarnings({"checkstyle:AnonInnerLength", "checkstyle:MethodLength"})
     private static Iterator<Metric> getIterator(byte[] metricsBlob, String[] dictionary,
-                                                Supplier<? extends MutableMetricDescriptor> supplier) {
+                                                Supplier<? extends MetricDescriptor> supplier) {
         DataInputStream dis = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(metricsBlob)));
 
         return new Iterator<Metric>() {
-            MutableMetricDescriptor lastDescriptor = supplier.get();
+            MetricDescriptor lastDescriptor = supplier.get();
             Metric next;
             int lastTagCount;
 
@@ -421,7 +420,7 @@ public class MetricsCompressor {
             @SuppressWarnings("checkstyle:NPathComplexity")
             private void moveNext() {
                 ProbeUnit[] units = ProbeUnit.values();
-                MutableMetricDescriptor newDescriptor = supplier.get();
+                MetricDescriptor newDescriptor = supplier.get();
                 try {
                     int mask = dis.readUnsignedShort();
 

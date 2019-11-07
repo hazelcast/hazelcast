@@ -17,7 +17,7 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 
 import java.io.File;
 
@@ -42,7 +42,7 @@ public final class FileMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         File file = new File(System.getProperty("user.home"));
-        MutableMetricDescriptor descriptor = metricsRegistry
+        MetricDescriptor descriptor = metricsRegistry
                 .newMetricDescriptor()
                 .withPrefix("file.partition")
                 .withDiscriminator("dir", "user.home");

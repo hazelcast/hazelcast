@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
@@ -188,7 +188,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        MutableMetricDescriptor descriptor = registry
+        MetricDescriptor descriptor = registry
                 .newMetricDescriptor()
                 .withPrefix("operation.thread")
                 .withDiscriminator("thread", getName());

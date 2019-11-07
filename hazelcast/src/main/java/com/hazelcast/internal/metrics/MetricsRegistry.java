@@ -156,7 +156,7 @@ public interface MetricsRegistry {
      * @throws IllegalArgumentException if the source contains a Probe
      *                                  annotation on a field/method of unsupported type.
      */
-    <S> void registerStaticMetrics(MutableMetricDescriptor descriptor, S source);
+    <S> void registerStaticMetrics(MetricDescriptor descriptor, S source);
 
     /**
      * Registers dynamic metrics sources that collect metrics in each metrics
@@ -187,7 +187,7 @@ public interface MetricsRegistry {
      * @param function the probe function
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void registerStaticProbe(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
+    <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
                                  ProbeFunction function);
 
     /**
@@ -229,7 +229,7 @@ public interface MetricsRegistry {
      * @param probe  the probe
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void registerStaticProbe(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
+    <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
                                  LongProbeFunction<S> probe);
 
     /**
@@ -309,6 +309,6 @@ public interface MetricsRegistry {
     /**
      * Creates a new {@link MetricDescriptorImpl}.
      */
-    MutableMetricDescriptor newMetricDescriptor();
+    MetricDescriptor newMetricDescriptor();
 
 }

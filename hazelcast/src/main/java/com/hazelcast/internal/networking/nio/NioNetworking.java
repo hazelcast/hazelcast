@@ -20,7 +20,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
@@ -46,7 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
@@ -326,52 +325,52 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     }
 
     @Override
-    public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
+    public void provideDynamicMetrics(MetricDescriptor descriptor,
                                       MetricsCollectionContext context) {
         for (Channel channel : channels) {
             String pipelineId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
 
-            MutableMetricDescriptor descriptorIn = descriptorSupplier
-                    .get()
+            MetricDescriptor descriptorIn = descriptor
+                    .copy()
                     .withPrefix("tcp.connection.in")
                     .withDiscriminator("pipelineId", pipelineId);
             context.collect(descriptorIn, channel.inboundPipeline());
 
-            MutableMetricDescriptor descriptorOut = descriptorSupplier
-                    .get()
+            MetricDescriptor descriptorOut = descriptor
+                    .copy()
                     .withPrefix("tcp.connection.out")
                     .withDiscriminator("pipelineId", pipelineId);
             context.collect(descriptorOut, channel.outboundPipeline());
         }
 
         for (NioThread nioThread : inputThreads) {
-            MutableMetricDescriptor discriminator = descriptorSupplier
-                    .get()
+            MetricDescriptor descriptorInThread = descriptor
+                    .copy()
                     .withPrefix("tcp.inputThread")
                     .withDiscriminator("thread", nioThread.getName());
-            context.collect(discriminator, nioThread);
+            context.collect(descriptorInThread, nioThread);
         }
 
         for (NioThread nioThread : outputThreads) {
-            MutableMetricDescriptor discriminator = descriptorSupplier
-                    .get()
+            MetricDescriptor descriptorOutThread = descriptor
+                    .copy()
                     .withPrefix("tcp.outputThread")
                     .withDiscriminator("thread", nioThread.getName());
-            context.collect(discriminator, nioThread);
+            context.collect(descriptorOutThread, nioThread);
         }
 
         IOBalancer ioBalancer = this.ioBalancer;
         if (ioBalancer != null) {
-            MutableMetricDescriptor descriptor = descriptorSupplier
-                    .get()
+            MetricDescriptor descriptorBalancer = descriptor
+                    .copy()
                     .withPrefix("tcp.balancer");
-            context.collect(descriptor, ioBalancer);
+            context.collect(descriptorBalancer, ioBalancer);
         }
 
-        MutableMetricDescriptor descriptor = descriptorSupplier
-                .get()
+        MetricDescriptor descriptorTcp = descriptor
+                .copy()
                 .withPrefix("tcp");
-        context.collect(descriptor, this);
+        context.collect(descriptorTcp, this);
     }
 
     private class ChannelCloseListenerImpl implements ChannelCloseListener {

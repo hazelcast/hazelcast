@@ -17,8 +17,8 @@
 package com.hazelcast.internal.metrics.jmx;
 
 import com.hazelcast.config.MetricsConfig;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeUnit;
 
 import javax.management.InstanceNotFoundException;

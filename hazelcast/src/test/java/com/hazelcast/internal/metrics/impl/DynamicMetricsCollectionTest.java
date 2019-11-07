@@ -17,7 +17,7 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
@@ -50,9 +50,8 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
 
         CapturingCollector collector = new CapturingCollector();
         MetricsRegistry registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        registry.registerDynamicMetricsProvider((descriptorSupplier, context) -> {
-            MutableMetricDescriptor descriptor = descriptorSupplier.get().withPrefix("test");
-            context.collect(descriptor, source);
+        registry.registerDynamicMetricsProvider((descriptor, context) -> {
+            context.collect(descriptor.withPrefix("test"), source);
         });
         registry.collect(collector);
 
@@ -86,10 +85,7 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
 
         MetricsCollector collectorMock = mock(MetricsCollector.class);
         MetricsRegistry registry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
-        registry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MutableMetricDescriptor descriptor = taggerSupplier.get().withPrefix("test");
-            context.collect(descriptor, source);
-        });
+        registry.registerDynamicMetricsProvider((descriptor, context) -> context.collect(descriptor.withPrefix("test"), source));
         registry.collect(collectorMock);
 
         verify(collectorMock, never()).collectLong(registry.newMetricDescriptor()
@@ -110,13 +106,11 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
     public void testDirectLong() {
         CapturingCollector capturingCollector = new CapturingCollector();
         MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MutableMetricDescriptor descriptor = taggerSupplier.get().withPrefix("test");
-            context.collect(descriptor, "someMetric", INFO, BYTES, 42);
-        });
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context.collect(descriptor.withPrefix("test"), "someMetric", INFO, BYTES, 42));
         metricsRegistry.collect(capturingCollector);
 
-        MutableMetricDescriptor expectedDescriptor = metricsRegistry
+        MetricDescriptor expectedDescriptor = metricsRegistry
                 .newMetricDescriptor()
                 .withPrefix("test")
                 .withUnit(BYTES)
@@ -131,13 +125,11 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
     public void testDirectLongProveLevelFilters() {
         MetricsCollector collectorMock = mock(MetricsCollector.class);
         MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MutableMetricDescriptor descriptor = taggerSupplier.get().withPrefix("test");
-            context.collect(descriptor, "someMetric", INFO, BYTES, 42);
-        });
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context.collect(descriptor.withPrefix("test"), "someMetric", INFO, BYTES, 42));
         metricsRegistry.collect(collectorMock);
 
-        MutableMetricDescriptor expectedDescriptor = metricsRegistry
+        MetricDescriptor expectedDescriptor = metricsRegistry
                 .newMetricDescriptor()
                 .withPrefix("test")
                 .withUnit(BYTES)
@@ -149,13 +141,11 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
     public void testDirectDouble() {
         CapturingCollector capturingCollector = new CapturingCollector();
         MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MutableMetricDescriptor tagger = taggerSupplier.get().withPrefix("test");
-            context.collect(tagger, "someMetric", INFO, BYTES, 42.42D);
-        });
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context.collect(descriptor.withPrefix("test"), "someMetric", INFO, BYTES, 42.42D));
         metricsRegistry.collect(capturingCollector);
 
-        MutableMetricDescriptor expectedDescriptor = metricsRegistry
+        MetricDescriptor expectedDescriptor = metricsRegistry
                 .newMetricDescriptor()
                 .withPrefix("test")
                 .withUnit(BYTES)
@@ -169,13 +159,11 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
     public void testDirectDoubleProveLevelFilters() {
         MetricsCollector collectorMock = mock(MetricsCollector.class);
         MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
-        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
-            MutableMetricDescriptor des = taggerSupplier.get().withPrefix("test");
-            context.collect(des, "someMetric", INFO, BYTES, 42.42D);
-        });
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context.collect(descriptor.withPrefix("test"), "someMetric", INFO, BYTES, 42.42D));
         metricsRegistry.collect(collectorMock);
 
-        MutableMetricDescriptor expectedDescriptor = metricsRegistry
+        MetricDescriptor expectedDescriptor = metricsRegistry
                 .newMetricDescriptor()
                 .withPrefix("test")
                 .withUnit(BYTES)

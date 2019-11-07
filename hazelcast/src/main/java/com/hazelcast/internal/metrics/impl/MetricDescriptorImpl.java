@@ -19,7 +19,6 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeUnit;
 
 import javax.annotation.Nonnull;
@@ -35,9 +34,9 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Default implementation of {@link MetricDescriptor} and
- * {@link MutableMetricDescriptor}.
+ * {@link MetricDescriptor}.
  */
-public final class MetricDescriptorImpl implements MutableMetricDescriptor {
+public final class MetricDescriptorImpl implements MetricDescriptor {
     private static final int INITIAL_TAG_CAPACITY = 4;
     private static final double GROW_FACTOR = 1.2D;
 
@@ -70,6 +69,20 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
         tags[tagPtr + 1] = value;
         tagPtr += 2;
         return this;
+    }
+
+    @Nullable
+    @Override
+    public String tag(String tag) {
+        Objects.requireNonNull(tag);
+        for (int i = 0; i < tags.length; i += 2) {
+            String tagStored = tags[i];
+            String tagValue = tags[i + 1];
+            if (tag.equals(tagStored)) {
+                return tagValue;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -111,9 +124,8 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
         copy.discriminatorValue = discriminatorValue;
         copy.unit = unit;
         copy.excludedTargets = excludedTargets;
-        copy.tagPtr = tagPtr;
-        ensureCapacity(tagPtr - 1);
-        System.arraycopy(tags, 0, copy.tags, 0, tags.length);
+        copy.ensureCapacity(tagCount() << 1);
+        readTags(copy::withTag);
 
         return copy;
     }
@@ -129,6 +141,7 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
         this.discriminatorValue = descriptor.discriminatorValue();
         this.unit = descriptor.unit();
         this.excludedTargets = descriptor.excludedTargets();
+        this.ensureCapacity(descriptor.tagCount() << 1);
         descriptor.readTags(this::withTag);
 
         return this;
@@ -286,7 +299,7 @@ public final class MetricDescriptorImpl implements MutableMetricDescriptor {
             return;
         }
 
-        int newCapacity = (int) Math.ceil(tags.length * GROW_FACTOR);
+        int newCapacity = (int) Math.max(tagPtr, Math.ceil(tags.length * GROW_FACTOR));
         if (newCapacity % 2 != 0) {
             newCapacity++;
         }

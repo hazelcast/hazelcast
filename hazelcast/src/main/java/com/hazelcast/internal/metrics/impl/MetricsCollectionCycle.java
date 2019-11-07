@@ -19,11 +19,10 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -87,7 +86,7 @@ class MetricsCollectionCycle {
     void collectDynamicMetrics(Collection<DynamicMetricsProvider> metricsSources) {
         for (DynamicMetricsProvider metricsSource : metricsSources) {
             try {
-                metricsSource.provideDynamicMetrics(descriptorSupplier, metricsContext);
+                metricsSource.provideDynamicMetrics(descriptorSupplier.get(), metricsContext);
             } catch (Throwable t) {
                 logger.warning("Collecting metrics from source " + metricsSource.getClass().getName() + " failed", t);
             }
@@ -100,17 +99,17 @@ class MetricsCollectionCycle {
         }
     }
 
-    private MetricValueCatcher lookupMetricValueCatcher(MutableMetricDescriptor descriptor) {
+    private MetricValueCatcher lookupMetricValueCatcher(MetricDescriptor descriptor) {
         MetricValueCatcher catcher = lookupMetricValueCatcherFn.apply(descriptor);
         return catcher != null ? catcher : NOOP_CATCHER;
     }
 
-    private void extractAndCollectDynamicMetrics(MutableMetricDescriptor descriptor, Object source) {
+    private void extractAndCollectDynamicMetrics(MetricDescriptor descriptor, Object source) {
         SourceMetadata metadata = lookupMetadataFn.apply(source.getClass());
 
         for (MethodProbe methodProbe : metadata.methods()) {
             if (methodProbe.probe.level().isEnabled(minimumLevel)) {
-                MutableMetricDescriptor descriptorCopy = descriptor
+                MetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(methodProbe.probe.unit())
                         .withMetric(methodProbe.getProbeOrMethodName())
@@ -123,7 +122,7 @@ class MetricsCollectionCycle {
 
         for (FieldProbe fieldProbe : metadata.fields()) {
             if (fieldProbe.probe.level().isEnabled(minimumLevel)) {
-                MutableMetricDescriptor descriptorCopy = descriptor
+                MetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(fieldProbe.probe.unit())
                         .withMetric(fieldProbe.getProbeOrFieldName())
@@ -135,7 +134,7 @@ class MetricsCollectionCycle {
         }
     }
 
-    private void collect(MutableMetricDescriptor descriptor, Object source, ProbeFunction function) {
+    private void collect(MetricDescriptor descriptor, Object source, ProbeFunction function) {
         if (function == null || source == null) {
             metricsCollector.collectNoValue(descriptor);
             return;
@@ -187,14 +186,14 @@ class MetricsCollectionCycle {
 
     private class MetricsContext implements MetricsCollectionContext {
         @Override
-        public void collect(MutableMetricDescriptor descriptor, Object source) {
+        public void collect(MetricDescriptor descriptor, Object source) {
             extractAndCollectDynamicMetrics(descriptor, source);
         }
 
         @Override
-        public void collect(MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, long value) {
+        public void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, long value) {
             if (level.isEnabled(minimumLevel)) {
-                MutableMetricDescriptor descriptorCopy = descriptor
+                MetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(unit)
                         .withMetric(name);
@@ -206,9 +205,9 @@ class MetricsCollectionCycle {
 
 
         @Override
-        public void collect(MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value) {
+        public void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value) {
             if (level.isEnabled(minimumLevel)) {
-                MutableMetricDescriptor descriptorCopy = descriptor
+                MetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(unit)
                         .withMetric(name);

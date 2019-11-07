@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.metrics.collectors;
 
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 
 /**
  * With the {@link MetricsCollector} the metrics registered in the

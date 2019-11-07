@@ -39,6 +39,7 @@ import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -450,5 +451,47 @@ public class MetricDescriptorImplTest {
         assertTrue(original.isTargetExcluded(MANAGEMENT_CENTER));
         assertTrue(original.isTargetExcluded(DIAGNOSTICS));
         assertTrue(original.isTargetIncluded(JMX));
+    }
+
+    @Test
+    public void testTagsCanGrow() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(new DefaultMetricDescriptorSupplier());
+        for (int i = 0; i < 64; i++) {
+            descriptor.withTag("tag" + i, "tag" + i + "Value");
+            assertEquals("tag" + i + "Value", descriptor.tag("tag" + i));
+            assertEquals(i + 1, descriptor.tagCount());
+        }
+        assertNull(descriptor.tag("unknownTag"));
+    }
+
+    @Test
+    public void testCopiedDescriptorTagsCanGrow() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(new DefaultMetricDescriptorSupplier());
+        for (int i = 0; i < 64; i++) {
+            descriptor = descriptor.copy().withTag("tag" + i, "tag" + i + "Value");
+
+            for (int j = 0; j <= i; j++) {
+                assertEquals("tag" + j + "Value", descriptor.tag("tag" + j));
+            }
+            assertEquals(i + 1, descriptor.tagCount());
+        }
+        assertNull(descriptor.tag("unknownTag"));
+    }
+
+    @Test
+    public void testCopiedIntoDescriptorTagsCanGrow() {
+        Supplier supplierMock = mock(Supplier.class);
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplierMock);
+        for (int i = 0; i < 64; i++) {
+            descriptor = new MetricDescriptorImpl(supplierMock)
+                    .copy(descriptor)
+                    .withTag("tag" + i, "tag" + i + "Value");
+
+            for (int j = 0; j <= i; j++) {
+                assertEquals("tag" + j + "Value", descriptor.tag("tag" + j));
+            }
+            assertEquals(i + 1, descriptor.tagCount());
+        }
+        assertNull(descriptor.tag("unknownTag"));
     }
 }

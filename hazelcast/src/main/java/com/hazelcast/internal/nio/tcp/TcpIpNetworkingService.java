@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
@@ -50,7 +50,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -375,26 +374,23 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
         }
 
         @Override
-        public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
-                                          MetricsCollectionContext context) {
-            MutableMetricDescriptor descriptor = descriptorSupplier
-                    .get()
-                    .withPrefix("tcp");
+        public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+            descriptor.withPrefix("tcp");
             context.collect(descriptor, this);
 
             TcpIpAcceptor acceptor = this.acceptorRef.get();
             if (acceptor != null) {
-                acceptor.provideDynamicMetrics(descriptorSupplier, context);
+                acceptor.provideDynamicMetrics(descriptor.copy(), context);
             }
 
             for (EndpointManager<TcpIpConnection> manager : this.endpointManagers.values()) {
                 if (manager instanceof DynamicMetricsProvider) {
-                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(descriptorSupplier, context);
+                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(descriptor.copy(), context);
                 }
             }
 
             if (unifiedEndpointManager != null) {
-                unifiedEndpointManager.provideDynamicMetrics(descriptorSupplier, context);
+                unifiedEndpointManager.provideDynamicMetrics(descriptor.copy(), context);
             }
         }
     }

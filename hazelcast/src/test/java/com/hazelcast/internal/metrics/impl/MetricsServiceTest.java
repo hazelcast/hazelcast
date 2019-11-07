@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -136,15 +136,15 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         InOrder inOrderLong = inOrder(metricsCollectorMock);
         InOrder inOrderDouble = inOrder(metricsCollectorMock);
 
-        MutableMetricDescriptor descRoot = metricsRegistry.newMetricDescriptor()
-                                                          .withPrefix("test")
-                                                          .withUnit(COUNT);
-        MutableMetricDescriptor descLongValue = descRoot.copy().withMetric("longValue");
+        MetricDescriptor descRoot = metricsRegistry.newMetricDescriptor()
+                                                   .withPrefix("test")
+                                                   .withUnit(COUNT);
+        MetricDescriptor descLongValue = descRoot.copy().withMetric("longValue");
         inOrderLong.verify(metricsCollectorMock).collectLong(descLongValue, 1);
         inOrderLong.verify(metricsCollectorMock).collectLong(descLongValue, 2);
         inOrderLong.verify(metricsCollectorMock, never()).collectLong(eq(descLongValue), anyLong());
 
-        MutableMetricDescriptor descDoubleValue = descRoot.copy().withMetric("doubleValue");
+        MetricDescriptor descDoubleValue = descRoot.copy().withMetric("doubleValue");
         inOrderDouble.verify(metricsCollectorMock).collectDouble(descDoubleValue, 1.5D);
         inOrderDouble.verify(metricsCollectorMock).collectDouble(descDoubleValue, 5.5D);
         inOrderDouble.verify(metricsCollectorMock, never()).collectDouble(eq(descDoubleValue), anyDouble());

@@ -20,10 +20,9 @@ import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -147,7 +146,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void registerStaticMetrics(MutableMetricDescriptor descriptor, S source) {
+    public <S> void registerStaticMetrics(MetricDescriptor descriptor, S source) {
         checkNotNull(descriptor, "descriptor can't be null");
         checkNotNull(source, "source can't be null");
 
@@ -172,7 +171,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void registerStaticProbe(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level,
+    public <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level,
                                         ProbeUnit unit, ProbeFunction function) {
         registerStaticProbeWithUnit(source, descriptor, name, level, unit, function);
     }
@@ -188,7 +187,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void registerStaticProbe(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level,
+    public <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level,
                                         ProbeUnit unit, LongProbeFunction<S> function) {
         registerStaticProbeWithUnit(source, descriptor, name, level, unit, function);
     }
@@ -219,7 +218,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         registerInternal(source, createDescriptor(name), level, function);
     }
 
-    private <S> void registerStaticProbeWithUnit(S source, MutableMetricDescriptor descriptor, String name, ProbeLevel level,
+    private <S> void registerStaticProbeWithUnit(S source, MetricDescriptor descriptor, String name, ProbeLevel level,
                                                  ProbeUnit unit,
                                                  ProbeFunction function) {
         registerInternal(source, descriptor.copy().withUnit(unit).withMetric(name), level, function);
@@ -231,7 +230,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         return probeInstances.get(createDescriptor(name).lookupView());
     }
 
-    <S> void registerInternal(S source, MutableMetricDescriptor descriptor, ProbeLevel probeLevel, ProbeFunction function) {
+    <S> void registerInternal(S source, MetricDescriptor descriptor, ProbeLevel probeLevel, ProbeFunction function) {
         if (!probeLevel.isEnabled(minimumLevel)) {
             return;
         }

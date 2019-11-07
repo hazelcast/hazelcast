@@ -30,7 +30,7 @@ public interface MetricsCollectionContext {
      *                   the metrics extracted from the {@code source} object
      * @param source     The object that contains the metrics
      */
-    void collect(MutableMetricDescriptor descriptor, Object source);
+    void collect(MetricDescriptor descriptor, Object source);
 
     /**
      * Collects the given metric.
@@ -41,7 +41,7 @@ public interface MetricsCollectionContext {
      * @param level      The level
      * @param value      The value of the collected metric
      */
-    void collect(MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, long value);
+    void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, long value);
 
     /**
      * Collects the given metric.
@@ -52,6 +52,6 @@ public interface MetricsCollectionContext {
      * @param level      The level
      * @param value      The value of the collected metric
      */
-    void collect(MutableMetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value);
+    void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value);
 
 }

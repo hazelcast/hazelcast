@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
@@ -567,7 +567,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
             if (existingSegment == null) {
                 segment = newSegment;
                 MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-                MutableMetricDescriptor descriptor = metricsRegistry
+                MetricDescriptor descriptor = metricsRegistry
                         .newMetricDescriptor()
                         .withPrefix("event")
                         .withDiscriminator("service", service);

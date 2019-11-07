@@ -22,7 +22,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.internal.metrics.MutableMetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
@@ -58,7 +58,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.nio.IOUtil.close;
@@ -404,18 +403,12 @@ public class TcpIpEndpointManager
     }
 
     @Override
-    public void provideDynamicMetrics(Supplier<? extends MutableMetricDescriptor> descriptorSupplier,
-                                      MetricsCollectionContext context) {
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         if (endpointQualifier == null) {
-            MutableMetricDescriptor descriptor = descriptorSupplier
-                    .get().withPrefix("tcp.connection");
-            context.collect(descriptor, this);
+            context.collect(descriptor.withPrefix("tcp.connection"), this);
         } else {
-            MutableMetricDescriptor descriptor = descriptorSupplier
-                    .get()
-                    .withPrefix("tcp.connection")
-                    .withDiscriminator("endpoint", endpointQualifier.toMetricsPrefixString());
-            context.collect(descriptor, this);
+            context.collect(descriptor.withPrefix("tcp.connection")
+                                      .withDiscriminator("endpoint", endpointQualifier.toMetricsPrefixString()), this);
         }
     }
 
