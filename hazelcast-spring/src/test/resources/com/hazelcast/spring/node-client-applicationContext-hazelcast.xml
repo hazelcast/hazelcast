@@ -379,6 +379,17 @@
         <hz:backup-ack-to-client-enabled>false</hz:backup-ack-to-client-enabled>
     </hz:client>
 
+    <hz:client id="client18-map">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:map name="client-map">
+            <hz:partition-strategy>com.hazelcast.examples.MyPartitioningStrategy</hz:partition-strategy>
+        </hz:map>
+    </hz:client>
+
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="name" value="spring-cluster"/>
         <property name="password" value="spring-cluster-pass"/>

@@ -1523,6 +1523,7 @@
                     <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="flake-id-generator" type="client-flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
                     <xs:element name="reliable-topic" type="client-reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="map" type="client-map" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:choice>
                 <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
             </xs:extension>
@@ -3334,6 +3335,29 @@
                     Enable/disable statistics.
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="client-map">
+        <xs:all>
+            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The fully qualified name of the class implementing the
+                        com.hazelcast.partition.PartitioningStrategy interface.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the map.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
 

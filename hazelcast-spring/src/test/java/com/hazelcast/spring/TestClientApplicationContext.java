@@ -24,6 +24,7 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
+import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
@@ -134,6 +135,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client17-backupAckToClient")
     private HazelcastClientProxy backupAckToClient;
+
+    @Resource(name = "client18-map")
+    private HazelcastClientProxy client18;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -419,6 +423,16 @@ public class TestClientApplicationContext {
         assertEquals("gen1", config.getName());
         assertEquals(3, config.getPrefetchCount());
         assertEquals(3000L, config.getPrefetchValidityMillis());
+    }
+
+    @Test
+    public void testMapConfig() {
+        Map<String, ClientMapConfig> mapConfigs = client18.getClientConfig().getMapConfigs();
+        assertEquals(1, mapConfigs.size());
+        ClientMapConfig mapConfig = mapConfigs.values().iterator().next();
+        assertEquals("client-map", mapConfig.getName());
+        assertEquals("com.hazelcast.examples.MyPartitioningStrategy",
+                mapConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
     }
 
     @Test
