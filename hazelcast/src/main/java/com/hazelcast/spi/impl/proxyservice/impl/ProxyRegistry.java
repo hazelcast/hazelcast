@@ -309,4 +309,17 @@ public final class ProxyRegistry {
             ((AbstractDistributedObject) distributedObject).invalidate();
         }
     }
+
+    /**
+     * Force-initializes and publishes all uninitialized proxies in this registry.
+     */
+    void initializeAndPublishProxies() {
+        for (Map.Entry<String, DistributedObjectFuture> entry : proxies.entrySet()) {
+            DistributedObjectFuture future = entry.getValue();
+            if (!future.isSetAndInitialized()) {
+                extractDistributedObject(future);
+                publish(new DistributedObjectEventPacket(CREATED, serviceName, entry.getKey()));
+            }
+        }
+    }
 }
