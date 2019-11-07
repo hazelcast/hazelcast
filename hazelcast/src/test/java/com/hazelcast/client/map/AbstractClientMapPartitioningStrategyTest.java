@@ -17,7 +17,6 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -73,7 +72,7 @@ public abstract class AbstractClientMapPartitioningStrategyTest extends Hazelcas
         PartitioningStrategyConfig partitioningStrategyConfig
                 = new PartitioningStrategyConfig(StringPartitioningStrategy.class.getName());
         mapName = randomMapName();
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addMapConfig(new MapConfig(mapName)
                 .setPartitioningStrategyConfig(partitioningStrategyConfig));
         member = factory.newHazelcastInstance(config);
