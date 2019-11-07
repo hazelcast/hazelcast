@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map;
+package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientMapConfig;
+import com.hazelcast.client.map.AbstractClientMapPartitioningStrategyTest;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,7 +30,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientMapPartitioningStrategyTest extends AbstractClientMapPartitioningStrategyTest {
+public class ClientMapNearCachePartitioningStrategyTest extends AbstractClientMapPartitioningStrategyTest {
 
     @Override
     public ClientConfig getClientConfig() {
@@ -37,6 +39,7 @@ public class ClientMapPartitioningStrategyTest extends AbstractClientMapPartitio
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addMapConfig(new ClientMapConfig(mapName)
                 .setPartitioningStrategyConfig(partitioningStrategyConfig));
+        clientConfig.addNearCacheConfig(new NearCacheConfig(mapName));
         return clientConfig;
     }
 }
