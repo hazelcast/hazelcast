@@ -16,19 +16,20 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.internal.partition.service.TestGetOperation;
 import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -51,11 +52,11 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getDefaultReplicaVersions;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
 import static com.hazelcast.internal.partition.impl.MigrationCommitTest.resetInternalMigrationListener;
-import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
-import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -313,7 +314,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private MigrationInfo createShiftDownMigration(int partitionId, int oldReplicaIndex, int newReplicaIndex,
-            PartitionReplica destination) {
+                                                   PartitionReplica destination) {
         InternalPartitionImpl partition = getPartition(instances[0], partitionId);
         PartitionReplica source = partition.getReplica(oldReplicaIndex);
 
@@ -540,7 +541,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         OperationServiceImpl operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
             assertNotNull(operationService.invokeOnPartition(null, new TestGetOperation(), partitionId)
-                    .get(1, TimeUnit.MINUTES));
+                                          .get(1, TimeUnit.MINUTES));
         }
     }
 
@@ -566,7 +567,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         Config config = new Config();
 
         ServiceConfig serviceConfig = TestMigrationAwareService.createServiceConfig(BACKUP_COUNT);
-        config.getServicesConfig().addServiceConfig(serviceConfig);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
         config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
 

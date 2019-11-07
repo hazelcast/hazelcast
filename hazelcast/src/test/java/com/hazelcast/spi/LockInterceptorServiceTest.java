@@ -16,24 +16,25 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.internal.locksupport.LockProxySupport;
-import com.hazelcast.internal.locksupport.LockSupportService;
-import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.locksupport.LockProxySupport;
+import com.hazelcast.internal.locksupport.LockStoreInfo;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.LockInterceptorService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.ConstructorFunction;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -78,7 +79,7 @@ public class LockInterceptorServiceTest extends HazelcastTestSupport {
 
     private void testLockingInterceptor(LockInterceptingService implementation) {
         Config config = new Config();
-        config.getServicesConfig().addServiceConfig(new ServiceConfig()
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(new ServiceConfig()
                 .setEnabled(true)
                 .setName(LockInterceptingService.SERVICE_NAME)
                 .setImplementation(implementation));

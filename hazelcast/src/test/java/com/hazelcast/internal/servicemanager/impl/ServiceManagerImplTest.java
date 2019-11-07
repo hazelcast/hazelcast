@@ -17,6 +17,7 @@
 package com.hazelcast.internal.servicemanager.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.MapService;
@@ -58,7 +59,7 @@ public class ServiceManagerImplTest extends HazelcastTestSupport {
                 .setClassName(FooService.class.getName())
                 .setEnabled(true)
                 .setName("fooService");
-        config.getServicesConfig().addServiceConfig(serviceConfig);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);

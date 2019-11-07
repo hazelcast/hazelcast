@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -107,7 +108,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         final Config config = new Config();
         ServiceConfig serviceConfig =
                 new ServiceConfig().setEnabled(true).setName(serviceName).setImplementation(new Object());
-        config.getServicesConfig().addServiceConfig(serviceConfig);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
         return config;
     }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
@@ -58,7 +59,7 @@ public class MultiMapTransactionStressTest extends HazelcastTestSupport {
                 .setImplementation(new DummyTransactionalService(dummyTxService));
 
         Config config = new Config();
-        config.getServicesConfig().addServiceConfig(serviceConfig);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
 
         hz = createHazelcastInstance(config);
         name = randomMapName();

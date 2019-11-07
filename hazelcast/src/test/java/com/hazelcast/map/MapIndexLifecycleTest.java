@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ServiceConfig;
@@ -123,8 +124,8 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
         Config config = getConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "4");
         config.getMapConfig(mapName);
-        config.getServicesConfig()
-              .addServiceConfig(
+        ConfigAccessor.getServicesConfig(config)
+                      .addServiceConfig(
                       new ServiceConfig()
                               .setName("SlowPostJoinAwareService")
                               .setEnabled(true)

@@ -120,19 +120,6 @@ public class XmlSchemaValidationTest {
     }
 
     @Test
-    public void testXmlDeniesDuplicateServicesConfig() {
-        expectDuplicateElementError("services");
-        String servicesConfig = ""
-                + "   <services>\n"
-                + "       <service enabled=\"true\">\n"
-                + "            <name>custom-service</name>\n"
-                + "            <class-name>com.hazelcast.examples.MyService</class-name>\n"
-                + "        </service>\n"
-                + "   </services>";
-        buildConfig(HAZELCAST_START_TAG + servicesConfig + servicesConfig + HAZELCAST_END_TAG);
-    }
-
-    @Test
     public void testXmlDeniesDuplicateSecurityConfig() {
         expectDuplicateElementError("security");
         String securityConfig = "   <security/>\n";

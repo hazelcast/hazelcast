@@ -92,7 +92,6 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
@@ -663,23 +662,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(testTopicConfig.isStatisticsEnabled());
         ListenerConfig listenerConfig = testTopicConfig.getMessageListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
-    }
-
-    @Test
-    public void testServiceConfig() {
-        ServiceConfig serviceConfig = config.getServicesConfig().getServiceConfig("my-service");
-        assertEquals("com.hazelcast.spring.MyService", serviceConfig.getClassName());
-        assertEquals("prop1-value", serviceConfig.getProperties().getProperty("prop1"));
-        assertEquals("prop2-value", serviceConfig.getProperties().getProperty("prop2"));
-        MyServiceConfig configObject = (MyServiceConfig) serviceConfig.getConfigObject();
-        assertNotNull(configObject);
-        assertEquals("prop1", configObject.stringProp);
-        assertEquals(123, configObject.intProp);
-        assertTrue(configObject.boolProp);
-        Object impl = serviceConfig.getImplementation();
-        assertNotNull(impl);
-        assertTrue("expected service of class com.hazelcast.spring.MyService but it is "
-                + impl.getClass().getName(), impl instanceof MyService);
     }
 
     @Test

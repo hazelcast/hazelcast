@@ -47,7 +47,6 @@ public enum ConfigSections {
     RINGBUFFER("ringbuffer", true),
     LISTENERS("listeners", false),
     SERIALIZATION("serialization", false),
-    SERVICES("services", false),
     SECURITY("security", false),
     MEMBER_ATTRIBUTES("member-attributes", false),
     NATIVE_MEMORY("native-memory", false),

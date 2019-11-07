@@ -1247,7 +1247,6 @@
                                 <xs:field xpath="@name"/>
                             </xs:unique>
                         </xs:element>
-                        <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="split-brain-protection" type="split-brain-protection" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="lite-member" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
@@ -2988,30 +2987,6 @@
             <xs:element name="discovery-token" type="xs:string" minOccurs="1" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
-    </xs:complexType>
-
-    <xs:complexType name="services">
-        <xs:sequence>
-            <xs:element name="service" type="service" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-        <xs:attribute name="enable-defaults" type="parameterized-boolean" default="true"/>
-    </xs:complexType>
-    <xs:complexType name="service">
-        <xs:sequence>
-            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="configuration" minOccurs="0" maxOccurs="1">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:any minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                    <xs:attribute name="parser" type="xs:string" use="required"/>
-                </xs:complexType>
-            </xs:element>
-        </xs:sequence>
-        <xs:attributeGroup ref="class-or-bean-name"/>
-        <xs:attribute name="enabled" type="parameterized-boolean" default="true"/>
     </xs:complexType>
 
     <xs:simpleType name="parameterizedValueType">
