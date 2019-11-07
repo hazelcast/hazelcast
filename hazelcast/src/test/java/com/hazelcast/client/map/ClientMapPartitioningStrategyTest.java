@@ -18,25 +18,42 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientMapConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class ClientMapPartitioningStrategyTest extends AbstractClientMapPartitioningStrategyTest {
 
-    @Override
-    public ClientConfig getClientConfig() {
+    @BeforeClass
+    public static void setupClass() {
         PartitioningStrategyConfig partitioningStrategyConfig
                 = new PartitioningStrategyConfig(StringPartitioningStrategy.class.getName());
+        mapName = randomMapName();
+        Config config = regularInstanceConfig();
+        config.addMapConfig(new MapConfig(mapName)
+                .setPartitioningStrategyConfig(partitioningStrategyConfig));
+        member = factory.newHazelcastInstance(config);
+        memberMap = member.getMap(mapName);
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addMapConfig(new ClientMapConfig(mapName)
                 .setPartitioningStrategyConfig(partitioningStrategyConfig));
-        return clientConfig;
+        clientConfig.addNearCacheConfig(new NearCacheConfig(mapName));
+
+        client = factory.newHazelcastClient(clientConfig);
+        clientMap = client.getMap(mapName);
+
+        HazelcastInstance clientWithoutStrategy = factory.newHazelcastClient();
+        clientMapWithoutStrategy = clientWithoutStrategy.getMap(mapName);
     }
 }

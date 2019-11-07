@@ -16,13 +16,9 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.BiTuple;
@@ -35,7 +31,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,40 +52,23 @@ import static org.junit.Assert.fail;
 
 public abstract class AbstractClientMapPartitioningStrategyTest extends HazelcastTestSupport {
 
-    private static TestHazelcastFactory factory = new TestHazelcastFactory();
-    private HazelcastInstance member;
-    private HazelcastInstance client;
-    protected String mapName;
-    private IMap<String, String> memberMap;
-    private IMap<String, String> clientMap;
-    private IMap<String, String> clientMapWithoutStrategy;
+    protected static TestHazelcastFactory factory = new TestHazelcastFactory();
+    protected static HazelcastInstance member;
+    protected static HazelcastInstance client;
+    protected static String mapName;
+    protected static IMap<String, String> memberMap;
+    protected static IMap<String, String> clientMap;
+    protected static IMap<String, String> clientMapWithoutStrategy;
     private String key;
-
-    public abstract ClientConfig getClientConfig();
 
     @Before
     public void setup() {
-        PartitioningStrategyConfig partitioningStrategyConfig
-                = new PartitioningStrategyConfig(StringPartitioningStrategy.class.getName());
-        mapName = randomMapName();
-        Config config = smallInstanceConfig();
-        config.addMapConfig(new MapConfig(mapName)
-                .setPartitioningStrategyConfig(partitioningStrategyConfig));
-        member = factory.newHazelcastInstance(config);
-        memberMap = member.getMap(mapName);
-
-        client = factory.newHazelcastClient(getClientConfig());
-        clientMap = client.getMap(mapName);
-
-        HazelcastInstance clientWithoutStrategy = factory.newHazelcastClient();
-        clientMapWithoutStrategy = clientWithoutStrategy.getMap(mapName);
-
         memberMap.clear();
         key = generateKey();
     }
 
-    @After
-    public void tearDown() {
+    @AfterClass
+    public static void tearDown() {
         factory.terminateAll();
     }
 
@@ -415,7 +394,7 @@ public abstract class AbstractClientMapPartitioningStrategyTest extends Hazelcas
         assertEquals("value", memberMap.get(key));
     }
 
-    public static class ValueUpdater implements EntryProcessor<String, String, String> {
+    private static class ValueUpdater implements EntryProcessor<String, String, String> {
 
         private final String newValue;
 
