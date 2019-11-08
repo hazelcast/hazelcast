@@ -3,6 +3,7 @@ package com.hazelcast.internal.management;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -11,6 +12,7 @@ import org.junit.Test;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class TimedMemberStateFactoryTest
@@ -81,6 +83,9 @@ public class TimedMemberStateFactoryTest
 
         TimedMemberState actual = memberStateFactory.createTimedMemberState();
 
-        assertTrue(actual.getMemberState().getLocalReplicatedMapStats("myCache").isNativeMemoryUsed());
+        LocalCacheStats myCacheStats = actual.getMemberState().getLocalCacheStats("/hz/myCache");
+        assertNotNull(myCacheStats);
+        assertTrue(myCacheStats.isNativeMemoryUsed());
     }
+
 }

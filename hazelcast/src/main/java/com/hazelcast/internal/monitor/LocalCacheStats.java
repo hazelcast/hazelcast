@@ -121,4 +121,6 @@ public interface LocalCacheStats extends LocalInstanceStats {
      */
     float getAverageRemoveTime();
 
+    boolean isNativeMemoryUsed();
+
 }

@@ -75,6 +75,8 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     @Probe(unit = MS)
     private float averageRemoveTime;
 
+    private boolean nativeMemoryUsed;
+
     public LocalCacheStatsImpl() {
     }
 
@@ -169,6 +171,15 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     @Override
     public long getCreationTime() {
         return creationTime;
+    }
+
+    @Override
+    public boolean isNativeMemoryUsed() {
+        return nativeMemoryUsed;
+    }
+
+    public void setNativeMemoryUsed(boolean nativeMemoryUsed) {
+        this.nativeMemoryUsed = nativeMemoryUsed;
     }
 
     @Override

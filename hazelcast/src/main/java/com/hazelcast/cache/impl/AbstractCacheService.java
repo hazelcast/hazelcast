@@ -32,6 +32,7 @@ import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.monitor.LocalCacheStats;
@@ -81,10 +82,12 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
@@ -650,15 +653,26 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     @Override
     public Map<String, LocalCacheStats> getStats() {
         Map<String, LocalCacheStats> stats = createHashMap(statistics.size());
+
         for (Map.Entry<String, CacheStatisticsImpl> entry : statistics.entrySet()) {
-            stats.put(entry.getKey(), new LocalCacheStatsImpl(entry.getValue()));
+            String cacheName = entry.getKey();
+            LocalCacheStatsImpl localCacheStats = new LocalCacheStatsImpl(entry.getValue());
+            CompletableFuture<CacheConfig> configFuture = configs.get(cacheName);
+            if (configFuture.isDone()) {
+                try {
+                    localCacheStats.setNativeMemoryUsed(configFuture.get().getInMemoryFormat() == NATIVE);
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+            stats.put(cacheName, localCacheStats);
         }
         return stats;
     }
 
     @Override
     public CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat inMemoryFormat) {
-        if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
+        if (NATIVE.equals(inMemoryFormat) && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
             throw new IllegalArgumentException("Native memory is available only in Hazelcast Enterprise."
                     + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }
