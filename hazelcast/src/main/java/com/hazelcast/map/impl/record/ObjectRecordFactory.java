@@ -18,12 +18,11 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
 
 public class ObjectRecordFactory implements RecordFactory<Object> {
 
-    private final SerializationService serializationService;
     private final boolean statisticsEnabled;
+    private final SerializationService serializationService;
 
     public ObjectRecordFactory(MapConfig config,
                                SerializationService serializationService) {
@@ -32,17 +31,10 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     }
 
     @Override
-    public Record<Object> newRecord(Data key, Object value) {
-        assert value != null : "value can not be null";
-
+    public Record<Object> newRecord(Object value) {
         Object objectValue = serializationService.toObject(value);
-
-        Record<Object> record = statisticsEnabled
+        return statisticsEnabled
                 ? new ObjectRecordWithStats(objectValue)
                 : new ObjectRecord(objectValue);
-
-        record.setKey(key);
-
-        return record;
     }
 }

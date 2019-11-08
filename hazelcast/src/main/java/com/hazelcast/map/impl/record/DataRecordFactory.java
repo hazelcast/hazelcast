@@ -18,39 +18,30 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
 public class DataRecordFactory implements RecordFactory<Data> {
 
-    private final SerializationService serializationService;
-    private final PartitioningStrategy partitionStrategy;
-    private final CacheDeserializedValues cacheDeserializedValues;
     private final boolean statisticsEnabled;
+    private final SerializationService ss;
+    private final CacheDeserializedValues cacheDeserializedValues;
 
-    public DataRecordFactory(MapConfig config, SerializationService serializationService,
-                             PartitioningStrategy partitionStrategy) {
-        this.serializationService = serializationService;
-        this.partitionStrategy = partitionStrategy;
+    public DataRecordFactory(MapConfig config, SerializationService ss) {
+        this.ss = ss;
         this.statisticsEnabled = config.isStatisticsEnabled();
         this.cacheDeserializedValues = config.getCacheDeserializedValues();
     }
 
     @Override
-    public Record<Data> newRecord(Data key, Object value) {
-        assert value != null : "value can not be null";
+    public Record<Data> newRecord(Object value) {
+        Data valueData = ss.toData(value);
 
-        final Data valueData = serializationService.toData(value, partitionStrategy);
-        Record<Data> record;
         switch (cacheDeserializedValues) {
             case NEVER:
-                record = statisticsEnabled ? new DataRecordWithStats(valueData) : new DataRecord(valueData);
-                break;
+                return statisticsEnabled ? new DataRecordWithStats(valueData) : new DataRecord(valueData);
             default:
-                record = statisticsEnabled ? new CachedDataRecordWithStats(valueData) : new CachedDataRecord(valueData);
+                return statisticsEnabled ? new CachedDataRecordWithStats(valueData) : new CachedDataRecord(valueData);
         }
-        record.setKey(key);
-        return record;
     }
 }

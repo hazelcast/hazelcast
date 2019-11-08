@@ -60,8 +60,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final ValueComparator valueComparator;
     protected final MapServiceContext mapServiceContext;
     protected final MapDataStore<Data, Object> mapDataStore;
-    protected final CompositeMutationObserver<Record> mutationObserver;
     protected final SerializationService serializationService;
+    protected final CompositeMutationObserver<Record> mutationObserver;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
@@ -104,7 +104,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         }
 
         // Add observer for indexing
-        indexingObserver = new IndexingMutationObserver<>(serializationService, this);
+        indexingObserver = new IndexingMutationObserver<>(this, serializationService);
         mutationObserver.add(indexingObserver);
     }
 
@@ -141,7 +141,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now) {
-        Record record = recordFactory.newRecord(key, value);
+        Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
@@ -151,9 +151,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Record sourceRecord, long nowInMillis) {
-        Record newRecord = recordFactory.newRecord(sourceRecord.getKey(), sourceRecord.getValue());
-        Records.copyMetadataFrom(sourceRecord, newRecord);
+    public Record createRecord(Data key, Record fromRecord, long nowInMillis) {
+        Record newRecord = recordFactory.newRecord(fromRecord == null ? null : fromRecord.getValue());
+        if (fromRecord != null) {
+            Records.copyMetadataFrom(fromRecord, newRecord);
+        }
         updateStatsOnPut(false, nowInMillis);
         return newRecord;
     }

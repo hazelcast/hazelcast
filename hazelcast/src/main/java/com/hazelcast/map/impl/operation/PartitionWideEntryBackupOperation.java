@@ -20,15 +20,12 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -56,37 +53,26 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
 
     private void runWithPartitionScan() {
         EntryOperator operator = operator(this, backupProcessor, getPredicate());
-
-        Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), true);
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            operator.operateOnKey(record.getKey()).doPostOperateOps();
-        }
+        recordStore.iterator((key, record) -> operator.operateOnKey(key).doPostOperateOps(), true);
     }
 
     // TODO unify this method with `runWithPartitionScan`
     protected void runWithPartitionScanForNative() {
-        Queue<Object> outComes = null;
         EntryOperator operator = operator(this, backupProcessor, getPredicate());
 
-        Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), true);
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            Data dataKey = toHeapData(record.getKey());
+        Queue<Object> outComes = new LinkedList<>();
+        recordStore.iterator((key, record) -> {
+            Data dataKey = toHeapData(key);
             operator.operateOnKey(dataKey);
 
             EntryEventType eventType = operator.getEventType();
             if (eventType != null) {
-                if (outComes == null) {
-                    outComes = new LinkedList<>();
-                }
-
                 outComes.add(dataKey);
                 outComes.add(operator.getOldValue());
                 outComes.add(operator.getNewValue());
                 outComes.add(eventType);
             }
-        }
+        }, true);
 
         if (outComes != null) {
             // This iteration is needed to work around an issue related with binary elastic hash map (BEHM).

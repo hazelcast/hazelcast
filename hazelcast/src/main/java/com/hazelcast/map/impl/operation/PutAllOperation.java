@@ -198,8 +198,9 @@ public class PutAllOperation extends MapOperation
             Data dataKey = ((Data) backupPairs.get(i));
             Record record = recordStore.getRecord(dataKey);
             if (record != null) {
-                toBackupList.add(record);
+                toBackupList.add(dataKey);
                 toBackupList.add(backupPairs.get(i + 1));
+                toBackupList.add(record);
             }
         }
         return toBackupList;

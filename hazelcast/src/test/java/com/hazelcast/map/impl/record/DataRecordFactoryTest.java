@@ -35,7 +35,7 @@ public class DataRecordFactoryTest extends AbstractRecordFactoryTest<Data> {
                 .setStatisticsEnabled(isStatisticsEnabled)
                 .setCacheDeserializedValues(cacheDeserializedValues);
 
-        factory = new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
+        factory = new DataRecordFactory(mapConfig, serializationService);
     }
 
     @Override

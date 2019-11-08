@@ -57,7 +57,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     @Test
     public void testNewRecord_withStatisticsDisabledAndCacheDeserializedValuesIsALWAYS() {
         newRecordFactory(false, CacheDeserializedValues.ALWAYS);
-        record = newRecord(factory, data1, object1);
+        record = newRecord(factory, object1);
 
         assertInstanceOf(getCachedRecordClass(), record);
     }
@@ -65,7 +65,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     @Test
     public void testNewRecord_withStatisticsDisabledAndCacheDeserializedValuesIsNEVER() {
         newRecordFactory(false, CacheDeserializedValues.NEVER);
-        record = newRecord(factory, data1, object1);
+        record = newRecord(factory, object1);
 
         assertInstanceOf(getRecordClass(), record);
     }
@@ -73,7 +73,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     @Test
     public void testNewRecord_withStatisticsEnabledAndCacheDeserializedValuesIsALWAYS() {
         newRecordFactory(true, CacheDeserializedValues.ALWAYS);
-        record = newRecord(factory, data1, object1);
+        record = newRecord(factory, object1);
 
         assertInstanceOf(getCachedRecordWithStatsClass(), record);
     }
@@ -81,17 +81,11 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
     @Test
     public void testNewRecord_withStatisticsEnabledAndCacheDeserializedValuesIsNEVER() {
         newRecordFactory(true, CacheDeserializedValues.NEVER);
-        record = newRecord(factory, data1, object1);
+        record = newRecord(factory, object1);
 
         assertInstanceOf(getRecordWithStatsClass(), record);
     }
 
-    @Test(expected = AssertionError.class)
-    public void testNewRecord_withNullValue() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS);
-
-        newRecord(factory, data1, null);
-    }
 
     abstract void newRecordFactory(boolean isStatisticsEnabled,
                                    CacheDeserializedValues cacheDeserializedValues);
@@ -108,9 +102,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
         return new DefaultSerializationServiceBuilder().build();
     }
 
-    Record<T> newRecord(RecordFactory<T> factory, Data key, Object value) {
-        Record<T> record = factory.newRecord(key, value);
-        record.setKey(key);
-        return record;
+    Record<T> newRecord(RecordFactory<T> factory, Object value) {
+        return factory.newRecord(value);
     }
 }

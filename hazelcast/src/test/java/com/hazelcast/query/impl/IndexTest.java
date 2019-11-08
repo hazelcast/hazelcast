@@ -19,12 +19,12 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,8 +33,6 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -86,10 +84,7 @@ public class IndexTest {
 
     final InternalSerializationService ss =
             new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
-
-    private PartitioningStrategy partitionStrategy = new DefaultPartitioningStrategy();
-
-    final DataRecordFactory recordFactory = new DataRecordFactory(new MapConfig(), ss, partitionStrategy);
+    final DataRecordFactory recordFactory = new DataRecordFactory(new MapConfig(), ss);
 
     @Test
     public void testBasics() {
@@ -111,7 +106,7 @@ public class IndexTest {
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         assertNotNull(is.getIndex(config.getName()));
-        Record record = recordFactory.newRecord(key, value);
+        Record record = recordFactory.newRecord(value);
         is.removeEntry(key, Records.getValueOrCachedValue(record, ss), Index.OperationSource.USER);
         assertEquals(0, is.getIndex(config.getName()).getRecords(SerializableWithEnum.City.ISTANBUL).size());
     }
@@ -463,8 +458,7 @@ public class IndexTest {
         }
 
         public Record toRecord() {
-            Record<Data> record = recordFactory.newRecord(key, attributeValue);
-            return record;
+            return recordFactory.newRecord(attributeValue);
         }
     }
 
@@ -520,7 +514,7 @@ public class IndexTest {
         assertEquals(2, index.getRecords(new Comparable[]{555L, 34234L}).size());
 
         Record recordToRemove = record5.toRecord();
-        index.removeEntry(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
+        index.removeEntry(toData(5L), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
 
         assertEquals(Collections.<QueryableEntry>singleton(record50), index.getRecords(555L));
 
@@ -540,7 +534,7 @@ public class IndexTest {
         assertEquals(2, index.getRecords(Comparison.GREATER_OR_EQUAL, 61L).size());
 
         recordToRemove = record50.toRecord();
-        index.removeEntry(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
+        index.removeEntry(toData(50L), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
 
         assertEquals(0, index.getRecords(555L).size());
 
@@ -552,7 +546,7 @@ public class IndexTest {
         assertEquals(0, index.getRecords(555L, true, 555L, true).size());
 
         recordToRemove = record6.toRecord();
-        index.removeEntry(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
+        index.removeEntry(toData(6L), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
 
         assertEquals(0, index.getRecords(66L).size());
 

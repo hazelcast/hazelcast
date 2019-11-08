@@ -22,6 +22,7 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapMergeContainer;
@@ -44,7 +45,6 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -105,9 +105,10 @@ public final class MergingValueFactory {
                 .setCost(entryView.getCost());
     }
 
-    public static MapMergeTypes createMergingEntry(SerializationService serializationService, Record record) {
+    public static MapMergeTypes createMergingEntry(SerializationService serializationService,
+                                                   Data dataKey, Record record) {
         return new MapMergingEntryImpl(serializationService)
-                .setKey(record.getKey())
+                .setKey(dataKey)
                 .setValue(serializationService.toData(record.getValue()))
                 .setCreationTime(record.getCreationTime())
                 .setExpirationTime(record.getExpirationTime())

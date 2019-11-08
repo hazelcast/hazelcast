@@ -28,7 +28,6 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -40,7 +39,6 @@ import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
@@ -264,10 +262,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             return;
         }
 
-        final long now = getNow();
-
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        for (RecordStore recordStore : container.getMaps().values()) {
+        for (RecordStore<Record> recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
             final StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
 
@@ -285,20 +281,18 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 continue;
             }
 
-            final InternalIndex[] indexesSnapshot = indexes.getIndexes();
-            final Iterator<Record> iterator = recordStore.iterator(now, false);
-            while (iterator.hasNext()) {
-                final Record record = iterator.next();
-                final Data key = record.getKey();
+            InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
-                final Object value = Records.getValueOrCachedValue(record, serializationService);
+            recordStore.iterator((key, record) -> {
+                Object value = Records.getValueOrCachedValue(record, serializationService);
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
                     queryEntry.setRecord(record);
                     queryEntry.setStoreAdapter(storeAdapter);
                     indexes.putEntry(queryEntry, null, Index.OperationSource.SYSTEM);
                 }
-            }
+            }, false);
+
             Indexes.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
         }
     }
@@ -312,10 +306,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             return;
         }
 
-        final long now = getNow();
-
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        for (RecordStore recordStore : container.getMaps().values()) {
+        for (RecordStore<Record> recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
@@ -324,15 +316,13 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 continue;
             }
 
-            final InternalIndex[] indexesSnapshot = indexes.getIndexes();
-            final Iterator<Record> iterator = recordStore.iterator(now, false);
-            while (iterator.hasNext()) {
-                final Record record = iterator.next();
-                final Data key = record.getKey();
+            InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
-                final Object value = Records.getValueOrCachedValue(record, serializationService);
+            recordStore.iterator((key, record) -> {
+                Object value = Records.getValueOrCachedValue(record, serializationService);
                 indexes.removeEntry(key, value, Index.OperationSource.SYSTEM);
-            }
+            }, false);
+
             Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
         }
     }

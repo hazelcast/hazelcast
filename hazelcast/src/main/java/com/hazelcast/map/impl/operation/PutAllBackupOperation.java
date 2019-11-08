@@ -33,15 +33,16 @@ public class PutAllBackupOperation extends MapOperation
         implements PartitionAwareOperation, BackupOperation {
 
     private boolean disableWanReplicationEvent;
-    private List recordAndDataValuePairs;
+    private List dataKeyDataValueRecord;
 
-    private transient List<Record> dataRecords;
+    private transient int lastIndex;
+    private transient List dataKeyRecord;
 
     public PutAllBackupOperation(String name,
-                                 List recordAndDataValuePairs,
+                                 List dataKeyDataValueRecord,
                                  boolean disableWanReplicationEvent) {
         super(name);
-        this.recordAndDataValuePairs = recordAndDataValuePairs;
+        this.dataKeyDataValueRecord = dataKeyDataValueRecord;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
@@ -50,26 +51,33 @@ public class PutAllBackupOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        if (dataRecords != null) {
-            for (Record<Data> record : dataRecords) {
-                putBackup(record);
+        if (dataKeyRecord != null) {
+            for (int i = lastIndex; i < dataKeyRecord.size(); i += 2) {
+                Data key = (Data) dataKeyRecord.get(i);
+                Record record = (Record) dataKeyRecord.get(i + 1);
+                putBackup(key, record);
+                lastIndex = i;
             }
         } else {
-            // If dataRecords is null and we are in
+            // If dataKeyRecord is null and we are in
             // `runInternal` method, means this operation
             // has not been serialized/deserialized
-            // and is running directly on caller node.
-            for (int i = 0; i < recordAndDataValuePairs.size(); i += 2) {
-                putBackup((Record) recordAndDataValuePairs.get(i));
+            // and is running directly on caller node
+            for (int i = lastIndex; i < dataKeyDataValueRecord.size(); i += 3) {
+                Data key = (Data) dataKeyDataValueRecord.get(i);
+                Record record = (Record) dataKeyDataValueRecord.get(i + 2);
+                putBackup(key, record);
+                lastIndex = i;
             }
         }
     }
 
-    private void putBackup(Record record) {
-        Record currentRecord = recordStore.putBackup(record, false, getCallerProvenance());
+    private void putBackup(Data key, Record record) {
+        Record currentRecord = recordStore.putBackup(key, record,
+                false, getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
-        publishWanUpdate(record.getKey(), record.getValue());
-        evict(record.getKey());
+        publishWanUpdate(key, record.getValue());
+        evict(key);
     }
 
     @Override
@@ -81,10 +89,13 @@ public class PutAllBackupOperation extends MapOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeInt(recordAndDataValuePairs.size() / 2);
-        for (int i = 0; i < recordAndDataValuePairs.size(); i += 2) {
-            Record record = (Record) recordAndDataValuePairs.get(i);
-            Data dataValue = (Data) recordAndDataValuePairs.get(i + 1);
+        out.writeInt(dataKeyDataValueRecord.size() / 3);
+        for (int i = 0; i < dataKeyDataValueRecord.size(); i += 3) {
+            Data dataKey = (Data) dataKeyDataValueRecord.get(i);
+            Data dataValue = (Data) dataKeyDataValueRecord.get(i + 1);
+            Record record = (Record) dataKeyDataValueRecord.get(i + 2);
+
+            out.writeData(dataKey);
             Records.writeRecord(out, record, dataValue);
         }
         out.writeBoolean(disableWanReplicationEvent);
@@ -95,11 +106,12 @@ public class PutAllBackupOperation extends MapOperation
         super.readInternal(in);
 
         int size = in.readInt();
-        List<Record> dataRecords = new ArrayList<>(size);
+        List dataKeyRecord = new ArrayList<>(size * 2);
         for (int i = 0; i < size; i++) {
-            dataRecords.add(Records.readRecord(in));
+            dataKeyRecord.add(in.readData());
+            dataKeyRecord.add(Records.readRecord(in));
         }
-        this.dataRecords = dataRecords;
+        this.dataKeyRecord = dataKeyRecord;
         this.disableWanReplicationEvent = in.readBoolean();
     }
 

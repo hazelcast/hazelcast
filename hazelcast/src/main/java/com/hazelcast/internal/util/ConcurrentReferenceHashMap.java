@@ -1602,7 +1602,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      */
     public Set<Map.Entry<K, V>> entrySet() {
         Set<Map.Entry<K, V>> es = entrySet;
-        return (es != null) ? es : (entrySet = new EntrySet());
+        return (es != null) ? es : (entrySet = new EntrySet(false));
+    }
+
+    public Set<Map.Entry<K, V>> cachedEntrySet() {
+        Set<Map.Entry<K, V>> es = entrySet;
+        return (es != null) ? es : (entrySet = new EntrySet(true));
     }
 
     /**
@@ -1627,7 +1632,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
     /* ---------------- Iterator Support -------------- */
 
-    abstract class HashIterator {
+    protected abstract class HashIterator {
         int nextSegmentIndex;
         int nextTableIndex;
         HashEntry<K, V>[] currentTable;
@@ -1815,6 +1820,42 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
+    final class CachedEntryIterator extends HashIterator implements Iterator<Entry<K, V>> {
+        private InitializableEntry entry = new InitializableEntry();
+
+        public Map.Entry<K, V> next() {
+            HashEntry<K, V> e = super.nextEntry();
+            return entry.init(e.key(), e.value());
+        }
+    }
+
+    protected static class InitializableEntry<K, V> implements Entry<K, V> {
+        private K key;
+        private V value;
+
+        @Override
+        public K getKey() {
+            return key;
+        }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        public Entry<K, V> init(K key, V value) {
+            this.key = key;
+            this.value = value;
+            return this;
+        }
+
+        @Override
+        public V setValue(V value) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+
     final class KeySet extends AbstractSet<K> {
         public Iterator<K> iterator() {
             return new KeyIterator();
@@ -1864,8 +1905,14 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     }
 
     final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+        private final boolean cached;
+
+        public EntrySet(boolean cached) {
+            this.cached = cached;
+        }
+
         public Iterator<Map.Entry<K, V>> iterator() {
-            return new EntryIterator();
+            return cached ? new CachedEntryIterator() : new EntryIterator();
         }
 
         public boolean contains(Object o) {

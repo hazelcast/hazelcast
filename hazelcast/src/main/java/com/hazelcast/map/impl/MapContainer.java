@@ -26,7 +26,6 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -52,6 +51,7 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.impl.DelegatingWanReplicationScheme;
@@ -199,10 +199,10 @@ public class MapContainer {
 
     // overridden in different context
     ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
-        return notUsedArg -> {
+        return anyArg -> {
             switch (mapConfig.getInMemoryFormat()) {
                 case BINARY:
-                    return new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
+                    return new DataRecordFactory(mapConfig, serializationService);
                 case OBJECT:
                     return new ObjectRecordFactory(mapConfig, serializationService);
                 default:

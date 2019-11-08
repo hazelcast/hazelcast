@@ -27,10 +27,8 @@ import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -50,19 +48,14 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
 
     @Override
     protected void mergeStore(RecordStore store, BiConsumer<Integer, MapMergeTypes> consumer) {
-        long now = Clock.currentTimeMillis();
         int partitionId = store.getPartitionId();
 
-        //noinspection unchecked
-        Iterator<Record> iterator = store.iterator(now, false);
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-
-            Data dataKey = toHeapData(record.getKey());
+        store.iterator((BiConsumer<Data, Record>) (key, record) -> {
+            Data dataKey = toHeapData(key);
             Data dataValue = toHeapData(record.getValue());
-
-            consumer.accept(partitionId, createMergingEntry(getSerializationService(), dataKey, dataValue, record));
-        }
+            consumer.accept(partitionId,
+                    createMergingEntry(getSerializationService(), dataKey, dataValue, record));
+        }, false);
     }
 
     @Override

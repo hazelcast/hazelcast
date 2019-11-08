@@ -34,7 +34,6 @@ public enum RecordReaderWriter {
         @Override
         void writeRecord(ObjectDataOutput out,
                          Record record, Data dataValue) throws IOException {
-            writeData(out, record.getKey());
             writeData(out, dataValue);
             out.writeInt(record.getRawTtl());
             out.writeInt(record.getRawMaxIdle());
@@ -48,7 +47,6 @@ public enum RecordReaderWriter {
         @Override
         Record readRecord(ObjectDataInput in) throws IOException {
             DataRecord record = new DataRecord();
-            record.setKey(readData(in));
             record.setValue(readData(in));
             record.setRawTtl(in.readInt());
             record.setRawMaxIdle(in.readInt());
@@ -65,7 +63,6 @@ public enum RecordReaderWriter {
         @Override
         void writeRecord(ObjectDataOutput out,
                          Record record, Data dataValue) throws IOException {
-            writeData(out, record.getKey());
             writeData(out, dataValue);
             out.writeInt(record.getRawTtl());
             out.writeInt(record.getRawMaxIdle());
@@ -81,7 +78,6 @@ public enum RecordReaderWriter {
         @Override
         Record readRecord(ObjectDataInput in) throws IOException {
             DataRecordWithStats record = new DataRecordWithStats();
-            record.setKey(readData(in));
             record.setValue(readData(in));
             record.setRawTtl(in.readInt());
             record.setRawMaxIdle(in.readInt());

@@ -20,6 +20,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.EntryProcessor;
@@ -31,7 +33,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -39,7 +40,6 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.internal.partition.IPartitionService;
 
 import java.util.Map.Entry;
 
@@ -215,7 +215,8 @@ public final class EntryOperator {
             return this;
         }
         if (eventType == null) {
-            // when event type is null, it means this is a read-only entry processor and not modified entry.
+            // when event type is null, it means this is a
+            // read-only entry processor and not modified entry.
             onTouched();
             return this;
         }
