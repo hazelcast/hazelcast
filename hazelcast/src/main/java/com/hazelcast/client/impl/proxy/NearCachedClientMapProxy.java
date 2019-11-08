@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
@@ -37,7 +38,6 @@ import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -52,7 +52,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
@@ -221,7 +220,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected InternalCompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
-                                                     Object key, Object value) {
+                                                            Object key, Object value) {
         key = toNearCacheKey(key);
         InternalCompletableFuture<V> future;
         try {
@@ -234,7 +233,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected InternalCompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Long maxIdle, TimeUnit maxIdleUnit,
-                                                        Object key, Object value) {
+                                                               Object key, Object value) {
         key = toNearCacheKey(key);
         InternalCompletableFuture<Void> future;
         try {
@@ -482,24 +481,17 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return localMapStats;
     }
 
-    /**
-     * Async version of {@link #executeOnKeys}.
-     */
-    public <R> InternalCompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
-                                                                 @Nonnull EntryProcessor<K, V, R> entryProcessor) {
-        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
-
-        Set<?> nearCacheKeys = serializeKeys
-            ? keys.stream().map(this::toNearCacheKey).collect(Collectors.toSet())
-            : keys;
-
-        InternalCompletableFuture<Map<K, R>> response;
+    @Nonnull
+    @Override
+    protected <R> InternalCompletableFuture<Map<K, R>> submitToKeysInternal(@Nonnull Set<K> objectKeys,
+                                                                            @Nonnull Collection<Data> dataKeys,
+                                                                            @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         try {
-            response = super.submitToKeys(keys, entryProcessor);
+            return super.submitToKeysInternal(objectKeys, dataKeys, entryProcessor);
         } finally {
+            Collection<?> nearCacheKeys = serializeKeys ? dataKeys : objectKeys;
             nearCacheKeys.forEach(this::invalidateNearCache);
         }
-        return response;
     }
 
     @Override
@@ -517,7 +509,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     public <R> InternalCompletableFuture<R> submitToKeyInternal(Object key,
-                                                         EntryProcessor<K, V, R> entryProcessor) {
+                                                                EntryProcessor<K, V, R> entryProcessor) {
         key = toNearCacheKey(key);
         InternalCompletableFuture future;
         try {
