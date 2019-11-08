@@ -70,7 +70,7 @@ abstract class MethodProbe implements ProbeFunction, ProbeAware {
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        MetricDescriptorImpl descriptor = metricsRegistry
+        MetricDescriptor descriptor = metricsRegistry
                 .newMetricDescriptor()
                 .withPrefix(namePrefix)
                 .withMetric(getProbeOrMethodName());

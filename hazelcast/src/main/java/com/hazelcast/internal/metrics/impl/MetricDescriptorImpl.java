@@ -379,7 +379,9 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
         return result;
     }
 
-    public void reset() {
+    @Override
+    @Nonnull
+    public MetricDescriptor reset() {
         prefix = null;
         metric = null;
         unit = null;
@@ -387,6 +389,8 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
         discriminator = null;
         discriminatorValue = null;
         Arrays.fill(tags, null);
+
+        return this;
     }
 
     /**

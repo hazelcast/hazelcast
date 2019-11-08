@@ -203,7 +203,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void registerStaticProbe(S source, MetricDescriptorImpl descriptor, String name, ProbeLevel level, ProbeUnit unit,
+    public <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
                                         DoubleProbeFunction<S> function) {
         registerStaticProbeWithUnit(source, descriptor, name, level, unit, function);
     }

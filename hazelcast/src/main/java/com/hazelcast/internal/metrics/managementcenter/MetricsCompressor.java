@@ -17,10 +17,9 @@
 package com.hazelcast.internal.metrics.managementcenter;
 
 import com.hazelcast.function.BiConsumerEx;
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.ProbeUnit;
-import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.ByteArrayInputStream;
@@ -127,7 +126,7 @@ public class MetricsCompressor {
     private MorePublicByteArrayOutputStream tmpBaos = new MorePublicByteArrayOutputStream(INITIAL_BUFFER_SIZE_DESCRIPTION);
 
     private int count;
-    private MetricDescriptorImpl lastDescriptor;
+    private MetricDescriptor lastDescriptor;
 
     public MetricsCompressor() {
         reset(INITIAL_BUFFER_SIZE_DICTIONARY, INITIAL_BUFFER_SIZE_METRICS);
@@ -228,8 +227,8 @@ public class MetricsCompressor {
         return mask;
     }
 
-    private static MetricDescriptorImpl copyDescriptor(MetricDescriptor from, MetricDescriptorImpl to) {
-        final MetricDescriptorImpl target = to != null ? to : DEFAULT_DESCRIPTOR_SUPPLIER.get();
+    private static MetricDescriptor copyDescriptor(MetricDescriptor from, MetricDescriptor to) {
+        final MetricDescriptor target = to != null ? to : DEFAULT_DESCRIPTOR_SUPPLIER.get();
 
         target.reset();
         target.withPrefix(from.prefix())

@@ -249,4 +249,12 @@ public interface MetricDescriptor {
      */
     @Nonnull
     MetricDescriptor copy(MetricDescriptor descriptor);
+
+    /**
+     * Resets the descriptor instance
+     *
+     * @return the this instance after reset
+     */
+    @Nonnull
+    MetricDescriptor reset();
 }

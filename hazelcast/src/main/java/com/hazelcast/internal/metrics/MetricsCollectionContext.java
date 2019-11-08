@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.metrics;
 
-import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
-
 /**
  * An interface that extracts the metrics from the objects collected by
  * the {@link DynamicMetricsProvider} implementations.
@@ -26,7 +24,7 @@ public interface MetricsCollectionContext {
     /**
      * Extracts, tags and collects all metrics from the given source.
      *
-     * @param descriptor The {@link MetricDescriptorImpl} used to describe
+     * @param descriptor The {@link MetricDescriptor} used to describe
      *                   the metrics extracted from the {@code source} object
      * @param source     The object that contains the metrics
      */
@@ -35,7 +33,7 @@ public interface MetricsCollectionContext {
     /**
      * Collects the given metric.
      *
-     * @param descriptor The {@link MetricDescriptorImpl} used to describe
+     * @param descriptor The {@link MetricDescriptor} used to describe
      *                   the metrics extracted from the {@code source} object
      * @param name       The name of the metric
      * @param level      The level
@@ -46,7 +44,7 @@ public interface MetricsCollectionContext {
     /**
      * Collects the given metric.
      *
-     * @param descriptor The {@link MetricDescriptorImpl} used to describe
+     * @param descriptor The {@link MetricDescriptor} used to describe
      *                   the metrics extracted from the {@code source} object
      * @param name       The name of the metric
      * @param level      The level

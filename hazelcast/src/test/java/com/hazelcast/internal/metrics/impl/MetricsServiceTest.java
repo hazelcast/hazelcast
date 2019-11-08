@@ -19,9 +19,9 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -172,7 +172,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
         readMetrics(metricsService, 0, metricConsumerMock);
 
-        MetricDescriptorImpl longDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
+        MetricDescriptor longDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
                 .withPrefix("test")
                 .withMetric("longValue")
@@ -181,7 +181,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         inOrderLong.verify(metricConsumerMock).consumeLong(longDescriptor, 2);
         inOrderLong.verify(metricConsumerMock, never()).consumeLong(eq(longDescriptor), anyLong());
 
-        MetricDescriptorImpl doubleDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
+        MetricDescriptor doubleDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
                 .withPrefix("test")
                 .withMetric("doubleValue")
@@ -215,7 +215,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         InOrder inOrderLong = inOrder(metricConsumerMock);
         InOrder inOrderDouble = inOrder(metricConsumerMock);
 
-        MetricDescriptorImpl doubleDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
+        MetricDescriptor doubleDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
                 .withPrefix("test")
                 .withMetric("doubleValue")
@@ -223,7 +223,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         inOrderDouble.verify(metricConsumerMock).consumeDouble(doubleDescriptor, 5.5D);
         inOrderDouble.verify(metricConsumerMock, never()).consumeDouble(eq(doubleDescriptor), anyDouble());
 
-        MetricDescriptorImpl longDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
+        MetricDescriptor longDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
                 .withPrefix("test")
                 .withMetric("longValue")
@@ -341,14 +341,14 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
         readMetrics(metricsService, 0, metricConsumerMock);
 
-        MetricDescriptorImpl longRoot = DEFAULT_DESCRIPTOR_SUPPLIER
+        MetricDescriptor longRoot = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
                 .withPrefix("testExclusion")
                 .withUnit(COUNT);
         verify(metricConsumerMock).consumeLong(longRoot.copy().withMetric("notExcludedLong"), 1);
         verify(metricConsumerMock, never()).consumeLong(eq(longRoot.copy().withMetric("excludedLong")), anyLong());
 
-        MetricDescriptorImpl doubleRoot = DEFAULT_DESCRIPTOR_SUPPLIER
+        MetricDescriptor doubleRoot = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
                 .withPrefix("testExclusion")
                 .withUnit(COUNT);

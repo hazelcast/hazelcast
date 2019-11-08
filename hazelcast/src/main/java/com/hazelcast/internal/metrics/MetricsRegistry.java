@@ -17,7 +17,6 @@
 package com.hazelcast.internal.metrics;
 
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
-import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
 
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
@@ -271,7 +270,7 @@ public interface MetricsRegistry {
      * @param probe  the probe
      * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void registerStaticProbe(S source, MetricDescriptorImpl descriptor, String name, ProbeLevel level, ProbeUnit unit,
+    <S> void registerStaticProbe(S source, MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit,
                                  DoubleProbeFunction<S> probe);
 
     /**
@@ -307,7 +306,7 @@ public interface MetricsRegistry {
     void provideMetrics(Object... providers);
 
     /**
-     * Creates a new {@link MetricDescriptorImpl}.
+     * Creates a new {@link MetricDescriptor}.
      */
     MetricDescriptor newMetricDescriptor();
 

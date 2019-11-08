@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.metrics.jmx;
 
-import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -90,7 +90,7 @@ public class JmxPublisherTest {
 
     @Test
     public void when_singleMetric() throws Exception {
-        MetricDescriptorImpl descriptor = newDescriptor()
+        MetricDescriptor descriptor = newDescriptor()
                 .withMetric("c")
                 .withTag("tag1", "a")
                 .withTag("tag2", "b");
@@ -102,7 +102,7 @@ public class JmxPublisherTest {
 
     @Test
     public void when_singleMetricNewFormatWithModule() throws Exception {
-        MetricDescriptorImpl descriptor = newDescriptor()
+        MetricDescriptor descriptor = newDescriptor()
                 .withMetric("c")
                 .withTag("tag1", "a")
                 .withTag("module", MODULE_NAME);
@@ -248,7 +248,7 @@ public class JmxPublisherTest {
         ));
     }
 
-    private MetricDescriptorImpl newDescriptor() {
+    private MetricDescriptor newDescriptor() {
         return DEFAULT_DESCRIPTOR_SUPPLIER.get();
     }
 

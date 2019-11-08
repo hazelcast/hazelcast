@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier;
-import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,12 +44,12 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl originalMetric = supplier.get()
-                                                      .withPrefix("prefix")
-                                                      .withMetric("metricName")
-                                                      .withDiscriminator("ds", "dsName1")
-                                                      .withUnit(COUNT)
-                                                      .withTag("tag0", "tag0Value");
+        MetricDescriptor originalMetric = supplier.get()
+                                                  .withPrefix("prefix")
+                                                  .withMetric("metricName")
+                                                  .withDiscriminator("ds", "dsName1")
+                                                  .withUnit(COUNT)
+                                                  .withTag("tag0", "tag0Value");
         compressor.addLong(originalMetric, 42L);
         byte[] blob = compressor.getBlobAndReset();
 
@@ -67,12 +67,12 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl originalMetric = supplier.get()
-                                                      .withPrefix("prefix")
-                                                      .withMetric("metricName")
-                                                      .withDiscriminator("ds", "dsName1")
-                                                      .withUnit(COUNT)
-                                                      .withTag("tag0", "tag0Value");
+        MetricDescriptor originalMetric = supplier.get()
+                                                  .withPrefix("prefix")
+                                                  .withMetric("metricName")
+                                                  .withDiscriminator("ds", "dsName1")
+                                                  .withUnit(COUNT)
+                                                  .withTag("tag0", "tag0Value");
         compressor.addDouble(originalMetric, 42.42D);
         byte[] blob = compressor.getBlobAndReset();
 
@@ -90,11 +90,11 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl originalMetric = supplier.get()
-                                                      .withMetric("metricName")
-                                                      .withDiscriminator("ds", "dsName1")
-                                                      .withUnit(COUNT)
-                                                      .withTag("tag0", "tag0Value");
+        MetricDescriptor originalMetric = supplier.get()
+                                                  .withMetric("metricName")
+                                                  .withDiscriminator("ds", "dsName1")
+                                                  .withUnit(COUNT)
+                                                  .withTag("tag0", "tag0Value");
         compressor.addLong(originalMetric, 42L);
         byte[] blob = compressor.getBlobAndReset();
 
@@ -112,11 +112,11 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl originalMetric = supplier.get()
-                                                      .withMetric("metricName")
-                                                      .withMetric("metricName")
-                                                      .withDiscriminator("ds", "dsName1")
-                                                      .withTag("tag0", "tag0Value");
+        MetricDescriptor originalMetric = supplier.get()
+                                                  .withMetric("metricName")
+                                                  .withMetric("metricName")
+                                                  .withDiscriminator("ds", "dsName1")
+                                                  .withTag("tag0", "tag0Value");
         compressor.addLong(originalMetric, 42L);
         byte[] blob = compressor.getBlobAndReset();
 
@@ -134,14 +134,14 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl metric1 = supplier.get()
-                                               .withPrefix("prefix")
-                                               .withMetric("metricName")
-                                               .withDiscriminator("ds", "dsName1")
-                                               .withUnit(COUNT)
-                                               .withTag("tag0", "tag0Value");
-        MetricDescriptorImpl metric2 = metric1.copy()
-                                              .withMetric("metricName2");
+        MetricDescriptor metric1 = supplier.get()
+                                           .withPrefix("prefix")
+                                           .withMetric("metricName")
+                                           .withDiscriminator("ds", "dsName1")
+                                           .withUnit(COUNT)
+                                           .withTag("tag0", "tag0Value");
+        MetricDescriptor metric2 = metric1.copy()
+                                          .withMetric("metricName2");
         compressor.addLong(metric1, 42L);
         compressor.addLong(metric2, 43L);
         byte[] blob = compressor.getBlobAndReset();
@@ -163,18 +163,18 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl metric1 = supplier.get()
-                                               .withPrefix("prefix")
-                                               .withMetric("metricName")
-                                               .withDiscriminator("ds", "dsName1")
-                                               .withUnit(COUNT)
-                                               .withTag("tag0", "tag0Value");
-        MetricDescriptorImpl metric2 = supplier.get()
-                                               .withPrefix("anotherPrefix")
-                                               .withMetric("anotherMetricName")
-                                               .withDiscriminator("anotherDs", "anotherDsName1")
-                                               .withUnit(PERCENT)
-                                               .withTag("anotherTag0", "anotherTag0Value");
+        MetricDescriptor metric1 = supplier.get()
+                                           .withPrefix("prefix")
+                                           .withMetric("metricName")
+                                           .withDiscriminator("ds", "dsName1")
+                                           .withUnit(COUNT)
+                                           .withTag("tag0", "tag0Value");
+        MetricDescriptor metric2 = supplier.get()
+                                           .withPrefix("anotherPrefix")
+                                           .withMetric("anotherMetricName")
+                                           .withDiscriminator("anotherDs", "anotherDsName1")
+                                           .withUnit(PERCENT)
+                                           .withTag("anotherTag0", "anotherTag0Value");
         compressor.addLong(metric1, 42L);
         compressor.addLong(metric2, 43L);
         byte[] blob = compressor.getBlobAndReset();
@@ -196,13 +196,13 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl metric1 = supplier.get()
-                                               .withPrefix("prefix")
-                                               .withMetric("metricName")
-                                               .withDiscriminator("ds", "dsName1")
-                                               .withUnit(COUNT);
-        MetricDescriptorImpl metric2 = metric1.copy()
-                                              .withMetric("metricName2");
+        MetricDescriptor metric1 = supplier.get()
+                                           .withPrefix("prefix")
+                                           .withMetric("metricName")
+                                           .withDiscriminator("ds", "dsName1")
+                                           .withUnit(COUNT);
+        MetricDescriptor metric2 = metric1.copy()
+                                          .withMetric("metricName2");
         metric1.withTag("tag0", "tag0Value");
 
         compressor.addLong(metric1, 42L);
@@ -226,12 +226,12 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl metric1 = supplier.get()
-                                               .withPrefix("prefix")
-                                               .withMetric("metricName")
-                                               .withExcludedTarget(JMX)
-                                               .withExcludedTarget(MANAGEMENT_CENTER);
-        MetricDescriptorImpl metric2 = metric1.copy();
+        MetricDescriptor metric1 = supplier.get()
+                                           .withPrefix("prefix")
+                                           .withMetric("metricName")
+                                           .withExcludedTarget(JMX)
+                                           .withExcludedTarget(MANAGEMENT_CENTER);
+        MetricDescriptor metric2 = metric1.copy();
 
         compressor.addLong(metric1, 42L);
         compressor.addLong(metric2, 43L);
@@ -254,12 +254,12 @@ public class MetricsCompressorTest {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
-        MetricDescriptorImpl metric1 = supplier.get()
-                                               .withPrefix("prefix")
-                                               .withMetric("metricName")
-                                               .withExcludedTarget(JMX);
-        MetricDescriptorImpl metric2 = metric1.copy()
-                                              .withExcludedTarget(MANAGEMENT_CENTER);
+        MetricDescriptor metric1 = supplier.get()
+                                           .withPrefix("prefix")
+                                           .withMetric("metricName")
+                                           .withExcludedTarget(JMX);
+        MetricDescriptor metric2 = metric1.copy()
+                                          .withExcludedTarget(MANAGEMENT_CENTER);
 
         compressor.addLong(metric1, 42L);
         compressor.addLong(metric2, 43L);

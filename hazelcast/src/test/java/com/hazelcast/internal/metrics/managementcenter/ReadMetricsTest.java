@@ -24,7 +24,6 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.impl.MetricDescriptorImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -87,10 +86,10 @@ public class ReadMetricsTest extends HazelcastTestSupport {
             byte[] blob = result.collections().get(0).getValue();
             Iterator<Metric> metricIterator = decompressingIterator(blob);
             MetricKeyConsumer metricConsumer = new MetricKeyConsumer();
-            MetricDescriptorImpl expectedDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
-                                                                                 .withPrefix("operation")
-                                                                                 .withMetric("queueSize")
-                                                                                 .withUnit(COUNT);
+            MetricDescriptor expectedDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
+                                                                             .withPrefix("operation")
+                                                                             .withMetric("queueSize")
+                                                                             .withUnit(COUNT);
             while (metricIterator.hasNext()) {
                 Metric metric = metricIterator.next();
                 metric.provide(metricConsumer);
