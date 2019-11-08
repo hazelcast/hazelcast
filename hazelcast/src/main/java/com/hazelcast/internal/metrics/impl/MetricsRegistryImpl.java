@@ -20,9 +20,9 @@ import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -74,7 +74,6 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             = new ConcurrentReferenceHashMap<>(STRONG, STRONG, of(IDENTITY_COMPARISONS));
 
     private final DefaultMetricDescriptorSupplier staticDescriptorSupplier = new DefaultMetricDescriptorSupplier();
-    private final PoolingMetricDescriptorSupplier dynamicDescriptorSupplier = new PoolingMetricDescriptorSupplier();
 
     /**
      * Creates a MetricsRegistryImpl instance.

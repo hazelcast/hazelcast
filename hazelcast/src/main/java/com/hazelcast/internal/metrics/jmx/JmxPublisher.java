@@ -17,8 +17,8 @@
 package com.hazelcast.internal.metrics.jmx;
 
 import com.hazelcast.config.MetricsConfig;
-import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.ProbeUnit;
 
 import javax.management.InstanceNotFoundException;
@@ -93,6 +93,8 @@ public class JmxPublisher implements MetricsPublisher {
             return;
         }
 
+        // we need to take a copy of originalDescriptor here to ensure
+        // we map with an instance that doesn't get recycled or mutated
         MetricDescriptor descriptor = copy(originalDescriptor);
         MetricData metricData = metricNameToMetricData.computeIfAbsent(descriptor, createMetricDataFunction);
         assert !metricData.wasPresent : "metric '" + originalDescriptor.toString() + "' was rendered twice";
