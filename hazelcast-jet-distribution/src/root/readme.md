@@ -1,10 +1,15 @@
-# Hazelcast Jet 
+# Hazelcast Jet Readme
+======================
 
+About Hazelcast Jet
+-------------------
+ 
 Hazelcast Jet is an open-source, cloud-native, distributed stream
 processing engine. It handles both unbounded (stream) and bounded 
 (batch) data sources.
 
-## What's included
+What's Included
+---------------
 
 * `bin/jet-start`: starts a new Jet instance
 * `bin/jet-stop`: stops all Jet instances running on this machine
@@ -22,20 +27,22 @@ processing engine. It handles both unbounded (stream) and bounded
     * S3
     * Avro
    
-## Quickstart
+Quickstart
+----------
 
-### 1. Starting a Jet Instance
+### 1. Start a Jet Instance
 
-On a terminal prompt, enter the command below:
+On a terminal prompt, with the unpacked distribution's root as your current
+directory, type this:
 
 ```
 $ bin/jet-start
 ```
 
-### 2. (optional) Start a second node to form a cluster
+### 2. (Optional) Start a Second Node to Form a Cluster
 
-Repeat the first step on the terminal and you should see output like below,
-after the nodes have  discovered each other. 
+Repeat the first step on the terminal and within the log output you
+should see the text like below, after the nodes have discovered each other: 
 
 ```
 Members {size:2, ver:2} [
@@ -44,15 +51,17 @@ Members {size:2, ver:2} [
 ]
 ```
 
-Note: By default Jet uses multicast, which may be disabled in some
-environments. In this case you can enable the TCP-IP join inside 
+Note: By default Jet nodes use IP multicast to discover each other. This
+network feature is often disabled in managed cloud environments. In this 
+case you can enable the TCP-IP join inside 
 `config/hazelcast.yaml`. For more details, please see the the section on
 setting up clusters in [Hazelcast IMDG's reference
 manual](https://docs.hazelcast.org/docs/3.12.3/manual/html-single/index.html#setting-up-clusters)
 
-### 3. Submitting a Job
+### 4. Submit a Job
 
-You can submit the hello world example to the cluster using the command below:
+In order to validate your cluster setup, submit the provided Hello World
+example:
 
 ```
 $ bin/jet submit examples/hello-world.jar
@@ -60,23 +69,25 @@ $ bin/jet submit examples/hello-world.jar
 
 This job creates a stream of random numbers and then calculates the
 top 10 largest values observed so far, writing the results to an IMap.
-The contents of the IMap are then periodically printed out. 
+It periodically prints the contents of the IMap.
+ 
 You can play around with the various fault tolerance features of Jet by
-adding a second node, and then killing it again and observing 
-how the job is affected. You can also monitor the job using the Jet 
-command line like below:
+adding and removing Jet instances to the cluster and observe how the job
+is affected. You can also monitor the job from the command line :
 
 ```
 $ bin/jet list-jobs
 ```
 
-## Additional Libraries
+Additional Libraries
+--------------------
 
-To use the additional libraries provided in the opt folder, you can move them
-into the `lib` folder and they will be automatically added to the classpath next time
-Jet is started.
+To use an additional library provided in the opt folder, move it to the
+`lib` folder. Jet will automatically use it the next time you start it.
 
-## Additional Information
+
+Additional Information
+----------------------
 
 * [Hazelcast Jet on GitHub](https://github.com/hazelcast-jet)
 * [Hazelcast Jet Homepage](https://jet.hazelcast.org)
