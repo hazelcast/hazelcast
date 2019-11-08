@@ -6,6 +6,9 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 - Configurable Backoff Strategy for Client Reconnections: Introduced a highly configurable exponential backoff mechanism for the client with which you can set the duration for waiting after connection failures, upper limit for the wait, etc. See the Client Connection Retry Configuration section.
 
+NOTE: "hazelcast-client-config-3.10.xsd" in this release is different from the web published XSD at https://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.10.xsd due to the above enhancement.
+This would not have any effect on your application code since the latest XSD is in the release JAR, but it may only make a difference when using an XML editor which looks at the web location.
+
 ==== 3.10.6 ====
 
 1. Enhancements 
