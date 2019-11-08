@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
@@ -51,6 +52,7 @@ import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 /**
  * A server-side {@code IMap} implementation which is fronted by a Near Cache.
@@ -609,7 +611,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         // local member UUID may change after a split-brain merge
         UUID localMemberUuid = getNodeEngine().getClusterService().getLocalMember().getUuid();
         EventFilter eventFilter = new UuidFilter(localMemberUuid);
-        return mapServiceContext.addEventListener(listener, eventFilter, name);
+        Future<UUID> registrationFuture = mapServiceContext.addEventListener(listener, eventFilter, name);
+        return getRegistrationId(registrationFuture);
     }
 
     private void registerInvalidationListener() {

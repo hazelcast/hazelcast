@@ -76,6 +76,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
@@ -241,23 +242,17 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         publisher.publishEntryEvent(multiMapName, eventType, key, newValue, oldValue);
     }
 
-    public UUID addListener(String name,
-                              @Nonnull EventListener listener,
-                              Data key,
-                              boolean includeValue,
-                              boolean local) {
+    public Future<UUID> addListener(String name, @Nonnull EventListener listener, Data key, boolean includeValue, boolean local) {
         EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration;
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
         if (local) {
-            registration = eventService.registerLocalListener(SERVICE_NAME, name, filter, listener);
+            return eventService.registerLocalListener(SERVICE_NAME, name, filter, listener).thenApply(EventRegistration::getId);
         } else {
-            registration = eventService.registerListener(SERVICE_NAME, name, filter, listener);
+            return eventService.registerListener(SERVICE_NAME, name, filter, listener).thenApply(EventRegistration::getId);
         }
-        return registration.getId();
     }
 
-    public boolean removeListener(String name, UUID registrationId) {
+    public Future<Boolean> removeListener(String name, UUID registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }

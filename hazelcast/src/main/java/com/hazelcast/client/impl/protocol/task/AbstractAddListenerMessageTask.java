@@ -21,44 +21,30 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 /**
- * Base class for remove listener message tasks that removes a client listener registration
- * from a node
- *
- * @param <P> listener registration request parameters type
+ * Base message task for listener registration tasks
  */
-public abstract class AbstractRemoveListenerMessageTask<P>
-        extends AbstractListenerMessageTask<P, Boolean> {
+public abstract class AbstractAddListenerMessageTask<P>
+        extends AbstractListenerMessageTask<P, UUID> {
 
-    protected AbstractRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    protected AbstractAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
-    }
-
-    public final CompletableFuture<Boolean> processInternal() {
-        endpoint.removeDestroyAction(getRegistrationId());
-        return (CompletableFuture<Boolean>) deRegisterListener();
-    }
-
-    protected abstract Future<Boolean> deRegisterListener();
-
-    protected abstract UUID getRegistrationId();
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{getRegistrationId()};
     }
 
     @Override
     public void accept(Object response, Throwable throwable) {
         if (throwable == null) {
-            boolean isSuccess = response != null;
-            sendResponse(isSuccess);
+            UUID registrationId = (UUID) response;
+            addDestroyAction(registrationId);
+            sendResponse(registrationId);
         } else {
             handleProcessingFailure(throwable);
         }
+    }
+
+    protected void addDestroyAction(UUID registrationId) {
+        endpoint.addListenerDestroyAction(getServiceName(), getDistributedObjectName(), registrationId);
     }
 
 }

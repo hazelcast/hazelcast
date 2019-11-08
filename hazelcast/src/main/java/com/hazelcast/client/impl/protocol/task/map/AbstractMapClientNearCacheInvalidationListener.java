@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.ClientEndpoint;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.internal.nearcache.impl.invalidation.AbstractBaseNearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
@@ -28,7 +27,8 @@ import java.util.UUID;
  * Invalidation listener abstraction helps to handle some different behaviour between clients in a backward compatible way.
  */
 abstract class AbstractMapClientNearCacheInvalidationListener
-        extends AbstractBaseNearCacheInvalidationListener implements InvalidationListener, ListenerMessageTask {
+        extends AbstractBaseNearCacheInvalidationListener
+        implements InvalidationListener {
 
     private final ClientEndpoint endpoint;
 

@@ -16,13 +16,14 @@
 
 package com.hazelcast.map.impl.querycache;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.map.IMapEvent;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.querycache.publisher.DefaultPublisherContext;
@@ -32,19 +33,20 @@ import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheScheduler;
 import com.hazelcast.map.impl.querycache.subscriber.NodeSubscriberContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 /**
  * Node side implementation of {@link QueryCacheContext}.
@@ -177,7 +179,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
     }
 
     private UUID registerLocalIMapListener(final String name) {
-        return mapServiceContext.addLocalListenerAdapter(new ListenerAdapter<IMapEvent>() {
+        Future<UUID> registrationFuture = mapServiceContext.addLocalListenerAdapter(new ListenerAdapter<IMapEvent>() {
             @Override
             public void onEvent(IMapEvent event) {
                 // NOP
@@ -188,6 +190,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
                 return "Local IMap listener for the map '" + name + "'";
             }
         }, name);
+        return getRegistrationId(registrationFuture);
     }
 
     private class RegisterMapListenerFunction implements Function<String, UUID> {

@@ -19,13 +19,12 @@ package com.hazelcast.client.impl.protocol.task.set;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SetAddListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.collection.ItemListener;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -36,33 +35,32 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * SetAddListenerMessageTask
  */
 public class SetAddListenerMessageTask
-        extends AbstractCallableMessageTask<SetAddListenerCodec.RequestParameters>
-        implements ListenerMessageTask {
+        extends AbstractAddListenerMessageTask<SetAddListenerCodec.RequestParameters> {
 
     public SetAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected CompletableFuture<UUID> processInternal() {
         Data partitionKey = serializationService.toData(parameters.name);
         ItemListener listener = createItemListener(endpoint, partitionKey);
         EventService eventService = clientEngine.getEventService();
         CollectionEventFilter filter = new CollectionEventFilter(parameters.includeValue);
-        EventRegistration registration;
+        CompletableFuture<EventRegistration> eventRegistration;
         if (parameters.localOnly) {
-            registration = eventService.registerLocalListener(getServiceName(), parameters.name, filter, listener);
+            return eventService.registerLocalListener(getServiceName(), parameters.name, filter, listener)
+                               .thenApply(EventRegistration::getId);
         } else {
-            registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
+            return eventService.registerListener(getServiceName(), parameters.name, filter, listener)
+                               .thenApply(EventRegistration::getId);
         }
-        UUID registrationId = registration.getId();
-        endpoint.addListenerDestroyAction(getServiceName(), parameters.name, registrationId);
-        return registrationId;
     }
 
     private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {

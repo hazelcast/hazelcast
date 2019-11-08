@@ -32,7 +32,6 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -50,10 +49,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
@@ -62,11 +62,11 @@ import java.util.logging.Level;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
@@ -243,32 +243,26 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public EventRegistration registerLocalListener(@Nonnull String serviceName,
-                                                   @Nonnull String topic,
-                                                   @Nonnull Object listener) {
+    public CompletableFuture<EventRegistration> registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                      @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, true);
     }
 
     @Override
-    public EventRegistration registerLocalListener(@Nonnull String serviceName,
-                                                   @Nonnull String topic,
-                                                   @Nonnull EventFilter filter,
-                                                   @Nonnull Object listener) {
+    public CompletableFuture<EventRegistration> registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                      @Nonnull EventFilter filter, @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, filter, listener, true);
     }
 
     @Override
-    public EventRegistration registerListener(@Nonnull String serviceName,
-                                              @Nonnull String topic,
-                                              @Nonnull Object listener) {
+    public CompletableFuture<EventRegistration> registerListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                 @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, false);
     }
 
     @Override
-    public EventRegistration registerListener(@Nonnull String serviceName,
-                                              @Nonnull String topic,
-                                              @Nonnull EventFilter filter,
-                                              @Nonnull Object listener) {
+    public CompletableFuture<EventRegistration> registerListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                 @Nonnull EventFilter filter, @Nonnull Object listener) {
         return registerListenerInternal(serviceName, topic, filter, listener, false);
     }
 
@@ -286,11 +280,9 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
      * @return the event registration
      * @throws IllegalArgumentException if the listener or filter is null
      */
-    private EventRegistration registerListenerInternal(@Nonnull String serviceName,
-                                                       @Nonnull String topic,
-                                                       @Nonnull EventFilter filter,
-                                                       @Nonnull Object listener,
-                                                       boolean localOnly) {
+    private CompletableFuture<EventRegistration> registerListenerInternal(@Nonnull String serviceName, @Nonnull String topic,
+                                                                          @Nonnull EventFilter filter, @Nonnull Object listener,
+                                                                          boolean localOnly) {
         if (listener == null) {
             throw new IllegalArgumentException("Null listener is not allowed!");
         }
@@ -299,16 +291,29 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         }
         EventServiceSegment segment = getSegment(serviceName, true);
         UUID id = UuidUtil.newUnsecureUUID();
-        Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly);
+        final Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener,
+                localOnly);
         if (!segment.addRegistration(topic, reg)) {
-            return null;
+            return newCompletedFuture(null);
         }
 
-        if (!localOnly) {
-            Supplier<Operation> supplier = new RegistrationOperationSupplier(reg, nodeEngine.getClusterService());
-            invokeOnAllMembers(supplier);
+        return invokeOnAllMembersIfNeeded(reg, new RegistrationOperationSupplier(reg, nodeEngine.getClusterService()));
+    }
+
+    private CompletableFuture<EventRegistration> invokeOnAllMembersIfNeeded(Registration reg,
+                                                                            Supplier<Operation> operationSupplier) {
+        if (reg == null || reg.isLocalOnly()) {
+            return newCompletedFuture(reg);
         }
-        return reg;
+
+        return invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES).thenApply(result -> {
+            boolean isSuccess = (boolean) result;
+            if (!isSuccess) {
+                return null;
+            }
+
+            return reg;
+        });
     }
 
     public boolean handleRegistration(Registration reg) {
@@ -320,35 +325,19 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public boolean deregisterListener(@Nonnull String serviceName,
-                                      @Nonnull String topic,
-                                      @Nonnull Object id) {
+    public Future<Boolean> deregisterListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull Object id) {
         checkNotNull(serviceName, "Null serviceName is not allowed!");
         checkNotNull(topic, "Null topic is not allowed!");
         checkNotNull(id, "Null id is not allowed!");
 
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment == null) {
-            return false;
+            return newCompletedFuture(null);
         }
         Registration reg = segment.removeRegistration(topic, (UUID) id);
-        if (reg != null && !reg.isLocalOnly()) {
-            Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
-            invokeOnAllMembers(supplier);
-        }
-        return reg != null;
-    }
 
-    private void invokeOnAllMembers(Supplier<Operation> operationSupplier) {
-        InternalCompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES);
-        try {
-            future.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw rethrow(e);
-        } catch (ExecutionException e) {
-            throw rethrow(e);
-        }
+        return invokeOnAllMembersIfNeeded(reg, new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService()))
+                .thenApply(Objects::nonNull);
     }
 
     @Override
@@ -394,9 +383,9 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
         Collection<Registration> registrations = segment.getRegistrations(topic, false);
         if (registrations == null || registrations.isEmpty()) {
-            return Collections.<EventRegistration>emptySet();
+            return Collections.emptySet();
         } else {
-            return Collections.<EventRegistration>unmodifiableCollection(registrations);
+            return Collections.unmodifiableCollection(registrations);
         }
     }
 
@@ -651,7 +640,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
      * @return the on join operation containing all non-local registrations
      */
     private OnJoinRegistrationOperation getOnJoinRegistrationOperation() {
-        Collection<Registration> registrations = new LinkedList<Registration>();
+        Collection<Registration> registrations = new LinkedList<>();
         for (EventServiceSegment segment : segments.values()) {
             segment.collectRemoteRegistrations(registrations);
         }

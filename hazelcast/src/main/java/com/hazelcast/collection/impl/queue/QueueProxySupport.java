@@ -35,7 +35,6 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
@@ -51,7 +50,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueService> implements InitializingObject {
 
@@ -77,7 +79,7 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
                     listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
                             itemListenerConfig.getClassName());
                 } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw rethrow(e);
                 }
             }
             if (listener != null) {
@@ -178,7 +180,7 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
             Future f = invoke(operation);
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable, allowedException);
+            throw rethrow(throwable, allowedException);
         }
     }
 
@@ -195,7 +197,7 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
             Future f = operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
+            throw rethrow(throwable);
         }
     }
 
@@ -214,11 +216,13 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     UUID addItemListener(@Nonnull ItemListener<E> listener,
                            boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
-        return getService().addItemListener(name, listener, includeValue, false);
+        Future<UUID> eventRegistration = getService().addItemListener(name, listener, includeValue, false);
+        return getRegistrationId(eventRegistration);
     }
 
     public boolean removeItemListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Null registrationId is not allowed!");
-        return getService().removeItemListener(name, registrationId);
+        Future<Boolean> eventRegistration = getService().removeItemListener(name, registrationId);
+        return getListenerRemovalResult(eventRegistration);
     }
 }

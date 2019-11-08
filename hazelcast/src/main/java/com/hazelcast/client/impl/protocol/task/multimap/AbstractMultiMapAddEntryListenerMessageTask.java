@@ -17,41 +17,39 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.MapEvent;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends AbstractCallableMessageTask<P>
-        implements ListenerMessageTask {
+public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
+        extends AbstractAddListenerMessageTask<P> {
 
     public AbstractMultiMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected CompletableFuture<UUID> processInternal() {
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
         EntryAdapter listener = new MultiMapListener();
 
         final String name = getDistributedObjectName();
         Data key = getKey();
         boolean includeValue = shouldIncludeValue();
-        UUID registrationId = service.addListener(name, listener, key, includeValue, isLocalOnly());
-        endpoint.addListenerDestroyAction(MultiMapService.SERVICE_NAME, name, registrationId);
-        return registrationId;
+        return (CompletableFuture<UUID>) service.addListener(name, listener, key, includeValue, isLocalOnly());
     }
 
     protected abstract boolean shouldIncludeValue();

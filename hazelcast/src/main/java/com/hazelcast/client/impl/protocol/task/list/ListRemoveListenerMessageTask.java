@@ -28,10 +28,11 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_REMOVELISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListRemoveListenerCodec#REQUEST_MESSAGE_TYPE}
  */
 public class ListRemoveListenerMessageTask
         extends AbstractRemoveListenerMessageTask<ListRemoveListenerCodec.RequestParameters> {
@@ -41,7 +42,7 @@ public class ListRemoveListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         final EventService eventService = clientEngine.getEventService();
         return eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
     }

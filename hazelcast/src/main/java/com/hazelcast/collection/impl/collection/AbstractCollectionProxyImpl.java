@@ -31,17 +31,17 @@ import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -56,6 +56,8 @@ import java.util.concurrent.Future;
 import static com.hazelcast.internal.config.ConfigValidator.checkCollectionConfig;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 import static java.util.Collections.singleton;
 
 public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>
@@ -226,13 +228,15 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         checkNotNull(listener, "Null listener is not allowed!");
         final EventService eventService = getNodeEngine().getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
-        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
-        return registration.getId();
+        final Future<UUID> registration = eventService.registerListener(getServiceName(), name, filter, listener)
+                                                      .thenApply(EventRegistration::getId);
+        return getRegistrationId(registration);
     }
 
     public boolean removeItemListener(@Nonnull UUID registrationId) {
         EventService eventService = getNodeEngine().getEventService();
-        return eventService.deregisterListener(getServiceName(), name, registrationId);
+        Future<Boolean> registrationFuture = eventService.deregisterListener(getServiceName(), name, registrationId);
+        return getListenerRemovalResult(registrationFuture);
     }
 
     protected <T> T invoke(CollectionOperation operation) {

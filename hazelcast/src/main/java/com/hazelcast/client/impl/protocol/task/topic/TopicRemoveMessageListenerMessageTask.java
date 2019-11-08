@@ -27,6 +27,7 @@ import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 public class TopicRemoveMessageListenerMessageTask
         extends AbstractRemoveListenerMessageTask<TopicRemoveMessageListenerCodec.RequestParameters> {
@@ -36,7 +37,7 @@ public class TopicRemoveMessageListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         TopicService service = getService(TopicService.SERVICE_NAME);
         return service.removeMessageListener(parameters.name, parameters.registrationId);
     }

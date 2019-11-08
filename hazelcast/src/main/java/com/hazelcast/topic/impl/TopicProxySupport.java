@@ -19,17 +19,21 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
+import java.util.concurrent.Future;
+
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
@@ -102,11 +106,13 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
 
     public @Nonnull
     UUID addMessageListenerInternal(@Nonnull MessageListener listener) {
-        return topicService.addMessageListener(name, listener, false);
+        Future<UUID> eventRegistration = topicService.addMessageListener(name, listener, false);
+        return getRegistrationId(eventRegistration);
     }
 
     public boolean removeMessageListenerInternal(@Nonnull UUID registrationId) {
-        return topicService.removeMessageListener(name, registrationId);
+        Future<Boolean> eventRegistration = topicService.removeMessageListener(name, registrationId);
+        return getListenerRemovalResult(eventRegistration);
     }
 
     @Override

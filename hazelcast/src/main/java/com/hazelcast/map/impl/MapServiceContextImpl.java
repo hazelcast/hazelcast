@@ -92,8 +92,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -659,40 +661,36 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public UUID addLocalEventListener(Object listener, String mapName) {
-        EventRegistration registration = addListenerInternal(listener, TrueEventFilter.INSTANCE, mapName, true);
-        return registration.getId();
+    public CompletableFuture<UUID> addLocalEventListener(Object listener, String mapName) {
+        return addListenerInternal(listener, TrueEventFilter.INSTANCE, mapName, true);
     }
 
     @Override
-    public UUID addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
-        EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, true);
-        return registration.getId();
+    public CompletableFuture<UUID> addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
+        return addListenerInternal(listener, eventFilter, mapName, true);
     }
 
     @Override
-    public UUID addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+    public CompletableFuture<UUID> addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
         ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         EventFilter filter = new MapPartitionLostEventFilter();
-        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdapter);
-        return registration.getId();
+        return eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdapter)
+                           .thenApply(EventRegistration::getId);
     }
 
     @Override
-    public UUID addEventListener(Object listener, EventFilter eventFilter, String mapName) {
-        EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, false);
-        return registration.getId();
+    public CompletableFuture<UUID> addEventListener(Object listener, EventFilter eventFilter, String mapName) {
+        return addListenerInternal(listener, eventFilter, mapName, false);
     }
 
     @Override
-    public UUID addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+    public CompletableFuture<UUID> addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
         ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         EventFilter filter = new MapPartitionLostEventFilter();
-        EventRegistration registration = eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdapter);
-        return registration.getId();
+        return eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdapter).thenApply(EventRegistration::getId);
     }
 
-    private EventRegistration addListenerInternal(Object listener, EventFilter filter, String mapName, boolean local) {
+    private CompletableFuture<UUID> addListenerInternal(Object listener, EventFilter filter, String mapName, boolean local) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         if (!(filter instanceof EventListenerFilter)) {
             int enabledListeners = setAndGetListenerFlags(listenerAdaptor);
@@ -700,19 +698,21 @@ class MapServiceContextImpl implements MapServiceContext {
         }
 
         if (local) {
-            return eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdaptor);
+            return eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdaptor)
+                               .thenApply(EventRegistration::getId);
         } else {
-            return eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdaptor);
+            return eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdaptor)
+                               .thenApply(EventRegistration::getId);
         }
     }
 
     @Override
-    public boolean removeEventListener(String mapName, UUID registrationId) {
+    public Future<Boolean> removeEventListener(String mapName, UUID registrationId) {
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     @Override
-    public boolean removePartitionLostListener(String mapName, UUID registrationId) {
+    public Future<Boolean> removePartitionLostListener(String mapName, UUID registrationId) {
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
@@ -790,17 +790,15 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public UUID addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName) {
-        EventRegistration registration = getNodeEngine().getEventService().
-                registerListener(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
-        return registration.getId();
+    public Future<UUID> addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName) {
+        return getNodeEngine().getEventService().registerListener(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor)
+                              .thenApply(EventRegistration::getId);
     }
 
     @Override
-    public UUID addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
+    public Future<UUID> addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
         EventService eventService = getNodeEngine().getEventService();
-        EventRegistration registration = eventService.registerLocalListener(MapService.SERVICE_NAME, mapName, adapter);
-        return registration.getId();
+        return eventService.registerLocalListener(MapService.SERVICE_NAME, mapName, adapter).thenApply(EventRegistration::getId);
     }
 
     @Override

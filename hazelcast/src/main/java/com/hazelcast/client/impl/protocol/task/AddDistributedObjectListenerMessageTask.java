@@ -42,12 +42,7 @@ public class AddDistributedObjectListenerMessageTask
     protected Object call() throws Exception {
         final ProxyService proxyService = clientEngine.getProxyService();
         final UUID registrationId = proxyService.addProxyListener(this);
-        endpoint.addDestroyAction(registrationId, new Callable() {
-            @Override
-            public Boolean call() {
-                return proxyService.removeProxyListener(registrationId);
-            }
-        });
+        endpoint.addDestroyAction(registrationId, (Callable) () -> proxyService.removeProxyListener(registrationId));
 
         return registrationId;
     }

@@ -16,13 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
-import com.hazelcast.map.IMapEvent;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -30,42 +29,34 @@ import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.BatchIMapEvent;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_ADDLISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MapAddListenerMessageTask
-        extends AbstractCallableMessageTask<ContinuousQueryAddListenerCodec.RequestParameters>
-        implements ListenerAdapter<IMapEvent>, ListenerMessageTask {
+        extends AbstractAddListenerMessageTask<ContinuousQueryAddListenerCodec.RequestParameters>
+        implements ListenerAdapter<IMapEvent> {
 
     public MapAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        return registerListener(endpoint, this);
-    }
-
-    private UUID registerListener(ClientEndpoint endpoint, ListenerAdapter adapter) {
+    protected CompletableFuture<UUID> processInternal() {
         MapService mapService = getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        UUID registrationId;
         if (parameters.localOnly) {
-            registrationId = mapServiceContext.addLocalListenerAdapter(adapter, parameters.listenerName);
+            return (CompletableFuture<UUID>) mapServiceContext.addLocalListenerAdapter(this, parameters.listenerName);
         } else {
-            registrationId = mapServiceContext.addListenerAdapter(adapter,
-                    TrueEventFilter.INSTANCE, parameters.listenerName);
+            return (CompletableFuture<UUID>) mapServiceContext
+                    .addListenerAdapter(this, TrueEventFilter.INSTANCE, parameters.listenerName);
         }
-
-        endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, parameters.listenerName, registrationId);
-        return registrationId;
     }
 
     @Override

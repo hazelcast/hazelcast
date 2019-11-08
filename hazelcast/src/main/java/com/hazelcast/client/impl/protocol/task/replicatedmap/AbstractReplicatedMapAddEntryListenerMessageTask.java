@@ -17,16 +17,15 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapEvent;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
@@ -38,10 +37,11 @@ import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter>
-        extends AbstractCallableMessageTask<Parameter>
-        implements EntryListener<Object, Object>, ListenerMessageTask {
+        extends AbstractAddListenerMessageTask<Parameter>
+        implements EntryListener<Object, Object> {
 
     public AbstractReplicatedMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node,
                                                             Connection connection) {
@@ -49,20 +49,17 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
     @Override
-    protected Object call() {
+    protected CompletableFuture<UUID> processInternal() {
         ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
-        UUID registrationId;
         Predicate predicate = getPredicate();
         if (predicate == null) {
-            registrationId = eventPublishingService.addEventListener(this,
-                    new ReplicatedEntryEventFilter(getKey()), getDistributedObjectName());
+            return (CompletableFuture<UUID>) eventPublishingService
+                    .addEventListener(this, new ReplicatedEntryEventFilter(getKey()), getDistributedObjectName());
         } else {
-            registrationId = eventPublishingService.addEventListener(this,
-                    new ReplicatedQueryEventFilter(getKey(), predicate), getDistributedObjectName());
+            return (CompletableFuture<UUID>) eventPublishingService
+                    .addEventListener(this, new ReplicatedQueryEventFilter(getKey(), predicate), getDistributedObjectName());
         }
-        endpoint.addListenerDestroyAction(ReplicatedMapService.SERVICE_NAME, getDistributedObjectName(), registrationId);
-        return registrationId;
     }
 
     @Override

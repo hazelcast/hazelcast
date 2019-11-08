@@ -26,6 +26,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 public class CacheRemovePartitionLostListenerMessageTask
         extends AbstractRemoveListenerMessageTask<CacheRemovePartitionLostListenerCodec.RequestParameters> {
@@ -36,10 +37,10 @@ public class CacheRemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         ICacheService service = getService(CacheService.SERVICE_NAME);
         return service.getNodeEngine().getEventService()
-                .deregisterListener(ICacheService.SERVICE_NAME, parameters.name, parameters.registrationId);
+                      .deregisterListener(ICacheService.SERVICE_NAME, parameters.name, parameters.registrationId);
     }
 
     @Override

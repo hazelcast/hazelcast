@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
@@ -30,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.internal.util.FutureUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -45,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
+import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 public class PartitionServiceProxy implements PartitionService {
 
@@ -93,22 +95,26 @@ public class PartitionServiceProxy implements PartitionService {
 
     @Override
     public UUID addMigrationListener(final MigrationListener migrationListener) {
-        return partitionService.addMigrationListener(migrationListener);
+        Future<UUID> registrationFuture = partitionService.addMigrationListener(migrationListener);
+        return getRegistrationId(registrationFuture);
     }
 
     @Override
     public boolean removeMigrationListener(final UUID registrationId) {
-        return partitionService.removeMigrationListener(registrationId);
+        Future<Boolean> registrationFuture = partitionService.removeMigrationListener(registrationId);
+        return getListenerRemovalResult(registrationFuture);
     }
 
     @Override
     public UUID addPartitionLostListener(PartitionLostListener partitionLostListener) {
-        return partitionService.addPartitionLostListener(partitionLostListener);
+        Future<UUID> registrationFuture = partitionService.addPartitionLostListener(partitionLostListener);
+        return getRegistrationId(registrationFuture);
     }
 
     @Override
     public boolean removePartitionLostListener(UUID registrationId) {
-        return partitionService.removePartitionLostListener(registrationId);
+        Future<Boolean> registrationFuture = partitionService.removePartitionLostListener(registrationId);
+        return getListenerRemovalResult(registrationFuture);
     }
 
     @Override

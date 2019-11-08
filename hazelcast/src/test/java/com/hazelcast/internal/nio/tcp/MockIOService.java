@@ -17,29 +17,31 @@
 package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.auditlog.impl.NoOpAuditlogService;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.internal.nio.IOService;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -53,6 +55,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -240,35 +244,36 @@ public class MockIOService implements IOService {
             }
 
             @Override
-            public EventRegistration registerLocalListener(@Nonnull String serviceName,
-                                                           @Nonnull String topic,
-                                                           @Nonnull Object listener) {
+            public CompletableFuture<EventRegistration> registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                              @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerLocalListener(@Nonnull String serviceName,
-                                                           @Nonnull String topic,
-                                                           @Nonnull EventFilter filter,
-                                                           @Nonnull Object listener) {
+            public CompletableFuture<EventRegistration> registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                              @Nonnull EventFilter filter,
+                                                                              @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(@Nonnull String serviceName,
-                                                      @Nonnull String topic,
-                                                      @Nonnull Object listener) {
+            public CompletableFuture<EventRegistration> registerListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                         @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
+            public CompletableFuture<EventRegistration> registerListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                         @Nonnull EventFilter filter, @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public boolean deregisterListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull Object id) {
-                return false;
+            public CompletableFuture<Boolean> deregisterListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                                 @Nonnull Object id) {
+                Registration registration = new Registration((UUID) id, serviceName, topic, null, null, null, true);
+
+                return InternalCompletableFuture.newCompletedFuture(registration);
             }
 
             @Override

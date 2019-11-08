@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -31,7 +32,10 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.IterableUtil;
@@ -40,6 +44,7 @@ import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapEntries;
@@ -67,9 +72,6 @@ import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
@@ -86,8 +88,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -1140,37 +1140,35 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public UUID addLocalEntryListenerInternal(Object listener) {
+    public Future<UUID> addLocalEntryListenerInternal(Object listener) {
         return mapServiceContext.addLocalEventListener(listener, name);
     }
 
-    public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
+    public Future<UUID> addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }
 
-    protected UUID addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
+    protected Future<UUID> addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected UUID addEntryListenerInternal(Object listener,
-                                              Predicate predicate,
-                                              @Nullable Data key,
-                                              boolean includeValue) {
+    protected Future<UUID> addEntryListenerInternal(Object listener, Predicate predicate, @Nullable Data key,
+                                                    boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
-    protected boolean removeEntryListenerInternal(UUID id) {
+    protected Future<Boolean> removeEntryListenerInternal(UUID id) {
         return mapServiceContext.removeEventListener(name, id);
     }
 
-    protected UUID addPartitionLostListenerInternal(MapPartitionLostListener listener) {
+    protected Future<UUID> addPartitionLostListenerInternal(MapPartitionLostListener listener) {
         return mapServiceContext.addPartitionLostListener(listener, name);
     }
 
-    protected boolean removePartitionLostListenerInternal(UUID id) {
+    protected Future<Boolean> removePartitionLostListenerInternal(UUID id) {
         return mapServiceContext.removePartitionLostListener(name, id);
     }
 

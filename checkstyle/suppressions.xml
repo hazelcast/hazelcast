@@ -169,6 +169,8 @@
     <!-- SPI -->
     <suppress checks="FileLength"
               files="com[\\/]hazelcast[\\/]spi[\\/]impl[\\/]AbstractInvocationFuture"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]spi[\\/]impl[\\/]AbstractDistributedObject"/>
 
     <!-- Transaction -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]transaction[\\/]"/>
@@ -278,6 +280,9 @@
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]LazyEntryViewFromRecord"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]querycache[\\/]event[\\/]DefaultQueryCacheEventData"/>
+
+    <!-- ReplicatedMapProxy -->
+    <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]replicatedmap[\\/]impl[\\/]ReplicatedMapProxy"/>
 
     <!-- Adopted public domain code with different style -->
     <suppress

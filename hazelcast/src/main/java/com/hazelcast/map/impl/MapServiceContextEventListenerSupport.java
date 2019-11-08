@@ -20,24 +20,25 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * Helper event listener methods for {@link MapServiceContext}.
  */
 public interface MapServiceContextEventListenerSupport {
 
-    UUID addLocalEventListener(Object mapListener, String mapName);
+    Future<UUID> addLocalEventListener(Object mapListener, String mapName);
 
-    UUID addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
+    Future<UUID> addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
-    UUID addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName);
+    Future<UUID> addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName);
 
-    UUID addEventListener(Object mapListener, EventFilter eventFilter, String mapName);
+    Future<UUID> addEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
-    UUID addPartitionLostListener(MapPartitionLostListener listener, String mapName);
+    Future<UUID> addPartitionLostListener(MapPartitionLostListener listener, String mapName);
 
-    boolean removeEventListener(String mapName, UUID registrationId);
+    Future<Boolean> removeEventListener(String mapName, UUID registrationId);
 
-    boolean removePartitionLostListener(String mapName, UUID registrationId);
+    Future<Boolean> removePartitionLostListener(String mapName, UUID registrationId);
 
 }
