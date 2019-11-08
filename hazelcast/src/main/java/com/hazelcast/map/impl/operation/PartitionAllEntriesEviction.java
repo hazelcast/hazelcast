@@ -17,61 +17,49 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.stream.IntStream;
-
-import static com.hazelcast.config.EvictionPolicy.NONE;
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 
 /**
  * An {@link Eviction} operation that attempts to evict all an {@link com.hazelcast.map.IMap} partition entries
  * of current thread
  */
-class PartitionAllEntriesEviction implements Eviction {
-    private final ILogger logger;
-    private final MapOperation mapOperation;
-    private boolean successful;
-
-    PartitionAllEntriesEviction(ILogger logger, MapOperation mapOperation) {
-        this.logger = logger;
-        this.mapOperation = mapOperation;
-    }
+class PartitionAllEntriesEviction extends PartitionEviction {
+    private final ThreadLocal<Boolean> successful = ThreadLocal.withInitial(() -> false);
 
     @Override
-    public void execute() {
-        successful = false;
+    public void execute(int retries, MapOperation mapOperation, ILogger logger) {
+        successful.set(false);
         if (logger.isInfoEnabled()) {
             logger.info("Evicting all entries in other RecordStores owned by the same partition thread"
                             + " because forced eviction was not enough!");
         }
 
-        boolean isBackup = mapOperation instanceof BackupOperation;
-        NodeEngine nodeEngine = mapOperation.getNodeEngine();
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        OperationService operationService = nodeEngine.getOperationService();
-        int threadCount = operationService.getPartitionThreadCount();
-        int mod = mapOperation.getPartitionId() % threadCount;
+        boolean isBackup = backupOperation(mapOperation);
+        int partitionCount = numberOfPartitions(mapOperation);
+        int threadCount = threadCount(mapOperation);
+        int mod = mod(mapOperation, threadCount);
 
         IntStream.range(0, partitionCount)
             .filter(partitionId -> partitionId % threadCount == mod)
-            .mapToObj(partitionId ->
-                          mapOperation.mapServiceContext.getPartitionContainer(partitionId).getMaps())
+            .mapToObj(partitionId -> partitionMaps(mapOperation, partitionId))
             .flatMap(map -> map.values().stream())
-            .filter(recordStore -> recordStore.getInMemoryFormat() == NATIVE
-                    && recordStore.getEvictionPolicy() != NONE)
+            .filter(this::nativeFormatWithEvictionPolicy)
             .forEach(recordStore -> {
                 recordStore.evictAll(isBackup);
                 recordStore.disposeDeferredBlocks();
             });
         mapOperation.runInternal();
-        successful = true;
+        successful.set(true);
+    }
+
+    private boolean backupOperation(MapOperation mapOperation) {
+        return mapOperation instanceof BackupOperation;
     }
 
     @Override
     public boolean isSuccessful() {
-        return successful;
+        return successful.get();
     }
 }

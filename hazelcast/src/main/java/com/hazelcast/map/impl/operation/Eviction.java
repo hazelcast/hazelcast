@@ -16,8 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.logging.ILogger;
+
 interface Eviction {
-    void execute();
+    void execute(int retries, MapOperation mapOperation, ILogger logger);
 
     boolean isSuccessful();
 }

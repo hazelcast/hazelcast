@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -33,20 +32,11 @@ import static java.lang.String.format;
  * {@link com.hazelcast.map.impl.recordstore.RecordStore}
  */
 class RecordStoreForcedEviction implements Eviction {
-    private final int retries;
-    private final ILogger logger;
-    private final MapOperation mapOperation;
-    private boolean successful;
-
-    RecordStoreForcedEviction(int retries, ILogger logger, MapOperation mapOperation) {
-        this.retries = retries;
-        this.logger = logger;
-        this.mapOperation = mapOperation;
-    }
+    private final ThreadLocal<Boolean> successful = ThreadLocal.withInitial(() -> false);
 
     @Override
-    public void execute() {
-        successful = false;
+    public void execute(int retries, MapOperation mapOperation, ILogger logger) {
+        successful.set(false);
         RecordStore recordStore = mapOperation.recordStore;
         if (recordStore == null) {
             return;
@@ -71,7 +61,7 @@ class RecordStoreForcedEviction implements Eviction {
             try {
                 evictor.forceEvict(recordStore);
                 mapOperation.runInternal();
-                successful = true;
+                successful.set(true);
                 return;
             } catch (NativeOutOfMemoryError e) {
                 ignore(e);
@@ -81,6 +71,6 @@ class RecordStoreForcedEviction implements Eviction {
 
     @Override
     public boolean isSuccessful() {
-        return successful;
+        return successful.get();
     }
 }

@@ -60,6 +60,12 @@ public abstract class MapOperation extends AbstractNamedOperation
     private static final HazelcastProperty FORCED_EVICTION_RETRY_COUNT
         = new HazelcastProperty(PROP_FORCED_EVICTION_RETRY_COUNT,
                                 DEFAULT_FORCED_EVICTION_RETRY_COUNT);
+    private static final Eviction[] EVICTIONS = new Eviction[]{
+        new RecordStoreForcedEviction(),
+        new PartitionRecordStoreForcedEviction(),
+        new AllEntriesEviction(),
+        new PartitionAllEntriesEviction()
+    };
 
     private static final boolean ASSERTION_ENABLED = MapOperation.class.desiredAssertionStatus();
 
@@ -71,24 +77,13 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
-    private transient Eviction[] evictions;
 
     private transient boolean canPublishWanEvent;
 
     public MapOperation() {
-        final ILogger logger = this.logger();
-        final int forcedEvictionRetryCount = getRetryCount();
-
-        evictions = new Eviction[]{
-            new RecordStoreForcedEviction(forcedEvictionRetryCount, logger, this),
-            new PartitionRecordStoreForcedEviction(forcedEvictionRetryCount, logger, this),
-            new AllEntriesEviction(logger, this),
-            new PartitionAllEntriesEviction(logger, this)
-        };
     }
 
     public MapOperation(String name) {
-        this();
         this.name = name;
     }
 
@@ -98,8 +93,8 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     private void runEvictionStrategies() {
-        for (Eviction eviction : evictions) {
-            eviction.execute();
+        for (Eviction eviction : EVICTIONS) {
+            eviction.execute(getRetryCount(), this, logger());
             if (eviction.isSuccessful()) {
                 return;
             }
