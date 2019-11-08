@@ -63,8 +63,6 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
     public MetricDescriptorImpl withTag(String tag, String value) {
         ensureCapacity(tagPtr);
 
-        ensureCapacity(tagPtr);
-
         tags[tagPtr] = tag;
         tags[tagPtr + 1] = value;
         tagPtr += 2;
@@ -343,13 +341,16 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
         }
 
         // since we already checked that the two descriptors have the same number
-        // of tags, we can safely compare them from only one side
-        for (int i = 0; i < tagPtr; i++) {
-            String thisStr = tags[i];
+        // of tags, we can safely compare them from only one side but we need
+        // to compare pairs
+        for (int i = 0; i < tagPtr; i += 2) {
+            String thisTag = tags[i];
+            String thisTagValue = tags[i + 1];
             boolean match = false;
-            for (int j = 0; j < that.tagPtr && !match; j++) {
-                String thatStr = that.tags[j];
-                match = thisStr.equals(thatStr);
+            for (int j = 0; j < that.tagPtr && !match; j += 2) {
+                String thatTag = that.tags[j];
+                String thatTagValue = that.tags[j + 1];
+                match = thisTag.equals(thatTag) && thisTagValue.equals(thatTagValue);
             }
             if (!match) {
                 return false;
@@ -361,8 +362,10 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
     @Override
     public int hashCode() {
         int result = 0;
-        for (int i = 0; i < tagPtr; i++) {
-            result += tags[i].hashCode();
+        for (int i = 0; i < tagPtr; i += 2) {
+            String tag = tags[i];
+            String tagValue = tags[i + 1];
+            result += tag.hashCode() + 31 * tagValue.hashCode();
         }
 
         result = 31 * result + tagPtr;

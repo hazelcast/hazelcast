@@ -65,7 +65,7 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testMetricName_withPrefixAndId() {
+    public void testMetricName_withPrefixAndDiscriminator() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withPrefix("prefix")
                 .withDiscriminator("discriminatorTag", "discriminatorValue")
@@ -75,7 +75,7 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testMetricName_withPrefixWithoutId() {
+    public void testMetricName_withPrefixWithoutDiscriminator() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withPrefix("prefix")
                 .withMetric("metricValue")
@@ -85,7 +85,7 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testMetricName_withoutPrefixWithId() {
+    public void testMetricName_withoutPrefixWithDiscriminator() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withDiscriminator("discriminatorTag", "discriminatorValue")
                 .withMetric("metricValue");
@@ -94,7 +94,7 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testMetricName_withoutPrefixAndId() {
+    public void testMetricName_withoutPrefixAndDiscriminator() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withMetric("metricValue");
 
@@ -102,7 +102,7 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testMetricName_withoutPrefixAndId_withTags() {
+    public void testMetricName_withoutPrefixAndDiscriminator_withTags() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withMetric("metricValue")
                 .withUnit(MS)
@@ -118,7 +118,7 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testMetricName_withPrefixAndId_withTags() {
+    public void testMetricName_withPrefixAndDiscriminator_withTags() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withPrefix("prefix")
                 .withMetric("metricValue")
@@ -137,7 +137,7 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testMetricName_withPrefixAndId_withSingleTag() {
+    public void testMetricName_withPrefixAndDiscriminator_withSingleTag() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withPrefix("prefix")
                 .withMetric("metricValue")
@@ -150,7 +150,7 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testCopy_withMetricName_withPrefixAndId_withTags() {
+    public void testCopy_withMetricName_withPrefixAndDiscriminator_withTags() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withPrefix("prefix")
                 .withDiscriminator("discriminatorTag", "discriminatorValue")
@@ -334,6 +334,44 @@ public class MetricDescriptorImplTest {
         metricDescriptor2
                 .withMetric("metricName")
                 .withTag("tag", "otherTagValue");
+
+        assertNotEquals(metricDescriptor1, metricDescriptor2);
+        assertNotEquals(metricDescriptor1.hashCode(), metricDescriptor2.hashCode());
+    }
+
+    @Test
+    public void testEqualsDifferentTagsSameValues() {
+        MetricDescriptorImpl metricDescriptor1 = new MetricDescriptorImpl(mock(Supplier.class));
+        MetricDescriptorImpl metricDescriptor2 = new MetricDescriptorImpl(mock(Supplier.class));
+
+        metricDescriptor1
+                .withMetric("metricName")
+                .withTag("tag0", "tag0Value")
+                .withTag("tag1", "tag1Value");
+
+        metricDescriptor2
+                .withMetric("metricName")
+                .withTag("tag0", "tag1Value")
+                .withTag("tag1", "tag0Value");
+
+        assertNotEquals(metricDescriptor1, metricDescriptor2);
+        assertEquals(metricDescriptor1.hashCode(), metricDescriptor2.hashCode());
+    }
+
+    @Test
+    public void testEqualsReversedTagAndValue() {
+        MetricDescriptorImpl metricDescriptor1 = new MetricDescriptorImpl(mock(Supplier.class));
+        MetricDescriptorImpl metricDescriptor2 = new MetricDescriptorImpl(mock(Supplier.class));
+
+        metricDescriptor1
+                .withMetric("metricName")
+                .withTag("tag0", "tag0Value")
+                .withTag("tag1", "tag1Value");
+
+        metricDescriptor2
+                .withMetric("metricName")
+                .withTag("tag0Value", "tag0")
+                .withTag("tag1Value", "tag1");
 
         assertNotEquals(metricDescriptor1, metricDescriptor2);
         assertNotEquals(metricDescriptor1.hashCode(), metricDescriptor2.hashCode());
