@@ -34,18 +34,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the latest TimedMemberState of the member it's called on.
+ * Shuts down the cluster.
  */
-@Generated("0e91faf8893963b5a550757f0348f034")
-public final class MCGetTimedMemberStateCodec {
-    //hex: 0x200B00
-    public static final int REQUEST_MESSAGE_TYPE = 2099968;
-    //hex: 0x200B01
-    public static final int RESPONSE_MESSAGE_TYPE = 2099969;
+@Generated("23ad7474c2065ed1897bd22042c0c15e")
+public final class MCShutdownClusterCodec {
+    //hex: 0x200D00
+    public static final int REQUEST_MESSAGE_TYPE = 2100480;
+    //hex: 0x200D01
+    public static final int RESPONSE_MESSAGE_TYPE = 2100481;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCGetTimedMemberStateCodec() {
+    private MCShutdownClusterCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -54,16 +54,16 @@ public final class MCGetTimedMemberStateCodec {
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(true);
+        clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
-        clientMessage.setOperationName("MC.GetTimedMemberState");
+        clientMessage.setOperationName("MC.ShutdownCluster");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static MCGetTimedMemberStateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCShutdownClusterCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -73,29 +73,22 @@ public final class MCGetTimedMemberStateCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * Latest TimedMemberState of the member, serialized as JSON.
-         */
-        public @Nullable java.lang.String timedMemberStateJson;
     }
 
-    public static ClientMessage encodeResponse(@Nullable java.lang.String timedMemberStateJson) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, timedMemberStateJson, StringCodec::encode);
         return clientMessage;
     }
 
-    public static MCGetTimedMemberStateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCShutdownClusterCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.timedMemberStateJson = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return response;
     }
 

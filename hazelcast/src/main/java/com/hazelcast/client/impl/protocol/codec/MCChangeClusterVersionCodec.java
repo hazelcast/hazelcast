@@ -34,68 +34,76 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the latest TimedMemberState of the member it's called on.
+ * Changes the cluster version.
  */
-@Generated("0e91faf8893963b5a550757f0348f034")
-public final class MCGetTimedMemberStateCodec {
-    //hex: 0x200B00
-    public static final int REQUEST_MESSAGE_TYPE = 2099968;
-    //hex: 0x200B01
-    public static final int RESPONSE_MESSAGE_TYPE = 2099969;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("1fec4d17bbf6a88b7ed156d905b94a06")
+public final class MCChangeClusterVersionCodec {
+    //hex: 0x200E00
+    public static final int REQUEST_MESSAGE_TYPE = 2100736;
+    //hex: 0x200E01
+    public static final int RESPONSE_MESSAGE_TYPE = 2100737;
+    private static final int REQUEST_MAJOR_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MINOR_VERSION_FIELD_OFFSET = REQUEST_MAJOR_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MINOR_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCGetTimedMemberStateCodec() {
+    private MCChangeClusterVersionCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
+
+        /**
+         * Major component of the new cluster version.
+         */
+        public byte majorVersion;
+
+        /**
+         * Minor component of the new cluster version.
+         */
+        public byte minorVersion;
     }
 
-    public static ClientMessage encodeRequest() {
+    public static ClientMessage encodeRequest(byte majorVersion, byte minorVersion) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(true);
+        clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
-        clientMessage.setOperationName("MC.GetTimedMemberState");
+        clientMessage.setOperationName("MC.ChangeClusterVersion");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeByte(initialFrame.content, REQUEST_MAJOR_VERSION_FIELD_OFFSET, majorVersion);
+        encodeByte(initialFrame.content, REQUEST_MINOR_VERSION_FIELD_OFFSET, minorVersion);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static MCGetTimedMemberStateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCChangeClusterVersionCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.majorVersion = decodeByte(initialFrame.content, REQUEST_MAJOR_VERSION_FIELD_OFFSET);
+        request.minorVersion = decodeByte(initialFrame.content, REQUEST_MINOR_VERSION_FIELD_OFFSET);
         return request;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * Latest TimedMemberState of the member, serialized as JSON.
-         */
-        public @Nullable java.lang.String timedMemberStateJson;
     }
 
-    public static ClientMessage encodeResponse(@Nullable java.lang.String timedMemberStateJson) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, timedMemberStateJson, StringCodec::encode);
         return clientMessage;
     }
 
-    public static MCGetTimedMemberStateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCChangeClusterVersionCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.timedMemberStateJson = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return response;
     }
 

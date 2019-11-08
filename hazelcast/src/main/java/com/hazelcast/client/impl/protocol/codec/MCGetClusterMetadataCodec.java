@@ -34,18 +34,20 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the latest TimedMemberState of the member it's called on.
+ * Gets the current metadata of a cluster.
  */
-@Generated("0e91faf8893963b5a550757f0348f034")
-public final class MCGetTimedMemberStateCodec {
-    //hex: 0x200B00
-    public static final int REQUEST_MESSAGE_TYPE = 2099968;
-    //hex: 0x200B01
-    public static final int RESPONSE_MESSAGE_TYPE = 2099969;
+@Generated("7587d11d3ecaab6e03899be72ea99c52")
+public final class MCGetClusterMetadataCodec {
+    //hex: 0x200C00
+    public static final int REQUEST_MESSAGE_TYPE = 2100224;
+    //hex: 0x200C01
+    public static final int RESPONSE_MESSAGE_TYPE = 2100225;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_CURRENT_STATE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_CLUSTER_TIME_FIELD_OFFSET = RESPONSE_CURRENT_STATE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_CLUSTER_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
-    private MCGetTimedMemberStateCodec() {
+    private MCGetClusterMetadataCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -56,14 +58,14 @@ public final class MCGetTimedMemberStateCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setAcquiresResource(false);
-        clientMessage.setOperationName("MC.GetTimedMemberState");
+        clientMessage.setOperationName("MC.GetClusterMetadata");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static MCGetTimedMemberStateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCGetClusterMetadataCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -75,27 +77,52 @@ public final class MCGetTimedMemberStateCodec {
     public static class ResponseParameters {
 
         /**
-         * Latest TimedMemberState of the member, serialized as JSON.
+         * Current state of the cluster:
+         * 0 - ACTIVE
+         * 1 - NO_MIGRATION
+         * 2 - FROZEN
+         * 3 - PASSIVE
+         * 4 - IN_TRANSITION (not allowed)
          */
-        public @Nullable java.lang.String timedMemberStateJson;
+        public byte currentState;
+
+        /**
+         * Current version of the member.
+         */
+        public java.lang.String memberVersion;
+
+        /**
+         * Current Jet version of the member.
+         */
+        public @Nullable java.lang.String jetVersion;
+
+        /**
+         * Cluster-wide time in milliseconds.
+         */
+        public long clusterTime;
     }
 
-    public static ClientMessage encodeResponse(@Nullable java.lang.String timedMemberStateJson) {
+    public static ClientMessage encodeResponse(byte currentState, java.lang.String memberVersion, @Nullable java.lang.String jetVersion, long clusterTime) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeByte(initialFrame.content, RESPONSE_CURRENT_STATE_FIELD_OFFSET, currentState);
+        encodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET, clusterTime);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, timedMemberStateJson, StringCodec::encode);
+        StringCodec.encode(clientMessage, memberVersion);
+        CodecUtil.encodeNullable(clientMessage, jetVersion, StringCodec::encode);
         return clientMessage;
     }
 
-    public static MCGetTimedMemberStateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCGetClusterMetadataCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        response.timedMemberStateJson = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        ClientMessage.Frame initialFrame = iterator.next();
+        response.currentState = decodeByte(initialFrame.content, RESPONSE_CURRENT_STATE_FIELD_OFFSET);
+        response.clusterTime = decodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET);
+        response.memberVersion = StringCodec.decode(iterator);
+        response.jetVersion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return response;
     }
 
