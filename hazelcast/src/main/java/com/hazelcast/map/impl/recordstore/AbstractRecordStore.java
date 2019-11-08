@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MetadataPolicy;
@@ -58,7 +57,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapContainer mapContainer;
     protected final RecordFactory recordFactory;
     protected final InMemoryFormat inMemoryFormat;
-    protected final EvictionConfig evictionConfig;
     protected final MapStoreContext mapStoreContext;
     protected final ValueComparator valueComparator;
     protected final MapServiceContext mapServiceContext;
@@ -78,7 +76,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        this.evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.valueComparator = mapServiceContext.getValueComparatorOf(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
@@ -124,12 +121,12 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public InMemoryFormat getInMemoryFormat() {
-        return inMemoryFormat;
+        return getMapContainer().getMapConfig().getInMemoryFormat();
     }
 
     @Override
     public EvictionPolicy getEvictionPolicy() {
-        return evictionConfig.getEvictionPolicy();
+        return getMapContainer().getMapConfig().getEvictionConfig().getEvictionPolicy();
     }
 
     protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
