@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core.metrics;
 
 /**
- * Measurement unit of user metrics (see {@link Metric}). Meant to
+ * Measurement unit of user-defined metrics (see {@link Metric}). Meant to
  * provide further information on the type of value measured by user
  * metrics.
  * <p>

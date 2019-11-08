@@ -48,15 +48,8 @@ public final class Metrics {
     }
 
     /**
-     * Returns a non-thread-safe handler for manipulating the metric with the
-     * specified name and measurement unit.
-     * <p>
-     * This method only works if called from a processor thread and the
-     * returned handler is tied to the processor that is currently executing.
-     * The handler is created on the first call, subsequent calls return the
-     * cached instance and ignore the requested unit or thread safety. Until
-     * the first call is made, the metric is not visible in JMX or using {@link
-     * Job#getMetrics()}.
+     * Same as {@link #metric(String)}, but allows us to also specify the
+     * measurement {@link Unit} of the metric.
      */
     public static Metric metric(String name, Unit unit) {
         return MetricsImpl.metric(name, unit);
@@ -96,6 +89,14 @@ public final class Metrics {
      * cached instance and ignore the requested unit or thread safety. Until
      * the first call is made, the metric is not visible in JMX or using {@link
      * Job#getMetrics()}.
+     */
+    public static Metric threadSafeMetric(String name) {
+        return MetricsImpl.threadSafeMetric(name, Unit.COUNT);
+    }
+
+    /**
+     * Same as {@link #threadSafeMetric(String)}, but allows us to also
+     * specify the measurement {@link Unit} of the metric.
      */
     public static Metric threadSafeMetric(String name, Unit unit) {
         return MetricsImpl.threadSafeMetric(name, unit);

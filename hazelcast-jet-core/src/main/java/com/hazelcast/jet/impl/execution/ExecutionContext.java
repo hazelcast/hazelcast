@@ -21,7 +21,6 @@ import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.JetService;
@@ -70,7 +69,6 @@ public class ExecutionContext {
     private Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = emptyMap();
 
     private List<ProcessorSupplier> procSuppliers = emptyList();
-    private List<Processor> processors = emptyList();
 
     private List<Tasklet> tasklets = emptyList();
 
@@ -84,6 +82,8 @@ public class ExecutionContext {
     private final TaskletExecutionService taskletExecService;
     private SnapshotContext snapshotContext;
     private JobConfig jobConfig;
+
+    private boolean metricsEnabled;
 
     private volatile RawJobMetrics jobMetrics = RawJobMetrics.empty();
 
@@ -108,11 +108,10 @@ public class ExecutionContext {
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
         procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
-        processors = plan.getProcessors();
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
-        boolean registerMetrics = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
+        metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         plan.initialize(nodeEngine, jobId, executionId, snapshotContext);
         snapshotContext.initTaskletCount(plan.getStoreSnapshotTaskletCount(), plan.getHigherPriorityVertexCount());
         receiverMap = unmodifiableMap(plan.getReceiverMap());
@@ -271,7 +270,7 @@ public class ExecutionContext {
     }
 
     public void collectMetrics(MetricTagger tagger, MetricsCollectionContext context) {
-        if (!jobConfig.isMetricsEnabled()) {
+        if (!metricsEnabled) {
             return;
         }
         tagger = tagger.withTag(MetricTags.JOB, idToString(jobId))

@@ -40,10 +40,11 @@ public interface Metric {
     /**
      * Return the measurement unit for the associated metric. Meant
      * to provide further information on the type of value measured
-     * by the user-metric. Doesn't affect the functionality of the metric,
-     * it still remains a simple numeric value, but is used to
+     * by the user-defined metric. Doesn't affect the functionality of the
+     * metric, it still remains a simple numeric value, but is used to
      * populate the {@link MetricTags#UNIT} tag in the metric's description.
      */
+    @Nonnull
     Unit unit();
 
     /**
@@ -70,10 +71,5 @@ public interface Metric {
      * Sets the current value.
      */
     void set(long newValue);
-
-    /**
-     * Returns the current value.
-     */
-    long get();
 
 }

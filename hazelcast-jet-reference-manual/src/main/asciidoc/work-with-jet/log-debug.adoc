@@ -271,11 +271,15 @@ distinguishes them from regular job-specific metrics is exactly what
 their name implies: they are not built-in, but defined when processing
 pipelines are written.
 
-Since user metrics are also job metrics, they will have all the tags
-job metrics have. They also have an extra tag, called `USER` which is
+Since user-defined metrics are also job metrics, they will have all the tags
+job metrics have. They also have an extra tag, called `user` which is
 of type `boolean` and is set to `true`.
 
-Let's see how one would go about defining user metrics. For example if
+NOTE: Due to the extra tag user-defined metrics have it's not possible
+for them to overwrite a built-in metric, even if they have the exact same
+name.
+
+Let's see how one would go about defining such metrics. For example if
 you would like to monitor your filtering step you could write code like
 this:
 
@@ -284,7 +288,7 @@ this:
 include::{javasource}/LogDebug.java[tag=s5]
 ----
 
-The handler for manipulating user metrics is the
+The handler for manipulating user-defined metrics is the
 `{jet-javadoc}/core/metrics/Metric.html[Metric]` class, instances can be
 obtained via the utility class
 `{jet-javadoc}/core/metrics/Metrics.html[Metrics]`). The `Metric`
@@ -292,8 +296,16 @@ interface allows to both store simple measured values (like queue
 length, load-factor and such) and to incrementally count things (like
 number of certain events).
 
-User metrics can be used anywhere in pipeline definitions where custom
-code can be added. This means (just to name the most important ones):
+When obtaining `Metric` instances from the `Metrics` utility class it's
+possible to specify the desired
+`{jet-javadoc}/core/metrics/Unit.html[measurement unit]`
+of the metrics. The unit can be used by UI tools to format the value, it's
+ignored by Jet. If you request a metric multiple times with different unit,
+the unit of the first request will be used to register the metric, others
+will be ignored.
+
+User-defined metrics can be used anywhere in pipeline definitions where
+custom code can be added. This means (just to name the most important ones):
 filtering, mapping and flat-mapping functions, various constituent
 functions of aggregations (accumulate, create, combine, deduct, export &
 finish), key extraction function when grouping, in custom sources, sinks
@@ -302,10 +314,10 @@ and processors and so on.
 They can also be used both with the high-level <<pipeline-api, Pipeline
 API>> and the low-level <<expert-zone, Core API>>.
 
-NOTE: User metrics are accessible only when the user code is running on
-*internal Jet worker threads*. All the functions created when defining
-a pipeline execute on those threads, but they can submit work to other
-threads. For example, following code will throw an exception:
+NOTE: User-defined metrics are accessible only when the user code is
+running on *internal Jet worker threads*. All the functions created when
+defining a pipeline execute on those threads, but they can submit work to
+other threads. For example, following code will throw an exception:
 
 [source]
 ----

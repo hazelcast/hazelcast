@@ -32,13 +32,13 @@ import java.util.function.BiFunction;
 
 public class MetricsContext {
 
-    private static final BiFunction<String, Unit, Metric> CREATE_SINGLE_WRITER_METRIC = SingleWriterMetric::new;
-    private static final BiFunction<String, Unit, Metric> CREATE_THREAD_SAFE_METRICS = ThreadSafeMetric::new;
+    private static final BiFunction<String, Unit, AbstractMetric> CREATE_SINGLE_WRITER_METRIC = SingleWriterMetric::new;
+    private static final BiFunction<String, Unit, AbstractMetric> CREATE_THREAD_SAFE_METRICS = ThreadSafeMetric::new;
 
     private String onlyName;
-    private Metric onlyMetric;
+    private AbstractMetric onlyMetric;
 
-    private Map<String, Metric> metrics;
+    private Map<String, AbstractMetric> metrics;
 
     Metric metric(String name, Unit unit) {
         return metric(name, unit, CREATE_SINGLE_WRITER_METRIC);
@@ -48,7 +48,7 @@ public class MetricsContext {
         return metric(name, unit, CREATE_THREAD_SAFE_METRICS);
     }
 
-    private Metric metric(String name, Unit unit, BiFunction<String, Unit, Metric> metricSupplier) {
+    private Metric metric(String name, Unit unit, BiFunction<String, Unit, AbstractMetric> metricSupplier) {
         if (metrics == null) { //at most one already defined metric
             if (onlyMetric == null) { //no already defined metrics
                 onlyMetric = metricSupplier.apply(name, unit);
@@ -64,13 +64,13 @@ public class MetricsContext {
                     onlyMetric = null;
                     onlyName = null;
 
-                    Metric metric = metricSupplier.apply(name, unit);
+                    AbstractMetric metric = metricSupplier.apply(name, unit);
                     metrics.put(name, metric);
                     return metric;
                 }
             }
         } else { //multiple metrics already defined
-            Metric metric = metrics.get(name);
+            AbstractMetric metric = metrics.get(name);
             if (metric == null) { //requested metric not yet defined
                 metric = metricSupplier.apply(name, unit);
                 metrics.put(name, metric);
@@ -98,16 +98,12 @@ public class MetricsContext {
         return ProbeUnit.valueOf(unit.name());
     }
 
-    private static final class SingleWriterMetric implements Metric {
-
-        private static final AtomicLongFieldUpdater<SingleWriterMetric> VOLATILE_VALUE_UPDATER =
-                AtomicLongFieldUpdater.newUpdater(SingleWriterMetric.class, "value");
+    private abstract static class AbstractMetric implements Metric {
 
         private final String name;
         private final Unit unit;
-        private volatile long value;
 
-        SingleWriterMetric(String name, Unit unit) {
+        AbstractMetric(String name, Unit unit) {
             this.name = name;
             this.unit = unit;
         }
@@ -117,9 +113,24 @@ public class MetricsContext {
             return name;
         }
 
-        @Override
+        @Nonnull @Override
         public Unit unit() {
             return unit;
+        }
+
+        protected abstract long get();
+
+    }
+
+    private static final class SingleWriterMetric extends AbstractMetric {
+
+        private static final AtomicLongFieldUpdater<SingleWriterMetric> VOLATILE_VALUE_UPDATER =
+                AtomicLongFieldUpdater.newUpdater(SingleWriterMetric.class, "value");
+
+        private volatile long value;
+
+        SingleWriterMetric(String name, Unit unit) {
+            super(name, unit);
         }
 
         @Override
@@ -148,34 +159,20 @@ public class MetricsContext {
         }
 
         @Override
-        public long get() {
+        protected long get() {
             return value;
         }
     }
 
-    private static final class ThreadSafeMetric implements Metric {
+    private static final class ThreadSafeMetric extends AbstractMetric {
 
         private static final AtomicLongFieldUpdater<ThreadSafeMetric> VOLATILE_VALUE_UPDATER =
                 AtomicLongFieldUpdater.newUpdater(ThreadSafeMetric.class, "value");
 
-        private final String name;
-        private final Unit unit;
         private volatile long value;
 
         ThreadSafeMetric(String name, Unit unit) {
-            this.name = name;
-            this.unit = unit;
-        }
-
-        @Nonnull
-        @Override
-        public String name() {
-            return name;
-        }
-
-        @Override
-        public Unit unit() {
-            return unit;
+            super(name, unit);
         }
 
         @Override
@@ -204,8 +201,9 @@ public class MetricsContext {
         }
 
         @Override
-        public long get() {
+        protected long get() {
             return VOLATILE_VALUE_UPDATER.get(this);
         }
     }
+
 }
