@@ -88,4 +88,10 @@ public class TimedMemberStateFactoryTest
         assertTrue(myCacheStats.isNativeMemoryUsed());
     }
 
+    @Test
+    public void nativeMemoryEnabledForNearCache() {
+        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-replicatedmap.xml");
+        instance.getMap("myMapWithNearCache");
+    }
+
 }

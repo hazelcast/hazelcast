@@ -83,6 +83,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private volatile long lastPersistenceKeyCount;
     private volatile String lastPersistenceFailure = "";
 
+    private boolean nativeMemoryUsed;
+
     public NearCacheStatsImpl() {
         this.creationTime = getNowInMillis();
     }
@@ -281,6 +283,16 @@ public class NearCacheStatsImpl implements NearCacheStats {
     public String getLastPersistenceFailure() {
         return lastPersistenceFailure;
     }
+
+    @Override
+    public boolean isNativeMemoryUsed() {
+        return nativeMemoryUsed;
+    }
+
+    public void setNativeMemoryUsed(boolean nativeMemoryUsed) {
+        this.nativeMemoryUsed = nativeMemoryUsed;
+    }
+
 
     @Override
     public JsonObject toJson() {

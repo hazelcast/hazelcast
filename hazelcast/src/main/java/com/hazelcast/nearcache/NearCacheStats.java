@@ -129,4 +129,6 @@ public interface NearCacheStats extends LocalInstanceStats {
      * @return the failure reason of the last Near Cache persistence
      */
     String getLastPersistenceFailure();
+
+    boolean isNativeMemoryUsed();
 }

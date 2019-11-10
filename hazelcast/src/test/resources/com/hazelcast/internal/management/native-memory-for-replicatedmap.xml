@@ -21,6 +21,13 @@
         <statistics-enabled>true</statistics-enabled>
     </multimap>
 
+    <map name="myMapWithNearCache">
+        <near-cache name="myNearCache">
+            <in-memory-format>NATIVE</in-memory-format>
+            <eviction eviction-policy="LRU" size="20" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"/>
+        </near-cache>
+    </map>
+
     <native-memory allocator-type="POOLED" enabled="true">
         <size unit="MEGABYTES" value="256"/>
         <min-block-size>32</min-block-size>
