@@ -575,7 +575,7 @@ public final class ClientConfigXmlGenerator {
                 .node("initial-backoff-millis", connectionRetry.getInitialBackoffMillis())
                 .node("max-backoff-millis", connectionRetry.getMaxBackoffMillis())
                 .node("multiplier", connectionRetry.getMultiplier())
-                .node("fail-on-max-backoff", connectionRetry.isFailOnMaxBackoff())
+                .node("cluster-connect-timeout-millis", connectionRetry.getClusterConnectTimeoutMillis())
                 .node("jitter", connectionRetry.getJitter())
                 .close();
 

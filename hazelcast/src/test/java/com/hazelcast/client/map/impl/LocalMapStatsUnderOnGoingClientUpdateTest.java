@@ -51,7 +51,7 @@ public class LocalMapStatsUnderOnGoingClientUpdateTest extends HazelcastTestSupp
     @Before
     public void setUp() throws Exception {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         client = factory.newHazelcastClient(clientConfig);
     }
 

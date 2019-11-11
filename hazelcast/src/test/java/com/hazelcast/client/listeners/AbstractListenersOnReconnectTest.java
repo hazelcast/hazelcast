@@ -530,7 +530,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     private ClientConfig getSmartClientConfigWithHeartbeat() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.getNetworkConfig().setRedoOperation(true);
         clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(20)));
         clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(1)));
@@ -539,7 +539,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     private ClientConfig getSmartClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.getNetworkConfig().setRedoOperation(true);
         return clientConfig;
     }
