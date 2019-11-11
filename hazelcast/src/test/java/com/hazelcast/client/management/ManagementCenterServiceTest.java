@@ -80,10 +80,6 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
                 .map(instance -> instance.getCluster().getLocalMember())
                 .toArray(Member[]::new);
 
-        members = Arrays.stream(hazelcastInstances)
-                        .map(instance -> instance.getCluster().getLocalMember())
-                        .toArray(Member[]::new);
-
         HazelcastInstance client = factory.newHazelcastClient();
         managementCenterService = ((HazelcastClientProxy) client).client.getManagementCenterService();
     }
