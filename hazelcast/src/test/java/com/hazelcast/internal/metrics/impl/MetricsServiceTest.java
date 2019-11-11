@@ -39,6 +39,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.core.Is;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -93,6 +94,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     private MetricsRegistry metricsRegistry;
     private TestProbeSource testProbeSource;
     private final Config config = new Config();
+    private ExecutionServiceImpl executionService;
 
     @Before
     public void setUp() {
@@ -111,7 +113,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         when(nodeEngineMock.getHazelcastInstance()).thenReturn(hzMock);
         when(hzMock.getName()).thenReturn("mockInstance");
 
-        ExecutionServiceImpl executionService = new ExecutionServiceImpl(nodeEngineMock);
+        executionService = new ExecutionServiceImpl(nodeEngineMock);
         when(nodeEngineMock.getExecutionService()).thenReturn(executionService);
 
         when(loggingServiceMock.getLogger(any(Class.class))).thenReturn(loggerMock);
@@ -119,6 +121,13 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         testProbeSource = new TestProbeSource();
 
         metricsRegistry.registerStaticMetrics(testProbeSource, "test");
+    }
+
+    @After
+    public void tearDown() {
+        if (executionService != null) {
+            executionService.shutdown();
+        }
     }
 
     @Test
