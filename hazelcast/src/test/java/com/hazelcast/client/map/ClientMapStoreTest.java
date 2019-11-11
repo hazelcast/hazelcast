@@ -390,7 +390,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
                 + "        <backup-count>1</backup-count>\n"
                 + "        <async-backup-count>0</async-backup-count>\n"
                 + "        <max-idle-seconds>0</max-idle-seconds>\n"
-                + "        <eviction size=\"10\" max-size policy=\"PER_NODE\" eviction-policy=\"LRU\" />\n"
+                + "        <eviction size=\"10\" max-size-policy=\"PER_NODE\" eviction-policy=\"LRU\" />\n"
                 + "        <merge-policy>PassThroughMergePolicy</merge-policy>\n"
                 + "        <map-store enabled=\"true\">\n"
                 + "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n"
