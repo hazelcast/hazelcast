@@ -23,8 +23,8 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.util.ClientStateListener;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,7 +34,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,7 +62,7 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
         //configure exponential retry
         ConnectionRetryConfig connectionRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
         connectionRetryConfig.setJitter(0);
-        connectionRetryConfig.setFailOnMaxBackoff(true);
+        connectionRetryConfig.setClusterConnectTimeoutMillis(5000);
         connectionRetryConfig.setMultiplier(retryTimeoutMultiplier);
         connectionRetryConfig.setInitialBackoffMillis(baseRetryTimeoutMillis);
         connectionRetryConfig.setMaxBackoffMillis(capRetryTimeoutMillis);
@@ -75,10 +75,12 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
 
         clientStateListener.awaitDisconnected();
 
-        LinkedHashSet<Long> attemptTimeStamps = connectionStrategy.getAttemptTimeStamps();
+        LinkedList<Long> attemptTimeStamps = connectionStrategy.getAttemptTimeStamps();
+        //last attempt will not be exponential since it will try one last time when `clusterConnectTimeoutIsReached`
+        attemptTimeStamps.removeLast();
         Iterator<Long> iterator = attemptTimeStamps.iterator();
         Long startPoint = iterator.next();
-        Long last = 0L;
+        long last = 0L;
         int expectedSleepBetweenAttempts = baseRetryTimeoutMillis;
         while (iterator.hasNext()) {
             Long attemptTimeStamp = iterator.next();
@@ -106,7 +108,7 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
         ConnectionRetryConfig connectionRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
         double jitter = 0.5;
         connectionRetryConfig.setJitter(jitter);
-        connectionRetryConfig.setFailOnMaxBackoff(true);
+        connectionRetryConfig.setClusterConnectTimeoutMillis(3000);
         connectionRetryConfig.setMultiplier(retryTimeoutMultiplier);
         connectionRetryConfig.setInitialBackoffMillis(initialBackoffMillis);
         connectionRetryConfig.setMaxBackoffMillis(capRetryTimeoutMillis);
@@ -119,32 +121,35 @@ public class ClusterConnectionRetryTest extends ClientTestSupport {
 
         clientStateListener.awaitDisconnected();
 
-        LinkedHashSet<Long> attemptTimeStamps = connectionStrategy.getAttemptTimeStamps();
+        LinkedList<Long> attemptTimeStamps = connectionStrategy.getAttemptTimeStamps();
+        //last attempt will not be exponential since it will try one last time when `clusterConnectTimeoutIsReached`
+        attemptTimeStamps.removeLast();
         Iterator<Long> iterator = attemptTimeStamps.iterator();
         Long startPoint = iterator.next();
-        Long last = 0L;
-        int currentBackoffMillis = initialBackoffMillis;
+        long last = 0L;
+        int expectedSleepBetweenAttempts = initialBackoffMillis;
 
         while (iterator.hasNext()) {
             long attemptTimeStamp = iterator.next();
             long actualSleepBetweenAttempts = attemptTimeStamp - startPoint - last;
-            long lowerBound = (long) (currentBackoffMillis - currentBackoffMillis * jitter);
-            assertGreaterOrEquals("sleep between attempts", actualSleepBetweenAttempts, lowerBound);
-            currentBackoffMillis *= retryTimeoutMultiplier;
+            long expectedLowerBound = (long) (expectedSleepBetweenAttempts - expectedSleepBetweenAttempts * jitter);
+            assertGreaterOrEquals("sleep between attempts", actualSleepBetweenAttempts, expectedLowerBound);
+            expectedSleepBetweenAttempts *= retryTimeoutMultiplier;
+            expectedSleepBetweenAttempts = Math.min(capRetryTimeoutMillis, expectedSleepBetweenAttempts);
             last = attemptTimeStamp - startPoint;
         }
     }
 
     public static class RecordingStrategy extends DefaultClientConnectionStrategy {
 
-        private final LinkedHashSet<Long> attemptTimeStamps = new LinkedHashSet<Long>();
+        private final LinkedList<Long> attemptTimeStamps = new LinkedList<Long>();
 
         public void beforeOpenConnection(Address target) {
             attemptTimeStamps.add(System.currentTimeMillis());
             super.beforeOpenConnection(target);
         }
 
-        LinkedHashSet<Long> getAttemptTimeStamps() {
+        LinkedList<Long> getAttemptTimeStamps() {
             return attemptTimeStamps;
         }
     }

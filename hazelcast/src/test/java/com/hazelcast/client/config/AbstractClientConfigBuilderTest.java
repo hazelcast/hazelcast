@@ -281,7 +281,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig() {
         ClientConnectionStrategyConfig connectionStrategyConfig = fullClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertFalse(exponentialRetryConfig.isFailOnMaxBackoff());
+        assertEquals(5000, exponentialRetryConfig.getClusterConnectTimeoutMillis());
         assertEquals(0.5, exponentialRetryConfig.getJitter(), 0);
         assertEquals(2000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(60000, exponentialRetryConfig.getMaxBackoffMillis());
@@ -292,11 +292,11 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig_defaults() {
         ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertTrue(exponentialRetryConfig.isFailOnMaxBackoff());
-        assertEquals(0.2, exponentialRetryConfig.getJitter(), 0);
+        assertEquals(20000, exponentialRetryConfig.getClusterConnectTimeoutMillis());
+        assertEquals(0, exponentialRetryConfig.getJitter(), 0);
         assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());
-        assertEquals(2, exponentialRetryConfig.getMultiplier(), 0);
+        assertEquals(1, exponentialRetryConfig.getMultiplier(), 0);
     }
 
     @Test

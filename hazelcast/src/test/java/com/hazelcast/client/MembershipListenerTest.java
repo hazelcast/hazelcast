@@ -277,7 +277,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         final InitialMemberShipEventLogger listener = new InitialMemberShipEventLogger();
         clientConfig.addListenerConfig(new ListenerConfig().setImplementation(listener));
         hazelcastFactory.newHazelcastClient(clientConfig);

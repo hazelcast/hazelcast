@@ -382,7 +382,7 @@
             <xs:element name="initial-backoff-millis" type="xs:int" minOccurs="0" maxOccurs="1" default="1000"/>
             <xs:element name="max-backoff-millis" type="xs:int" minOccurs="0" maxOccurs="1" default="30000"/>
             <xs:element name="multiplier" type="xs:double" minOccurs="0" maxOccurs="1" default="2"/>
-            <xs:element name="fail-on-max-backoff" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="cluster-connect-timeout-millis" type="xs:long" minOccurs="0" maxOccurs="1" default="20000"/>
             <xs:element name="jitter" type="xs:double" minOccurs="0" maxOccurs="1" default="0.2"/>
         </xs:all>
     </xs:complexType>

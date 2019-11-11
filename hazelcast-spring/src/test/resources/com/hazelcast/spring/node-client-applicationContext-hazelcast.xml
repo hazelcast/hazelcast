@@ -193,7 +193,7 @@
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:connection-strategy>
             <hz:connection-retry>
-                <hz:fail-on-max-backoff>false</hz:fail-on-max-backoff>
+                <hz:cluster-connect-timeout-millis>1000</hz:cluster-connect-timeout-millis>
             </hz:connection-retry>
         </hz:connection-strategy>
         <hz:network>
@@ -338,7 +338,7 @@
                 <hz:initial-backoff-millis>2000</hz:initial-backoff-millis>
                 <hz:max-backoff-millis>60000</hz:max-backoff-millis>
                 <hz:multiplier>3</hz:multiplier>
-                <hz:fail-on-max-backoff>true</hz:fail-on-max-backoff>
+                <hz:cluster-connect-timeout-millis>5000</hz:cluster-connect-timeout-millis>
                 <hz:jitter>0.5</hz:jitter>
             </hz:connection-retry>
         </hz:connection-strategy>
