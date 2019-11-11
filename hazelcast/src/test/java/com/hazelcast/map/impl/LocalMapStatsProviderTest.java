@@ -1,6 +1,5 @@
 package com.hazelcast.map.impl;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -13,22 +12,20 @@ import com.hazelcast.internal.partition.impl.DummyInternalPartition;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,28 +38,42 @@ public class LocalMapStatsProviderTest {
     private static final String MAP_NAME = "myMap";
     private static final int PARTITION_ID = 0;
 
-    @Test
-    public void nearCache_withoutStats_UsesNativeMemory() {
-        NodeEngine nodeEngine = mock(NodeEngine.class);
+    private static final MapConfig MAP_CONFIG = new MapConfig();
+
+    static {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setInMemoryFormat(NATIVE);
+        MAP_CONFIG.setNearCacheConfig(nearCacheConfig);
+    }
+
+    private NodeEngine nodeEngine;
+
+    @Before
+    public void initNodeEngine() {
+        nodeEngine = mock(NodeEngine.class);
         Properties props = new Properties();
         props.put(GroupProperty.MAP_LOAD_CHUNK_SIZE, 22);
         doReturn(new HazelcastProperties(props)).when(nodeEngine).getProperties();
+        doReturn(mock(ClusterService.class)).when(nodeEngine).getClusterService();
+    }
+
+    @Before
+    public void b2() {
+        System.out.println("b2");
+    }
+
+    @Test
+    public void nearCache_withoutStats_UsesNativeMemory() {
         MapServiceContext serviceContext = mock(MapServiceContext.class);
         doReturn(nodeEngine).when(serviceContext).getNodeEngine();
         ProxyService proxyService = mock(ProxyService.class);
         doReturn(proxyService).when(nodeEngine).getProxyService();
-        doReturn(mock(ClusterService.class)).when(nodeEngine).getClusterService();
 
         MapService mapService = mock(MapService.class);
         doReturn(serviceContext).when(mapService).getMapServiceContext();
         MapContainer mapContainer = mock(MapContainer.class);
 
-        MapConfig mapConfig = new MapConfig();
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInMemoryFormat(NATIVE);
-        mapConfig.setNearCacheConfig(nearCacheConfig);
-
-        doReturn(mapConfig).when(mapContainer).getMapConfig();
+        doReturn(MAP_CONFIG).when(mapContainer).getMapConfig();
         doReturn(mapContainer).when(serviceContext).getMapContainer(MAP_NAME);
         doReturn(new PartitionContainer[]{}).when(serviceContext).getPartitionContainers();
         doReturn(singletonList(MAP_NAME)).when(proxyService).getDistributedObjectNames("hz:impl:mapService");
@@ -99,28 +110,19 @@ public class LocalMapStatsProviderTest {
 
     @Test
     public void nearCache_WithStats_usesNativeMemory() {
-        NodeEngine nodeEngine = mock(NodeEngine.class);
-        Properties props = new Properties();
-        props.put(GroupProperty.MAP_LOAD_CHUNK_SIZE, 22);
-        doReturn(new HazelcastProperties(props)).when(nodeEngine).getProperties();
         MapServiceContext serviceContext = mock(MapServiceContext.class);
         doReturn(nodeEngine).when(serviceContext).getNodeEngine();
         ProxyService proxyService = mock(ProxyService.class);
         doReturn(proxyService).when(nodeEngine).getProxyService();
-        doReturn(mock(ClusterService.class)).when(nodeEngine).getClusterService();
 
         MapService mapService = mock(MapService.class);
         doReturn(serviceContext).when(mapService).getMapServiceContext();
         MapContainer mapContainer = mock(MapContainer.class);
-        MapConfig mapConfig = new MapConfig();
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInMemoryFormat(NATIVE);
-        mapConfig.setNearCacheConfig(nearCacheConfig);
-        doReturn(mapConfig).when(mapContainer).getMapConfig();
+        doReturn(MAP_CONFIG).when(mapContainer).getMapConfig();
 
-        NearCacheDataRecordStore<Object, Object> recordStore = new NearCacheDataRecordStore<>("default", nearCacheConfig,
-                mock(SerializationService.class), getClass().getClassLoader());
-        DefaultNearCache<Object, Object> nearCache = new DefaultNearCache<>("default", nearCacheConfig,
+        NearCacheDataRecordStore<Object, Object> recordStore = new NearCacheDataRecordStore<>("default",
+                MAP_CONFIG.getNearCacheConfig(), mock(SerializationService.class), getClass().getClassLoader());
+        DefaultNearCache<Object, Object> nearCache = new DefaultNearCache<>("default", MAP_CONFIG.getNearCacheConfig(),
                 recordStore, null, null, null, null);
         nearCache.initialize();
 
