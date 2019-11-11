@@ -82,8 +82,8 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
                 while (metricIterator.hasNext()) {
                     Metric metric = metricIterator.next();
                     metric.provide(metricConsumer);
-                    mapMetric |= metricConsumer.descriptor.metricName().contains("name=map")
-                            & metricConsumer.descriptor.metricName().contains("map.");
+                    mapMetric |= metricConsumer.descriptor.metricString().contains("name=map")
+                            & metricConsumer.descriptor.metricString().contains("map.");
                 }
             }
             assertTrue(mapMetric);

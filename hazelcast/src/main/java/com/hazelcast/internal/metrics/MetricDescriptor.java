@@ -123,8 +123,15 @@ public interface MetricDescriptor {
     @Nonnull
     MetricDescriptor withTag(String tag, String value);
 
+    /**
+     * Returns the value associated with the given {@code tag}.
+     *
+     * @param tag The tag
+     * @return the value of the tag or {@code null} if the given tag is
+     * not set for the descriptor
+     */
     @Nullable
-    String tag(String tag);
+    String tagValue(String tag);
 
     /**
      * Calls the given {@code tagReader} with all tags in this descriptor.
@@ -150,7 +157,7 @@ public interface MetricDescriptor {
      * @return the textual representation
      */
     @Nonnull
-    String metricName();
+    String metricString();
 
     /**
      * Returns the excluded targets.
@@ -164,7 +171,7 @@ public interface MetricDescriptor {
      * Excludes the given target for this metric.
      * <p>
      * Note: The excluded targets are not part of the textual
-     * representation of the metric returned by {@link #metricName()}, but
+     * representation of the metric returned by {@link #metricString()}, but
      * part of its {@link #toString()}.
      *
      * @param target The target to exclude
@@ -181,7 +188,7 @@ public interface MetricDescriptor {
      * <p>
      * Note1: Calling this method overwrites the previously set excluded targets
      * Note2: The excluded targets are not part of the textual
-     * representation of the metric returned by {@link #metricName()}, but
+     * representation of the metric returned by {@link #metricString()}, but
      * part of its {@link #toString()}.
      *
      * @param excludedTargets The targets to exclude
@@ -199,7 +206,7 @@ public interface MetricDescriptor {
      * <p>
      * Note1: This is the invert method for {@link #withExcludedTarget(MetricTarget)}
      * Note2: The excluded targets are not part of the textual
-     * representation of the metric returned by {@link #metricName()}, but
+     * representation of the metric returned by {@link #metricString()}, but
      * part of its {@link #toString()}.
      *
      * @param target The target to exclude

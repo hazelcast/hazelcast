@@ -115,7 +115,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     @Override
     public Set<String> getNames() {
         return unmodifiableSet(probeInstances.values().stream()
-                                             .map(probeInstance -> probeInstance.descriptor.metricName())
+                                             .map(probeInstance -> probeInstance.descriptor.metricString())
                                              .collect(Collectors.toSet()));
     }
 
@@ -242,7 +242,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
         if (probeInstance.source == source && probeInstance.function == function) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Registered probeInstance " + descriptor.metricName());
+                logger.finest("Registered probeInstance " + descriptor.metricString());
             }
         } else {
             logOverwrite(probeInstance);

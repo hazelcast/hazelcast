@@ -71,7 +71,7 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
 
     @Nullable
     @Override
-    public String tag(String tag) {
+    public String tagValue(String tag) {
         Objects.requireNonNull(tag);
         for (int i = 0; i < tags.length; i += 2) {
             String tagStored = tags[i];
@@ -190,7 +190,7 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
 
     @Override
     @Nonnull
-    public String metricName() {
+    public String metricString() {
         return buildMetricString(false);
     }
 

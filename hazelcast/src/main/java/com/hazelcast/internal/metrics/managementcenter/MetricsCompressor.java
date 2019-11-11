@@ -81,11 +81,11 @@ import static java.lang.Math.multiplyExact;
 public class MetricsCompressor {
 
     @SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:TrailingComment"})
-    private static final int INITIAL_BUFFER_SIZE_METRICS = 2 << 11; // 2kB
+    private static final int INITIAL_BUFFER_SIZE_METRICS = 2 << 11; // 4kB
     @SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:TrailingComment"})
-    private static final int INITIAL_BUFFER_SIZE_DICTIONARY = 2 << 10; // 1kB
+    private static final int INITIAL_BUFFER_SIZE_DICTIONARY = 2 << 10; // 2kB
     @SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:TrailingComment"})
-    private static final int INITIAL_BUFFER_SIZE_DESCRIPTION = 2 << 8; // 32B
+    private static final int INITIAL_BUFFER_SIZE_DESCRIPTION = 2 << 8; // 512B
 
     private static final int SIZE_FACTOR_NUMERATOR = 11;
     private static final int SIZE_FACTOR_DENOMINATOR = 10;
@@ -162,7 +162,7 @@ public class MetricsCompressor {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private void writeDescriptor(MetricDescriptor descriptor) throws IOException {
         int mask = calculateDescriptorMask(descriptor);
-        tmpDos.writeShort(mask);
+        tmpDos.writeByte(mask);
 
         if ((mask & MASK_PREFIX) == 0) {
             tmpDos.writeInt(getDictionaryId(descriptor.prefix()));
@@ -319,12 +319,6 @@ public class MetricsCompressor {
     private byte[] getRenderedBlob() {
         try {
             writeDictionary();
-        } catch (IOException e) {
-            // should never be thrown
-            throw new RuntimeException(e);
-        }
-
-        try {
             dictionaryDos.close();
             metricDos.close();
         } catch (IOException e) {
@@ -380,12 +374,10 @@ public class MetricsCompressor {
 
             String[] dictionary = readDictionary(dictionaryBlob);
             return getIterator(metricsBlob, dictionary, supplier);
-
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
         }
-
     }
 
     @SuppressWarnings({"checkstyle:AnonInnerLength", "checkstyle:MethodLength"})
@@ -421,7 +413,7 @@ public class MetricsCompressor {
                 ProbeUnit[] units = ProbeUnit.values();
                 MetricDescriptor newDescriptor = supplier.get();
                 try {
-                    int mask = dis.readUnsignedShort();
+                    int mask = dis.readUnsignedByte();
 
                     // prefix
                     if ((mask & MASK_PREFIX) != 0) {

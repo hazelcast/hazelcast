@@ -83,6 +83,7 @@ public enum MetricTarget {
      *
      * @param bitset input array
      * @return set containing all items from the input array
+     * @see #bitset(Iterable)
      */
     public static Set<MetricTarget> asSet(int bitset) {
         return BITSET_TO_SET_CACHE.get(bitset & MASK_ALL_TARGETS);
@@ -116,7 +117,15 @@ public enum MetricTarget {
         return BITSET_TO_SET_CACHE.get(bitset);
     }
 
-    private static int bitset(MetricTarget[] targets) {
+    /**
+     * Creates a bitset from the given metric targets. The bitset is
+     * used internally for caching target sets.
+     *
+     * @param targets The targets to create the bitset for
+     * @return the bitset
+     * @see #asSet(int)
+     */
+    public static int bitset(Iterable<MetricTarget> targets) {
         int bitset = 0;
         for (MetricTarget target : targets) {
             bitset |= targetMask(target);
@@ -124,7 +133,7 @@ public enum MetricTarget {
         return bitset;
     }
 
-    public static int bitset(Iterable<MetricTarget> targets) {
+    private static int bitset(MetricTarget[] targets) {
         int bitset = 0;
         for (MetricTarget target : targets) {
             bitset |= targetMask(target);

@@ -26,20 +26,14 @@ import com.hazelcast.internal.metrics.ProbeUnit;
  * through reflective access.
  */
 final class CachedProbe {
-    private final String name;
     private final ProbeLevel level;
     private final ProbeUnit unit;
     private final MetricTarget[] excludedTargets;
 
     CachedProbe(Probe probe) {
-        name = probe.name();
         unit = probe.unit();
         level = probe.level();
         excludedTargets = probe.excludedTargets();
-    }
-
-    String name() {
-        return name;
     }
 
     ProbeLevel level() {

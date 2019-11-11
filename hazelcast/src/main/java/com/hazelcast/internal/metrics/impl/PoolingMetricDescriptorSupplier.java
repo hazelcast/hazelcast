@@ -35,7 +35,7 @@ class PoolingMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> 
 
     private final List<MetricDescriptorImpl> allCreated = new ArrayList<>(INITIAL_CAPACITY);
     private MetricDescriptorImpl[] pool = new MetricDescriptorImpl[INITIAL_CAPACITY];
-    private int poolPtr = -1;
+    private int poolPtr;
     private boolean closed;
 
     PoolingMetricDescriptorSupplier() {

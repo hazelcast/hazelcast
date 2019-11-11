@@ -71,7 +71,7 @@ public class MetricDescriptorImplTest {
                 .withDiscriminator("discriminatorTag", "discriminatorValue")
                 .withMetric("metricValue");
 
-        assertEquals("[discriminatorTag=discriminatorValue,metric=prefix.metricValue]", descriptor.metricName());
+        assertEquals("[discriminatorTag=discriminatorValue,metric=prefix.metricValue]", descriptor.metricString());
     }
 
     @Test
@@ -81,7 +81,7 @@ public class MetricDescriptorImplTest {
                 .withMetric("metricValue")
                 .withUnit(ProbeUnit.PERCENT);
 
-        assertEquals("[unit=percent,metric=prefix.metricValue]", descriptor.metricName());
+        assertEquals("[unit=percent,metric=prefix.metricValue]", descriptor.metricString());
     }
 
     @Test
@@ -90,7 +90,7 @@ public class MetricDescriptorImplTest {
                 .withDiscriminator("discriminatorTag", "discriminatorValue")
                 .withMetric("metricValue");
 
-        assertEquals("[discriminatorTag=discriminatorValue,metric=metricValue]", descriptor.metricName());
+        assertEquals("[discriminatorTag=discriminatorValue,metric=metricValue]", descriptor.metricString());
     }
 
     @Test
@@ -98,7 +98,7 @@ public class MetricDescriptorImplTest {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
                 .withMetric("metricValue");
 
-        assertEquals("[metric=metricValue]", descriptor.metricName());
+        assertEquals("[metric=metricValue]", descriptor.metricString());
     }
 
     @Test
@@ -114,7 +114,7 @@ public class MetricDescriptorImplTest {
                 .withTag("tag5", "tag5Value");
 
         assertEquals("[unit=ms,metric=metricValue,tag0=tag0Value,tag1=tag1Value,tag2=tag2Value,tag3=tag3Value,tag4=tag4Value,"
-                + "tag5=tag5Value]", descriptor.metricName());
+                + "tag5=tag5Value]", descriptor.metricString());
     }
 
     @Test
@@ -133,7 +133,7 @@ public class MetricDescriptorImplTest {
 
         assertEquals(
                 "[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metricValue,tag0=tag0Value,tag1=tag1Value,tag2=tag2Value,"
-                        + "tag3=tag3Value,tag4=tag4Value,tag5=tag5Value]", descriptor.metricName());
+                        + "tag3=tag3Value,tag4=tag4Value,tag5=tag5Value]", descriptor.metricString());
     }
 
     @Test
@@ -146,7 +146,7 @@ public class MetricDescriptorImplTest {
                 .withTag("tag0", "tag0Value");
 
         assertEquals("[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metricValue,tag0=tag0Value]",
-                descriptor.metricName());
+                descriptor.metricString());
     }
 
     @Test
@@ -169,9 +169,9 @@ public class MetricDescriptorImplTest {
         descriptor.withMetric("metric1");
 
         assertEquals("[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metric1,tag0=tag0Value,tag1=tag1Value,"
-                + "tag2=tag2Value]", descriptor.metricName());
+                + "tag2=tag2Value]", descriptor.metricString());
         assertEquals("[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metric2,tag0=tag0Value,tag1=tag1Value,"
-                + "tag2=tag2Value,tag3=tag3Value,tag4=tag4Value,tag5=tag5Value]", descriptorCopy.metricName());
+                + "tag2=tag2Value,tag3=tag3Value,tag4=tag4Value,tag5=tag5Value]", descriptorCopy.metricString());
     }
 
     @Test
@@ -185,7 +185,7 @@ public class MetricDescriptorImplTest {
                 .withExcludedTarget(MANAGEMENT_CENTER);
 
         assertEquals("[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metricValue,tag0=tag0Value]",
-                descriptor.metricName());
+                descriptor.metricString());
     }
 
     @Test
@@ -496,10 +496,10 @@ public class MetricDescriptorImplTest {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(new DefaultMetricDescriptorSupplier());
         for (int i = 0; i < 64; i++) {
             descriptor.withTag("tag" + i, "tag" + i + "Value");
-            assertEquals("tag" + i + "Value", descriptor.tag("tag" + i));
+            assertEquals("tag" + i + "Value", descriptor.tagValue("tag" + i));
             assertEquals(i + 1, descriptor.tagCount());
         }
-        assertNull(descriptor.tag("unknownTag"));
+        assertNull(descriptor.tagValue("unknownTag"));
     }
 
     @Test
@@ -509,11 +509,11 @@ public class MetricDescriptorImplTest {
             descriptor = descriptor.copy().withTag("tag" + i, "tag" + i + "Value");
 
             for (int j = 0; j <= i; j++) {
-                assertEquals("tag" + j + "Value", descriptor.tag("tag" + j));
+                assertEquals("tag" + j + "Value", descriptor.tagValue("tag" + j));
             }
             assertEquals(i + 1, descriptor.tagCount());
         }
-        assertNull(descriptor.tag("unknownTag"));
+        assertNull(descriptor.tagValue("unknownTag"));
     }
 
     @Test
@@ -526,10 +526,10 @@ public class MetricDescriptorImplTest {
                     .withTag("tag" + i, "tag" + i + "Value");
 
             for (int j = 0; j <= i; j++) {
-                assertEquals("tag" + j + "Value", descriptor.tag("tag" + j));
+                assertEquals("tag" + j + "Value", descriptor.tagValue("tag" + j));
             }
             assertEquals(i + 1, descriptor.tagCount());
         }
-        assertNull(descriptor.tag("unknownTag"));
+        assertNull(descriptor.tagValue("unknownTag"));
     }
 }

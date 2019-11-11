@@ -20,6 +20,7 @@ import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.util.MutableInteger;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
@@ -30,7 +31,6 @@ import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
@@ -179,7 +179,7 @@ public class JmxPublisher implements MetricsPublisher {
             metric = descriptor.metric();
             ProbeUnit descriptorUnit = descriptor.unit();
             unit = descriptorUnit != null ? descriptorUnit.name() : "unknown";
-            AtomicInteger tagCnt = new AtomicInteger();
+            MutableInteger tagCnt = new MutableInteger();
             descriptor.readTags((tag, tagValue) -> {
                 if ("module".equals(tag)) {
                     moduleBuilder.append(tagValue);
@@ -187,7 +187,7 @@ public class JmxPublisher implements MetricsPublisher {
                     if (mBeanTags.length() > 0) {
                         mBeanTags.append(',');
                     }
-                    int newTagIdx = tagCnt.getAndIncrement();
+                    int newTagIdx = tagCnt.getAndInc();
                     mBeanTags.append("tag").append(newTagIdx).append('=')
                              .append(escapeObjectNameValue(tag + "=" + tagValue));
                 }
