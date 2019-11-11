@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
@@ -36,6 +37,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.management.TimedMemberState;
+import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
@@ -338,6 +340,10 @@ public class ManagementCenterService {
 
     /**
      * Checks if local MC config (client filter list) on a given member has the same ETag as provided.
+     *
+     * @param member    target member
+     * @param eTag      ETag value of MC config to match with (should be the latest value from MC)
+     * @return          match result: <code>true</code> if config ETags match
      */
     @Nonnull
     public CompletableFuture<Boolean> matchMCConfig(Member member, String eTag) {
@@ -359,6 +365,35 @@ public class ManagementCenterService {
                     return response.response;
                 },
                 true
+        );
+    }
+
+    /**
+     * Applies the MC config (client filter list) on a given member.
+     *
+     * @param member        target member
+     * @param eTag          ETag of the new config
+     * @param clientBwList  new config
+     * @return              operation result
+     */
+    @Nonnull
+    public CompletableFuture<Void> applyMCConfig(Member member, String eTag, ClientBwListDTO clientBwList) {
+        checkNotNull(member);
+        checkNotNull(eTag);
+        checkNotNull(clientBwList);
+        checkNotNull(clientBwList.mode);
+        checkNotNull(clientBwList.entries);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCApplyMCConfigCodec.encodeRequest(eTag, clientBwList.mode.getId(), clientBwList.entries),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
         );
     }
 }
