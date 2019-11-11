@@ -33,8 +33,10 @@ public abstract class AbstractScheduledExecutorContainerHolder
 
     final NodeEngine nodeEngine;
 
-    final ConcurrentMap<String, ScheduledExecutorContainer> containers =
-            new ConcurrentHashMap<String, ScheduledExecutorContainer>();
+    /**
+     * Containers for scheduled tasks, grouped by scheduler name
+     */
+    final ConcurrentMap<String, ScheduledExecutorContainer> containers = new ConcurrentHashMap<>();
 
     public AbstractScheduledExecutorContainerHolder(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
