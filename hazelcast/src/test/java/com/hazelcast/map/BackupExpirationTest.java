@@ -23,12 +23,12 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -60,7 +60,6 @@ public class BackupExpirationTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "test";
     private static final int NODE_COUNT = 3;
-    private static final int REPLICA_COUNT = NODE_COUNT;
 
     private HazelcastInstance[] nodes;
 
@@ -89,16 +88,19 @@ public class BackupExpirationTest extends HazelcastTestSupport {
         nodes = factory.newInstances(config);
     }
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
     @Test
     public void all_backups_should_be_empty_eventually() throws Exception {
-        configureAndStartNodes(3, 271, 5);
+        configureAndStartNodes(3, 11, 1);
 
         IMap map = nodes[0].getMap(MAP_NAME);
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
         }
-
-        sleepSeconds(5);
 
         assertTrueEventually(() -> {
             for (HazelcastInstance node : nodes) {
