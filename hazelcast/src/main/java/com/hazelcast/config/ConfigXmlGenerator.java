@@ -1557,7 +1557,6 @@ public class ConfigXmlGenerator {
            .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
            .close()
            .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
-           .node("data-structure-metrics-enabled", metricsConfig.isDataStructureMetricsEnabled())
            .close();
     }
 

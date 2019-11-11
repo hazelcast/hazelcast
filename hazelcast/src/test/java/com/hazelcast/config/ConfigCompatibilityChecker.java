@@ -634,8 +634,7 @@ public class ConfigCompatibilityChecker {
                     && c1.getManagementCenterConfig().getRetentionSeconds() == c2.getManagementCenterConfig()
                                                                                  .getRetentionSeconds()
                     && c1.getJmxConfig().isEnabled() == c2.getJmxConfig().isEnabled()
-                    && c1.getCollectionFrequencySeconds() == c2.getCollectionFrequencySeconds()
-                    && c1.isDataStructureMetricsEnabled() == c2.isDataStructureMetricsEnabled();
+                    && c1.getCollectionFrequencySeconds() == c2.getCollectionFrequencySeconds();
         }
 
         @Override

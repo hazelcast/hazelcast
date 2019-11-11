@@ -215,7 +215,9 @@ public class NodeEngineImpl implements NodeEngine {
         FileMetricSet.register(metricsRegistry);
 
         MetricsConfig metricsConfig = node.getConfig().getMetricsConfig();
-        if (metricsConfig.isEnabled() && metricsConfig.isDataStructureMetricsEnabled()) {
+        HazelcastProperties properties = new HazelcastProperties(node.getConfig().getProperties());
+        boolean dataStructureMetrics = properties.getBoolean(GroupProperty.METRICS_DATASTRUCTURES);
+        if (metricsConfig.isEnabled() && dataStructureMetrics) {
             StatisticsAwareMetricsSet.register(serviceManager, metricsRegistry);
         }
 

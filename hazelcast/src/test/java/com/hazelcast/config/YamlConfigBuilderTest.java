@@ -3467,8 +3467,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      retention-seconds: 11\n"
                 + "    jmx:\n"
                 + "      enabled: false\n"
-                + "    collection-frequency-seconds: 10\n"
-                + "    data-structure-metrics-enabled: true";
+                + "    collection-frequency-seconds: 10";
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
@@ -3477,7 +3476,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
         assertEquals(11, metricsMcConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isDataStructureMetricsEnabled());
     }
 
     @Override

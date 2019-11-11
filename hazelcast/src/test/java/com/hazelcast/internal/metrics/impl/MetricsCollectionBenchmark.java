@@ -67,10 +67,8 @@ public class MetricsCollectionBenchmark {
         config.setProperty(GroupProperty.LOGGING_TYPE.getName(), "none");
         config.setProperty(GroupProperty.METRICS_DEBUG.getName(), "true");
         MetricsConfig metricsConfig = config.getMetricsConfig();
-        metricsConfig
-                .setDataStructureMetricsEnabled(true)
-                // we disable scheduled collection
-                .setCollectionFrequencySeconds(Integer.MAX_VALUE);
+        // we disable scheduled collection
+        metricsConfig.setCollectionFrequencySeconds(Integer.MAX_VALUE);
         metricsConfig.getJmxConfig().setEnabled(false);
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 

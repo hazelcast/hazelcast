@@ -46,8 +46,7 @@ public class MetricsConfigTest {
         // create MetricsConfig with non-defaults
         MetricsConfig original = new MetricsConfig()
                 .setEnabled(false)
-                .setCollectionFrequencySeconds(1)
-                .setDataStructureMetricsEnabled(true);
+                .setCollectionFrequencySeconds(1);
 
         original.getManagementCenterConfig()
                 .setEnabled(false)

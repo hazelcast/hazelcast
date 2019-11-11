@@ -1427,6 +1427,5 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(42, metricsConfig.getManagementCenterConfig().getRetentionSeconds());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
-        assertTrue(metricsConfig.isDataStructureMetricsEnabled());
     }
 }

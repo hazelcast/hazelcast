@@ -77,11 +77,6 @@ public final class MetricsConfigHelper {
                 prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
                 () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
                 "MetricsConfig.collectionFrequencySeconds");
-
-        // MetricsConfig.dataStructuresEnabled
-        tryOverride(config, GroupProperty.METRICS_DATASTRUCTURES,
-                prop -> metricsConfig.setDataStructureMetricsEnabled(Boolean.parseBoolean(prop)),
-                () -> Boolean.toString(metricsConfig.isDataStructureMetricsEnabled()), "MetricsConfig.dataStructuresEnabled");
     }
 
     private static void tryOverride(Config hzConfig, HazelcastProperty property, Consumer<String> setterFn,

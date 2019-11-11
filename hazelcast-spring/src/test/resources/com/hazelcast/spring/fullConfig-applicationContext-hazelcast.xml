@@ -940,7 +940,6 @@
                 </hz:management-center>
                 <hz:jmx enabled="false"/>
                 <hz:collection-frequency-seconds>24</hz:collection-frequency-seconds>
-                <hz:data-structure-metrics-enabled>true</hz:data-structure-metrics-enabled>
             </hz:metrics>
         </hz:config>
     </hz:hazelcast>

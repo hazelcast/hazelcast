@@ -4734,17 +4734,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="data-structure-metrics-enabled" type="xs:boolean" default="false" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Controls if metrics should be collected for the
-                        distributed data structures (maps, caches etc).
-                        It is disabled by default.
-                        May be overridden by 'hazelcast.metrics.datastructures'
-                        system property.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>

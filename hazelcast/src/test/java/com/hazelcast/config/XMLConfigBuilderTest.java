@@ -3432,7 +3432,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  </management-center>"
                 + "  <jmx enabled=\"false\" />"
                 + "  <collection-frequency-seconds>10</collection-frequency-seconds>\n"
-                + "  <data-structure-metrics-enabled>true</data-structure-metrics-enabled>\n"
                 + "</metrics>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
@@ -3443,7 +3442,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
         assertEquals(11, metricsMcConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isDataStructureMetricsEnabled());
     }
 
     @Override

@@ -3274,10 +3274,6 @@ hazelcast:
   #     Sets the metrics collection frequency in seconds.
   #     By default, metrics are collected every 5 seconds.
   #
-  # * "data-structure-metrics":
-  #     Controls if metrics should be collected for the
-  #     distributed data structures (maps, caches etc).
-  #     It is disabled by default.
   #
   metrics:
     enabled: false
@@ -3287,4 +3283,3 @@ hazelcast:
     jmx:
       enabled: false
     collection-frequency-seconds: 10
-    data-structure-metrics-enabled: true

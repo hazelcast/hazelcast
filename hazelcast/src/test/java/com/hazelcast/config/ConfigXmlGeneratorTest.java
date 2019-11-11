@@ -1457,8 +1457,7 @@ public class ConfigXmlGeneratorTest {
 
         config.getMetricsConfig()
               .setEnabled(false)
-              .setCollectionFrequencySeconds(10)
-              .setDataStructureMetricsEnabled(true);
+              .setCollectionFrequencySeconds(10);
 
         config.getMetricsConfig().getManagementCenterConfig()
               .setEnabled(false)

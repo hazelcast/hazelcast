@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.properties.GroupProperty;
 
@@ -40,7 +39,6 @@ public class MetricsConfig {
     private boolean enabled = true;
     private MetricsManagementCenterConfig managementCenterConfig = new MetricsManagementCenterConfig();
     private MetricsJmxConfig jmxConfig = new MetricsJmxConfig();
-    private boolean dataStructureMetricsEnabled;
     private int collectionFrequencySeconds = DEFAULT_METRICS_COLLECTION_SECONDS;
 
     public MetricsConfig() {
@@ -50,7 +48,6 @@ public class MetricsConfig {
         this.enabled = metricsConfig.enabled;
         this.managementCenterConfig = new MetricsManagementCenterConfig(metricsConfig.managementCenterConfig);
         this.jmxConfig = new MetricsJmxConfig(metricsConfig.jmxConfig);
-        this.dataStructureMetricsEnabled = metricsConfig.dataStructureMetricsEnabled;
         this.collectionFrequencySeconds = metricsConfig.collectionFrequencySeconds;
     }
 
@@ -119,29 +116,6 @@ public class MetricsConfig {
         return this.collectionFrequencySeconds;
     }
 
-    /**
-     * Sets whether statistics for data structures are added to metrics.
-     * It's disabled by default.
-     * <p/>
-     * Note that enabling the data structures metrics also sets
-     * to {@link ProbeLevel#INFO}.
-     * <p/>
-     * May be overridden by {@link GroupProperty#METRICS_DATASTRUCTURES}
-     * system property.
-     */
-    @Nonnull
-    public MetricsConfig setDataStructureMetricsEnabled(boolean dataStructureMetricsEnabled) {
-        this.dataStructureMetricsEnabled = dataStructureMetricsEnabled;
-        return this;
-    }
-
-    /**
-     * Returns if statistics for data structures are added to metrics.
-     */
-    public boolean isDataStructureMetricsEnabled() {
-        return dataStructureMetricsEnabled;
-    }
-
     @Override
     @SuppressWarnings("checkstyle:NPathComplexity")
     public final boolean equals(Object o) {
@@ -155,9 +129,6 @@ public class MetricsConfig {
         MetricsConfig that = (MetricsConfig) o;
 
         if (enabled != that.enabled) {
-            return false;
-        }
-        if (dataStructureMetricsEnabled != that.dataStructureMetricsEnabled) {
             return false;
         }
         if (collectionFrequencySeconds != that.collectionFrequencySeconds) {
@@ -174,7 +145,6 @@ public class MetricsConfig {
         int result = (enabled ? 1 : 0);
         result = 31 * result + (managementCenterConfig != null ? managementCenterConfig.hashCode() : 0);
         result = 31 * result + (jmxConfig != null ? jmxConfig.hashCode() : 0);
-        result = 31 * result + (dataStructureMetricsEnabled ? 1 : 0);
         result = 31 * result + collectionFrequencySeconds;
         return result;
     }
@@ -185,7 +155,6 @@ public class MetricsConfig {
                 + "enabled=" + enabled
                 + ", managementCenterConfig=" + managementCenterConfig
                 + ", jmxConfig=" + jmxConfig
-                + ", dataStructureMetricsEnabled=" + dataStructureMetricsEnabled
                 + ", collectionFrequencySeconds=" + collectionFrequencySeconds
                 + '}';
     }

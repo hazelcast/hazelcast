@@ -69,8 +69,6 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     public void setup() {
         Config config = new Config();
         config.addMapConfig(new MapConfig(NEAR_CACHE_MAP_NAME).setNearCacheConfig(new NearCacheConfig("nearCache")));
-        config.getMetricsConfig()
-              .setDataStructureMetricsEnabled(true);
         config.addCacheConfig(new CacheSimpleConfig()
                 .setName(CACHE_NAME)
                 .setStatisticsEnabled(true));

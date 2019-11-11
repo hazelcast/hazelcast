@@ -1098,16 +1098,8 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.metrics.debug.enabled");
 
     /**
-     * Enables/disables collecting metrics from the distributed datastructures.
-     * <p/>
-     * NOTE: This property overrides {@link MetricsConfig#isDataStructureMetricsEnabled()}.
-     * <p/>
-     * Using {@link MetricsConfig#setDataStructureMetricsEnabled(boolean)} and the declarative
-     * counterparts are preferred over using this property. The main purpose
-     * of making metrics collection configurable from properties too is
-     * allowing operators to configure the metrics subsystem from the outside
-     * during investigation without touching or copying the configuration
-     * potentially embedded into a signed artifact.
+     * Enables/disables collecting metrics from the distributed data structures.
+     * By default, collecting data structure metrics are enabled.
      */
     public static final HazelcastProperty METRICS_DATASTRUCTURES
             = new HazelcastProperty("hazelcast.metrics.datastructures.enabled", "true");

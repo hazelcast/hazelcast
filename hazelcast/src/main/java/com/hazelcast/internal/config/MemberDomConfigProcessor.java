@@ -3048,8 +3048,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleMetricsJmx(child);
             } else if ("collection-frequency-seconds".equals(nodeName)) {
                 metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(value));
-            } else if ("data-structure-metrics-enabled".equals(nodeName)) {
-                metricsConfig.setDataStructureMetricsEnabled(Boolean.parseBoolean(value));
             }
         }
     }
