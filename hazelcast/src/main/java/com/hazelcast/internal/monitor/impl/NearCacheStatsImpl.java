@@ -22,6 +22,7 @@ import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.lang.String.format;
@@ -312,6 +313,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         root.add("lastPersistenceWrittenBytes", lastPersistenceWrittenBytes);
         root.add("lastPersistenceKeyCount", lastPersistenceKeyCount);
         root.add("lastPersistenceFailure", lastPersistenceFailure);
+        root.add("nativeMemoryUsed", nativeMemoryUsed);
         return root;
     }
 
@@ -332,6 +334,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         lastPersistenceWrittenBytes = getLong(json, "lastPersistenceWrittenBytes", -1L);
         lastPersistenceKeyCount = getLong(json, "lastPersistenceKeyCount", -1L);
         lastPersistenceFailure = getString(json, "lastPersistenceFailure", "");
+        nativeMemoryUsed = getBoolean(json, "nativeMemoryUsed", false);
     }
 
     @Override
@@ -353,6 +356,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 + ", lastPersistenceWrittenBytes=" + lastPersistenceWrittenBytes
                 + ", lastPersistenceKeyCount=" + lastPersistenceKeyCount
                 + ", lastPersistenceFailure='" + lastPersistenceFailure + "'"
+                + ", nativeMemoryUsed=" + nativeMemoryUsed
                 + '}';
     }
 }

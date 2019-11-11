@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -24,6 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.io.Serializable;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -184,7 +186,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      * {@code false} if the key is stored by-reference and in-memory-format is {@code BINARY} or {@code OBJECT}
      */
     public boolean isSerializeKeys() {
-        return serializeKeys || inMemoryFormat == InMemoryFormat.NATIVE;
+        return serializeKeys || inMemoryFormat == NATIVE;
     }
 
     /**
@@ -383,6 +385,12 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     @Override
     public int getClassId() {
         return ConfigDataSerializerHook.NEAR_CACHE_CONFIG;
+    }
+
+    public NearCacheStatsImpl initNearCacheStats() {
+        NearCacheStatsImpl stats = new NearCacheStatsImpl();
+        stats.setNativeMemoryUsed(inMemoryFormat == NATIVE);
+        return stats;
     }
 
     @Override

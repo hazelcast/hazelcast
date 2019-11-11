@@ -80,21 +80,22 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
 
     @Test
     public void testDefaultConstructor() {
-        assertNearCacheStats(nearCacheStats, 1, 200, 300, 400, false);
+        assertNearCacheStats(nearCacheStats, 1, 200, 300, 400, false, false);
     }
 
     @Test
     public void testCopyConstructor() {
         NearCacheStatsImpl copy = new NearCacheStatsImpl(nearCacheStats);
 
-        assertNearCacheStats(copy, 1, 200, 300, 400, false);
+        assertNearCacheStats(copy, 1, 200, 300, 400, false, false);
     }
 
     @Test
     public void testSerialization() {
+        nearCacheStats.setNativeMemoryUsed(true);
         NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
 
-        assertNearCacheStats(deserialized, 1, 200, 300, 400, false);
+        assertNearCacheStats(deserialized, 1, 200, 300, 400, false, true);
     }
 
     @Test
@@ -104,7 +105,7 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
 
         NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
 
-        assertNearCacheStats(deserialized, 2, 0, 0, 0, true);
+        assertNearCacheStats(deserialized, 2, 0, 0, 0, true, false);
 
         String lastPersistenceFailure = deserialized.getLastPersistenceFailure();
         assertContains(lastPersistenceFailure, throwable.getClass().getSimpleName());
@@ -154,8 +155,6 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
         startLatch.countDown();
         assertJoinable(threads);
 
-        System.out.println(nearCacheStats);
-
         int incCount = incThreads * countPerThread;
         int decCount = decThreads * countPerThread;
         int totalCount = incCount - decCount;
@@ -176,7 +175,8 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
     }
 
     private static void assertNearCacheStats(NearCacheStatsImpl stats, long expectedPersistenceCount, long expectedDuration,
-                                             long expectedWrittenBytes, long expectedKeyCount, boolean expectedFailure) {
+                                             long expectedWrittenBytes, long expectedKeyCount, boolean expectedFailure,
+                                             boolean nativeMemoryUsed) {
         assertTrue(stats.getCreationTime() > 0);
         assertEquals(500, stats.getOwnedEntryCount());
         assertEquals(1280, stats.getOwnedEntryMemoryCost());
@@ -191,6 +191,7 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
         assertEquals(expectedDuration, stats.getLastPersistenceDuration());
         assertEquals(expectedWrittenBytes, stats.getLastPersistenceWrittenBytes());
         assertEquals(expectedKeyCount, stats.getLastPersistenceKeyCount());
+        assertEquals(nativeMemoryUsed, stats.isNativeMemoryUsed());
         if (expectedFailure) {
             assertFalse(stats.getLastPersistenceFailure().isEmpty());
         } else {

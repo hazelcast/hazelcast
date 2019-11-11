@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -74,14 +75,7 @@ public class LocalMapStatsProvider {
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction = this::initializeLocalMapStats;
 
     private LocalMapStatsImpl initializeLocalMapStats(String mapName) {
-        LocalMapStatsImpl stats = new LocalMapStatsImpl();
-//        mapServiceContext.getMapContainer(mapName).getMapConfig().getNearCacheConfig().getInMemoryFormat() == NATIVE
-        MapConfig mapConfig = mapServiceContext.getMapContainer(mapName).getMapConfig();
-        stats.setNativeMemoryUsed(mapConfig.getInMemoryFormat() == NATIVE);
-        if (mapConfig.getNearCacheConfig() != null) {
-//            stats.setNearCacheStats();
-        }
-        return stats;
+        return mapServiceContext.getMapContainer(mapName).getMapConfig().initMapStats();
     }
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {

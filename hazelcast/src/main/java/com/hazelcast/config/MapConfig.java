@@ -17,9 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
@@ -954,5 +958,12 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());
+    }
+
+    public LocalMapStatsImpl initMapStats() {
+        LocalMapStatsImpl stats = new LocalMapStatsImpl();
+        stats.setNativeMemoryUsed(inMemoryFormat == NATIVE);
+        stats.setNearCacheStats(nearCacheConfig.initNearCacheStats());
+        return stats;
     }
 }
