@@ -18,7 +18,6 @@ package com.hazelcast.client.splitbrainprotection.set;
 
 import com.hazelcast.client.splitbrainprotection.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.splitbrainprotection.set.SetSplitBrainProtectionReadTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -41,7 +40,7 @@ public class ClientSetSplitBrainProtectionReadTest extends SetSplitBrainProtecti
     @BeforeClass
     public static void setUp() {
         TestHazelcastFactory factory = new TestHazelcastFactory();
-        initTestEnvironment(new Config(), factory);
+        initTestEnvironment(smallInstanceConfig(), factory);
         clients = new PartitionedClusterClients(cluster, factory);
     }
 

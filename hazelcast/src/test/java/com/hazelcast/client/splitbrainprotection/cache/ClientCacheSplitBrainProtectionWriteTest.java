@@ -19,7 +19,6 @@ package com.hazelcast.client.splitbrainprotection.cache;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.splitbrainprotection.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.splitbrainprotection.cache.CacheSplitBrainProtectionWriteTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,7 +40,7 @@ public class ClientCacheSplitBrainProtectionWriteTest extends CacheSplitBrainPro
     @BeforeClass
     public static void setUp() {
         TestHazelcastFactory factory = new TestHazelcastFactory();
-        initTestEnvironment(new Config(), factory);
+        initTestEnvironment(smallInstanceConfig(), factory);
         clients = new PartitionedClusterClients(cluster, factory);
     }
 
