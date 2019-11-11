@@ -66,7 +66,7 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
         });
 
         plugin.run(logWriter);
-        assertContains("[metric=broken]=java.lang.RuntimeException:error");
+        assertContains("[metric=broken,excludedTargets={}]=java.lang.RuntimeException:error");
     }
 
     @Test
@@ -74,8 +74,8 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
         plugin.run(logWriter);
 
         // we just test a few to make sure the metrics are written
-        assertContains("[unit=count,metric=client.endpoint.count]=0");
-        assertContains("[unit=count,metric=operation.responseQueueSize]=0");
+        assertContains("[unit=count,metric=client.endpoint.count,excludedTargets={}]=0");
+        assertContains("[unit=count,metric=operation.responseQueueSize,excludedTargets={}]=0");
     }
 
     @Test
@@ -84,10 +84,10 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
 
         plugin.run(logWriter);
 
-        assertContains("[unit=count,metric=test.notExcludedLong]=1");
-        assertNotContains("[unit=count,metric=test.excludedLong]=1");
-        assertContains("[unit=count,metric=test.notExcludedDouble]=1.5");
-        assertNotContains("[unit=count,metric=test.excludedDouble]=2.5");
+        assertContains("[unit=count,metric=test.notExcludedLong,excludedTargets={}]=1");
+        assertNotContains("[unit=count,metric=test.excludedLong,excludedTargets={}]=1");
+        assertContains("[unit=count,metric=test.notExcludedDouble,excludedTargets={}]=1.5");
+        assertNotContains("[unit=count,metric=test.excludedDouble,excludedTargets={}]=2.5");
     }
 
     private static class ExclusionProbeSource {

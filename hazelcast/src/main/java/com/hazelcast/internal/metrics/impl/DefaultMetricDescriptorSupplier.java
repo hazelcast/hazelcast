@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics;
+package com.hazelcast.internal.metrics.impl;
+
+import com.hazelcast.internal.metrics.MetricDescriptor;
+
+import java.util.function.Supplier;
 
 /**
- * Interface that can return a Probe instance.
+ * Default {@link MetricDescriptor} {@link Supplier} creating new instance
+ * on every call to {@link #get()}.
  */
-public interface ProbeAware {
-    /**
-     * Returns the probe.
-     *
-     * @return the probe
-     */
-    Probe getProbe();
+public class DefaultMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> {
+    public static final Supplier<MetricDescriptorImpl> DEFAULT_DESCRIPTOR_SUPPLIER = new DefaultMetricDescriptorSupplier();
+
+    @Override
+    public MetricDescriptorImpl get() {
+        return new MetricDescriptorImpl(this);
+    }
 }

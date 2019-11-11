@@ -17,7 +17,8 @@
 package com.hazelcast.internal.nio.tcp;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.impl.CapturingCollector;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -27,14 +28,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
-import static java.util.Collections.emptySet;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.matches;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -45,19 +44,29 @@ public class TcpIpEndpointManagerMetricsTest extends HazelcastTestSupport {
 
     @Test
     public void testUnifiedEndpointManagerMetricsCollectedOnce() {
-        MetricsCollector collectorMock = mock(MetricsCollector.class);
+        CapturingCollector collector = new CapturingCollector();
         HazelcastInstance instance = createHazelcastInstance();
 
-        getNodeEngineImpl(instance).getMetricsRegistry().collect(collectorMock);
+        getNodeEngineImpl(instance).getMetricsRegistry().collect(collector);
 
         // defined by TcpIpEndpointManager
-        verifyCollectedOnce(collectorMock, "tcp.connection.count");
+        verifyCollectedOnce(collector, metricDescriptor("tcp.connection", "count"));
         // defined by TcpIpUnifiedEndpointManager
-        verifyCollectedOnce(collectorMock, "tcp.connection.clientCount");
-        verifyCollectedOnce(collectorMock, "tcp.connection.textCount");
+        verifyCollectedOnce(collector, metricDescriptor("tcp.connection", "clientCount"));
+        verifyCollectedOnce(collector, metricDescriptor("tcp.connection", "textCount"));
     }
 
-    private void verifyCollectedOnce(MetricsCollector collectorMock, String metric) {
-        verify(collectorMock).collectLong(matches(".*" + metric + ".*"), anyLong(), eq(emptySet()));
+    private void verifyCollectedOnce(CapturingCollector collector, MetricDescriptor expectedDescriptor) {
+        CapturingCollector.Capture capture = collector.captures().get(expectedDescriptor);
+        assertNotNull(capture);
+        assertEquals(1, capture.hits());
+        assertInstanceOf(Long.class, capture.singleCapturedValue());
+    }
+
+    private MetricDescriptor metricDescriptor(String prefix, String metric) {
+        return DEFAULT_DESCRIPTOR_SUPPLIER.get()
+                                          .withPrefix(prefix)
+                                          .withMetric(metric)
+                                          .withUnit(COUNT);
     }
 }

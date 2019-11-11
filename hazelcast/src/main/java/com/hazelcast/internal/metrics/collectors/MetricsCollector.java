@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.metrics.collectors;
 
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-
-import java.util.Set;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 
 /**
  * With the {@link MetricsCollector} the metrics registered in the
@@ -27,12 +25,12 @@ import java.util.Set;
  */
 public interface MetricsCollector {
 
-    void collectLong(String name, long value, Set<MetricTarget> excludedTargets);
+    void collectLong(MetricDescriptor descriptor, long value);
 
-    void collectDouble(String name, double value, Set<MetricTarget> excludedTargets);
+    void collectDouble(MetricDescriptor descriptor, double value);
 
-    void collectException(String name, Exception e, Set<MetricTarget> excludedTargets);
+    void collectException(MetricDescriptor descriptor, Exception e);
 
-    void collectNoValue(String name, Set<MetricTarget> excludedTargets);
+    void collectNoValue(MetricDescriptor descriptor);
 
 }

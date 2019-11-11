@@ -21,9 +21,8 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -390,23 +389,30 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+        public void provideDynamicMetrics(MetricDescriptor descriptor,
+                                          MetricsCollectionContext context) {
             for (ManagedExecutorService executorService : executors.values()) {
-                MetricTagger tagger = taggerSupplier.getMetricTagger("internal-executor")
-                                                    .withIdTag("executor", executorService.getName());
-                context.collect(tagger, executorService);
+                MetricDescriptor executorDescriptor = descriptor
+                        .copy()
+                        .withPrefix("internal-executor")
+                        .withDiscriminator("executor", executorService.getName());
+                context.collect(executorDescriptor, executorService);
             }
 
             for (ManagedExecutorService executorService : durableExecutors.values()) {
-                MetricTagger tagger = taggerSupplier.getMetricTagger("durable-executor")
-                                                    .withIdTag("executor", executorService.getName());
-                context.collect(tagger, executorService);
+                MetricDescriptor executorDescriptor = descriptor
+                        .copy()
+                        .withPrefix("durable-executor")
+                        .withDiscriminator("executor", executorService.getName());
+                context.collect(executorDescriptor, executorService);
             }
 
             for (ManagedExecutorService executorService : scheduleDurableExecutors.values()) {
-                MetricTagger tagger = taggerSupplier.getMetricTagger("scheduled-durable-executor")
-                                                    .withIdTag("executor", executorService.getName());
-                context.collect(tagger, executorService);
+                MetricDescriptor executorDescriptor = descriptor
+                        .copy()
+                        .withPrefix("scheduled-durable-executor")
+                        .withDiscriminator("executor", executorService.getName());
+                context.collect(executorDescriptor, executorService);
             }
         }
     }

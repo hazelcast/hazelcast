@@ -25,8 +25,8 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.map.IMap;
@@ -45,7 +45,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 
@@ -204,7 +203,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         StringMetricsCollector(String dsName, String metricPrefix) {
             this.pattern = Pattern.compile(
                     String.format(
-                            "^\\[name=%s,.+,metric=%s.+\\]$",
+                            "^\\[name=%s,(.+,)?metric=%s.+\\]$",
                             dsName.replace(".", "\\."),
                             metricPrefix.replace(".", "\\.")
                     )
@@ -212,28 +211,32 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void collectLong(String name, long value, Set<MetricTarget> excludedMetricTargets) {
+        public void collectLong(MetricDescriptor descriptor, long value) {
+            String name = descriptor.toString();
             if (pattern.matcher(name).matches()) {
                 probes.put(name, value);
             }
         }
 
         @Override
-        public void collectDouble(String name, double value, Set<MetricTarget> excludedMetricTargets) {
+        public void collectDouble(MetricDescriptor descriptor, double value) {
+            String name = descriptor.toString();
             if (pattern.matcher(name).matches()) {
                 probes.put(name, value);
             }
         }
 
         @Override
-        public void collectException(String name, Exception e, Set<MetricTarget> excludedMetricTargets) {
+        public void collectException(MetricDescriptor descriptor, Exception e) {
+            String name = descriptor.toString();
             if (pattern.matcher(name).matches()) {
                 probes.put(name, e);
             }
         }
 
         @Override
-        public void collectNoValue(String name, Set<MetricTarget> excludedMetricTargets) {
+        public void collectNoValue(MetricDescriptor descriptor) {
+            String name = descriptor.toString();
             if (pattern.matcher(name).matches()) {
                 probes.put(name, null);
             }

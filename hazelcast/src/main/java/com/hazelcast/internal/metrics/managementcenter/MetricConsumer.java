@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
+import com.hazelcast.internal.metrics.MetricDescriptor;
+
 /**
  * An interface that allows consuming keys and primitive values
  * stored in {@link Metric} objects.
@@ -27,17 +29,17 @@ public interface MetricConsumer {
     /**
      * Called when the Metric contains a {@code long} value.
      *
-     * @param key   metric key
-     * @param value metric value
+     * @param descriptor  metric descriptor
+     * @param value       metric value
      */
-    void consumeLong(String key, long value);
+    void consumeLong(MetricDescriptor descriptor, long value);
 
     /**
      * Called when the Metric contains a {@code double} value.
      *
-     * @param key   metric key
-     * @param value metric value
+     * @param descriptor  metric descriptor
+     * @param value       metric value
      */
-    void consumeDouble(String key, double value);
+    void consumeDouble(MetricDescriptor descriptor, double value);
 
 }

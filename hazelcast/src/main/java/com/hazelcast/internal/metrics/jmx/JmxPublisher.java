@@ -17,9 +17,10 @@
 package com.hazelcast.internal.metrics.jmx;
 
 import com.hazelcast.config.MetricsConfig;
-import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
-import com.hazelcast.internal.metrics.MetricsUtil;
+import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.util.MutableInteger;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
@@ -27,17 +28,13 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
-import static com.hazelcast.internal.util.MapUtil.entry;
+import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 
 /**
  * Renderer to create, register and unregister mBeans for metrics as they are
@@ -51,14 +48,14 @@ public class JmxPublisher implements MetricsPublisher {
     /**
      * key: metric name, value: MetricData
      */
-    private final Map<String, MetricData> metricNameToMetricData = new HashMap<>();
+    private final Map<MetricDescriptor, MetricData> metricNameToMetricData = new HashMap<>();
     /**
      * key: jmx object name, value: mBean
      */
     private final Map<ObjectName, MetricsMBean> mBeans = new HashMap<>();
 
     private volatile boolean isShutdown;
-    private final Function<String, MetricData> createMetricDataFunction;
+    private final Function<MetricDescriptor, MetricData> createMetricDataFunction;
     private final Function<? super ObjectName, ? extends MetricsMBean> createMBeanFunction;
 
     public JmxPublisher(String instanceName, String domainPrefix) {
@@ -82,28 +79,35 @@ public class JmxPublisher implements MetricsPublisher {
     }
 
     @Override
-    public void publishLong(String metricName, long value, Set<MetricTarget> excludedTargets) {
-        publishNumber(metricName, value, excludedTargets);
+    public void publishLong(MetricDescriptor descriptor, long value) {
+        publishNumber(descriptor, value);
     }
 
     @Override
-    public void publishDouble(String metricName, double value, Set<MetricTarget> excludedTargets) {
-        publishNumber(metricName, value, excludedTargets);
+    public void publishDouble(MetricDescriptor descriptor, double value) {
+        publishNumber(descriptor, value);
     }
 
-    private void publishNumber(String metricName, Number value, Set<MetricTarget> excludedTargets) {
-        if (excludedTargets.contains(JMX)) {
+    private void publishNumber(MetricDescriptor originalDescriptor, Number value) {
+        if (originalDescriptor.isTargetExcluded(JMX)) {
             return;
         }
 
-        MetricData metricData = metricNameToMetricData.computeIfAbsent(metricName, createMetricDataFunction);
-        assert !metricData.wasPresent : "metric '" + metricName + "' was rendered twice";
+        // we need to take a copy of originalDescriptor here to ensure
+        // we map with an instance that doesn't get recycled or mutated
+        MetricDescriptor descriptor = copy(originalDescriptor);
+        MetricData metricData = metricNameToMetricData.computeIfAbsent(descriptor, createMetricDataFunction);
+        assert !metricData.wasPresent : "metric '" + originalDescriptor.toString() + "' was rendered twice";
         metricData.wasPresent = true;
         MetricsMBean mBean = mBeans.computeIfAbsent(metricData.objectName, createMBeanFunction);
         if (isShutdown) {
             unregisterMBeanIgnoreError(metricData.objectName);
         }
         mBean.setMetricValue(metricData.metric, metricData.unit, value);
+    }
+
+    private MetricDescriptor copy(MetricDescriptor descriptor) {
+        return DEFAULT_DESCRIPTOR_SUPPLIER.get().copy(descriptor);
     }
 
     private void unregisterMBeanIgnoreError(ObjectName objectName) {
@@ -167,45 +171,38 @@ public class JmxPublisher implements MetricsPublisher {
         /**
          * See {@link MetricsConfig#setJmxEnabled(boolean)}.
          */
-        @SuppressWarnings("checkstyle:ExecutableStatementCount")
-        MetricData(String metricName, String instanceNameEscaped, String domainPrefix) {
-            List<Entry<String, String>> tagsList = metricName.startsWith("[") && metricName.endsWith("]")
-                    ? MetricsUtil.parseMetricName(metricName)
-                    : parseOldMetricName(metricName);
+        @SuppressWarnings({"checkstyle:ExecutableStatementCount", "checkstyle:NPathComplexity"})
+        MetricData(MetricDescriptor descriptor, String instanceNameEscaped, String domainPrefix) {
             StringBuilder mBeanTags = new StringBuilder();
+            StringBuilder moduleBuilder = new StringBuilder();
             String module = null;
-            metric = "metric";
-            unit = "unknown";
-            int tag = 0;
-
-            for (Entry<String, String> entry : tagsList) {
-                switch (entry.getKey()) {
-                    case "unit":
-                        unit = entry.getValue();
-                        break;
-                    case "module":
-                        module = entry.getValue();
-                        break;
-                    case "metric":
-                        metric = entry.getValue();
-                        break;
-                    default:
-                        if (mBeanTags.length() > 0) {
-                            mBeanTags.append(',');
-                        }
-                        mBeanTags.append("tag")
-                                 .append(tag++)
-                                 .append('=');
-                        if (entry.getKey().length() == 0) {
-                            // key is empty for old metric names (see parseOldMetricName)
-                            mBeanTags.append(escapeObjectNameValue(entry.getValue()));
-                        } else {
-                            // We add both key and value to the value: the key carries semantic value, we
-                            // want to see it in the UI.
-                            mBeanTags.append(escapeObjectNameValue(entry.getKey() + '=' + entry.getValue()));
-                        }
+            metric = descriptor.metric();
+            ProbeUnit descriptorUnit = descriptor.unit();
+            unit = descriptorUnit != null ? descriptorUnit.name() : "unknown";
+            MutableInteger tagCnt = new MutableInteger();
+            descriptor.readTags((tag, tagValue) -> {
+                if ("module".equals(tag)) {
+                    moduleBuilder.append(tagValue);
+                } else {
+                    if (mBeanTags.length() > 0) {
+                        mBeanTags.append(',');
+                    }
+                    int newTagIdx = tagCnt.getAndInc();
+                    mBeanTags.append("tag").append(newTagIdx).append('=')
+                             .append(escapeObjectNameValue(tag + "=" + tagValue));
                 }
+            });
+            if (moduleBuilder.length() > 0) {
+                module = moduleBuilder.toString();
             }
+            String discriminator = descriptor.discriminator();
+            String discriminatorValue = descriptor.discriminatorValue();
+            if (discriminator != null && discriminatorValue != null) {
+                mBeanTags.append(escapeObjectNameValue(discriminator))
+                         .append('=')
+                         .append(escapeObjectNameValue(discriminatorValue));
+            }
+
             assert metric != null : "metric == null";
 
             StringBuilder objectNameStr = new StringBuilder(mBeanTags.length() + (1 << 3 << 3));
@@ -215,6 +212,9 @@ public class JmxPublisher implements MetricsPublisher {
             }
             objectNameStr.append(":type=Metrics");
             objectNameStr.append(",instance=").append(instanceNameEscaped);
+            if (descriptor.prefix() != null) {
+                objectNameStr.append(",prefix=").append(escapeObjectNameValue(descriptor.prefix()));
+            }
             if (mBeanTags.length() > 0) {
                 objectNameStr.append(',').append(mBeanTags);
             }
@@ -225,33 +225,6 @@ public class JmxPublisher implements MetricsPublisher {
             } catch (MalformedObjectNameException e) {
                 throw new RuntimeException(e);
             }
-        }
-
-        private static List<Entry<String, String>> parseOldMetricName(String name) {
-            List<Entry<String, String>> res = new ArrayList<>();
-            boolean inBracket = false;
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < name.length(); i++) {
-                char ch = name.charAt(i);
-                if (ch == '.' && !inBracket) {
-                    if (builder.length() > 0) {
-                        res.add(entry("", builder.toString()));
-                    }
-                    builder.setLength(0);
-                } else {
-                    builder.append(ch);
-                    if (ch == '[') {
-                        inBracket = true;
-                    } else if (ch == ']') {
-                        inBracket = false;
-                    }
-                }
-            }
-            // the trailing entry will be marked as `metric` tag
-            if (builder.length() > 0) {
-                res.add(entry("metric", builder.toString()));
-            }
-            return res;
         }
     }
 

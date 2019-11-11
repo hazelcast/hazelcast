@@ -19,9 +19,8 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
@@ -132,10 +131,9 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-        MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.acceptor")
-                                            .withIdTag("thread", acceptorThread.getName());
-        context.collect(tagger, this);
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        context.collect(descriptor.withPrefix("tcp.acceptor")
+                                  .withDiscriminator("thread", acceptorThread.getName()), this);
     }
 
     private final class AcceptorIOThread extends Thread {
