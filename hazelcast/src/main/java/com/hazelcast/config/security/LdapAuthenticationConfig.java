@@ -211,8 +211,8 @@ public class LdapAuthenticationConfig implements AuthenticationConfig {
     public LoginModuleConfig[] asLoginModuleConfigs() {
         boolean useSystemUser = !isNullOrEmpty(systemUserDn);
         LoginModuleConfig loginModuleConfig = new LoginModuleConfig(
-                useSystemUser ? "com.hazelcast.security.impl.LdapLoginModule"
-                        : "com.hazelcast.security.impl.BasicLdapLoginModule",
+                useSystemUser ? "com.hazelcast.security.loginimpl.LdapLoginModule"
+                        : "com.hazelcast.security.loginimpl.BasicLdapLoginModule",
                 LoginModuleUsage.REQUIRED);
 
         Properties props = loginModuleConfig.getProperties();

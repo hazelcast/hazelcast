@@ -125,6 +125,11 @@ public abstract class MapOperation extends AbstractNamedOperation
         super.afterRun();
     }
 
+    protected void afterRunInternal() {
+        // Intentionally empty method body.
+        // Concrete classes can override this method.
+    }
+
     private void assertNativeMapOnPartitionThread() {
         if (!ASSERTION_ENABLED) {
             return;
@@ -133,10 +138,6 @@ public abstract class MapOperation extends AbstractNamedOperation
         assert mapContainer.getMapConfig().getInMemoryFormat() != NATIVE
                 || getPartitionId() != GENERIC_PARTITION_ID
                 : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
-    }
-
-    protected void afterRunInternal() {
-
     }
 
     ILogger logger() {
@@ -272,8 +273,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected final void evict(Data justAddedKey) {
-        assert recordStore != null : "Record-store cannot be null";
-
         recordStore.evictEntries(justAddedKey);
         disposeDeferredBlocks();
     }

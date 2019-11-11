@@ -39,7 +39,7 @@ public class TlsAuthenticationConfig implements AuthenticationConfig {
 
     @Override
     public LoginModuleConfig[] asLoginModuleConfigs() {
-        LoginModuleConfig loginModuleConfig = new LoginModuleConfig("com.hazelcast.security.impl.X509CertificateLoginModule",
+        LoginModuleConfig loginModuleConfig = new LoginModuleConfig("com.hazelcast.security.loginimpl.X509CertificateLoginModule",
                 LoginModuleUsage.REQUIRED);
         if (roleAttribute != null) {
             loginModuleConfig.getProperties().setProperty("roleAttribute", roleAttribute);

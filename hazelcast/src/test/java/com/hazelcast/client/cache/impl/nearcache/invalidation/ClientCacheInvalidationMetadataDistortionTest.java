@@ -18,8 +18,6 @@ package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -31,11 +29,11 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,13 +44,15 @@ import javax.cache.spi.CachingProvider;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertEquals;
 
@@ -69,7 +69,7 @@ public class ClientCacheInvalidationMetadataDistortionTest extends ClientNearCac
         final Config config = createConfig();
         final HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
 
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(serverInstance);
+        CachingProvider provider = createServerCachingProvider(serverInstance);
         CacheManager serverCacheManager = provider.getCacheManager();
 
         // populated from member
@@ -81,7 +81,7 @@ public class ClientCacheInvalidationMetadataDistortionTest extends ClientNearCac
         ClientConfig clientConfig = createClientConfig();
         clientConfig.addNearCacheConfig(createNearCacheConfig(BINARY));
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider clientCachingProvider = createClientCachingProvider(client);
 
         final Cache<Integer, Integer> clientCache = clientCachingProvider.getCacheManager().createCache(
                 DEFAULT_CACHE_NAME, createCacheConfig(BINARY));

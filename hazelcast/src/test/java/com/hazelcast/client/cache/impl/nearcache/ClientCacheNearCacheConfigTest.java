@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache.impl.nearcache;
 
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -33,6 +32,7 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.client.config.XmlClientConfigBuilderTest.buildConfig;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static java.lang.Integer.MAX_VALUE;
@@ -62,7 +62,7 @@ public class ClientCacheNearCacheConfigTest {
 
         ClientConfig clientConfig = buildConfig(xml);
         HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
-        CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider clientCachingProvider = createClientCachingProvider(client);
         CacheManager cacheManager = clientCachingProvider.getCacheManager();
         cacheManager.createCache("test", newCacheConfig());
     }

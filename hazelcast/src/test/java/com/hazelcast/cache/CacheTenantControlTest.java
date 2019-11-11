@@ -16,18 +16,17 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.AdditionalServiceClassLoader;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.AdditionalServiceClassLoader;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cache.CacheTestSupport.getCacheService;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -99,7 +99,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
     public void testTenantControl_whenCacheCreatedViaCacheManager() {
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hz);
+        CachingProvider provider = createServerCachingProvider(hz);
         CacheManager cacheManager = provider.getCacheManager(null, null, propertiesByInstanceItself(hz));
         Cache cache = cacheManager.createCache(cacheName, new CacheConfig());
 
@@ -110,7 +110,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
     public void testTenantControl_whenCacheObtainedViaCacheManager() {
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hz);
+        CachingProvider provider = createServerCachingProvider(hz);
         CacheManager cacheManager = provider.getCacheManager(null, null, propertiesByInstanceItself(hz));
         Cache cache = cacheManager.getCache(cacheName);
 

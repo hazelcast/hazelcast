@@ -21,6 +21,7 @@ import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
@@ -77,6 +78,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToLongFunction;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
@@ -108,6 +111,7 @@ public class TimedMemberStateFactory {
         );
     }
 
+    @Nonnull
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
@@ -262,7 +266,7 @@ public class TimedMemberStateFactory {
                 count = handleFlakeIdGenerator(memberState, count, config,
                         ((FlakeIdGeneratorService) service).getStats());
             } else if (service instanceof CacheService) {
-                count = handleCache(memberState, count, config, ((CacheService) service).getStats());
+                count = handleCache(memberState, count, (CacheService) service);
             }
         }
 
@@ -386,10 +390,12 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int handleCache(MemberStateImpl memberState, int count, Config config, Map<String, LocalCacheStats> map) {
+    private int handleCache(MemberStateImpl memberState, int count, CacheService cacheService) {
+        Map<String, LocalCacheStats> map = cacheService.getStats();
         for (Map.Entry<String, LocalCacheStats> entry : map.entrySet()) {
             String name = entry.getKey();
-            if (config.findCacheConfig(name).isStatisticsEnabled()) {
+            CacheConfig cacheConfig = cacheService.getCacheConfig(entry.getKey());
+            if (cacheConfig != null && cacheConfig.isStatisticsEnabled()) {
                 LocalCacheStats stats = entry.getValue();
                 memberState.putLocalCacheStats(name, stats);
                 ++count;

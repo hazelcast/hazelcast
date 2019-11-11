@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -67,8 +68,8 @@ public class CacheFromDifferentNodesTest
         factory = new TestHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
-        cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(hz1);
-        cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(hz2);
+        cachingProvider1 = createServerCachingProvider(hz1);
+        cachingProvider2 = createServerCachingProvider(hz2);
     }
 
     @After

@@ -197,7 +197,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record, null, true);
         } else {
-            updateRecord(key, record, null, value, now, true,
+            updateRecord(key, record, record.getValue(), value, now, true,
                     ttl, maxIdle, false, transactionId, true);
         }
 
@@ -811,9 +811,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
             record = createRecord(key, newValue, UNSET, UNSET, now);
             mergeRecordExpiration(record, mergingEntry);
-            newValue = persistenceEnabledFor(provenance)
-                    ? mapDataStore.add(key, newValue, record.getExpirationTime(), now, null) : newValue;
-            recordFactory.setValue(record, newValue);
+            if (persistenceEnabledFor(provenance)) {
+                putIntoMapStore(record, key, newValue, now, null);
+            }
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record, null, false);
         } else {

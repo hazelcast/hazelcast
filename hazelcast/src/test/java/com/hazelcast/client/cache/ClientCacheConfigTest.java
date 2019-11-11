@@ -19,7 +19,6 @@ package com.hazelcast.client.cache;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.jsr.JsrClientTestUtil;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheConfig;
@@ -45,6 +44,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Properties;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -150,7 +150,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 4; i++) {
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
-            CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+            CachingProvider provider = createClientCachingProvider(client);
             CacheManager cacheManager = provider.getCacheManager();
 
             Cache<Object, Object> cache = cacheManager.getCache(simpleConfig.getName());
@@ -184,8 +184,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
             client = HazelcastClient.newHazelcastClient();
 
             // Create the client cache manager
-            CachingProvider cachingProvider =
-                    HazelcastClientCachingProvider.createCachingProvider(client);
+            CachingProvider cachingProvider = createClientCachingProvider(client);
             CacheManager cacheManager = cachingProvider.getCacheManager();
 
             Cache<String, String> cache = cacheManager.getCache(CACHE_NAME);

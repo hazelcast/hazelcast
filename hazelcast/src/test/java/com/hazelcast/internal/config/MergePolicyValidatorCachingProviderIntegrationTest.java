@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.hamcrest.CoreMatchers.containsString;
 
 /**
@@ -65,7 +66,7 @@ public class MergePolicyValidatorCachingProviderIntegrationTest
 
     private void getCache(String name, MergePolicyConfig mergePolicyConfig) {
         HazelcastInstance hz = getHazelcastInstance(name, mergePolicyConfig);
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(hz);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
         CacheConfig cacheConfig = new CacheConfig();

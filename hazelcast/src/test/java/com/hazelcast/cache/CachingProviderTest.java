@@ -17,7 +17,6 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -44,6 +43,7 @@ import java.util.Collection;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceName;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByLocation;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.jsr.JsrTestUtil.cleanup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -93,7 +93,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     }
 
     protected CachingProvider createCachingProvider(HazelcastInstance defaultInstance) {
-        return HazelcastServerCachingProvider.createCachingProvider(defaultInstance);
+        return createServerCachingProvider(defaultInstance);
     }
 
     @Test

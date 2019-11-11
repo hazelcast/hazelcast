@@ -17,8 +17,6 @@
 package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -43,6 +41,8 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
@@ -92,7 +92,7 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
 
         HazelcastInstance server = factory.newHazelcastInstance(config);
 
-        CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(server);
+        CachingProvider provider = createServerCachingProvider(server);
         CacheManager serverCacheManager = provider.getCacheManager();
 
         serverCache = serverCacheManager.createCache(CACHE_NAME, cacheConfig);
@@ -135,7 +135,7 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
 
     private Cache<Integer, Integer> createCacheFromNewClient() {
         HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
-        CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider clientCachingProvider = createClientCachingProvider(client);
 
         CacheManager cacheManager = clientCachingProvider.getCacheManager();
         Cache<Integer, Integer> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);

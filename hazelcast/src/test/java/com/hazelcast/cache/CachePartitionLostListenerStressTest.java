@@ -40,7 +40,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -97,7 +97,7 @@ public class CachePartitionLostListenerStressTest extends AbstractPartitionLostL
         survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
 
         HazelcastInstance instance = survivingInstances.get(0);
-        HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
+        HazelcastServerCachingProvider cachingProvider = createServerCachingProvider(instance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         List<EventCollectingCachePartitionLostListener> listeners = registerListeners(cacheManager);
 

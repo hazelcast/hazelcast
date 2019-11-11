@@ -17,7 +17,6 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheProxy;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MaxSizePolicy;
@@ -42,6 +41,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+
 @Ignore
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -57,7 +58,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
     }
 
     protected CachingProvider createCachingProvider(HazelcastInstance server) {
-        return HazelcastServerCachingProvider.createCachingProvider(server);
+        return createServerCachingProvider(server);
     }
 
     private <K, V> CacheProxy<K, V> getCacheProxy(CachingProvider cachingProvider) {

@@ -133,6 +133,19 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
         verify(collectorMock, never()).collectDouble("[unit=bytes,metric=test.someMetric]", 42.42D, emptySet());
     }
 
+    @Test
+    public void testDynamicProviderExceptionsAreNotPropagated() {
+        MetricsCollector collectorMock = mock(MetricsCollector.class);
+        MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), MANDATORY);
+        metricsRegistry.registerDynamicMetricsProvider((taggerSupplier, context) -> {
+            throw new RuntimeException("Intentionally failing metrics collection");
+
+        });
+
+        metricsRegistry.collect(collectorMock);
+        // we just expect there is no exception
+    }
+
     private static class SourceObject {
         @Probe
         private long longField;

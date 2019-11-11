@@ -18,7 +18,6 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CachePutAllTest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
@@ -66,7 +65,7 @@ public class ClientCachePutAllTest extends CachePutAllTest {
 
     @Override
     protected CachingProvider getCachingProvider() {
-        return HazelcastClientCachingProvider.createCachingProvider(client);
+        return createClientCachingProvider(client);
     }
 
 }

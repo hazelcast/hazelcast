@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,6 +48,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -72,7 +72,7 @@ public class CacheResourceTest
     @Test
     public void testCloseableCacheLoader() throws InterruptedException {
         CachingProvider provider =
-                HazelcastServerCachingProvider.createCachingProvider(factory.newHazelcastInstance());
+                createServerCachingProvider(factory.newHazelcastInstance());
 
         CacheManager cacheManager = provider.getCacheManager();
 
@@ -129,7 +129,7 @@ public class CacheResourceTest
     @Test
     public void testCloseableCacheWriter() throws InterruptedException {
         CachingProvider provider =
-                HazelcastServerCachingProvider.createCachingProvider(factory.newHazelcastInstance());
+                createServerCachingProvider(factory.newHazelcastInstance());
 
         CacheManager cacheManager = provider.getCacheManager();
 
@@ -197,9 +197,7 @@ public class CacheResourceTest
 
     @Test
     public void testCloseableCacheListener() {
-        CachingProvider provider =
-                HazelcastServerCachingProvider
-                        .createCachingProvider(factory.newHazelcastInstance());
+        CachingProvider provider = createServerCachingProvider(factory.newHazelcastInstance());
 
         CacheManager cacheManager = provider.getCacheManager();
 

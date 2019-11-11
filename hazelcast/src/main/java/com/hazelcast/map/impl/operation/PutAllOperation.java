@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,7 @@ public class PutAllOperation extends MapOperation
     private transient boolean hasBackups;
     private transient boolean hasInvalidation;
 
-    private transient List backupRecordAndDataValuePairs;
+    private transient List backupPairs;
     private transient List<Data> invalidationKeys;
 
     public PutAllOperation() {
@@ -77,7 +78,7 @@ public class PutAllOperation extends MapOperation
         hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
-            backupRecordAndDataValuePairs = new ArrayList<>(mapEntries.size());
+            backupPairs = new ArrayList(2 * mapEntries.size());
         }
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mapEntries.size());
@@ -95,12 +96,9 @@ public class PutAllOperation extends MapOperation
         }
     }
 
-    private boolean hasBackups() {
-        return (mapContainer.getTotalBackupCount() > 0);
-    }
-
     private void put(Data dataKey, Data dataValue) {
         Object oldValue = putToRecordStore(dataKey, dataValue);
+
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
         mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
 
@@ -113,16 +111,21 @@ public class PutAllOperation extends MapOperation
         if (hasWanReplication) {
             publishWanUpdate(dataKey, dataValue);
         }
-        if (hasBackups) {
-            Record record = recordStore.getRecord(dataKey);
-            backupRecordAndDataValuePairs.add(record);
-            backupRecordAndDataValuePairs.add(dataValue);
-        }
 
-        evict(dataKey);
         if (hasInvalidation) {
             invalidationKeys.add(dataKey);
         }
+
+        if (hasBackups) {
+            backupPairs.add(dataKey);
+            backupPairs.add(dataValue);
+        }
+
+        evict(dataKey);
+    }
+
+    private boolean hasBackups() {
+        return (mapContainer.getTotalBackupCount() > 0);
     }
 
     /**
@@ -177,7 +180,29 @@ public class PutAllOperation extends MapOperation
     @Override
     public Operation getBackupOperation() {
         return new PutAllBackupOperation(name,
-                backupRecordAndDataValuePairs, false);
+                toBackupListByRemovingEvictedRecords(), false);
+    }
+
+    /**
+     * Since records may get evicted on NOOME after
+     * they have been put. We are re-checking
+     * backup pair list to eliminate evicted entries.
+     *
+     * @return list of existing records which can
+     * safely be transferred to backup replica.
+     */
+    @Nonnull
+    private List toBackupListByRemovingEvictedRecords() {
+        List toBackupList = new ArrayList(backupPairs.size());
+        for (int i = 0; i < backupPairs.size(); i += 2) {
+            Data dataKey = ((Data) backupPairs.get(i));
+            Record record = recordStore.getRecord(dataKey);
+            if (record != null) {
+                toBackupList.add(record);
+                toBackupList.add(backupPairs.get(i + 1));
+            }
+        }
+        return toBackupList;
     }
 
     @Override

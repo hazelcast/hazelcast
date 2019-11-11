@@ -18,9 +18,7 @@ package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -48,6 +46,8 @@ import javax.cache.Cache;
 import javax.cache.spi.CachingProvider;
 import java.io.File;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -106,7 +106,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
         CacheConfig<K, V> cacheConfig = getCacheConfig(nearCacheConfig);
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
-        CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
+        CachingProvider memberProvider = createServerCachingProvider(member);
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
         ICache<K, V> memberCache = memberCacheManager.createCache(nearCacheConfig.getName(), cacheConfig);
         ICacheDataStructureAdapter<K, V> dataAdapter = new ICacheDataStructureAdapter<K, V>(memberCache);
@@ -160,7 +160,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
 
-        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider provider = createClientCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
         String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(nearCacheConfig.getName());
         ICache<K, V> clientCache = cacheManager.createCache(nearCacheConfig.getName(), cacheConfig);

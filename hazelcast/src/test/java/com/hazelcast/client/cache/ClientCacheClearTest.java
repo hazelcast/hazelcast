@@ -19,7 +19,6 @@ package com.hazelcast.client.cache;
 import com.hazelcast.cache.CacheClearTest;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
@@ -218,7 +217,7 @@ public class ClientCacheClearTest extends CacheClearTest {
 
     @Override
     protected CachingProvider getCachingProvider() {
-        return HazelcastClientCachingProvider.createCachingProvider(client);
+        return createClientCachingProvider(client);
     }
 
     private void registerInvalidationListener(EventHandler handler, String nameWithPrefix) {

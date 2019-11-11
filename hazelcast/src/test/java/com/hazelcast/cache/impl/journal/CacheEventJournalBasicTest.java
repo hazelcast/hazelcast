@@ -16,9 +16,8 @@
 
 package com.hazelcast.cache.impl.journal;
 
-import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MaxSizePolicy;
@@ -36,6 +35,7 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 
@@ -105,7 +105,7 @@ public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicT
     }
 
     protected CacheManager createCacheManager() {
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(getRandomInstance());
+        CachingProvider cachingProvider = createServerCachingProvider(getRandomInstance());
         return cachingProvider.getCacheManager();
     }
 }

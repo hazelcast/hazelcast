@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.eviction;
 
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
 import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
 
@@ -41,7 +41,7 @@ public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPoli
 
     @Override
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance);
+        return createServerCachingProvider(instance);
     }
 
     @Override

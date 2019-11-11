@@ -37,6 +37,7 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -52,7 +53,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
             clientConfig.setClusterName(hzConfig.getClusterName());
             clientConfig.getNetworkConfig().setAddresses(singletonList("127.0.0.1"));
         }
-        return HazelcastClientCachingProvider.createCachingProvider(HazelcastClient.newHazelcastClient(clientConfig));
+        return createClientCachingProvider(HazelcastClient.newHazelcastClient(clientConfig));
     }
 
     @Test(expected = OperationTimeoutException.class)
@@ -63,7 +64,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "2");
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCachingProvider cachingProvider = createClientCachingProvider(client);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
         hazelcastInstance.shutdown();
@@ -78,7 +79,7 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCachingProvider cachingProvider = createClientCachingProvider(client);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
 
         hazelcastInstance.shutdown();

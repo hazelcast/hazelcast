@@ -20,7 +20,6 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -59,6 +58,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.CacheUtil.getPrefixedCacheName;
 import static com.hazelcast.client.cache.impl.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport.generateValueFromKey;
@@ -146,8 +147,8 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
                 .addNearCacheConfig(nearCacheConfig);
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
-        HazelcastServerCachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(allMembers[0]);
+        CachingProvider provider = createClientCachingProvider(client);
+        HazelcastServerCachingProvider memberProvider = createServerCachingProvider(allMembers[0]);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
 
@@ -409,7 +410,7 @@ public class ClientCacheNearCacheInvalidationTest extends HazelcastTestSupport {
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CachingProvider provider = createClientCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
 
         ICache<K, V> cache = cacheManager.createCache(cacheName, cacheConfig);
