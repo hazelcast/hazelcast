@@ -331,6 +331,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     }
 
     @Override
+    @Test
     public void testLoadBalancerRandom() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "<load-balancer type=\"random\" />"
@@ -342,6 +343,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     }
 
     @Override
+    @Test
     public void testLoadBalancerRoundRobin() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "<load-balancer type=\"round-robin\" />"
@@ -353,6 +355,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     }
 
     @Override
+    @Test
     public void testWhitespaceInNonSpaceStrings() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "<load-balancer type=' \n random \n'/>"
@@ -361,6 +364,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     }
 
     @Override
+    @Test
     public void testTokenIdentityConfig() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "<security>"
@@ -373,6 +377,49 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertArrayEquals("Hazelcast".getBytes(StandardCharsets.US_ASCII), tokenIdentityConfig.getToken());
         assertEquals("SGF6ZWxjYXN0", tokenIdentityConfig.getTokenEncoded());
     }
+
+    @Override
+    @Test
+    public void testMetricsConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<metrics enabled=\"false\">"
+                + "  <jmx enabled=\"false\" />"
+                + "  <collection-frequency-seconds>10</collection-frequency-seconds>\n"
+                + "</metrics>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        ClientMetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+        assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigMasterSwitchDisabled() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<metrics enabled=\"false\"/>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        ClientMetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMetricsConfigJmxDisabled() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<metrics>"
+                + "  <jmx enabled=\"false\" />"
+                + "</metrics>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        ClientMetricsConfig metricsConfig = config.getMetricsConfig();
+        assertTrue(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+    }
+
 
     static ClientConfig buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());

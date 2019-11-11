@@ -63,10 +63,10 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 
-import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
-import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.config.EvictionPolicy.LFU;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -478,6 +478,22 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         Map<String, ClientFlakeIdGeneratorConfig> actual = newConfigViaGenerator().getFlakeIdGeneratorConfigMap();
         assertMap(clientConfig.getFlakeIdGeneratorConfigMap(), actual);
+    }
+
+    @Test
+    public void testMetricsConfig() {
+        clientConfig.getMetricsConfig()
+                    .setEnabled(false)
+                    .setCollectionFrequencySeconds(10);
+
+        clientConfig.getMetricsConfig().getJmxConfig()
+                    .setEnabled(false);
+
+        ClientMetricsConfig originalConfig = clientConfig.getMetricsConfig();
+        ClientMetricsConfig generatedConfig = newConfigViaGenerator().getMetricsConfig();
+        assertEquals(originalConfig.isEnabled(), generatedConfig.isEnabled());
+        assertEquals(originalConfig.getJmxConfig().isEnabled(), generatedConfig.getJmxConfig().isEnabled());
+        assertEquals(originalConfig.getCollectionFrequencySeconds(), generatedConfig.getCollectionFrequencySeconds());
     }
 
     private ClientConfig newConfigViaGenerator() {

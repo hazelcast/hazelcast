@@ -1516,6 +1516,7 @@
                     <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="flake-id-generator" type="client-flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
                     <xs:element name="reliable-topic" type="client-reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="metrics" type="client-metrics" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:choice>
                 <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
             </xs:extension>
@@ -3454,6 +3455,32 @@
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="client-metrics">
+        <xs:all>
+            <xs:element name="jmx" type="metrics-jmx" minOccurs="0"/>
+            <xs:element name="collection-frequency-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the metrics collection frequency in seconds.
+                        By default, metrics are collected every 5 seconds.
+                        May be overridden by 'hazelcast.metrics.collection.frequency'
+                        system property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Master-switch for the metrics system. Controls whether
+                    the metrics are collected and publishers are enabled.
+                    May be overridden by 'hazelcast.metrics.enabled'
+                    system property.
+                </xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:complexType>
 
