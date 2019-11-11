@@ -38,6 +38,9 @@ import static org.mockito.Mockito.mock;
 
 public class LocalMapStatsProviderTest {
 
+    private static final String MAP_NAME = "myMap";
+    private static final int PARTITION_ID = 0;
+
     @Test
     public void nearCache_withoutStats_UsesNativeMemory() {
         NodeEngine nodeEngine = mock(NodeEngine.class);
@@ -60,17 +63,16 @@ public class LocalMapStatsProviderTest {
         mapConfig.setNearCacheConfig(nearCacheConfig);
 
         doReturn(mapConfig).when(mapContainer).getMapConfig();
-        String mapName = "myMap";
-        doReturn(mapContainer).when(serviceContext).getMapContainer(mapName);
+        doReturn(mapContainer).when(serviceContext).getMapContainer(MAP_NAME);
         doReturn(new PartitionContainer[]{}).when(serviceContext).getPartitionContainers();
-        doReturn(singletonList(mapName)).when(proxyService).getDistributedObjectNames("hz:impl:mapService");
+        doReturn(singletonList(MAP_NAME)).when(proxyService).getDistributedObjectNames("hz:impl:mapService");
 
         doReturn(mock(MapNearCacheManager.class)).when(serviceContext).getMapNearCacheManager();
 
         LocalMapStatsProvider provider = new LocalMapStatsProvider(serviceContext);
         Map<String, LocalMapStats> actual = provider.createAllLocalMapStats();
 
-        assertTrue(actual.get(mapName).getNearCacheStats().isNativeMemoryUsed());
+        assertTrue(actual.get(MAP_NAME).getNearCacheStats().isNativeMemoryUsed());
     }
 
     private void setupPartitionContainer(NodeEngine nodeEngine, MapServiceContext serviceContext, MapService mapService,
@@ -83,21 +85,20 @@ public class LocalMapStatsProviderTest {
         RecordStore mockRecordStore = mock(RecordStore.class);
         doReturn(mapName).when(mockRecordStore).getName();
         doReturn(mapContainer).when(mockRecordStore).getMapContainer();
-        doReturn(mockRecordStore).when(serviceContext).createRecordStore(eq(mapContainer), eq(0), any());
+        doReturn(mockRecordStore).when(serviceContext).createRecordStore(eq(mapContainer), eq(PARTITION_ID), any());
 
         IPartitionService partitionService = mock(IPartitionService.class);
         doReturn(partitionService).when(nodeEngine).getPartitionService();
-        doReturn(new DummyInternalPartition(new PartitionReplica[]{}, 0)).when(partitionService).getPartition(0, false);
-        doReturn(new DummyInternalPartition(new PartitionReplica[]{}, 0)).when(partitionService).getPartition(0);
+        doReturn(new DummyInternalPartition(new PartitionReplica[]{}, PARTITION_ID)).when(partitionService).getPartition(PARTITION_ID, false);
+        doReturn(new DummyInternalPartition(new PartitionReplica[]{}, PARTITION_ID)).when(partitionService).getPartition(PARTITION_ID);
 
-        PartitionContainer partitionContainer = new PartitionContainer(mapService, 0);
+        PartitionContainer partitionContainer = new PartitionContainer(mapService, PARTITION_ID);
         partitionContainer.getRecordStore(mapName, false);
         doReturn(new PartitionContainer[]{partitionContainer}).when(serviceContext).getPartitionContainers();
     }
 
     @Test
     public void nearCache_WithStats_usesNativeMemory() {
-        String mapName = "myMap";
         NodeEngine nodeEngine = mock(NodeEngine.class);
         Properties props = new Properties();
         props.put(GroupProperty.MAP_LOAD_CHUNK_SIZE, 22);
@@ -119,22 +120,22 @@ public class LocalMapStatsProviderTest {
 
         NearCacheDataRecordStore<Object, Object> recordStore = new NearCacheDataRecordStore<>("default", nearCacheConfig,
                 mock(SerializationService.class), getClass().getClassLoader());
-        DefaultNearCache<Object, Object> nearCache = new DefaultNearCache<Object, Object>("default", nearCacheConfig,
+        DefaultNearCache<Object, Object> nearCache = new DefaultNearCache<>("default", nearCacheConfig,
                 recordStore, null, null, null, null);
         nearCache.initialize();
 
         MapNearCacheManager nearCacheManager = mock(MapNearCacheManager.class);
         doReturn(nearCacheManager).when(serviceContext).getMapNearCacheManager();
-        doReturn(nearCache).when(nearCacheManager).getNearCache(mapName);
+        doReturn(nearCache).when(nearCacheManager).getNearCache(MAP_NAME);
 
-        doReturn(mapContainer).when(serviceContext).getMapContainer(mapName);
-        setupPartitionContainer(nodeEngine, serviceContext, mapService, mapContainer, mapName);
+        doReturn(mapContainer).when(serviceContext).getMapContainer(MAP_NAME);
+        setupPartitionContainer(nodeEngine, serviceContext, mapService, mapContainer, MAP_NAME);
 
         LocalMapStatsProvider provider = new LocalMapStatsProvider(serviceContext);
-        provider.getLocalMapStatsImpl(mapName);
+        provider.getLocalMapStatsImpl(MAP_NAME);
         Map<String, LocalMapStats> actual = provider.createAllLocalMapStats();
 
-        assertTrue(actual.get(mapName).getNearCacheStats().isNativeMemoryUsed());
+        assertTrue(actual.get(MAP_NAME).getNearCacheStats().isNativeMemoryUsed());
     }
 
 }
