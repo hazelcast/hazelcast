@@ -185,13 +185,13 @@ public final class FactoryIdHelper {
     public static final int REPLICATED_PORTABLE_FACTORY_ID = -22;
 
     public static final String CACHE_PORTABLE_FACTORY = "hazelcast.serialization.portable.cache";
-    public static final int CACHE_PORTABLE_FACTORY_ID = -23;
+    public static final int CACHE_PORTABLE_FACTORY_ID = -24;
 
     public static final String RINGBUFFER_PORTABLE_FACTORY = "hazelcast.serialization.portable.ringbuffer";
-    public static final int RINGBUFFER_PORTABLE_FACTORY_ID = -28;
+    public static final int RINGBUFFER_PORTABLE_FACTORY_ID = -29;
 
     public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
-    public static final int ENTERPRISE_MAP_PORTABLE_FACTORY_ID = -29;
+    public static final int ENTERPRISE_MAP_PORTABLE_FACTORY_ID = -30;
 
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
