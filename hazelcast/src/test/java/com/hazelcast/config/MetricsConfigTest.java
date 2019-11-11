@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,8 +47,7 @@ public class MetricsConfigTest {
         MetricsConfig original = new MetricsConfig()
                 .setEnabled(false)
                 .setCollectionFrequencySeconds(1)
-                .setDataStructureMetricsEnabled(true)
-                .setLevel(ProbeLevel.DEBUG);
+                .setDataStructureMetricsEnabled(true);
 
         original.getManagementCenterConfig()
                 .setEnabled(false)

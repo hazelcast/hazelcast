@@ -1558,7 +1558,6 @@ public class ConfigXmlGenerator {
            .close()
            .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
            .node("data-structure-metrics-enabled", metricsConfig.isDataStructureMetricsEnabled())
-           .node("level", metricsConfig.getLevel())
            .close();
     }
 

@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MetricsConfigOverrideTest extends HazelcastTestSupport {
+public class MetricsPropertiesTest extends HazelcastTestSupport {
 
     @Test
     public void testSystemPropertiesOverrideConfig() {
@@ -48,7 +49,6 @@ public class MetricsConfigOverrideTest extends HazelcastTestSupport {
         System.setProperty(GroupProperty.METRICS_JMX_ENABLED.getName(), "false");
         System.setProperty(GroupProperty.METRICS_COLLECTION_FREQUENCY.getName(), "24");
         System.setProperty(GroupProperty.METRICS_DATASTRUCTURES.getName(), "true");
-        System.setProperty(GroupProperty.METRICS_LEVEL.getName(), "DEBUG");
 
         HazelcastInstance instance = createHazelcastInstance();
         Config instanceConfig = instance.getConfig();
@@ -60,12 +60,9 @@ public class MetricsConfigOverrideTest extends HazelcastTestSupport {
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
         assertTrue(metricsConfig.isDataStructureMetricsEnabled());
-        assertEquals(DEBUG, metricsConfig.getLevel());
 
         // verify that the overridden config is used
-        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
         MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
-        assertEquals(DEBUG, metricsRegistry.minimumLevel());
         assertSame(metricsConfig, metricsService.getConfig());
     }
 
@@ -78,7 +75,6 @@ public class MetricsConfigOverrideTest extends HazelcastTestSupport {
         System.setProperty(GroupProperty.METRICS_JMX_ENABLED.getName(), "invalid");
         System.setProperty(GroupProperty.METRICS_COLLECTION_FREQUENCY.getName(), "invalid");
         System.setProperty(GroupProperty.METRICS_DATASTRUCTURES.getName(), "invalid");
-        System.setProperty(GroupProperty.METRICS_LEVEL.getName(), "invalid");
 
         HazelcastInstance instance = createHazelcastInstance();
         Config instanceConfig = instance.getConfig();
@@ -95,12 +91,9 @@ public class MetricsConfigOverrideTest extends HazelcastTestSupport {
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
         assertFalse(metricsConfig.isDataStructureMetricsEnabled());
-        assertEquals(defaultConfig.getLevel(), metricsConfig.getLevel());
 
         // verify that the overridden config is used
-        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
         MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
-        assertEquals(defaultConfig.getLevel(), metricsRegistry.minimumLevel());
         assertSame(metricsConfig, metricsService.getConfig());
     }
 
@@ -114,7 +107,6 @@ public class MetricsConfigOverrideTest extends HazelcastTestSupport {
         originalConfig.setProperty(GroupProperty.METRICS_JMX_ENABLED.getName(), "false");
         originalConfig.setProperty(GroupProperty.METRICS_COLLECTION_FREQUENCY.getName(), "24");
         originalConfig.setProperty(GroupProperty.METRICS_DATASTRUCTURES.getName(), "true");
-        originalConfig.setProperty(GroupProperty.METRICS_LEVEL.getName(), "DEBUG");
 
         HazelcastInstance instance = createHazelcastInstance(originalConfig);
         Config instanceConfig = instance.getConfig();
@@ -126,12 +118,9 @@ public class MetricsConfigOverrideTest extends HazelcastTestSupport {
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
         assertTrue(metricsConfig.isDataStructureMetricsEnabled());
-        assertEquals(DEBUG, metricsConfig.getLevel());
 
         // verify that the overridden config is used
-        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
         MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
-        assertEquals(DEBUG, metricsRegistry.minimumLevel());
         assertSame(metricsConfig, metricsService.getConfig());
     }
 
@@ -145,7 +134,6 @@ public class MetricsConfigOverrideTest extends HazelcastTestSupport {
         originalConfig.setProperty(GroupProperty.METRICS_JMX_ENABLED.getName(), "invalid");
         originalConfig.setProperty(GroupProperty.METRICS_COLLECTION_FREQUENCY.getName(), "invalid");
         originalConfig.setProperty(GroupProperty.METRICS_DATASTRUCTURES.getName(), "invalid");
-        originalConfig.setProperty(GroupProperty.METRICS_LEVEL.getName(), "invalid");
 
         HazelcastInstance instance = createHazelcastInstance(originalConfig);
         Config instanceConfig = instance.getConfig();
@@ -162,12 +150,35 @@ public class MetricsConfigOverrideTest extends HazelcastTestSupport {
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
         assertFalse(metricsConfig.isDataStructureMetricsEnabled());
-        assertEquals(defaultConfig.getLevel(), metricsConfig.getLevel());
 
         // verify that the overridden config is used
-        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
         MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
-        assertEquals(defaultConfig.getLevel(), metricsRegistry.minimumLevel());
         assertSame(metricsConfig, metricsService.getConfig());
+    }
+
+    @Test
+    public void testDebugMetricsSysPropNotSet() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
+
+        assertEquals(INFO, metricsRegistry.minimumLevel());
+    }
+
+    @Test
+    public void testDebugMetricsSysPropDisabled() {
+        System.setProperty(GroupProperty.METRICS_DEBUG.getName(), "false");
+        HazelcastInstance instance = createHazelcastInstance();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
+
+        assertEquals(INFO, metricsRegistry.minimumLevel());
+    }
+
+    @Test
+    public void testDebugMetricsSysPropEnabled() {
+        System.setProperty(GroupProperty.METRICS_DEBUG.getName(), "true");
+        HazelcastInstance instance = createHazelcastInstance();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
+
+        assertEquals(DEBUG, metricsRegistry.minimumLevel());
     }
 }

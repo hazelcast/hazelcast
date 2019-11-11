@@ -62,7 +62,6 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -3469,8 +3468,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    jmx:\n"
                 + "      enabled: false\n"
                 + "    collection-frequency-seconds: 10\n"
-                + "    data-structure-metrics-enabled: true\n"
-                + "    level: DEBUG";
+                + "    data-structure-metrics-enabled: true";
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
@@ -3480,7 +3478,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
         assertEquals(11, metricsMcConfig.getRetentionSeconds());
         assertTrue(metricsConfig.isDataStructureMetricsEnabled());
-        assertEquals(DEBUG, metricsConfig.getLevel());
     }
 
     @Override

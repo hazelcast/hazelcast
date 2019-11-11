@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MetricsJmxConfig;
@@ -24,10 +25,14 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 
 public final class MetricsConfigHelper {
     private static final ILogger LOGGER = Logger.getLogger(MetricsConfigHelper.class);
@@ -77,11 +82,6 @@ public final class MetricsConfigHelper {
         tryOverride(config, GroupProperty.METRICS_DATASTRUCTURES,
                 prop -> metricsConfig.setDataStructureMetricsEnabled(Boolean.parseBoolean(prop)),
                 () -> Boolean.toString(metricsConfig.isDataStructureMetricsEnabled()), "MetricsConfig.dataStructuresEnabled");
-
-        // MetricsConfig.level
-        tryOverride(config, GroupProperty.METRICS_LEVEL,
-                prop -> metricsConfig.setLevel(ProbeLevel.valueOf(prop)),
-                () -> metricsConfig.getLevel().name(), "MetricsConfig.level");
     }
 
     private static void tryOverride(Config hzConfig, HazelcastProperty property, Consumer<String> setterFn,
@@ -97,5 +97,31 @@ public final class MetricsConfigHelper {
             LOGGER.warning(String.format("Failed to override metrics configuration with system property '%s'='%s'. Kept "
                     + "'%s'='%s'", property.getName(), propertyValue, configOverridden, getterFn.get()), ex);
         }
+    }
+
+    public static ProbeLevel memberMetricsLevel(HazelcastProperties properties) {
+        boolean debugMetrics = properties.getBoolean(GroupProperty.METRICS_DEBUG);
+        ProbeLevel probeLevel = debugMetrics ? DEBUG : INFO;
+
+        if (probeLevel == INFO) {
+            LOGGER.fine("Collecting debug metrics and sending them to diagnostics is disabled");
+        } else {
+            LOGGER.info("Collecting debug metrics and sending them to diagnostics is enabled");
+        }
+
+        return probeLevel;
+    }
+
+    public static ProbeLevel clientMetricsLevel(HazelcastProperties properties) {
+        boolean debugMetrics = properties.getBoolean(ClientProperty.METRICS_DEBUG);
+        ProbeLevel probeLevel = debugMetrics ? DEBUG : INFO;
+
+        if (probeLevel == INFO) {
+            LOGGER.fine("Collecting debug metrics and sending them to diagnostics is disabled");
+        } else {
+            LOGGER.info("Collecting debug metrics and sending them to diagnostics is enabled");
+        }
+
+        return probeLevel;
     }
 }

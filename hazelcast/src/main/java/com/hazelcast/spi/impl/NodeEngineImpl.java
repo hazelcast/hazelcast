@@ -30,7 +30,6 @@ import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
@@ -83,6 +82,7 @@ import java.util.LinkedList;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.memberMetricsLevel;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
@@ -182,8 +182,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
-        ProbeLevel minimumLevel = node.getConfig().getMetricsConfig().getLevel();
-        return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class), minimumLevel);
+        return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class),
+                memberMetricsLevel(node.getProperties()));
     }
 
     private Diagnostics newDiagnostics() {

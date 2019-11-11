@@ -45,7 +45,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 
 @BenchmarkMode({Mode.AverageTime})
@@ -66,12 +65,12 @@ public class MetricsCollectionBenchmark {
     public void setup() {
         Config config = new Config();
         config.setProperty(GroupProperty.LOGGING_TYPE.getName(), "none");
+        config.setProperty(GroupProperty.METRICS_DEBUG.getName(), "true");
         MetricsConfig metricsConfig = config.getMetricsConfig();
         metricsConfig
                 .setDataStructureMetricsEnabled(true)
                 // we disable scheduled collection
-                .setCollectionFrequencySeconds(Integer.MAX_VALUE)
-                .setLevel(DEBUG);
+                .setCollectionFrequencySeconds(Integer.MAX_VALUE);
         metricsConfig.getJmxConfig().setEnabled(false);
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 

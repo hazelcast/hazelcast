@@ -172,7 +172,6 @@ import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
@@ -1429,6 +1428,5 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
         assertTrue(metricsConfig.isDataStructureMetricsEnabled());
-        assertEquals(DEBUG, metricsConfig.getLevel());
     }
 }

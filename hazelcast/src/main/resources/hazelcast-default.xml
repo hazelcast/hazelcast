@@ -326,6 +326,5 @@
         <jmx enabled="true"/>
         <collection-frequency-seconds>5</collection-frequency-seconds>
         <data-structure-metrics-enabled>false</data-structure-metrics-enabled>
-        <level>INFO</level>
     </metrics>
 </hazelcast>

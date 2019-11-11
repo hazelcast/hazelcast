@@ -31,7 +31,6 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -1092,19 +1091,11 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.metrics.jmx.enabled");
 
     /**
-     * Sets the minimum level of metrics to be collected.
-     * <p/>
-     * NOTE: This property overrides {@link MetricsConfig#getLevel()}.
-     * <p/>
-     * Using {@link MetricsConfig#setLevel(ProbeLevel)} and the declarative
-     * counterparts are preferred over using this property. The main purpose
-     * of making metrics collection configurable from properties too is
-     * allowing operators to configure the metrics subsystem from the outside
-     * during investigation without touching or copying the configuration
-     * potentially embedded into a signed artifact.
+     * Enables collecting debug metrics. Debug metrics are sent to the
+     * diagnostics only.
      */
-    public static final HazelcastProperty METRICS_LEVEL
-            = new HazelcastProperty("hazelcast.metrics.level");
+    public static final HazelcastProperty METRICS_DEBUG
+            = new HazelcastProperty("hazelcast.metrics.debug.enabled");
 
     /**
      * Enables/disables collecting metrics from the distributed datastructures.

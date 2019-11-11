@@ -941,7 +941,6 @@
                 <hz:jmx enabled="false"/>
                 <hz:collection-frequency-seconds>24</hz:collection-frequency-seconds>
                 <hz:data-structure-metrics-enabled>true</hz:data-structure-metrics-enabled>
-                <hz:level>DEBUG</hz:level>
             </hz:metrics>
         </hz:config>
     </hz:hazelcast>

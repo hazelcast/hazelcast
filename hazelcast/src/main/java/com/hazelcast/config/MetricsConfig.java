@@ -42,7 +42,6 @@ public class MetricsConfig {
     private MetricsJmxConfig jmxConfig = new MetricsJmxConfig();
     private boolean dataStructureMetricsEnabled;
     private int collectionFrequencySeconds = DEFAULT_METRICS_COLLECTION_SECONDS;
-    private ProbeLevel level = ProbeLevel.INFO;
 
     public MetricsConfig() {
     }
@@ -53,7 +52,6 @@ public class MetricsConfig {
         this.jmxConfig = new MetricsJmxConfig(metricsConfig.jmxConfig);
         this.dataStructureMetricsEnabled = metricsConfig.dataStructureMetricsEnabled;
         this.collectionFrequencySeconds = metricsConfig.collectionFrequencySeconds;
-        this.level = metricsConfig.level;
     }
 
     /**
@@ -125,18 +123,16 @@ public class MetricsConfig {
      * Sets whether statistics for data structures are added to metrics.
      * It's disabled by default.
      * <p/>
-     * Note that enabling the data structures metrics also sets {@link #level}
+     * Note that enabling the data structures metrics also sets
      * to {@link ProbeLevel#INFO}.
      * <p/>
      * May be overridden by {@link GroupProperty#METRICS_DATASTRUCTURES}
      * system property.
-     *
-     * @see #setLevel(ProbeLevel)
      */
     @Nonnull
     public MetricsConfig setDataStructureMetricsEnabled(boolean dataStructureMetricsEnabled) {
         this.dataStructureMetricsEnabled = dataStructureMetricsEnabled;
-        return setLevel(ProbeLevel.INFO);
+        return this;
     }
 
     /**
@@ -144,29 +140,6 @@ public class MetricsConfig {
      */
     public boolean isDataStructureMetricsEnabled() {
         return dataStructureMetricsEnabled;
-    }
-
-    /**
-     * Sets the minimum probe level to be collected.
-     * <p/>
-     * May be overridden by {@link GroupProperty#METRICS_LEVEL}
-     *
-     * @param level The minimum level to be collected
-     */
-    @Nonnull
-    public MetricsConfig setLevel(ProbeLevel level) {
-        this.level = level;
-        return this;
-    }
-
-    /**
-     * Returns the minimum probe level to be collected.
-     *
-     * @return the minimum probe level
-     */
-    @Nonnull
-    public ProbeLevel getLevel() {
-        return level;
     }
 
     @Override
@@ -193,10 +166,7 @@ public class MetricsConfig {
         if (!Objects.equals(managementCenterConfig, that.managementCenterConfig)) {
             return false;
         }
-        if (!Objects.equals(jmxConfig, that.jmxConfig)) {
-            return false;
-        }
-        return level == that.level;
+        return Objects.equals(jmxConfig, that.jmxConfig);
     }
 
     @Override
@@ -206,7 +176,6 @@ public class MetricsConfig {
         result = 31 * result + (jmxConfig != null ? jmxConfig.hashCode() : 0);
         result = 31 * result + (dataStructureMetricsEnabled ? 1 : 0);
         result = 31 * result + collectionFrequencySeconds;
-        result = 31 * result + (level != null ? level.hashCode() : 0);
         return result;
     }
 
@@ -218,7 +187,6 @@ public class MetricsConfig {
                 + ", jmxConfig=" + jmxConfig
                 + ", dataStructureMetricsEnabled=" + dataStructureMetricsEnabled
                 + ", collectionFrequencySeconds=" + collectionFrequencySeconds
-                + ", level=" + level
                 + '}';
     }
 }

@@ -3357,13 +3357,6 @@
             distributed data structures (maps, caches etc).
             It is disabled by default.
 
-        * <level>:
-            Sets the minimum metrics level to be collected. By default
-            it is set to INFO so metrics collect at INFO and MANDATORY
-            levels are collected, DEBUG metrics are not.
-
-            Possible values are MANDATORY, INFO, DEBUG.
-
     -->
     <metrics enabled="false">
         <management-center enabled="false">
@@ -3372,7 +3365,6 @@
         <jmx enabled="false"/>
         <collection-frequency-seconds>10</collection-frequency-seconds>
         <data-structure-metrics-enabled>true</data-structure-metrics-enabled>
-        <level>DEBUG</level>
     </metrics>
 
 </hazelcast>

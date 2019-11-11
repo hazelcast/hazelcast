@@ -4749,17 +4749,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="level" type="metric-level" default="INFO" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Sets the minimum metrics level to be collected. By default
-                        it is set to INFO so metrics collect at INFO and MANDATORY
-                        levels are collected, DEBUG metrics are not.
-                        May be overridden by 'hazelcast.metrics.level'
-                        system property.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
@@ -4824,14 +4813,6 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-
-    <xs:simpleType name="metric-level">
-        <xs:restriction base="non-space-string">
-            <xs:enumeration value="MANDATORY"/>
-            <xs:enumeration value="INFO"/>
-            <xs:enumeration value="DEBUG"/>
-        </xs:restriction>
-    </xs:simpleType>
 
     <xs:complexType name="realms">
         <xs:sequence>

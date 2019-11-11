@@ -818,4 +818,3 @@ hazelcast:
       enabled: false
     collection-frequency-seconds: 24
     data-structure-metrics-enabled: true
-    level: DEBUG
