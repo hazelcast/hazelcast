@@ -17,6 +17,7 @@
 package com.hazelcast.jet.examples.helloworld;
 
 import com.hazelcast.function.ComparatorEx;
+//import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
@@ -37,7 +38,8 @@ import static com.hazelcast.jet.Util.entry;
 
 /**
  * Demonstrates a simple job which calculates the top 10 numbers from a
- * stream of random numbers.
+ * stream of random numbers. This job is intended to be submitted to running
+ * Jet cluster by `jet submit` script in Hazelcast Jet distribution.
  */
 public class HelloWorld {
 
@@ -60,7 +62,12 @@ public class HelloWorld {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        /**
+         * JetBootstrap.getInstance() can be changed to Jet.newJetInstance()
+         * to start an embedded Jet node instead and submit the job to it.
+         */
         JetInstance jet = JetBootstrap.getInstance();
+//        JetInstance jet = Jet.newJetInstance();
 
         String mapName = "top10_" + UUID.randomUUID().toString();
         Pipeline p = buildPipeline(mapName);
