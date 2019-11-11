@@ -333,7 +333,9 @@ public class MemberCompatibilityTest_2_0 {
         int fileClientMessageIndex = 31;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientStatisticsCodec.RequestParameters parameters = ClientStatisticsCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aString, parameters.stats));
+        assertTrue(isEqual(aLong, parameters.timestamp));
+        assertTrue(isEqual(aString, parameters.clientAttributes));
+        assertTrue(isEqual(aByteArray, parameters.metricsBlob));
     }
 
     @Test

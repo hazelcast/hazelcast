@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.impl.JCacheDetector;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
@@ -55,7 +56,6 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -74,6 +74,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -118,7 +119,7 @@ public class ManagementCenterService {
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
     private final ManagementCenterConnectionFactory connectionFactory;
-    private final AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<>();
+    private final AtomicReference<String> timedMemberStateJson = new AtomicReference<>();
     private final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
 
     private volatile String managementCenterUrl;
@@ -208,6 +209,10 @@ public class ManagementCenterService {
         } catch (Throwable ignored) {
             ignore(ignored);
         }
+    }
+
+    public Optional<String> getTimedMemberStateJson() {
+        return Optional.ofNullable(timedMemberStateJson.get());
     }
 
     public byte[] clusterWideUpdateManagementCenterUrl(String newUrl) {
@@ -447,7 +452,10 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    timedMemberState.set(timedMemberStateFactory.createTimedMemberState());
+                    TimedMemberState tms = timedMemberStateFactory.createTimedMemberState();
+                    JsonObject tmsJson = new JsonObject();
+                    tmsJson.add("timedMemberState", tms.toJson());
+                    timedMemberStateJson.set(tmsJson.toString());
                     sleep();
                 }
             } catch (Throwable throwable) {
@@ -515,12 +523,9 @@ public class ManagementCenterService {
                 outputStream = connection.getOutputStream();
                 writer = new OutputStreamWriter(outputStream, UTF_8);
 
-                JsonObject root = new JsonObject();
-                TimedMemberState memberState = timedMemberState.get();
-                if (memberState != null) {
-                    root.add("timedMemberState", memberState.toJson());
-                    root.writeTo(writer);
-
+                String memberStateJson = timedMemberStateJson.get();
+                if (memberStateJson != null) {
+                    writer.write(memberStateJson);
                     writer.flush();
                     outputStream.flush();
 

@@ -16,13 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -46,9 +46,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *      for all other data structures and configurations</li>
  * </ul>
  */
-@BinaryInterface
-public class EvictionConfig implements EvictionConfiguration,
-        DataSerializable, Serializable {
+public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSerializable, Serializable {
 
     /**
      * Default maximum entry count.
@@ -228,6 +226,16 @@ public class EvictionConfig implements EvictionConfiguration,
         this.comparator = checkNotNull(comparator,
                 "Eviction policy comparator cannot be null!");
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.EVICTION_CONFIG;
     }
 
     @Override

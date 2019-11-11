@@ -100,10 +100,10 @@ public interface ClientEndpoint extends Client {
      *
      * @param stats the latest statistics retrieved from the client
      */
-    void setClientStatistics(String stats);
+    void setClientStatistics(ClientStatistics stats);
 
     /**
-     * @return statistics string for the client
+     * @return client attributes string for the client
      */
-    String getClientStatistics();
+    String getClientAttributes();
 }

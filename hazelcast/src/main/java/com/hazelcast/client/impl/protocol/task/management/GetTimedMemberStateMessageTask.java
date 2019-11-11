@@ -14,44 +14,43 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task;
+package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
-import com.hazelcast.client.impl.ClientStatistics;
+import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class ClientStatisticsMessageTask
-        extends AbstractCallableMessageTask<ClientStatisticsCodec.RequestParameters> {
+public class GetTimedMemberStateMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
-    public ClientStatisticsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public GetTimedMemberStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientStatisticsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientStatisticsCodec.decodeRequest(clientMessage);
+    protected Object call() throws Exception {
+        ManagementCenterService mcs = nodeEngine.getManagementCenterService();
+        return mcs != null ? mcs.getTimedMemberStateJson().orElse(null) : null;
+    }
+
+    @Override
+    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MCGetTimedMemberStateCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientStatisticsCodec.encodeResponse();
-    }
-
-    @Override
-    protected Object call() throws Exception {
-        ClientStatistics clientStatistics = new ClientStatistics(parameters.timestamp, parameters.clientAttributes,
-                parameters.metricsBlob);
-        endpoint.setClientStatistics(clientStatistics);
-        return null;
+        return MCGetTimedMemberStateCodec.encodeResponse((String) response);
     }
 
     @Override
     public String getServiceName() {
-        return null;
+        return ManagementCenterService.SERVICE_NAME;
     }
 
     @Override
@@ -66,12 +65,11 @@ public class ClientStatisticsMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "getTimedMemberState";
     }
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[0];
     }
-
 }

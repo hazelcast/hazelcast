@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * WAN heap based implementation of {@link EntryView}.
@@ -207,10 +208,10 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         if (maxIdle != that.maxIdle) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

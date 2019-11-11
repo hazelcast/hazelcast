@@ -71,6 +71,7 @@ import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryIn
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.query.SampleTestObjects.Employee;
 import static com.hazelcast.test.OverridePropertyRule.set;
+import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -204,32 +205,41 @@ public class EvictionTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
-        // make the cleaner task as aggressive as possible
-        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
+        // "disable" the cleaner task
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, Integer.toString(MAX_VALUE));
 
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Employee> map = node.getMap(mapName);
         map.addIndex(ordered ? IndexType.SORTED : IndexType.HASH, "city");
 
-        for (int i = 0; i < 5; ++i) {
+        int entries = 5;
+        Map<Integer, Long> lastAccessTimes = new HashMap<>();
+        for (int i = 0; i < entries; ++i) {
             String cityName = i % 2 == 0 ? "cityname" : null;
 
             Employee emp = new Employee(i, "name" + i, cityName, 0, true, i);
-            map.put(i, emp, 0L, SECONDS, 14L, SECONDS);
+            map.put(i, emp, 0L, SECONDS, 60L, SECONDS);
+            // we do get to set the last access time
+            map.get(i);
+            EntryView view = map.getEntryView(i);
+            long lastAccessTime = view.getLastAccessTime();
+            assertTrue(lastAccessTime > 0);
+            lastAccessTimes.put(i, lastAccessTime);
         }
+
+        sleepSeconds(1);
 
         EntryObject entryObject = new PredicateBuilderImpl().getEntryObject();
         Predicate predicateCityNull = entryObject.get("city").isNull();
-        // Touch the map entry though the index to make sure expiration cleaning task
-        // doesn't evict it.
-        assertTrueAllTheTime(() -> {
-            assertTrue(map.containsKey(0));
-            Collection<Employee> valuesNullCity = map.values(predicateCityNull);
-            assertEquals(2, valuesNullCity.size());
-
-            Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
-            assertEquals(3, valuesNotNullCity.size());
-        }, 30);
+        Collection<Employee> valuesNullCity = map.values(predicateCityNull);
+        Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
+        assertEquals(entries, valuesNullCity.size() + valuesNotNullCity.size());
+        // check that evaluating the predicate updated the last access time of the returned records
+        for (int i = 0; i < entries; ++i) {
+            EntryView view = map.getEntryView(i);
+            assertNotNull(view);
+            assertTrue(view.getLastAccessTime() > lastAccessTimes.get(i));
+        }
     }
 
     /**
@@ -250,80 +260,79 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     @Category(SlowTest.class)
-    public void testTTL_prolongationAfterNonTTLUpdate()
+    public void testTTL_AfterNonTTLUpdate()
             throws ExecutionException, InterruptedException {
         final IMap<Integer, String> map = createSimpleMap();
 
-        long startRef = currentTimeMillis();
-        map.put(1, "value0", 10, SECONDS);
-        long endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
 
         // Prolong 1st round
-        startRef = currentTimeMillis();
         map.put(1, "value1");
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 2nd round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.set(1, "value2");
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 3rd round
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         final HashMap<Integer, String> items = new HashMap<Integer, String>();
         items.put(1, "value3");
         items.put(2, "value1");
         items.put(3, "value1");
-
-        startRef = currentTimeMillis();
         map.putAll(items);
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 4th round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.putAsync(1, "value4").toCompletableFuture().get();
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 5th round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.setAsync(1, "value5").toCompletableFuture().get();
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 6th round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.tryPut(1, "value6", 5, TimeUnit.SECONDS);
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 7th round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.replace(1, "value7");
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 8th round
-        startRef = currentTimeMillis();
-        map.replace(1, "value7", "value8");
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
+        map.replace(1, "value0", "value8");
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
+    }
 
-        // Confirm expiration
-        sleepAtLeastSeconds(10);
-        assertFalse(map.containsKey(1));
+    private void makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(IMap<Integer, String> map) {
+        long startRef = currentTimeMillis();
+        map.put(1, "value0", 10, SECONDS);
+        long endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
     }
 
     private void sleepAndAssertTtlExpirationCorrectness(IMap<Integer, String> map, long expected, long startRef, long endRef) {
         sleepAtLeastSeconds(3);
 
         EntryView view = map.getEntryView(1);
-        long actual = MILLISECONDS.toSeconds(view.getExpirationTime() - startRef);
-        long delta = (1 + MILLISECONDS.toSeconds(endRef - startRef));
-        assertEquals(expected, actual, delta);
+        if (expected == Long.MAX_VALUE) {
+            assertEquals(expected, view.getExpirationTime());
+        } else {
+            long actual = MILLISECONDS.toSeconds(view.getExpirationTime() - startRef);
+            long delta = (1 + MILLISECONDS.toSeconds(endRef - startRef));
+            assertEquals(expected, actual, delta);
+        }
+    }
+
+    private void assertTtlExpirationCorrectness(IMap<Integer, String> map, long expected) {
+        EntryView view = map.getEntryView(1);
+        assertEquals(expected, view.getExpirationTime());
         assertTrue(map.containsKey(1));
     }
 

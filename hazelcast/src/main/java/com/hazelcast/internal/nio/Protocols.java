@@ -34,7 +34,7 @@ public final class Protocols {
     /**
      * New Client Protocol that is used for clients (Java, c++, c# client)
      */
-    public static final String CLIENT_BINARY_NEW = "CB2";
+    public static final String CLIENT_BINARY = "CP2";
 
     /**
      * Protocol that is used by REST
@@ -54,7 +54,7 @@ public final class Protocols {
             return "Cluster Protocol";
         }
 
-        if (CLIENT_BINARY_NEW.equals(protocol)) {
+        if (CLIENT_BINARY.equals(protocol)) {
             return "Client Open Binary Protocol";
         }
 

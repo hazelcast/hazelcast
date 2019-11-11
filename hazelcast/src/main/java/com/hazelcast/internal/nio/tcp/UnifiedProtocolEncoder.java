@@ -31,7 +31,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOService.KILO_BYTE;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
-import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY_NEW;
+import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.ascii.TextEncoder.TEXT_ENCODER;
@@ -109,7 +109,7 @@ public class UnifiedProtocolEncoder
                 }
 
                 initChannelForCluster();
-            } else if (CLIENT_BINARY_NEW.equals(inboundProtocol)) {
+            } else if (CLIENT_BINARY.equals(inboundProtocol)) {
                 // in case of a client, the member will not send the member protocol
                 initChannelForClient();
             } else {

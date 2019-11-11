@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
@@ -33,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
@@ -40,6 +42,7 @@ import com.hazelcast.internal.util.MapUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nonnull;
@@ -309,6 +312,27 @@ public class ManagementCenterService {
                     }
                     return result;
                 }
+        );
+    }
+
+    /**
+     * Gets the latest {@link TimedMemberState} of the member it's called on.
+     */
+    @Nonnull
+    public CompletableFuture<Optional<String>> getTimedMemberState(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetTimedMemberStateCodec.encodeRequest(),
+                null,
+                member.getAddress());
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> Optional.ofNullable(
+                        MCGetTimedMemberStateCodec.decodeResponse(clientMessage).timedMemberStateJson)
         );
     }
 }

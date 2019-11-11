@@ -50,18 +50,17 @@ public class PutAllBackupOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        if (dataRecords == null) {
-            // If dataRecords is null and we are in
-            // `runInternal` method, means this operation
-            // has not been serialized/deserialized
-            // and is running directly on caller node
-            for (int i = 0; i < recordAndDataValuePairs.size(); i += 2) {
-                Record record = (Record) recordAndDataValuePairs.get(i);
+        if (dataRecords != null) {
+            for (Record<Data> record : dataRecords) {
                 putBackup(record);
             }
         } else {
-            for (Record<Data> record : dataRecords) {
-                putBackup(record);
+            // If dataRecords is null and we are in
+            // `runInternal` method, means this operation
+            // has not been serialized/deserialized
+            // and is running directly on caller node.
+            for (int i = 0; i < recordAndDataValuePairs.size(); i += 2) {
+                putBackup((Record) recordAndDataValuePairs.get(i));
             }
         }
     }

@@ -35,7 +35,7 @@ public final class DefaultAuthenticationConfig implements AuthenticationConfig {
     @Override
     public LoginModuleConfig[] asLoginModuleConfigs() {
         return new LoginModuleConfig[] {
-                new LoginModuleConfig("com.hazelcast.security.impl.DefaultLoginModule", LoginModuleUsage.REQUIRED) };
+                new LoginModuleConfig("com.hazelcast.security.loginimpl.DefaultLoginModule", LoginModuleUsage.REQUIRED) };
     }
 
 }

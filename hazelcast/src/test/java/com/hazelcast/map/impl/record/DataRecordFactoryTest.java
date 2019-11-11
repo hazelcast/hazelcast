@@ -57,9 +57,4 @@ public class DataRecordFactoryTest extends AbstractRecordFactoryTest<Data> {
     Class<?> getCachedRecordWithStatsClass() {
         return CachedDataRecordWithStats.class;
     }
-
-    @Override
-    Object getValue(Data dataValue, Object objectValue) {
-        return dataValue;
-    }
 }

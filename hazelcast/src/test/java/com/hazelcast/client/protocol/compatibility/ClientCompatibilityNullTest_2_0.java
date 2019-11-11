@@ -360,7 +360,7 @@ public class ClientCompatibilityNullTest_2_0 {
     @Test
     public void test_ClientStatisticsCodec_encodeRequest() {
         int fileClientMessageIndex = 31;
-        ClientMessage encoded = ClientStatisticsCodec.encodeRequest(aString);
+        ClientMessage encoded = ClientStatisticsCodec.encodeRequest(aLong, aString, aByteArray);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
