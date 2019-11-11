@@ -16,31 +16,28 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.OnDemandIndexStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,10 +71,6 @@ public class LocalMapStatsProvider {
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction = this::initializeLocalMapStats;
 
-    private LocalMapStatsImpl initializeLocalMapStats(String mapName) {
-        return mapServiceContext.getMapContainer(mapName).getMapConfig().initMapStats();
-    }
-
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
@@ -86,6 +79,10 @@ public class LocalMapStatsProvider {
         this.clusterService = nodeEngine.getClusterService();
         this.partitionService = nodeEngine.getPartitionService();
         this.localAddress = clusterService.getThisAddress();
+    }
+
+    private LocalMapStatsImpl initializeLocalMapStats(String mapName) {
+        return mapServiceContext.getMapContainer(mapName).getMapConfig().initMapStats();
     }
 
     protected MapServiceContext getMapServiceContext() {

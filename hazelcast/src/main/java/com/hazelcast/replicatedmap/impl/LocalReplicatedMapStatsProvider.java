@@ -47,18 +47,18 @@ class LocalReplicatedMapStatsProvider {
             new ConcurrentHashMap<>();
     private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction = this::createEmptyMapStats;
 
-    private LocalReplicatedMapStatsImpl createEmptyMapStats(String mapName) {
-        LocalReplicatedMapStatsImpl stats = new LocalReplicatedMapStatsImpl();
-        stats.setNativeMemoryUsed(config.getReplicatedMapConfig(mapName).getInMemoryFormat() == NATIVE);
-        return stats;
-    }
-
     private final Config config;
     private final PartitionContainer[] partitionContainers;
 
     LocalReplicatedMapStatsProvider(Config config, PartitionContainer[] partitionContainers) {
         this.config = config;
         this.partitionContainers = partitionContainers;
+    }
+
+    private LocalReplicatedMapStatsImpl createEmptyMapStats(String mapName) {
+        LocalReplicatedMapStatsImpl stats = new LocalReplicatedMapStatsImpl();
+        stats.setNativeMemoryUsed(config.getReplicatedMapConfig(mapName).getInMemoryFormat() == NATIVE);
+        return stats;
     }
 
     LocalReplicatedMapStatsImpl getLocalReplicatedMapStatsImpl(String name) {
