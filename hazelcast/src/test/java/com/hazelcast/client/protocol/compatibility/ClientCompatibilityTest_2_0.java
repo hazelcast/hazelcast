@@ -6788,8 +6788,24 @@ public class ClientCompatibilityTest_2_0 {
     }
 
     @Test
-    public void test_MCMatchMCConfigCodec_encodeRequest() {
+    public void test_MCGetTimedMemberStateCodec_encodeRequest() {
         int fileClientMessageIndex = 801;
+        ClientMessage encoded = MCGetTimedMemberStateCodec.encodeRequest();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCGetTimedMemberStateCodec_decodeResponse() {
+        int fileClientMessageIndex = 802;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetTimedMemberStateCodec.ResponseParameters parameters = MCGetTimedMemberStateCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aString, parameters.timedMemberStateJson));
+    }
+
+    @Test
+    public void test_MCMatchMCConfigCodec_encodeRequest() {
+        int fileClientMessageIndex = 803;
         ClientMessage encoded = MCMatchMCConfigCodec.encodeRequest(aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6797,7 +6813,7 @@ public class ClientCompatibilityTest_2_0 {
 
     @Test
     public void test_MCMatchMCConfigCodec_decodeResponse() {
-        int fileClientMessageIndex = 802;
+        int fileClientMessageIndex = 804;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCMatchMCConfigCodec.ResponseParameters parameters = MCMatchMCConfigCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aBoolean, parameters.response));
@@ -6805,7 +6821,7 @@ public class ClientCompatibilityTest_2_0 {
 
     @Test
     public void test_MCApplyMCConfigCodec_encodeRequest() {
-        int fileClientMessageIndex = 803;
+        int fileClientMessageIndex = 805;
         ClientMessage encoded = MCApplyMCConfigCodec.encodeRequest(aString, anInt, aListOfClientBwListEntries);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6813,7 +6829,7 @@ public class ClientCompatibilityTest_2_0 {
 
     @Test
     public void test_MCApplyMCConfigCodec_decodeResponse() {
-        int fileClientMessageIndex = 804;
+        int fileClientMessageIndex = 806;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCApplyMCConfigCodec.ResponseParameters parameters = MCApplyMCConfigCodec.decodeResponse(fromFile);
     }

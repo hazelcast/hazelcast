@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if local MC config (client filter list) has the same ETag as provided.
  */
-@Generated("0c4b77aac5b3d1358aec04eca7981f7f")
+@Generated("2a39f018b1179420effb2bab4f602847")
 public final class MCMatchMCConfigCodec {
-    //hex: 0x200500
-    public static final int REQUEST_MESSAGE_TYPE = 2098432;
-    //hex: 0x200501
-    public static final int RESPONSE_MESSAGE_TYPE = 2098433;
+    //hex: 0x200C00
+    public static final int REQUEST_MESSAGE_TYPE = 2100224;
+    //hex: 0x200C01
+    public static final int RESPONSE_MESSAGE_TYPE = 2100225;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

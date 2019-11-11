@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies given MC config (client filter list).
  */
-@Generated("08ff1a6bf148019f4b6ae1718ef59314")
+@Generated("bb9c2ffdbfa25922d043e92250c24962")
 public final class MCApplyMCConfigCodec {
-    //hex: 0x200600
-    public static final int REQUEST_MESSAGE_TYPE = 2098688;
-    //hex: 0x200601
-    public static final int RESPONSE_MESSAGE_TYPE = 2098689;
+    //hex: 0x200D00
+    public static final int REQUEST_MESSAGE_TYPE = 2100480;
+    //hex: 0x200D01
+    public static final int RESPONSE_MESSAGE_TYPE = 2100481;
     private static final int REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
