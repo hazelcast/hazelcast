@@ -19,7 +19,6 @@ package com.hazelcast.internal.config;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.internal.serialization.BinaryInterface;
 
 import java.util.EventListener;
 
@@ -28,7 +27,6 @@ import java.util.EventListener;
  *
  * @see CachePartitionLostListener
  */
-@BinaryInterface
 public class CachePartitionLostListenerConfigReadOnly
         extends CachePartitionLostListenerConfig {
 
