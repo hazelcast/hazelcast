@@ -56,6 +56,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -452,10 +453,17 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    TimedMemberState tms = timedMemberStateFactory.createTimedMemberState();
-                    JsonObject tmsJson = new JsonObject();
-                    tmsJson.add("timedMemberState", tms.toJson());
-                    timedMemberStateJson.set(tmsJson.toString());
+                    try {
+                        TimedMemberState tms = timedMemberStateFactory.createTimedMemberState();
+                        JsonObject tmsJson = new JsonObject();
+                        tmsJson.add("timedMemberState", tms.toJson());
+                        timedMemberStateJson.set(tmsJson.toString());
+                    } catch (Throwable e) {
+                        if (!(e instanceof RetryableException)) {
+                            throw rethrow(e);
+                        }
+                        logger.warning("Can't create TimedMemberState. Will retry after " + updateIntervalMs + " ms");
+                    }
                     sleep();
                 }
             } catch (Throwable throwable) {
