@@ -57,7 +57,7 @@ public class TimedMemberStateFactoryTest
 
     @Test
     public void nativeMemoryEnabledForMap() {
-        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-map.xml");
+        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-datastructures.xml");
         instance.getMap("myMap");
 
         TimedMemberState actual = memberStateFactory.createTimedMemberState();
@@ -66,19 +66,8 @@ public class TimedMemberStateFactoryTest
     }
 
     @Test
-    @Ignore("native memory is not supported yet for replicated map")
-    public void nativeMemoryEnabledForReplicatedMap() {
-        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-replicatedmap.xml");
-        instance.getReplicatedMap("myReplicatedMap");
-
-        TimedMemberState actual = memberStateFactory.createTimedMemberState();
-
-        assertTrue(actual.getMemberState().getLocalReplicatedMapStats("myReplicatedMap").isNativeMemoryUsed());
-    }
-
-    @Test
     public void nativeMemoryEnabledForCache() {
-        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-replicatedmap.xml");
+        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-datastructures.xml");
         instance.getCacheManager().getCache("myCache");
 
         TimedMemberState actual = memberStateFactory.createTimedMemberState();
@@ -86,12 +75,6 @@ public class TimedMemberStateFactoryTest
         LocalCacheStats myCacheStats = actual.getMemberState().getLocalCacheStats("/hz/myCache");
         assertNotNull(myCacheStats);
         assertTrue(myCacheStats.isNativeMemoryUsed());
-    }
-
-    @Test
-    public void nativeMemoryEnabledForNearCache() {
-        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-for-replicatedmap.xml");
-        instance.getMap("myMapWithNearCache");
     }
 
 }
