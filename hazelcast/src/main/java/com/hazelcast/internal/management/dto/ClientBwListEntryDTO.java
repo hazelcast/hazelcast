@@ -24,7 +24,7 @@ import static com.hazelcast.internal.util.JsonUtil.getString;
 /**
  * A serializable DTO for client B/W list filtering configuration entries.
  */
-public class ClientBwListEntryDTO implements JsonSerializable {
+public final class ClientBwListEntryDTO implements JsonSerializable {
 
     public Type type;
     public String value;
