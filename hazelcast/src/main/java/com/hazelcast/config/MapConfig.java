@@ -958,12 +958,4 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
         metadataPolicy = MetadataPolicy.getById(in.readShort());
     }
 
-    public LocalMapStatsImpl initMapStats() {
-        LocalMapStatsImpl stats = new LocalMapStatsImpl();
-        stats.setNativeMemoryUsed(inMemoryFormat == NATIVE);
-        if (nearCacheConfig != null) {
-            stats.setNearCacheStats(nearCacheConfig.initNearCacheStats());
-        }
-        return stats;
-    }
 }

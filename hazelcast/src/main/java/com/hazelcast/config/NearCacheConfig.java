@@ -387,12 +387,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         return ConfigDataSerializerHook.NEAR_CACHE_CONFIG;
     }
 
-    public NearCacheStatsImpl initNearCacheStats() {
-        NearCacheStatsImpl stats = new NearCacheStatsImpl();
-        stats.setNativeMemoryUsed(inMemoryFormat == NATIVE);
-        return stats;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
