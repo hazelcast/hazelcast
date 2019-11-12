@@ -171,7 +171,8 @@ public class JmxPublisher implements MetricsPublisher {
         /**
          * See {@link MetricsConfig#setJmxEnabled(boolean)}.
          */
-        @SuppressWarnings({"checkstyle:ExecutableStatementCount", "checkstyle:NPathComplexity"})
+        @SuppressWarnings({"checkstyle:ExecutableStatementCount", "checkstyle:NPathComplexity",
+                           "checkstyle:CyclomaticComplexity"})
         MetricData(MetricDescriptor descriptor, String instanceNameEscaped, String domainPrefix) {
             StringBuilder mBeanTags = new StringBuilder();
             StringBuilder moduleBuilder = new StringBuilder();
@@ -201,6 +202,9 @@ public class JmxPublisher implements MetricsPublisher {
             String discriminator = descriptor.discriminator();
             String discriminatorValue = descriptor.discriminatorValue();
             if (discriminator != null && discriminatorValue != null) {
+                if (mBeanTags.length() > 0) {
+                    mBeanTags.append(',');
+                }
                 int newTagIdx = tagCnt.getAndInc();
                 mBeanTags.append("tag").append(newTagIdx).append("=")
                          .append(escapeObjectNameValue(discriminator + "=" + discriminatorValue));
