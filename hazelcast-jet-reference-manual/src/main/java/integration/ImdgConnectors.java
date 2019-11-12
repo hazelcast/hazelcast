@@ -42,8 +42,8 @@ public class ImdgConnectors {
     static void s1() {
         //tag::s1[]
         Pipeline p = Pipeline.create();
-        BatchStage<Entry<String, Long>> stage = p.drawFrom(Sources.map("myMap"));
-        stage.drainTo(Sinks.map("myMap"));
+        BatchStage<Entry<String, Long>> stage = p.drawFrom(Sources.map("inMap"));
+        stage.drainTo(Sinks.map("outMap"));
         //end::s1[]
     }
 
