@@ -280,7 +280,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(0.5, exponentialRetryConfig.getJitter(), 0);
         assertEquals(2000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(60000, exponentialRetryConfig.getMaxBackoffMillis());
-        assertEquals(3, exponentialRetryConfig.getMultiplier(), 0);
+        assertEquals(3.1, exponentialRetryConfig.getMultiplier(), 0);
     }
 
     @Test

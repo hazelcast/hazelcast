@@ -274,7 +274,7 @@ hazelcast-client:
       enabled: true
       initial-backoff-millis: 2000
       max-backoff-millis: 60000
-      multiplier: 3
+      multiplier: 3.1
       fail-on-max-backoff: true
       jitter: 0.5
 
