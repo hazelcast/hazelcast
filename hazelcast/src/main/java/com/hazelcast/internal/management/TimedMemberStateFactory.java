@@ -24,6 +24,7 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.cp.CPMember;
@@ -117,7 +118,9 @@ public class TimedMemberStateFactory {
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
 
         TimedMemberState timedMemberState = new TimedMemberState();
-        timedMemberState.setNativeMemoryEnabled(instance.node.config.getNativeMemoryConfig().isEnabled());
+        NativeMemoryConfig nativeMemoryConfig = instance.node.config.getNativeMemoryConfig();
+        timedMemberState.setPersistentMemoryUsed(nativeMemoryConfig.isEnabled()
+                && nativeMemoryConfig.getPersistentMemoryDirectory() != null);
         createMemberState(memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<>());

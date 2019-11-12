@@ -76,7 +76,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertTrue(cloned.isSslEnabled());
         assertTrue(cloned.isLite());
         assertFalse(cloned.isScriptingEnabled());
-        assertTrue(cloned.isNativeMemoryEnabled());
+        assertTrue(cloned.isPersistentMemoryUsed());
         assertNotNull(cloned.toString());
     }
 
@@ -93,7 +93,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertTrue(deserialized.isSslEnabled());
         assertTrue(deserialized.isLite());
         assertFalse(deserialized.isScriptingEnabled());
-        assertTrue(deserialized.isNativeMemoryEnabled());
+        assertTrue(deserialized.isPersistentMemoryUsed());
         assertNotNull(deserialized.toString());
     }
 
@@ -141,7 +141,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         state.setSslEnabled(true);
         state.setLite(true);
         state.setScriptingEnabled(false);
-        state.setNativeMemoryEnabled(true);
+        state.setPersistentMemoryUsed(true);
         return state;
     }
 }

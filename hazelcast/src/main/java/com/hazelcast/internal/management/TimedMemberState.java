@@ -47,7 +47,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     boolean lite;
     boolean socketInterceptorEnabled;
     boolean scriptingEnabled;
-    boolean nativeMemoryEnabled;
+    boolean persistentMemoryUsed;
 
     public List<String> getMemberList() {
         return memberList;
@@ -121,12 +121,12 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         this.scriptingEnabled = scriptingEnabled;
     }
 
-    public boolean isNativeMemoryEnabled() {
-        return nativeMemoryEnabled;
+    public boolean isPersistentMemoryUsed() {
+        return persistentMemoryUsed;
     }
 
-    public void setNativeMemoryEnabled(boolean nativeMemoryEnabled) {
-        this.nativeMemoryEnabled = nativeMemoryEnabled;
+    public void setPersistentMemoryUsed(boolean persistentMemoryUsed) {
+        this.persistentMemoryUsed = persistentMemoryUsed;
     }
 
     @Override
@@ -163,7 +163,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         root.add("lite", lite);
         root.add("socketInterceptorEnabled", socketInterceptorEnabled);
         root.add("scriptingEnabled", scriptingEnabled);
-        root.add("nativeMemoryEnabled", nativeMemoryEnabled);
+        root.add("persistentMemoryUsed", persistentMemoryUsed);
         return root;
     }
 
@@ -184,7 +184,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         lite = getBoolean(json, "lite");
         socketInterceptorEnabled = getBoolean(json, "socketInterceptorEnabled");
         scriptingEnabled = getBoolean(json, "scriptingEnabled");
-        nativeMemoryEnabled = getBoolean(json, "nativeMemoryEnabled");
+        persistentMemoryUsed = getBoolean(json, "persistentMemoryUsed");
     }
 
     @Override

@@ -59,7 +59,15 @@ public class TimedMemberStateFactoryTest
         TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-enabled.xml");
         TimedMemberState actual = memberStateFactory.createTimedMemberState();
 
-        assertTrue(actual.isNativeMemoryEnabled());
+        assertTrue(actual.isPersistentMemoryUsed());
+    }
+
+    @Test
+    public void nativeMemoryWithoutPersistentMemoryDir() {
+        TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("native-memory-without-persistent-memory.xml");
+        TimedMemberState actual = memberStateFactory.createTimedMemberState();
+
+        assertFalse(actual.isPersistentMemoryUsed());
     }
 
     @Test
@@ -67,7 +75,7 @@ public class TimedMemberStateFactoryTest
         TimedMemberStateFactory memberStateFactory = createTimedMemberStateFactory("empty-config.xml");
         TimedMemberState actual = memberStateFactory.createTimedMemberState();
 
-        assertFalse(actual.isNativeMemoryEnabled());
+        assertFalse(actual.isPersistentMemoryUsed());
     }
 
     @Test
