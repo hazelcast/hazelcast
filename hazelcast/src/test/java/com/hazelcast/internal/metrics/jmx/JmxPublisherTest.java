@@ -101,7 +101,21 @@ public class JmxPublisherTest {
     }
 
     @Test
-    public void when_singleMetricNewFormatWithModule() throws Exception {
+    public void when_singleMetricWithPrefixAndDiscriminator() throws Exception {
+        MetricDescriptor descriptor = newDescriptor()
+                .withPrefix("d")
+                .withMetric("c")
+                .withDiscriminator("name", "itsName")
+                .withTag("tag1", "a")
+                .withTag("tag2", "b");
+        jmxPublisher.publishLong(descriptor, 1L);
+        assertMBeans(singletonList(
+                of(domainPrefix + ":type=Metrics,instance=inst1,prefix=d,tag0=\"tag1=a\",tag1=\"tag2=b\",tag2=\"name=itsName\"",
+                        singletonList(entry("c", 1L)))));
+    }
+
+    @Test
+    public void when_singleMetricWithModule() throws Exception {
         MetricDescriptor descriptor = newDescriptor()
                 .withMetric("c")
                 .withTag("tag1", "a")
@@ -113,7 +127,7 @@ public class JmxPublisherTest {
     }
 
     @Test
-    public void when_moreMetricsNewFormat() throws Exception {
+    public void when_moreMetrics() throws Exception {
         jmxPublisher.publishLong(newDescriptor()
                 .withMetric("c")
                 .withTag("tag1", "a")

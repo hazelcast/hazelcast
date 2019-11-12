@@ -25,8 +25,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 
 import java.util.EnumSet;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
@@ -36,11 +38,13 @@ import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
+import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -521,15 +525,53 @@ public class MetricDescriptorImplTest {
         Supplier supplierMock = mock(Supplier.class);
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplierMock);
         for (int i = 0; i < 64; i++) {
+            String tag = "tag" + i;
+            String tagValue = "tag" + i + "Value";
             descriptor = new MetricDescriptorImpl(supplierMock)
                     .copy(descriptor)
-                    .withTag("tag" + i, "tag" + i + "Value");
+                    .withTag(tag, tagValue);
 
             for (int j = 0; j <= i; j++) {
                 assertEquals("tag" + j + "Value", descriptor.tagValue("tag" + j));
             }
+            assertEquals(tag, descriptor.tag(i));
+            assertEquals(tagValue, descriptor.tagValue(i));
             assertEquals(i + 1, descriptor.tagCount());
         }
         assertNull(descriptor.tagValue("unknownTag"));
+    }
+
+    @Test
+    public void testTagsWithNegativeIndexReturnsNull() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(mock(Supplier.class));
+        assertNull(descriptor.tag(-1));
+        assertNull(descriptor.tagValue(-1));
+    }
+
+    @Test
+    public void testTagsWithTooHighIndexReturnsNull() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(mock(Supplier.class));
+        assertNull(descriptor.tag(MAX_VALUE));
+        assertNull(descriptor.tagValue(MAX_VALUE));
+    }
+
+    @Test
+    public void testReadTags() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(mock(Supplier.class))
+                .withTag("tag0", "tag0Value")
+                .withTag("tag1", "tag1Value")
+                .withTag("tag2", "tag2Value")
+                .withTag("tag3", "tag3Value")
+                .withTag("tag4", "tag4Value");
+        BiConsumer<String, String> tagConsumerMock = mock(BiConsumer.class);
+        descriptor.readTags(tagConsumerMock);
+
+        InOrder inOrder = inOrder(tagConsumerMock);
+        inOrder.verify(tagConsumerMock).accept("tag0", "tag0Value");
+        inOrder.verify(tagConsumerMock).accept("tag1", "tag1Value");
+        inOrder.verify(tagConsumerMock).accept("tag2", "tag2Value");
+        inOrder.verify(tagConsumerMock).accept("tag3", "tag3Value");
+        inOrder.verify(tagConsumerMock).accept("tag4", "tag4Value");
+        inOrder.verifyNoMoreInteractions();
     }
 }
