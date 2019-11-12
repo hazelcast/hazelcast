@@ -21,12 +21,14 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
 
 public final class DataCodec {
+    private static final byte[] EMPTY = new byte[0];
 
     private DataCodec() {
     }
 
     public static void encode(ClientMessage clientMessage, Data data) {
-        clientMessage.add(new ClientMessage.Frame(data.toByteArray()));
+        byte[] payload = data != null ? data.toByteArray() : EMPTY;
+        clientMessage.add(new ClientMessage.Frame(payload));
     }
 
     public static Data decode(ClientMessage.Frame frame) {

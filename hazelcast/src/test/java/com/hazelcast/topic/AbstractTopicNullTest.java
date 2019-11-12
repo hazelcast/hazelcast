@@ -34,6 +34,11 @@ public abstract class AbstractTopicNullTest extends HazelcastTestSupport {
         assertThrowsNPE(t -> t.removeMessageListener(null));
     }
 
+    @Test
+    public void publishNullMessage() {
+        getDriver().getTopic(randomName()).publish(null);
+    }
+
     private void assertThrowsNPE(ConsumerEx<ITopic<Object>> method) {
         assertThrows(NullPointerException.class, method);
     }
