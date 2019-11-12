@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.ClientSelectors;
-import com.hazelcast.client.Client;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
@@ -44,6 +44,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.management.dto.ClientBwListDTO.Mode;
 import static com.hazelcast.internal.management.dto.ClientBwListEntryDTO.Type;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -208,6 +209,20 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
 
         Client client2 = createClient("192.168.0.2", randomString());
         assertFalse(clientEngine.isClientAllowed(client2));
+    }
+
+    @Test
+    public void testApplyConfig() {
+        clientEngine.applySelector(ClientSelectors.none());
+
+        ClientBwListDTO config = new ClientBwListDTO(
+                Mode.WHITELIST,
+                singletonList(new ClientBwListEntryDTO(Type.IP_ADDRESS, "127.0.0.*"))
+        );
+        handler.applyConfig(config);
+
+        Client client = createClient("127.0.0.42", randomString());
+        assertTrue(clientEngine.isClientAllowed(client));
     }
 
     private JsonObject createConfig(Mode mode, ClientBwListEntryDTO... entries) {
