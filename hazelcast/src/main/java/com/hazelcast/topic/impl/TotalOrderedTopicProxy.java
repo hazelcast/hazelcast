@@ -20,7 +20,9 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Topic proxy used when global ordering is enabled (all nodes listening to
@@ -38,7 +40,8 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
     }
 
     @Override
-    public void publish(@Nullable E message) {
+    public void publish(@Nonnull  E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         Operation operation = new PublishOperation(getName(), toData(message))
                 .setPartitionId(partitionId);
         InternalCompletableFuture f = invokeOnPartition(operation);

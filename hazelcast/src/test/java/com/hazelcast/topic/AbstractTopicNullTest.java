@@ -32,6 +32,7 @@ public abstract class AbstractTopicNullTest extends HazelcastTestSupport {
     public void testNullability() {
         assertThrowsNPE(t -> t.addMessageListener(null));
         assertThrowsNPE(t -> t.removeMessageListener(null));
+        assertThrowsNPE(t -> t.publish(null));
     }
 
     private void assertThrowsNPE(ConsumerEx<ITopic<Object>> method) {
