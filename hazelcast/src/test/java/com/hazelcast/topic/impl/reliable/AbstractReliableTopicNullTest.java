@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic;
+package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.topic.ITopic;
 import org.junit.Test;
 
-public abstract class AbstractTopicNullTest extends HazelcastTestSupport {
+public abstract class AbstractReliableTopicNullTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testAddNullMessageListener() {
-        ITopic<Object> topic = getDriver().getTopic(randomName());
+        ITopic<Object> topic = getDriver().getReliableTopic(randomName());
         topic.addMessageListener(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testRemoveMessageListenerWithNullId() {
-        ITopic<Object> topic = getDriver().getTopic(randomName());
+        ITopic<Object> topic = getDriver().getReliableTopic(randomName());
         topic.removeMessageListener(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testPublishNullMessage() {
-        ITopic<Object> topic = getDriver().getTopic(randomName());
+        ITopic<Object> topic = getDriver().getReliableTopic(randomName());
         topic.publish(null);
     }
 
