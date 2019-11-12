@@ -95,7 +95,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
      *
      * @param message the message to be published
      */
-    public void publishInternal(Object message) {
+    public void publishInternal(@Nonnull Object message) {
         topicStats.incrementPublishes();
         topicService.publishMessage(name, message, multithreaded);
     }

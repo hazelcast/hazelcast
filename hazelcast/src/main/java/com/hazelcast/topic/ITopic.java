@@ -19,7 +19,6 @@ package com.hazelcast.topic;
 import com.hazelcast.core.DistributedObject;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.UUID;
 
 /**
@@ -62,7 +61,7 @@ public interface ITopic<E> extends DistributedObject {
      * @throws TopicOverloadException if the consumer is too slow
      *                                (only works in combination with reliable topic)
      */
-    void publish(@Nullable E message);
+    void publish(@Nonnull E message);
 
     /**
      * Subscribes to this topic. When a message is published, the
