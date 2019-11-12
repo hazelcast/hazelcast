@@ -83,11 +83,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 import static java.lang.String.format;
 
@@ -758,7 +757,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {
         Future<UUID> registrationFuture = addMembershipListenerAsync(listener);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     public Future<UUID> addMembershipListenerAsync(@Nonnull MembershipListener listener) {
@@ -784,7 +783,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         EventService eventService = nodeEngine.getEventService();
         Future<Boolean> registrationFuture = eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
-        return getListenerRemovalResult(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST")

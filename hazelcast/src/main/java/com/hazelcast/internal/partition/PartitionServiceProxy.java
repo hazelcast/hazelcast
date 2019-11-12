@@ -43,10 +43,9 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 public class PartitionServiceProxy implements PartitionService {
 
@@ -96,25 +95,25 @@ public class PartitionServiceProxy implements PartitionService {
     @Override
     public UUID addMigrationListener(final MigrationListener migrationListener) {
         Future<UUID> registrationFuture = partitionService.addMigrationListener(migrationListener);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
     public boolean removeMigrationListener(final UUID registrationId) {
         Future<Boolean> registrationFuture = partitionService.removeMigrationListener(registrationId);
-        return getListenerRemovalResult(registrationFuture);
+        return FutureUtil.getValue(registrationFuture);
     }
 
     @Override
     public UUID addPartitionLostListener(PartitionLostListener partitionLostListener) {
         Future<UUID> registrationFuture = partitionService.addPartitionLostListener(partitionLostListener);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
     public boolean removePartitionLostListener(UUID registrationId) {
         Future<Boolean> registrationFuture = partitionService.removePartitionLostListener(registrationId);
-        return getListenerRemovalResult(registrationFuture);
+        return FutureUtil.getValue(registrationFuture);
     }
 
     @Override

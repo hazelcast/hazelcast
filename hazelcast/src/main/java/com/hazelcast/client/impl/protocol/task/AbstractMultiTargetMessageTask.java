@@ -22,45 +22,51 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_MAP;
 
-public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageTask<P> {
+public abstract class AbstractMultiTargetMessageTask<P>
+        extends AbstractAsyncMessageTask<P, Object> {
 
     protected AbstractMultiTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() throws Throwable {
+    protected CompletableFuture<Object> processInternal() {
         Supplier<Operation> operationSupplier = createOperationSupplier();
         Collection<Member> targets = getTargets();
 
-        returnResponseIfNoTargetLeft(targets, EMPTY_MAP);
+        CompletableFuture<Object> finalResult = new CompletableFuture<>();
+
+        if (targets.isEmpty()) {
+            finalResult.complete(EMPTY_MAP);
+            return finalResult;
+        }
 
         final OperationServiceImpl operationService = nodeEngine.getOperationService();
 
-        MultiTargetCallback callback = new MultiTargetCallback(targets);
+        MultiTargetCallback callback = new MultiTargetCallback(targets, finalResult);
         for (Member target : targets) {
             Operation op = operationSupplier.get();
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target.getAddress())
-                    .setResultDeserialized(false);
-            builder.invoke().whenCompleteAsync(new SingleTargetCallback(target, callback));
-        }
-    }
+                                                        .setResultDeserialized(false);
 
-    private void returnResponseIfNoTargetLeft(Collection<Member> targets, Map<Member, Object> results) throws Throwable {
-        if (targets.isEmpty()) {
-            sendResponse(reduce(results));
+            InvocationFuture<Object> invocationFuture = builder.invoke();
+            invocationFuture.whenComplete(new SingleTargetCallback(target, callback));
         }
+
+        return finalResult;
     }
 
     protected abstract Supplier<Operation> createOperationSupplier();
@@ -73,10 +79,12 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
 
         final Collection<Member> targets;
         final Map<Member, Object> results;
+        final CompletableFuture<Object> finalResult;
 
-        private MultiTargetCallback(Collection<Member> targets) {
-            this.targets = new HashSet<Member>(targets);
+        private MultiTargetCallback(Collection<Member> targets, CompletableFuture<Object> finalResult) {
+            this.targets = new HashSet<>(targets);
             this.results = createHashMap(targets.size());
+            this.finalResult = finalResult;
         }
 
         public synchronized void notify(Member target, Object result) {
@@ -84,14 +92,17 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
                 results.put(target, result);
             } else {
                 if (results.containsKey(target)) {
-                    throw new IllegalArgumentException("Duplicate response from -> " + target);
+                    finalResult.completeExceptionally(new IllegalArgumentException("Duplicate response from -> " + target));
                 }
-                throw new IllegalArgumentException("Unknown target! -> " + target);
+                finalResult.completeExceptionally(new IllegalArgumentException("Unknown target! -> " + target));
             }
-            try {
-                returnResponseIfNoTargetLeft(targets, results);
-            } catch (Throwable throwable) {
-                handleProcessingFailure(throwable);
+
+            if (targets.isEmpty()) {
+                try {
+                    finalResult.complete(results);
+                } catch (Throwable throwable) {
+                    finalResult.completeExceptionally(throwable);
+                }
             }
         }
     }

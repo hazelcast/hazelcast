@@ -54,13 +54,14 @@ public class ReplicatedMapGetMessageTask
     }
 
     @Override
-    protected void beforeResponse() {
+    protected Object beforeResponse(Object response) {
         long latencyNanos = System.nanoTime() - startTimeNanos;
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
 
         if (replicatedMapService.getReplicatedMapConfig(parameters.name).isStatisticsEnabled()) {
             replicatedMapService.getLocalReplicatedMapStatsImpl(parameters.name).incrementGets(latencyNanos);
         }
+        return response;
     }
 
     @Override

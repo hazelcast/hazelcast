@@ -26,21 +26,16 @@ import java.util.UUID;
  * Base message task for listener registration tasks
  */
 public abstract class AbstractAddListenerMessageTask<P>
-        extends AbstractListenerMessageTask<P, UUID> {
+        extends AbstractAsyncMessageTask<P, UUID> {
 
     protected AbstractAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    public void accept(Object response, Throwable throwable) {
-        if (throwable == null) {
-            UUID registrationId = (UUID) response;
-            addDestroyAction(registrationId);
-            sendResponse(registrationId);
-        } else {
-            handleProcessingFailure(throwable);
-        }
+    protected Object beforeResponse(UUID response) {
+        addDestroyAction(response);
+        return response;
     }
 
     protected void addDestroyAction(UUID registrationId) {

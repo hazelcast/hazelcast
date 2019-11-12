@@ -25,7 +25,7 @@ import java.security.Permission;
 import java.util.concurrent.CompletableFuture;
 
 public class RemoveAllListenersMessageTask
-        extends AbstractListenerMessageTask<ClientRemoveAllListenersCodec.RequestParameters, Object> {
+        extends AbstractAsyncMessageTask<ClientRemoveAllListenersCodec.RequestParameters, Object> {
 
     public RemoveAllListenersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

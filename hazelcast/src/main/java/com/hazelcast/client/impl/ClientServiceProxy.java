@@ -29,9 +29,8 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 /**
  * The default implementation of the {@link ClientService}.
@@ -61,7 +60,7 @@ public final class ClientServiceProxy implements ClientService {
         Future<UUID> registration = eventService
                 .registerLocalListener(ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, clientListener)
                 .thenApply(EventRegistration::getId);
-        return getRegistrationId(registration);
+        return getValue(registration);
     }
 
     @Override
@@ -71,6 +70,6 @@ public final class ClientServiceProxy implements ClientService {
         EventService eventService = nodeEngine.getEventService();
         Future<Boolean> registrationFuture = eventService
                 .deregisterListener(ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, registrationId);
-        return getListenerRemovalResult(registrationFuture);
+        return getValue(registrationFuture);
     }
 }

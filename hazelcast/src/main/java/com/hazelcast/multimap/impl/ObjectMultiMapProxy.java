@@ -21,6 +21,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
@@ -43,11 +44,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class ObjectMultiMapProxy<K, V>
@@ -234,7 +234,7 @@ public class ObjectMultiMapProxy<K, V>
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         Future<UUID> eventRegistrationFuture = getService().addListener(name, listener, null, false, true);
 
-        return getRegistrationId(eventRegistrationFuture);
+        return getValue(eventRegistrationFuture);
     }
 
     @Nonnull
@@ -243,14 +243,14 @@ public class ObjectMultiMapProxy<K, V>
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         Future<UUID> eventRegistrationFuture = getService().addListener(name, listener, null, includeValue, false);
 
-        return getRegistrationId(eventRegistrationFuture);
+        return getValue(eventRegistrationFuture);
     }
 
     @Override
     public boolean removeEntryListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Registration ID should not be null!");
         Future<Boolean> eventRegistrationFuture = getService().removeListener(name, registrationId);
-        return getListenerRemovalResult(eventRegistrationFuture);
+        return FutureUtil.getValue(eventRegistrationFuture);
     }
 
     @Nonnull
@@ -261,7 +261,7 @@ public class ObjectMultiMapProxy<K, V>
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         Future<UUID> eventRegistrationFuture = getService().addListener(name, listener, dataKey, includeValue, false);
-        return getRegistrationId(eventRegistrationFuture);
+        return getValue(eventRegistrationFuture);
     }
 
     @Override

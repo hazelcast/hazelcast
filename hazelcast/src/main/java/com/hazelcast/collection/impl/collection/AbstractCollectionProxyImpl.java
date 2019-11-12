@@ -54,10 +54,9 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCollectionConfig;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 import static java.util.Collections.singleton;
 
 public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>
@@ -230,13 +229,13 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
         final Future<UUID> registration = eventService.registerListener(getServiceName(), name, filter, listener)
                                                       .thenApply(EventRegistration::getId);
-        return getRegistrationId(registration);
+        return getValue(registration);
     }
 
     public boolean removeItemListener(@Nonnull UUID registrationId) {
         EventService eventService = getNodeEngine().getEventService();
         Future<Boolean> registrationFuture = eventService.deregisterListener(getServiceName(), name, registrationId);
-        return getListenerRemovalResult(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     protected <T> T invoke(CollectionOperation operation) {

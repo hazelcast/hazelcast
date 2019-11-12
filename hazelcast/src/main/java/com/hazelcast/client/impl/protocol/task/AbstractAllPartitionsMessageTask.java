@@ -24,37 +24,29 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.concurrent.CompletableFuture;
 
-public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessageTask<P>
-        implements BiConsumer<Map<Integer, Object>, Throwable> {
+public abstract class AbstractAllPartitionsMessageTask<P>
+        extends AbstractAsyncMessageTask<P, Map<Integer, Object>> {
 
     public AbstractAllPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() {
+    protected CompletableFuture<Map<Integer, Object>> processInternal() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory)
-                        .whenCompleteAsync(this);
+        return operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory);
+    }
+
+    @Override
+    protected Object beforeResponse(Map<Integer, Object> response) {
+        return reduce(response);
     }
 
     protected abstract OperationFactory createOperationFactory();
 
     protected abstract Object reduce(Map<Integer, Object> map);
 
-    @Override
-    public void accept(Map<Integer, Object> map, Throwable throwable) {
-        if (throwable == null) {
-            try {
-                sendResponse(reduce(map));
-            } catch (Exception e) {
-                handleProcessingFailure(e);
-            }
-        } else {
-            handleProcessingFailure(throwable);
-        }
-    }
 }

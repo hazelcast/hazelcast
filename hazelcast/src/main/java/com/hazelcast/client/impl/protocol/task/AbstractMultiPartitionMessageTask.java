@@ -20,26 +20,25 @@ import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.concurrent.CompletableFuture;
 
-public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractMessageTask<P>
-        implements BiConsumer<Map<Integer, Object>, Throwable> {
+public abstract class AbstractMultiPartitionMessageTask<P>
+        extends AbstractAsyncMessageTask<P, Map<Integer, Object>> {
 
     protected AbstractMultiPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() {
+    protected CompletableFuture<Map<Integer, Object>> processInternal() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions())
-                        .whenCompleteAsync(this);
+        return operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions());
     }
 
     public abstract PartitionIdSet getPartitions();
@@ -49,11 +48,7 @@ public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractMessa
     protected abstract Object reduce(Map<Integer, Object> map);
 
     @Override
-    public void accept(Map<Integer, Object> map, Throwable throwable) {
-        if (throwable == null) {
-            sendResponse(reduce(map));
-        } else {
-            handleProcessingFailure(throwable);
-        }
+    protected Object beforeResponse(Map<Integer, Object> response) {
+        return reduce(response);
     }
 }

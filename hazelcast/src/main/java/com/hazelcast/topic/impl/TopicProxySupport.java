@@ -32,8 +32,7 @@ import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 
 public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
@@ -107,12 +106,12 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     public @Nonnull
     UUID addMessageListenerInternal(@Nonnull MessageListener listener) {
         Future<UUID> eventRegistration = topicService.addMessageListener(name, listener, false);
-        return getRegistrationId(eventRegistration);
+        return getValue(eventRegistration);
     }
 
     public boolean removeMessageListenerInternal(@Nonnull UUID registrationId) {
         Future<Boolean> eventRegistration = topicService.removeMessageListener(name, registrationId);
-        return getListenerRemovalResult(eventRegistration);
+        return getValue(eventRegistration);
     }
 
     @Override

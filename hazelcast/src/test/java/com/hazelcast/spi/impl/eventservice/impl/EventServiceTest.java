@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -64,7 +64,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         while (getClusterService(hz2).getSize() < 3) {
             Future<UUID> registration = eventService.registerListener(serviceName, topic, listener)
                                                     .thenApply(EventRegistration::getId);
-            registrationIds.add(getRegistrationId(registration));
+            registrationIds.add(getValue(registration));
         }
 
         HazelcastInstance hz3 = future.get();
@@ -90,7 +90,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         for (int i = 0; i < 500; i++) {
             Future<UUID> registration = eventService.registerListener(serviceName, topic, listener)
                                                     .thenApply(EventRegistration::getId);
-            registrationIds.add(getRegistrationId(registration));
+            registrationIds.add(getValue(registration));
         }
 
         Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));

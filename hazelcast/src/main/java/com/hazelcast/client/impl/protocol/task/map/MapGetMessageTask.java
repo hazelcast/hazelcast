@@ -19,11 +19,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -63,7 +63,7 @@ public class MapGetMessageTask
     }
 
     @Override
-    protected void beforeResponse() {
+    protected Object beforeResponse(Object response) {
         final long latencyNanos = System.nanoTime() - startTimeNanos;
         final MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
@@ -71,6 +71,7 @@ public class MapGetMessageTask
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
                     .incrementGetLatencyNanos(latencyNanos);
         }
+        return response;
     }
 
 

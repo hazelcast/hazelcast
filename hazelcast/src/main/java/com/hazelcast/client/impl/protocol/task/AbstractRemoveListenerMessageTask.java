@@ -31,7 +31,7 @@ import java.util.concurrent.Future;
  * @param <P> listener registration request parameters type
  */
 public abstract class AbstractRemoveListenerMessageTask<P>
-        extends AbstractListenerMessageTask<P, Boolean> {
+        extends AbstractAsyncMessageTask<P, Boolean> {
 
     protected AbstractRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,16 +49,6 @@ public abstract class AbstractRemoveListenerMessageTask<P>
     @Override
     public Object[] getParameters() {
         return new Object[]{getRegistrationId()};
-    }
-
-    @Override
-    public void accept(Object response, Throwable throwable) {
-        if (throwable == null) {
-            boolean isSuccess = response != null;
-            sendResponse(isSuccess);
-        } else {
-            handleProcessingFailure(throwable);
-        }
     }
 
 }

@@ -47,12 +47,11 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 
 /**
  * Node side event service implementation for query cache.
@@ -92,12 +91,12 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     public UUID addPublisherListener(String mapName, String cacheId, ListenerAdapter listenerAdapter) {
         Future<UUID> registrationFuture = mapServiceContext
                 .addListenerAdapter(listenerAdapter, TrueEventFilter.INSTANCE, cacheId);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
     public boolean removePublisherListener(String mapName, String cacheId, UUID listenerId) {
-        return getListenerRemovalResult(mapServiceContext.removeEventListener(cacheId, listenerId));
+        return getValue(mapServiceContext.removeEventListener(cacheId, listenerId));
     }
 
     @Override
@@ -115,7 +114,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
                 Future<UUID> registration = eventService
                         .registerLocalListener(SERVICE_NAME, cacheId, filter == null ? TrueEventFilter.INSTANCE : filter,
                                 listenerAdaptor).thenApply(EventRegistration::getId);
-                return getRegistrationId(registration);
+                return getValue(registration);
             }
         } finally {
             closeResource(mutex);
@@ -124,7 +123,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
 
     @Override
     public boolean removeListener(String mapName, String cacheId, UUID listenerId) {
-        return getListenerRemovalResult(eventService.deregisterListener(SERVICE_NAME, cacheId, listenerId));
+        return getValue(eventService.deregisterListener(SERVICE_NAME, cacheId, listenerId));
     }
 
     @Override

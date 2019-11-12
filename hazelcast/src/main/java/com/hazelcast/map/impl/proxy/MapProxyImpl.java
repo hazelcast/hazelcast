@@ -24,6 +24,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
@@ -72,6 +73,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
@@ -86,8 +88,6 @@ import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.new
 import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newDelegatingFuture;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -523,7 +523,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(listener);
 
         Future<UUID> registrationFuture = addLocalEntryListenerInternal(listener);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
@@ -535,7 +535,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         Future<UUID> registrationFuture = addLocalEntryListenerInternal(listener, predicate, null, includeValue);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
@@ -549,7 +549,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         Future<UUID> registrationFuture = addLocalEntryListenerInternal(listener, predicate, toDataWithStrategy(key),
                 includeValue);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
@@ -558,7 +558,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(listener);
 
         Future<UUID> registrationFuture = addEntryListenerInternal(listener, null, includeValue);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
@@ -568,7 +568,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(listener);
 
         Future<UUID> registrationFuture = addEntryListenerInternal(listener, toDataWithStrategy(key), includeValue);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
@@ -581,7 +581,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         Future<UUID> registrationFuture = addEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
@@ -593,7 +593,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(listener, predicate);
 
         Future<UUID> registrationFuture = addEntryListenerInternal(listener, predicate, null, includeValue);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
@@ -601,7 +601,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(id, "Listener ID should not be null!");
 
         Future<Boolean> registrationFuture = removeEntryListenerInternal(id);
-        return getListenerRemovalResult(registrationFuture);
+        return FutureUtil.getValue(registrationFuture);
     }
 
     @Override
@@ -610,7 +610,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(listener);
 
         CompletableFuture<UUID> registrationFuture = (CompletableFuture<UUID>) addPartitionLostListenerInternal(listener);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
@@ -618,7 +618,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(id, "Listener ID should not be null!");
 
         Future<Boolean> registrationFuture = removePartitionLostListenerInternal(id);
-        return getListenerRemovalResult(registrationFuture);
+        return FutureUtil.getValue(registrationFuture);
     }
 
     @Override

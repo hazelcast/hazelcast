@@ -46,7 +46,7 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 
 /**
  * Node side implementation of {@link QueryCacheContext}.
@@ -190,7 +190,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
                 return "Local IMap listener for the map '" + name + "'";
             }
         }, name);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     private class RegisterMapListenerFunction implements Function<String, UUID> {

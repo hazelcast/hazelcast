@@ -41,7 +41,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
@@ -211,7 +211,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     public void addListenerDestroyAction(final String service, final String topic, final UUID id) {
         final EventService eventService = clientEngine.getEventService();
         // the destroy action is blocking. It is called when the connection is being closed.
-        addDestroyAction(id, () -> getListenerRemovalResult(eventService.deregisterListener(service, topic, id)));
+        addDestroyAction(id, () -> getValue(eventService.deregisterListener(service, topic, id)));
     }
 
     @Override

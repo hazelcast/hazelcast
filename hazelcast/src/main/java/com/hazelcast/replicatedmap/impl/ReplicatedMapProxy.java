@@ -60,11 +60,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getListenerRemovalResult;
-import static com.hazelcast.spi.impl.eventservice.impl.RegistrationUtil.getRegistrationId;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
@@ -369,14 +368,14 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     public boolean removeEntryListener(@Nonnull UUID id) {
         checkNotNull(id, "Listener ID should not be null!");
         Future<Boolean> registrationFuture = eventPublishingService.removeEventListener(name, id);
-        return getListenerRemovalResult(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         Future<UUID> registrationFuture = eventPublishingService.addEventListener(listener, TrueEventFilter.INSTANCE, name);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Nonnull
@@ -385,7 +384,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedEntryEventFilter(serializationService.toData(key));
         Future<UUID> registrationFuture = eventPublishingService.addEventListener(listener, eventFilter, name);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Nonnull
@@ -395,7 +394,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(null, predicate);
         Future<UUID> registrationFuture = eventPublishingService.addEventListener(listener, eventFilter, name);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Nonnull
@@ -405,7 +404,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(serializationService.toData(key), predicate);
         Future<UUID> registrationFuture = eventPublishingService.addEventListener(listener, eventFilter, name);
-        return getRegistrationId(registrationFuture);
+        return getValue(registrationFuture);
     }
 
     @Nonnull
