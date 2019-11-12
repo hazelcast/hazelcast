@@ -23,6 +23,7 @@ import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.json.Json;
@@ -130,7 +131,7 @@ public class ManagementCenterService {
     private volatile boolean taskPollFailed;
     private volatile boolean eventSendFailed;
     private volatile ManagementCenterEventListener eventListener;
-    private volatile String lastConfigETag;
+    private volatile String lastMCConfigETag;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -340,8 +341,8 @@ public class ManagementCenterService {
      *
      * @return  last or <code>null</code>
      */
-    public String getLastConfigETag() {
-        return lastConfigETag;
+    public String getLastMCConfigETag() {
+        return lastMCConfigETag;
     }
 
     /**
@@ -350,17 +351,18 @@ public class ManagementCenterService {
      * @param eTag          ETag of new config
      * @param bwListConfig  new config
      */
-    public void applyConfig(String eTag, ClientBwListDTO bwListConfig) {
-        if (eTag.equals(lastConfigETag)) {
-            logger.warning("Client B/W list filtering config is already present.");
+    public void applyMCConfig(String eTag, ClientBwListDTO bwListConfig) {
+        if (eTag.equals(lastMCConfigETag)) {
+            logger.warning("Client B/W list filtering config with the same ETag is already applied.");
             return;
         }
 
         try {
             bwListConfigHandler.applyConfig(bwListConfig);
-            lastConfigETag = eTag;
+            lastMCConfigETag = eTag;
         } catch (Exception e) {
-            logger.warning("Could not apply client B/W list filtering.", e);
+            logger.warning("Could not apply client B/W list filtering config.", e);
+            throw new HazelcastException("Error while applying MC config", e);
         }
     }
 

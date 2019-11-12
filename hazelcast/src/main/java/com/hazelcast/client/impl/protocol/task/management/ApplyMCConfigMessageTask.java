@@ -23,7 +23,7 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<MCAppl
         if (mode == null) {
             throw new IllegalArgumentException("Unexpected client B/W list mode = [" + parameters.clientBwListMode + "]");
         }
-        mcService.applyConfig(parameters.eTag, new ClientBwListDTO(mode, parameters.clientBwListEntries));
+        mcService.applyMCConfig(parameters.eTag, new ClientBwListDTO(mode, parameters.clientBwListEntries));
         return null;
     }
 

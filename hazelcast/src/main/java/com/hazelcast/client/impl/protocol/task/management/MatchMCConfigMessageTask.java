@@ -35,7 +35,7 @@ public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<Reques
     @Override
     protected Object call() throws Exception {
         ManagementCenterService mcService = nodeEngine.getManagementCenterService();
-        return mcService != null && parameters.eTag.equals(mcService.getLastConfigETag());
+        return mcService != null && parameters.eTag.equals(mcService.getLastMCConfigETag());
     }
 
     @Override

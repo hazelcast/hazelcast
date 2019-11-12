@@ -234,7 +234,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Test
     public void matchMCConfig() throws Exception {
         ClientBwListDTO bwListDTO = new ClientBwListDTO(ClientBwListDTO.Mode.DISABLED, emptyList());
-        getMemberMCService(hazelcastInstances[0]).applyConfig("testETag", bwListDTO);
+        getMemberMCService(hazelcastInstances[0]).applyMCConfig("testETag", bwListDTO);
 
         assertTrue(managementCenterService.matchMCConfig(members[0], "testETag").get());
         assertFalse(managementCenterService.matchMCConfig(members[0], "wrongETag").get());
@@ -242,7 +242,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void applyMCConfig() throws Exception {
-        assertNull(getMemberMCService(hazelcastInstances[0]).getLastConfigETag());
+        assertNull(getMemberMCService(hazelcastInstances[0]).getLastMCConfigETag());
 
         ClientBwListDTO bwListDTO = new ClientBwListDTO(
                 ClientBwListDTO.Mode.BLACKLIST,
@@ -250,7 +250,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         );
         managementCenterService.applyMCConfig(members[0], "testETag", bwListDTO).get();
 
-        assertEquals("testETag", getMemberMCService(hazelcastInstances[0]).getLastConfigETag());
+        assertEquals("testETag", getMemberMCService(hazelcastInstances[0]).getLastMCConfigETag());
     }
 
     private static com.hazelcast.internal.management.ManagementCenterService getMemberMCService(HazelcastInstance instance) {
