@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -191,11 +191,11 @@ public class SenderTasklet implements Tasklet {
     }
 
     @Override
-    public void collectMetrics(MetricTagger tagger, MetricsCollectionContext context) {
-        tagger = tagger.withTag(MetricTags.VERTEX, sourceVertexName)
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        descriptor = descriptor.withTag(MetricTags.VERTEX, sourceVertexName)
                         .withTag(MetricTags.ORDINAL, sourceOrdinalString)
                         .withTag(MetricTags.DESTINATION_ADDRESS, destinationAddressString);
 
-        context.collect(tagger, this);
+        context.collect(descriptor, this);
     }
 }

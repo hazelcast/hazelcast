@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.managementcenter.MetricsCompressor;
 import com.hazelcast.jet.impl.JetService;
@@ -37,7 +37,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
@@ -80,8 +80,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
             JobMetricsCollector metricsRenderer = new JobMetricsCollector(executionId, nodeEngine.getLocalMember(),
                     logger);
             nodeEngine.getMetricsRegistry().collect(metricsRenderer);
-            metricsRenderer.whenComplete();
-            response = metricsRenderer.getJobMetrics();
+            response = metricsRenderer.getMetrics();
         } else {
             response = RawJobMetrics.empty();
         }
@@ -128,58 +127,52 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
     private static class JobMetricsCollector implements MetricsCollector {
 
         private final Long executionIdOfInterest;
-        private final String namePrefix;
         private final MetricsCompressor compressor;
         private final ILogger logger;
-
-        private RawJobMetrics jobMetrics = RawJobMetrics.empty();
+        private final UnaryOperator<MetricDescriptor> addPrefixFn;
 
         JobMetricsCollector(long executionId, @Nonnull Member member, @Nonnull ILogger logger) {
             Objects.requireNonNull(member, "member");
             this.logger = Objects.requireNonNull(logger, "logger");
 
             this.executionIdOfInterest = executionId;
-            this.namePrefix = JobMetricsUtil.getMemberPrefix(member);
+            this.addPrefixFn = JobMetricsUtil.addMemberPrefixFn(member);
             this.compressor = new MetricsCompressor();
         }
 
         @Override
-        public void collectLong(String name, long value, Set<MetricTarget> excludedTargets) {
-            Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
+        public void collectLong(MetricDescriptor descriptor, long value) {
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
             if (executionIdOfInterest.equals(executionId)) {
-                String prefixedName = JobMetricsUtil.addPrefixToDescriptor(name, namePrefix);
-                compressor.addLong(prefixedName, value);
+                compressor.addLong(addPrefixFn.apply(descriptor), value);
             }
         }
 
         @Override
-        public void collectDouble(String name, double value, Set<MetricTarget> excludedTargets) {
-            Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
+        public void collectDouble(MetricDescriptor descriptor, double value) {
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
             if (executionIdOfInterest.equals(executionId)) {
-                String prefixedName = JobMetricsUtil.addPrefixToDescriptor(name, namePrefix);
-                compressor.addDouble(prefixedName, value);
+                compressor.addDouble(addPrefixFn.apply(descriptor), value);
             }
         }
 
         @Override
-        public void collectException(String name, Exception e, Set<MetricTarget> excludedTargets) {
-            Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
+        public void collectException(MetricDescriptor descriptor, Exception e) {
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
             if (executionIdOfInterest.equals(executionId)) {
                 logger.warning("Exception when rendering job metrics: " + e, e);
             }
         }
 
         @Override
-        public void collectNoValue(String name, Set<MetricTarget> excludedTargets) {
-        }
+        public void collectNoValue(MetricDescriptor descriptor) {
 
-        public void whenComplete() {
-            jobMetrics = RawJobMetrics.of(compressor.getBlobAndReset());
         }
 
         @Nonnull
-        RawJobMetrics getJobMetrics() {
-            return jobMetrics;
+        public RawJobMetrics getMetrics() {
+            return RawJobMetrics.of(compressor.getBlobAndReset());
         }
+
     }
 }

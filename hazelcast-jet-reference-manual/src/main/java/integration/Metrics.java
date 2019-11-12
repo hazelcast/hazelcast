@@ -59,7 +59,7 @@ public class Metrics {
                 .filter(vertexOfInterest.and(notSnapshotEdge))
                 .get(MetricNames.EMITTED_COUNT);
 
-        long totalCount = measurements.stream().mapToLong(Measurement::getValue).sum();
+        long totalCount = measurements.stream().mapToLong(Measurement::value).sum();
         //end::s2[]
     }
 }

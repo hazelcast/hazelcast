@@ -16,7 +16,8 @@
 
 package com.hazelcast.jet.impl.metrics;
 
-import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -30,7 +31,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.BiFunction;
 
-public class MetricsContext {
+public class MetricsContext implements DynamicMetricsProvider {
 
     private static final BiFunction<String, Unit, AbstractMetric> CREATE_SINGLE_WRITER_METRIC = SingleWriterMetric::new;
     private static final BiFunction<String, Unit, AbstractMetric> CREATE_THREAD_SAFE_METRICS = ThreadSafeMetric::new;
@@ -79,19 +80,21 @@ public class MetricsContext {
         }
     }
 
-    public void collectMetrics(MetricTagger tagger, MetricsCollectionContext context) {
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor tagger, MetricsCollectionContext context) {
         if (onlyMetric != null) {
-            MetricTagger withUserFlag = addUserTag(tagger);
-            context.collect(withUserFlag, onlyName, ProbeLevel.INFO, toProbeUnit(onlyMetric.unit()), onlyMetric.get());
+            context.collect(
+                    addUserTag(tagger), onlyName, ProbeLevel.INFO, toProbeUnit(onlyMetric.unit()), onlyMetric.get()
+            );
         } else if (metrics != null) {
-            MetricTagger withUserFlag = addUserTag(tagger);
+            MetricDescriptor withUserTag = addUserTag(tagger);
             metrics.forEach((name, metric) ->
-                    context.collect(withUserFlag, name, ProbeLevel.INFO, toProbeUnit(metric.unit()), metric.get()));
+                    context.collect(withUserTag, name, ProbeLevel.INFO, toProbeUnit(metric.unit()), metric.get()));
         }
     }
 
-    private MetricTagger addUserTag(MetricTagger tagger) {
-        return tagger.withTag(MetricTags.USER, "true");
+    private static MetricDescriptor addUserTag(MetricDescriptor tagger) {
+        return tagger.copy().withTag(MetricTags.USER, "true");
     }
 
     private ProbeUnit toProbeUnit(Unit unit) {

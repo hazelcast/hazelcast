@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
@@ -102,13 +102,13 @@ public class TaskletExecutionService {
 
         // register metrics
         MetricsRegistry registry = nodeEngine.getMetricsRegistry();
-        MetricTagger tagger = registry.newMetricTagger()
-                                        .withTag(MetricTags.MODULE, "jet");
+        MetricDescriptor descriptor = registry.newMetricDescriptor()
+                                                     .withTag(MetricTags.MODULE, "jet");
 
-        registry.registerStaticMetrics(tagger, this);
+        registry.registerStaticMetrics(descriptor, this);
         for (int i = 0; i < cooperativeWorkers.length; i++) {
             registry.registerStaticMetrics(
-                    tagger.withIdTag(MetricTags.COOPERATIVE_WORKER, String.valueOf(i)),
+                    descriptor.withDiscriminator(MetricTags.COOPERATIVE_WORKER, String.valueOf(i)),
                     cooperativeWorkers[i]
             );
         }

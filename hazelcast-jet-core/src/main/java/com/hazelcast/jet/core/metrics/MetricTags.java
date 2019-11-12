@@ -101,12 +101,6 @@ public final class MetricTags {
     public static final String ORDINAL = "ordinal";
 
     /**
-     * The name of the metric. This is the tag that conceptually identifies
-     * a metric. Mandatory tag.
-     */
-    public static final String METRIC = "metric";
-
-    /**
      * Unit of metric value, for details see {@link ProbeUnit}.
      */
     public static final String UNIT = "unit";

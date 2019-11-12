@@ -23,8 +23,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
@@ -363,11 +362,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-        MetricTagger tagger = taggerSupplier.getMetricTagger()
-                                            .withTag(MetricTags.MODULE, "jet");
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        descriptor.withTag(MetricTags.MODULE, "jet");
         executionContexts.forEach((id, ctx) -> {
-            ctx.collectMetrics(tagger, context);
+            ctx.provideDynamicMetrics(descriptor.copy(), context);
         });
     }
 }

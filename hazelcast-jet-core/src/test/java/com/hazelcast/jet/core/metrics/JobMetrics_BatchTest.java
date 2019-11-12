@@ -176,6 +176,6 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
         Collection<Measurement> measurements = metrics
                 .filter(MeasurementPredicates.tagValueEquals(MetricTags.VERTEX, vertex))
                 .get(metric);
-        return measurements.stream().mapToLong(Measurement::getValue).sum();
+        return measurements.stream().mapToLong(Measurement::value).sum();
     }
 }

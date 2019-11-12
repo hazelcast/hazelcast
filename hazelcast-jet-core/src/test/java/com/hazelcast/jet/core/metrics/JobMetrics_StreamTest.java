@@ -245,6 +245,6 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
                 .filter(MeasurementPredicates.tagValueEquals(MetricTags.VERTEX, vertex)
                             .and(MeasurementPredicates.tagValueEquals(MetricTags.ORDINAL, "snapshot").negate()))
                 .get(metric);
-        return measurements.stream().mapToLong(Measurement::getValue).sum();
+        return measurements.stream().mapToLong(Measurement::value).sum();
     }
 }

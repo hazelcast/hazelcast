@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.internal.metrics.MetricTagger;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -499,38 +499,38 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     @Override
-    public void collectMetrics(MetricTagger tagger, MetricsCollectionContext context) {
-        tagger = tagger.withTag(MetricTags.VERTEX, this.context.vertexName())
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
                        .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
                        .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
         if (instreams.size() == 0 && !VertexDef.isSnapshotVertex(this.context.vertexName())) {
-            tagger = tagger.withTag(MetricTags.SOURCE, "true");
+            descriptor = descriptor.withTag(MetricTags.SOURCE, "true");
         }
         if (outstreams.length == 0) {
-            tagger = tagger.withTag(MetricTags.SINK, "true");
+            descriptor = descriptor.withTag(MetricTags.SINK, "true");
         }
 
         for (int i = 0; i < instreams.size(); i++) {
-            MetricTagger taggerWithOrdinal = tagger.withTag(MetricTags.ORDINAL, String.valueOf(i));
-            context.collect(taggerWithOrdinal, RECEIVED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, receivedCounts.get(i));
-            context.collect(taggerWithOrdinal, RECEIVED_BATCHES, ProbeLevel.INFO, ProbeUnit.COUNT, receivedBatches.get(i));
+            MetricDescriptor descWithOrdinal = descriptor.copy().withTag(MetricTags.ORDINAL, String.valueOf(i));
+            context.collect(descWithOrdinal, RECEIVED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, receivedCounts.get(i));
+            context.collect(descWithOrdinal, RECEIVED_BATCHES, ProbeLevel.INFO, ProbeUnit.COUNT, receivedBatches.get(i));
         }
 
         for (int i = 0; i < emittedCounts.length() - (this.context.snapshottingEnabled() ? 0 : 1); i++) {
             String ordinal = i == emittedCounts.length() - 1 ? "snapshot" : String.valueOf(i);
-            MetricTagger taggerWithOrdinal = tagger.withTag(MetricTags.ORDINAL, ordinal);
-            context.collect(taggerWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
+            MetricDescriptor descriptorWithOrdinal = descriptor.copy().withTag(MetricTags.ORDINAL, ordinal);
+            context.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
 
-        context.collect(tagger, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
-        context.collect(tagger, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
-        context.collect(tagger, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
-        context.collect(tagger, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
+        context.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
+        context.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
+        context.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
+        context.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
 
-        context.collect(tagger, this);
-        context.collect(tagger, this.processor);
+        context.collect(descriptor, this);
+        context.collect(descriptor, this.processor);
 
-        metricsContext.collectMetrics(tagger, context);
+        metricsContext.provideDynamicMetrics(descriptor, context);
     }
 }

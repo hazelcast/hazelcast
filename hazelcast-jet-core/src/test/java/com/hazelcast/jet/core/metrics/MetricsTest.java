@@ -207,9 +207,9 @@ public class MetricsTest extends JetTestSupport {
 
         Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
         assertTrueEventually(() -> assertEquals(inputSize,
-                job.getMetrics().get("total").stream().mapToLong(Measurement::getValue).sum()));
+                job.getMetrics().get("total").stream().mapToLong(Measurement::value).sum()));
         assertTrueEventually(() -> assertEquals(inputSize / 2,
-                job.getMetrics().get("dropped").stream().mapToLong(Measurement::getValue).sum()));
+                job.getMetrics().get("dropped").stream().mapToLong(Measurement::value).sum()));
         job.join();
     }
 
@@ -390,7 +390,7 @@ public class MetricsTest extends JetTestSupport {
         List<String> mBeanNames = new ArrayList<>();
         String memberName = instance.getHazelcastInstance().getName();
         String jobId = job.getIdString();
-        String execId = job.getMetrics().get("total").get(0).getTag("exec");
+        String execId = job.getMetrics().get("total").get(0).tag("exec");
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         for (int i = 0; i < availableProcessors; i++) {
             StringBuilder sb = new StringBuilder();
@@ -451,7 +451,7 @@ public class MetricsTest extends JetTestSupport {
                     String.format("Expected measurements for metric '%s', but there were none", name),
                     measurements.isEmpty()
             );
-            long actualValue = measurements.stream().mapToLong(Measurement::getValue).sum();
+            long actualValue = measurements.stream().mapToLong(Measurement::value).sum();
             if (expected instanceof Number) {
                 long expectedValue = ((Number) expected).longValue();
                 assertEquals(

@@ -43,24 +43,25 @@ import java.util.stream.Collectors;
  * with a particular metric, metric which in turn is defined by its name
  * (for a full list of metric names provided see {@link MetricNames}).
  * The attributes are specified as tags that have names and values (for a
- * full list of tag names see {@link MetricTags}). The metric name is also
- * duplicated as one of the tags, see {@link MetricTags#METRIC}. An example
+ * full list of tag names see {@link MetricTags}). An example
  * descriptor would have a collection of tags/attributes like this:
  * {@code module=jet, job=jobId, exec=execId, vertex=filter, proc=3,
  * unit=count, metric=queuesCapacity, ...}
  *
  * @since 3.2
  */
-public class Measurement implements IdentifiedDataSerializable {
+public final class Measurement implements IdentifiedDataSerializable {
 
     private Map<String, String> tags; //tag name -> tag value
+    private String metric;
     private long value;
     private long timestamp;
 
     Measurement() { //needed for deserialization
     }
 
-    private Measurement(long value, long timestamp, @Nonnull Map<String, String> tags) {
+    private Measurement(String metric, long value, long timestamp, @Nonnull Map<String, String> tags) {
+        this.metric = metric;
         this.value = value;
         this.timestamp = timestamp;
         this.tags = new HashMap<>(tags);
@@ -71,15 +72,18 @@ public class Measurement implements IdentifiedDataSerializable {
      * the metric descriptor in map form.
      */
     @Nonnull
-    public static Measurement of(long value, long timestamp, @Nonnull Map<String, String> tags) {
+    public static Measurement of(
+            @Nonnull String metric, long value, long timestamp, @Nonnull Map<String, String> tags
+    ) {
+        Objects.requireNonNull(tags, "metric");
         Objects.requireNonNull(tags, "tags");
-        return new Measurement(value, timestamp, tags);
+        return new Measurement(metric, value, timestamp, tags);
     }
 
     /**
      * Returns the value associated with this {@link Measurement}.
      */
-    public long getValue() {
+    public long value() {
         return value;
     }
 
@@ -87,8 +91,17 @@ public class Measurement implements IdentifiedDataSerializable {
      * Returns the timestamps associated with this {@link Measurement}, the
      * moment when the value was gathered.
      */
-    public long getTimestamp() {
+    public long timestamp() {
         return timestamp;
+    }
+
+    /**
+     * Returns the name of the metric. For a list of different metrics
+     * see {@link MetricNames}.
+     */
+    @Nonnull
+    public String metric() {
+        return metric;
     }
 
     /**
@@ -97,7 +110,7 @@ public class Measurement implements IdentifiedDataSerializable {
      * possible tag names see {@link MetricTags}.
      */
     @Nullable
-    public String getTag(String name) {
+    public String tag(String name) {
         return tags.get(name);
     }
 
@@ -143,7 +156,7 @@ public class Measurement implements IdentifiedDataSerializable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("%,5d", value))
+        sb.append(String.format("%s %,5d", metric, value))
                 .append(" ")
                 .append(Util.toLocalTime(timestamp))
                 .append(" [");

@@ -34,7 +34,7 @@ public final class MeasurementPredicates {
      * @return a filtering predicate
      */
     public static Predicate<Measurement> containsTag(String tag) {
-        return measurement -> measurement.getTag(tag) != null;
+        return measurement -> measurement.tag(tag) != null;
     }
 
     /**
@@ -46,7 +46,7 @@ public final class MeasurementPredicates {
      * @return a filtering predicate
      */
     public static Predicate<Measurement> tagValueEquals(String tag, String value) {
-        return measurement -> value.equals(measurement.getTag(tag));
+        return measurement -> value.equals(measurement.tag(tag));
     }
 
     /**
@@ -59,7 +59,7 @@ public final class MeasurementPredicates {
      */
     public static Predicate<Measurement> tagValueMatches(String tag, String valueRegexp) {
         return measurement -> {
-            String value = measurement.getTag(tag);
+            String value = measurement.tag(tag);
             return value != null && Pattern.compile(valueRegexp).matcher(value).matches();
         };
     }

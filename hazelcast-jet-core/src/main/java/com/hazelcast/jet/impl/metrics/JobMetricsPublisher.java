@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.metrics;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.managementcenter.MetricsCompressor;
 import com.hazelcast.jet.impl.JobExecutionService;
@@ -29,8 +29,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import static com.hazelcast.jet.impl.JobMetricsUtil.addPrefixToDescriptor;
+import java.util.function.UnaryOperator;
 
 /**
  * A publisher which updates the latest metric values in {@link
@@ -39,7 +38,7 @@ import static com.hazelcast.jet.impl.JobMetricsUtil.addPrefixToDescriptor;
 public class JobMetricsPublisher implements MetricsPublisher {
 
     private final JobExecutionService jobExecutionService;
-    private final String namePrefix;
+    private final UnaryOperator<MetricDescriptor> namePrefixFn;
     private final Map<Long, MetricsCompressor> executionIdToCompressor = new HashMap<>();
 
     public JobMetricsPublisher(
@@ -50,22 +49,22 @@ public class JobMetricsPublisher implements MetricsPublisher {
         Objects.requireNonNull(member, "member");
 
         this.jobExecutionService = jobExecutionService;
-        this.namePrefix = JobMetricsUtil.getMemberPrefix(member);
+        this.namePrefixFn = JobMetricsUtil.addMemberPrefixFn(member);
     }
 
     @Override
-    public void publishLong(String name, long value, Set<MetricTarget> excludedTargets) {
-        MetricsCompressor metricsCompressor = getCompressor(name);
+    public void publishLong(MetricDescriptor descriptor, long value) {
+        MetricsCompressor metricsCompressor = getCompressor(descriptor);
         if (metricsCompressor != null) {
-            metricsCompressor.addLong(addPrefixToDescriptor(name, namePrefix), value);
+            metricsCompressor.addLong(namePrefixFn.apply(descriptor), value);
         }
     }
 
     @Override
-    public void publishDouble(String name, double value, Set<MetricTarget> excludedTargets) {
-        MetricsCompressor metricsCompressor = getCompressor(name);
+    public void publishDouble(MetricDescriptor descriptor, double value) {
+        MetricsCompressor metricsCompressor = getCompressor(descriptor);
         if (metricsCompressor != null) {
-            metricsCompressor.addDouble(addPrefixToDescriptor(name, namePrefix), value);
+            metricsCompressor.addDouble(namePrefixFn.apply(descriptor), value);
         }
     }
 
@@ -92,9 +91,10 @@ public class JobMetricsPublisher implements MetricsPublisher {
         return "Job Metrics Publisher";
     }
 
-    private MetricsCompressor getCompressor(String name) {
-        Long executionId = JobMetricsUtil.getExecutionIdFromMetricDescriptor(name);
-        return executionId == null ? null :
-                executionIdToCompressor.computeIfAbsent(executionId, id -> new MetricsCompressor());
+    private MetricsCompressor getCompressor(MetricDescriptor descriptor) {
+        Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
+        return executionId == null ?
+                null
+                : executionIdToCompressor.computeIfAbsent(executionId, id -> new MetricsCompressor());
     }
 }

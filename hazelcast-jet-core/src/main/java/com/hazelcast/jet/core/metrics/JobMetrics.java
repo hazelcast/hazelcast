@@ -50,7 +50,7 @@ public final class JobMetrics implements IdentifiedDataSerializable {
     private static final JobMetrics EMPTY = new JobMetrics(Collections.emptyMap());
 
     private static final Collector<Measurement, ?, Map<String, List<Measurement>>> COLLECTOR =
-        Collectors.groupingBy(measurement -> measurement.getTag(MetricTags.METRIC));
+        Collectors.groupingBy(Measurement::metric);
 
     private Map<String, List<Measurement>> metrics; //metric name -> set of measurements
 
@@ -79,11 +79,7 @@ public final class JobMetrics implements IdentifiedDataSerializable {
     public static JobMetrics of(Stream<Measurement> measurements) {
         Map<String, List<Measurement>> parsed = new HashMap<>();
         measurements.forEach(m -> {
-            String metricName = m.getTag(MetricTags.METRIC);
-            if (metricName == null || metricName.isEmpty()) {
-                throw new IllegalArgumentException("Metric name missing");
-            }
-            parsed.computeIfAbsent(metricName, mn -> new ArrayList<>()).add(m);
+            parsed.computeIfAbsent(m.metric(), mn -> new ArrayList<>()).add(m);
         });
         return new JobMetrics(parsed);
     }
@@ -190,7 +186,7 @@ public final class JobMetrics implements IdentifiedDataSerializable {
                 sb.append(mainEntry.getKey()).append(":\n");
                 mainEntry.getValue().stream()
                     .collect(groupingBy(m -> {
-                        String vertex = m.getTag(MetricTags.VERTEX);
+                        String vertex = m.tag(MetricTags.VERTEX);
                         return vertex == null ? "" : vertex;
                     }))
                     .entrySet().stream()
