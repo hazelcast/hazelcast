@@ -169,8 +169,10 @@ public final class CustomTypeFactory {
     }
 
     public static ClientBwListEntryDTO createClientBwListEntry(int type, String value) {
-        // TODO handle null case???
         ClientBwListEntryDTO.Type entryType = ClientBwListEntryDTO.Type.getById(type);
+        if (entryType == null) {
+            throw new HazelcastException("Unexpected client B/W list entry type = [" + type + "]");
+        }
         return new ClientBwListEntryDTO(entryType, value);
     }
 }
