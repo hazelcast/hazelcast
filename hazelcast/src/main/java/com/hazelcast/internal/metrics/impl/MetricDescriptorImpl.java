@@ -36,6 +36,7 @@ import static java.util.Objects.requireNonNull;
  * Default implementation of {@link MetricDescriptor} and
  * {@link MetricDescriptor}.
  */
+@SuppressWarnings("checkstyle:MethodCount")
 public final class MetricDescriptorImpl implements MetricDescriptor {
     private static final int INITIAL_TAG_CAPACITY = 4;
     private static final double GROW_FACTOR = 1.2D;
@@ -186,6 +187,26 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
             String tagValue = tags[i + 1];
             tagReader.accept(tag, tagValue);
         }
+    }
+
+    @Override
+    public String tag(int index) {
+        index = index << 1;
+        if (index < 0 || index >= tags.length) {
+            return null;
+        }
+
+        return tags[index];
+    }
+
+    @Override
+    public String tagValue(int index) {
+        index = (index << 1) + 1;
+        if (index < 0 || index >= tags.length) {
+            return null;
+        }
+
+        return tags[index];
     }
 
     @Override
@@ -465,5 +486,4 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
             return metricName();
         }
     }
-
 }

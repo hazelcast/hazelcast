@@ -137,8 +137,34 @@ public interface MetricDescriptor {
      * Calls the given {@code tagReader} with all tags in this descriptor.
      *
      * @param tagReader The reader to call
+     * @see #tag(int)
+     * @see #tagValue(int)
      */
     void readTags(BiConsumer<String, String> tagReader);
+
+    /**
+     * Returns the name of the tag at the given index.
+     *
+     * @param index The index
+     * @return the name of the tag
+     * @see #tagValue(int)
+     * @see #tagCount()
+     * @see #readTags(BiConsumer)
+     */
+    @Nullable
+    String tag(int index);
+
+    /**
+     * Returns the value of the tag at the given index.
+     *
+     * @param index The index
+     * @return the value of the tag
+     * @see #tag(int)
+     * @see #tagCount()
+     * @see #readTags(BiConsumer)
+     */
+    @Nullable
+    String tagValue(int index);
 
     /**
      * Returns the number of tags in this descriptor.

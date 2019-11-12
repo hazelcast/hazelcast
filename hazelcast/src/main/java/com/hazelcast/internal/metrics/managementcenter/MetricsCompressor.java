@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
-import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -191,10 +190,12 @@ public class MetricsCompressor {
             tmpDos.writeByte(descriptor.tagCount());
         }
         // further compression is possible by writing only the different tags
-        descriptor.readTags((BiConsumerEx<String, String>) (tag, tagValue) -> {
+        for (int i = 0; i < descriptor.tagCount(); i++) {
+            String tag = descriptor.tag(i);
+            String tagValue = descriptor.tagValue(i);
             tmpDos.writeInt(getDictionaryId(tag));
             tmpDos.writeInt(getDictionaryId(tagValue));
-        });
+        }
         count++;
         lastDescriptor = copyDescriptor(descriptor, lastDescriptor);
     }
@@ -230,14 +231,7 @@ public class MetricsCompressor {
     private static MetricDescriptor copyDescriptor(MetricDescriptor from, MetricDescriptor to) {
         final MetricDescriptor target = to != null ? to : DEFAULT_DESCRIPTOR_SUPPLIER.get();
 
-        target.reset();
-        target.withPrefix(from.prefix())
-              .withMetric(from.metric())
-              .withDiscriminator(from.discriminator(), from.discriminatorValue())
-              .withUnit(from.unit());
-
-        from.readTags(target::withTag);
-        return target;
+        return target.copy(from);
     }
 
     private int getDictionaryId(String word) {

@@ -180,7 +180,10 @@ public class JmxPublisher implements MetricsPublisher {
             ProbeUnit descriptorUnit = descriptor.unit();
             unit = descriptorUnit != null ? descriptorUnit.name() : "unknown";
             MutableInteger tagCnt = new MutableInteger();
-            descriptor.readTags((tag, tagValue) -> {
+            for (int i = 0; i < descriptor.tagCount(); i++) {
+                String tag = descriptor.tag(i);
+                String tagValue = descriptor.tagValue(i);
+
                 if ("module".equals(tag)) {
                     moduleBuilder.append(tagValue);
                 } else {
@@ -191,16 +194,16 @@ public class JmxPublisher implements MetricsPublisher {
                     mBeanTags.append("tag").append(newTagIdx).append('=')
                              .append(escapeObjectNameValue(tag + "=" + tagValue));
                 }
-            });
+            }
             if (moduleBuilder.length() > 0) {
                 module = moduleBuilder.toString();
             }
             String discriminator = descriptor.discriminator();
             String discriminatorValue = descriptor.discriminatorValue();
             if (discriminator != null && discriminatorValue != null) {
-                mBeanTags.append(escapeObjectNameValue(discriminator))
-                         .append('=')
-                         .append(escapeObjectNameValue(discriminatorValue));
+                int newTagIdx = tagCnt.getAndInc();
+                mBeanTags.append("tag").append(newTagIdx).append("=")
+                         .append(escapeObjectNameValue(discriminator + "=" + discriminatorValue));
             }
 
             assert metric != null : "metric == null";
