@@ -121,7 +121,7 @@ class RaftGroupMembershipManager {
     private class CheckLocalRaftNodesTask implements Runnable {
 
         public void run() {
-            if (skipRunningTask()) {
+            if (!(raftService.isDiscoveryCompleted() && raftService.isStartCompleted())) {
                 return;
             }
 
@@ -139,7 +139,7 @@ class RaftGroupMembershipManager {
                     continue;
                 }
 
-                CompletableFuture<CPGroupInfo> f = queryMetadata(new GetRaftGroupOp(groupId));
+                CompletableFuture<CPGroupSummary> f = queryMetadata(new GetRaftGroupOp(groupId));
 
                 f.whenCompleteAsync((group, t) -> {
                     if (t == null) {
