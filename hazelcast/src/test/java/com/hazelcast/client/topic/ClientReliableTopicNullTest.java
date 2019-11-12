@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.topic.AbstractTopicNullTest;
+import com.hazelcast.topic.impl.reliable.AbstractReliableTopicNullTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientTopicNullTest extends AbstractTopicNullTest {
+public class ClientReliableTopicNullTest extends AbstractReliableTopicNullTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;

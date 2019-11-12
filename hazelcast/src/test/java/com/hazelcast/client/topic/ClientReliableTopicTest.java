@@ -82,12 +82,6 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     // ============== addMessageListener ==============================
 
-    @Test(expected = NullPointerException.class)
-    public void addMessageListener_whenNull() {
-        ITopic topic = client.getReliableTopic(randomString());
-        topic.addMessageListener(null);
-    }
-
     @Test
     public void addMessageListener() {
         ITopic topic = client.getReliableTopic(randomString());
@@ -96,12 +90,6 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     }
 
     // ============== removeMessageListener ==============================
-
-    @Test(expected = NullPointerException.class)
-    public void removeMessageListener_whenNull() {
-        ITopic topic = client.getReliableTopic(randomString());
-        topic.removeMessageListener(null);
-    }
 
     @Test
     public void removeMessageListener_whenExisting() {
@@ -165,21 +153,6 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertContains(listener.objects, msg);
-            }
-        });
-    }
-
-    @Test
-    public void publishNull() throws InterruptedException {
-        ITopic topic = client.getReliableTopic(randomString());
-        final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
-        topic.addMessageListener(listener);
-        topic.publish(null);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContains(listener.objects, null);
             }
         });
     }

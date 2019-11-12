@@ -14,42 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.topic;
+package com.hazelcast.topic.impl.reliable;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.topic.AbstractTopicNullTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 /**
- * Member implementation for basic queue methods nullability tests
+ * Member implementation for basic map methods nullability tests
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientTopicNullTest extends AbstractTopicNullTest {
+public class MemberReliableTopicNullTest extends AbstractReliableTopicNullTest {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private HazelcastInstance client;
+    private HazelcastInstance instance;
 
     @Before
     public void setup() {
-        hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
-    }
-
-    @After
-    public void tearDown() {
-        hazelcastFactory.terminateAll();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        instance = factory.newHazelcastInstance();
     }
 
     @Override
     protected HazelcastInstance getDriver() {
-        return client;
+        return instance;
     }
 }
