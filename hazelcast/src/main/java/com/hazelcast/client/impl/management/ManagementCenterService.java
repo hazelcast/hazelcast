@@ -339,11 +339,11 @@ public class ManagementCenterService {
     }
 
     /**
-     * Checks if local MC config (client filter list) on a given member has the same ETag as provided.
+     * Checks if local MC config (client B/W list) on a given member has the same ETag as provided.
      *
      * @param member    target member
      * @param eTag      ETag value of MC config to match with (should be the latest value from MC)
-     * @return          match result: <code>true</code> if config ETags match
+     * @return          operation future object with match result: <code>true</code> if config ETags match
      */
     @Nonnull
     public CompletableFuture<Boolean> matchMCConfig(Member member, String eTag) {
@@ -369,12 +369,12 @@ public class ManagementCenterService {
     }
 
     /**
-     * Applies the MC config (client filter list) on a given member.
+     * Applies the MC config (client B/W list) on a given member.
      *
      * @param member        target member
      * @param eTag          ETag of the new config
-     * @param clientBwList  new config
-     * @return              operation result
+     * @param clientBwList  new config for client B/W list filtering
+     * @return              operation future object
      */
     @Nonnull
     public CompletableFuture<Void> applyMCConfig(Member member, String eTag, ClientBwListDTO clientBwList) {
