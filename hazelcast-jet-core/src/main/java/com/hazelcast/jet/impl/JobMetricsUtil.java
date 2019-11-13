@@ -44,13 +44,12 @@ public final class JobMetricsUtil {
     }
 
     public static Long getExecutionIdFromMetricsDescriptor(MetricDescriptor descriptor) {
-        final String[] val = new String[1];
-        descriptor.readTags((k, v) -> {
-            if (MetricTags.EXECUTION.equals(k)) {
-                val[0] = v;
+        for (int i = 0; i < descriptor.tagCount(); i++) {
+            if (MetricTags.EXECUTION.equals(descriptor.tag(i))) {
+                return idFromString(descriptor.tagValue(i));
             }
-        });
-        return idFromString(val[0]);
+        }
+        return null;
     }
 
     public static UnaryOperator<MetricDescriptor> addMemberPrefixFn(@Nonnull Member member) {
@@ -80,7 +79,9 @@ public final class JobMetricsUtil {
         metric.provide(kvConsumer);
         MetricDescriptor descriptor = kvConsumer.descriptor;
         Map<String, String> tags = MapUtil.createHashMap(descriptor.tagCount());
-        descriptor.readTags(tags::put);
+        for (int i = 0; i < descriptor.tagCount(); i++) {
+            tags.put(descriptor.tag(i), descriptor.tagValue(i));
+        }
         return Measurement.of(kvConsumer.descriptor.metric(), kvConsumer.value, timestamp, tags);
     }
 
