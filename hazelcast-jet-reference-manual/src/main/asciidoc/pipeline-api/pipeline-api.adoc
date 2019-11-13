@@ -1,7 +1,7 @@
 = The Shape of a Pipeline
 
-The general shape of any data processing pipeline is `drawFromSource ->
-transform -> drainToSink` and the natural way to build it is from source
+The general shape of any data processing pipeline is `readFromSource ->
+transform -> writeToSink` and the natural way to build it is from source
 to sink. The {jet-javadoc}/pipeline/Pipeline.html[Pipeline] API follows this
 pattern. For example,
 
@@ -10,8 +10,8 @@ pattern. For example,
 include::{javasource}/BuildComputation.java[tag=s1]
 ----
 
-In each step, such as `drawFrom` or `drainTo`, you create a pipeline
-_stage_. The stage resulting from a `drainTo` operation is called a
+In each step, such as `readFrom` or `writeTo`, you create a pipeline
+_stage_. The stage resulting from a `writeTo` operation is called a
 _sink stage_ and you can't attach more stages to it. All others are
 called _compute stages_ and expect you to attach stages to them.
 
@@ -662,7 +662,7 @@ stream.
 == Add Timestamps to the Stream
 
 The Pipeline API guides you to set up the timestamp policy right after
-you obtain a source stage. `pipeline.drawFrom(someStreamSource)` returns
+you obtain a source stage. `pipeline.readFrom(someStreamSource)` returns
 a `SourceStreamStage` which offers just these methods:
 
 - {jet-javadoc}/pipeline/StreamSourceStage.html#withNativeTimestamps--[`withNativeTimestamps()`]

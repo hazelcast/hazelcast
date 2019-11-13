@@ -42,7 +42,7 @@ public class PerformanceConsiderations {
 
         Pipeline buildPipeline() {
             Pipeline p = Pipeline.create();
-            p.drawFrom(Sources.list("input"))
+            p.readFrom(Sources.list("input"))
              .filter(item -> item.equals(instanceVar)); // <1>
             return p;
         }
@@ -57,7 +57,7 @@ public class PerformanceConsiderations {
 
         Pipeline buildPipeline() {
             Pipeline p = Pipeline.create();
-            p.drawFrom(Sources.list("input"))
+            p.readFrom(Sources.list("input"))
              .filter(item -> item.equals(instanceVar)); // <2>
             return p;
         }
@@ -72,7 +72,7 @@ public class PerformanceConsiderations {
         Pipeline buildPipeline() {
             Pipeline p = Pipeline.create();
             String findMe = instanceVar; // <1>
-            p.drawFrom(Sources.list("input"))
+            p.readFrom(Sources.list("input"))
              .filter(item -> item.equals(findMe)); // <2>
             return p;
         }
@@ -85,13 +85,13 @@ public class PerformanceConsiderations {
                 .ofPattern("HH:mm:ss.SSS")
                 .withZone(ZoneId.systemDefault());
         Pipeline p = Pipeline.create();
-        BatchStage<Long> src = p.drawFrom(Sources.list("input"));
+        BatchStage<Long> src = p.readFrom(Sources.list("input"));
         src.map((Long tstamp) -> formatter.format(Instant.ofEpochMilli(tstamp))); // <1>
         //end::s6[]
     }
 
     static void s7() {
-        BatchStage<Long> src = Pipeline.create().drawFrom(Sources.list("a"));
+        BatchStage<Long> src = Pipeline.create().readFrom(Sources.list("a"));
         //tag::s7[]
         src.map((Long tstamp) -> DateTimeFormatter.ISO_LOCAL_TIME // <1>
                 .format(Instant.ofEpochMilli(tstamp).atZone(ZoneId.systemDefault())));
@@ -101,7 +101,7 @@ public class PerformanceConsiderations {
     static void s8() {
         //tag::s8[]
         Pipeline p = Pipeline.create();
-        BatchStage<Long> src = p.drawFrom(Sources.list("input"));
+        BatchStage<Long> src = p.readFrom(Sources.list("input"));
         ServiceFactory<DateTimeFormatter> serviceFactory = ServiceFactory.withCreateFn( // <1>
                 x -> DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
                                       .withZone(ZoneId.systemDefault()));
@@ -139,9 +139,9 @@ public class PerformanceConsiderations {
         JetInstance jet = Jet.newJetInstance();
         //tag::s11[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list("a")).setName("source")
+        p.readFrom(Sources.<String>list("a")).setName("source")
          .map(String::toLowerCase)
-         .drainTo(Sinks.list("b"));
+         .writeTo(Sinks.list("b"));
 
         DAG dag = p.toDag();
         dag.getOutboundEdges("source").get(0)

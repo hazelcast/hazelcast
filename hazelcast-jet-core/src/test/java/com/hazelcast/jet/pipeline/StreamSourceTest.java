@@ -58,11 +58,11 @@ public class StreamSourceTest extends PipelineTestSupport {
         }
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(source)
+        p.readFrom(source)
          .withIngestionTimestamps()
          .window(WindowDefinition.tumbling(100))
          .aggregate(counting())
-         .drainTo(sink);
+         .writeTo(sink);
 
         Job job = allJetInstances()[0].newJob(p);
 

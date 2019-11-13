@@ -888,7 +888,7 @@ public final class Sinks {
      * disabled on the connection.
      * <p>
      * Example:<pre>{@code
-     *     p.drainTo(Sinks.jdbc(
+     *     p.writeTo(Sinks.jdbc(
      *             "REPLACE into table (id, name) values(?, ?)",
      *             () -> return DriverManager.getConnection("jdbc:..."),
      *             (stmt, item) -> {

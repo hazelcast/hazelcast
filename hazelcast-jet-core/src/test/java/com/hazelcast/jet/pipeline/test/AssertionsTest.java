@@ -47,7 +47,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertOrdered() {
-        p.drawFrom(TestSources.items(1, 2, 3, 4))
+        p.readFrom(TestSources.items(1, 2, 3, 4))
          .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)));
 
         execute();
@@ -55,7 +55,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertOrdered_should_fail() throws Throwable {
-        p.drawFrom(TestSources.items(4, 3, 2, 1))
+        p.readFrom(TestSources.items(4, 3, 2, 1))
          .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)));
 
         expectedException.expectMessage(AssertionError.class.getName());
@@ -67,9 +67,9 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items(1, 2, 3, 4))
+        p.readFrom(TestSources.items(1, 2, 3, 4))
                 .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         execute();
 
@@ -85,9 +85,9 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items(1, 2, 4, 3))
+        p.readFrom(TestSources.items(1, 2, 4, 3))
                 .apply(Assertions.assertOrdered(Arrays.asList(1, 2, 3, 4)))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
@@ -99,7 +99,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertAnyOrder() {
-        p.drawFrom(TestSources.items(4, 3, 2, 1))
+        p.readFrom(TestSources.items(4, 3, 2, 1))
          .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)));
 
         execute();
@@ -114,7 +114,7 @@ public class AssertionsTest extends PipelineTestSupport {
                                                      .map(i -> entry(String.valueOf(i), i))
                                                      .collect(Collectors.toList());
 
-        p.drawFrom(Sources.map(srcMap))
+        p.readFrom(Sources.map(srcMap))
          .apply(Assertions.assertAnyOrder(expected));
 
         execute();
@@ -122,7 +122,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertAnyOrder_should_fail() throws Throwable {
-        p.drawFrom(TestSources.items(3, 2, 1))
+        p.readFrom(TestSources.items(3, 2, 1))
          .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)));
 
         expectedException.expectMessage(AssertionError.class.getName());
@@ -131,7 +131,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertAnyOrder_duplicate_entry() throws Throwable {
-        p.drawFrom(TestSources.items(1, 3, 2, 3))
+        p.readFrom(TestSources.items(1, 3, 2, 3))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 3)));
 
         execute();
@@ -139,7 +139,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertAnyOrder_duplicate_entry_only_in_source_should_fail() throws Throwable {
-        p.drawFrom(TestSources.items(1, 3, 2, 3))
+        p.readFrom(TestSources.items(1, 3, 2, 3))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3)));
 
         expectedException.expectMessage(AssertionError.class.getName());
@@ -148,7 +148,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertAnyOrder_duplicate_entry_only_in_assert_should_fail() throws Throwable {
-        p.drawFrom(TestSources.items(1, 2, 3))
+        p.readFrom(TestSources.items(1, 2, 3))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 3)));
 
         expectedException.expectMessage(AssertionError.class.getName());
@@ -160,9 +160,9 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items(4, 3, 2, 1))
+        p.readFrom(TestSources.items(4, 3, 2, 1))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         execute();
 
@@ -178,9 +178,9 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items(3, 2, 1))
+        p.readFrom(TestSources.items(3, 2, 1))
                 .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
@@ -193,7 +193,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertContains() {
-        p.drawFrom(TestSources.items(4, 3, 2, 1))
+        p.readFrom(TestSources.items(4, 3, 2, 1))
          .apply(Assertions.assertContains(Arrays.asList(1, 3)));
 
         execute();
@@ -201,7 +201,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertContains_should_fail() throws Throwable {
-        p.drawFrom(TestSources.items(4, 1, 2, 3))
+        p.readFrom(TestSources.items(4, 1, 2, 3))
          .apply(Assertions.assertContains(Arrays.asList(1, 3, 5)));
 
         expectedException.expectMessage(AssertionError.class.getName());
@@ -213,9 +213,9 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items(4, 3, 2, 1))
+        p.readFrom(TestSources.items(4, 3, 2, 1))
                 .apply(Assertions.assertContains(Arrays.asList(1, 3)))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         execute();
 
@@ -231,9 +231,9 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items(4, 1, 2, 3))
+        p.readFrom(TestSources.items(4, 1, 2, 3))
                 .apply(Assertions.assertContains(Arrays.asList(1, 3, 5)))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
@@ -247,7 +247,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertCollected() {
-        p.drawFrom(TestSources.items(4, 3, 2, 1))
+        p.readFrom(TestSources.items(4, 3, 2, 1))
          .apply(assertCollected(c -> assertTrue("list size must be at least 4", c.size() >= 4)));
 
         execute();
@@ -255,7 +255,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertCollected_should_fail() throws Throwable {
-        p.drawFrom(TestSources.items(1))
+        p.readFrom(TestSources.items(1))
          .apply(assertCollected(c -> assertTrue("list size must be at least 4", c.size() >= 4)));
 
         expectedException.expectMessage(AssertionError.class.getName());
@@ -267,9 +267,9 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items(4, 3, 2, 1))
+        p.readFrom(TestSources.items(4, 3, 2, 1))
                 .apply(assertCollected(c -> assertTrue("list size must be at least 4", c.size() >= 4)))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         execute();
 
@@ -285,9 +285,9 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items(1))
+        p.readFrom(TestSources.items(1))
                 .apply(assertCollected(c -> assertTrue("list size must be at least 4", c.size() >= 4)))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
@@ -298,7 +298,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertCollectedEventually() throws Throwable {
-        p.drawFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
+        p.readFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
          .withoutTimestamps()
          .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '0'", c.contains(0L))));
 
@@ -308,7 +308,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertCollectedEventually_should_fail() throws Throwable {
-        p.drawFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
+        p.readFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
          .withoutTimestamps()
          .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '1'", c.contains(1L))));
 
@@ -321,10 +321,10 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
+        p.readFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
                 .withoutTimestamps()
                 .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '0'", c.contains(0L))))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         expectedException.expectMessage(AssertionCompletedException.class.getName());
         executeAndPeel();
@@ -337,10 +337,10 @@ public class AssertionsTest extends PipelineTestSupport {
         List<Integer> assertionSink = jet().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
+        p.readFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
                 .withoutTimestamps()
                 .apply(assertCollectedEventually(5, c -> assertTrue("did not receive item '1'", c.contains(1L))))
-                .drainTo(sinkList());
+                .writeTo(sinkList());
 
         expectedException.expectMessage(AssertionError.class.getName());
         executeAndPeel();
@@ -353,7 +353,7 @@ public class AssertionsTest extends PipelineTestSupport {
         Map<String, Long> assertionSink = jet().getMap(sinkName);
         assertTrue(assertionSink.isEmpty());
 
-        p.drawFrom(TestSources.items("some text here and here and some here"))
+        p.readFrom(TestSources.items("some text here and here and some here"))
                 .apply(Assertions.assertOrdered(Arrays.asList("some text here and here and some here")))
                 .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
                 .apply(Assertions.assertAnyOrder(
@@ -363,7 +363,7 @@ public class AssertionsTest extends PipelineTestSupport {
                 .apply(Assertions.assertContains(Arrays.asList("some", "here")))
                 .groupingKey(wholeItem())
                 .aggregate(AggregateOperations.counting())
-                .drainTo(Sinks.map(sinkName));
+                .writeTo(Sinks.map(sinkName));
 
         execute();
 

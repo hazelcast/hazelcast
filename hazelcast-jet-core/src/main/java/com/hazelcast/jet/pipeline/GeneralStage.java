@@ -875,14 +875,14 @@ public interface GeneralStage<T> extends Stage {
      * supplied argument specifies what to do with the received data (typically
      * push it to some outside resource).
      * <p>
-     * You cannot reuse the sink in other {@code drainTo} calls. If you want to
-     * drain multiple stages to the same sink, use {@link Pipeline#drainTo}.
+     * You cannot reuse the sink in other {@code writeTo} calls. If you want to
+     * write multiple stages to the same sink, use {@link Pipeline#writeTo}.
      * This will be more efficient than creating a new sink each time.
      *
      * @return the newly attached sink stage
      */
     @Nonnull
-    SinkStage drainTo(@Nonnull Sink<? super T> sink);
+    SinkStage writeTo(@Nonnull Sink<? super T> sink);
 
     /**
      * Attaches a peeking stage which logs this stage's output and passes it

@@ -59,21 +59,21 @@ public class CheatSheet {
 
     static void s1() {
         //tag::s1[]
-        BatchStage<String> lines = p.drawFrom(list("lines"));
+        BatchStage<String> lines = p.readFrom(list("lines"));
         BatchStage<String> lowercased = lines.map(line -> line.toLowerCase());
         //end::s1[]
     }
 
     static void s2() {
         //tag::s2[]
-        BatchStage<String> lines = p.drawFrom(list("lines"));
+        BatchStage<String> lines = p.readFrom(list("lines"));
         BatchStage<String> nonEmpty = lines.filter(line -> !line.isEmpty());
         //end::s2[]
     }
 
     static void s3() {
         //tag::s3[]
-        BatchStage<String> lines = p.drawFrom(list("lines"));
+        BatchStage<String> lines = p.readFrom(list("lines"));
         BatchStage<String> words = lines.flatMap(
                 line -> traverseArray(line.split("\\W+")));
         //end::s3[]
@@ -81,9 +81,9 @@ public class CheatSheet {
 
     static void s4() {
         //tag::s4[]
-        BatchStage<Trade> trades = p.drawFrom(list("trades"));
+        BatchStage<Trade> trades = p.readFrom(list("trades"));
         BatchStage<Entry<String, StockInfo>> stockInfo =
-                p.drawFrom(list("stockInfo"));
+                p.readFrom(list("stockInfo"));
         BatchStage<Trade> joined = trades.hashJoin(stockInfo,
                 joinMapEntries(Trade::ticker), Trade::setStockInfo);
         //end::s4[]
@@ -95,24 +95,24 @@ public class CheatSheet {
         IMap<String, StockInfo> stockMap = jet.getMap("stock-info");
         StreamSource<Trade> tradesSource = tradesSource();
 
-        p.drawFrom(tradesSource)
+        p.readFrom(tradesSource)
          .withoutTimestamps()
          .groupingKey(Trade::ticker)
          .mapUsingIMap(stockMap, Trade::setStockInfo)
-         .drainTo(Sinks.list("result"));
+         .writeTo(Sinks.list("result"));
         //end::s4a[]
     }
 
     static void s5() {
         //tag::s5[]
-        BatchStage<String> lines = p.drawFrom(list("lines"));
+        BatchStage<String> lines = p.readFrom(list("lines"));
         BatchStage<Long> count = lines.aggregate(counting());
         //end::s5[]
     }
 
     static void s6() {
         //tag::s6[]
-        BatchStage<String> words = p.drawFrom(list("words"));
+        BatchStage<String> words = p.readFrom(list("words"));
         BatchStage<Entry<String, Long>> wordsAndCounts =
             words.groupingKey(word -> word)
                  .aggregate(counting());
@@ -132,14 +132,14 @@ public class CheatSheet {
     }
 
     private static StreamStage<Tweet> tweetStream() {
-        return p.drawFrom(TestSources.itemStream(10, (x, y) -> new Tweet()))
+        return p.readFrom(TestSources.itemStream(10, (x, y) -> new Tweet()))
                 .withoutTimestamps();
     }
 
     static void s8() {
         //tag::s8[]
-        BatchStage<PageVisit> pageVisits = p.drawFrom(Sources.list("pageVisit"));
-        BatchStage<Payment> payments = p.drawFrom(Sources.list("payment"));
+        BatchStage<PageVisit> pageVisits = p.readFrom(Sources.list("pageVisit"));
+        BatchStage<Payment> payments = p.readFrom(Sources.list("payment"));
 
         BatchStageWithKey<PageVisit, Integer> pageVisitsByUserId =
                 pageVisits.groupingKey(pageVisit -> pageVisit.userId());
@@ -174,13 +174,13 @@ public class CheatSheet {
     }
 
     private static StreamStage<Payment> paymentsStream() {
-        return p.<Payment>drawFrom(Sources.mapJournal("payments",
+        return p.<Payment>readFrom(Sources.mapJournal("payments",
                 START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
             .withTimestamps(Payment::timestamp, 1000);
     }
 
     private static StreamStage<PageVisit> pageVisitsStream() {
-        return p.<PageVisit>drawFrom(
+        return p.<PageVisit>readFrom(
             Sources.mapJournal("pageVisits", START_FROM_OLDEST, mapEventNewValue(), mapPutEvents())
         ).withTimestamps(PageVisit::timestamp, 1000);
     }
@@ -189,7 +189,7 @@ public class CheatSheet {
         //tag::s10[]
         StreamSource<Trade> tradesSource = tradesSource();
         StreamStage<Trade> currLargestTrade =
-            p.drawFrom(tradesSource)
+            p.readFrom(tradesSource)
              .withoutTimestamps()
              .rollingAggregate(maxBy(comparing(Trade::worth)));
         //end::s10[]
@@ -252,7 +252,7 @@ public class CheatSheet {
         Pipeline p = Pipeline.create();
         BatchSource<String> source = null;
         //tag::apply1[]
-        p.drawFrom(source)
+        p.readFrom(source)
          .map(String::toLowerCase)
          .filter(s -> s.startsWith("success"))
          .aggregate(counting())
@@ -260,7 +260,7 @@ public class CheatSheet {
         ;
 
         //tag::apply3[]
-        p.drawFrom(source)
+        p.readFrom(source)
          .apply(PipelineTransforms::cleanUp)
          .aggregate(counting())
         //end::apply3[]
@@ -296,7 +296,7 @@ public class CheatSheet {
         Pipeline p = Pipeline.create();
         BatchSource<String> source = null;
         //tag::custom-transform-2[]
-        p.drawFrom(source)
+        p.readFrom(source)
          .customTransform("name", IdentityMapP::new)
         //end::custom-transform-2[]
         ;

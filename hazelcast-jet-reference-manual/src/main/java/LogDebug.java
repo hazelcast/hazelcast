@@ -54,13 +54,13 @@ public class LogDebug {
     static void s3() {
         //tag::s3[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list("inputList"))
+        p.readFrom(Sources.<String>list("inputList"))
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
          .filter(word -> !word.isEmpty())
          .peek() // <1>
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .drainTo(Sinks.map("counts"));
+         .writeTo(Sinks.map("counts"));
         //end::s3[]
 
         //tag::s4[]
@@ -81,7 +81,7 @@ public class LogDebug {
         Pipeline p = Pipeline.create();
 
         //tag::s5[]
-        p.drawFrom(source)
+        p.readFrom(source)
          .filter(l -> {
              boolean pass = l % 2 == 0;
              if (!pass) {
@@ -90,7 +90,7 @@ public class LogDebug {
              Metrics.metric("total").increment();
              return pass;
          })
-         .drainTo(sink);
+         .writeTo(sink);
         //end::s5[]
 
         JetInstance jet = Jet.newJetInstance();
@@ -100,7 +100,7 @@ public class LogDebug {
 
     static void s6() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(TestSources.items(0, 1, 2, 3))
+        p.readFrom(TestSources.items(0, 1, 2, 3))
             //tag::s6[]
             .filterUsingServiceAsync(
                 ServiceFactory.withCreateFn(i -> 0L),
@@ -115,12 +115,12 @@ public class LogDebug {
                 )
             )
             //end::s6[]
-            .drainTo(Sinks.logger());
+            .writeTo(Sinks.logger());
     }
 
     static void s7() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(TestSources.items(0, 1, 2, 3))
+        p.readFrom(TestSources.items(0, 1, 2, 3))
             //tag::s7[]
             .filterUsingServiceAsync(
                 ServiceFactory.withCreateFn(i -> "foo"),
@@ -139,7 +139,7 @@ public class LogDebug {
                 }
             )
             //end::s7[]
-            .drainTo(Sinks.logger());
+            .writeTo(Sinks.logger());
     }
 
     static void s8() {

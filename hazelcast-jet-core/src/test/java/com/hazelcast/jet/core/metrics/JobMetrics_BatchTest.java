@@ -142,12 +142,12 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
 
     private Pipeline createPipeline(String text) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(TestSources.items(text))
+        p.readFrom(TestSources.items(text))
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
          .filter(word -> !word.isEmpty())
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .drainTo(Sinks.map("counts"));
+         .writeTo(Sinks.map("counts"));
         return p;
     }
 

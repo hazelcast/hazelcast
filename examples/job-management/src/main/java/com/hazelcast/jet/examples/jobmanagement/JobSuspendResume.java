@@ -40,9 +40,9 @@ public class JobSuspendResume {
         JetInstance instance2 = Jet.newJetInstance();
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<Integer, Integer>mapJournal("source", START_FROM_OLDEST))
+        p.readFrom(Sources.<Integer, Integer>mapJournal("source", START_FROM_OLDEST))
                 .withoutTimestamps()
-                .drainTo(Sinks.list("sink"));
+                .writeTo(Sinks.list("sink"));
 
         JobConfig jobConfig = new JobConfig();
         // job name is optional

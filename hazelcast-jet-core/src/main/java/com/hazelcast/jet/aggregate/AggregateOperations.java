@@ -83,7 +83,7 @@ public final class AggregateOperations {
      * This sample takes a stream of words and finds the number of occurrences
      * of each word in it:
      * <pre>{@code
-     * BatchStage<String> words = pipeline.drawFrom(wordSource);
+     * BatchStage<String> words = pipeline.readFrom(wordSource);
      * BatchStage<Entry<String, Long>> wordFrequencies =
      *     words.groupingKey(wholeItem()).aggregate(counting());
      * }</pre>
@@ -105,7 +105,7 @@ public final class AggregateOperations {
      * This sample takes a stream of lines of text and outputs a single {@code
      * long} number telling how many words there were in the stream:
      * <pre>{@code
-     * BatchStage<String> linesOfText = pipeline.drawFrom(textSource);
+     * BatchStage<String> linesOfText = pipeline.readFrom(textSource);
      * BatchStage<Long> numberOfWordsInText =
      *         linesOfText
      *                 .map(line -> line.split("\\W+"))
@@ -140,7 +140,7 @@ public final class AggregateOperations {
      * {@code double} value that tells the total sum of money spent in
      * them:
      * <pre>{@code
-     * BatchStage<Purchase> purchases = pipeline.drawFrom(purchaseSource);
+     * BatchStage<Purchase> purchases = pipeline.readFrom(purchaseSource);
      * BatchStage<Double> purchaseVolume =
      *         purchases.aggregate(summingDouble(Purchase::amount));
      * }</pre>
@@ -167,7 +167,7 @@ public final class AggregateOperations {
      * <p>
      * This sample takes a stream of people and finds the youngest person in it:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<Person> youngestPerson =
      *         people.aggregate(minBy(ComparatorEx.comparing(Person::age)));
      * }</pre>
@@ -195,7 +195,7 @@ public final class AggregateOperations {
      * <p>
      * This sample takes a stream of people and finds the oldest person in it:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<Person> oldestPerson =
      *         people.aggregate(maxBy(ComparatorEx.comparing(Person::age)));
      * }</pre>
@@ -236,7 +236,7 @@ public final class AggregateOperations {
      * <p>
      * This sample takes a stream of people and finds ten oldest persons in it:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<List<Person>> oldestDudes =
      *         people.aggregate(topN(10, ComparatorEx.comparing(Person::age)));
      * }</pre>
@@ -286,7 +286,7 @@ public final class AggregateOperations {
      * This sample takes a stream of people and finds ten youngest persons in
      * it:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<List<Person>> youngestDudes =
      *         people.aggregate(bottomN(10, ComparatorEx.comparing(Person::age)));
      * }</pre>
@@ -311,7 +311,7 @@ public final class AggregateOperations {
      * <p>
      * This sample takes a stream of people and finds their mean age:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<Double> meanAge = people.aggregate(averagingLong(Person::age));
      * }</pre>
      * <p>
@@ -358,7 +358,7 @@ public final class AggregateOperations {
      * <p>
      * This sample takes a stream of people and finds their mean age:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<Double> meanAge = people.aggregate(averagingDouble(Person::age));
      * }</pre>
      *
@@ -404,7 +404,7 @@ public final class AggregateOperations {
      * current rate of price change using a sliding window:
      * <pre>{@code
      * StreamStage<Trade> trades = pipeline
-     *         .drawFrom(tradeSource)
+     *         .readFrom(tradeSource)
      *         .withTimestamps(Trade::getTimestamp, SECONDS.toMillis(1));
      * StreamStage<WindowResult<Double>> priceTrend = trades
      *     .window(WindowDefinition.sliding(MINUTES.toMillis(5), SECONDS.toMillis(1)))
@@ -442,7 +442,7 @@ public final class AggregateOperations {
      * This sample outputs a string that you get by reading down the first
      * column of the input text:
      * <pre>{@code
-     * BatchStage<String> linesOfText = pipeline.drawFrom(textSource);
+     * BatchStage<String> linesOfText = pipeline.readFrom(textSource);
      * BatchStage<String> lineStarters = linesOfText
      *         .map(line -> line.charAt(0))
      *         .map(Object::toString)
@@ -464,7 +464,7 @@ public final class AggregateOperations {
      * This sample outputs a single line of text that contains all the
      * upper-cased and title-cased words of the input text:
      * <pre>{@code
-     * BatchStage<String> linesOfText = pipeline.drawFrom(textSource);
+     * BatchStage<String> linesOfText = pipeline.readFrom(textSource);
      * BatchStage<String> upcaseWords = linesOfText
      *         .map(line -> line.split("\\W+"))
      *         .flatMap(Traversers::traverseArray)
@@ -487,7 +487,7 @@ public final class AggregateOperations {
      * This sample outputs a single item, a JSON array of all the upper-cased
      * and title-cased words of the input text:
      * <pre>{@code
-     * BatchStage<String> linesOfText = pipeline.drawFrom(textSource);
+     * BatchStage<String> linesOfText = pipeline.readFrom(textSource);
      * BatchStage<String> upcaseWords = linesOfText
      *         .map(line -> line.split("\\W+"))
      *         .flatMap(Traversers::traverseArray)
@@ -536,7 +536,7 @@ public final class AggregateOperations {
      * This sample takes a stream of people and builds two sorted lists from
      * it, one with all the names and one with all the surnames:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<Tuple2<List<String>, List<String>>> sortedNames =
      *     people.aggregate(allOf(
      *         mapping(Person::getFirstName, sorting(ComparatorEx.naturalOrder())),
@@ -583,7 +583,7 @@ public final class AggregateOperations {
      * This sample takes a stream of people and outputs two numbers, the
      * average height of kids and grown-ups:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<Tuple2<Double, Double>> avgHeightByAge = people.aggregate(allOf(
      *     filtering((Person p) -> p.getAge() < 18, averagingLong(Person::getHeight)),
      *     filtering((Person p) -> p.getAge() >= 18, averagingLong(Person::getHeight))
@@ -634,7 +634,7 @@ public final class AggregateOperations {
      * age of all the people and the mean age of people listed as someone's
      * kid:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * people.aggregate(allOf(
      *     averagingLong(Person::getAge),
      *     flatMapping((Person p) -> traverseIterable(p.getChildren()),
@@ -681,7 +681,7 @@ public final class AggregateOperations {
      * This sample takes a stream of words and outputs a single sorted set of
      * all the long words (above 5 letters):
      * <pre>{@code
-     * BatchStage<String> words = pipeline.drawFrom(wordSource);
+     * BatchStage<String> words = pipeline.readFrom(wordSource);
      * BatchStage<SortedSet<String>> sortedLongWords = words
      *         .filter(w -> w.length() > 5)
      *         .aggregate(toCollection(TreeSet::new));
@@ -717,7 +717,7 @@ public final class AggregateOperations {
      * This sample takes a stream of words and outputs a single list of all the
      * long words (above 5 letters):
      * <pre>{@code
-     * BatchStage<String> words = pipeline.drawFrom(wordSource);
+     * BatchStage<String> words = pipeline.readFrom(wordSource);
      * BatchStage<List<String>> longWords = words
      *         .filter(w -> w.length() > 5)
      *         .aggregate(toList());
@@ -739,7 +739,7 @@ public final class AggregateOperations {
      * This sample takes a stream of people and outputs a single set of all the
      * distinct cities they live in:
      * <pre>{@code
-     * pipeline.drawFrom(personSource)
+     * pipeline.readFrom(personSource)
      *         .map(Person::getCity)
      *         .aggregate(toSet());
      * }</pre>
@@ -766,7 +766,7 @@ public final class AggregateOperations {
      * single map {sensor ID -> reading}:
      * <pre>{@code
      * BatchStage<Map<String, Double>> readings = pipeline
-     *         .drawFrom(sensorData)
+     *         .readFrom(sensorData)
      *         .aggregate(toMap(
      *                 SensorReading::getSensorId,
      *                 SensorReading::getValue));
@@ -812,7 +812,7 @@ public final class AggregateOperations {
      * sensor get summed up:
      * <pre>{@code
      * BatchStage<Map<String, Double>> readings = pipeline
-     *         .drawFrom(sensorData)
+     *         .readFrom(sensorData)
      *         .aggregate(toMap(
      *                 SensorReading::getSensorId,
      *                 SensorReading::getValue,
@@ -858,7 +858,7 @@ public final class AggregateOperations {
      * readings from the same sensor get summed up:
      * <pre>{@code
      * BatchStage<Map<String, Long>> readings = pipeline
-     *         .drawFrom(sensorData)
+     *         .readFrom(sensorData)
      *         .aggregate(toMap(
      *                 SensorReading::getSensorId,
      *                 SensorReading::getValue,
@@ -919,7 +919,7 @@ public final class AggregateOperations {
      * key is the country and the value is a map from gender to the list of
      * people of that gender from that country:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(personSource);
+     * BatchStage<Person> people = pipeline.readFrom(personSource);
      * BatchStage<Entry<String, Map<String, List<Person>>>> byCountryAndGender =
      *         people.groupingKey(Person::getCountry)
      *               .aggregate(groupingBy(Person::getGender));
@@ -931,7 +931,7 @@ public final class AggregateOperations {
      * so you may wonder why not use it in all cases, not just cascaded
      * grouping. To see the difference, check out these two snippets:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(personSource);
+     * BatchStage<Person> people = pipeline.readFrom(personSource);
      *
      * // Snippet 1
      * BatchStage<Entry<String, List<Person>>> byCountry1 =
@@ -982,7 +982,7 @@ public final class AggregateOperations {
      * This sample takes a stream of people, classifies them by country and
      * gender, and reports the number of people in each category:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(personSource);
+     * BatchStage<Person> people = pipeline.readFrom(personSource);
      * BatchStage<Entry<String, Map<String, Long>>> countByCountryAndGender =
      *         people.groupingKey(Person::getCountry)
      *               .aggregate(groupingBy(Person::getGender, counting()));
@@ -1024,7 +1024,7 @@ public final class AggregateOperations {
      * and gender, and reports the number of people in each category. It uses
      * the {@code EnumMap} to optimize memory usage:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(personSource);
+     * BatchStage<Person> people = pipeline.readFrom(personSource);
      * BatchStage<Entry<String, Map<Gender, Long>>> countByCountryAndGender =
      *         people.groupingKey(Person::getCountry)
      *               .aggregate(groupingBy(
@@ -1119,7 +1119,7 @@ public final class AggregateOperations {
      * long} number which is the sum total of all the ordered amounts. The
      * aggregate operation it implements is equivalent to {@link #summingLong}:
      * <pre>{@code
-     * BatchStage<Order> orders = pipeline.drawFrom(orderSource);
+     * BatchStage<Order> orders = pipeline.readFrom(orderSource);
      * BatchStage<Long> totalAmount = orders.aggregate(reducing(
      *         0L,
      *         Order::getAmount,
@@ -1172,7 +1172,7 @@ public final class AggregateOperations {
      * have distinct last names (same as calling {@link
      * BatchStageWithKey#distinct() groupingKey(keyFn).distinct()}:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<Entry<String, Person>> distinctByLastName =
      *         people.groupingKey(Person::getLastName)
      *               .aggregate(pickAny());
@@ -1205,7 +1205,7 @@ public final class AggregateOperations {
      * This sample takes a stream of people and outputs a single list of people
      * sorted by their last name:
      * <pre>{@code
-     * BatchStage<Person> people = pipeline.drawFrom(peopleSource);
+     * BatchStage<Person> people = pipeline.readFrom(peopleSource);
      * BatchStage<List<Person>> sorted = people.aggregate(
      *     sorting(ComparatorEx.comparing(Person::getLastName)));
      * }</pre>
@@ -1240,7 +1240,7 @@ public final class AggregateOperations {
      * This sample takes a stream of orders and outputs a single tuple
      * containing the orders with the smallest and the largest amount:
      * <pre>{@code
-     * BatchStage<Order> orders = pipeline.drawFrom(orderSource);
+     * BatchStage<Order> orders = pipeline.readFrom(orderSource);
      * BatchStage<Tuple2<Order, Order>> extremes = orders.aggregate(allOf(
      *         minBy(ComparatorEx.comparing(Order::getAmount)),
      *         maxBy(ComparatorEx.comparing(Order::getAmount)),
@@ -1315,7 +1315,7 @@ public final class AggregateOperations {
      * containing the average amount ordered and the orders with the smallest
      * and the largest amount:
      * <pre>{@code
-     * BatchStage<Order> orders = pipeline.drawFrom(orderSource);
+     * BatchStage<Order> orders = pipeline.readFrom(orderSource);
      * BatchStage<Tuple3<Double, Order, Order>> averageAndExtremes =
      *     orders.aggregate(allOf(
      *         averagingLong(Order::getAmount),
@@ -1418,7 +1418,7 @@ public final class AggregateOperations {
      * that takes a stream of orders and finds the extremes in terms of ordered
      * amount. Here's the input stage:
      * <pre>{@code
-     * BatchStage<Order> orders = pipeline.drawFrom(orderSource);
+     * BatchStage<Order> orders = pipeline.readFrom(orderSource);
      * }</pre>
      *
      * Now we construct the aggregate operation using the builder:
@@ -1467,8 +1467,8 @@ public final class AggregateOperations {
      * As a quick example, let's say you have two data streams coming from an
      * online store, consisting of user actions: page visits and payments:
      * <pre>{@code
-     * BatchStage<PageVisit> pageVisits = pipeline.drawFrom(pageVisitSource);
-     * BatchStage<Payment> payments = pipeline.drawFrom(paymentSource);
+     * BatchStage<PageVisit> pageVisits = pipeline.readFrom(pageVisitSource);
+     * BatchStage<Payment> payments = pipeline.readFrom(paymentSource);
      * }</pre>
      * We want to find out how many page clicks each user did before buying a
      * product. We can do it like this:
@@ -1574,9 +1574,9 @@ public final class AggregateOperations {
      * online store, consisting of user actions: page visits, add-to-cart
      * actions and payments:
      * <pre>{@code
-     * BatchStage<PageVisit> pageVisits = pipeline.drawFrom(pageVisitSource);
-     * BatchStage<AddToCart> addToCarts = pipeline.drawFrom(addToCartSource);
-     * BatchStage<Payment> payments = pipeline.drawFrom(paymentSource);
+     * BatchStage<PageVisit> pageVisits = pipeline.readFrom(pageVisitSource);
+     * BatchStage<AddToCart> addToCarts = pipeline.readFrom(addToCartSource);
+     * BatchStage<Payment> payments = pipeline.readFrom(paymentSource);
      * }</pre>
      * We want to get these metrics per each user: how many page clicks they
      * did before buying a product, and how many products they bought per
@@ -1705,8 +1705,8 @@ public final class AggregateOperations {
      * As a quick example, let's say you have two data streams coming from an
      * online store, consisting of user actions: page visits and payments:
      * <pre>{@code
-     * BatchStage<PageVisit> pageVisits = pipeline.drawFrom(pageVisitSource);
-     * BatchStage<Payment> payments = pipeline.drawFrom(paymentSource);
+     * BatchStage<PageVisit> pageVisits = pipeline.readFrom(pageVisitSource);
+     * BatchStage<Payment> payments = pipeline.readFrom(paymentSource);
      * }</pre>
      * We want to find out how many page clicks each user did before buying a
      * product, and we want to do it using {@link BatchStage#aggregateBuilder()

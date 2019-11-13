@@ -43,9 +43,9 @@ public class TopicSink {
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.files(getBooksPath()))
+        p.readFrom(Sources.files(getBooksPath()))
          .filter(line -> line.startsWith("The "))
-         .drainTo(buildTopicSink());
+         .writeTo(buildTopicSink());
         return p;
     }
 

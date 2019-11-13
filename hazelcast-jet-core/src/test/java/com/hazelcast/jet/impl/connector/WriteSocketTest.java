@@ -101,8 +101,8 @@ public class WriteSocketTest extends JetTestSupport {
         range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.map("map"))
-         .drainTo(Sinks.socket("localhost", serverSocket.getLocalPort()));
+        p.readFrom(Sources.map("map"))
+         .writeTo(Sinks.socket("localhost", serverSocket.getLocalPort()));
 
         jetInstance.newJob(p).join();
         assertTrueEventually(() -> assertEquals(ITEM_COUNT, counter.get()));

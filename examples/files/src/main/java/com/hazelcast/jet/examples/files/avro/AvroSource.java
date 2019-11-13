@@ -38,12 +38,12 @@ public class AvroSource {
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
-        p.drawFrom(AvroSources.filesBuilder(AvroSink.DIRECTORY_NAME, ReflectDatumReader<User>::new)
-                //Both Jet members share the same local file system
-                .sharedFileSystem(true)
-                .build())
+        p.readFrom(AvroSources.filesBuilder(AvroSink.DIRECTORY_NAME, ReflectDatumReader<User>::new)
+                              //Both Jet members share the same local file system
+                              .sharedFileSystem(true)
+                              .build())
          .map(user -> Util.entry(user.getUsername(), user))
-         .drainTo(Sinks.map(AvroSink.MAP_NAME));
+         .writeTo(Sinks.map(AvroSink.MAP_NAME));
         return p;
     }
 

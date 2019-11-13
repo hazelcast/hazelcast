@@ -42,7 +42,7 @@ public class TestSourcesTest extends PipelineTestSupport {
 
         List<Object> expected = Arrays.asList(input);
 
-        p.drawFrom(TestSources.items(input))
+        p.readFrom(TestSources.items(input))
                 .apply(Assertions.assertOrdered(expected));
 
         jet().newJob(p).join();
@@ -52,7 +52,7 @@ public class TestSourcesTest extends PipelineTestSupport {
     public void test_itemStream() throws Throwable {
         int expectedItemCount = 20;
 
-        p.drawFrom(TestSources.itemStream(10))
+        p.readFrom(TestSources.itemStream(10))
          .withoutTimestamps()
          .apply(assertCollectedEventually(10, items -> {
              assertTrue("list should contain at least " + expectedItemCount + " items", items.size() > expectedItemCount);
@@ -70,7 +70,7 @@ public class TestSourcesTest extends PipelineTestSupport {
     public void test_itemStream_withWindowing() throws Throwable {
         int itemsPerSecond = 10;
 
-        p.drawFrom(TestSources.itemStream(itemsPerSecond))
+        p.readFrom(TestSources.itemStream(itemsPerSecond))
          .withNativeTimestamps(0)
          .window(WindowDefinition.tumbling(1000))
          .aggregate(AggregateOperations.counting())
@@ -93,7 +93,7 @@ public class TestSourcesTest extends PipelineTestSupport {
     public void test_itemStream_in_expected_range() throws Throwable {
         int itemsPerSecond = 5327;
 
-        p.drawFrom(TestSources.itemStream(itemsPerSecond))
+        p.readFrom(TestSources.itemStream(itemsPerSecond))
                 .withNativeTimestamps(0)
                 .window(WindowDefinition.tumbling(1000))
                 .aggregate(AggregateOperations.counting())

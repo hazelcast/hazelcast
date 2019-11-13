@@ -103,7 +103,7 @@ public class MapSource_MigrationDetectionTest extends JetTestSupport {
         proceedLatch = new CountDownLatch(1);
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(remote ? remoteMap(m.getName(), clientConfig) : map(m))
+        p.readFrom(remote ? remoteMap(m.getName(), clientConfig) : map(m))
          .setLocalParallelism(1)
          .map(o -> {
              startLatch.countDown();
@@ -111,7 +111,7 @@ public class MapSource_MigrationDetectionTest extends JetTestSupport {
              return o;
          })
          .setLocalParallelism(1)
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
 
         // start the job. The map reader will be blocked thanks to the backpressure from the mapping stage
         Job job = jobInstance.newJob(p, new JobConfig().setAutoScaling(false).setProcessingGuarantee(NONE));

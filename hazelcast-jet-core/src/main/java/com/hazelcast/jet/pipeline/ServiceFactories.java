@@ -48,7 +48,7 @@ public final class ServiceFactories {
      * <p>
      * Example usage (without destroyFn):
      * <pre>
-     * p.drawFrom( /* a batch or streaming source &#42;/ )
+     * p.readFrom( /* a batch or streaming source &#42;/ )
      *  .mapUsingService(replicatedMapService("fooMapName"),
      *      (map, item) -> tuple2(item, map.get(item.getKey())))
      *  .destroyFn(ReplicatedMap::destroy);

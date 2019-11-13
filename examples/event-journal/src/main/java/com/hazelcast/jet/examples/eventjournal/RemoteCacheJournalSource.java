@@ -58,11 +58,11 @@ public class RemoteCacheJournalSource {
             clientConfig.setClusterName(hzConfig.getClusterName());
 
             Pipeline p = Pipeline.create();
-            p.drawFrom(Sources.<Integer, Integer>remoteCacheJournal(
+            p.readFrom(Sources.<Integer, Integer>remoteCacheJournal(
                     CACHE_NAME, clientConfig, START_FROM_OLDEST)
             ).withoutTimestamps()
              .map(Entry::getValue)
-             .drainTo(Sinks.list(SINK_NAME));
+             .writeTo(Sinks.list(SINK_NAME));
 
             localJet.newJob(p);
 

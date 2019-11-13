@@ -79,7 +79,7 @@ public class KafkaJsonSource {
 
     private Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(KafkaSources.kafka(props(
+        p.readFrom(KafkaSources.kafka(props(
                 "bootstrap.servers", BROKER_HOST + ':' + brokerPort,
                 "group.id", "0",
                 "key.deserializer", IntegerDeserializer.class.getName(),
@@ -87,7 +87,7 @@ public class KafkaJsonSource {
                 "auto.offset.reset", AUTO_OFFSET_RESET), TOPIC))
          .withoutTimestamps()
          .peek()
-         .drainTo(Sinks.map(SINK_MAP_NAME));
+         .writeTo(Sinks.map(SINK_MAP_NAME));
         return p;
     }
 

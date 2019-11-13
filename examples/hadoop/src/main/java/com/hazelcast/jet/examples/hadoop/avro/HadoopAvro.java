@@ -50,10 +50,10 @@ public class HadoopAvro {
 
     private static Pipeline buildPipeline(JobConf jobConfig) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(HdfsSources.<AvroWrapper<User>, NullWritable>hdfs(jobConfig))
+        p.readFrom(HdfsSources.<AvroWrapper<User>, NullWritable>hdfs(jobConfig))
          .filter(entry -> entry.getKey().datum().get(3).equals(Boolean.TRUE))
          .peek(entry -> entry.getKey().datum().toString())
-         .drainTo(HdfsSinks.hdfs(jobConfig));
+         .writeTo(HdfsSinks.hdfs(jobConfig));
         return p;
     }
 

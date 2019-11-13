@@ -48,7 +48,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
         List<Integer> input = sequence(itemCount);
         addToSrcList(input);
         String listName = randomName();
-        BatchStage<Integer> stage = p.drawFrom(Sources.list(srcName));
+        BatchStage<Integer> stage = p.readFrom(Sources.list(srcName));
 
         // When
         Sink<Integer> sink = sinkBuilder("file-sink",
@@ -63,7 +63,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
                 .build();
 
         //Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         List<String> paths = new ArrayList<>(jet().getList(listName));
         long count = paths.stream().map(Paths::get)
@@ -95,7 +95,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
                     }));
                 }
             }));
-            BatchStage<Integer> stage = p.drawFrom(Sources.list(srcName));
+            BatchStage<Integer> stage = p.readFrom(Sources.list(srcName));
 
             // When
             int localPort = serverSocket.getLocalPort();
@@ -106,7 +106,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
                     .build();
 
             //Then
-            stage.drainTo(sink);
+            stage.writeTo(sink);
             execute();
             assertTrueEventually(() -> assertEquals(itemCount, counter.get()));
         }

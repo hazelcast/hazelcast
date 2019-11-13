@@ -293,20 +293,20 @@ public interface StageWithKeyAndWindow<T, K> {
      * {@code stage.aggregateN(...)} calls because they offer more static type
      * safety.
      * <p>
-     * This example draws from three stream sources that produce {@code
+     * This example reads from three stream sources that produce {@code
      * Map.Entry<String, Long>}. It groups by entry key, defines a 1-second
      * sliding window and then counts the items in stage-0, sums those in
      * stage-1 and takes the average of those in stage-2:
      * <pre>{@code
      * Pipeline p = Pipeline.create();
      * StreamStageWithKey<Entry<String, Long>, String> stage0 =
-     *         p.drawFrom(source0).withNativeTimestamps(0L)
+     *         p.readFrom(source0).withNativeTimestamps(0L)
      *          .groupingKey(Entry::getKey);
      * StreamStageWithKey<Entry<String, Long>, String> stage1 =
-     *         p.drawFrom(source1).withNativeTimestamps(0L)
+     *         p.readFrom(source1).withNativeTimestamps(0L)
      *          .groupingKey(Entry::getKey);
      * StreamStageWithKey<Entry<String, Long>, String> stage2 =
-     *         p.drawFrom(source2).withNativeTimestamps(0L)
+     *         p.readFrom(source2).withNativeTimestamps(0L)
      *          .groupingKey(Entry::getKey);
      * WindowGroupAggregateBuilder<String, Long> b = stage0
      *         .window(sliding(1000, 10))
@@ -362,11 +362,11 @@ public interface StageWithKeyAndWindow<T, K> {
      * Pipeline p = Pipeline.create();
      *
      * StreamStageWithGrouping<Entry<String, Long>, String> stage0 =
-     *         p.drawFrom(source0).groupingKey(Entry::getKey);
+     *         p.readFrom(source0).groupingKey(Entry::getKey);
      * StreamStageWithGrouping<Entry<String, Long>, String> stage1 =
-     *         p.drawFrom(source1).groupingKey(Entry::getKey);
+     *         p.readFrom(source1).groupingKey(Entry::getKey);
      * StreamStageWithGrouping<Entry<String, Long>, String> stage2 =
-     *         p.drawFrom(source2).groupingKey(Entry::getKey);
+     *         p.readFrom(source2).groupingKey(Entry::getKey);
      *
      * WindowGroupAggregateBuilder1<Entry<String, Long>, String> b = stage0
      *         .window(sliding(1000, 10))

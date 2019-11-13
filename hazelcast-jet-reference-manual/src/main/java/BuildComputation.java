@@ -79,19 +79,19 @@ class BuildComputation {
     static void s1() {
         //tag::s1[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list("input"))
+        p.readFrom(Sources.<String>list("input"))
          .map(String::toUpperCase)
-         .drainTo(Sinks.list("result"));
+         .writeTo(Sinks.list("result"));
         //end::s1[]
     }
 
     static void s2() {
         //tag::s2[]
         Pipeline p = Pipeline.create();
-        StreamStage<Trade> trades = p.drawFrom(tradeStream())
+        StreamStage<Trade> trades = p.readFrom(tradeStream())
                                      .withoutTimestamps();
         BatchStage<Entry<Integer, Product>> products =
-                p.drawFrom(Sources.map("products"));
+                p.readFrom(Sources.map("products"));
         StreamStage<Tuple2<Trade, Product>> joined = trades.hashJoin(
                 products,
                 joinMapEntries(Trade::productId),
@@ -103,20 +103,20 @@ class BuildComputation {
     static void s3() {
         //tag::s3[]
         Pipeline p = Pipeline.create();
-        BatchStage<String> src = p.drawFrom(Sources.list("src"));
+        BatchStage<String> src = p.readFrom(Sources.list("src"));
         src.map(String::toUpperCase)
-           .drainTo(Sinks.list("uppercase"));
+           .writeTo(Sinks.list("uppercase"));
         src.map(String::toLowerCase)
-           .drainTo(Sinks.list("lowercase"));
+           .writeTo(Sinks.list("lowercase"));
         //end::s3[]
     }
 
     static Pipeline s4() {
         //tag::s4[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.list("text"))
+        p.readFrom(Sources.list("text"))
          .aggregate(counting())
-         .drainTo(Sinks.list("result"));
+         .writeTo(Sinks.list("result"));
         //end::s4[]
         return p;
     }
@@ -138,10 +138,10 @@ class BuildComputation {
     static Pipeline s5() {
         //tag::s5[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list("text"))
+        p.readFrom(Sources.<String>list("text"))
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
          .aggregate(counting())
-         .drainTo(Sinks.list("result"));
+         .writeTo(Sinks.list("result"));
         //end::s5[]
         return p;
     }
@@ -149,11 +149,11 @@ class BuildComputation {
     static Pipeline s6() {
         //tag::s6[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list("text"))
+        p.readFrom(Sources.<String>list("text"))
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .drainTo(Sinks.list("result"));
+         .writeTo(Sinks.list("result"));
         //end::s6[]
         return p;
     }
@@ -177,10 +177,10 @@ class BuildComputation {
         // <3>
         Pipeline p = Pipeline.create();
         BatchStageWithKey<PageVisit, Integer> pageVisit =
-                p.drawFrom(Sources.list(pageVisits))
+                p.readFrom(Sources.list(pageVisits))
                  .groupingKey(pv -> pv.userId());
         BatchStageWithKey<AddToCart, Integer> addToCart =
-                p.drawFrom(Sources.list(addToCarts))
+                p.readFrom(Sources.list(addToCarts))
                  .groupingKey(atc -> atc.userId());
 
         BatchStage<Entry<Integer, Tuple2<Long, Long>>> coAggregated = pageVisit
@@ -192,7 +192,7 @@ class BuildComputation {
                     long addToCartCount = e.getValue().f1();
                     return entry(e.getKey(), (double) (addToCartCount / visitCount));
                 })
-                .drainTo(Sinks.list(results));
+                .writeTo(Sinks.list(results));
         // <7>
         jet.newJob(p).join();
         results.forEach(System.out::println);
@@ -205,10 +205,10 @@ class BuildComputation {
 
         //tag::s8[]
         BatchStageWithKey<PageVisit, Integer> pageVisit =
-                p.drawFrom(Sources.<PageVisit>list("pageVisit"))
+                p.readFrom(Sources.<PageVisit>list("pageVisit"))
                  .groupingKey(PageVisit::userId);
         BatchStageWithKey<AddToCart, Integer> addToCart =
-                p.drawFrom(Sources.<AddToCart>list("addToCart"))
+                p.readFrom(Sources.<AddToCart>list("addToCart"))
                  .groupingKey(AddToCart::userId);
         //end::s8[]
 
@@ -232,7 +232,7 @@ class BuildComputation {
                                 .map(addCart -> tuple2(pVisit, addCart)))));
         //end::s8c[]
 
-        leftOuterJoined.drainTo(Sinks.map("result"));
+        leftOuterJoined.writeTo(Sinks.map("result"));
     }
 
     //tag::nonEmptyStream[]
@@ -247,16 +247,16 @@ class BuildComputation {
 
         //<1>
         BatchStageWithKey<PageVisit, Integer> pageVisits =
-                p.drawFrom(Sources.<PageVisit>list("pageVisit"))
+                p.readFrom(Sources.<PageVisit>list("pageVisit"))
                  .groupingKey(PageVisit::userId);
         BatchStageWithKey<AddToCart, Integer> addToCarts =
-                p.drawFrom(Sources.<AddToCart>list("addToCart"))
+                p.readFrom(Sources.<AddToCart>list("addToCart"))
                  .groupingKey(AddToCart::userId);
         BatchStageWithKey<Payment, Integer> payments =
-                p.drawFrom(Sources.<Payment>list("payment"))
+                p.readFrom(Sources.<Payment>list("payment"))
                  .groupingKey(Payment::userId);
         BatchStageWithKey<Delivery, Integer> deliveries =
-                p.drawFrom(Sources.<Delivery>list("delivery"))
+                p.readFrom(Sources.<Delivery>list("delivery"))
                  .groupingKey(Delivery::userId);
 
         //<2>
@@ -289,16 +289,16 @@ class BuildComputation {
 
         // The primary stream (stream to be enriched): trades
         IMap<Long, Trade> tradesMap = instance.getMap("trades");
-        StreamStage<Trade> trades = p.drawFrom(
+        StreamStage<Trade> trades = p.readFrom(
                 Sources.mapJournal(tradesMap, START_FROM_CURRENT, mapEventNewValue(), mapPutEvents()
                 ))
                 .withoutTimestamps();
 
         // The enriching streams: products and brokers
         BatchStage<Entry<Integer, Product>> prodEntries =
-                p.drawFrom(Sources.map("products"));
+                p.readFrom(Sources.map("products"));
         BatchStage<Entry<Integer, Broker>> brokEntries =
-                p.drawFrom(Sources.map("brokers"));
+                p.readFrom(Sources.map("brokers"));
 
         // Join the trade stream with the product and broker streams
         StreamStage<Tuple3<Trade, Product, Broker>> joined = trades.hashJoin2(
@@ -313,7 +313,7 @@ class BuildComputation {
         Pipeline p = Pipeline.create();
         StreamStage<Trade> trades = null;
         BatchStage<Entry<Integer, Product>> prodEntries =
-                p.drawFrom(Sources.map("products"));
+                p.readFrom(Sources.map("products"));
 
         //tag::s10a[]
         StreamStage<Trade> joined = trades.hashJoin(
@@ -333,18 +333,18 @@ class BuildComputation {
 
         // The stream to be enriched: trades
         IMap<Long, Trade> tradesMap = instance.getMap("trades");
-        StreamStage<Trade> trades = p.drawFrom(
+        StreamStage<Trade> trades = p.readFrom(
                 Sources.mapJournal(tradesMap, START_FROM_CURRENT, mapEventNewValue(), mapPutEvents()
                 ))
                 .withoutTimestamps();
 
         // The enriching streams: products, brokers and markets
         BatchStage<Entry<Integer, Product>> prodEntries =
-                p.drawFrom(Sources.map("products"));
+                p.readFrom(Sources.map("products"));
         BatchStage<Entry<Integer, Broker>> brokEntries =
-                p.drawFrom(Sources.map("brokers"));
+                p.readFrom(Sources.map("brokers"));
         BatchStage<Entry<Integer, Market>> marketEntries =
-                p.drawFrom(Sources.map("markets"));
+                p.readFrom(Sources.map("markets"));
 
         // Obtain a hash-join builder object from the stream to be enriched
         StreamHashJoinBuilder<Trade> builder = trades.hashJoinBuilder();
@@ -377,20 +377,20 @@ class BuildComputation {
     static void s13a() {
         Pipeline p = Pipeline.create();
         //tag::s13a[]
-        BatchStage<Tweet> tweets = p.drawFrom(Sources.list("tweets"));
+        BatchStage<Tweet> tweets = p.readFrom(Sources.list("tweets"));
 
         tweets.flatMap(tweet -> traverseArray(tweet.text().toLowerCase().split("\\W+")))
               .filter(word -> !word.isEmpty())
               .groupingKey(wholeItem())
               .aggregate(counting())
-              .drainTo(Sinks.map("counts"));
+              .writeTo(Sinks.map("counts"));
         //end::s13a[]
     }
 
     static void s13() {
         Pipeline p = Pipeline.create();
         //tag::s13[]
-        StreamStage<Tweet> tweets = p.drawFrom(twitterStream())
+        StreamStage<Tweet> tweets = p.readFrom(twitterStream())
                                      .withNativeTimestamps(0); // <1>
 
         tweets.flatMap(tweet -> traverseArray(tweet.text().toLowerCase().split("\\W+")))
@@ -398,14 +398,14 @@ class BuildComputation {
               .window(sliding(MINUTES.toMillis(1), SECONDS.toMillis(1))) // <2>
               .groupingKey(wholeItem())
               .aggregate(counting())
-              .drainTo(Sinks.list("result"));
+              .writeTo(Sinks.list("result"));
         //end::s13[]
     }
 
     static void s14() {
         Pipeline p = Pipeline.create();
         //tag::s14[]
-        StreamStage<Tweet> tweets = p.drawFrom(twitterStream())
+        StreamStage<Tweet> tweets = p.readFrom(twitterStream())
                          .withTimestamps(Tweet::timestamp, SECONDS.toMillis(5));
         //end::s14[]
     }
@@ -415,7 +415,7 @@ class BuildComputation {
 
         //tag::s15[]
         StreamStage<KeyedWindowResult<String, Long>> result =
-            p.drawFrom(twitterStream())
+            p.readFrom(twitterStream())
              .withTimestamps(Tweet::timestamp, SECONDS.toMillis(15))
              .flatMap(tweet -> traverseArray(tweet.text().toLowerCase().split("\\W+")))
              .filter(word -> !word.isEmpty())
@@ -434,11 +434,11 @@ class BuildComputation {
                 START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(tradesSource)
+        p.readFrom(tradesSource)
          .withoutTimestamps()
          .groupingKey(Trade::ticker) // <2>
          .mapUsingIMap(stockMap, Trade::setStockInfo) //<3>
-         .drainTo(Sinks.list("result"));
+         .writeTo(Sinks.list("result"));
         //end::s16[]
     }
 
@@ -458,13 +458,13 @@ class BuildComputation {
                 START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(tradesSource)
+        p.readFrom(tradesSource)
          .withoutTimestamps()
          .groupingKey(Trade::ticker)
          .mapUsingServiceAsync(ctxFac,
                  (map, key, trade) -> map.getAsync(key).toCompletableFuture()
                          .thenApply(trade::setStockInfo))
-         .drainTo(Sinks.list("result"));
+         .writeTo(Sinks.list("result"));
         //end::s16a[]
     }
 
@@ -472,10 +472,10 @@ class BuildComputation {
         //tag::s17[]
         Pipeline p = Pipeline.create();
         BatchSource<Person> personSource = Sources.list("people");
-        p.drawFrom(personSource)
+        p.readFrom(personSource)
          .groupingKey(person -> person.getAge() / 5)
          .distinct()
-         .drainTo(Sinks.list("sampleByAgeBracket"));
+         .writeTo(Sinks.list("sampleByAgeBracket"));
         //end::s17[]
     }
 
@@ -485,11 +485,11 @@ class BuildComputation {
         Pipeline p = Pipeline.create();
         IMap<Long, Trade> tradesNewYorkMap = instance.getMap("trades-newyork");
         IMap<Long, Trade> tradesTokyoMap = instance.getMap("trades-tokyo");
-        StreamStage<Trade> tradesNewYork = p.drawFrom(
+        StreamStage<Trade> tradesNewYork = p.readFrom(
                 Sources.mapJournal(tradesNewYorkMap, START_FROM_CURRENT, mapEventNewValue(), mapPutEvents()
                 ))
                 .withNativeTimestamps(5_000);
-        StreamStage<Trade> tradesTokyo = p.drawFrom(
+        StreamStage<Trade> tradesTokyo = p.readFrom(
                 Sources.mapJournal(tradesTokyoMap, START_FROM_CURRENT, mapEventNewValue(), mapPutEvents()
                 ))
                 .withNativeTimestamps(5_000);
@@ -503,7 +503,7 @@ class BuildComputation {
         StreamSource<Trade> tradesSource = Sources.mapJournal("trades",
                 START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
         StreamStage<Trade> currLargestTrade =
-                p.drawFrom(tradesSource)
+                p.readFrom(tradesSource)
                  .withoutTimestamps()
                  .rollingAggregate(maxBy(
                          ComparatorEx.comparing(Trade::worth)));
@@ -579,13 +579,13 @@ class BuildComputation {
         BatchSource<String> source = null;
         {
             //tag::apply2[]
-            BatchStage<String> stage = p.drawFrom(source);
+            BatchStage<String> stage = p.readFrom(source);
             BatchStage<String> cleanedUp = PipelineTransforms.cleanUp(stage);
             BatchStage<Long> counted = cleanedUp.aggregate(counting());
             //end::apply2[]
         }
         //tag::apply3[]
-        BatchStage<Long> counted = p.drawFrom(source)
+        BatchStage<Long> counted = p.readFrom(source)
                        .apply(PipelineTransforms::cleanUp)
                        .aggregate(counting());
         //end::apply3[]

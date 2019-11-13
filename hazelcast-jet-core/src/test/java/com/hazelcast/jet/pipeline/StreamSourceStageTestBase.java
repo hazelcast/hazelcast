@@ -88,7 +88,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
             String expectedTimestampFailure
     ) {
         Pipeline p = Pipeline.create();
-        StreamSourceStage<Integer> sourceStage = p.drawFrom(source);
+        StreamSourceStage<Integer> sourceStage = p.readFrom(source);
         StreamStage<Integer> stageWithTimestamps;
         try {
             stageWithTimestamps = addTimestampsFunction.apply(sourceStage);
@@ -108,7 +108,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
                 .window(WindowDefinition.tumbling(1))
                 .aggregate(AggregateOperations.counting())
                 .peek()
-                .drainTo(Sinks.fromProcessor("wmCollector",
+                .writeTo(Sinks.fromProcessor("wmCollector",
                         ProcessorMetaSupplier.of(WatermarkCollector::new, 1))
                 );
         Job job = instance.newJob(p);

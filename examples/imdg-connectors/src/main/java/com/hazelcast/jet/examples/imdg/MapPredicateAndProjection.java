@@ -67,11 +67,11 @@ public class MapPredicateAndProjection {
             // by using named attributes for predicate and projection,
             // we can avoid the need for deserializing the whole object.
             Pipeline p1 = Pipeline.create();
-            p1.<String>drawFrom(Sources.map(
+            p1.<String>readFrom(Sources.map(
                     SOURCE_NAME,
                     Predicates.lessThan("price", 10),
                     Projections.singleAttribute("ticker"))
-            ).drainTo(Sinks.list(SINK_NAME));
+            ).writeTo(Sinks.list(SINK_NAME));
             System.out.println("\n\nExecuting job 1...\n");
             jet.newJob(p1).join();
 
@@ -83,11 +83,11 @@ public class MapPredicateAndProjection {
             // but the predicate and projection will still be applied at the
             // source
             Pipeline p2 = Pipeline.create();
-            p2.drawFrom(Sources.<String, String, Trade>map(
+            p2.readFrom(Sources.<String, String, Trade>map(
                     SOURCE_NAME,
                     e -> e.getValue().getPrice() < 10,
                     e -> e.getValue().getTicker())
-            ).drainTo(Sinks.list(SINK_NAME));
+            ).writeTo(Sinks.list(SINK_NAME));
             System.out.println("\n\nExecuting job 2...\n");
             jet.newJob(p2).join();
 

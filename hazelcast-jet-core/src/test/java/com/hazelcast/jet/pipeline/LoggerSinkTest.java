@@ -50,9 +50,9 @@ public class LoggerSinkTest extends JetTestSupport {
         Pipeline p = Pipeline.create();
 
         // When
-        p.drawFrom(Sources.<Integer>list(srcName))
+        p.readFrom(Sources.<Integer>list(srcName))
          .map(i -> i + "-shouldBeSeenOnTheSystemOutput")
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         jet.newJob(p).join();
         verify(appender, atMost(1000)).doAppend(logCaptor.capture());
 

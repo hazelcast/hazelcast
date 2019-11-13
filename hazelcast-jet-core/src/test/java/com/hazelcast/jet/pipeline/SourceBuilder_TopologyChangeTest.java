@@ -101,12 +101,12 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
         IList<WindowResult<Long>> result = jet.getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(source)
+        p.readFrom(source)
                 .withNativeTimestamps(0)
                 .window(tumbling(windowSize))
                 .aggregate(AggregateOperations.counting())
                 .peek()
-                .drainTo(Sinks.list(result));
+                .writeTo(Sinks.list(result));
 
         Job job = jet.newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));

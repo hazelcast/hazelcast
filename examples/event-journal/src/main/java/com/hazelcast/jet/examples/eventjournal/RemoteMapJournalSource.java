@@ -57,11 +57,11 @@ public class RemoteMapJournalSource {
             clientConfig.setClusterName(hzConfig.getClusterName());
 
             Pipeline p = Pipeline.create();
-            p.drawFrom(Sources.<Integer, Integer>remoteMapJournal(
+            p.readFrom(Sources.<Integer, Integer>remoteMapJournal(
                     MAP_NAME, clientConfig, START_FROM_OLDEST)
             ).withoutTimestamps()
              .map(Entry::getValue)
-             .drainTo(Sinks.list(SINK_NAME));
+             .writeTo(Sinks.list(SINK_NAME));
 
             localJet.newJob(p);
 

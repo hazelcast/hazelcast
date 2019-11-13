@@ -108,7 +108,7 @@ public class TfIdf {
         Pipeline p = Pipeline.create();
 
         // (filename, line) pairs
-        BatchStage<Entry<String, String>> bookLines = p.drawFrom(
+        BatchStage<Entry<String, String>> bookLines = p.readFrom(
                 Sources.filesBuilder(bookDirectory.toString())
                        .build(Util::entry));
 
@@ -146,7 +146,7 @@ public class TfIdf {
                         docScores(logDocCount, tfPair.getValue().entrySet()))
         );
         // INVERTED_INDEX is a map of (word -> pairs (filename, score))
-        idf.drainTo(Sinks.map(INVERTED_INDEX));
+        idf.writeTo(Sinks.map(INVERTED_INDEX));
         return p;
     }
 

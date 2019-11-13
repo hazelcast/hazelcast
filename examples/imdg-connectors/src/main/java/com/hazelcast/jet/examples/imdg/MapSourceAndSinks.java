@@ -58,8 +58,8 @@ public class MapSourceAndSinks {
     private static Pipeline mapSourceAndSink(String sourceMapName, String sinkMapName) {
         Pipeline pipeline = Pipeline.create();
 
-        pipeline.drawFrom(Sources.map(sourceMapName))
-                .drainTo(Sinks.map(sinkMapName));
+        pipeline.readFrom(Sources.map(sourceMapName))
+                .writeTo(Sinks.map(sinkMapName));
 
         return pipeline;
     }
@@ -77,8 +77,8 @@ public class MapSourceAndSinks {
         // the map, it only changes the values, so we can use it. Note that
         // you can also use IMap.executeOnEntries() for this simple case,
         // but Jet pipeline has more features.
-        pipeline.drawFrom(Sources.<Integer, String>map(mapName))
-                .drainTo(
+        pipeline.readFrom(Sources.<Integer, String>map(mapName))
+                .writeTo(
                         Sinks.mapWithUpdating(
                                 mapName,
                                 (oldValue, item) ->
@@ -99,9 +99,9 @@ public class MapSourceAndSinks {
     private static Pipeline mapWithMerging(String sourceMapName, String sinkMapName) {
         Pipeline pipeline = Pipeline.create();
 
-        pipeline.drawFrom(Sources.<Integer, Integer>map(sourceMapName))
+        pipeline.readFrom(Sources.<Integer, Integer>map(sourceMapName))
                 .map(e -> entry("sum", e.getValue()))
-                .drainTo(
+                .writeTo(
                         Sinks.mapWithMerging(
                                 sinkMapName,
                                 (oldValue, newValue) -> oldValue + newValue
@@ -117,8 +117,8 @@ public class MapSourceAndSinks {
     private static Pipeline mapWithEntryProcessor(String sourceMapName, String sinkMapName) {
         Pipeline pipeline = Pipeline.create();
 
-        pipeline.drawFrom(Sources.<Integer, Integer>map(sourceMapName))
-                .drainTo(
+        pipeline.readFrom(Sources.<Integer, Integer>map(sourceMapName))
+                .writeTo(
                         Sinks.mapWithEntryProcessor(
                                 sinkMapName,
                                 entryKey(),

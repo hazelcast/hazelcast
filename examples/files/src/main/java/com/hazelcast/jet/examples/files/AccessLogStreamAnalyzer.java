@@ -63,7 +63,7 @@ public class AccessLogStreamAnalyzer {
 
     private static Pipeline buildPipeline(Path tempDir) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.fileWatcher(tempDir.toString()))
+        p.readFrom(Sources.fileWatcher(tempDir.toString()))
          .withoutTimestamps()
          .map(LogLine::parse)
          .filter(line -> line.getResponseCode() >= 200 && line.getResponseCode() < 400)
@@ -71,7 +71,7 @@ public class AccessLogStreamAnalyzer {
          .window(WindowDefinition.sliding(10_000, 1_000))
          .groupingKey(LogLine::getEndpoint)
          .aggregate(AggregateOperations.counting())
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         return p;
     }
 

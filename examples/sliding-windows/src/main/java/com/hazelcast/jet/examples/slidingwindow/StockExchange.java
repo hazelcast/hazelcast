@@ -51,12 +51,12 @@ public class StockExchange {
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
-        p.drawFrom(TradeGenerator.tradeSource(NUMBER_OF_TICKERS, TRADES_PER_SEC))
+        p.readFrom(TradeGenerator.tradeSource(NUMBER_OF_TICKERS, TRADES_PER_SEC))
          .withNativeTimestamps(3000)
          .groupingKey(Trade::getTicker)
          .window(WindowDefinition.sliding(SLIDING_WINDOW_LENGTH_MILLIS, SLIDE_STEP_MILLIS))
          .aggregate(counting())
-         .drainTo(Sinks.logger(wr -> String.format("%s %5s %4d", toLocalTime(wr.end()), wr.key(), wr.result())));
+         .writeTo(Sinks.logger(wr -> String.format("%s %5s %4d", toLocalTime(wr.end()), wr.key(), wr.result())));
 
         return p;
     }

@@ -83,7 +83,7 @@ public final class S3Sources {
      *
      * <pre>{@code
      * Pipeline p = Pipeline.create();
-     * BatchStage<String> srcStage = p.drawFrom(S3Sources.s3(
+     * BatchStage<String> srcStage = p.readFrom(S3Sources.s3(
      *      Arrays.asList("bucket1", "bucket2"),
      *      "prefix",
      *      StandardCharsets.UTF_8,

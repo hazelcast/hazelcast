@@ -47,9 +47,9 @@ public class JdbcSink {
     private static Pipeline buildPipeline(String connectionUrl) {
         Pipeline p = Pipeline.create();
 
-        p.drawFrom(Sources.<Integer, User>map(MAP_NAME))
+        p.readFrom(Sources.<Integer, User>map(MAP_NAME))
          .map(Map.Entry::getValue)
-         .drainTo(Sinks.jdbc("INSERT INTO " + TABLE_NAME + "(id, name) VALUES(?, ?)",
+         .writeTo(Sinks.jdbc("INSERT INTO " + TABLE_NAME + "(id, name) VALUES(?, ?)",
                  connectionUrl,
                  (stmt, user) -> {
                      // Bind the values from the stream item to a PreparedStatement created from

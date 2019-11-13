@@ -181,12 +181,12 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_flatMapNotPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
+        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .flatMapUsingServiceAsync(serviceFactory,
                  transformNotPartitionedFn(i -> traverseItems(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5")))
          .setLocalParallelism(2)
-         .drainTo(Sinks.list(sinkList));
+         .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
         assertResult(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), NUM_ITEMS);
@@ -195,12 +195,12 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_mapNotPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
+        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .mapUsingServiceAsync(serviceFactory,
                  transformNotPartitionedFn(i -> i + "-1"))
          .setLocalParallelism(2)
-         .drainTo(Sinks.list(sinkList));
+         .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
         assertResult(i -> Stream.of(i + "-1"), NUM_ITEMS);
@@ -209,12 +209,12 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_filterNotPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
+        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .filterUsingServiceAsync(serviceFactory,
                  transformNotPartitionedFn(i -> i % 2 == 0))
          .setLocalParallelism(2)
-         .drainTo(Sinks.list(sinkList));
+         .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
         assertResult(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);
@@ -223,13 +223,13 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_flatMapPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
+        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .groupingKey(i -> i % 10)
          .flatMapUsingServiceAsync(serviceFactory,
                  transformPartitionedFn(i -> traverseItems(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5")))
          .setLocalParallelism(2)
-         .drainTo(Sinks.list(sinkList));
+         .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
         assertResult(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), NUM_ITEMS);
@@ -238,13 +238,13 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_mapPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
+        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .groupingKey(i -> i % 10)
          .mapUsingServiceAsync(serviceFactory,
                  transformPartitionedFn(i -> i + "-1"))
          .setLocalParallelism(2)
-         .drainTo(Sinks.list(sinkList));
+         .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
         assertResult(i -> Stream.of(i + "-1"), NUM_ITEMS);
@@ -253,13 +253,13 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
     @Test
     public void test_pipelineApi_filterPartitioned() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
+        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
          .withoutTimestamps()
          .groupingKey(i -> i % 10)
          .filterUsingServiceAsync(serviceFactory,
                  transformPartitionedFn(i -> i % 2 == 0))
          .setLocalParallelism(2)
-         .drainTo(Sinks.list(sinkList));
+         .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
         assertResult(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);

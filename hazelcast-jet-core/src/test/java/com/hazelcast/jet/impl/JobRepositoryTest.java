@@ -137,9 +137,9 @@ public class JobRepositoryTest extends JetTestSupport {
     public void test_getJobRecordFromClient() {
         JetInstance client = createJetClient();
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
+        p.readFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
          .withoutTimestamps()
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         Job job = instance.newJob(p, new JobConfig()
             .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
             .setSnapshotIntervalMillis(100));

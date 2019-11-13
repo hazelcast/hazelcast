@@ -63,7 +63,7 @@ public final class Metrics {
      * want to manipulate the metric in those threads. For example:
      * <pre>
      * {@code
-     *  p.drawFrom(...)
+     *  p.readFrom(...)
      *   .filterUsingServiceAsync(
      *       ServiceFactory.withCreateFn(i -> "foo"),
      *       (ctx, item) -> {

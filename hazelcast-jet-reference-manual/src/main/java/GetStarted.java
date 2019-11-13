@@ -57,9 +57,9 @@ public class GetStarted {
         IList<String> uppercased = jet.getList("uppercased");
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.drawFrom(Sources.list(strings))
+        pipeline.readFrom(Sources.list(strings))
                 .map(String::toUpperCase)
-                .drainTo(Sinks.list(uppercased));
+                .writeTo(Sinks.list(uppercased));
         jet.newJob(pipeline).join();
 
         uppercased.forEach(System.out::println);
@@ -86,10 +86,10 @@ public class GetStarted {
         IMap<Integer, Long> histogram = jet.getMap("histogram");
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.drawFrom(Sources.list(strings))
+        pipeline.readFrom(Sources.list(strings))
                 .groupingKey(String::length)
                 .aggregate(AggregateOperations.counting())
-                .drainTo(Sinks.map(histogram));
+                .writeTo(Sinks.map(histogram));
         jet.newJob(pipeline).join();
 
         histogram.forEach((length, count) -> System.out.format(

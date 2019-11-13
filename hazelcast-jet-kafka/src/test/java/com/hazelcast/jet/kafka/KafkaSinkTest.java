@@ -81,8 +81,8 @@ public class KafkaSinkTest extends KafkaTestSupport {
     @Test
     public void testWriteToTopic() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.map(SOURCE_IMAP_NAME))
-         .drainTo(KafkaSinks.kafka(properties, topic));
+        p.readFrom(Sources.map(SOURCE_IMAP_NAME))
+         .writeTo(KafkaSinks.kafka(properties, topic));
         instance.newJob(p).join();
 
         assertTopicContentsEventually(sourceIMap, false);
@@ -93,8 +93,8 @@ public class KafkaSinkTest extends KafkaTestSupport {
         String localTopic = topic;
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String, String>map(SOURCE_IMAP_NAME))
-         .drainTo(KafkaSinks.kafka(properties, e ->
+        p.readFrom(Sources.<String, String>map(SOURCE_IMAP_NAME))
+         .writeTo(KafkaSinks.kafka(properties, e ->
                  new ProducerRecord<>(localTopic, Integer.valueOf(e.getKey()), e.getKey(), e.getValue()))
          );
         instance.newJob(p).join();
@@ -109,9 +109,9 @@ public class KafkaSinkTest extends KafkaTestSupport {
 
         // Given
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<Entry<String, String>>batchFromProcessor("source",
+        p.readFrom(Sources.<Entry<String, String>>batchFromProcessor("source",
                 ProcessorMetaSupplier.of(ProcessorWithEntryAndLatch::new)))
-         .drainTo(KafkaSinks.kafka(properties, topic));
+         .writeTo(KafkaSinks.kafka(properties, topic));
 
         Job job = instance.newJob(p);
 
@@ -134,9 +134,9 @@ public class KafkaSinkTest extends KafkaTestSupport {
 
         // Given
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<Entry<String, String>>batchFromProcessor("source",
+        p.readFrom(Sources.<Entry<String, String>>batchFromProcessor("source",
                 ProcessorMetaSupplier.of(ProcessorWithEntryAndLatch::new)))
-         .drainTo(KafkaSinks.kafka(properties, topic));
+         .writeTo(KafkaSinks.kafka(properties, topic));
 
         Job job = instance.newJob(p, new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)

@@ -65,7 +65,7 @@ public class S3SinkTest extends S3TestBase {
     }
 
     @Test
-    public void when_drainToNotExistingBucket() {
+    public void when_writeToNotExistingBucket() {
         testSinkWithNotExistingBucket("jet-s3-connector-test-bucket-sink-THIS-BUCKET-DOES-NOT-EXIST");
     }
 

@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
  * <p>
  * The {@code Pipeline} object is a container of all the stages defined on
  * a pipeline: the source stages obtained directly from it by calling {@link
- * #drawFrom(BatchSource)} as well as all the stages attached (directly or
+ * #readFrom(BatchSource)} as well as all the stages attached (directly or
  * indirectly) to them.
  * <p>
  * Note that there is no simple one-to-one correspondence between pipeline
@@ -59,33 +59,33 @@ public interface Pipeline {
      * has no upstream stages and emits the data (typically coming from an outside
      * source) to its downstream stages.
      *
-     * @param source the definition of the source from which the stage draws data
+     * @param source the definition of the source from which the stage reads data
      * @param <T> the type of source data items
      */
     @Nonnull
-    <T> BatchStage<T> drawFrom(@Nonnull BatchSource<? extends T> source);
+    <T> BatchStage<T> readFrom(@Nonnull BatchSource<? extends T> source);
 
     /**
      * Returns a pipeline stage that represents an unbounded data source (i.e., an
      * event stream). It has no upstream stages and emits the data (typically coming
      * from an outside source) to its downstream stages.
      *
-     * @param source the definition of the source from which the stage draws data
+     * @param source the definition of the source from which the stage reads data
      * @param <T> the type of source data items
      */
     @Nonnull
-    <T> StreamSourceStage<T> drawFrom(@Nonnull StreamSource<? extends T> source);
+    <T> StreamSourceStage<T> readFrom(@Nonnull StreamSource<? extends T> source);
 
     /**
      * Attaches the supplied sink to two or more pipeline stages. Returns the
      * {@code SinkStage} representing the sink. You need this method when you
      * want to drain more than one stage to the same sink. In the typical case
-     * you'll use {@link GeneralStage#drainTo(Sink)} instead.
+     * you'll use {@link GeneralStage#writeTo(Sink)} instead.
      *
      * @param <T> the type of data being drained to the sink
      */
     @Nonnull
-    <T> SinkStage drainTo(
+    <T> SinkStage writeTo(
             @Nonnull Sink<? super T> sink,
             @Nonnull GeneralStage<? extends T> stage0,
             @Nonnull GeneralStage<? extends T> stage1,

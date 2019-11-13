@@ -57,7 +57,7 @@ public class SourceSinkBuilders {
             .destroyFn(BufferedReader::close)
             .build();
         Pipeline p = Pipeline.create();
-        BatchStage<String> srcStage = p.drawFrom(fileSource);
+        BatchStage<String> srcStage = p.readFrom(fileSource);
         //end::s1[]
     }
 
@@ -98,7 +98,7 @@ public class SourceSinkBuilders {
             .destroyFn(CloseableHttpClient::close)
             .build();
         Pipeline p = Pipeline.create();
-        StreamSourceStage<String> srcStage = p.drawFrom(httpSource);
+        StreamSourceStage<String> srcStage = p.readFrom(httpSource);
         //end::s2[]
     }
 
@@ -177,8 +177,8 @@ public class SourceSinkBuilders {
             .destroyFn(PrintWriter::close)
             .build();
         Pipeline p = Pipeline.create();
-        p.drawFrom(list("input"))
-         .drainTo(sink);
+        p.readFrom(list("input"))
+         .writeTo(sink);
         //end::s4[]
     }
 

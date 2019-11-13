@@ -49,8 +49,8 @@ public class S3 {
                 .build();
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(S3Sources.s3(singletonList("input-bucket"), prefix, () -> s3))
-         .drainTo(Sinks.logger());
+        p.readFrom(S3Sources.s3(singletonList("input-bucket"), prefix, () -> s3))
+         .writeTo(Sinks.logger());
         //end::s1[]
     }
 
@@ -66,8 +66,8 @@ public class S3 {
                 .build();
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.list("input-list"))
-         .drainTo(S3Sinks.s3("output-bucket", () -> s3));
+        p.readFrom(Sources.list("input-list"))
+         .writeTo(S3Sinks.s3("output-bucket", () -> s3));
         //end::s2[]
     }
 
@@ -81,9 +81,9 @@ public class S3 {
 
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(HdfsSources.<String, String>hdfs(jobConfig))
+        p.readFrom(HdfsSources.<String, String>hdfs(jobConfig))
          .map(e -> Util.entry(e.getKey(), e.getValue().toUpperCase()))
-         .drainTo(HdfsSinks.hdfs(jobConfig));
+         .writeTo(HdfsSinks.hdfs(jobConfig));
         //end::s3[]
     }
 }

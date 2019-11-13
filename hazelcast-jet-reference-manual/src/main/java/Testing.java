@@ -38,28 +38,28 @@ public class Testing {
         Pipeline pipeline = Pipeline.create();
 
         //tag::items[]
-        pipeline.drawFrom(TestSources.items(1, 2, 3, 4));
+        pipeline.readFrom(TestSources.items(1, 2, 3, 4));
         //end::items[]
 
         //tag::items-collection[]
         List<Integer> list = IntStream.range(0, 1000)
               .boxed()
               .collect(Collectors.toList());
-        pipeline.drawFrom(TestSources.items(list))
-                .drainTo(Sinks.logger());
+        pipeline.readFrom(TestSources.items(list))
+                .writeTo(Sinks.logger());
         //end::items-collection[]
 
         //tag::items-stream[]
-        pipeline.drawFrom(TestSources.itemStream(10));
+        pipeline.readFrom(TestSources.itemStream(10));
         //end::items-stream[]
 
         //tag::items-stream-trade[]
-        pipeline.drawFrom(TestSources.itemStream(10,
+        pipeline.readFrom(TestSources.itemStream(10,
             (timestamp, sequence) -> new Trade(sequence, timestamp)))
                 .withNativeTimestamps(0)
                 .window(WindowDefinition.tumbling(1000))
                 .aggregate(AggregateOperations.counting())
-                .drainTo(Sinks.logger());
+                .writeTo(Sinks.logger());
         //end::items-stream-trade[]
     }
 
@@ -67,21 +67,21 @@ public class Testing {
         Pipeline pipeline = Pipeline.create();
 
         //tag::assert-collected[]
-        pipeline.drawFrom(TestSources.items(1, 2, 3, 4))
+        pipeline.readFrom(TestSources.items(1, 2, 3, 4))
                 .apply(Assertions.assertCollected(list ->
                     assertEquals("4 items must be received", list.size(), 4))
                 )
-                .drainTo(Sinks.logger());
+                .writeTo(Sinks.logger());
         //end::assert-collected[]
 
         //tag::assert-collected-eventually[]
         int itemsPerSecond = 10;
-        pipeline.drawFrom(TestSources.itemStream(itemsPerSecond))
+        pipeline.readFrom(TestSources.itemStream(itemsPerSecond))
                 .withoutTimestamps()
                 .apply(Assertions.assertCollectedEventually(10, list ->
                     assertTrue("At least 20 items must be received", list.size() > 20))
                 )
-                .drainTo(Sinks.logger());
+                .writeTo(Sinks.logger());
         //end::assert-collected-eventually[]
 
 

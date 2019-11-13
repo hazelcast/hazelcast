@@ -69,13 +69,13 @@ public class SessionWindow {
         );
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<ProductEvent>streamFromProcessor("generator",
+        p.readFrom(Sources.<ProductEvent>streamFromProcessor("generator",
                 ProcessorMetaSupplier.of(GenerateEventsP::new, 1)))
          .withTimestamps(ProductEvent::getTimestamp, 0)
          .groupingKey(ProductEvent::getUserId)
          .window(WindowDefinition.session(SESSION_TIMEOUT))
          .aggregate(aggrOp)
-         .drainTo(Sinks.logger(SessionWindow::sessionToString));
+         .writeTo(Sinks.logger(SessionWindow::sessionToString));
         return p;
     }
 

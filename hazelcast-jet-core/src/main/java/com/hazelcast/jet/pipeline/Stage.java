@@ -27,10 +27,10 @@ import javax.annotation.Nonnull;
  * represent infinite data streams. Some operations only make sense on a
  * batch stage and vice versa.
  * <p>
- * To build a pipeline, start with {@link Pipeline#drawFrom pipeline.drawfrom()} to
+ * To build a pipeline, start with {@link Pipeline#readFrom pipeline.readFrom()} to
  * get the initial stage and then use its methods to attach further
  * downstream stages. Terminate the pipeline by calling {@link
- * GeneralStage#drainTo(Sink) stage.drainTo(sink)}, which will attach a
+ * GeneralStage#writeTo(Sink) stage.writeTo(sink)}, which will attach a
  * {@link SinkStage}.
  *
  * @since 3.0

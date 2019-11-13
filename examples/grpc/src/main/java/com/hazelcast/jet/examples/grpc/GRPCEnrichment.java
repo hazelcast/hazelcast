@@ -103,7 +103,7 @@ public final class GRPCEnrichment {
         // The stream to be enriched: trades
         Pipeline p = Pipeline.create();
         StreamStage<Trade> trades = p
-                .drawFrom(Sources.<Object, Trade>mapJournal(TRADES, START_FROM_CURRENT))
+                .readFrom(Sources.<Object, Trade>mapJournal(TRADES, START_FROM_CURRENT))
                 .withoutTimestamps()
                 .map(entryValue());
 
@@ -130,7 +130,7 @@ public final class GRPCEnrichment {
                                   .thenApply(brokerReply -> tuple3(t.f0(), t.f1(), brokerReply.getBrokerName()));
                       })
               // output is (trade, productName, brokerName)
-              .drainTo(Sinks.logger());
+              .writeTo(Sinks.logger());
         return p;
     }
 

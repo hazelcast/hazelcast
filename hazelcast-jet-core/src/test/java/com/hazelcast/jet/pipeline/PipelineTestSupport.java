@@ -99,7 +99,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     }
 
     protected BatchStage<Integer> batchStageFromList(List<Integer> input) {
-        return p.drawFrom(TestSources.items(input));
+        return p.readFrom(TestSources.items(input));
     }
 
     protected static String journaledMapName() {

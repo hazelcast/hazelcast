@@ -26,42 +26,42 @@ public class FileAndSocket {
     static void s1() {
         //tag::s1[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.files("/home/jet/input"))
-         .drainTo(Sinks.logger());
+        p.readFrom(Sources.files("/home/jet/input"))
+         .writeTo(Sinks.logger());
         //end::s1[]
     }
 
     static void s2() {
         //tag::s2[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.fileWatcher("/home/jet/input"))
+        p.readFrom(Sources.fileWatcher("/home/jet/input"))
          .withoutTimestamps()
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         //end::s2[]
     }
 
     static void s3() {
         //tag::s3[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.list("inputList"))
-         .drainTo(Sinks.files("/home/jet/output"));
+        p.readFrom(Sources.list("inputList"))
+         .writeTo(Sinks.files("/home/jet/output"));
         //end::s3[]
     }
 
     static void s4() {
         //tag::s4[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.socket("localhost", 8080, StandardCharsets.UTF_8))
+        p.readFrom(Sources.socket("localhost", 8080, StandardCharsets.UTF_8))
          .withoutTimestamps()
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         //end::s4[]
     }
 
     static void s5() {
         //tag::s5[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.list("inputList"))
-         .drainTo(Sinks.socket("localhost", 8080));
+        p.readFrom(Sources.list("inputList"))
+         .writeTo(Sinks.socket("localhost", 8080));
         //end::s5[]
     }
 

@@ -51,13 +51,13 @@ public class JmsTopicSample {
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
-        p.drawFrom(Sources.jmsTopic(() -> new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL), INPUT_TOPIC))
+        p.readFrom(Sources.jmsTopic(() -> new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL), INPUT_TOPIC))
          .withoutTimestamps()
          .filter(message -> message.getJMSPriority() > 3)
          .map(message -> (TextMessage) message)
          // print the message text to the log
          .peek(TextMessage::getText)
-         .drainTo(Sinks.<TextMessage>jmsTopicBuilder(() -> new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL))
+         .writeTo(Sinks.<TextMessage>jmsTopicBuilder(() -> new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL))
                  .destinationName(OUTPUT_TOPIC)
                  .messageFn((session, message) -> {
                      TextMessage textMessage = session.createTextMessage(message.getText());

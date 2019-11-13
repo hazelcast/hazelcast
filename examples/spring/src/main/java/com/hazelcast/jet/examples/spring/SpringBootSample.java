@@ -49,8 +49,8 @@ public class SpringBootSample {
     @RequestMapping("/submitJob")
     public void submitJob() {
         Pipeline pipeline = Pipeline.create();
-        pipeline.drawFrom(CustomSourceP.customSource())
-                .drainTo(Sinks.logger());
+        pipeline.readFrom(CustomSourceP.customSource())
+                .writeTo(Sinks.logger());
 
         JobConfig jobConfig = new JobConfig()
                 .addClass(SpringBootSample.class)

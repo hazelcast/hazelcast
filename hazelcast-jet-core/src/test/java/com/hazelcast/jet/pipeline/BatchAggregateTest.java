@@ -76,7 +76,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStage<Long> aggregated = sourceStageFromInput().aggregate(SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(
                 singletonList(input.stream().mapToLong(i -> i).sum()),
@@ -95,7 +95,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 .aggregate2(SUMMING, stage, SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         long expectedSum = input.stream().mapToLong(i -> i).sum();
         assertEquals(
@@ -111,7 +111,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 .aggregate2(sourceStageFromInput(), aggregateOperation2(SUMMING, SUMMING));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         long expectedSum = input.stream().mapToLong(i -> i).sum();
         assertEquals(
@@ -131,7 +131,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 aggregateOperation2(SUMMING, SUMMING, outputFn));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         long expectedSum = input.stream().mapToLong(i -> i).sum();
         assertEquals(
@@ -150,7 +150,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 .aggregate2(SUMMING, stage11, SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         long expectedSum = input.stream().mapToLong(i -> i).sum();
         assertEquals(
@@ -170,7 +170,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 stage1, stage2, aggregateOperation3(SUMMING, SUMMING, SUMMING));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         long expectedSum = input.stream().mapToLong(i -> i).sum();
         assertEquals(
@@ -188,7 +188,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 aggregateOperation3(SUMMING, SUMMING, SUMMING, (r0, r1, r2) -> r0 + r1 + r2));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(
                 singletonList(3 * input.stream().mapToLong(i -> i).sum()),
@@ -216,7 +216,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStage<ItemsByTag> aggregated = b.build();
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         long sum0 = input.stream().mapToLong(i -> i).sum();
         assertEquals(
@@ -245,7 +245,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStage<ItemsByTag> aggregated = b.build(aggrOp);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         long sum0 = input.stream().mapToLong(i -> i).sum();
         assertEquals(
@@ -269,7 +269,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStage<Long> aggregated = b.build(ibt -> ibt.get(tag0) + ibt.get(tag1) + ibt.get(tag2));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(
                 singletonList(3 * input.stream().mapToLong(i -> i).sum()),
@@ -299,7 +299,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStage<Long> aggregated = b.build(aggrOp);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(
                 singletonList(3 * input.stream().mapToLong(i -> i).sum()),
@@ -318,7 +318,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 .aggregate(SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         Map<Integer, Long> expected = input.stream().collect(groupingBy(keyFn, summingLong(i -> i)));
         assertEquals(
@@ -363,7 +363,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStage<Entry<Integer, Tuple2<Long, Long>>> aggregated = stage0.aggregate2(SUMMING, stage1, SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
@@ -387,7 +387,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 stage0.aggregate2(stage1, aggregateOperation2(SUMMING, SUMMING));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
@@ -412,7 +412,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 stage0.aggregate3(SUMMING, stage1, SUMMING, stage2, SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
@@ -440,7 +440,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 stage0.aggregate3(stage1, stage2, aggregateOperation3(SUMMING, SUMMING, SUMMING));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
@@ -472,7 +472,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStage<Entry<Integer, ItemsByTag>> aggregated = b.build();
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
@@ -510,7 +510,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BatchStage<Entry<Integer, ItemsByTag>> aggregated = b.build(aggrOp);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
@@ -553,7 +553,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 });
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         Map<Integer, Long> expectedMap0 = input.stream().collect(groupingBy(fx.keyFn, fx.collectOp));
         Map<Integer, Long> expectedMap1 = input.stream().map(fx.mapFn1).collect(groupingBy(fx.keyFn, fx.collectOp));
@@ -573,6 +573,6 @@ public class BatchAggregateTest extends PipelineTestSupport {
                     input.forEach(buf::add);
                     buf.close();
                 }).build();
-        return p.drawFrom(source);
+        return p.readFrom(source);
     }
 }

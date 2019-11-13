@@ -58,13 +58,13 @@ public class AccessLogAnalyzer {
     private static Pipeline buildPipeline(String sourceDir, String targetDir) {
         Pipeline p = Pipeline.create();
 
-        p.drawFrom(Sources.files(sourceDir))
+        p.readFrom(Sources.files(sourceDir))
          .map(LogLine::parse)
          .filter((LogLine log) -> log.getResponseCode() >= 200 && log.getResponseCode() < 400)
          .flatMap(AccessLogAnalyzer::explodeSubPaths)
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .drainTo(Sinks.files(targetDir));
+         .writeTo(Sinks.files(targetDir));
 
         return p;
     }

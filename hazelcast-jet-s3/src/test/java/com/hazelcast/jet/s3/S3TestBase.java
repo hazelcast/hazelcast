@@ -76,8 +76,8 @@ abstract class S3TestBase extends JetTestSupport {
         }
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.map(map, alwaysTrue(), Map.Entry::getValue))
-         .drainTo(S3Sinks.s3(bucketName, prefix, CHARSET, clientSupplier(), Object::toString));
+        p.readFrom(Sources.map(map, alwaysTrue(), Map.Entry::getValue))
+         .writeTo(S3Sinks.s3(bucketName, prefix, CHARSET, clientSupplier(), Object::toString));
 
         jet.newJob(p).join();
 
@@ -108,7 +108,7 @@ abstract class S3TestBase extends JetTestSupport {
 
     void testSource(List<String> bucketNames, String prefix, int objectCount, int lineCount, String match) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(S3Sources.s3(bucketNames, prefix, clientSupplier()))
+        p.readFrom(S3Sources.s3(bucketNames, prefix, clientSupplier()))
                 .groupingKey(s -> s)
                 .aggregate(AggregateOperations.counting())
                 .apply(Assertions.assertCollected(entries -> {
@@ -123,7 +123,7 @@ abstract class S3TestBase extends JetTestSupport {
 
     public void testSourceWithEmptyResults(String bucketName, String prefix) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(S3Sources.s3(singletonList(bucketName), prefix, clientSupplier()))
+        p.readFrom(S3Sources.s3(singletonList(bucketName), prefix, clientSupplier()))
                 .apply(Assertions.assertCollected(entries -> {
                     assertEquals(0, entries.size());
                 }));
@@ -133,8 +133,8 @@ abstract class S3TestBase extends JetTestSupport {
 
     public void testSourceWithNotExistingBucket(String bucketName) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(S3Sources.s3(singletonList(bucketName), null, clientSupplier()))
-                .drainTo(Sinks.logger());
+        p.readFrom(S3Sources.s3(singletonList(bucketName), null, clientSupplier()))
+                .writeTo(Sinks.logger());
 
         try {
             jet.newJob(p).join();
@@ -146,8 +146,8 @@ abstract class S3TestBase extends JetTestSupport {
 
     public void testSinkWithNotExistingBucket(String bucketName) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(TestSources.items("item"))
-                .drainTo(S3Sinks.s3(bucketName, "ignore", UTF_8, clientSupplier(), Object::toString));
+        p.readFrom(TestSources.items("item"))
+                .writeTo(S3Sinks.s3(bucketName, "ignore", UTF_8, clientSupplier(), Object::toString));
 
         try {
             jet.newJob(p).join();

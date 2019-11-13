@@ -48,11 +48,11 @@ public class HelloWorld {
 
     private static Pipeline buildPipeline(String mapName) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(TestSources.itemStream(10, (ts, seq) -> nextRandomNumber()))
+        p.readFrom(TestSources.itemStream(10, (ts, seq) -> nextRandomNumber()))
          .withIngestionTimestamps()
          .rollingAggregate(AggregateOperations.topN(10, ComparatorEx.comparingLong(l -> l)))
          .map(l -> entry(KEY, l))
-         .drainTo(Sinks.map(mapName))
+         .writeTo(Sinks.map(mapName))
          .setLocalParallelism(1);
         return p;
     }

@@ -70,13 +70,13 @@ public class HttpSource {
                 .destroyFn(PollHttp::close)
                 .build();
         Pipeline p = Pipeline.create();
-        p.drawFrom(usedMemorySource)
+        p.readFrom(usedMemorySource)
          // we use zero allowed lag because we know the data from remote service is always ordered
          .withNativeTimestamps(0)
          .window(sliding(100, 20))
          .aggregate(linearTrend(MemoryUsageMetric::timestamp, MemoryUsageMetric::memoryUsage))
          .map(wr -> entry(wr.end(), wr.result()))
-         .drainTo(Sinks.map(MAP_NAME));
+         .writeTo(Sinks.map(MAP_NAME));
         return p;
     }
 

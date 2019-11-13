@@ -86,7 +86,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StreamStage<WindowResult<Integer>> distinct = windowed.distinct();
 
         // Then
-        distinct.drainTo(sink);
+        distinct.writeTo(sink);
         execute();
         assertEquals(
                 streamToString(
@@ -116,7 +116,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         windowed.aggregate(summingLong(i -> i))
-                .drainTo(sink);
+                .writeTo(sink);
         execute();
         assertEquals(
                 new SlidingWindowSimulator(wDef)
@@ -143,7 +143,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         windowed.aggregate(summingLong(i -> i))
-                .drainTo(sink);
+                .writeTo(sink);
         jet().newJob(p);
         String expectedString = new SlidingWindowSimulator(wDef)
                 .acceptStream(input.stream())
@@ -174,7 +174,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                                                              .aggregate(summingLong(i -> i));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(
                 new SlidingWindowSimulator(wDef)
@@ -202,7 +202,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                                                              .aggregate(summingLong(i -> i));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         jet().newJob(p);
         String expectedString = new SlidingWindowSimulator(wDef)
                 .acceptStream(input.stream())
@@ -234,7 +234,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         windowed.aggregate(summingLong(i -> i))
-                .drainTo(sink);
+                .writeTo(sink);
         execute();
 
         assertEquals(
@@ -268,7 +268,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         windowed.aggregate(summingLong(i -> i))
                 // suppress incomplete windows to get predictable results
                 .filter(wr -> wr.end() - wr.start() == sessionLength + sessionTimeout - 1)
-                .drainTo(sink);
+                .writeTo(sink);
         jet().newJob(p);
 
         String expectedString = new SessionWindowSimulator(wDef, sessionLength + sessionTimeout)
@@ -303,7 +303,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StageWithWindow<Integer> stage = srcStage.window(wDef.setEarlyResultsPeriod(earlyResultPeriod));
 
         // Then
-        stage.aggregate(counting()).drainTo(Sinks.list(sinkList));
+        stage.aggregate(counting()).writeTo(Sinks.list(sinkList));
         jet().newJob(p);
         assertTrueEventually(() -> assertGreaterOrEquals("sinkList.size()", sinkList.size(), 10));
         WindowResult<Long> expected = new WindowResult<>(0L, 10L, 1L, true);
@@ -340,7 +340,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 fx.stage0.aggregate2(SUMMING, fx.newStage(), SUMMING);
 
         //Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(
@@ -359,7 +359,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 fx.stage0.aggregate2(fx.newStage(), aggregateOperation2(SUMMING, SUMMING));
 
         //Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(
@@ -378,7 +378,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 fx.stage0.aggregate3(SUMMING, fx.newStage(), SUMMING, fx.newStage(), SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString3,
                 streamToString(this.<Tuple3<Long, Long, Long>>sinkStreamOfWinResult(),
@@ -397,7 +397,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                         aggregateOperation3(SUMMING, SUMMING, SUMMING));
 
         //Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString3,
                 streamToString(this.<Tuple3<Long, Long, Long>>sinkStreamOfWinResult(),
@@ -417,7 +417,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StreamStage<WindowResult<ItemsByTag>> aggregated = b.build();
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(this.<ItemsByTag>sinkStreamOfWinResult(),
@@ -441,7 +441,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StreamStage<WindowResult<ItemsByTag>> aggregated = b.build(b2.build());
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(this.<ItemsByTag>sinkStreamOfWinResult(),

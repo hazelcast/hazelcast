@@ -79,8 +79,8 @@ public class WriteFilePTest extends JetTestSupport {
     public void when_localParallelismMoreThan1_then_multipleFiles() throws Exception {
         // Given
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list(list.getName()))
-         .drainTo(Sinks.files(directory.toString()))
+        p.readFrom(Sources.<String>list(list.getName()))
+         .writeTo(Sinks.files(directory.toString()))
          .setLocalParallelism(2);
         addItemsToList(0, 10);
 
@@ -243,8 +243,8 @@ public class WriteFilePTest extends JetTestSupport {
     public void when_toStringF_then_used() throws Exception {
         // Given
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list(list.getName()))
-         .drainTo(Sinks.<String>filesBuilder(directory.toString())
+        p.readFrom(Sources.<String>list(list.getName()))
+         .writeTo(Sinks.<String>filesBuilder(directory.toString())
                        .toStringFn(val -> Integer.toString(Integer.parseInt(val) - 1))
                        .build());
 
@@ -309,8 +309,8 @@ public class WriteFilePTest extends JetTestSupport {
             charset = StandardCharsets.UTF_8;
         }
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list(list.getName()))
-         .drainTo(Sinks.<String>filesBuilder(directory.toString())
+        p.readFrom(Sources.<String>list(list.getName()))
+         .writeTo(Sinks.<String>filesBuilder(directory.toString())
                  .toStringFn(toStringFn)
                  .charset(charset)
                  .append(append)

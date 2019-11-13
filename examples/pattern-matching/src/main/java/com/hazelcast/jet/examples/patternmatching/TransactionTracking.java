@@ -54,7 +54,7 @@ public final class TransactionTracking {
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
         StreamSource<TransactionEvent> source = transactionEventSource(EVENTS_PER_SECOND);
-        p.drawFrom(source).withTimestamps(TransactionEvent::timestamp, 0)
+        p.readFrom(source).withTimestamps(TransactionEvent::timestamp, 0)
          .groupingKey(TransactionEvent::transactionId)
          .mapStateful(
                  SECONDS.toMillis(TRANSACTION_TIMEOUT_SECONDS),
@@ -80,7 +80,7 @@ public final class TransactionTracking {
                  (startEnd, transactionId, wm) -> (startEnd[0] != null && startEnd[1] == null)
                          ? entry(transactionId, TIMED_OUT_CODE)
                          : null
-         ).drainTo(Sinks.map(STATUS_MAP_NAME));
+         ).writeTo(Sinks.map(STATUS_MAP_NAME));
         return p;
     }
 

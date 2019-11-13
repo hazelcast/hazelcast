@@ -75,7 +75,7 @@ public class KafkaAvroSource {
 
     private Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(KafkaSources.kafka(props(
+        p.readFrom(KafkaSources.kafka(props(
                 "bootstrap.servers", BROKER_HOST + ':' + brokerPort,
                 "key.deserializer", IntegerDeserializer.class.getName(),
                 "value.deserializer", KafkaAvroDeserializer.class.getName(),
@@ -85,7 +85,7 @@ public class KafkaAvroSource {
                 "auto.offset.reset", AUTO_OFFSET_RESET
         ), TOPIC))
          .withoutTimestamps()
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         return p;
     }
 

@@ -30,8 +30,8 @@ public class Avro {
     static void s1() {
         //tag::s1[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(AvroSources.files("/home/jet/input", Person.class))
-         .drainTo(Sinks.logger());
+        p.readFrom(AvroSources.files("/home/jet/input", Person.class))
+         .writeTo(Sinks.logger());
         //end::s1[]
     }
 
@@ -41,8 +41,8 @@ public class Avro {
                 "\"namespace\":\"datamodel\",\"fields\":[{" +
                 "\"name\":\"id\",\"type\":\"int\"}]}";
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<GenericRecord>list("inputList"))
-         .drainTo(AvroSinks.files("/home/jet/output",
+        p.readFrom(Sources.<GenericRecord>list("inputList"))
+         .writeTo(AvroSinks.files("/home/jet/output",
                  () -> new Schema.Parser().parse(schemaString)));
         //end::s2[]
     }

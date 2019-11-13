@@ -131,9 +131,9 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         IList sinkList = instance.getList("sinkList");
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(createSourceJournal())
+        p.readFrom(createSourceJournal())
          .withIngestionTimestamps()
-         .drainTo(Sinks.list(sinkList));
+         .writeTo(Sinks.list(sinkList));
 
         instance.newJob(p);
         assertTrueEventually(() -> assertEquals(Arrays.asList(1, 2), new ArrayList<>(sinkList)), 5);
@@ -142,7 +142,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
     @Test
     public void when_withTimestampsAndAddTimestamps_then_fail() {
         Pipeline p = Pipeline.create();
-        StreamStage<Entry<Object, Object>> stage = p.drawFrom(Sources.mapJournal("foo", START_FROM_OLDEST))
+        StreamStage<Entry<Object, Object>> stage = p.readFrom(Sources.mapJournal("foo", START_FROM_OLDEST))
                                                   .withIngestionTimestamps();
 
         expectedException.expectMessage("This stage already has timestamps assigned to it");
@@ -156,10 +156,10 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
         // When
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.streamFromProcessor("src",
+        p.readFrom(Sources.streamFromProcessor("src",
                 ProcessorMetaSupplier.of(lp, ProcessorSupplier.of(noopP()))))
          .withTimestamps(o -> 0L, 0)
-         .drainTo(Sinks.noop());
+         .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -176,11 +176,11 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
         // When
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.streamFromProcessor("src",
+        p.readFrom(Sources.streamFromProcessor("src",
                 ProcessorMetaSupplier.of(ProcessorSupplier.of(noopP()))))
          .withTimestamps(o -> 0L, 0)
          .setLocalParallelism(lp)
-         .drainTo(Sinks.noop());
+         .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -199,9 +199,9 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
         // When
         Pipeline p = Pipeline.create();
-        p.drawFrom(source)
+        p.readFrom(source)
          .withTimestamps(o -> 0L, 0)
-         .drainTo(Sinks.noop());
+         .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then

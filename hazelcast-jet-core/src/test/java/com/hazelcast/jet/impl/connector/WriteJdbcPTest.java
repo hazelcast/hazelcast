@@ -64,9 +64,9 @@ public class WriteJdbcPTest extends PipelineTestSupport {
     @Test
     public void test() throws SQLException {
         addToSrcList(sequence(PERSON_COUNT));
-        p.drawFrom(source)
+        p.readFrom(source)
          .map(item -> new Person((Integer) item, item.toString()))
-         .drainTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", DB_CONNECTION_URL,
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", DB_CONNECTION_URL,
                  (stmt, item) -> {
                      stmt.setInt(1, item.id);
                      stmt.setString(2, item.name);
@@ -81,9 +81,9 @@ public class WriteJdbcPTest extends PipelineTestSupport {
     @Test
     public void testReconnect() throws SQLException {
         addToSrcList(sequence(PERSON_COUNT));
-        p.drawFrom(source)
+        p.readFrom(source)
          .map(item -> new Person((Integer) item, item.toString()))
-         .drainTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)",
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)",
                  failOnceConnectionSupplier(), failOnceBindFn()
          ));
 
@@ -95,9 +95,9 @@ public class WriteJdbcPTest extends PipelineTestSupport {
     @Test(expected = CompletionException.class)
     public void testFailJob_withNonTransientException() {
         addToSrcList(sequence(PERSON_COUNT));
-        p.drawFrom(source)
+        p.readFrom(source)
          .map(item -> new Person((Integer) item, item.toString()))
-         .drainTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", DB_CONNECTION_URL,
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + "(id, name) VALUES(?, ?)", DB_CONNECTION_URL,
                  (stmt, item) -> {
                      throw new SQLNonTransientException();
                  }

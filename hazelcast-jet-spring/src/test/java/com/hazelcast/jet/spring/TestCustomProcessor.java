@@ -55,8 +55,8 @@ public class TestCustomProcessor {
     @Test(timeout = 20000)
     public void test() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.batchFromProcessor("source", preferLocalParallelismOne(CustomSourceP::new)))
-         .drainTo(Sinks.fromProcessor("sink", preferLocalParallelismOne(CustomSinkP::new)));
+        p.readFrom(Sources.batchFromProcessor("source", preferLocalParallelismOne(CustomSourceP::new)))
+         .writeTo(Sinks.fromProcessor("sink", preferLocalParallelismOne(CustomSinkP::new)));
 
         jetInstance.newJob(p).join();
     }

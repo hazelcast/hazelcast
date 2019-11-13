@@ -97,13 +97,13 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
         String key1 = generateKeyForPartition(instance.getHazelcastInstance(), 1);
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(sourceMap, JournalInitialPosition.START_FROM_OLDEST))
+        p.readFrom(Sources.mapJournal(sourceMap, JournalInitialPosition.START_FROM_OLDEST))
                 .withTimestamps(Map.Entry::getValue, 0)
                 .setLocalParallelism(PARTITION_COUNT)
                 .groupingKey(Map.Entry::getKey)
                 .window(WindowDefinition.sliding(1, 1))
                 .aggregate(AggregateOperations.counting()).setLocalParallelism(PARTITION_COUNT)
-                .drainTo(SinkBuilder.sinkBuilder("throwing", ctx -> "").
+                .writeTo(SinkBuilder.sinkBuilder("throwing", ctx -> "").
                         <KeyedWindowResult<String, Long>>receiveFn((w, kwr) -> {
                             if (kwr.result() != COUNT) {
                                 throw new RuntimeException("Received unexpected item " + kwr + ", expected count is "

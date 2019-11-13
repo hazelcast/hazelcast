@@ -72,22 +72,22 @@ public class DotTest {
     @Test
     public void when_pipelineToDotString() {
         Pipeline p = Pipeline.create();
-        BatchStage<Entry> source = p.drawFrom(Sources.map("source1"));
+        BatchStage<Entry> source = p.readFrom(Sources.map("source1"));
 
         source
             .groupingKey(Entry::getKey)
             .aggregate(AggregateOperations.counting())
             .setName("aggregateToCount")
-            .drainTo(Sinks.logger());
+            .writeTo(Sinks.logger());
 
         source
             .groupingKey(Entry::getKey)
             .aggregate(AggregateOperations.toSet())
             .setName("aggregateToSet")
-            .drainTo(Sinks.logger());
+            .writeTo(Sinks.logger());
 
         source.filter(alwaysTrue())
-              .drainTo(Sinks.logger());
+              .writeTo(Sinks.logger());
 
         String actualPipeline = p.toDotString();
         assertEquals(actualPipeline, "digraph Pipeline {\n" +
@@ -132,11 +132,11 @@ public class DotTest {
     public void assertedTest() {
         Pipeline p = Pipeline.create();
         // " in vertex name should be escaped
-        p.drawFrom(Sources.map("source1\""))
+        p.readFrom(Sources.map("source1\""))
          .groupingKey(Entry::getKey)
          .aggregate(AggregateOperations.counting())
          .setName("aggregateToCount")
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
 
         assertEquals("digraph Pipeline {\n" +
                 "\t\"mapSource(source1\\\")\" -> \"aggregateToCount\";\n" +

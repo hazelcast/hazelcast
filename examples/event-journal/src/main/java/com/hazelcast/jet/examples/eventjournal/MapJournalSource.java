@@ -47,10 +47,10 @@ public class MapJournalSource {
 
         try {
             Pipeline p = Pipeline.create();
-            p.drawFrom(Sources.<Integer, Integer>mapJournal(MAP_NAME, START_FROM_OLDEST))
+            p.readFrom(Sources.<Integer, Integer>mapJournal(MAP_NAME, START_FROM_OLDEST))
              .withoutTimestamps()
              .map(Entry::getValue)
-             .drainTo(Sinks.list(SINK_NAME));
+             .writeTo(Sinks.list(SINK_NAME));
 
             jet.newJob(p);
 

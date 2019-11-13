@@ -111,7 +111,7 @@ public final class Enrichment {
 
         // The stream to be enriched: trades
         StreamStage<Trade> trades = p
-                .drawFrom(Sources.<Object, Trade>mapJournal(TRADES, START_FROM_CURRENT))
+                .readFrom(Sources.<Object, Trade>mapJournal(TRADES, START_FROM_CURRENT))
                 .withoutTimestamps()
                 .map(entryValue());
 
@@ -129,7 +129,7 @@ public final class Enrichment {
                         (t, broker) -> tuple3(t.f0(), t.f1(), broker.name())
                 )
                 // (trade, productName, brokerName)
-                .drainTo(Sinks.logger());
+                .writeTo(Sinks.logger());
 
         return p;
     }
@@ -162,7 +162,7 @@ public final class Enrichment {
 
         // The stream to be enriched: trades
         StreamStage<Trade> trades = p
-                .drawFrom(Sources.<Object, Trade>mapJournal(TRADES, START_FROM_CURRENT))
+                .readFrom(Sources.<Object, Trade>mapJournal(TRADES, START_FROM_CURRENT))
                 .withoutTimestamps()
                 .map(entryValue());
 
@@ -180,7 +180,7 @@ public final class Enrichment {
                         (t, broker) -> tuple3(t.f0(), t.f1(), broker.name())
                 )
                 // (trade, productName, brokerName)
-                .drainTo(Sinks.logger());
+                .writeTo(Sinks.logger());
         return p;
     }
 
@@ -206,7 +206,7 @@ public final class Enrichment {
         Pipeline p = Pipeline.create();
 
         // The stream to be enriched: trades
-        StreamStage<Trade> trades = p.drawFrom(Sources.<Object, Trade>mapJournal(TRADES, START_FROM_CURRENT))
+        StreamStage<Trade> trades = p.readFrom(Sources.<Object, Trade>mapJournal(TRADES, START_FROM_CURRENT))
                                      .withoutTimestamps()
                                      .map(entryValue());
 
@@ -230,15 +230,15 @@ public final class Enrichment {
                     return entry(split.getKey(), new Broker(split.getKey(), split.getValue()));
                 });
 
-        BatchStage<Map.Entry<Integer, Product>> prodEntries = p.drawFrom(products);
-        BatchStage<Map.Entry<Integer, Broker>> brokEntries = p.drawFrom(brokers);
+        BatchStage<Map.Entry<Integer, Product>> prodEntries = p.readFrom(products);
+        BatchStage<Map.Entry<Integer, Broker>> brokEntries = p.readFrom(brokers);
 
         // Join the trade stream with the product and broker streams
         trades.hashJoin2(
                 prodEntries, joinMapEntries(Trade::productId),
                 brokEntries, joinMapEntries(Trade::brokerId),
                 Tuple3::tuple3
-        ).drainTo(Sinks.logger());
+        ).writeTo(Sinks.logger());
 
         return p;
     }

@@ -71,13 +71,13 @@ public final class BatchCoGroup {
 
         // Create three source streams
         BatchStageWithKey<PageVisit, Integer> pageVisits =
-                p.drawFrom(Sources.<PageVisit>list(PAGE_VISIT))
+                p.readFrom(Sources.<PageVisit>list(PAGE_VISIT))
                  .groupingKey(pageVisit -> pageVisit.userId());
         BatchStageWithKey<AddToCart, Integer> addToCarts =
-                p.drawFrom(Sources.<AddToCart>list(ADD_TO_CART))
+                p.readFrom(Sources.<AddToCart>list(ADD_TO_CART))
                  .groupingKey(addToCart -> addToCart.userId());
         BatchStageWithKey<Payment, Integer> payments =
-                p.drawFrom(Sources.<Payment>list(PAYMENT))
+                p.readFrom(Sources.<Payment>list(PAYMENT))
                  .groupingKey(payment -> payment.userId());
 
         // Construct the co-group transform. The aggregate operation collects all
@@ -86,7 +86,7 @@ public final class BatchCoGroup {
                 pageVisits.aggregate3(toList(), addToCarts, toList(), payments, toList());
 
         // Store the results in the output map
-        coGrouped.drainTo(Sinks.map(RESULT));
+        coGrouped.writeTo(Sinks.map(RESULT));
         return p;
     }
 
@@ -95,13 +95,13 @@ public final class BatchCoGroup {
 
         // Create three source streams
         BatchStageWithKey<PageVisit, Integer> pageVisits =
-                p.drawFrom(Sources.<PageVisit>list(PAGE_VISIT))
+                p.readFrom(Sources.<PageVisit>list(PAGE_VISIT))
                  .groupingKey(pageVisit -> pageVisit.userId());
         BatchStageWithKey<AddToCart, Integer> addToCarts =
-                p.drawFrom(Sources.<AddToCart>list(ADD_TO_CART))
+                p.readFrom(Sources.<AddToCart>list(ADD_TO_CART))
                  .groupingKey(addToCart -> addToCart.userId());
         BatchStageWithKey<Payment, Integer> payments =
-                p.drawFrom(Sources.<Payment>list(PAYMENT))
+                p.readFrom(Sources.<Payment>list(PAYMENT))
                  .groupingKey(payment -> payment.userId());
 
         // Obtain a builder object for the co-group transform
@@ -123,7 +123,7 @@ public final class BatchCoGroup {
                 });
 
         // Store the results in the output map
-        coGrouped.drainTo(Sinks.map(RESULT));
+        coGrouped.writeTo(Sinks.map(RESULT));
 
         return p;
     }

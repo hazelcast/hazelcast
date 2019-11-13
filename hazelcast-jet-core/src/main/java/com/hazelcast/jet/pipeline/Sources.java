@@ -71,7 +71,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Contains factory methods for various types of pipeline sources. To start
- * building a pipeline, pass a source to {@link Pipeline#drawFrom(BatchSource)}
+ * building a pipeline, pass a source to {@link Pipeline#readFrom(BatchSource)}
  * and you will obtain the initial {@link BatchStage}. You can then
  * attach further stages to it.
  * <p>
@@ -313,7 +313,7 @@ public final class Sources {
      * requirements, use {@link #map(String)} and add a subsequent
      * {@link GeneralStage#map map} or {@link GeneralStage#filter filter} stage.
      *
-     * @param map        the Hazelcast map to draw data from
+     * @param map        the Hazelcast map to read data from
      * @param predicate  the predicate to filter the events. If you want to specify just the
      *                   projection, use {@link
      *                   Predicates#alwaysTrue()} as a pass-through
@@ -452,7 +452,7 @@ public final class Sources {
      * coalesced watermark.
      *
      * @param <T>          type of emitted item
-     * @param map          the map to draw data from
+     * @param map          the map to read data from
      * @param initialPos   describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
 *                     null} for an item, that item will be filtered out. You may use {@link
@@ -1157,7 +1157,7 @@ public final class Sources {
      * cursor-navigating functions.
      * <p>
      * Example: <pre>{@code
-     *     p.drawFrom(Sources.jdbc(
+     *     p.readFrom(Sources.jdbc(
      *         () -> DriverManager.getConnection(DB_CONNECTION_URL),
      *         (con, parallelism, index) -> {
      *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
@@ -1206,7 +1206,7 @@ public final class Sources {
      * to the documentation for the target database system.
      * <p>
      * Example: <pre>{@code
-     *     p.drawFrom(Sources.jdbc(
+     *     p.readFrom(Sources.jdbc(
      *         DB_CONNECTION_URL,
      *         "select ID, NAME from PERSON",
      *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))

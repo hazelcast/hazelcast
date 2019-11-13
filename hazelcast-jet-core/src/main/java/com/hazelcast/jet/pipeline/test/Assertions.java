@@ -51,9 +51,9 @@ public final class Assertions {
      * <p>
      * Example:
      * <pre>{@code
-     * p.drawFrom(TestSources.items(1, 2, 3, 4))
+     * p.readFrom(TestSources.items(1, 2, 3, 4))
      *  .apply(Assertions.assertOrdered("unexpected values", Arrays.asList(1, 2, 3, 4)))
-     *  .drainTo(Sinks.logger());
+     *  .writeTo(Sinks.logger());
      * }</pre>
      *
      * <b>Note:</b> Since Jet jobs are distributed, input from multiple upstream
@@ -66,7 +66,7 @@ public final class Assertions {
         @Nonnull Collection<? extends T> expected
     ) {
         return stage -> {
-            stage.drainTo(AssertionSinks.assertOrdered(message, expected));
+            stage.writeTo(AssertionSinks.assertOrdered(message, expected));
             return stage;
         };
     }
@@ -78,9 +78,9 @@ public final class Assertions {
      * <p>
      * Example:
      * <pre>{@code
-     * p.drawFrom(TestSources.items(1, 2, 3, 4))
+     * p.readFrom(TestSources.items(1, 2, 3, 4))
      *  .apply(Assertions.assertOrderedArrays.asList(1, 2, 3, 4)))
-     *  .drainTo(Sinks.logger());
+     *  .writeTo(Sinks.logger());
      * }</pre>
      *
      * <b>Note:</b> Since Jet jobs are distributed, input from multiple upstream
@@ -101,9 +101,9 @@ public final class Assertions {
      * <p>
      * Example:
      * <pre>{@code
-     * p.drawFrom(TestSources.items(4, 3, 2, 1))
+     * p.readFrom(TestSources.items(4, 3, 2, 1))
      *  .apply(Assertions.assertAnyOrder("unexpected values", Arrays.asList(1, 2, 3, 4)))
-     *  .drainTo(Sinks.logger())
+     *  .writeTo(Sinks.logger())
      * }</pre>
      */
     @Nonnull
@@ -112,7 +112,7 @@ public final class Assertions {
         @Nonnull Collection<? extends T> expected
     ) {
         return stage -> {
-            stage.drainTo(AssertionSinks.assertAnyOrder(message, expected));
+            stage.writeTo(AssertionSinks.assertAnyOrder(message, expected));
             return stage;
         };
     }
@@ -124,9 +124,9 @@ public final class Assertions {
      * <p>
      * Example:
      * <pre>{@code
-     * p.drawFrom(TestSources.items(4, 3, 2, 1))
+     * p.readFrom(TestSources.items(4, 3, 2, 1))
      *  .apply(Assertions.assertAnyOrder(Arrays.asList(1, 2, 3, 4)))
-     *  .drainTo(Sinks.logger())
+     *  .writeTo(Sinks.logger())
      * }</pre>
      */
     @Nonnull
@@ -143,9 +143,9 @@ public final class Assertions {
      * <p>
      * Example:
      * <pre>{@code
-     * p.drawFrom(TestSources.items(4, 3, 2, 1))
+     * p.readFrom(TestSources.items(4, 3, 2, 1))
      *  .apply(Assertions.assertAnyOrder(Arrays.asList(1, 3)))
-     *  .drainTo(Sinks.logger())
+     *  .writeTo(Sinks.logger())
      * }</pre>
      */
     @Nonnull
@@ -154,7 +154,7 @@ public final class Assertions {
         @Nonnull Collection<? extends T> expected
     ) {
         return stage -> {
-            stage.drainTo(AssertionSinks.assertContains(message, expected));
+            stage.writeTo(AssertionSinks.assertContains(message, expected));
             return stage;
         };
     }
@@ -166,9 +166,9 @@ public final class Assertions {
      * <p>
      * Example:
      * <pre>{@code
-     * p.drawFrom(TestSources.items(4, 3, 2, 1))
+     * p.readFrom(TestSources.items(4, 3, 2, 1))
      *  .apply(Assertions.assertContains(Arrays.asList(1, 3)))
-     *  .drainTo(Sinks.logger())
+     *  .writeTo(Sinks.logger())
      * }</pre>
      */
     @Nonnull
@@ -185,10 +185,10 @@ public final class Assertions {
      * <p>
      * Example:
      * <pre>{@code
-     * p.drawFrom(TestSources.items(1, 2, 3, 4))
+     * p.readFrom(TestSources.items(1, 2, 3, 4))
      *  .apply(Assertions.assertCollected(items ->
      *          assertTrue("expected minimum of 4 items", items.size() >= 4)))
-     *  .drainTo(Sinks.logger())
+     *  .writeTo(Sinks.logger())
      * }</pre>
      *
      * <b>Note:</b> This assertion is not usable in streaming jobs. For the streaming
@@ -199,7 +199,7 @@ public final class Assertions {
         @Nonnull ConsumerEx<? super List<T>> assertFn
     ) {
         return stage -> {
-            stage.drainTo(AssertionSinks.assertCollected(assertFn));
+            stage.writeTo(AssertionSinks.assertCollected(assertFn));
             return stage;
         };
     }
@@ -218,7 +218,7 @@ public final class Assertions {
      * <p>
      * Example:
      * <pre>{@code
-     * p.drawFrom(TestSources.itemStream(10))
+     * p.readFrom(TestSources.itemStream(10))
      *  .withoutTimestamps()
      *  .apply(assertCollectedEventually(5, c -> assertTrue("did not receive at least 20 items", c.size() > 20)));
      * }</pre>
@@ -245,7 +245,7 @@ public final class Assertions {
         int timeout, @Nonnull ConsumerEx<? super List<T>> assertFn
     ) {
         return stage -> {
-            stage.drainTo(AssertionSinks.assertCollectedEventually(timeout, assertFn));
+            stage.writeTo(AssertionSinks.assertCollectedEventually(timeout, assertFn));
             return stage;
         };
     }

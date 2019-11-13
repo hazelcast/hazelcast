@@ -77,24 +77,24 @@ public final class WindowedCoGroup {
 
     private static Pipeline aggregate() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<PageVisit, Integer, PageVisit>mapJournal(PAGE_VISIT,
+        p.readFrom(Sources.<PageVisit, Integer, PageVisit>mapJournal(PAGE_VISIT,
                 START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
          .withTimestamps(pv -> pv.timestamp(), 100)
          .window(sliding(10, 1))
          .aggregate(counting())
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         return p;
     }
 
     private static Pipeline groupAndAggregate() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<PageVisit, Integer, PageVisit>mapJournal(PAGE_VISIT,
+        p.readFrom(Sources.<PageVisit, Integer, PageVisit>mapJournal(PAGE_VISIT,
                 START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
          .withTimestamps(pv -> pv.timestamp(), 100)
          .window(sliding(10, 1))
          .groupingKey(pv -> pv.userId())
          .aggregate(toList())
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         return p;
     }
 
@@ -102,17 +102,17 @@ public final class WindowedCoGroup {
         Pipeline p = Pipeline.create();
 
         StreamStageWithKey<PageVisit, Integer> pageVisits = p
-                .drawFrom(Sources.<PageVisit, Integer, PageVisit>mapJournal(PAGE_VISIT,
+                .readFrom(Sources.<PageVisit, Integer, PageVisit>mapJournal(PAGE_VISIT,
                         START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
                 .withTimestamps(pv -> pv.timestamp(), 100)
                 .groupingKey(pv -> pv.userId());
         StreamStageWithKey<Payment, Integer> payments = p
-                .drawFrom(Sources.<Payment, Integer, Payment>mapJournal(PAYMENT,
+                .readFrom(Sources.<Payment, Integer, Payment>mapJournal(PAYMENT,
                         START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
                 .withTimestamps(pm -> pm.timestamp(), 100)
                 .groupingKey(pm -> pm.userId());
         StreamStageWithKey<AddToCart, Integer> addToCarts = p
-                .drawFrom(Sources.<AddToCart, Integer, AddToCart>mapJournal(ADD_TO_CART,
+                .readFrom(Sources.<AddToCart, Integer, AddToCart>mapJournal(ADD_TO_CART,
                         START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
                 .withTimestamps(atc -> atc.timestamp(), 100)
                 .groupingKey(atc -> atc.userId());
@@ -120,7 +120,7 @@ public final class WindowedCoGroup {
         StageWithKeyAndWindow<PageVisit, Integer> windowStage = pageVisits.window(sliding(10, 1));
 
         windowStage.aggregate3(counting(), addToCarts, counting(), payments, counting())
-                .drainTo(Sinks.logger());
+                .writeTo(Sinks.logger());
         return p;
     }
 
@@ -128,17 +128,17 @@ public final class WindowedCoGroup {
         Pipeline p = Pipeline.create();
 
         StreamStageWithKey<PageVisit, Integer> pageVisits = p
-                .drawFrom(Sources.<PageVisit, Integer, PageVisit>mapJournal(PAGE_VISIT,
+                .readFrom(Sources.<PageVisit, Integer, PageVisit>mapJournal(PAGE_VISIT,
                         START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
                 .withTimestamps(pv -> pv.timestamp(), 100)
                 .groupingKey(pv -> pv.userId());
         StreamStageWithKey<AddToCart, Integer> addToCarts = p
-                .drawFrom(Sources.<AddToCart, Integer, AddToCart>mapJournal(ADD_TO_CART,
+                .readFrom(Sources.<AddToCart, Integer, AddToCart>mapJournal(ADD_TO_CART,
                         START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
                 .withTimestamps(atc -> atc.timestamp(), 100)
                 .groupingKey(atc -> atc.userId());
         StreamStageWithKey<Payment, Integer> payments = p
-                .drawFrom(Sources.<Payment, Integer, Payment>mapJournal(PAYMENT,
+                .readFrom(Sources.<Payment, Integer, Payment>mapJournal(PAYMENT,
                         START_FROM_OLDEST, mapEventNewValue(), mapPutEvents()))
                 .withTimestamps(pm -> pm.timestamp(), 100)
                 .groupingKey(pm -> pm.userId());
@@ -151,7 +151,7 @@ public final class WindowedCoGroup {
         Tag<Long> paymentTag = builder.add(payments, counting());
 
         builder.build()
-                .drainTo(Sinks.logger(r -> {
+                .writeTo(Sinks.logger(r -> {
                     ItemsByTag items = r.result();
                     return String.format(
                             "window(%s..%s): id %d%n" +

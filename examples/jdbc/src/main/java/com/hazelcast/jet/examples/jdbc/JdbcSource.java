@@ -46,11 +46,11 @@ public class JdbcSource {
     private static Pipeline buildPipeline(String connectionUrl) {
         Pipeline p = Pipeline.create();
 
-        p.drawFrom(Sources.jdbc(connectionUrl,
+        p.readFrom(Sources.jdbc(connectionUrl,
                 "SELECT * FROM " + TABLE_NAME,
                 resultSet -> new User(resultSet.getInt(1), resultSet.getString(2))))
          .map(user -> Util.entry(user.getId(), user))
-         .drainTo(Sinks.map(MAP_NAME));
+         .writeTo(Sinks.map(MAP_NAME));
         return p;
     }
 

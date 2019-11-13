@@ -42,24 +42,24 @@ public class ImdgConnectors {
     static void s1() {
         //tag::s1[]
         Pipeline p = Pipeline.create();
-        BatchStage<Entry<String, Long>> stage = p.drawFrom(Sources.map("inMap"));
-        stage.drainTo(Sinks.map("outMap"));
+        BatchStage<Entry<String, Long>> stage = p.readFrom(Sources.map("inMap"));
+        stage.writeTo(Sinks.map("outMap"));
         //end::s1[]
     }
 
     static void s2() {
         //tag::s2[]
         Pipeline p = Pipeline.create();
-        BatchStage<Entry<String, Long>> stage = p.drawFrom(Sources.cache("inCache"));
-        stage.drainTo(Sinks.cache("outCache"));
+        BatchStage<Entry<String, Long>> stage = p.readFrom(Sources.cache("inCache"));
+        stage.writeTo(Sinks.cache("outCache"));
         //end::s2[]
     }
 
     static void s3() {
         //tag::s3[]
         Pipeline pipeline = Pipeline.create();
-        pipeline.drawFrom(Sources.<String, Long>map("inMap"))
-                .drainTo(Sinks.mapWithMerging("outMap",
+        pipeline.readFrom(Sources.<String, Long>map("inMap"))
+                .writeTo(Sinks.mapWithMerging("outMap",
                         Entry::getKey,
                         Entry::getValue,
                         (oldValue, newValue) -> oldValue + newValue)
@@ -70,8 +70,8 @@ public class ImdgConnectors {
     static void s4() {
         //tag::s4[]
         Pipeline pipeline = Pipeline.create();
-        pipeline.drawFrom(Sources.<String, Long>map("inMap"))
-            .drainTo(Sinks.<Entry<String, Long>, String, Long>mapWithUpdating(
+        pipeline.readFrom(Sources.<String, Long>map("inMap"))
+            .writeTo(Sinks.<Entry<String, Long>, String, Long>mapWithUpdating(
                 "outMap", Entry::getKey,
                 (oldV, item) -> (oldV != null ? oldV : 0L) + item.getValue())
             );
@@ -81,8 +81,8 @@ public class ImdgConnectors {
     static void s5() {
     //tag::s5[]
     Pipeline pipeline = Pipeline.create();
-    pipeline.drawFrom(Sources.<String, Integer>map("mymap"))
-            .drainTo(Sinks.mapWithEntryProcessor("mymap",
+    pipeline.readFrom(Sources.<String, Integer>map("mymap"))
+            .writeTo(Sinks.mapWithEntryProcessor("mymap",
                     Entry::getKey,
                     entry -> new IncrementEntryProcessor(5)
             ));
@@ -116,11 +116,11 @@ public class ImdgConnectors {
 
         Pipeline p = Pipeline.create();
         BatchStage<Entry<String, Long>> fromMap =
-                p.drawFrom(Sources.remoteMap("inputMap", cfg));
+                p.readFrom(Sources.remoteMap("inputMap", cfg));
         BatchStage<Entry<String, Long>> fromCache =
-                p.drawFrom(Sources.remoteCache("inputCache", cfg));
-        fromMap.drainTo(Sinks.remoteCache("outputCache", cfg));
-        fromCache.drainTo(Sinks.remoteMap("outputMap", cfg));
+                p.readFrom(Sources.remoteCache("inputCache", cfg));
+        fromMap.writeTo(Sinks.remoteCache("outputCache", cfg));
+        fromCache.writeTo(Sinks.remoteMap("outputMap", cfg));
         //end::s7[]
     }
 
@@ -128,7 +128,7 @@ public class ImdgConnectors {
         ClientConfig clientConfig = new ClientConfig();
         //tag::s8[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<Integer, String, Person>remoteMap(
+        p.readFrom(Sources.<Integer, String, Person>remoteMap(
                 "inputMap", clientConfig,
                 e -> e.getValue().getAge() > 21,
                 e -> e.getValue().getAge()));
@@ -160,9 +160,9 @@ public class ImdgConnectors {
     static void s11() {
         //tag::s11[]
         Pipeline p = Pipeline.create();
-        StreamSourceStage<Entry<String, Long>> fromMap = p.drawFrom(
+        StreamSourceStage<Entry<String, Long>> fromMap = p.readFrom(
                 Sources.mapJournal("inputMap", START_FROM_CURRENT));
-        StreamSourceStage<Entry<String, Long>> fromCache = p.drawFrom(
+        StreamSourceStage<Entry<String, Long>> fromCache = p.readFrom(
                 Sources.cacheJournal("inputCache", START_FROM_CURRENT));
         //end::s11[]
     }
@@ -170,10 +170,10 @@ public class ImdgConnectors {
     static void s12() {
         //tag::s12[]
         Pipeline p = Pipeline.create();
-        StreamSourceStage<EventJournalMapEvent<String, Long>> allFromMap = p.drawFrom(
+        StreamSourceStage<EventJournalMapEvent<String, Long>> allFromMap = p.readFrom(
             Sources.mapJournal("inputMap",
                     START_FROM_CURRENT, identity(), alwaysTrue()));
-        StreamSourceStage<EventJournalCacheEvent<String, Long>> allFromCache = p.drawFrom(
+        StreamSourceStage<EventJournalCacheEvent<String, Long>> allFromCache = p.readFrom(
             Sources.cacheJournal("inputMap",
                     START_FROM_CURRENT, identity(), alwaysTrue()));
         //end::s12[]
@@ -183,10 +183,10 @@ public class ImdgConnectors {
         ClientConfig someClientConfig = new ClientConfig();
         //tag::s13[]
         Pipeline p = Pipeline.create();
-        StreamSourceStage<Entry<String, Long>> fromRemoteMap = p.drawFrom(
+        StreamSourceStage<Entry<String, Long>> fromRemoteMap = p.readFrom(
             Sources.remoteMapJournal("inputMap",
                     someClientConfig, START_FROM_CURRENT));
-        StreamSourceStage<Entry<String, Long>> fromRemoteCache = p.drawFrom(
+        StreamSourceStage<Entry<String, Long>> fromRemoteCache = p.readFrom(
             Sources.remoteCacheJournal("inputCache",
                     someClientConfig, START_FROM_CURRENT));
         //end::s13[]
@@ -201,9 +201,9 @@ public class ImdgConnectors {
         }
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<Integer>list("inputList"))
+        p.readFrom(Sources.<Integer>list("inputList"))
          .map(i -> "item" + i)
-         .drainTo(Sinks.list("resultList"));
+         .writeTo(Sinks.list("resultList"));
 
         jet.newJob(p).join();
 
@@ -220,8 +220,8 @@ public class ImdgConnectors {
                     .addAddress("node1.mydomain.com", "node2.mydomain.com");
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.remoteList("inputlist", clientConfig))
-         .drainTo(Sinks.remoteList("outputList", clientConfig));
+        p.readFrom(Sources.remoteList("inputlist", clientConfig))
+         .writeTo(Sinks.remoteList("outputList", clientConfig));
         //end::s15[]
     }
 }

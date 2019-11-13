@@ -40,8 +40,8 @@ public class AnnotationBasedConfigurationSample {
         JetInstance jet = context.getBean(JetInstance.class);
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.drawFrom(CustomSourceP.customSource())
-                .drainTo(Sinks.logger());
+        pipeline.readFrom(CustomSourceP.customSource())
+                .writeTo(Sinks.logger());
 
         JobConfig jobConfig = new JobConfig()
                 .addClass(AnnotationBasedConfigurationSample.class)

@@ -90,7 +90,7 @@ public class SourcesTest extends PipelineTestSupport {
                 readMapP(srcName, truePredicate(), Entry::getValue));
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(toBag(input), sinkToBag());
     }
@@ -105,7 +105,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Entry<String, Integer>> source = Sources.map(srcName);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i))
@@ -123,7 +123,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Entry<String, Integer>> source = Sources.map(srcMap);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i))
@@ -141,7 +141,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Object> source = Sources.map(srcName, truePredicate(), singleAttribute("value"));
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(toBag(input), sinkToBag());
     }
@@ -156,7 +156,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Integer> source = Sources.map(srcMap, truePredicate(), Projections.singleAttribute("value"));
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(toBag(input), sinkToBag());
     }
@@ -174,7 +174,7 @@ public class SourcesTest extends PipelineTestSupport {
                 Entry<String, Integer>::getValue);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(toBag(input), sinkToBag());
     }
@@ -192,7 +192,7 @@ public class SourcesTest extends PipelineTestSupport {
                 Entry::getValue);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(toBag(input), sinkToBag());
     }
@@ -208,7 +208,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<String> source = Sources.map(mapName, truePredicate(), singleAttribute("value"));
 
         // then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         jet().newJob(p);
         assertTrueEventually(() -> assertEquals(
                 range(0, itemCount)
@@ -233,7 +233,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Entry<Object, Object>> source = Sources.remoteMap(srcName, clientConfig);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i))
@@ -252,7 +252,7 @@ public class SourcesTest extends PipelineTestSupport {
                 srcName, clientConfig, truePredicate(), singleAttribute("value"));
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(toBag(input), sinkToBag());
     }
@@ -268,7 +268,7 @@ public class SourcesTest extends PipelineTestSupport {
                 srcName, clientConfig, truePredicate(), Entry<String, Integer>::getValue);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(toBag(input), sinkToBag());
     }
@@ -291,7 +291,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Entry<String, Object>> source = Sources.remoteMap(srcName, clientConfig);
 
         // Then
-        p.drawFrom(source).map(en -> en.getValue().toString()).drainTo(sink);
+        p.readFrom(source).map(en -> en.getValue().toString()).writeTo(sink);
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJar(jarResource);
         jet().newJob(p, jobConfig).join();
@@ -310,7 +310,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Entry<String, Integer>> source = Sources.cache(srcName);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i))
@@ -328,7 +328,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Entry<Object, Object>> source = Sources.remoteCache(srcName, clientConfig);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i))
@@ -354,7 +354,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Entry<String, Object>> source = Sources.remoteCache(srcName, clientConfig);
 
         // Then
-        p.drawFrom(source).map(en -> en.getValue().toString()).drainTo(sink);
+        p.readFrom(source).map(en -> en.getValue().toString()).writeTo(sink);
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJar(jarResource);
         jet().newJob(p, jobConfig).join();
@@ -373,7 +373,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Integer> source = Sources.list(srcName);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(input, sinkList);
     }
@@ -388,7 +388,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Object> source = Sources.list(srcList);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(input, sinkList);
     }
@@ -403,7 +403,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<Object> source = Sources.remoteList(srcName, clientConfig);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         assertEquals(input, sinkList);
     }
@@ -435,7 +435,7 @@ public class SourcesTest extends PipelineTestSupport {
             StreamSource<String> source = Sources.socket("localhost", 8176, UTF_8);
 
             // Then
-            p.drawFrom(source).withoutTimestamps().drainTo(sink);
+            p.readFrom(source).withoutTimestamps().writeTo(sink);
             execute();
             assertEquals(6, sinkList.size());
         }
@@ -454,7 +454,7 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<String> source = Sources.files(directory.getPath());
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.readFrom(source).writeTo(sink);
         execute();
         int nodeCount = jet().getCluster().getMembers().size();
         assertEquals(4 * nodeCount, sinkList.size());
@@ -474,7 +474,7 @@ public class SourcesTest extends PipelineTestSupport {
         StreamSource<String> source = Sources.fileWatcher(directory.getPath());
 
         // Then
-        p.drawFrom(source).withoutTimestamps().drainTo(sink);
+        p.readFrom(source).withoutTimestamps().writeTo(sink);
         Job job = jet().newJob(p);
         // wait for the processor to initialize
         assertJobStatusEventually(job, JobStatus.RUNNING);
@@ -490,19 +490,19 @@ public class SourcesTest extends PipelineTestSupport {
     public void when_batchSourceUsedTwice_then_throwException() {
         // Given
         BatchSource<Entry<Object, Object>> source = Sources.map(srcName);
-        p.drawFrom(source);
+        p.readFrom(source);
 
         // When-Then
-        p.drawFrom(source);
+        p.readFrom(source);
     }
 
     @Test(expected = IllegalStateException.class)
     public void when_streamSourceUsedTwice_then_throwException() {
         // Given
         StreamSource<Entry<Object, Object>> source = Sources.mapJournal(srcName, START_FROM_CURRENT);
-        p.drawFrom(source);
+        p.readFrom(source);
 
         // When-Then
-        p.drawFrom(source);
+        p.readFrom(source);
     }
 }

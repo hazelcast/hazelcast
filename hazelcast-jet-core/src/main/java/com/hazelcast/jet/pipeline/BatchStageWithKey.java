@@ -346,18 +346,18 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * will also be able to supply a function to the builder that immediately
      * transforms the {@code ItemsByTag} to the desired output type.
      * <p>
-     * This example draws from three sources that produce {@code
+     * This example reads from three sources that produce {@code
      * Map.Entry<String, Long>}. It groups by entry key and then counts the
      * items in stage-0, sums those in stage-1 and takes the average of those
      * in stage-2:
      * <pre>{@code
      * Pipeline p = Pipeline.create();
      * StageWithGrouping<Entry<String, Long>, String> stage0 =
-     *         p.drawFrom(source0).groupingKey(Entry::getKey);
+     *         p.readFrom(source0).groupingKey(Entry::getKey);
      * StageWithGrouping<Entry<String, Long>, String> stage1 =
-     *         p.drawFrom(source1).groupingKey(Entry::getKey);
+     *         p.readFrom(source1).groupingKey(Entry::getKey);
      * StageWithGrouping<Entry<String, Long>, String> stage2 =
-     *         p.drawFrom(source2).groupingKey(Entry::getKey);
+     *         p.readFrom(source2).groupingKey(Entry::getKey);
      *
      * GroupAggregateBuilder<String, Long> b = stage0.aggregateBuilder(
      *         AggregateOperations.counting());
@@ -412,11 +412,11 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * Pipeline p = Pipeline.create();
      *
      * StageWithGrouping<Entry<String, Long>, String> stage0 =
-     *         p.drawFrom(source0).groupingKey(Entry::getKey);
+     *         p.readFrom(source0).groupingKey(Entry::getKey);
      * StageWithGrouping<Entry<String, Long>, String> stage1 =
-     *         p.drawFrom(source1).groupingKey(Entry::getKey);
+     *         p.readFrom(source1).groupingKey(Entry::getKey);
      * StageWithGrouping<Entry<String, Long>, String> stage2 =
-     *         p.drawFrom(source2).groupingKey(Entry::getKey);
+     *         p.readFrom(source2).groupingKey(Entry::getKey);
      *
      * GroupAggregateBuilder1<Entry<String, Long>, String> b = stage0.aggregateBuilder();
      * Tag<Entry<String, Long>> tag0 = b.tag0();

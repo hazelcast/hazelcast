@@ -52,13 +52,13 @@ public class RemoteMapSourceAndSink {
 
             // pipeline that copies the remote map to a local with the same name
             Pipeline p1 = Pipeline.create();
-            p1.drawFrom(Sources.remoteMap(MAP_1, clientConfig))
-              .drainTo(Sinks.map(MAP_1));
+            p1.readFrom(Sources.remoteMap(MAP_1, clientConfig))
+              .writeTo(Sinks.map(MAP_1));
 
             // pipeline that copies the local map to a remote with different name
             Pipeline p2 = Pipeline.create();
-            p2.drawFrom(Sources.map(MAP_1))
-              .drainTo(Sinks.remoteMap(MAP_2, clientConfig));
+            p2.readFrom(Sources.map(MAP_1))
+              .writeTo(Sinks.remoteMap(MAP_2, clientConfig));
 
             localJet.newJob(p1).join();
             System.out.println("Local map-1 contents: " + localJet.getMap(MAP_1).entrySet());

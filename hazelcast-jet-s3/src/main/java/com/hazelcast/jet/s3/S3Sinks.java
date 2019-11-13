@@ -79,8 +79,8 @@ public final class S3Sinks {
      *
      * <pre>{@code
      * Pipeline p = Pipeline.create();
-     * p.drawFrom(Sources.map("map"))
-     *  .drainTo(S3Sinks.s3("bucket", "my-map-", StandardCharsets.UTF_8,
+     * p.readFrom(Sources.map("map"))
+     *  .writeTo(S3Sinks.s3("bucket", "my-map-", StandardCharsets.UTF_8,
      *      () -> S3Client.create(),
      *      Object::toString
      * ));

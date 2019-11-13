@@ -488,9 +488,9 @@ public class JetCommandLineTest extends JetTestSupport {
 
     private Job newJob(String jobName) {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal(SOURCE_NAME, START_FROM_OLDEST))
+        p.readFrom(Sources.mapJournal(SOURCE_NAME, START_FROM_OLDEST))
          .withoutTimestamps()
-         .drainTo(Sinks.list(SINK_NAME));
+         .writeTo(Sinks.list(SINK_NAME));
         Job job = jet.newJob(p, new JobConfig().setName(jobName));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         return job;

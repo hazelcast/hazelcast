@@ -66,7 +66,7 @@ public class KafkaSource {
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(KafkaSources.kafka(props(
+        p.readFrom(KafkaSources.kafka(props(
                 "bootstrap.servers", BOOTSTRAP_SERVERS,
                 "key.deserializer", StringDeserializer.class.getCanonicalName(),
                 "value.deserializer", IntegerDeserializer.class.getCanonicalName(),
@@ -74,7 +74,7 @@ public class KafkaSource {
                 "auto.offset.reset", AUTO_OFFSET_RESET)
                 , "t1", "t2"))
          .withoutTimestamps()
-         .drainTo(Sinks.map(SINK_NAME));
+         .writeTo(Sinks.map(SINK_NAME));
         return p;
     }
 

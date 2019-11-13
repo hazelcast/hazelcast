@@ -32,12 +32,12 @@ public class HelloWorld {
         // Create the specification of the computation pipeline. Note
         // it's a pure POJO: no instance of Jet needed to create it.
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String>list("text"))
+        p.readFrom(Sources.<String>list("text"))
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
          .filter(word -> !word.isEmpty())
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .drainTo(Sinks.map("counts"));
+         .writeTo(Sinks.map("counts"));
 
         // Start Jet, populate the input list
         JetInstance jet = Jet.newJetInstance();

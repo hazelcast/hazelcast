@@ -173,7 +173,7 @@ public final class SourceBuilder<C> {
      *         .destroyFn(BufferedReader::close)
      *         .build();
      * Pipeline p = Pipeline.create();
-     * BatchStage<String> srcStage = p.drawFrom(fileSource);
+     * BatchStage<String> srcStage = p.readFrom(fileSource);
      * }</pre>
      *
      * @param name     a descriptive name for the source (for diagnostic purposes)
@@ -233,7 +233,7 @@ public final class SourceBuilder<C> {
      *     .destroyFn(Closeable::close)
      *     .build();
      * Pipeline p = Pipeline.create();
-     * StreamStage<String> srcStage = p.drawFrom(socketSource);
+     * StreamStage<String> srcStage = p.readFrom(socketSource);
      * }</pre>
      *
      * @param name     a descriptive name for the source (for diagnostic purposes)
@@ -305,7 +305,7 @@ public final class SourceBuilder<C> {
      *     .destroyFn(Closeable::close)
      *     .build();
      * Pipeline p = Pipeline.create();
-     * StreamStage<String> srcStage = p.drawFrom(socketSource)
+     * StreamStage<String> srcStage = p.readFrom(socketSource)
      *         .withNativeTimestamps(SECONDS.toMillis(5));
      * }</pre>
      * <p>

@@ -36,12 +36,12 @@ public class WhatIsDistributedComputing {
         //tag::s1[]
         Pattern delimiter = Pattern.compile("\\W+");
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<Long, String>map("book-lines"))
+        p.readFrom(Sources.<Long, String>map("book-lines"))
          .flatMap(e -> traverseArray(delimiter.split(e.getValue().toLowerCase())))
          .filter(word -> !word.isEmpty())
          .groupingKey(wholeItem())
          .aggregate(AggregateOperations.counting())
-         .drainTo(Sinks.map("counts"));
+         .writeTo(Sinks.map("counts"));
         //end::s1[]
     }
 

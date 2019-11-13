@@ -72,7 +72,7 @@ public class S3WordCount {
     private static Pipeline buildPipeline() {
         final Pattern regex = Pattern.compile("\\W+");
         Pipeline p = Pipeline.create();
-        p.drawFrom(S3Sources.s3(
+        p.readFrom(S3Sources.s3(
                 Collections.singletonList(INPUT_BUCKET),
                 PREFIX,
                 UTF_8,
@@ -81,7 +81,7 @@ public class S3WordCount {
         ).flatMap(line -> traverseArray(regex.split(line.toLowerCase())).filter(w -> !w.isEmpty()))
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .drainTo(S3Sinks.s3(OUTPUT_BUCKET, PREFIX, UTF_8, S3WordCount::createClient, Object::toString));
+         .writeTo(S3Sinks.s3(OUTPUT_BUCKET, PREFIX, UTF_8, S3WordCount::createClient, Object::toString));
         return p;
     }
 

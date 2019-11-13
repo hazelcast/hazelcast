@@ -48,9 +48,9 @@ public class AvroSink {
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
-        p.drawFrom(Sources.<String, User>map(MAP_NAME))
+        p.readFrom(Sources.<String, User>map(MAP_NAME))
          .map(Map.Entry::getValue)
-         .drainTo(AvroSinks.files(DIRECTORY_NAME, AvroSink::schemaForUser, User.class));
+         .writeTo(AvroSinks.files(DIRECTORY_NAME, AvroSink::schemaForUser, User.class));
 
         return p;
     }

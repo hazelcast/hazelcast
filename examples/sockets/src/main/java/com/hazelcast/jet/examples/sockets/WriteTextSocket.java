@@ -56,8 +56,8 @@ public class WriteTextSocket {
             IntStream.range(0, SOURCE_ITEM_COUNT).parallel().forEach(i -> map.put(i, i));
 
             Pipeline p = Pipeline.create();
-            p.drawFrom(Sources.map(SOURCE_NAME))
-             .drainTo(Sinks.socket(HOST, PORT, e -> e.getValue().toString(), UTF_8));
+            p.readFrom(Sources.map(SOURCE_NAME))
+             .writeTo(Sinks.socket(HOST, PORT, e -> e.getValue().toString(), UTF_8));
 
             System.out.println("Executing job...");
             jet.newJob(p).join();

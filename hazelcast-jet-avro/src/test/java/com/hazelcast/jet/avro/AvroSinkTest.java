@@ -73,8 +73,8 @@ public class AvroSinkTest extends JetTestSupport {
     @Test
     public void testReflectWriter() throws IOException {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<User>list(list.getName()))
-         .drainTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$, User.class));
+        p.readFrom(Sources.<User>list(list.getName()))
+         .writeTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$, User.class));
 
         jet.newJob(p).join();
 
@@ -84,8 +84,8 @@ public class AvroSinkTest extends JetTestSupport {
     @Test
     public void testSpecificWriter() throws IOException {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<SpecificUser>list(list.getName()))
-         .drainTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$, SpecificUser.class));
+        p.readFrom(Sources.<SpecificUser>list(list.getName()))
+         .writeTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$, SpecificUser.class));
 
         jet.newJob(p).join();
 
@@ -95,8 +95,8 @@ public class AvroSinkTest extends JetTestSupport {
     @Test
     public void testGenericWriter() throws IOException {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<SpecificUser>list(list.getName()))
-         .drainTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$));
+        p.readFrom(Sources.<SpecificUser>list(list.getName()))
+         .writeTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$));
 
         jet.newJob(p).join();
 

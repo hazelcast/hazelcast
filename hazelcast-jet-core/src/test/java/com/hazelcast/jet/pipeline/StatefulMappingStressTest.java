@@ -84,13 +84,13 @@ public class StatefulMappingStressTest extends JetTestSupport {
     ) {
         int emitItemsCount = 2_000_000;
         Pipeline p = Pipeline.create();
-        StreamStageWithKey<Integer, Integer> streamStageWithKey = p.drawFrom(TestSources.itemStream(100_000))
+        StreamStageWithKey<Integer, Integer> streamStageWithKey = p.readFrom(TestSources.itemStream(100_000))
                 .withIngestionTimestamps()
                 .filter(f -> f.sequence() < emitItemsCount)
                 .map(t -> RANDOM.nextInt(100_000))
                 .groupingKey(k -> k % 100_000);
         StreamStage<Map.Entry<Integer, Integer>> statefulStage = statefulFn.apply(streamStageWithKey);
-        statefulStage.drainTo(Sinks.mapWithMerging(MAP_SINK_NAME, (oldValue, newValue) -> oldValue + newValue));
+        statefulStage.writeTo(Sinks.mapWithMerging(MAP_SINK_NAME, (oldValue, newValue) -> oldValue + newValue));
 
         instance.newJob(p);
 

@@ -51,12 +51,12 @@ public class HdfsAndKafka {
         JobConf jobConfig = new JobConf();
         //tag::s2[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(HdfsSources.hdfs(jobConfig, (k, v) -> v.toString()))
+        p.readFrom(HdfsSources.hdfs(jobConfig, (k, v) -> v.toString()))
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+"))
                                .filter(w -> !w.isEmpty()))
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .drainTo(HdfsSinks.hdfs(jobConfig));
+         .writeTo(HdfsSinks.hdfs(jobConfig));
         //end::s2[]
     }
 
@@ -71,9 +71,9 @@ public class HdfsAndKafka {
         props.setProperty("auto.offset.reset", "earliest");
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(KafkaSources.kafka(props, "t1", "t2"))
+        p.readFrom(KafkaSources.kafka(props, "t1", "t2"))
          .withoutTimestamps()
-         .drainTo(KafkaSinks.kafka(props, "t3"));
+         .writeTo(KafkaSinks.kafka(props, "t3"));
         //end::s3[]
     }
 

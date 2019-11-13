@@ -52,9 +52,9 @@ public class ImplementAggregation {
     static void s2() {
         //tag::s2[]
         Pipeline p = Pipeline.create();
-        BatchStage<PageVisit> pageVisit = p.drawFrom(Sources.list("pageVisit"));
-        BatchStage<AddToCart> addToCart = p.drawFrom(Sources.list("addToCart"));
-        BatchStage<Payment> payment = p.drawFrom(Sources.list("payment"));
+        BatchStage<PageVisit> pageVisit = p.readFrom(Sources.list("pageVisit"));
+        BatchStage<AddToCart> addToCart = p.readFrom(Sources.list("addToCart"));
+        BatchStage<Payment> payment = p.readFrom(Sources.list("payment"));
 
         AggregateOperation3<PageVisit, AddToCart, Payment, LongAccumulator[], long[]>
             aggrOp = AggregateOperation

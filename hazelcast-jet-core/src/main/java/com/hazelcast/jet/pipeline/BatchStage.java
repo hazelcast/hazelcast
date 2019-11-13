@@ -385,9 +385,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * This example counts the items in stage-0, sums those in stage-1 and takes
      * the average of those in stage-2:
      * <pre>{@code
-     * BatchStage<Long> stage0 = p.drawFrom(source0);
-     * BatchStage<Long> stage1 = p.drawFrom(source1);
-     * BatchStage<Long> stage2 = p.drawFrom(source2);
+     * BatchStage<Long> stage0 = p.readFrom(source0);
+     * BatchStage<Long> stage1 = p.readFrom(source1);
+     * BatchStage<Long> stage2 = p.readFrom(source2);
      *
      * AggregateBuilder<Long> b = stage0.aggregateBuilder(
      *         AggregateOperations.counting());
@@ -437,9 +437,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * strings across all of them:
      * <pre>{@code
      * Pipeline p = Pipeline.create();
-     * BatchStage<String> stage0 = p.drawFrom(source0);
-     * BatchStage<String> stage1 = p.drawFrom(source1);
-     * BatchStage<String> stage2 = p.drawFrom(source2);
+     * BatchStage<String> stage0 = p.readFrom(source0);
+     * BatchStage<String> stage1 = p.readFrom(source1);
+     * BatchStage<String> stage2 = p.readFrom(source2);
      * AggregateBuilder1<String> b = stage0.aggregateBuilder();
      * Tag<String> tag0 = b.tag0();
      * Tag<String> tag1 = b.add(stage1);
@@ -497,7 +497,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * For example, say you have this code:
      *
      * <pre>{@code
-     * BatchStage<String> input = pipeline.drawFrom(textSource);
+     * BatchStage<String> input = pipeline.readFrom(textSource);
      * BatchStage<String> cleanedUp = input
      *         .map(String::toLowerCase)
      *         .filter(s -> s.startsWith("success"));
@@ -518,7 +518,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *
      * <pre>{@code
      * BatchStage<String> tokens = pipeline
-     *     .drawFrom(textSource)
+     *     .readFrom(textSource)
      *     .apply(this::cleanUp)
      *     .flatMap(line -> traverseArray(line.split("\\W+")));
      * }</pre>

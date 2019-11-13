@@ -110,7 +110,7 @@ public class FaultTolerance {
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<PriceUpdateEvent, String, Tuple2<Integer, Long>>mapJournal(
+        p.readFrom(Sources.<PriceUpdateEvent, String, Tuple2<Integer, Long>>mapJournal(
                 "prices",
                 START_FROM_CURRENT,
                 e -> new PriceUpdateEvent(e.getKey(), e.getNewValue().f0(), e.getNewValue().f1()), mapPutEvents()
@@ -120,7 +120,7 @@ public class FaultTolerance {
          .groupingKey(PriceUpdateEvent::ticker)
          .window(WindowDefinition.sliding(WINDOW_SIZE_SECONDS * 1000, 1000))
          .aggregate(AggregateOperations.counting())
-         .drainTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         return p;
     }
 

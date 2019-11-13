@@ -29,7 +29,7 @@ public class JDBC {
         String DB_CONNECTION_URL = "";
         //tag::s1[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.jdbc(
+        p.readFrom(Sources.jdbc(
             () -> DriverManager.getConnection(DB_CONNECTION_URL),
             (con, parallelism, index) -> {
                 PreparedStatement stmt = con.prepareStatement("SELECT * FROM PERSON WHERE MOD(id, ?) = ?)");
@@ -39,7 +39,7 @@ public class JDBC {
             },
             resultSet ->
                 new Person(resultSet.getInt(1), resultSet.getString(2))
-        )).drainTo(Sinks.logger());
+        )).writeTo(Sinks.logger());
         //end::s1[]
     }
 
@@ -47,12 +47,12 @@ public class JDBC {
         String DB_CONNECTION_URL = "";
         //tag::s2[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.jdbc(
+        p.readFrom(Sources.jdbc(
             DB_CONNECTION_URL,
             "select * from PERSON",
             resultSet ->
                     new Person(resultSet.getInt(1), resultSet.getString(2))
-        )).drainTo(Sinks.logger());
+        )).writeTo(Sinks.logger());
         //end::s2[]
     }
 
@@ -60,8 +60,8 @@ public class JDBC {
         String DB_CONNECTION_URL = "";
         //tag::s3[]
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<Person>list("inputList"))
-         .drainTo(Sinks.jdbc(
+        p.readFrom(Sources.<Person>list("inputList"))
+         .writeTo(Sinks.jdbc(
                  "REPLACE INTO PERSON (id, name) values(?, ?)",
                  DB_CONNECTION_URL,
                  (stmt, item) -> {

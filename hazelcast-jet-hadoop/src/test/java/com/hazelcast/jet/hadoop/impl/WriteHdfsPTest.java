@@ -101,8 +101,8 @@ public class WriteHdfsPTest extends HdfsTestSupport {
 
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.map(mapName))
-         .drainTo(HdfsSinks.hdfs(conf))
+        p.readFrom(Sources.map(mapName))
+         .writeTo(HdfsSinks.hdfs(conf))
          // we use higher value to increase the race chance for LazyOutputFormat
          .setLocalParallelism(8);
 
@@ -115,8 +115,8 @@ public class WriteHdfsPTest extends HdfsTestSupport {
         FileInputFormat.addInputPath(readJobConf, path);
 
         p = Pipeline.create();
-        p.drawFrom(HdfsSources.hdfs(readJobConf))
-         .drainTo(Sinks.list("results"));
+        p.readFrom(HdfsSources.hdfs(readJobConf))
+         .writeTo(Sinks.list("results"));
 
         future = instance.newJob(p).getFuture();
         assertCompletesEventually(future);

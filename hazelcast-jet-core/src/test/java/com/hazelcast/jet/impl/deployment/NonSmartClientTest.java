@@ -72,8 +72,8 @@ public class NonSmartClientTest extends JetTestSupport {
 
         //When
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.list(sourceName))
-         .drainTo(Sinks.list(sinkName));
+        p.readFrom(Sources.list(sourceName))
+         .writeTo(Sinks.list(sinkName));
         client.newJob(p).join();
 
         //Then
@@ -168,9 +168,9 @@ public class NonSmartClientTest extends JetTestSupport {
 
     private Pipeline streamingPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.mapJournal("journal" + randomMapName(), JournalInitialPosition.START_FROM_OLDEST))
+        p.readFrom(Sources.mapJournal("journal" + randomMapName(), JournalInitialPosition.START_FROM_OLDEST))
          .withoutTimestamps()
-         .drainTo(Sinks.map(randomMapName()));
+         .writeTo(Sinks.map(randomMapName()));
         return p;
     }
 }

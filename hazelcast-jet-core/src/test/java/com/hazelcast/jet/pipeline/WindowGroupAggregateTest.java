@@ -138,7 +138,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StreamStage<KeyedWindowResult<Integer, Integer>> distinct = windowed.distinct();
 
         // Then
-        distinct.drainTo(sink);
+        distinct.writeTo(sink);
         execute();
         assertEquals(
                 IntStream.range(0, itemCount)
@@ -164,7 +164,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         windowed.aggregate(SUMMING)
-                .drainTo(sink);
+                .writeTo(sink);
         execute();
         assertEquals(
                 new SlidingWindowSimulator(wDef)
@@ -186,7 +186,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         windowed.aggregate(SUMMING)
-                .drainTo(sink);
+                .writeTo(sink);
         jet().newJob(p);
         String expectedString = new SlidingWindowSimulator(wDef)
                 .acceptStream(fx.input.stream())
@@ -210,7 +210,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         windowed.aggregate(SUMMING)
-                .drainTo(sink);
+                .writeTo(sink);
         execute();
         assertEquals(
                 new SlidingWindowSimulator(wDef)
@@ -233,7 +233,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         windowed.aggregate(SUMMING)
-                .drainTo(sink);
+                .writeTo(sink);
         jet().newJob(p);
         String expectedString = new SlidingWindowSimulator(wDef)
                 .acceptStream(fx.input.stream())
@@ -264,7 +264,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                     listOfList.sort(comparing(l -> l.get(0)));
                     return formatTsItem(wr.end(), listOfList.get(0), listOfList.get(1));
                 })
-                .drainTo(sink);
+                .writeTo(sink);
 
         // Then
         execute();
@@ -299,7 +299,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         windowed.aggregate(SUMMING)
-                .drainTo(sink);
+                .writeTo(sink);
         execute();
 
         assertEquals(
@@ -329,7 +329,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         windowed.aggregate(SUMMING)
                 // suppress incomplete windows to get predictable results
                 .filter(wr -> wr.end() - wr.start() == sessionLength + sessionTimeout - 1)
-                .drainTo(sink);
+                .writeTo(sink);
         jet().newJob(p);
         String expectedString = new SessionWindowSimulator(wDef, sessionLength + sessionTimeout)
                 .acceptStream(fx.input.stream())
@@ -353,7 +353,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 stage0.aggregate2(SUMMING, fx.newSourceStage(), SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(sinkStreamOfKeyedWinResult(), TS_ENTRY_FORMAT_FN_2));
@@ -370,7 +370,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 stage0.aggregate2(fx.newSourceStage(), aggregateOperation2(SUMMING, SUMMING));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(sinkStreamOfKeyedWinResult(), TS_ENTRY_FORMAT_FN_2));
@@ -387,7 +387,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 stage0.aggregate3(SUMMING, fx.newSourceStage(), SUMMING, fx.newSourceStage(), SUMMING);
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString3,
                 streamToString(sinkStreamOfKeyedWinResult(), TS_ENTRY_FORMAT_FN_3)
@@ -406,7 +406,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                         aggregateOperation3(SUMMING, SUMMING, SUMMING));
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString3,
                 streamToString(sinkStreamOfKeyedWinResult(), TS_ENTRY_FORMAT_FN_3));
@@ -426,7 +426,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StreamStage<KeyedWindowResult<String, ItemsByTag>> aggregated = b.build();
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(this.<ItemsByTag>sinkStreamOfKeyedWinResult(), wr -> String.format(
@@ -455,7 +455,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StreamStage<KeyedWindowResult<String, ItemsByTag>> aggregated = b.build(b2.build());
 
         // Then
-        aggregated.drainTo(sink);
+        aggregated.writeTo(sink);
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(this.<ItemsByTag>sinkStreamOfKeyedWinResult(), wr -> String.format(

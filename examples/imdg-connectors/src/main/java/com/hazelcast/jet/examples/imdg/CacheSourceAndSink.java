@@ -54,8 +54,8 @@ public class CacheSourceAndSink {
             }
 
             Pipeline p = Pipeline.create();
-            p.drawFrom(Sources.cache(SOURCE_NAME))
-             .drainTo(Sinks.cache(SINK_NAME));
+            p.readFrom(Sources.cache(SOURCE_NAME))
+             .writeTo(Sinks.cache(SINK_NAME));
 
             jet.newJob(p).join();
 

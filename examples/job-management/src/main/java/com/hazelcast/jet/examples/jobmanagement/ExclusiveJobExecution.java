@@ -44,9 +44,9 @@ public class ExclusiveJobExecution {
         JetInstance instance2 = Jet.newJetInstance();
 
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<Integer, Integer>mapJournal("source", START_FROM_OLDEST))
+        p.readFrom(Sources.<Integer, Integer>mapJournal("source", START_FROM_OLDEST))
                 .withoutTimestamps()
-                .drainTo(list("sink"));
+                .writeTo(list("sink"));
 
         JobConfig jobConfig = new JobConfig().setName("namedJob");
 

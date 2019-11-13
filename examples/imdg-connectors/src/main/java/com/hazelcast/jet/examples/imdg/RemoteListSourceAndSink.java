@@ -56,13 +56,13 @@ public class RemoteListSourceAndSink {
 
             // pipeline that copies the remote list to a local with the same name
             Pipeline p1 = Pipeline.create();
-            p1.drawFrom(Sources.remoteList(LIST_1, clientConfig))
-              .drainTo(Sinks.list(LIST_1));
+            p1.readFrom(Sources.remoteList(LIST_1, clientConfig))
+              .writeTo(Sinks.list(LIST_1));
 
             // pipeline that copies the local list to a remote with a different name
             Pipeline p2 = Pipeline.create();
-            p2.drawFrom(Sources.list(LIST_1))
-              .drainTo(Sinks.remoteList(LIST_2, clientConfig));
+            p2.readFrom(Sources.list(LIST_1))
+              .writeTo(Sinks.remoteList(LIST_2, clientConfig));
 
             localJet.newJob(p1).join();
             System.out.println("Local list-1 contents: " + new ArrayList<>(localJet.getList(LIST_1)));

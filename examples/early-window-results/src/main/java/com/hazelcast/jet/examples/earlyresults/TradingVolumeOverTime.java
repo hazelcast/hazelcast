@@ -57,14 +57,14 @@ public final class TradingVolumeOverTime {
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(TradeGenerator.tradeSource(TRADES_PER_SEC, DURATION_SECONDS))
+        p.readFrom(TradeGenerator.tradeSource(TRADES_PER_SEC, DURATION_SECONDS))
          .withNativeTimestamps(TradeGenerator.MAX_LAG)
          .window(tumbling(SECONDS.toMillis(2))
                  // comment out this line to see how the chart behaves without early results:
                  .setEarlyResultsPeriod(20)
          )
          .aggregate(summingLong(trade -> trade.getQuantity() * trade.getPrice()))
-         .drainTo(Sinks.list(VOLUME_LIST_NAME));
+         .writeTo(Sinks.list(VOLUME_LIST_NAME));
         return p;
     }
 

@@ -50,9 +50,9 @@ public class ListSourceAndSink {
             }
 
             Pipeline p = Pipeline.create();
-            p.drawFrom(Sources.<Integer>list(INPUT_LIST))
+            p.readFrom(Sources.<Integer>list(INPUT_LIST))
              .map(i -> "item" + i)
-             .drainTo(Sinks.list(RESULT_LIST));
+             .writeTo(Sinks.list(RESULT_LIST));
 
             jet.newJob(p).join();
 

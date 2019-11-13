@@ -72,8 +72,8 @@ public class KafkaSink {
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.map(SOURCE_NAME))
-         .drainTo(KafkaSinks.kafka(props(
+        p.readFrom(Sources.map(SOURCE_NAME))
+         .writeTo(KafkaSinks.kafka(props(
                  "bootstrap.servers", BOOTSTRAP_SERVERS,
                  "key.serializer", StringSerializer.class.getCanonicalName(),
                  "value.serializer", IntegerSerializer.class.getCanonicalName()),

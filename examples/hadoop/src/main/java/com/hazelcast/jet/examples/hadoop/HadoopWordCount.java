@@ -73,11 +73,11 @@ public class HadoopWordCount {
 
         final Pattern regex = Pattern.compile("\\W+");
         Pipeline p = Pipeline.create();
-        p.drawFrom(HdfsSources.hdfs(jobConfig, (k, v) -> v.toString()))
+        p.readFrom(HdfsSources.hdfs(jobConfig, (k, v) -> v.toString()))
          .flatMap(line -> traverseArray(regex.split(line.toLowerCase())).filter(w -> !w.isEmpty()))
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .drainTo(HdfsSinks.hdfs(jobConfig));
+         .writeTo(HdfsSinks.hdfs(jobConfig));
         return p;
     }
 

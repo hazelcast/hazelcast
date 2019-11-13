@@ -82,7 +82,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
     @Test
     public void when_minimalPipeline_then_validDag() {
-        batchStageFromList(emptyList()).drainTo(sink);
+        batchStageFromList(emptyList()).writeTo(sink);
         assertTrue(p.toDag().iterator().hasNext());
     }
 
@@ -122,7 +122,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<String> mapped = batchStageFromList(input).map(formatFn);
 
         // Then
-        mapped.drainTo(sink);
+        mapped.writeTo(sink);
         execute();
         assertEquals(streamToString(input.stream(), formatFn),
                 streamToString(sinkStreamOf(String.class), identity()));
@@ -143,7 +143,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 .apply(transformFn);
 
         // Then
-        mapped.drainTo(sink);
+        mapped.writeTo(sink);
         execute();
         assertEquals(streamToString(input.stream(), formatFn.andThen(String::toUpperCase)),
                 streamToString(sinkStreamOf(String.class), identity()));
@@ -159,7 +159,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Integer> filtered = batchStageFromList(input).filter(filterFn);
 
         // Then
-        filtered.drainTo(sink);
+        filtered.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d-string", i);
         assertEquals(streamToString(input.stream().filter(filterFn), formatFn),
@@ -176,7 +176,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 .flatMap(i -> traverseItems(entry(i, "A"), entry(i, "B")));
 
         // Then
-        flatMapped.drainTo(sink);
+        flatMapped.writeTo(sink);
         execute();
         Function<Entry<Integer, String>, String> formatFn = e -> String.format("%04d-%s", e.getKey(), e.getValue());
         assertEquals(
@@ -198,7 +198,7 @@ public class BatchStageTest extends PipelineTestSupport {
         );
 
         // Then
-        mapped.drainTo(sink);
+        mapped.writeTo(sink);
         execute();
         assertEquals(
                 streamToString(input.stream(), i -> formatFn.apply(suffix, i)),
@@ -221,7 +221,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 );
 
         // Then
-        mapped.drainTo(sink);
+        mapped.writeTo(sink);
         execute();
         assertEquals(
                 streamToString(input.stream(), i -> formatFn.apply(i, suffix)),
@@ -239,7 +239,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 (ctx, i) -> i % 2 == ctx);
 
         // Then
-        mapped.drainTo(sink);
+        mapped.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d-string", i);
         assertEquals(
@@ -260,7 +260,7 @@ public class BatchStageTest extends PipelineTestSupport {
                         (ctx, k, r) -> r % 2 == ctx);
 
         // Then
-        mapped.drainTo(sink);
+        mapped.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d-string", i);
         assertEquals(
@@ -279,7 +279,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 (ctx, i) -> traverseItems(entry(i, ctx.get(0)), entry(i, ctx.get(1))));
 
         // Then
-        flatMapped.drainTo(sink);
+        flatMapped.writeTo(sink);
         execute();
         Function<Entry<Integer, String>, String> formatFn = e -> String.format("%04d-%s", e.getKey(), e.getValue());
         assertEquals(
@@ -300,7 +300,7 @@ public class BatchStageTest extends PipelineTestSupport {
                         (ctx, k, i) -> traverseItems(entry(i, ctx.get(0)), entry(i, ctx.get(1))));
 
         // Then
-        flatMapped.drainTo(sink);
+        flatMapped.writeTo(sink);
         execute();
         Function<Entry<Integer, String>, String> formatFn = e -> String.format("%04d-%s", e.getKey(), e.getValue());
         assertEquals(
@@ -327,7 +327,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 .mapUsingReplicatedMap(replicatedMap, FunctionEx.identity(), Util::entry);
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Entry<Integer, String>, String> formatFn =
                 e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
@@ -351,7 +351,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 .mapUsingIMap(map, FunctionEx.identity(), Util::entry);
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Entry<Integer, String>, String> formatFn =
                 e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
@@ -376,7 +376,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 .mapUsingIMap(map, Util::entry);
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Entry<Integer, String>, String> formatFn =
                 e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
@@ -398,7 +398,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 });
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Long, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -420,7 +420,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 });
 
         // Then
-        stage.drainTo(assertOrdered(Collections.singletonList((long) itemCount)));
+        stage.writeTo(assertOrdered(Collections.singletonList((long) itemCount)));
         execute();
     }
 
@@ -438,7 +438,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 });
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Entry<Integer, Long>, String> formatFn = e -> String.format("%d %04d", e.getKey(), e.getValue());
         assertEquals(
@@ -469,7 +469,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // Then
         long expectedCount = itemCount / 2;
-        stage.drainTo(assertAnyOrder(Arrays.asList(entry(0, expectedCount), entry(1, expectedCount))));
+        stage.writeTo(assertAnyOrder(Arrays.asList(entry(0, expectedCount), entry(1, expectedCount))));
         execute();
     }
 
@@ -488,7 +488,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // Then
         long expectedCount = itemCount / 2;
-        stage.drainTo(assertAnyOrder(Arrays.asList(entry(0, expectedCount), entry(1, expectedCount))));
+        stage.writeTo(assertAnyOrder(Arrays.asList(entry(0, expectedCount), entry(1, expectedCount))));
         execute();
     }
 
@@ -505,7 +505,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 });
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -534,7 +534,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 });
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%d %04d", i % 2, i);
         assertEquals(
@@ -566,7 +566,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 });
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Long, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -593,7 +593,7 @@ public class BatchStageTest extends PipelineTestSupport {
                     return (acc.get() == input.size()) ? acc.get() : null;
                 });
         // Then
-        stage.drainTo(assertOrdered(Collections.singletonList((long) itemCount)));
+        stage.writeTo(assertOrdered(Collections.singletonList((long) itemCount)));
         execute();
     }
 
@@ -611,7 +611,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 });
 
         // Then
-        stage.drainTo(sink);
+        stage.writeTo(sink);
         execute();
         Function<Entry<Integer, Long>, String> formatFn = e -> String.format("%d %04d", e.getKey(), e.getValue());
         assertEquals(
@@ -634,7 +634,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Long> mapped = batchStageFromList(input).rollingAggregate(counting());
 
         // Then
-        mapped.drainTo(sink);
+        mapped.writeTo(sink);
         execute();
         Function<Long, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -654,7 +654,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 .rollingAggregate(counting());
 
         // Then
-        mapped.drainTo(sink);
+        mapped.writeTo(sink);
         execute();
         assertEquals(0, itemCount % 2);
         Stream<Entry<Integer, Long>> expectedStream =
@@ -679,7 +679,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Integer> merged = stage0.merge(stage1);
 
         // Then
-        merged.drainTo(sink);
+        merged.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -699,7 +699,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Integer> distinct = batchStageFromList(input).distinct();
 
         // Then
-        distinct.drainTo(sink);
+        distinct.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -720,7 +720,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 .distinct();
 
         // Then
-        distinct.drainTo(sink);
+        distinct.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -743,7 +743,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 (i, enriching) -> entry(i, enriching));
 
         // Then
-        joined.drainTo(sink);
+        joined.writeTo(sink);
         execute();
         Function<Entry<Integer, String>, String> formatFn =
                 e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
@@ -766,7 +766,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 (i, enriching) -> null);
 
         // Then
-        joined.drainTo(sink);
+        joined.writeTo(sink);
         execute();
         assertEquals(emptyList(), new ArrayList<>(sinkList));
     }
@@ -791,7 +791,7 @@ public class BatchStageTest extends PipelineTestSupport {
         );
 
         // Then
-        joined.drainTo(sink);
+        joined.writeTo(sink);
         execute();
         Function<Tuple3<Integer, String, String>, String> formatFn =
                 t3 -> String.format("(%04d, %s, %s)", t3.f0(), t3.f1(), t3.f2());
@@ -823,7 +823,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 b.build((t1, t2) -> tuple2(t1, t2));
 
         // Then
-        joined.drainTo(sink);
+        joined.writeTo(sink);
         execute();
         TriFunction<Integer, String, String, String> formatFn =
                 (i, v1, v2) -> String.format("(%04d, %s, %s)", i, v1, v2);
@@ -849,7 +849,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Integer> peeked = batchStageFromList(input).peek();
 
         // Then
-        peeked.drainTo(sink);
+        peeked.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -866,7 +866,7 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Integer> peeked = batchStageFromList(input).peek(Object::toString);
 
         // Then
-        peeked.drainTo(sink);
+        peeked.writeTo(sink);
         execute();
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
@@ -885,7 +885,7 @@ public class BatchStageTest extends PipelineTestSupport {
                 .customTransform("map", Processors.mapP(formatFn));
 
         // Then
-        custom.drainTo(sink);
+        custom.writeTo(sink);
         execute();
         assertEquals(
                 streamToString(input.stream(), formatFn),
@@ -909,7 +909,7 @@ public class BatchStageTest extends PipelineTestSupport {
                         }));
 
         // Then
-        custom.drainTo(sink);
+        custom.writeTo(sink);
         execute();
         // Each processor emitted distinct keys it observed. If groupingKey isn't correctly partitioning,
         // multiple processors will observe the same keys and the counts won't match.
@@ -923,9 +923,9 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchSource<Integer> source = TestSources.items(items);
 
         // When
-        p.drawFrom(source)
+        p.readFrom(source)
          .addTimestamps(o -> 0L, 0)
-         .drainTo(assertOrdered(items));
+         .writeTo(assertOrdered(items));
 
         // Then
         execute();
@@ -937,10 +937,10 @@ public class BatchStageTest extends PipelineTestSupport {
         int lp = 11;
 
         // When
-        p.drawFrom(Sources.batchFromProcessor("src",
+        p.readFrom(Sources.batchFromProcessor("src",
                 ProcessorMetaSupplier.of(lp, ProcessorSupplier.of(noopP()))))
          .addTimestamps(o -> 0L, 0)
-         .drainTo(Sinks.noop());
+         .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -954,10 +954,10 @@ public class BatchStageTest extends PipelineTestSupport {
         int lp = 11;
 
         // When
-        p.drawFrom(source)
+        p.readFrom(source)
          .setLocalParallelism(lp)
          .addTimestamps(t -> System.currentTimeMillis(), 1000)
-         .drainTo(Sinks.noop());
+         .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -973,9 +973,9 @@ public class BatchStageTest extends PipelineTestSupport {
                 ProcessorMetaSupplier.of(noopP()));
 
         // When
-        p.drawFrom(src)
+        p.readFrom(src)
          .addTimestamps(o -> 0L, 0)
-         .drainTo(Sinks.noop());
+         .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -992,10 +992,10 @@ public class BatchStageTest extends PipelineTestSupport {
         int lp = 11;
 
         // When
-        p.drawFrom(source)
+        p.readFrom(source)
          .addTimestamps(o -> 0L, 0)
          .setLocalParallelism(lp)
-         .drainTo(Sinks.noop());
+         .writeTo(Sinks.noop());
     }
 
 }
