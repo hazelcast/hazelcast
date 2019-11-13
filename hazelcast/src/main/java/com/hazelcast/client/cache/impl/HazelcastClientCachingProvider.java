@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
 import com.hazelcast.client.HazelcastClient;
@@ -116,7 +117,7 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     private ClientConfig getDefaultClientConfig() {
         ClientConfig clientConfig = new XmlClientConfigBuilder().build();
         if (namedDefaultHzInstance && isNullOrEmpty(clientConfig.getInstanceName())) {
-            clientConfig.setInstanceName(SHARED_JCACHE_INSTANCE_NAME);
+            clientConfig.setInstanceName(HazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME);
         }
         return clientConfig;
     }
