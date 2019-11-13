@@ -332,7 +332,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment == null) {
-            return newCompletedFuture(null);
+            return newCompletedFuture(false);
         }
         Registration reg = segment.removeRegistration(topic, (UUID) id);
 

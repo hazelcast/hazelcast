@@ -21,7 +21,6 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
@@ -250,7 +249,7 @@ public class ObjectMultiMapProxy<K, V>
     public boolean removeEntryListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Registration ID should not be null!");
         Future<Boolean> eventRegistrationFuture = getService().removeListener(name, registrationId);
-        return FutureUtil.getValue(eventRegistrationFuture);
+        return getValue(eventRegistrationFuture);
     }
 
     @Nonnull

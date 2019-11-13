@@ -67,10 +67,7 @@ public class CacheAddEntryListenerMessageTask
     @Override
     protected void addDestroyAction(UUID registrationId) {
         final CacheService service = getService(CacheService.SERVICE_NAME);
-        endpoint.addDestroyAction(registrationId, () -> {
-            Boolean result = getValue(service.deregisterListener(parameters.name, registrationId));
-            return result != null && result;
-        });
+        endpoint.addDestroyAction(registrationId, () -> getValue(service.deregisterListener(parameters.name, registrationId)));
     }
 
     private static final class CacheEntryListener
