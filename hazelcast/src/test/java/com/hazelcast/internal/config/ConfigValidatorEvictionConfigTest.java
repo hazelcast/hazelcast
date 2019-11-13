@@ -45,7 +45,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkCacheEvictionConfig(getEvictionConfig(false, false));
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void checkEvictionConfig_forCache_when_wrong_max_size_policy() {
         EvictionConfig evictionConfig = getEvictionConfig(false, false);
         evictionConfig.setMaxSizePolicy(MaxSizePolicy.PER_PARTITION);
@@ -235,7 +235,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), InMemoryFormat.BINARY);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void checkEvictionConfig_withEntryCountMaxSizePolicy_NATIVE() {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
