@@ -22,7 +22,6 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.function.BiConsumer;
 
 /**
  *
@@ -31,9 +30,7 @@ import java.util.function.BiConsumer;
  * @param <P> The client message parameter class
  * @param <T> The task return type
  */
-public abstract class AbstractAsyncMessageTask<P, T>
-        extends AbstractMessageTask<P>
-        implements BiConsumer<Object, Throwable> {
+public abstract class AbstractAsyncMessageTask<P, T> extends AbstractMessageTask<P> {
 
     protected AbstractAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -70,11 +67,10 @@ public abstract class AbstractAsyncMessageTask<P, T>
     protected void processMessage() {
         beforeProcess();
         CompletableFuture<T> internalFuture = processInternal();
-        internalFuture.thenApply(this::beforeResponse).whenComplete(this.andThen(this::afterResponse));
+        internalFuture.thenApply(this::beforeResponse).whenComplete(this::handleResponse).whenComplete(this::afterResponse);
     }
 
-    @Override
-    public void accept(Object response, Throwable throwable) {
+    private void handleResponse(Object response, Throwable throwable) {
         if (throwable == null) {
             sendResponse(response);
         } else {

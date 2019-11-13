@@ -38,15 +38,6 @@ public class RemoveAllListenersMessageTask
     }
 
     @Override
-    public void accept(Object o, Throwable throwable) {
-        if (throwable == null) {
-            sendResponse(null);
-        } else {
-            handleProcessingFailure(throwable);
-        }
-    }
-
-    @Override
     protected ClientRemoveAllListenersCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return ClientRemoveAllListenersCodec.decodeRequest(clientMessage);
     }
