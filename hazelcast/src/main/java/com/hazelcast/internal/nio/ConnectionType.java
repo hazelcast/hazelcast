@@ -24,6 +24,7 @@ public enum ConnectionType {
     NONE(false, false),
     MEMBER(true, true),
     JAVA_CLIENT(false, true),
+    MC_JAVA_CLIENT(false, true),
     CSHARP_CLIENT(false, true),
     CPP_CLIENT(false, true),
     PYTHON_CLIENT(false, true),

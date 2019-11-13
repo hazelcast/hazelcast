@@ -32,6 +32,11 @@ public final class ClientTypes {
     public static final String JAVA = "JVM";
 
     /**
+     * Management Center Java client protocol ID
+     */
+    public static final String MC_JAVA = "MCJ";
+
+    /**
      * CSHARP client protocol ID
      */
     public static final String CSHARP = "CSP";

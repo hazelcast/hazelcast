@@ -26,6 +26,11 @@ public enum ClientType {
     JAVA,
 
     /**
+     * Hazelcast Management Center Java client.
+     */
+    MC_JAVA,
+
+    /**
      * Hazelcast .NET client.
      */
     CSHARP,

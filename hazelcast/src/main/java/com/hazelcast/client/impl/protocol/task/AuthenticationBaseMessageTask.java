@@ -209,6 +209,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
             connection.setType(ConnectionType.NODEJS_CLIENT);
         } else if (ClientTypes.GO.equals(type)) {
             connection.setType(ConnectionType.GO_CLIENT);
+        } else if (ClientTypes.MC_JAVA.equals(type)) {
+            connection.setType(ConnectionType.MC_JAVA_CLIENT);
         } else {
             logger.info("Unknown client type: " + type);
             connection.setType(ConnectionType.BINARY_CLIENT);
