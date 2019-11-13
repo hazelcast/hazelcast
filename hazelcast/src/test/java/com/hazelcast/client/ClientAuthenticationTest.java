@@ -33,6 +33,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl.MC_CLIENT_MODE;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientAuthenticationTest extends HazelcastTestSupport {
@@ -48,11 +50,10 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testNoClusterFound() throws Exception {
+    public void testNoClusterFound() {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         hazelcastFactory.newHazelcastClient(clientConfig);
-
     }
 
     @Test
@@ -73,18 +74,26 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
-    private class CustomCredentialsPortableFactory implements PortableFactory {
+    @Test
+    public void testAuthentication_with_mcModeEnabled() {
+        hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(MC_CLIENT_MODE.getName(), "true");
+        hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+    private static class CustomCredentialsPortableFactory implements PortableFactory {
         @Override
         public Portable create(int classId) {
             return new CustomCredentials();
         }
     }
 
-    private class CustomCredentials extends SimpleTokenCredentials {
+    private static class CustomCredentials extends SimpleTokenCredentials {
         @Override
         public byte[] getToken() {
             return new byte[10];
         }
-
     }
 }

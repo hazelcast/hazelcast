@@ -22,19 +22,9 @@ package com.hazelcast.client.impl;
 public final class ClientTypes {
 
     /**
-     * Length of type information in bytes
-     */
-    public static final int TYPE_LENGTH = 3;
-
-    /**
      * JVM clients protocol ID
      */
     public static final String JAVA = "JVM";
-
-    /**
-     * Management Center Java client protocol ID
-     */
-    public static final String MC_JAVA = "MCJ";
 
     /**
      * CSHARP client protocol ID
@@ -65,6 +55,11 @@ public final class ClientTypes {
      * Go client protocol ID
      */
     public static final String GO = "GOO";
+
+    /**
+     * Management Center Java client protocol ID
+     */
+    public static final String MC_JAVA = "MCJ";
 
     private ClientTypes() {
     }

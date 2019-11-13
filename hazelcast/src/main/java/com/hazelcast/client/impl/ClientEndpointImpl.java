@@ -170,6 +170,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             case BINARY_CLIENT:
                 type = ClientType.OTHER;
                 break;
+            case MC_JAVA_CLIENT:
+                type = ClientType.MC_JAVA;
+                break;
             default:
                 throw new IllegalArgumentException("Invalid connection type: " + connection.getType());
         }

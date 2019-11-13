@@ -56,6 +56,7 @@ import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -91,6 +92,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
+    public static final HazelcastProperty MC_CLIENT_MODE
+            = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
+
     private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
 
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
@@ -111,6 +115,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final long authenticationTimeout;
     private final ClientConnectionStrategy connectionStrategy;
     private final UUID clientUuid;
+    private final String clientType;
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
     private final Set<String> labels;
@@ -127,6 +132,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         this.clientUuid = UuidUtil.newUnsecureUUID();
+        this.clientType = client.getProperties().getBoolean(MC_CLIENT_MODE) ? ClientTypes.MC_JAVA : ClientTypes.JAVA;
         final int connTimeout = networkConfig.getConnectionTimeout();
         this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
         this.executionService = client.getClientExecutionService();
@@ -543,7 +549,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (credentials instanceof PasswordCredentials) {
                 PasswordCredentials cr = (PasswordCredentials) credentials;
                 return ClientAuthenticationCodec.encodeRequest(clusterName, cr.getName(),
-                        cr.getPassword(), clientUuid, ClientTypes.JAVA, serializationVersion,
+                        cr.getPassword(), clientUuid, clientType, serializationVersion,
                         BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels, clusterPartitionCount,
                         resolvedClusterId);
             } else {
@@ -554,7 +560,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     data = ss.toData(credentials);
                 }
                 return ClientAuthenticationCustomCodec.encodeRequest(clusterName, data,
-                        clientUuid, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
+                        clientUuid, clientType, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
                         client.getName(), labels, clusterPartitionCount, resolvedClusterId);
             }
         }
