@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.managementcenter;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
