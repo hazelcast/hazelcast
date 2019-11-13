@@ -75,7 +75,6 @@ public class CachingProviderTest extends HazelcastTestSupport {
         instance3 = instanceFactory.newHazelcastInstance(config);
     }
 
-
     protected String getConfigClasspathLocation() {
         return CONFIG_CLASSPATH_LOCATION;
     }
@@ -111,7 +110,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenDefaultURI_inexistentInstanceNameAsProperty_thenStartsOtherInstance() throws URISyntaxException {
+    public void whenDefaultURI_inexistentInstanceNameAsProperty_thenStartsOtherInstance() {
         cachingProvider.getCacheManager(null, null, propertiesByInstanceName("instance-does-not-exist"));
         assertInstanceStarted("instance-does-not-exist");
     }
@@ -126,19 +125,6 @@ public class CachingProviderTest extends HazelcastTestSupport {
     public void whenDefaultURI_noInstanceName_thenUseDefaultHazelcastInstance() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager();
         assertCacheManagerInstance(cacheManager, instance1);
-    }
-
-    @Test
-    public void whenInstanceNameAsUri_thenThatInstanceIsUsed() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI(INSTANCE_2_NAME), null);
-        assertCacheManagerInstance(cacheManager, instance2);
-    }
-
-    @Test
-    public void whenInexistentInstanceNameAsUri_thenOtherInstanceIsStarted() throws URISyntaxException {
-        cachingProvider.getCacheManager(new URI("does-not-exist"), null);
-        assertInstanceStarted("does-not-exist");
     }
 
     @Test
@@ -161,9 +147,6 @@ public class CachingProviderTest extends HazelcastTestSupport {
         cachingProvider.getCacheManager(new URI("classpath:this-config-does-not-exist"), null);
     }
 
-    // test that config location property has priority over attempting URI interpretation:
-    // CacheManager's URI points to invalid config location, however a valid config location is
-    // specified in properties
     @Test
     public void whenConfigLocationAsProperty_thenThatInstanceIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
@@ -197,13 +180,6 @@ public class CachingProviderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenInstanceItselfAsProperty_andValidInstanceNameURI_thenInstanceItselfIsUsed() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:" + getConfigClasspathLocation()), null, propertiesByInstanceItself(instance2));
-        assertCacheManagerInstance(cacheManager, instance2);
-    }
-
-    @Test
     public void whenInstanceItselfAsProperty_andDefaultURI_thenInstanceItselfIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
                 null, null, propertiesByInstanceItself(instance3));
@@ -220,7 +196,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
             CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
             Collection<HazelcastInstance> instances = getStartedInstances();
             for (HazelcastInstance instance : instances) {
-                if (AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME.equals(instance.getName())) {
+                if (HazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME.equals(instance.getName())) {
                     fail("The default named HazelcastInstance shouldn't have been started");
                 }
             }
@@ -240,7 +216,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
             Collection<HazelcastInstance> instances = getStartedInstances();
             boolean sharedInstanceStarted = false;
             for (HazelcastInstance instance : instances) {
-                if (instance.getName().equals(AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME)) {
+                if (instance.getName().equals(HazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME)) {
                     sharedInstanceStarted = true;
                 }
             }
@@ -251,7 +227,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
         }
     }
 
-    protected void assertCacheManagerInstance(HazelcastCacheManager cacheManager, HazelcastInstance instance) {
+    private void assertCacheManagerInstance(HazelcastCacheManager cacheManager, HazelcastInstance instance) {
         assertEquals(instance, cacheManager.getHazelcastInstance());
     }
 

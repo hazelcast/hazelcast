@@ -623,4 +623,9 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     public CacheStatistics getLocalCacheStatistics() {
         return statsHandler.getStatistics();
     }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "{name=" + name + ", nameWithPrefix=" + nameWithPrefix + '}';
+    }
 }
