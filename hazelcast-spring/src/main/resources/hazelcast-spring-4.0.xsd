@@ -2145,7 +2145,6 @@
             <xs:enumeration value="hazelcast.map.max.backup.count"/>
             <xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
             <xs:enumeration value="hazelcast.logging.type"/>
-            <xs:enumeration value="hazelcast.compatibility.3.6.client"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="propertyNameString">
