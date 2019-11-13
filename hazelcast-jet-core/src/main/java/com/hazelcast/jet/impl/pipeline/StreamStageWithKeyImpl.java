@@ -128,7 +128,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public <S, R> StreamStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return attachFlatMapUsingService(serviceFactory, flatMapFn);
     }

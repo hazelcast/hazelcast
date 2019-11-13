@@ -262,7 +262,7 @@ public final class Traversers {
 
         @SuppressWarnings("unchecked")
         @Nonnull @Override
-        public <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> flatMapFn) {
+        public <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<R>> flatMapFn) {
             return (Traverser<R>) this;
         }
 

@@ -118,7 +118,7 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
     @Nonnull @Override
     public <S, R> BatchStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return attachFlatMapUsingService(serviceFactory, flatMapFn);
     }

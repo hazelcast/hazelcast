@@ -132,7 +132,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull @Override
     <S, R> BatchStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     );
 
     @Nonnull @Override

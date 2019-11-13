@@ -395,7 +395,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <S, R> GeneralStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<S> serviceFactory,
-            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
     );
 
     /**

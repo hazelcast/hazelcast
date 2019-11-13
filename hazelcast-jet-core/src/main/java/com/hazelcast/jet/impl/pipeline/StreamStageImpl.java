@@ -74,7 +74,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
 
     @Nonnull @Override
     public <R> StreamStage<R> flatMap(
-            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull FunctionEx<? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return attachFlatMap(flatMapFn);
     }

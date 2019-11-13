@@ -106,7 +106,7 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     <R> GeneralStage<R> flatMap(
-            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull FunctionEx<? super T, ? extends Traverser<R>> flatMapFn
     );
 
     /**

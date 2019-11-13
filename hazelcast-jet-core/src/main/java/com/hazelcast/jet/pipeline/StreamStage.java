@@ -75,7 +75,7 @@ public interface StreamStage<T> extends GeneralStage<T> {
     StreamStage<T> filter(@Nonnull PredicateEx<T> filterFn);
 
     @Nonnull @Override
-    <R> StreamStage<R> flatMap(@Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn);
+    <R> StreamStage<R> flatMap(@Nonnull FunctionEx<? super T, ? extends Traverser<R>> flatMapFn);
 
     @Nonnull @Override
     <S, R> StreamStage<R> mapStateful(

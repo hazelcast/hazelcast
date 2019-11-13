@@ -101,7 +101,7 @@ public interface Traverser<T> {
      */
     @Nonnull
     @CheckReturnValue
-    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> flatMapFn) {
+    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<R>> flatMapFn) {
         return new FlatMappingTraverser<>(this, flatMapFn);
     }
 

@@ -359,7 +359,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         }
         return traverseStream(range(rangeStart, wm, winPolicy.frameSize()).boxed())
                 .flatMap(winEnd -> traverseIterable(computeWindow(winEnd).entrySet())
-                        .map(e -> mapToOutputFn.apply(
+                        .<Object>map(e -> mapToOutputFn.apply(
                                 winEnd - winPolicy.windowSize(), winEnd,
                                 e.getKey(), aggrOp.finishFn().apply(e.getValue()),
                                 false))

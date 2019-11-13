@@ -44,7 +44,6 @@ import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.util.function.Function.identity;
 
 public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     private static final int HASH_MAP_INITIAL_CAPACITY = 16;
@@ -66,7 +65,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
 
     private final FlatMapper<Watermark, Object> wmFlatMapper = flatMapper(this::flatMapWm);
     private final EvictingTraverser evictingTraverser = new EvictingTraverser();
-    private final Traverser<?> evictingTraverserFlattened = evictingTraverser.flatMap(identity());
+    private final Traverser<?> evictingTraverserFlattened = evictingTraverser.flatMap(x -> x);
 
     private long currentWm = Long.MIN_VALUE;
     private Traverser<? extends Entry<?, ?>> snapshotTraverser;

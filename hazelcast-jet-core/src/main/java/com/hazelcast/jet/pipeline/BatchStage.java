@@ -67,7 +67,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
     BatchStage<T> filter(@Nonnull PredicateEx<T> filterFn);
 
     @Nonnull @Override
-    <R> BatchStage<R> flatMap(@Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn);
+    <R> BatchStage<R> flatMap(@Nonnull FunctionEx<? super T, ? extends Traverser<R>> flatMapFn);
 
     @Nonnull @Override
     <S, R> BatchStage<R> mapStateful(
