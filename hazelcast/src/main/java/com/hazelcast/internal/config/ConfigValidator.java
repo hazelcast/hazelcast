@@ -478,6 +478,10 @@ public final class ConfigValidator {
 
     /**
      * Validates the given parameters in the context of an {@link ICache} config.
+     * According to JSR-107, {@code javax.cache.CacheManager#createCache(String, Configuration)}
+     * should throw {@link IllegalArgumentException} in case of invalid configuration.
+     * Any {@link InvalidConfigurationException}s thrown from common validation methods
+     * are translated to {@link IllegalArgumentException} by this method.
      *
      * @param inMemoryFormat       the {@link InMemoryFormat} of the cache
      * @param evictionConfig       the {@link EvictionConfig} of the cache
@@ -491,11 +495,14 @@ public final class ConfigValidator {
                                         SplitBrainMergeTypeProvider mergeTypeProvider,
                                         SplitBrainMergePolicyProvider mergePolicyProvider,
                                         EnumSet<EvictionPolicy> supportedEvictionPolicies) {
-        checkNotNativeWhenOpenSource(inMemoryFormat);
-        checkEvictionConfig(evictionConfig, supportedEvictionPolicies);
-        checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), inMemoryFormat);
-        checkMergeTypeProviderHasRequiredTypes(mergeTypeProvider,
-                mergePolicyProvider, mergePolicyClassname);
+        try {
+            checkNotNativeWhenOpenSource(inMemoryFormat);
+            checkEvictionConfig(evictionConfig, supportedEvictionPolicies);
+            checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), inMemoryFormat);
+            checkMergeTypeProviderHasRequiredTypes(mergeTypeProvider, mergePolicyProvider, mergePolicyClassname);
+        } catch (InvalidConfigurationException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     // package private for testing.
@@ -503,7 +510,7 @@ public final class ConfigValidator {
                                         InMemoryFormat inMemoryFormat) {
         if (inMemoryFormat == NATIVE) {
             if (!CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
-                throw new InvalidConfigurationException("Maximum size policy " + maxSizePolicy
+                throw new IllegalArgumentException("Maximum size policy " + maxSizePolicy
                         + " cannot be used with NATIVE in memory format backed Cache."
                         + " Supported maximum size policies are: " + CACHE_SUPPORTED_NATIVE_MAX_SIZE_POLICIES);
             }
@@ -511,7 +518,7 @@ public final class ConfigValidator {
             if (!CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
                 String msg = format("Cache eviction config doesn't support max size policy `%s`. "
                         + "Please select a valid one: %s.", maxSizePolicy, CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES);
-                throw new InvalidConfigurationException(msg);
+                throw new IllegalArgumentException(msg);
             }
         }
     }
