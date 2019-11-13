@@ -2031,10 +2031,6 @@
         <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
-    <xs:complexType name="map-eviction-policy">
-        <xs:attributeGroup ref="class-or-bean-name"/>
-    </xs:complexType>
-
     <xs:complexType name="outbound-ports">
         <xs:sequence>
             <xs:element name="ports" minOccurs="0" maxOccurs="unbounded">

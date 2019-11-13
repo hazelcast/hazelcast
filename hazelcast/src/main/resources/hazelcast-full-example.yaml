@@ -1019,50 +1019,47 @@ hazelcast:
   # this time are evicted automatically. An entry is idle if no get, put, EntryProcessor.process or
   # containsKey is called.  Valid values are integers between 0 and Integer.MAX VALUE. Its default value
   # is 0, which means infinite.
-  # * "eviction-policy":
-  # Eviction policy configuration. Its default values is NONE. Available values are as follows:
-  # - NONE:
-  #     No items will be evicted and the property max-size will be ignored. You still
-  #     can combine it with time-to-live-seconds and max-idle-seconds.
-  # - LRU: 	Least Recently Used.
-  # - LFU: 	Least Frequently Used.
-  # * "map-eviction-policy-class-name":
-  # Internal eviction algorithm finds the most appropriate entry to evict from the map by using this policy.
-  # * "max-size":
-  # Maximum size of the map depending on the given policy specified by its "policy" attribute. When maximum
-  # size is reached, the map is evicted based on the policy defined. Valid values are integers between 0 and
-  # Integer.MAX VALUE. Its default value is 0 and its default policy attribute is "PER_NODE". If you want
-  # max-size to work, set the "eviction-policy" to a value other than NONE. Available max-size policies are
-  # as follows:
-  # - PER_NODE:
+  # "eviction":
+  # By default map has no eviction configured. Its <eviction-policy> is NONE.
+  # To make it work you have to configure it.
+  # Configuration has the following attributes:
+  # - size: Maximum size of the map.
+  # - max-size-policy: Maximum size policy for eviction of the map. Available values are as follows:
+  #   * PER_NODE:
   #     Maximum number of map entries in each cluster member. You cannot set the max-size to a value lower
   #     than the partition count (which is 271 by default).
-  # - PER_PARTITION:
+  #   * PER_PARTITION:
   #     Maximum number of map entries within each partition.
-  # - USED_HEAP_SIZE:
+  #   * USED_HEAP_SIZE:
   #     Maximum used heap size in megabytes per map for each Hazelcast instance. It does not work when
   #     "in-memory-format" is set to OBJECT.
-  # - USED_HEAP_PERCENTAGE:
+  #   * USED_HEAP_PERCENTAGE:
   #     Maximum used heap size percentage per map for each Hazelcast instance. If, for example, JVM is
   #     configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size
   #     exceeds 100 MB. It does not work when "in-memory-format" is set to OBJECT.
-  # - FREE_HEAP_SIZE:
+  #   * FREE_HEAP_SIZE:
   #     Minimum free heap size in megabytes for each Hazelcast instance.
-  # - FREE_HEAP_PERCENTAGE:
+  #   * FREE_HEAP_PERCENTAGE:
   #     Minimum free heap size percentage for each Hazelcast instance. If, for example, JVM is configured to
   #     have 1000 MB and this value is 10, then the map entries will be evicted when free heap size is below 100 MB.
-  # - USED_NATIVE_MEMORY_SIZE:
+  #   * USED_NATIVE_MEMORY_SIZE:
   #     Maximum used native memory size in megabytes per map for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
-  # - USED_NATIVE_MEMORY_PERCENTAGE:
+  #   * USED_NATIVE_MEMORY_PERCENTAGE:
   #     Maximum used native memory size percentage per map for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
-  # - FREE_NATIVE_MEMORY_SIZE:
+  #   * FREE_NATIVE_MEMORY_SIZE:
   #     Minimum free native memory size in megabytes for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
-  # - FREE_NATIVE_MEMORY_PERCENTAGE:
+  #   * FREE_NATIVE_MEMORY_PERCENTAGE:
   #     Minimum free native memory size percentage for each Hazelcast instance. It is available only in
   #     Hazelcast Enterprise HD.
+  # - eviction-policy:
+  #     Eviction policy has following values:
+  #   * NONE: No eviction.
+  #   * LRU: Least recently used entries will be removed.
+  #   * LFU: Least frequently used entries will be removed.
+  #   * RANDOM: Randomly selected entries will be removed.
   # * "merge-policy":
   # Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
   # split-brain syndrome. Its default values is "com.hazelcast.spi.merge.PutIfAbsentMergePolicy". Available
@@ -1309,7 +1306,7 @@ hazelcast:
           attributes:
             - "name"
         - attributes:
-          - "age"
+            - "age"
       attributes:
         currency:
           extractor-class-name: com.bank.CurrencyExtractor
@@ -1371,7 +1368,7 @@ hazelcast:
             eviction-policy: LFU
           indexes:
             - attributes:
-              - "name"
+                - "name"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #
@@ -1628,11 +1625,11 @@ hazelcast:
         max-size-policy: ENTRY_COUNT
         eviction-policy: LFU
       wan-replication-ref:
-         name: my-wan-cluster-batch
-         merge-policy: PassThroughMergePolicy
-         republishing-enabled: true
-         filters:
-           - com.example.SampleFilter
+        name: my-wan-cluster-batch
+        merge-policy: PassThroughMergePolicy
+        republishing-enabled: true
+        filters:
+          - com.example.SampleFilter
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       partition-lost-listeners:
         - com.your-package.YourPartitionLostListener
@@ -2189,37 +2186,37 @@ hazelcast:
       - name: ldapRealm
         authentication:
           ldap:
-             url: ldap://ldap.my-company.example
-             socket-factory-class-name: socketFactoryClassName
-             parse-dn: true
-             role-context: roleContext
-             role-filter: roleFilter
-             role-mapping-attribute: roleMappingAttribute
-             role-mapping-mode: reverse
-             role-name-attribute: roleNameAttribute
-             role-recursion-max-depth: 25
-             role-search-scope: object
-             user-name-attribute: userNameAttribute
-             system-user-dn: systemUserDn
-             system-user-password: systemUserPassword
-             password-attribute: passwordAttribute
-             user-context: userContext
-             user-filter: userFilter
-             user-search-scope: one-level
+            url: ldap://ldap.my-company.example
+            socket-factory-class-name: socketFactoryClassName
+            parse-dn: true
+            role-context: roleContext
+            role-filter: roleFilter
+            role-mapping-attribute: roleMappingAttribute
+            role-mapping-mode: reverse
+            role-name-attribute: roleNameAttribute
+            role-recursion-max-depth: 25
+            role-search-scope: object
+            user-name-attribute: userNameAttribute
+            system-user-dn: systemUserDn
+            system-user-password: systemUserPassword
+            password-attribute: passwordAttribute
+            user-context: userContext
+            user-filter: userFilter
+            user-search-scope: one-level
       - name: tlsRealm
         authentication:
           tls:
-             roleAttribute: cn
+            roleAttribute: cn
       - name: usernamePasswordIdentityRealm
         identity:
           username-password:
-             username: user
-             password: Hazelcast
+            username: user
+            password: Hazelcast
       - name: tokenIdentityRealm
         identity:
           token:
-             encoding: base64
-             value: SGF6ZWxjYXN0
+            encoding: base64
+            value: SGF6ZWxjYXN0
     member-authentication:
       realm: mr
     client-authentication:

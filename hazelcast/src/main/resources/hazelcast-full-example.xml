@@ -66,14 +66,17 @@
         The STRING_TO_BE_REPLACED is the value which is provided to replacer implementation.
     -->
     <config-replacers fail-if-value-missing="false">
-        <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
+        <replacer
+                class-name="com.hazelcast.config.replacer.EncryptionReplacer">
             <properties>
                 <property name="passwordFile">password.txt</property>
                 <property name="passwordUserProperties">false</property>
                 <property name="cipherAlgorithm">DES</property>
                 <property name="keyLengthBits">64</property>
                 <property name="secretKeyAlgorithm">DES</property>
-                <property name="secretKeyFactoryAlgorithm">PBKDF2WithHmacSHA1</property>
+                <property name="secretKeyFactoryAlgorithm">
+                    PBKDF2WithHmacSHA1
+                </property>
             </properties>
         </replacer>
     </config-replacers>
@@ -89,7 +92,9 @@
         You can also set your license key programmatically; please refer to
         http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#setting-the-license-key
     -->
-    <license-key>Your Hazelcast Enterprise or Enterprise HD License Key</license-key>
+    <license-key>Your Hazelcast Enterprise or Enterprise HD License
+        Key
+    </license-key>
     <!--
         When Hazelcast instances are created, they are put in a global registry with their creation names.
         <instance-name> elements gives you the ability to get a specific Hazelcast instance from this registry
@@ -111,7 +116,10 @@
         at most 2 members in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center enabled="true" scripting-enabled="false" update-interval="2">http://localhost:8080/hazelcast-mancenter</management-center>
+    <management-center enabled="true" scripting-enabled="false"
+                       update-interval="2">
+        http://localhost:8080/hazelcast-mancenter
+    </management-center>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
@@ -350,20 +358,26 @@
             <batch-size>1000</batch-size>
             <batch-max-delay-millis>2000</batch-max-delay-millis>
             <response-timeout-millis>60000</response-timeout-millis>
-            <acknowledge-type>ACK_ON_OPERATION_COMPLETE</acknowledge-type>
-            <initial-publisher-state>REPLICATING</initial-publisher-state>
+            <acknowledge-type>ACK_ON_OPERATION_COMPLETE
+            </acknowledge-type>
+            <initial-publisher-state>REPLICATING
+            </initial-publisher-state>
             <snapshot-enabled>false</snapshot-enabled>
             <idle-max-park-ns>250000000</idle-max-park-ns>
             <idle-min-park-ns>10000000</idle-min-park-ns>
             <max-concurrent-invocations>-1</max-concurrent-invocations>
             <discovery-period-seconds>10</discovery-period-seconds>
-            <use-endpoint-private-address>false</use-endpoint-private-address>
-            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+            <use-endpoint-private-address>false
+            </use-endpoint-private-address>
+            <queue-full-behavior>DISCARD_AFTER_MUTATION
+            </queue-full-behavior>
             <max-target-endpoints>2147483647</max-target-endpoints>
             <queue-capacity>10000</queue-capacity>
-            <target-endpoints>10.3.5.1:5701,10.3.5.2:5701</target-endpoints>
+            <target-endpoints>10.3.5.1:5701,10.3.5.2:5701
+            </target-endpoints>
             <wan-sync>
-                <consistency-check-strategy>NONE</consistency-check-strategy>
+                <consistency-check-strategy>NONE
+                </consistency-check-strategy>
             </wan-sync>
             <!--            <aws enabled="false">-->
             <!--                <access-key>my-access-key</access-key>-->
@@ -399,7 +413,8 @@
             <!--                <property name="prop1">prop1-value</property>-->
             <!--                <property name="prop2">prop2-value</property>-->
             <!--            </properties>-->
-            <persist-wan-replicated-data>true</persist-wan-replicated-data>
+            <persist-wan-replicated-data>true
+            </persist-wan-replicated-data>
         </consumer>
     </wan-replication>
     <!--
@@ -678,8 +693,10 @@
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
                 <service-name>MY-SERVICE-NAME</service-name>
-                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
-                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+                <service-label-name>MY-SERVICE-LABEL-NAME
+                </service-label-name>
+                <service-label-value>MY-SERVICE-LABEL-VALUE
+                </service-label-value>
             </kubernetes>
             <eureka enabled="false">
                 <self-registration>true</self-registration>
@@ -687,11 +704,17 @@
             </eureka>
             <discovery-strategies>
                 <node-filter class="com.yourpackage.NodeFilter"/>
-                <discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
+                <discovery-strategy
+                        class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy"
+                        enabled="true">
                     <properties>
-                        <property name="provider">google-compute-engine</property>
-                        <property name="identity">GCE_IDENTITY</property>
-                        <property name="credential">GCE_CREDENTIAL</property>
+                        <property name="provider">
+                            google-compute-engine
+                        </property>
+                        <property name="identity">GCE_IDENTITY
+                        </property>
+                        <property name="credential">GCE_CREDENTIAL
+                        </property>
                     </properties>
                 </discovery-strategy>
             </discovery-strategies>
@@ -700,15 +723,21 @@
             <interface>10.10.1.*</interface>
         </interfaces>
         <ssl enabled="false">
-            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
+            <factory-class-name>
+                com.hazelcast.nio.ssl.BasicSSLContextFactory
+            </factory-class-name>
             <properties>
                 <property name="protocol">TLS</property>
 
-                <property name="mutualAuthentication">REQUIRED</property>
-                <property name="keyStore">/opt/hazelcast.keystore</property>
-                <property name="keyStorePassword">secret.97531</property>
+                <property name="mutualAuthentication">REQUIRED
+                </property>
+                <property name="keyStore">/opt/hazelcast.keystore
+                </property>
+                <property name="keyStorePassword">secret.97531
+                </property>
                 <property name="keyStoreType">JKS</property>
-                <property name="trustStore">/opt/hazelcast.truststore</property>
+                <property name="trustStore">/opt/hazelcast.truststore
+                </property>
                 <property name="trustStorePassword">changeit</property>
                 <property name="trustStoreType">JKS</property>
             </properties>
@@ -721,7 +750,8 @@
             <iteration-count>7</iteration-count>
         </symmetric-encryption>
         <member-address-provider enabled="false">
-            <class-name>com.hazelcast.MemberAddressProviderImpl</class-name>
+            <class-name>com.hazelcast.MemberAddressProviderImpl
+            </class-name>
             <properties>
                 <property name="prop1">prop1-value</property>
                 <property name="prop2">prop2-value</property>
@@ -830,7 +860,9 @@
         <statistics-enabled>true</statistics-enabled>
         <pool-size>16</pool-size>
         <queue-capacity>0</queue-capacity>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
     </executor-service>
 
     <!--
@@ -853,7 +885,9 @@
         <pool-size>16</pool-size>
         <durability>1</durability>
         <capacity>100</capacity>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
     </durable-executor-service>
 
     <!--
@@ -880,8 +914,11 @@
         <pool-size>16</pool-size>
         <durability>1</durability>
         <capacity>100</capacity>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy
+        </merge-policy>
     </scheduled-executor-service>
 
     <!--
@@ -908,8 +945,11 @@
     <cardinality-estimator name="default">
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <merge-policy batch-size="102">PutIfAbsentMergePolicy</merge-policy>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
+        <merge-policy batch-size="102">PutIfAbsentMergePolicy
+        </merge-policy>
     </cardinality-estimator>
 
     <!--
@@ -966,7 +1006,9 @@
         <async-backup-count>0</async-backup-count>
         <empty-queue-ttl>-1</empty-queue-ttl>
         <item-listeners>
-            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+            <item-listener include-value="true">
+                com.hazelcast.examples.ItemListener
+            </item-listener>
         </item-listeners>
         <queue-store>
             <class-name>com.hazelcast.QueueStoreImpl</class-name>
@@ -976,8 +1018,11 @@
                 <property name="bulk-load">500</property>
             </properties>
         </queue-store>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy
+        </merge-policy>
     </queue>
 
     <!--
@@ -998,6 +1043,47 @@
         * <statistics-enabled>:
             When you enable it, you can retrieve map entry statistics such as creation time, expiration time,
             number of hits, key, value, etc. Its default value is true.
+       * "<eviction>":
+           By default map has no eviction configured. Its <eviction-policy> is NONE.
+           To make it work you have to configure it.
+           Configuration has the following attributes:
+           - size: Maximum size of the map.
+           - max-size-policy: Maximum size policy for eviction of the map. Available values are as follows:
+             * PER_NODE:
+               Maximum number of map entries in each cluster member. You cannot set the max-size to a value lower
+               than the partition count (which is 271 by default).
+             * PER_PARTITION:
+               Maximum number of map entries within each partition.
+             * USED_HEAP_SIZE:
+               Maximum used heap size in megabytes per map for each Hazelcast instance. It does not work when
+               "in-memory-format" is set to OBJECT.
+             * USED_HEAP_PERCENTAGE:
+               Maximum used heap size percentage per map for each Hazelcast instance. If, for example, JVM is
+               configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size
+               exceeds 100 MB. It does not work when "in-memory-format" is set to OBJECT.
+             * FREE_HEAP_SIZE:
+               Minimum free heap size in megabytes for each Hazelcast instance.
+             * FREE_HEAP_PERCENTAGE:
+               Minimum free heap size percentage for each Hazelcast instance. If, for example, JVM is configured to
+               have 1000 MB and this value is 10, then the map entries will be evicted when free heap size is below 100 MB.
+             * USED_NATIVE_MEMORY_SIZE:
+               Maximum used native memory size in megabytes per map for each Hazelcast instance. It is available only in
+               Hazelcast Enterprise HD.
+             * USED_NATIVE_MEMORY_PERCENTAGE:
+               Maximum used native memory size percentage per map for each Hazelcast instance. It is available only in
+               Hazelcast Enterprise HD.
+             * FREE_NATIVE_MEMORY_SIZE:
+               Minimum free native memory size in megabytes for each Hazelcast instance. It is available only in
+               Hazelcast Enterprise HD.
+             * FREE_NATIVE_MEMORY_PERCENTAGE:
+               Minimum free native memory size percentage for each Hazelcast instance. It is available only in
+               Hazelcast Enterprise HD.
+           - eviction-policy:
+               Eviction policy has following values:
+             * NONE: No eviction.
+             * LRU: Least recently used entries will be removed.
+             * LFU: Least frequently used entries will be removed.
+             * RANDOM: Randomly selected entries will be removed.
         * <metadata-policy>
         Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
         create additional metadata about them. This metadata then is used to make querying and indexing faster.
@@ -1029,50 +1115,6 @@
         this time are evicted automatically. An entry is idle if no get, put, EntryProcessor.process or
         containsKey is called.  Valid values are integers between 0 and Integer.MAX VALUE. Its default value
         is 0, which means infinite.
-        * <eviction-policy>:
-        Eviction policy configuration. Its default values is NONE. Available values are as follows:
-        - NONE:
-            No items will be evicted and the property max-size will be ignored. You still
-            can combine it with time-to-live-seconds and max-idle-seconds.
-        - LRU: 	Least Recently Used.
-        - LFU: 	Least Frequently Used.
-        * <map-eviction-policy-class-name>:
-        Internal eviction algorithm finds the most appropriate entry to evict from the map by using this policy.
-        * <max-size>:
-        Maximum size of the map depending on the given policy specified by its "policy" attribute. When maximum
-        size is reached, the map is evicted based on the policy defined. Valid values are integers between 0 and
-        Integer.MAX VALUE. Its default value is 0 and its default policy attribute is "PER_NODE". If you want
-        max-size to work, set the <eviction-policy> to a value other than NONE. Available max-size policies are
-        as follows:
-        - PER_NODE:
-            Maximum number of map entries in each cluster member. You cannot set the max-size to a value lower
-            than the partition count (which is 271 by default).
-        - PER_PARTITION:
-            Maximum number of map entries within each partition.
-        - USED_HEAP_SIZE:
-            Maximum used heap size in megabytes per map for each Hazelcast instance. It does not work when
-            <in-memory-format> is set to OBJECT.
-        - USED_HEAP_PERCENTAGE:
-            Maximum used heap size percentage per map for each Hazelcast instance. If, for example, JVM is
-            configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size
-            exceeds 100 MB. It does not work when <in-memory-format> is set to OBJECT.
-        - FREE_HEAP_SIZE:
-            Minimum free heap size in megabytes for each Hazelcast instance.
-        - FREE_HEAP_PERCENTAGE:
-            Minimum free heap size percentage for each Hazelcast instance. If, for example, JVM is configured to
-            have 1000 MB and this value is 10, then the map entries will be evicted when free heap size is below 100 MB.
-        - USED_NATIVE_MEMORY_SIZE:
-            Maximum used native memory size in megabytes per map for each Hazelcast instance. It is available only in
-            Hazelcast Enterprise HD.
-        - USED_NATIVE_MEMORY_PERCENTAGE:
-            Maximum used native memory size percentage per map for each Hazelcast instance. It is available only in
-            Hazelcast Enterprise HD.
-        - FREE_NATIVE_MEMORY_SIZE:
-            Minimum free native memory size in megabytes for each Hazelcast instance. It is available only in
-            Hazelcast Enterprise HD.
-        - FREE_NATIVE_MEMORY_PERCENTAGE:
-            Minimum free native memory size percentage for each Hazelcast instance. It is available only in
-            Hazelcast Enterprise HD.
         * <merge-policy>:
         Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
         split-brain syndrome. Its default values is "com.hazelcast.spi.merge.PutIfAbsentMergePolicy". Available
@@ -1269,8 +1311,10 @@
         <async-backup-count>0</async-backup-count>
         <time-to-live-seconds>0</time-to-live-seconds>
         <max-idle-seconds>0</max-idle-seconds>
-        <eviction eviction-policy="NONE" max-size-policy="PER_NODE" size="0"/>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <eviction eviction-policy="NONE" max-size-policy="PER_NODE"
+                  size="0"/>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy
+        </merge-policy>
         <read-backup-data>false</read-backup-data>
         <merkle-tree enabled="false">
             <depth>10</depth>
@@ -1297,7 +1341,8 @@
             <invalidate-on-change>true</invalidate-on-change>
             <in-memory-format>BINARY</in-memory-format>
             <cache-local-entries>false</cache-local-entries>
-            <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+            <eviction size="1000" max-size-policy="ENTRY_COUNT"
+                      eviction-policy="LFU"/>
         </near-cache>
         <wan-replication-ref name="my-wan-cluster-batch">
             <merge-policy>PassThroughMergePolicy</merge-policy>
@@ -1320,15 +1365,24 @@
             </index>
         </indexes>
         <attributes>
-            <attribute extractor-class-name="com.bank.CurrencyExtractor">currency</attribute>
+            <attribute
+                    extractor-class-name="com.bank.CurrencyExtractor">
+                currency
+            </attribute>
         </attributes>
         <entry-listeners>
-            <entry-listener include-value="false" local="false">com.your-package.MyEntryListener</entry-listener>
+            <entry-listener include-value="false" local="false">
+                com.your-package.MyEntryListener
+            </entry-listener>
         </entry-listeners>
         <partition-lost-listeners>
-            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
+            <partition-lost-listener>
+                com.your-package.YourPartitionLostListener
+            </partition-lost-listener>
         </partition-lost-listeners>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
         <!--
         ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
 
@@ -1364,7 +1418,9 @@
         <query-caches>
             <query-cache name="myContQueryCache">
                 <include-value>true</include-value>
-                <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
+                <predicate type="class-name">
+                    com.hazelcast.examples.ExamplePredicate
+                </predicate>
                 <entry-listeners>
                     <entry-listener>...</entry-listener>
                 </entry-listeners>
@@ -1374,7 +1430,8 @@
                 <delay-seconds>3</delay-seconds>
                 <batch-size>2</batch-size>
                 <buffer-size>32</buffer-size>
-                <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+                <eviction size="1000" max-size-policy="ENTRY_COUNT"
+                          eviction-policy="LFU"/>
                 <indexes>
                     <index>
                         <attributes>
@@ -1406,10 +1463,15 @@
         <binary>true</binary>
         <value-collection-type>SET</value-collection-type>
         <entry-listeners>
-            <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+            <entry-listener include-value="true" local="true">
+                com.hazelcast.examples.EntryListener
+            </entry-listener>
         </entry-listeners>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy
+        </merge-policy>
     </multimap>
 
     <!--
@@ -1446,10 +1508,15 @@
         <async-fillup>true</async-fillup>
         <statistics-enabled>true</statistics-enabled>
         <entry-listeners>
-            <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+            <entry-listener include-value="true" local="true">
+                com.hazelcast.examples.EntryListener
+            </entry-listener>
         </entry-listeners>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
+        <merge-policy batch-size="100">LatestAccessMergePolicy
+        </merge-policy>
     </replicatedmap>
 
     <!--
@@ -1619,7 +1686,8 @@
         <expiry-policy-factory
                 class-name="com.example.cache.MyExpirePolicyFactory"/>
         <cache-entry-listeners>
-            <cache-entry-listener old-value-required="false" synchronous="false">
+            <cache-entry-listener old-value-required="false"
+                                  synchronous="false">
                 <cache-entry-listener-factory
                         class-name="com.example.cache.MyEntryListenerFactory"/>
                 <cache-entry-event-filter-factory
@@ -1629,7 +1697,8 @@
         <in-memory-format>BINARY</in-memory-format>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+        <eviction size="1000" max-size-policy="ENTRY_COUNT"
+                  eviction-policy="LFU"/>
         <wan-replication-ref name="my-wan-cluster-batch">
             <merge-policy>PassThroughMergePolicy</merge-policy>
             <republishing-enabled>true</republishing-enabled>
@@ -1637,11 +1706,16 @@
                 <filter-impl>com.example.SampleFilter</filter-impl>
             </filters>
         </wan-replication-ref>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
         <partition-lost-listeners>
-            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
+            <partition-lost-listener>
+                com.your-package.YourPartitionLostListener
+            </partition-lost-listener>
         </partition-lost-listeners>
-        <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
+        <merge-policy batch-size="100">LatestAccessMergePolicy
+        </merge-policy>
         <hot-restart enabled="false">
             <fsync>false</fsync>
         </hot-restart>
@@ -1649,7 +1723,8 @@
             <capacity>10000</capacity>
             <time-to-live-seconds>0</time-to-live-seconds>
         </event-journal>
-        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
+        <disable-per-entry-invalidation-events>true
+        </disable-per-entry-invalidation-events>
     </cache>
 
 
@@ -1682,10 +1757,15 @@
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <item-listeners>
-            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+            <item-listener include-value="true">
+                com.hazelcast.examples.ItemListener
+            </item-listener>
         </item-listeners>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy
+        </merge-policy>
     </list>
 
     <!--
@@ -1716,10 +1796,15 @@
         <async-backup-count>0</async-backup-count>
         <max-size>10</max-size>
         <item-listeners>
-            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+            <item-listener include-value="true">
+                com.hazelcast.examples.ItemListener
+            </item-listener>
         </item-listeners>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy
+        </merge-policy>
     </set>
 
     <!--
@@ -1745,7 +1830,8 @@
         <global-ordering-enabled>true</global-ordering-enabled>
         <statistics-enabled>true</statistics-enabled>
         <message-listeners>
-            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+            <message-listener>com.hazelcast.examples.MessageListener
+            </message-listener>
         </message-listeners>
     </topic>
     <!--
@@ -1827,7 +1913,8 @@
         <topic-overload-policy>ERROR</topic-overload-policy>
         <read-batch-size>10</read-batch-size>
         <message-listeners>
-            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+            <message-listener>com.hazelcast.examples.MessageListener
+            </message-listener>
         </message-listeners>
     </reliable-topic>
 
@@ -1891,7 +1978,9 @@
                 <property name="prop2">prop2-value</property>
             </properties>
         </ringbuffer-store>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
         <merge-policy>PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
@@ -2011,14 +2100,19 @@
         <use-native-byte-order>false</use-native-byte-order>
         <byte-order>BIG_ENDIAN</byte-order>
         <data-serializable-factories>
-            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
+            <data-serializable-factory factory-id="1">
+                com.hazelcast.examples.DataSerializableFactory
             </data-serializable-factory>
         </data-serializable-factories>
         <portable-factories>
-            <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
+            <portable-factory factory-id="1">
+                com.hazelcast.examples.PortableFactory
+            </portable-factory>
         </portable-factories>
         <serializers>
-            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
+            <global-serializer>
+                com.hazelcast.examples.GlobalSerializerFactory
+            </global-serializer>
             <serializer type-class="com.hazelcast.examples.DummyType"
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
@@ -2075,7 +2169,8 @@
         <min-block-size>32</min-block-size>
         <page-size>4194304</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
-        <persistent-memory-directory>/mnt/optane</persistent-memory-directory>
+        <persistent-memory-directory>/mnt/optane
+        </persistent-memory-directory>
     </native-memory>
     <!--
         ===== HAZELCAST USER DEFINED SERVICES CONFIGURATION =====
@@ -2171,15 +2266,19 @@
             <realm name="mr">
                 <authentication>
                     <jaas>
-                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                        <login-module
+                                class-name="com.hazelcast.examples.MyRequiredLoginModule"
+                                usage="REQUIRED">
                             <properties>
-                                <property name="property">value</property>
+                                <property name="property">value
+                                </property>
                             </properties>
                         </login-module>
                     </jaas>
                 </authentication>
                 <identity>
-                    <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
+                    <credentials-factory
+                            class-name="com.hazelcast.examples.MyCredentialsFactory">
                         <properties>
                             <property name="property">value</property>
                         </properties>
@@ -2189,14 +2288,20 @@
             <realm name="cr">
                 <authentication>
                     <jaas>
-                        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
+                        <login-module
+                                class-name="com.hazelcast.examples.MyOptionalLoginModule"
+                                usage="OPTIONAL">
                             <properties>
-                                <property name="property">value</property>
+                                <property name="property">value
+                                </property>
                             </properties>
                         </login-module>
-                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                        <login-module
+                                class-name="com.hazelcast.examples.MyRequiredLoginModule"
+                                usage="REQUIRED">
                             <properties>
-                                <property name="property">value</property>
+                                <property name="property">value
+                                </property>
                             </properties>
                         </login-module>
                     </jaas>
@@ -2206,19 +2311,27 @@
                 <authentication>
                     <ldap>
                         <url>ldap://ldap.my-company.example</url>
-                        <socket-factory-class-name>socketFactoryClassName</socket-factory-class-name>
+                        <socket-factory-class-name>
+                            socketFactoryClassName
+                        </socket-factory-class-name>
                         <parse-dn>true</parse-dn>
                         <role-context>roleContext</role-context>
                         <role-filter>roleFilter</role-filter>
-                        <role-mapping-attribute>roleMappingAttribute</role-mapping-attribute>
+                        <role-mapping-attribute>roleMappingAttribute
+                        </role-mapping-attribute>
                         <role-mapping-mode>reverse</role-mapping-mode>
-                        <role-name-attribute>roleNameAttribute</role-name-attribute>
-                        <role-recursion-max-depth>25</role-recursion-max-depth>
+                        <role-name-attribute>roleNameAttribute
+                        </role-name-attribute>
+                        <role-recursion-max-depth>25
+                        </role-recursion-max-depth>
                         <role-search-scope>object</role-search-scope>
-                        <user-name-attribute>userNameAttribute</user-name-attribute>
+                        <user-name-attribute>userNameAttribute
+                        </user-name-attribute>
                         <system-user-dn>systemUserDn</system-user-dn>
-                        <system-user-password>systemUserPassword</system-user-password>
-                        <password-attribute>passwordAttribute</password-attribute>
+                        <system-user-password>systemUserPassword
+                        </system-user-password>
+                        <password-attribute>passwordAttribute
+                        </password-attribute>
                         <user-context>userContext</user-context>
                         <user-filter>userFilter</user-filter>
                         <user-search-scope>one-level</user-search-scope>
@@ -2232,7 +2345,8 @@
             </realm>
             <realm name="usernamePasswordIdentityRealm">
                 <identity>
-                    <username-password username="user" password="Hazelcast" />
+                    <username-password username="user"
+                                       password="Hazelcast"/>
                 </identity>
             </realm>
             <realm name="tokenIdentityRealm">
@@ -2243,7 +2357,8 @@
         </realms>
         <member-authentication realm="mr"/>
         <client-authentication realm="cr"/>
-        <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
+        <client-permission-policy
+                class-name="com.hazelcast.examples.MyPermissionPolicy">
             <properties>
                 <property name="property">value</property>
             </properties>
@@ -2361,9 +2476,11 @@
                 </actions>
             </pn-counter-permission>
         </client-permissions>
-        <client-block-unmapped-actions>true</client-block-unmapped-actions>
+        <client-block-unmapped-actions>true
+        </client-block-unmapped-actions>
         <security-interceptors>
-            <interceptor class-name="com.your-package.YourSecurityInterceptorImplementation"/>
+            <interceptor
+                    class-name="com.your-package.YourSecurityInterceptorImplementation"/>
         </security-interceptors>
     </security>
     <!--
@@ -2409,12 +2526,18 @@
             Split brain protection listeners are local to the member that they are registered, so they receive
             only events occurred on that local member.
     -->
-    <split-brain-protection name="splitBrainProtectionRuleWithThreeMembers" enabled="true">
+    <split-brain-protection
+            name="splitBrainProtectionRuleWithThreeMembers"
+            enabled="true">
         <minimum-cluster-size>3</minimum-cluster-size>
         <protect-on>READ_WRITE</protect-on>
-        <function-class-name>com.your-package.AbsPresMySplitBrainProtection</function-class-name>
+        <function-class-name>
+            com.your-package.AbsPresMySplitBrainProtection
+        </function-class-name>
         <listeners>
-            <listener>com.your-package.ThreeMemberSplitBrainProtectionListener</listener>
+            <listener>
+                com.your-package.ThreeMemberSplitBrainProtectionListener
+            </listener>
         </listeners>
     </split-brain-protection>
     <!--
@@ -2485,7 +2608,8 @@
         <backup-dir>/mnt/hot-backup</backup-dir>
         <validation-timeout-seconds>120</validation-timeout-seconds>
         <data-load-timeout-seconds>900</data-load-timeout-seconds>
-        <cluster-data-recovery-policy>PARTIAL_RECOVERY_MOST_COMPLETE</cluster-data-recovery-policy>
+        <cluster-data-recovery-policy>PARTIAL_RECOVERY_MOST_COMPLETE
+        </cluster-data-recovery-policy>
         <encryption-at-rest enabled="true">
             <algorithm>AES/CBC/PKCS5Padding</algorithm>
             <salt>somesalt</salt>
@@ -2583,7 +2707,8 @@
             burst of replication messages in a short time interval. The value must be a positive non-null integer.
     -->
     <crdt-replication>
-        <max-concurrent-replication-targets>1</max-concurrent-replication-targets>
+        <max-concurrent-replication-targets>1
+        </max-concurrent-replication-targets>
         <replication-period-millis>1000</replication-period-millis>
     </crdt-replication>
 
@@ -2607,7 +2732,9 @@
     -->
     <pn-counter name="default">
         <replica-count>2147483647</replica-count>
-        <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
+        <split-brain-protection-ref>
+            splitBrainProtectionRuleWithThreeNodes
+        </split-brain-protection-ref>
         <statistics-enabled>true</statistics-enabled>
     </pn-counter>
 
@@ -2975,8 +3102,10 @@
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>
                 <service-name>MY-SERVICE-NAME</service-name>
-                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
-                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+                <service-label-name>MY-SERVICE-LABEL-NAME
+                </service-label-name>
+                <service-label-value>MY-SERVICE-LABEL-VALUE
+                </service-label-value>
             </kubernetes>
             <eureka enabled="false">
                 <self-registration>true</self-registration>
@@ -3018,13 +3147,16 @@
                 <interface>10.10.1.*</interface>
             </interfaces>
             <ssl enabled="true">
-                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
+                <factory-class-name>
+                    com.hazelcast.examples.MySSLContextFactory
+                </factory-class-name>
                 <properties>
                     <property name="foo">bar</property>
                 </properties>
             </ssl>
             <socket-interceptor enabled="true">
-                <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
+                <class-name>com.hazelcast.examples.MySocketInterceptor
+                </class-name>
                 <properties>
                     <property name="foo">bar</property>
                 </properties>
@@ -3052,13 +3184,16 @@
                 <interface>10.10.1.*</interface>
             </interfaces>
             <ssl enabled="true">
-                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
+                <factory-class-name>
+                    com.hazelcast.examples.MySSLContextFactory
+                </factory-class-name>
                 <properties>
                     <property name="foo">bar</property>
                 </properties>
             </ssl>
             <socket-interceptor enabled="true">
-                <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
+                <class-name>com.hazelcast.examples.MySocketInterceptor
+                </class-name>
                 <properties>
                     <property name="foo">bar</property>
                 </properties>
@@ -3068,7 +3203,8 @@
             <reuse-address>true</reuse-address>
         </client-server-socket-endpoint-config>
         <!-- create a server socket for REST API -->
-        <rest-server-socket-endpoint-config name="internal-server-socket">
+        <rest-server-socket-endpoint-config
+                name="internal-server-socket">
             <interfaces enabled="false">
                 <interface>10.10.1.*</interface>
             </interfaces>
@@ -3085,7 +3221,9 @@
         <!-- specify SSL config to be used for outgoing connections -->
         <wan-endpoint-config name="endpoint-tokyo">
             <ssl enabled="true">
-                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
+                <factory-class-name>
+                    com.hazelcast.examples.MySSLContextFactory
+                </factory-class-name>
                 <properties>
                     <property name="foo">bar</property>
                 </properties>
@@ -3099,7 +3237,8 @@
                 <iteration-count>1000</iteration-count>
             </symmetric-encryption>
         </wan-endpoint-config>
-        <wan-server-socket-endpoint-config name="wan-server-socket-config">
+        <wan-server-socket-endpoint-config
+                name="wan-server-socket-config">
             <interfaces enabled="false">
                 <interface>192.168.8.101</interface>
                 <interface>10.20.10.100</interface>
@@ -3273,20 +3412,30 @@
         <cp-member-count>10</cp-member-count>
         <group-size>3</group-size>
         <session-time-to-live-seconds>60</session-time-to-live-seconds>
-        <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
-        <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>
-        <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+        <session-heartbeat-interval-seconds>5
+        </session-heartbeat-interval-seconds>
+        <missing-cp-member-auto-removal-seconds>120
+        </missing-cp-member-auto-removal-seconds>
+        <fail-on-indeterminate-operation-state>false
+        </fail-on-indeterminate-operation-state>
         <persistence-enabled>true</persistence-enabled>
         <base-dir>custom-cp-dir</base-dir>
         <data-load-timeout-seconds>30</data-load-timeout-seconds>
         <raft-algorithm>
-            <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
-            <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
-            <max-missed-leader-heartbeat-count>5</max-missed-leader-heartbeat-count>
-            <append-request-max-entry-count>50</append-request-max-entry-count>
-            <commit-index-advance-count-to-snapshot>1000</commit-index-advance-count-to-snapshot>
-            <uncommitted-entry-count-to-reject-new-appends>100</uncommitted-entry-count-to-reject-new-appends>
-            <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
+            <leader-election-timeout-in-millis>2000
+            </leader-election-timeout-in-millis>
+            <leader-heartbeat-period-in-millis>5000
+            </leader-heartbeat-period-in-millis>
+            <max-missed-leader-heartbeat-count>5
+            </max-missed-leader-heartbeat-count>
+            <append-request-max-entry-count>50
+            </append-request-max-entry-count>
+            <commit-index-advance-count-to-snapshot>1000
+            </commit-index-advance-count-to-snapshot>
+            <uncommitted-entry-count-to-reject-new-appends>100
+            </uncommitted-entry-count-to-reject-new-appends>
+            <append-request-backoff-timeout-in-millis>100
+            </append-request-backoff-timeout-in-millis>
         </raft-algorithm>
         <semaphores>
             <semaphore>
