@@ -1306,7 +1306,7 @@ hazelcast:
           attributes:
             - "name"
         - attributes:
-            - "age"
+          - "age"
       attributes:
         currency:
           extractor-class-name: com.bank.CurrencyExtractor
@@ -1368,7 +1368,7 @@ hazelcast:
             eviction-policy: LFU
           indexes:
             - attributes:
-                - "name"
+              - "name"
   #
   # ===== HAZELCAST MULTIMAP CONFIGURATION =====
   #
@@ -1625,11 +1625,11 @@ hazelcast:
         max-size-policy: ENTRY_COUNT
         eviction-policy: LFU
       wan-replication-ref:
-        name: my-wan-cluster-batch
-        merge-policy: PassThroughMergePolicy
-        republishing-enabled: true
-        filters:
-          - com.example.SampleFilter
+         name: my-wan-cluster-batch
+         merge-policy: PassThroughMergePolicy
+         republishing-enabled: true
+         filters:
+           - com.example.SampleFilter
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       partition-lost-listeners:
         - com.your-package.YourPartitionLostListener
@@ -2186,37 +2186,37 @@ hazelcast:
       - name: ldapRealm
         authentication:
           ldap:
-            url: ldap://ldap.my-company.example
-            socket-factory-class-name: socketFactoryClassName
-            parse-dn: true
-            role-context: roleContext
-            role-filter: roleFilter
-            role-mapping-attribute: roleMappingAttribute
-            role-mapping-mode: reverse
-            role-name-attribute: roleNameAttribute
-            role-recursion-max-depth: 25
-            role-search-scope: object
-            user-name-attribute: userNameAttribute
-            system-user-dn: systemUserDn
-            system-user-password: systemUserPassword
-            password-attribute: passwordAttribute
-            user-context: userContext
-            user-filter: userFilter
-            user-search-scope: one-level
+             url: ldap://ldap.my-company.example
+             socket-factory-class-name: socketFactoryClassName
+             parse-dn: true
+             role-context: roleContext
+             role-filter: roleFilter
+             role-mapping-attribute: roleMappingAttribute
+             role-mapping-mode: reverse
+             role-name-attribute: roleNameAttribute
+             role-recursion-max-depth: 25
+             role-search-scope: object
+             user-name-attribute: userNameAttribute
+             system-user-dn: systemUserDn
+             system-user-password: systemUserPassword
+             password-attribute: passwordAttribute
+             user-context: userContext
+             user-filter: userFilter
+             user-search-scope: one-level
       - name: tlsRealm
         authentication:
           tls:
-            roleAttribute: cn
+             roleAttribute: cn
       - name: usernamePasswordIdentityRealm
         identity:
           username-password:
-            username: user
-            password: Hazelcast
+             username: user
+             password: Hazelcast
       - name: tokenIdentityRealm
         identity:
           token:
-            encoding: base64
-            value: SGF6ZWxjYXN0
+             encoding: base64
+             value: SGF6ZWxjYXN0
     member-authentication:
       realm: mr
     client-authentication:
