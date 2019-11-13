@@ -39,18 +39,27 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * {@link Job} proxy on client.
  */
 public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
+
+    private static final long RETRY_DELAY_NS = MILLISECONDS.toNanos(200);
+    private static final long RETRY_TIME_NS = SECONDS.toNanos(60);
 
     ClientJobProxy(JetClientInstanceImpl client, long jobId) {
         super(client, jobId);
@@ -63,27 +72,23 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Nonnull
     @Override
     public JobStatus getStatus() {
-        ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
-        try {
+        return callAndRetryIfTargetNotFound(()  -> {
+            ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             ResponseParameters parameters = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[parameters.response];
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        });
     }
 
     @Nonnull
     @Override
     public JobMetrics getMetrics() {
-        ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
-        try {
+        return callAndRetryIfTargetNotFound(()  -> {
+            ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             JetGetJobMetricsCodec.ResponseParameters parameters = JetGetJobMetricsCodec.decodeResponse(response);
             return toJobMetrics(serializationService().toObject(parameters.response));
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        });
     }
 
     @Override
@@ -140,25 +145,21 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     @Override
     protected long doGetJobSubmissionTime() {
-        ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId());
-        try {
+        return callAndRetryIfTargetNotFound(() -> {
+            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response).response;
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        });
     }
 
     @Override
     protected JobConfig doGetJobConfig() {
-        ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
-        try {
+        return callAndRetryIfTargetNotFound(() -> {
+            ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             Data data = JetGetJobConfigCodec.decodeResponse(response).response;
             return serializationService().toObject(data);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        });
     }
 
     @Override
@@ -181,6 +182,25 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         return new ClientInvocation(
                 container().getHazelcastClient(), request, "jobId=" + getIdString(), invocationAddr
         );
+    }
+
+    private <T> T callAndRetryIfTargetNotFound(Callable<T> action) {
+        long timeLimit = System.nanoTime() + RETRY_TIME_NS;
+        for (;;) {
+            try {
+                return action.call();
+            } catch (Exception e) {
+                if (System.nanoTime() < timeLimit
+                        && e instanceof ExecutionException
+                        && e.getCause() instanceof TargetNotMemberException
+                ) {
+                    // ignore the TargetNotMemberException and retry with new master
+                    LockSupport.parkNanos(RETRY_DELAY_NS);
+                    continue;
+                }
+                throw rethrow(e);
+            }
+        }
     }
 
 }

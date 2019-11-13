@@ -18,10 +18,12 @@ package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -76,8 +78,12 @@ abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTas
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation operation) {
+        Address masterAddress = nodeEngine.getMasterAddress();
+        if (masterAddress == null) {
+            throw new RetryableHazelcastException("master not yet known");
+        }
         return nodeEngine.getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,
-                operation, nodeEngine.getMasterAddress());
+                operation, masterAddress);
     }
 
     protected JetService getJetService() {
