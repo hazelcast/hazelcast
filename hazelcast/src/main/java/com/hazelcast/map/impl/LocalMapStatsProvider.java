@@ -17,13 +17,10 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.monitor.impl.OnDemandIndexStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.nearcache.NearCache;

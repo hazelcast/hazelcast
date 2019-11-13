@@ -18,15 +18,13 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.lang.String.format;
@@ -34,13 +32,6 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class NearCacheStatsImpl implements NearCacheStats {
-
-    public static NearCacheStatsImpl initForConfig(NearCacheConfig config) {
-        NearCacheStatsImpl stats = new NearCacheStatsImpl();
-        stats.setInMemoryFormat(config.getInMemoryFormat());
-        return stats;
-    }
-
 
     private static final double PERCENTAGE = 100.0;
 
@@ -120,6 +111,12 @@ public class NearCacheStatsImpl implements NearCacheStats {
         lastPersistenceKeyCount = stats.lastPersistenceKeyCount;
         lastPersistenceFailure = stats.lastPersistenceFailure;
         inMemoryFormat = nearCacheStats.getInMemoryFormat();
+    }
+
+    public static NearCacheStatsImpl initForConfig(NearCacheConfig config) {
+        NearCacheStatsImpl stats = new NearCacheStatsImpl();
+        stats.setInMemoryFormat(config.getInMemoryFormat());
+        return stats;
     }
 
     @Override

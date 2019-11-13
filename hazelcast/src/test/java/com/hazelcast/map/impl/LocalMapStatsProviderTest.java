@@ -44,7 +44,6 @@ import java.util.Properties;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;

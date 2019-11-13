@@ -19,18 +19,17 @@ package com.hazelcast.replicatedmap.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
 
