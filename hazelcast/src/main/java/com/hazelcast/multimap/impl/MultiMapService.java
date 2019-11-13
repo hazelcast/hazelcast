@@ -212,12 +212,14 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         Set<Data> keySet = new HashSet<Data>();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             IPartition partition = nodeEngine.getPartitionService().getPartition(i);
+            boolean isLocalPartition = partition.isLocal();
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
-            MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name);
+            // we should not treat retrieving the container on backups an access
+            MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name, isLocalPartition);
             if (multiMapContainer == null) {
                 continue;
             }
-            if (partition.isLocal()) {
+            if (isLocalPartition) {
                 keySet.addAll(multiMapContainer.keySet());
             }
         }
@@ -394,7 +396,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         for (int partitionId = 0; partitionId < nodeEngine.getPartitionService().getPartitionCount(); partitionId++) {
             IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(partitionId);
-            MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name);
+            MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name, false);
             if (multiMapContainer == null) {
                 continue;
             }
