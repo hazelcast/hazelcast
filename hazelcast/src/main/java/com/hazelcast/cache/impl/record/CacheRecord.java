@@ -53,7 +53,7 @@ public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
      *
      * @param time the latest access time of this {@link Evictable} in milliseconds
      */
-    void setAccessTime(long time);
+    void setLastAccessTime(long time);
 
     /**
      * Sets the access hit count of this {@link Evictable}.
@@ -68,18 +68,15 @@ public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
     void incrementHits();
 
     /**
-     * Resets the access hit count of this {@link Evictable} to <code>0</code>.
-     */
-    void resetHits();
-
-    /**
      * Sets the expiry policy for this record.
+     *
      * @param expiryPolicy
      */
     void setExpiryPolicy(E expiryPolicy);
 
     /**
      * Gets the expiryPolicy associated with this record.
+     *
      * @return
      */
     E getExpiryPolicy();

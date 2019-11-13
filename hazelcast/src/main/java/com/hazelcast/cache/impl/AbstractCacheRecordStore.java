@@ -588,7 +588,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected long onRecordAccess(Data key, R record, ExpiryPolicy expiryPolicy, long now) {
-        record.setAccessTime(now);
+        record.setLastAccessTime(now);
         record.incrementHits();
         return updateAccessDuration(key, record, expiryPolicy, now);
     }

@@ -28,6 +28,7 @@ import com.hazelcast.spi.eviction.EvictionPolicyComparator;
  * @see EvictionPolicyComparator
  * @see EntryView
  */
+@FunctionalInterface
 public interface MapEvictionPolicyComparator<K, V>
         extends EvictionPolicyComparator<K, V, EntryView<K, V>> {
 

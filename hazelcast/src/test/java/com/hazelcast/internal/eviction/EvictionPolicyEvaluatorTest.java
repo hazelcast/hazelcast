@@ -132,11 +132,11 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             if (i == expectedEvictedRecordValue) {
                 // The record in the middle will be minimum access time.
                 // So, it will be selected for eviction
-                record.setAccessTime(baseTime - 1000);
+                record.setLastAccessTime(baseTime - 1000);
             } else if (i == expectedExpiredRecordValue) {
                 record.setExpirationTime(System.currentTimeMillis());
             } else {
-                record.setAccessTime(creationTime + 1000);
+                record.setLastAccessTime(creationTime + 1000);
             }
             records.add(new SimpleEvictionCandidate<Integer, CacheObjectRecord>(i, record));
         }
@@ -206,7 +206,7 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             } else {
                 record.setHits(i + 1);
             }
-            records.add(new SimpleEvictionCandidate<Integer, CacheObjectRecord>(i, record));
+            records.add(new SimpleEvictionCandidate<>(i, record));
         }
 
         EvictionCandidate<Integer, CacheObjectRecord> evictionCandidate = evictionPolicyEvaluator.evaluate(records);

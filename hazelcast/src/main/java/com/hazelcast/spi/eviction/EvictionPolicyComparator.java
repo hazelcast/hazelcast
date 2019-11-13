@@ -32,6 +32,7 @@ import java.util.Comparator;
  */
 
 @SuppressWarnings("checkstyle:interfaceistype")
+@FunctionalInterface
 public interface EvictionPolicyComparator<K, V, E extends EvictableEntryView<K, V>>
         extends Comparator<E>, Serializable {
 

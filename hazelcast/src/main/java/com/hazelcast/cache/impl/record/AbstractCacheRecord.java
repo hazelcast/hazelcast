@@ -34,9 +34,10 @@ import java.io.IOException;
 public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, IdentifiedDataSerializable {
 
     protected long creationTime = TIME_NOT_AVAILABLE;
+
+    protected volatile int hits;
     protected volatile long expirationTime = TIME_NOT_AVAILABLE;
-    protected volatile long accessTime = TIME_NOT_AVAILABLE;
-    protected volatile int accessHit;
+    protected volatile long lastAccessTime = TIME_NOT_AVAILABLE;
 
     protected AbstractCacheRecord() {
     }
@@ -67,22 +68,22 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
 
     @Override
     public long getLastAccessTime() {
-        return accessTime;
+        return lastAccessTime;
     }
 
     @Override
-    public void setAccessTime(long accessTime) {
-        this.accessTime = accessTime;
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
     }
 
     @Override
     public long getHits() {
-        return accessHit;
+        return hits;
     }
 
     @Override
     public void setHits(long accessHit) {
-        this.accessHit = accessHit > Integer.MAX_VALUE
+        this.hits = accessHit > Integer.MAX_VALUE
                 ? Integer.MAX_VALUE : (int) accessHit;
     }
 
@@ -90,12 +91,7 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "CacheRecord can be accessed by only its own partition thread.")
     public void incrementHits() {
-        accessHit++;
-    }
-
-    @Override
-    public void resetHits() {
-        accessHit = 0;
+        hits++;
     }
 
     @Override
@@ -107,16 +103,16 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
-        out.writeLong(accessTime);
-        out.writeInt(accessHit);
+        out.writeLong(lastAccessTime);
+        out.writeInt(hits);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
         expirationTime = in.readLong();
-        accessTime = in.readLong();
-        accessHit = in.readInt();
+        lastAccessTime = in.readLong();
+        hits = in.readInt();
     }
 
     @Override
