@@ -122,6 +122,11 @@ public interface LocalCacheStats extends LocalInstanceStats {
      */
     float getAverageRemoveTime();
 
+    /**
+     * Returns the in-memory format used to represent the contents of the cache on the member.
+     *
+     * @return the in-memory format used to represent the contents of the cache on the member
+     */
     InMemoryFormat getInMemoryFormat();
 
 }

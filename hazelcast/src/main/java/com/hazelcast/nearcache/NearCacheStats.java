@@ -131,5 +131,10 @@ public interface NearCacheStats extends LocalInstanceStats {
      */
     String getLastPersistenceFailure();
 
+    /**
+     * Returns the in-memory format used to represent the contents of this Near Cache.
+     *
+     * @return the in-memory format used to represent the contents of this Near Cache
+     */
     InMemoryFormat getInMemoryFormat();
 }

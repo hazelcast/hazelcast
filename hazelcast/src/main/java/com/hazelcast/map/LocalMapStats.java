@@ -275,6 +275,11 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     Map<String, LocalIndexStats> getIndexStats();
 
+    /**
+     * Returns the in-memory format used to represent the contents of the map on the member.
+     *
+     * @return the in-memory format used to represent the contents of the map on the member
+     */
     InMemoryFormat getInMemoryFormat();
 
 }
