@@ -31,6 +31,7 @@ import com.hazelcast.query.LocalIndexStats;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -40,6 +41,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -525,6 +527,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
         if (nearCacheStats != null) {
             root.add("nearCacheStats", nearCacheStats.toJson());
         }
+        if (inMemoryFormat != null) {
+            root.add("inMemoryFormat", inMemoryFormat.toString());
+        }
 
         root.add("queryCount", queryCount);
         root.add("indexedQueryCount", indexedQueryCount);
@@ -592,6 +597,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         } else {
             setIndexStats(null);
         }
+        inMemoryFormat = Optional.ofNullable(getString(json, "inMemoryFormat", null)).map(InMemoryFormat::valueOf).orElse(null);
     }
 
     @Override
@@ -628,6 +634,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", queryCount=" + queryCount
                 + ", indexedQueryCount=" + indexedQueryCount
                 + ", indexStats=" + indexStats
+                + ", inMemoryFormat=" + inMemoryFormat
                 + '}';
     }
 

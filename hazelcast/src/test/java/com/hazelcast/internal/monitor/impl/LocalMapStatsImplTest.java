@@ -28,9 +28,11 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -79,6 +81,7 @@ public class LocalMapStatsImplTest {
         LocalIndexStatsImpl index = new LocalIndexStatsImpl();
         indexStats.put("index", index);
         localMapStats.setIndexStats(indexStats);
+        localMapStats.setInMemoryFormat(NATIVE);
     }
 
     @Test
@@ -163,6 +166,7 @@ public class LocalMapStatsImplTest {
         assertEquals(5, deserialized.getIndexedQueryCount());
         assertNotNull(deserialized.getIndexStats());
         assertEquals(1, deserialized.getIndexStats().size());
+        assertSame(NATIVE, deserialized.getInMemoryFormat());
     }
 
     @Test

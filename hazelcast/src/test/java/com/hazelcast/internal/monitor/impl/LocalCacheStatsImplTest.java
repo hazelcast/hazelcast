@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -142,6 +143,7 @@ public class LocalCacheStatsImplTest {
         };
 
         LocalCacheStatsImpl localCacheStats = new LocalCacheStatsImpl(cacheStatistics);
+        localCacheStats.setInMemoryFormat(NATIVE);
 
         JsonObject serialized = localCacheStats.toJson();
         LocalCacheStatsImpl deserialized = new LocalCacheStatsImpl();
@@ -162,6 +164,7 @@ public class LocalCacheStatsImplTest {
         assertEquals(23.42f, deserialized.getAverageGetTime(), 0.0001);
         assertEquals(42.23f, deserialized.getAveragePutTime(), 0.0001);
         assertEquals(127.45f, deserialized.getAverageRemoveTime(), 0.0001);
+        assertEquals(NATIVE, deserialized.getInMemoryFormat());
         assertTrue(deserialized.getCreationTime() > 0);
         assertNotNull(deserialized.toString());
     }

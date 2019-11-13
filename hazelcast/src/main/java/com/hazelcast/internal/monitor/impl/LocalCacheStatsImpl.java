@@ -22,10 +22,13 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 
+import java.util.Optional;
+
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static com.hazelcast.internal.util.JsonUtil.getFloat;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.JsonUtil.getString;
 
 /**
  * Default implementation of {@link com.hazelcast.internal.monitor.LocalCacheStats}
@@ -201,6 +204,9 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
         root.add("averageGetTime", averageGetTime);
         root.add("averagePutTime", averagePutTime);
         root.add("averageRemoveTime", averageRemoveTime);
+        if (inMemoryFormat != null) {
+            root.add("inMemoryFormat", inMemoryFormat.toString());
+        }
         return root;
     }
 
@@ -221,6 +227,7 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
         averageGetTime = getFloat(json, "averageGetTime", -1f);
         averagePutTime = getFloat(json, "averagePutTime", -1f);
         averageRemoveTime = getFloat(json, "averageRemoveTime", -1f);
+        inMemoryFormat = Optional.ofNullable(getString(json, "inMemoryFormat", null)).map(InMemoryFormat::valueOf).orElse(null);
     }
 
     @Override

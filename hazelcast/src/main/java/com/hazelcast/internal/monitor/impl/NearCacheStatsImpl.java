@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nearcache.NearCacheStats;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -347,7 +348,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         lastPersistenceWrittenBytes = getLong(json, "lastPersistenceWrittenBytes", -1L);
         lastPersistenceKeyCount = getLong(json, "lastPersistenceKeyCount", -1L);
         lastPersistenceFailure = getString(json, "lastPersistenceFailure", "");
-        inMemoryFormat = InMemoryFormat.valueOf(getString(json, "inMemoryFormat"));
+        inMemoryFormat = Optional.ofNullable(getString(json, "inMemoryFormat", null)).map(InMemoryFormat::valueOf).orElse(null);
     }
 
     @Override
