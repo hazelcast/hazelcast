@@ -364,7 +364,7 @@ public class ManagementCenterService {
                             MCMatchMCConfigCodec.decodeResponse(clientMessage);
                     return response.response;
                 },
-                true
+                false
         );
     }
 
