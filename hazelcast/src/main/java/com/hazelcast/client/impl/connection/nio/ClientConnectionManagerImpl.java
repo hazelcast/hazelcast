@@ -56,7 +56,6 @@ import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -78,6 +77,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl.MC_CLIENT_MODE;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
@@ -91,9 +91,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
-
-    public static final HazelcastProperty MC_CLIENT_MODE
-            = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
 
     private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
 
