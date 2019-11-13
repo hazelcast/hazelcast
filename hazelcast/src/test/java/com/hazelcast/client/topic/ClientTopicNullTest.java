@@ -35,12 +35,11 @@ import org.junit.runner.RunWith;
 public class ClientTopicNullTest extends AbstractTopicNullTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private HazelcastInstance member;
     private HazelcastInstance client;
 
     @Before
     public void setup() {
-        member = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
     }
 

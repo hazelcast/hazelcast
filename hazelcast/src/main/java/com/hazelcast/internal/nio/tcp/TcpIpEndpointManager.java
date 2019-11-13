@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.nio.tcp;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
@@ -42,7 +42,6 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -404,14 +403,12 @@ public class TcpIpEndpointManager
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         if (endpointQualifier == null) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection");
-            context.collect(tagger, this);
+            context.collect(descriptor.withPrefix("tcp.connection"), this);
         } else {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.connection")
-                                                .withIdTag("endpoint", endpointQualifier.toMetricsPrefixString());
-            context.collect(tagger, this);
+            context.collect(descriptor.withPrefix("tcp.connection")
+                                      .withDiscriminator("endpoint", endpointQualifier.toMetricsPrefixString()), this);
         }
     }
 

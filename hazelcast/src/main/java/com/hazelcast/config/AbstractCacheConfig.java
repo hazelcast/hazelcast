@@ -16,12 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -43,9 +43,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @param <K> the key type
  * @param <V> the value type
  */
-@BinaryInterface
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, DataSerializable {
+public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, IdentifiedDataSerializable {
 
     private static final String DEFAULT_KEY_VALUE_TYPE = "java.lang.Object";
 
@@ -424,6 +423,11 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     public CacheConfiguration<K, V> setStoreByValue(boolean storeByValue) {
         this.isStoreByValue = storeByValue;
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
     }
 
     protected Set<DeferredValue<CacheEntryListenerConfiguration<K, V>>> createConcurrentSet() {

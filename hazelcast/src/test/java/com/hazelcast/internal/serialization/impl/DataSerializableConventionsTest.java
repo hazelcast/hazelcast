@@ -170,8 +170,8 @@ public class DataSerializableConventionsTest {
      */
     @Test
     public void test_identifiedDataSerializables_haveUniqueFactoryAndTypeId() throws Exception {
-        Set<String> classesWithInstantiationProblems = new TreeSet<String>();
-        Set<String> classesThrowingUnsupportedOperationException = new TreeSet<String>();
+        Set<String> classesWithInstantiationProblems = new TreeSet<>();
+        Set<String> classesThrowingUnsupportedOperationException = new TreeSet<>();
 
         Multimap<Integer, Integer> factoryToTypeId = HashMultimap.create();
 
@@ -273,7 +273,8 @@ public class DataSerializableConventionsTest {
 
     private boolean isReadOnlyConfig(Class<? extends IdentifiedDataSerializable> klass) {
         String className = klass.getName();
-        return className.endsWith("ReadOnly") && className.contains("Config");
+        return className.endsWith("ReadOnly")
+                && (className.contains("Config") || className.contains("WanReplicationRef"));
     }
 
     /**

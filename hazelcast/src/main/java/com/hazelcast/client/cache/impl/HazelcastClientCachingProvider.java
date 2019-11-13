@@ -54,15 +54,6 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
         this.hazelcastInstance = instance;
     }
 
-    /**
-     * Helper method for creating caching provider for testing etc.
-     */
-    public static HazelcastClientCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
-        HazelcastClientCachingProvider cachingProvider = new HazelcastClientCachingProvider();
-        cachingProvider.hazelcastInstance = hazelcastInstance;
-        return cachingProvider;
-    }
-
     @Override
     public String toString() {
         return "HazelcastClientCachingProvider{hazelcastInstance=" + hazelcastInstance + '}';

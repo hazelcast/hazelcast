@@ -22,10 +22,9 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
@@ -375,23 +374,23 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
         }
 
         @Override
-        public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
-            context.collect(tagger, this);
+        public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+            descriptor.withPrefix("tcp");
+            context.collect(descriptor, this);
 
             TcpIpAcceptor acceptor = this.acceptorRef.get();
             if (acceptor != null) {
-                acceptor.provideDynamicMetrics(taggerSupplier, context);
+                acceptor.provideDynamicMetrics(descriptor.copy(), context);
             }
 
             for (EndpointManager<TcpIpConnection> manager : this.endpointManagers.values()) {
                 if (manager instanceof DynamicMetricsProvider) {
-                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(taggerSupplier, context);
+                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(descriptor.copy(), context);
                 }
             }
 
             if (unifiedEndpointManager != null) {
-                unifiedEndpointManager.provideDynamicMetrics(taggerSupplier, context);
+                unifiedEndpointManager.provideDynamicMetrics(descriptor.copy(), context);
             }
         }
     }

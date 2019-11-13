@@ -20,34 +20,32 @@ import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.MessageListener;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.reliable.MessageRunner;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
-import com.hazelcast.internal.util.UuidUtil;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
-import static com.hazelcast.client.impl.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
-import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
-import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
+import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -60,6 +58,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
+    private static final String NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
+    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     private static final int MAX_BACKOFF = 2000;
     private static final int INITIAL_BACKOFF_MS = 100;
 
@@ -90,7 +90,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     @Override
-    public void publish(@Nullable E payload) {
+    public void publish(@Nonnull E payload) {
+        checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
         try {
             Data data = serializationService.toData(payload);
             ReliableTopicMessage message = new ReliableTopicMessage(data, null);

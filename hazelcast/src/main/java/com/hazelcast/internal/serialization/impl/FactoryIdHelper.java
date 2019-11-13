@@ -184,9 +184,6 @@ public final class FactoryIdHelper {
     public static final String REPLICATED_PORTABLE_FACTORY = "hazelcast.serialization.portable.replicated_map";
     public static final int REPLICATED_PORTABLE_FACTORY_ID = -22;
 
-    public static final String MAP_REDUCE_PORTABLE_FACTORY = "hazelcast.serialization.portable.map_reduce";
-    public static final int MAP_REDUCE_PORTABLE_FACTORY_ID = -23;
-
     public static final String CACHE_PORTABLE_FACTORY = "hazelcast.serialization.portable.cache";
     public static final int CACHE_PORTABLE_FACTORY_ID = -24;
 
