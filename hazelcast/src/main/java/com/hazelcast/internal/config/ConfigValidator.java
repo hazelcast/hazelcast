@@ -182,11 +182,16 @@ public final class ConfigValidator {
         checkMapMaxSizePolicyConfig(maxSizePolicy);
     }
 
-    private static void checkMapMaxSizePolicyConfig(MaxSizePolicy maxSizePolicy) {
+    static void checkMapMaxSizePolicyConfig(MaxSizePolicy maxSizePolicy) {
         if (!MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES.contains(maxSizePolicy)
                 && !MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
+
+            EnumSet<MaxSizePolicy> allMaxSizePolicies = EnumSet.copyOf(MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES);
+            allMaxSizePolicies.addAll(MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES);
+
             String msg = format("IMap eviction config doesn't support max size policy `%s`. "
-                    + "Please select a valid one: %s.", maxSizePolicy, MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES);
+                    + "Please select a valid one: %s.", maxSizePolicy, allMaxSizePolicies);
+
             throw new InvalidConfigurationException(msg);
         }
     }
