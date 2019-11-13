@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.monitor.impl;
 
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonObject.Member;
 import com.hazelcast.internal.json.JsonValue;
@@ -32,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
@@ -46,6 +50,16 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 public class LocalMapStatsImpl implements LocalMapStats {
+
+    public static LocalMapStatsImpl initForConfig(MapConfig mapConfig) {
+        LocalMapStatsImpl stats = new LocalMapStatsImpl();
+        stats.setInMemoryFormat(mapConfig.getInMemoryFormat());
+        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
+        if (nearCacheConfig != null) {
+            stats.setNearCacheStats(NearCacheStatsImpl.initForConfig(nearCacheConfig));
+        }
+        return stats;
+    }
 
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
@@ -146,7 +160,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe
     private volatile long indexedQueryCount;
 
-    private boolean nativeMemoryUsed;
+    private InMemoryFormat inMemoryFormat;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -377,12 +391,12 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
-    public boolean isNativeMemoryUsed() {
-        return nativeMemoryUsed;
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
     }
 
-    public void setNativeMemoryUsed(boolean nativeMemoryUsed) {
-        this.nativeMemoryUsed = nativeMemoryUsed;
+    public void setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        this.inMemoryFormat = inMemoryFormat;
     }
 
     /**

@@ -85,16 +85,7 @@ public class LocalMapStatsProvider {
     }
 
     private LocalMapStatsImpl initializeLocalMapStats(String mapName) {
-        MapConfig mapConfig = mapServiceContext.getMapContainer(mapName).getMapConfig();
-        LocalMapStatsImpl stats = new LocalMapStatsImpl();
-        stats.setNativeMemoryUsed(mapConfig.getInMemoryFormat() == NATIVE);
-        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
-        if (nearCacheConfig != null) {
-            NearCacheStatsImpl nearCacheStats = new NearCacheStatsImpl();
-            nearCacheStats.setNativeMemoryUsed(nearCacheConfig.getInMemoryFormat() == NATIVE);
-            stats.setNearCacheStats(nearCacheStats);
-        }
-        return stats;
+        return LocalMapStatsImpl.initForConfig(mapServiceContext.getMapContainer(mapName).getMapConfig());
     }
 
     protected MapServiceContext getMapServiceContext() {

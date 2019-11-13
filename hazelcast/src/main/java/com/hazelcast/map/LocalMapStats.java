@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.instance.LocalInstanceStats;
 import com.hazelcast.internal.monitor.MemberState;
@@ -274,6 +275,6 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     Map<String, LocalIndexStats> getIndexStats();
 
-    boolean isNativeMemoryUsed();
+    InMemoryFormat getInMemoryFormat();
 
 }

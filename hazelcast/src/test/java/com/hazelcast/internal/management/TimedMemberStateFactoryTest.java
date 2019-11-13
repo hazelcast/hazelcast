@@ -25,9 +25,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class TimedMemberStateFactoryTest
@@ -51,7 +53,7 @@ public class TimedMemberStateFactoryTest
         if (instance != null) {
             instance.shutdown();
         }
-        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "");
+        System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE);
     }
 
     @Test
@@ -85,7 +87,7 @@ public class TimedMemberStateFactoryTest
 
         TimedMemberState actual = memberStateFactory.createTimedMemberState();
 
-        assertTrue(actual.getMemberState().getLocalMapStats("myMap").isNativeMemoryUsed());
+        assertSame(NATIVE, actual.getMemberState().getLocalMapStats("myMap").getInMemoryFormat());
     }
 
     @Test
@@ -97,7 +99,7 @@ public class TimedMemberStateFactoryTest
 
         LocalCacheStats myCacheStats = actual.getMemberState().getLocalCacheStats("/hz/myCache");
         assertNotNull(myCacheStats);
-        assertTrue(myCacheStats.isNativeMemoryUsed());
+        assertSame(NATIVE, myCacheStats.getInMemoryFormat());
     }
 
 }

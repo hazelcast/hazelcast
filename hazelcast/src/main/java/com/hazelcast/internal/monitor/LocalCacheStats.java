@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.monitor;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.instance.LocalInstanceStats;
 
 /**
@@ -121,6 +122,6 @@ public interface LocalCacheStats extends LocalInstanceStats {
      */
     float getAverageRemoveTime();
 
-    boolean isNativeMemoryUsed();
+    InMemoryFormat getInMemoryFormat();
 
 }

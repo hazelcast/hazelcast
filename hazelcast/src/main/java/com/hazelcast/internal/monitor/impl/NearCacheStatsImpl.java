@@ -16,12 +16,15 @@
 
 package com.hazelcast.internal.monitor.impl;
 
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getString;
@@ -30,6 +33,13 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class NearCacheStatsImpl implements NearCacheStats {
+
+    public static NearCacheStatsImpl initForConfig(NearCacheConfig config) {
+        NearCacheStatsImpl stats = new NearCacheStatsImpl();
+        stats.setInMemoryFormat(config.getInMemoryFormat());
+        return stats;
+    }
+
 
     private static final double PERCENTAGE = 100.0;
 
@@ -84,7 +94,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private volatile long lastPersistenceKeyCount;
     private volatile String lastPersistenceFailure = "";
 
-    private boolean nativeMemoryUsed;
+    private InMemoryFormat inMemoryFormat;
 
     public NearCacheStatsImpl() {
         this.creationTime = getNowInMillis();
@@ -108,6 +118,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         lastPersistenceWrittenBytes = stats.lastPersistenceWrittenBytes;
         lastPersistenceKeyCount = stats.lastPersistenceKeyCount;
         lastPersistenceFailure = stats.lastPersistenceFailure;
+        inMemoryFormat = nearCacheStats.getInMemoryFormat();
     }
 
     @Override
@@ -286,12 +297,12 @@ public class NearCacheStatsImpl implements NearCacheStats {
     }
 
     @Override
-    public boolean isNativeMemoryUsed() {
-        return nativeMemoryUsed;
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
     }
 
-    public void setNativeMemoryUsed(boolean nativeMemoryUsed) {
-        this.nativeMemoryUsed = nativeMemoryUsed;
+    public void setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        this.inMemoryFormat = inMemoryFormat;
     }
 
 
@@ -313,7 +324,9 @@ public class NearCacheStatsImpl implements NearCacheStats {
         root.add("lastPersistenceWrittenBytes", lastPersistenceWrittenBytes);
         root.add("lastPersistenceKeyCount", lastPersistenceKeyCount);
         root.add("lastPersistenceFailure", lastPersistenceFailure);
-        root.add("nativeMemoryUsed", nativeMemoryUsed);
+        if (inMemoryFormat != null) {
+            root.add("inMemoryFormat", inMemoryFormat.toString());
+        }
         return root;
     }
 
@@ -334,7 +347,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         lastPersistenceWrittenBytes = getLong(json, "lastPersistenceWrittenBytes", -1L);
         lastPersistenceKeyCount = getLong(json, "lastPersistenceKeyCount", -1L);
         lastPersistenceFailure = getString(json, "lastPersistenceFailure", "");
-        nativeMemoryUsed = getBoolean(json, "nativeMemoryUsed", false);
+        inMemoryFormat = InMemoryFormat.valueOf(getString(json, "inMemoryFormat"));
     }
 
     @Override
@@ -356,7 +369,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 + ", lastPersistenceWrittenBytes=" + lastPersistenceWrittenBytes
                 + ", lastPersistenceKeyCount=" + lastPersistenceKeyCount
                 + ", lastPersistenceFailure='" + lastPersistenceFailure + "'"
-                + ", nativeMemoryUsed=" + nativeMemoryUsed
+                + ", inMemoryFormat='" + inMemoryFormat + "'"
                 + '}';
     }
 }

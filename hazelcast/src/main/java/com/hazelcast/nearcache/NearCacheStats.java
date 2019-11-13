@@ -16,6 +16,7 @@
 
 package com.hazelcast.nearcache;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.instance.LocalInstanceStats;
 import com.hazelcast.internal.monitor.MemberState;
 
@@ -130,5 +131,5 @@ public interface NearCacheStats extends LocalInstanceStats {
      */
     String getLastPersistenceFailure();
 
-    boolean isNativeMemoryUsed();
+    InMemoryFormat getInMemoryFormat();
 }

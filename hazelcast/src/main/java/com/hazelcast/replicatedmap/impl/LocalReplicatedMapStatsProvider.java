@@ -57,7 +57,7 @@ class LocalReplicatedMapStatsProvider {
 
     private LocalReplicatedMapStatsImpl createEmptyMapStats(String mapName) {
         LocalReplicatedMapStatsImpl stats = new LocalReplicatedMapStatsImpl();
-        stats.setNativeMemoryUsed(config.getReplicatedMapConfig(mapName).getInMemoryFormat() == NATIVE);
+        stats.setInMemoryFormat(config.getReplicatedMapConfig(mapName).getInMemoryFormat());
         return stats;
     }
 

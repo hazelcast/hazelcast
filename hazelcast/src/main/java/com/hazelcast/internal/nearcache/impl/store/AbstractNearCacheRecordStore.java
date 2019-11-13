@@ -100,7 +100,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig,
                                         SerializationService serializationService,
                                         ClassLoader classLoader) {
-        this(nearCacheConfig, nearCacheConfig.initNearCacheStats(), serializationService, classLoader);
+        this(nearCacheConfig, NearCacheStatsImpl.initForConfig(nearCacheConfig), serializationService, classLoader);
     }
 
     // extended in EE

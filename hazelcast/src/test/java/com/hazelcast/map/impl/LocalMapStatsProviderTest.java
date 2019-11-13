@@ -43,6 +43,7 @@ import java.util.Properties;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -88,7 +89,7 @@ public class LocalMapStatsProviderTest {
         LocalMapStatsProvider provider = new LocalMapStatsProvider(serviceContext);
         Map<String, LocalMapStats> actual = provider.createAllLocalMapStats();
 
-        assertTrue(actual.get(MAP_NAME).getNearCacheStats().isNativeMemoryUsed());
+        assertSame(NATIVE, actual.get(MAP_NAME).getNearCacheStats().getInMemoryFormat());
     }
 
     private MapContainer initMapContainer(MapServiceContext serviceContext) {
@@ -143,7 +144,7 @@ public class LocalMapStatsProviderTest {
         provider.getLocalMapStatsImpl(MAP_NAME);
         Map<String, LocalMapStats> actual = provider.createAllLocalMapStats();
 
-        assertTrue(actual.get(MAP_NAME).getNearCacheStats().isNativeMemoryUsed());
+        assertSame(NATIVE, actual.get(MAP_NAME).getNearCacheStats().getInMemoryFormat());
     }
 
 }

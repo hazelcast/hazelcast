@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalCacheStats;
@@ -75,7 +76,7 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     @Probe(unit = MS)
     private float averageRemoveTime;
 
-    private boolean nativeMemoryUsed;
+    private InMemoryFormat inMemoryFormat;
 
     public LocalCacheStatsImpl() {
     }
@@ -174,12 +175,12 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     }
 
     @Override
-    public boolean isNativeMemoryUsed() {
-        return nativeMemoryUsed;
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
     }
 
-    public void setNativeMemoryUsed(boolean nativeMemoryUsed) {
-        this.nativeMemoryUsed = nativeMemoryUsed;
+    public void setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        this.inMemoryFormat = inMemoryFormat;
     }
 
     @Override

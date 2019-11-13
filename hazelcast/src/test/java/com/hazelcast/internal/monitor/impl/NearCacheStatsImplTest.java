@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.monitor.impl;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,6 +30,8 @@ import org.junit.runner.RunWith;
 import java.io.FileNotFoundException;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -76,26 +79,27 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
         nearCacheStats.incrementInvalidationRequests();
 
         nearCacheStats.addPersistence(200, 300, 400);
+        nearCacheStats.setInMemoryFormat(OBJECT);
     }
 
     @Test
     public void testDefaultConstructor() {
-        assertNearCacheStats(nearCacheStats, 1, 200, 300, 400, false, false);
+        assertNearCacheStats(nearCacheStats, 1, 200, 300, 400, false, OBJECT);
     }
 
     @Test
     public void testCopyConstructor() {
         NearCacheStatsImpl copy = new NearCacheStatsImpl(nearCacheStats);
 
-        assertNearCacheStats(copy, 1, 200, 300, 400, false, false);
+        assertNearCacheStats(copy, 1, 200, 300, 400, false, OBJECT);
     }
 
     @Test
     public void testSerialization() {
-        nearCacheStats.setNativeMemoryUsed(true);
+        nearCacheStats.setInMemoryFormat(NATIVE);
         NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
 
-        assertNearCacheStats(deserialized, 1, 200, 300, 400, false, true);
+        assertNearCacheStats(deserialized, 1, 200, 300, 400, false, NATIVE);
     }
 
     @Test
@@ -105,7 +109,7 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
 
         NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
 
-        assertNearCacheStats(deserialized, 2, 0, 0, 0, true, false);
+        assertNearCacheStats(deserialized, 2, 0, 0, 0, true, OBJECT);
 
         String lastPersistenceFailure = deserialized.getLastPersistenceFailure();
         assertContains(lastPersistenceFailure, throwable.getClass().getSimpleName());
@@ -176,7 +180,7 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
 
     private static void assertNearCacheStats(NearCacheStatsImpl stats, long expectedPersistenceCount, long expectedDuration,
                                              long expectedWrittenBytes, long expectedKeyCount, boolean expectedFailure,
-                                             boolean nativeMemoryUsed) {
+                                             InMemoryFormat expectedInMemoryFormat) {
         assertTrue(stats.getCreationTime() > 0);
         assertEquals(500, stats.getOwnedEntryCount());
         assertEquals(1280, stats.getOwnedEntryMemoryCost());
@@ -191,7 +195,7 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
         assertEquals(expectedDuration, stats.getLastPersistenceDuration());
         assertEquals(expectedWrittenBytes, stats.getLastPersistenceWrittenBytes());
         assertEquals(expectedKeyCount, stats.getLastPersistenceKeyCount());
-        assertEquals(nativeMemoryUsed, stats.isNativeMemoryUsed());
+        assertEquals(expectedInMemoryFormat, stats.getInMemoryFormat());
         if (expectedFailure) {
             assertFalse(stats.getLastPersistenceFailure().isEmpty());
         } else {

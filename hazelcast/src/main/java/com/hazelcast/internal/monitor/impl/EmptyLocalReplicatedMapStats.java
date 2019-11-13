@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.monitor.impl;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.query.LocalIndexStats;
@@ -202,8 +203,8 @@ public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats {
     }
 
     @Override
-    public boolean isNativeMemoryUsed() {
-        return false;
+    public InMemoryFormat getInMemoryFormat() {
+        return InMemoryFormat.OBJECT;
     }
 
     @Override

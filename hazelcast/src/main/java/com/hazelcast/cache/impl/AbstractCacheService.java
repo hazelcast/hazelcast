@@ -660,9 +660,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             CompletableFuture<CacheConfig> configFuture = configs.get(cacheName);
             if (configFuture.isDone()) {
                 try {
-                    localCacheStats.setNativeMemoryUsed(configFuture.get().getInMemoryFormat() == NATIVE);
+                    localCacheStats.setInMemoryFormat(configFuture.get().getInMemoryFormat());
                 } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
+                    logger.severe(e);
                 }
             }
             stats.put(cacheName, localCacheStats);

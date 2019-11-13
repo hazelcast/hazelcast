@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.monitor.impl;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.query.LocalIndexStats;
@@ -104,7 +105,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     @Probe
     private volatile long ownedEntryMemoryCost;
 
-    private boolean nativeMemoryUsed;
+    private InMemoryFormat inMemoryFormat;
 
     public LocalReplicatedMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -206,12 +207,12 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     @Override
-    public boolean isNativeMemoryUsed() {
-        return nativeMemoryUsed;
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
     }
 
-    public void setNativeMemoryUsed(boolean nativeMemoryUsed) {
-        this.nativeMemoryUsed = nativeMemoryUsed;
+    public void setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        this.inMemoryFormat = inMemoryFormat;
     }
 
     @Probe
