@@ -45,6 +45,10 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.internal.diagnostics.Diagnostics.ENABLED;
+import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
+import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.multimap.MultiMapTestUtil.getBackupMultiMap;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
@@ -128,6 +132,11 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
                 .setStatisticsEnabled(true)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0);
+
+        config.getProperties().setProperty(ENABLED.getName(), "true");
+        config.getProperties().setProperty(METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
+        config.getProperties().setProperty(METRICS_LEVEL.getName(), INFO.name());
+
         return config;
     }
 
