@@ -200,11 +200,6 @@ public class MapConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMapEvictionPolicyOfReadOnlyMapConfigShouldFail() {
-        getReadOnlyConfig().setMapEvictionPolicy(null);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void setMapStoreConfigOfReadOnlyMapConfigShouldFail() {
         getReadOnlyConfig().setMapStoreConfig(new MapStoreConfig());
     }

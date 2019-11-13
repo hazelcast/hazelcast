@@ -2902,37 +2902,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapEvictionPolicyClassName() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"test\">"
-                + "<map-eviction-policy-class-name>" + mapEvictionPolicyClassName + "</map-eviction-policy-class-name> "
-                + "</map>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Override
-    @Test
-    public void testMapEvictionPolicyIsSelected_whenEvictionPolicySet() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"test\">"
-                + "<map-eviction-policy-class-name>" + mapEvictionPolicyClassName + "</map-eviction-policy-class-name> "
-                + "<eviction eviction-policy=\"LFU\"/>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Override
-    @Test
     public void testOnJoinPermissionOperation() {
         for (OnJoinPermissionOperationName onJoinOp : OnJoinPermissionOperationName.values()) {
             String xml = HAZELCAST_START_TAG + SECURITY_START_TAG

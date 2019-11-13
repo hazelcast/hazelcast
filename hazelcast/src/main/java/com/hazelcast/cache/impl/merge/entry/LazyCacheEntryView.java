@@ -96,7 +96,7 @@ public class LazyCacheEntryView<K, V>
     }
 
     @Override
-    public long getAccessHit() {
+    public long getHits() {
         return accessHit;
     }
 

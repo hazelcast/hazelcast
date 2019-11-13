@@ -59,8 +59,8 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.eviction.EvictableEntryView;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictableEntryView;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -1035,7 +1035,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SampleEvictionPolicyComparator extends EvictionPolicyComparator {
+    public static class SampleEvictionPolicyComparator
+            implements EvictionPolicyComparator<Object, Object, EvictableEntryView<Object, Object>> {
 
         @Override
         public int compare(EvictableEntryView e1, EvictableEntryView e2) {

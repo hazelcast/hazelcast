@@ -28,6 +28,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -939,6 +940,10 @@ public class EvictionTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         config.setProperty(GroupProperty.MAP_EVICTION_BATCH_SIZE.getName(), "2");
 
+        config.getMapConfig("default")
+                .getEvictionConfig()
+                .setComparator(RandomEvictionPolicyComparator.INSTANCE);
+
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, byte[]> map = instance.getMap(mapName);
 
@@ -953,6 +958,7 @@ public class EvictionTest extends HazelcastTestSupport {
         double toleranceFactor = 1.1d;
         long maxAllowedHeapCost = (long) (MemoryUnit.MEGABYTES.toBytes(maxSizeMB) * toleranceFactor);
         long minAllowedHeapCost = (long) (MemoryUnit.MEGABYTES.toBytes(maxSizeMB) / toleranceFactor);
+
         assertBetween("Maximum cost", maxObservedHeapCost, minAllowedHeapCost, maxAllowedHeapCost);
     }
 

@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
@@ -27,14 +26,17 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
-import com.hazelcast.map.eviction.LFUEvictionPolicy;
-import com.hazelcast.map.eviction.LRUEvictionPolicy;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
-import com.hazelcast.map.eviction.RandomEvictionPolicy;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.MemoryInfoAccessor;
+import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -44,7 +46,6 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
@@ -53,11 +54,6 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.MemoryInfoAccessor;
-import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.impl.DelegatingWanReplicationScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 
@@ -69,6 +65,7 @@ import java.util.function.Function;
 import static com.hazelcast.config.ConsistencyCheckStrategy.MERKLE_TREES;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyComparator;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_EVICTION_BATCH_SIZE;
@@ -80,6 +77,7 @@ import static java.lang.System.getProperty;
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
 public class MapContainer {
+
     protected final String name;
     protected final String splitBrainProtectionName;
     // on-heap indexes are global, meaning there is only one index per map,
@@ -105,8 +103,8 @@ public class MapContainer {
     protected SplitBrainMergePolicy wanMergePolicy;
     protected DelegatingWanReplicationScheme wanReplicationDelegate;
 
-    protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
+    private volatile Evictor evictor;
 
     private boolean persistWanReplicatedData;
 
@@ -127,22 +125,20 @@ public class MapContainer {
         this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.objectNamespace = MapService.getObjectNamespace(name);
-        initWanReplication(nodeEngine);
-        ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
         this.extractors = Extractors.newBuilder(serializationService)
-                                    .setAttributeConfigs(mapConfig.getAttributeConfigs())
-                                    .setClassLoader(classloader)
-                                    .build();
+                .setAttributeConfigs(mapConfig.getAttributeConfigs())
+                .setClassLoader(nodeEngine.getConfigClassLoader())
+                .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
                 serializationService, extractors);
-        if (shouldUseGlobalIndex(mapConfig)) {
-            this.globalIndexes = createIndexes(true);
-        } else {
-            this.globalIndexes = null;
-        }
+        this.globalIndexes = shouldUseGlobalIndex(mapConfig) ? createIndexes(true) : null;
         this.mapStoreContext = createMapStoreContext(this);
-        this.mapStoreContext.start();
+        initWanReplication(mapServiceContext.getNodeEngine());
+    }
+
+    public void init() {
         initEvictor();
+        mapStoreContext.start();
     }
 
     /**
@@ -152,51 +148,30 @@ public class MapContainer {
      */
     public Indexes createIndexes(boolean global) {
         return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior())
-                      .global(global)
-                      .extractors(extractors)
-                      .statsEnabled(mapConfig.isStatisticsEnabled())
-                      .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
-                      .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
-                      .build();
+                .global(global)
+                .extractors(extractors)
+                .statsEnabled(mapConfig.isStatisticsEnabled())
+                .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
+                .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
+                .build();
+    }
+
+    public final void initEvictor() {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        EvictionPolicyComparator evictionPolicyComparator
+                = getEvictionPolicyComparator(mapConfig.getEvictionConfig(), nodeEngine.getConfigClassLoader());
+
+        evictor = evictionPolicyComparator != null
+                ? newEvictor(evictionPolicyComparator, nodeEngine.getProperties().getInteger(MAP_EVICTION_BATCH_SIZE),
+                nodeEngine.getPartitionService()) : NULL_EVICTOR;
     }
 
     // this method is overridden
-    public void initEvictor() {
-        MapEvictionPolicy mapEvictionPolicy = getMapEvictionPolicy();
-        if (mapEvictionPolicy == null) {
-            evictor = NULL_EVICTOR;
-        } else {
-            MemoryInfoAccessor memoryInfoAccessor = getMemoryInfoAccessor();
-            EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
-            NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-            IPartitionService partitionService = nodeEngine.getPartitionService();
-            int batchSize = nodeEngine.getProperties().getInteger(MAP_EVICTION_BATCH_SIZE);
-            evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService, batchSize);
-        }
-    }
+    protected Evictor newEvictor(EvictionPolicyComparator evictionPolicyComparator,
+                                 int evictionBatchSize, IPartitionService partitionService) {
+        EvictionChecker evictionChecker = new EvictionChecker(getMemoryInfoAccessor(), mapServiceContext);
 
-    public MapEvictionPolicy getMapEvictionPolicy() {
-        // TODO get this over eviction config
-        MapEvictionPolicy mapEvictionPolicy = mapConfig.getMapEvictionPolicy();
-        if (mapEvictionPolicy != null) {
-            return mapEvictionPolicy;
-        }
-        EvictionPolicy evictionPolicy = mapConfig.getEvictionConfig().getEvictionPolicy();
-        if (evictionPolicy == null) {
-            return null;
-        }
-        switch (evictionPolicy) {
-            case LRU:
-                return LRUEvictionPolicy.INSTANCE;
-            case LFU:
-                return LFUEvictionPolicy.INSTANCE;
-            case RANDOM:
-                return RandomEvictionPolicy.INSTANCE;
-            case NONE:
-                return null;
-            default:
-                throw new IllegalArgumentException("Not known eviction policy: " + evictionPolicy);
-        }
+        return new EvictorImpl(evictionPolicyComparator, evictionChecker, evictionBatchSize, partitionService);
     }
 
     protected boolean shouldUseGlobalIndex(MapConfig mapConfig) {
@@ -281,11 +256,11 @@ public class MapContainer {
             return false;
         }
         return replicationConfig.getBatchPublisherConfigs()
-                                .stream()
-                                .anyMatch(c -> {
-                                    WanSyncConfig syncConfig = c.getWanSyncConfig();
-                                    return syncConfig != null && MERKLE_TREES.equals(syncConfig.getConsistencyCheckStrategy());
-                                });
+                .stream()
+                .anyMatch(c -> {
+                    WanSyncConfig syncConfig = c.getWanSyncConfig();
+                    return syncConfig != null && MERKLE_TREES.equals(syncConfig.getConsistencyCheckStrategy());
+                });
     }
 
     private PartitioningStrategy createPartitioningStrategy() {

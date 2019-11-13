@@ -62,7 +62,7 @@ public final class CacheEntryViews {
                                                              record.getCreationTime(),
                                                              record.getExpirationTime(),
                                                              record.getLastAccessTime(),
-                                                             record.getAccessHit(),
+                                                             record.getHits(),
                                                              expiryPolicy);
         return entryView;
     }
@@ -89,7 +89,7 @@ public final class CacheEntryViews {
                                                           record.getCreationTime(),
                                                           record.getExpirationTime(),
                                                           record.getLastAccessTime(),
-                                                          record.getAccessHit(),
+                                                          record.getHits(),
                                                           expiryPolicy);
         return entryView;
     }

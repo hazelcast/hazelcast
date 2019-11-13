@@ -100,22 +100,22 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     }
 
     @Override
-    public int getAccessHit() {
+    public long getHits() {
         return accessHit;
     }
 
     @Override
-    public void setAccessHit(int accessHit) {
+    public void setHits(int accessHit) {
         ACCESS_HIT.set(this, accessHit);
     }
 
     @Override
-    public void incrementAccessHit() {
+    public void incrementHits() {
         ACCESS_HIT.addAndGet(this, 1);
     }
 
     @Override
-    public void resetAccessHit() {
+    public void resetHits() {
         ACCESS_HIT.set(this, 0);
     }
 

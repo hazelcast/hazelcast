@@ -83,6 +83,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -90,8 +91,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
-
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
@@ -132,19 +131,16 @@ public class ClientDynamicClusterConfig extends Config {
 
         ClientMessage request = DynamicConfigAddMapConfigCodec.encodeRequest(mapConfig.getName(),
                 mapConfig.getBackupCount(), mapConfig.getAsyncBackupCount(), mapConfig.getTimeToLiveSeconds(),
-                mapConfig.getMaxIdleSeconds(), mapConfig.getEvictionConfig().getEvictionPolicy().name(),
+                mapConfig.getMaxIdleSeconds(), EvictionConfigHolder.of(mapConfig.getEvictionConfig(), serializationService),
                 mapConfig.isReadBackupData(), mapConfig.getCacheDeserializedValues().name(),
-                mapConfig.getMergePolicyConfig().getPolicy(),
+                mapConfig.getMergePolicyConfig().getPolicy(), mapConfig.getMergePolicyConfig().getBatchSize(),
                 mapConfig.getInMemoryFormat().name(), listenerConfigs, partitionLostListenerConfigs,
                 mapConfig.isStatisticsEnabled(), mapConfig.getSplitBrainProtectionName(),
-                serializationService.toData(mapConfig.getMapEvictionPolicy()),
-                mapConfig.getEvictionConfig().getMaxSizePolicy().name(), mapConfig.getEvictionConfig().getSize(),
                 MapStoreConfigHolder.of(mapConfig.getMapStoreConfig(), serializationService),
                 NearCacheConfigHolder.of(mapConfig.getNearCacheConfig(), serializationService),
                 mapConfig.getWanReplicationRef(), mapConfig.getIndexConfigs(), mapConfig.getAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
-                mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(),
-                mapConfig.getMergePolicyConfig().getBatchSize(), mapConfig.getMetadataPolicy().getId());
+                mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(), mapConfig.getMetadataPolicy().getId());
         invoke(request);
         return this;
     }
@@ -160,8 +156,8 @@ public class ClientDynamicClusterConfig extends Config {
                 cacheConfig.getCacheWriterFactory(), cacheConfig.getCacheLoader(), cacheConfig.getCacheWriter(),
                 cacheConfig.getBackupCount(), cacheConfig.getAsyncBackupCount(), cacheConfig.getInMemoryFormat().name(),
                 cacheConfig.getSplitBrainProtectionName(),
-                // TODO add merge policy batch size
                 cacheConfig.getMergePolicyConfig().getPolicy(),
+                cacheConfig.getMergePolicyConfig().getBatchSize(),
                 cacheConfig.isDisablePerEntryInvalidationEvents(),
                 partitionLostListenerConfigs,
                 cacheConfig.getExpiryPolicyFactoryConfig() == null ? null

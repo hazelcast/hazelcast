@@ -122,5 +122,5 @@ public interface Storage<K, R> {
      */
     MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService);
 
-    Record extractRecordFromLazy(EntryView entryView);
+    Record extractRecordFrom(EntryView evictableEntryView);
 }

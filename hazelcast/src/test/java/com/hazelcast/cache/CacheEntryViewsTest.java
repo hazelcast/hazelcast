@@ -65,7 +65,7 @@ public class CacheEntryViewsTest extends HazelcastTestSupport {
 
         assertEquals(key, serializationService.toObject(cacheEntryView.getKey()));
         assertEquals(value, serializationService.toObject(cacheEntryView.getValue()));
-        assertEquals(record.getAccessHit(), cacheEntryView.getAccessHit());
+        assertEquals(record.getHits(), cacheEntryView.getHits());
         assertEquals(record.getExpirationTime(), cacheEntryView.getExpirationTime());
         assertEquals(record.getLastAccessTime(), cacheEntryView.getLastAccessTime());
         assertInstanceOf(EternalExpiryPolicy.class, serializationService.toObject(cacheEntryView.getExpiryPolicy()));

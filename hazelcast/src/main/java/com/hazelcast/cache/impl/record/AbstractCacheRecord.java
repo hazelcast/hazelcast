@@ -76,24 +76,25 @@ public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, Id
     }
 
     @Override
-    public int getAccessHit() {
+    public long getHits() {
         return accessHit;
     }
 
     @Override
-    public void setAccessHit(int accessHit) {
-        this.accessHit = accessHit;
+    public void setHits(long accessHit) {
+        this.accessHit = accessHit > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE : (int) accessHit;
     }
 
     @Override
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "CacheRecord can be accessed by only its own partition thread.")
-    public void incrementAccessHit() {
+    public void incrementHits() {
         accessHit++;
     }
 
     @Override
-    public void resetAccessHit() {
+    public void resetHits() {
         accessHit = 0;
     }
 

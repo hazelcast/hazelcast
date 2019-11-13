@@ -179,8 +179,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public Record extractRecordFromLazy(EntryView entryView) {
-        return ((LazyEntryViewFromRecord) entryView).getRecord();
+    public Record extractRecordFrom(EntryView entryView) {
+        return ((LazyEvictableEntryView) entryView).getRecord();
     }
-
 }

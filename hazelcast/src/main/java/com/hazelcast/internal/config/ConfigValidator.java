@@ -44,7 +44,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -170,6 +170,15 @@ public final class ConfigValidator {
 
     public static void checkMapEvictionConfig(EvictionConfig evictionConfig) {
         checkEvictionConfig(evictionConfig, MAP_SUPPORTED_EVICTION_POLICIES);
+
+        EvictionPolicyComparator comparator = evictionConfig.getComparator();
+        String comparatorClassName = evictionConfig.getComparatorClassName();
+        EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
+
+        checkComparatorDefinedOnlyOnce(comparatorClassName, comparator);
+        checkEvictionPolicyConfiguredOnlyOnce(evictionPolicy, comparatorClassName,
+                comparator, MapConfig.DEFAULT_EVICTION_POLICY);
+
         checkMapMaxSizePolicyConfig(evictionConfig.getMaxSizePolicy());
     }
 
@@ -439,12 +448,13 @@ public final class ConfigValidator {
         if (!supportedEvictionPolicies.contains(evictionPolicy)) {
             if (isNullOrEmpty(comparatorClassName) && comparator == null) {
                 String msg = format("Eviction policy `%s` is not supported. Either you can provide a custom one or "
-                        + "you can use a supported one: %s.", evictionPolicy, COMMONLY_SUPPORTED_EVICTION_POLICIES);
+                        + "you can use a supported one: %s.", evictionPolicy, supportedEvictionPolicies);
 
                 throw new InvalidConfigurationException(msg);
             }
         } else {
-            checkEvictionPolicyConfiguredOnlyOnce(evictionPolicy, comparatorClassName, comparator);
+            checkEvictionPolicyConfiguredOnlyOnce(evictionPolicy, comparatorClassName,
+                    comparator, EvictionConfig.DEFAULT_EVICTION_POLICY);
         }
     }
 
@@ -459,12 +469,14 @@ public final class ConfigValidator {
                                                     String comparatorClassName,
                                                     Object comparator) {
         checkComparatorDefinedOnlyOnce(comparatorClassName, comparator);
-        checkEvictionPolicyConfiguredOnlyOnce(evictionPolicy, comparatorClassName, comparator);
+        checkEvictionPolicyConfiguredOnlyOnce(evictionPolicy, comparatorClassName,
+                comparator, EvictionConfig.DEFAULT_EVICTION_POLICY);
     }
 
     private static void checkEvictionPolicyConfiguredOnlyOnce(EvictionPolicy evictionPolicy,
-                                                              String comparatorClassName, Object comparator) {
-        if (evictionPolicy != EvictionConfig.DEFAULT_EVICTION_POLICY) {
+                                                              String comparatorClassName,
+                                                              Object comparator, EvictionPolicy defaultEvictionPolicy) {
+        if (evictionPolicy != defaultEvictionPolicy) {
             if (!isNullOrEmpty(comparatorClassName)) {
                 throw new InvalidConfigurationException(
                         "Only one of the `eviction policy` and `comparator class name` can be configured!");

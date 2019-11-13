@@ -14,7 +14,25 @@
  * limitations under the License.
  */
 
+package com.hazelcast.spi.eviction;
+
+import java.io.Serializable;
+import java.util.Comparator;
+
 /**
- * <p>This package contains eviction specific classes.<br>
+ * A kind of {@link java.util.Comparator} to be
+ * used while comparing entries to be evicted.
+ *
+ * @param <K> type of the key
+ * @param <V> type of the value
+ * @param <E> type of the {@link EvictableEntryView}
+ *
+ * @see com.hazelcast.map.MapEvictionPolicyComparator
+ * @see com.hazelcast.cache.CacheEvictionPolicyComparator
  */
-package com.hazelcast.map.eviction;
+
+@SuppressWarnings("checkstyle:interfaceistype")
+public interface EvictionPolicyComparator<K, V, E extends EvictableEntryView<K, V>>
+        extends Comparator<E>, Serializable {
+
+}

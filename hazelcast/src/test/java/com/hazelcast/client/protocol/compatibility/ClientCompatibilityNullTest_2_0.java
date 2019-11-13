@@ -133,7 +133,7 @@ public class ClientCompatibilityNullTest_2_0 {
             assertTrue(isEqual(aListOfMembers, members));
         }
         @Override
-        public void handleMemberAttributeChangeEvent(com.hazelcast.cluster.Member member, java.util.Collection<com.hazelcast.cluster.Member> members, java.lang.String key, int operationType, java.lang.String value) {
+        public void handleMemberAttributeChangeEvent(com.hazelcast.cluster.Member member, java.util.Collection<com.hazelcast.cluster.Member> members, String key, int operationType, String value) {
             assertTrue(isEqual(aMember, member));
             assertTrue(isEqual(aListOfMembers, members));
             assertTrue(isEqual(aString, key));
@@ -311,7 +311,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     private class ClientAddDistributedObjectListenerCodecHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler {
         @Override
-        public void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType) {
+        public void handleDistributedObjectEvent(String name, String serviceName, String eventType) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aString, serviceName));
             assertTrue(isEqual(aString, eventType));
@@ -404,7 +404,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     private class ClientAddPartitionListenerCodecHandler extends ClientAddPartitionListenerCodec.AbstractEventHandler {
         @Override
-        public void handlePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions, int partitionStateVersion) {
+        public void handlePartitionsEvent(java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, List<Integer>>> partitions, int partitionStateVersion) {
             assertTrue(isEqual(aListOfAddressToListOfIntegers, partitions));
             assertTrue(isEqual(anInt, partitionStateVersion));
         }
@@ -983,7 +983,7 @@ public class ClientCompatibilityNullTest_2_0 {
             assertTrue(isEqual(aLong, sequence));
         }
         @Override
-        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
+        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
             assertTrue(isEqual(aListOfUUIDs, partitionUuids));
@@ -1667,7 +1667,7 @@ public class ClientCompatibilityNullTest_2_0 {
             assertTrue(isEqual(aLong, sequence));
         }
         @Override
-        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
+        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
             assertTrue(isEqual(aListOfUUIDs, partitionUuids));
@@ -4764,7 +4764,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     private class CacheAddInvalidationListenerCodecHandler extends CacheAddInvalidationListenerCodec.AbstractEventHandler {
         @Override
-        public void handleCacheInvalidationEvent(java.lang.String name, com.hazelcast.nio.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
+        public void handleCacheInvalidationEvent(String name, com.hazelcast.nio.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(null, key));
             assertTrue(isEqual(null, sourceUuid));
@@ -4772,7 +4772,7 @@ public class ClientCompatibilityNullTest_2_0 {
             assertTrue(isEqual(aLong, sequence));
         }
         @Override
-        public void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
+        public void handleCacheBatchInvalidationEvent(String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(null, sourceUuids));
@@ -5257,7 +5257,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     private class CacheAddNearCacheInvalidationListenerCodecHandler extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
         @Override
-        public void handleCacheInvalidationEvent(java.lang.String name, com.hazelcast.nio.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
+        public void handleCacheInvalidationEvent(String name, com.hazelcast.nio.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(null, key));
             assertTrue(isEqual(null, sourceUuid));
@@ -5265,7 +5265,7 @@ public class ClientCompatibilityNullTest_2_0 {
             assertTrue(isEqual(aLong, sequence));
         }
         @Override
-        public void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
+        public void handleCacheBatchInvalidationEvent(String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
@@ -5598,7 +5598,7 @@ public class ClientCompatibilityNullTest_2_0 {
             assertTrue(isEqual(aQueryCacheEventData, data));
         }
         @Override
-        public void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, java.lang.String source, int partitionId) {
+        public void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, String source, int partitionId) {
             assertTrue(isEqual(aListOfQueryCacheEventData, events));
             assertTrue(isEqual(aString, source));
             assertTrue(isEqual(anInt, partitionId));
@@ -6384,7 +6384,7 @@ public class ClientCompatibilityNullTest_2_0 {
     @Test
     public void test_DynamicConfigAddMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 751;
-        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, aString, aBoolean, aString, aString, aString, null, null, aBoolean, null, null, aString, anInt, null, null, null, null, null, null, null, null, null, null, null, anInt, anInt);
+        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, null, aBoolean, aString, aString, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null, null, null, null, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6414,7 +6414,7 @@ public class ClientCompatibilityNullTest_2_0 {
     @Test
     public void test_DynamicConfigAddCacheConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 755;
-        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, null, null, aBoolean, aBoolean, aBoolean, aBoolean, null, null, null, null, anInt, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null);
+        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, null, null, aBoolean, aBoolean, aBoolean, aBoolean, null, null, null, null, anInt, anInt, aString, null, null, anInt, aBoolean, null, null, null, null, null, null, null, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6785,6 +6785,22 @@ public class ClientCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCGetSystemPropertiesCodec.ResponseParameters parameters = MCGetSystemPropertiesCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfStringToString, parameters.systemProperties));
+    }
+
+    @Test
+    public void test_MCGetTimedMemberStateCodec_encodeRequest() {
+        int fileClientMessageIndex = 801;
+        ClientMessage encoded = MCGetTimedMemberStateCodec.encodeRequest();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCGetTimedMemberStateCodec_decodeResponse() {
+        int fileClientMessageIndex = 802;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetTimedMemberStateCodec.ResponseParameters parameters = MCGetTimedMemberStateCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(null, parameters.timedMemberStateJson));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

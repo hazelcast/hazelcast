@@ -16,13 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
+import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
 
-public class DummyMapEvictionPolicy extends MapEvictionPolicy {
+public class DummyMapEvictionPolicyComparator extends RandomEvictionPolicyComparator {
 
-    @Override
-    public int compare(EntryView o1, EntryView o2) {
-        return 0;
-    }
 }

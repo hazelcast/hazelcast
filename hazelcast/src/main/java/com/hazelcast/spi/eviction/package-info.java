@@ -14,17 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring.context;
-
-import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.CacheEvictionPolicyComparator;
-
-public class MyEvictionPolicyComparator
-        implements CacheEvictionPolicyComparator<Object, Object> {
-
-    @Override
-    public int compare(CacheEntryView e1, CacheEntryView e2) {
-        return 0;
-    }
-
-}
+/**
+ * This package contains interfaces for eviction
+ *
+ * @since 4.0
+ */
+package com.hazelcast.spi.eviction;

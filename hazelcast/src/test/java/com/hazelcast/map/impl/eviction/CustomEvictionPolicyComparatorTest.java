@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
+import com.hazelcast.map.MapEvictionPolicyComparator;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,32 +38,33 @@ import static com.hazelcast.config.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.impl.eviction.Evictor.SAMPLE_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.lang.String.format;
-import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapEvictionPolicyTest extends HazelcastTestSupport {
+public class CustomEvictionPolicyComparatorTest extends HazelcastTestSupport {
 
     private final String mapName = "default";
 
     @Test
-    public void testMapEvictionPolicy() throws Exception {
+    public void custom_eviction_policy_removes_correct_entries() {
         int sampleCount = SAMPLE_COUNT;
 
         Config config = getConfig();
         config.setProperty(PARTITION_COUNT.getName(), "1");
         config.getMapConfig(mapName)
-                .setMapEvictionPolicy(new OddEvictor())
                 .getEvictionConfig()
-                .setMaxSizePolicy(PER_PARTITION).setSize(sampleCount);
+                .setComparator(new OddEvictor())
+                .setMaxSizePolicy(PER_PARTITION)
+                .setSize(sampleCount);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, Integer> map = instance.getMap(mapName);
 
         final CountDownLatch eventLatch = new CountDownLatch(1);
-        final Queue<Integer> evictedKeys = new ConcurrentLinkedQueue<Integer>();
+        final Queue<Integer> evictedKeys = new ConcurrentLinkedQueue<>();
         map.addEntryListener((EntryEvictedListener<Integer, Integer>) event -> {
             evictedKeys.add(event.getKey());
             eventLatch.countDown();
@@ -80,27 +81,34 @@ public class MapEvictionPolicyTest extends HazelcastTestSupport {
         }
     }
 
-    private static class OddEvictor extends MapEvictionPolicy {
+    private static class OddEvictor
+            implements MapEvictionPolicyComparator<Integer, Integer> {
 
         @Override
-        public int compare(EntryView o1, EntryView o2) {
-            assertNotNull(o1);
-            assertNotNull(o2);
+        public int compare(EntryView e1, EntryView e2) {
+            assertNotNull(e1);
+            assertNotNull(e2);
 
-            assertFalse(o1.equals(o2));
+            assertFalse(e1.equals(e2));
 
-            assertTrue(o1.hashCode() != 0);
-            assertTrue(o2.hashCode() != 0);
+            assertTrue(e1.hashCode() != 0);
+            assertTrue(e2.hashCode() != 0);
 
-            assertNotNull(o1.toString());
-            assertNotNull(o2.toString());
+            assertNotNull(e1.toString());
+            assertNotNull(e2.toString());
 
-            Integer key = (Integer) o1.getKey();
-            if (key % 2 != 0) {
+            Integer key1 = (Integer) e1.getKey();
+            if (key1 % 2 != 0) {
                 return -1;
             }
 
-            return 1;
+            Integer key2 = (Integer) e2.getKey();
+            if (key2 % 2 != 0) {
+                return 1;
+            }
+
+            return 0;
         }
     }
+
 }

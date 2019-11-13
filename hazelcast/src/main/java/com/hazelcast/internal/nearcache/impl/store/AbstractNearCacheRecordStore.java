@@ -447,7 +447,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     private void onRecordAccess(R record) {
         record.setAccessTime(Clock.currentTimeMillis());
-        record.incrementAccessHit();
+        record.incrementHits();
     }
 
     private void initInvalidationMetaData(R record, K key, Data keyData) {
