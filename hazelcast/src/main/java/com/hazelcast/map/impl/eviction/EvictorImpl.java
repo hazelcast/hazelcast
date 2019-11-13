@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.recordstore.LazyEvictableEntryView;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.eviction.EvictableEntryView;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -57,11 +56,11 @@ public class EvictorImpl implements Evictor {
         assertRunningOnPartitionThread();
 
         for (int i = 0; i < batchSize; i++) {
-            EvictableEntryView evictableEntryView = selectEvictableEntry(recordStore, excludedKey);
-            if (evictableEntryView == null) {
+            EntryView entryView = selectEvictableEntry(recordStore, excludedKey);
+            if (entryView == null) {
                 return;
             }
-            evictEntry(recordStore, evictableEntryView);
+            evictEntry(recordStore, entryView);
         }
     }
 
@@ -71,11 +70,11 @@ public class EvictorImpl implements Evictor {
     }
 
     @SuppressWarnings("checkstyle:rvcheckcomparetoforspecificreturnvalue")
-    private EvictableEntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {
-        EvictableEntryView excluded = null;
-        EvictableEntryView selected = null;
+    private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {
+        EntryView excluded = null;
+        EntryView selected = null;
 
-        for (EvictableEntryView current : getRandomSamples(recordStore)) {
+        for (EntryView current : getRandomSamples(recordStore)) {
             if (excludedKey != null && excluded == null
                     && getDataKey(current).equals(excludedKey)) {
                 excluded = current;
@@ -91,11 +90,11 @@ public class EvictorImpl implements Evictor {
         return selected == null ? excluded : selected;
     }
 
-    private Data getDataKey(EvictableEntryView evictable) {
+    private Data getDataKey(EntryView evictable) {
         return getRecordFromEntryView(evictable).getKey();
     }
 
-    private void evictEntry(RecordStore recordStore, EvictableEntryView evictable) {
+    private void evictEntry(RecordStore recordStore, EntryView evictable) {
         Record record = getRecordFromEntryView(evictable);
         Data key = record.getKey();
 
@@ -119,7 +118,7 @@ public class EvictorImpl implements Evictor {
     }
 
     // this method is overridden in another context.
-    protected Record getRecordFromEntryView(EvictableEntryView evictableEntryView) {
+    protected Record getRecordFromEntryView(EntryView evictableEntryView) {
         return ((LazyEvictableEntryView) evictableEntryView).getRecord();
     }
 
