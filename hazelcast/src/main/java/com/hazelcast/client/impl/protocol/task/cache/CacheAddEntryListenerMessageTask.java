@@ -40,6 +40,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.FutureUtil.getValue;
+
 /**
  * Client request which registers an event listener on behalf of the client and delegates the received events
  * back to client.
@@ -65,7 +67,10 @@ public class CacheAddEntryListenerMessageTask
     @Override
     protected void addDestroyAction(UUID registrationId) {
         final CacheService service = getService(CacheService.SERVICE_NAME);
-        service.deregisterListener(parameters.name, registrationId);
+        endpoint.addDestroyAction(registrationId, () -> {
+            Boolean result = getValue(service.deregisterListener(parameters.name, registrationId));
+            return result != null && result;
+        });
     }
 
     private static final class CacheEntryListener

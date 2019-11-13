@@ -99,7 +99,7 @@ public abstract class AbstractMultiTargetMessageTask<P>
 
             if (targets.isEmpty()) {
                 try {
-                    finalResult.complete(results);
+                    finalResult.complete(reduce(results));
                 } catch (Throwable throwable) {
                     finalResult.completeExceptionally(throwable);
                 }

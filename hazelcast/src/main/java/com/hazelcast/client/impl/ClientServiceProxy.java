@@ -70,6 +70,7 @@ public final class ClientServiceProxy implements ClientService {
         EventService eventService = nodeEngine.getEventService();
         Future<Boolean> registrationFuture = eventService
                 .deregisterListener(ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, registrationId);
-        return getValue(registrationFuture);
+        Boolean result = getValue(registrationFuture);
+        return result != null && result;
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 
 /**
@@ -77,6 +78,9 @@ public abstract class AbstractAsyncMessageTask<P, T>
         if (throwable == null) {
             sendResponse(response);
         } else {
+            if (throwable instanceof CompletionException) {
+                throwable = throwable.getCause();
+            }
             handleProcessingFailure(throwable);
         }
     }
