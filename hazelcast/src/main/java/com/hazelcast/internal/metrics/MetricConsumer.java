@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.managementcenter;
-
-import com.hazelcast.internal.metrics.MetricDescriptor;
+package com.hazelcast.internal.metrics;
 
 /**
- * An interface that allows consuming keys and primitive values
- * stored in {@link Metric} objects.
- *
- * @see Metric#provide(MetricConsumer)
+ * An interface for consuming metrics.
  */
 public interface MetricConsumer {
 

@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.managementcenter;
+package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier;
+import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
-import java.util.Iterator;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -39,11 +42,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsCompressorTest {
 
+    private final DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
+    private final Supplier<? extends MetricDescriptor> supplierSpy = Mockito.spy(supplier);
+    private final MetricsCompressor compressor = new MetricsCompressor();
+
     @Test
     public void testSingleLongMetric() {
-        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
-        MetricsCompressor compressor = new MetricsCompressor();
-
         MetricDescriptor originalMetric = supplier.get()
                                                   .withPrefix("prefix")
                                                   .withMetric("metricName")
@@ -53,20 +57,16 @@ public class MetricsCompressorTest {
         compressor.addLong(originalMetric, 42L);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
-        Metric metric = metricIterator.next();
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        metric.provide(metricConsumerMock);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeLong(originalMetric, 42L);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, only()).get();
     }
 
     @Test
     public void testSingleDoubleMetric() {
-        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
-        MetricsCompressor compressor = new MetricsCompressor();
-
         MetricDescriptor originalMetric = supplier.get()
                                                   .withPrefix("prefix")
                                                   .withMetric("metricName")
@@ -76,13 +76,12 @@ public class MetricsCompressorTest {
         compressor.addDouble(originalMetric, 42.42D);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
-        Metric metric = metricIterator.next();
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        metric.provide(metricConsumerMock);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeDouble(originalMetric, 42.42D);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, only()).get();
     }
 
     @Test
@@ -98,13 +97,12 @@ public class MetricsCompressorTest {
         compressor.addLong(originalMetric, 42L);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
-        Metric metric = metricIterator.next();
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        metric.provide(metricConsumerMock);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeLong(originalMetric, 42L);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, only()).get();
     }
 
     @Test
@@ -120,13 +118,12 @@ public class MetricsCompressorTest {
         compressor.addLong(originalMetric, 42L);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
-        Metric metric = metricIterator.next();
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        metric.provide(metricConsumerMock);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeLong(originalMetric, 42L);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, only()).get();
     }
 
     @Test
@@ -146,16 +143,13 @@ public class MetricsCompressorTest {
         compressor.addLong(metric2, 43L);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        while (metricIterator.hasNext()) {
-            Metric metric = metricIterator.next();
-            metric.provide(metricConsumerMock);
-        }
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, times(2)).get();
     }
 
     @Test
@@ -179,16 +173,13 @@ public class MetricsCompressorTest {
         compressor.addLong(metric2, 43L);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        while (metricIterator.hasNext()) {
-            Metric metric = metricIterator.next();
-            metric.provide(metricConsumerMock);
-        }
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, times(2)).get();
     }
 
     @Test
@@ -209,16 +200,13 @@ public class MetricsCompressorTest {
         compressor.addLong(metric2, 43L);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        while (metricIterator.hasNext()) {
-            Metric metric = metricIterator.next();
-            metric.provide(metricConsumerMock);
-        }
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, times(2)).get();
     }
 
     @Test
@@ -237,16 +225,13 @@ public class MetricsCompressorTest {
         compressor.addLong(metric2, 43L);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        while (metricIterator.hasNext()) {
-            Metric metric = metricIterator.next();
-            metric.provide(metricConsumerMock);
-        }
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, times(2)).get();
     }
 
     @Test
@@ -265,15 +250,12 @@ public class MetricsCompressorTest {
         compressor.addLong(metric2, 43L);
         byte[] blob = compressor.getBlobAndReset();
 
-        Iterator<Metric> metricIterator = MetricsCompressor.decompressingIterator(blob);
         MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
-        while (metricIterator.hasNext()) {
-            Metric metric = metricIterator.next();
-            metric.provide(metricConsumerMock);
-        }
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
 
         verify(metricConsumerMock).consumeLong(metric1, 42L);
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, times(2)).get();
     }
 }
