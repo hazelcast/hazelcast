@@ -33,15 +33,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.cache.impl.ClientCacheHelper.createCacheConfig;
 import static com.hazelcast.client.cache.impl.ClientCacheHelper.enableStatisticManagementOnNodes;
 import static com.hazelcast.client.cache.impl.ClientCacheHelper.getCacheConfig;
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -65,7 +62,6 @@ public class ClientCacheHelperTest extends HazelcastTestSupport {
     private CacheConfig<String, String> newCacheConfig;
 
     private CacheConfig<String, String> cacheConfig;
-    private ConcurrentMap<String, CacheConfig> configs;
 
     @Before
     public void setUp() {
@@ -84,7 +80,6 @@ public class ClientCacheHelperTest extends HazelcastTestSupport {
         newCacheConfig = new CacheConfig<String, String>(CACHE_NAME);
 
         cacheConfig = new CacheConfig<String, String>(CACHE_NAME);
-        configs = new ConcurrentHashMap<String, CacheConfig>(singletonMap(CACHE_NAME, cacheConfig));
     }
 
     @After
@@ -119,14 +114,14 @@ public class ClientCacheHelperTest extends HazelcastTestSupport {
 
     @Test
     public void testCreateCacheConfig_whenSyncCreate_thenReturnNewConfig() {
-        CacheConfig<String, String> actualConfig = createCacheConfig(client, newCacheConfig);
+        CacheConfig<String, String> actualConfig = createCacheConfig(client, newCacheConfig, false);
 
         assertNotEquals(cacheConfig, actualConfig);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateCacheConfig_rethrowsExceptions() {
-        createCacheConfig(exceptionThrowingClient, newCacheConfig);
+        createCacheConfig(exceptionThrowingClient, newCacheConfig, false);
     }
 
     @Test
