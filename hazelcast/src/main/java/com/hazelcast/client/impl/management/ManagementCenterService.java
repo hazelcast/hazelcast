@@ -41,6 +41,7 @@ import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -55,6 +56,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Only works for smart clients, i.e. doesn't work for unisocket clients.
  */
 public class ManagementCenterService {
+
+    public static final HazelcastProperty MC_CLIENT_MODE_PROPERTY
+            = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
 
     private final HazelcastClientInstanceImpl client;
     private final InternalSerializationService serializationService;

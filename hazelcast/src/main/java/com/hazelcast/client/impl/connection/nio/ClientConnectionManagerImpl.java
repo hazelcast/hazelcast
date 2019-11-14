@@ -77,7 +77,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl.MC_CLIENT_MODE;
+import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROPERTY;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
@@ -129,7 +129,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         this.clientUuid = UuidUtil.newUnsecureUUID();
-        this.clientType = client.getProperties().getBoolean(MC_CLIENT_MODE) ? ClientTypes.MC_JAVA : ClientTypes.JAVA;
+        this.clientType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROPERTY) ? ClientTypes.MC_JAVA : ClientTypes.JAVA;
         final int connTimeout = networkConfig.getConnectionTimeout();
         this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
         this.executionService = client.getClientExecutionService();

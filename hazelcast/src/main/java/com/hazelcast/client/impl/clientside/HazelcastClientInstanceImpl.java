@@ -124,7 +124,6 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
@@ -159,10 +158,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
-
-    // meant for Management Center purposes
-    public static final HazelcastProperty MC_CLIENT_MODE
-            = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
 
