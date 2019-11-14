@@ -17,7 +17,6 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
@@ -115,7 +114,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
             return;
         }
 
-        sendPostJoinOperations();
+        sendPostJoinOperationsBackToMaster();
         if (preparePostOp(postJoinOp)) {
             getNodeEngine().getOperationService().run(postJoinOp);
         }
@@ -136,7 +135,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         return true;
     }
 
-    private void sendPostJoinOperations() {
+    private void sendPostJoinOperationsBackToMaster() {
         final ClusterServiceImpl clusterService = getService();
         final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
 
@@ -146,14 +145,11 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
 
         if (postJoinOperations != null && !postJoinOperations.isEmpty()) {
             final OperationService operationService = nodeEngine.getOperationService();
-            final Collection<Member> members = clusterService.getMembers();
 
-            for (Member member : members) {
-                if (!member.localMember()) {
-                    OnJoinOp operation = new OnJoinOp(postJoinOperations);
-                    operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
-                }
-            }
+            // send post join operations to master and it will broadcast it to all members
+            Address masterAddress = clusterService.getMasterAddress();
+            OnJoinOp operation = new OnJoinOp(postJoinOperations);
+            operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, operation, masterAddress);
         }
     }
 
