@@ -17,14 +17,19 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheCreationTest;
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.executor.ExecutorServiceTestSupport;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
@@ -32,27 +37,26 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import javax.cache.CacheManager;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class ClientCacheCreationTest extends CacheCreationTest {
 
     @Override
-    protected CachingProvider createCachingProvider(Config hzConfig) {
+    protected CachingProvider createCachingProvider(@Nonnull Config hzConfig) {
         Hazelcast.newHazelcastInstance(hzConfig);
-        ClientConfig clientConfig = null;
-        if (hzConfig != null) {
-            clientConfig = new ClientConfig();
-            clientConfig.getGroupConfig().setName(hzConfig.getGroupConfig().getName());
-            clientConfig.getGroupConfig().setPassword(hzConfig.getGroupConfig().getPassword());
-            clientConfig.getNetworkConfig().setAddresses(singletonList("127.0.0.1"));
-        }
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getGroupConfig().setName(hzConfig.getGroupConfig().getName());
+        clientConfig.getGroupConfig().setPassword(hzConfig.getGroupConfig().getPassword());
+        clientConfig.getNetworkConfig().setAddresses(singletonList("127.0.0.1"));
         return HazelcastClientCachingProvider.createCachingProvider(HazelcastClient.newHazelcastClient(clientConfig));
     }
 
@@ -98,6 +102,60 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         Thread.sleep(2000);
         Hazelcast.newHazelcastInstance();
         assertOpenEventually(cacheCreated);
+    }
+
+    @Test
+    public void recreateCacheOnRestartedCluster_whenMaxConcurrentInvocationLow() {
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.setProperty(ClientProperty.MAX_CONCURRENT_INVOCATIONS.getName(), "1");
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
+        MutableConfiguration configuration = new MutableConfiguration();
+        cacheManager.createCache("xmlCache", configuration);
+
+        IExecutorService executorService = client.getExecutorService("exec");
+        //keep the slot for one invocation to test if client can reconnect even if all slots are kept
+        final CountDownLatch testFinished = new CountDownLatch(1);
+        executorService.submit(new ExecutorServiceTestSupport.SleepingTask(0),
+                new ExecutionCallback<Boolean>() {
+                    @Override
+                    public void onResponse(Boolean response) {
+                        try {
+                            testFinished.await();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        try {
+                            testFinished.await();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+        hazelcastInstance.shutdown();
+
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastServerCachingProvider.createCachingProvider(instance);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                try {
+                    instance.getCacheManager().getCache("xmlCache");
+                } catch (Exception e) {
+                    fail();
+                }
+            }
+        });
+        testFinished.countDown();
     }
 
     @Test
