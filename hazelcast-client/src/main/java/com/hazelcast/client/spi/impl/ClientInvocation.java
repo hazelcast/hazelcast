@@ -221,10 +221,7 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        boolean retry = isRetrySafeException(exception)
-                || invocationService.isRedoOperation()
-                || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable());
-        if (!retry) {
+        if (!shouldRetry(exception)) {
             clientInvocationFuture.complete(exception);
             return;
         }
@@ -311,6 +308,16 @@ public class ClientInvocation implements Runnable {
         return sendConnection;
     }
 
+    private boolean shouldRetry(Throwable t) {
+        if (isRetrySafeException(t)) {
+            return true;
+        }
+        if (t instanceof TargetDisconnectedException) {
+            return clientMessage.isRetryable() || invocationService.isRedoOperation();
+        }
+        return false;
+    }
+
     public static boolean isRetrySafeException(Throwable t) {
         return t instanceof IOException
                 || t instanceof HazelcastInstanceNotActiveException
@@ -332,7 +339,6 @@ public class ClientInvocation implements Runnable {
         String msg = sb.toString();
         return new OperationTimeoutException(msg, e);
     }
-
 
     @Override
     public String toString() {
