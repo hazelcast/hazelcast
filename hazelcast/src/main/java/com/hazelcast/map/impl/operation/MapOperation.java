@@ -38,7 +38,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;
@@ -53,19 +52,6 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
         implements IdentifiedDataSerializable, ServiceNamespaceAware {
-
-    private static final int DEFAULT_FORCED_EVICTION_RETRY_COUNT = 5;
-    private static final String PROP_FORCED_EVICTION_RETRY_COUNT
-        = "hazelcast.internal.forced.eviction.retry.count";
-    private static final HazelcastProperty FORCED_EVICTION_RETRY_COUNT
-        = new HazelcastProperty(PROP_FORCED_EVICTION_RETRY_COUNT,
-                                DEFAULT_FORCED_EVICTION_RETRY_COUNT);
-    private static final Eviction[] EVICTIONS = new Eviction[]{
-        new RecordStoreForcedEviction(),
-        new PartitionRecordStoreForcedEviction(),
-        new AllEntriesEviction(),
-        new PartitionAllEntriesEviction()
-    };
 
     private static final boolean ASSERTION_ENABLED = MapOperation.class.desiredAssertionStatus();
 
@@ -89,13 +75,12 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     private int getRetryCount() {
         HazelcastProperties properties = getNodeEngine().getProperties();
-        return properties.getInteger(FORCED_EVICTION_RETRY_COUNT);
+        return properties.getInteger(WithForcedEviction.FORCED_EVICTION_RETRY_COUNT);
     }
 
     private void runEvictionStrategies() {
-        for (Eviction eviction : EVICTIONS) {
-            eviction.execute(getRetryCount(), this, logger());
-            if (eviction.isSuccessful()) {
+        for (ForcedEviction eviction : WithForcedEviction.EVICTIONS) {
+            if (eviction.execute(getRetryCount(), this, logger())) {
                 return;
             }
         }

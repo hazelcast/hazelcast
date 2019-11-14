@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 
-abstract class PartitionEviction implements Eviction {
+abstract class PartitionForcedEviction implements ForcedEviction {
 
     boolean nativeFormatWithEvictionPolicy(RecordStore recordStore) {
         return recordStore.getInMemoryFormat() == NATIVE

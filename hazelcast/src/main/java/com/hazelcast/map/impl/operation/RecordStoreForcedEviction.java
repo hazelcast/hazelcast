@@ -28,22 +28,19 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.String.format;
 
 /**
- * An {@link Eviction} operation that attempts to force evict entries from a
+ * An {@link ForcedEviction} operation that attempts to force evict entries from a
  * {@link com.hazelcast.map.impl.recordstore.RecordStore}
  */
-class RecordStoreForcedEviction implements Eviction {
-    private final ThreadLocal<Boolean> successful = ThreadLocal.withInitial(() -> false);
-
+class RecordStoreForcedEviction implements ForcedEviction {
     @Override
-    public void execute(int retries, MapOperation mapOperation, ILogger logger) {
-        successful.set(false);
+    public boolean execute(int retries, MapOperation mapOperation, ILogger logger) {
         RecordStore recordStore = mapOperation.recordStore;
         if (recordStore == null) {
-            return;
+            return false;
         }
 
         if (recordStore.getInMemoryFormat() != NATIVE || recordStore.getEvictionPolicy() == NONE) {
-            return;
+            return false;
         }
 
         MapContainer mapContainer = recordStore.getMapContainer();
@@ -61,16 +58,11 @@ class RecordStoreForcedEviction implements Eviction {
             try {
                 evictor.forceEvict(recordStore);
                 mapOperation.runInternal();
-                successful.set(true);
-                return;
+                return true;
             } catch (NativeOutOfMemoryError e) {
                 ignore(e);
             }
         }
-    }
-
-    @Override
-    public boolean isSuccessful() {
-        return successful.get();
+        return false;
     }
 }

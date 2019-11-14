@@ -24,18 +24,15 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
- * An {@link Eviction} operation that attempts to evict all entries from a
+ * An {@link ForcedEviction} operation that attempts to evict all entries from a
  * {@link com.hazelcast.map.impl.recordstore.RecordStore}
  */
-class AllEntriesEviction implements Eviction {
-    private final ThreadLocal<Boolean> successful = ThreadLocal.withInitial(() -> false);
-
+class AllEntriesForcedEviction implements ForcedEviction {
     @Override
-    public void execute(int retries, MapOperation mapOperation, ILogger logger) {
-        successful.set(false);
+    public boolean execute(int retries, MapOperation mapOperation, ILogger logger) {
         RecordStore recordStore = mapOperation.recordStore;
         if (recordStore == null) {
-            return;
+            return false;
         }
 
         boolean isBackup = mapOperation instanceof BackupOperation;
@@ -47,14 +44,10 @@ class AllEntriesEviction implements Eviction {
             recordStore.evictAll(isBackup);
             recordStore.disposeDeferredBlocks();
             mapOperation.runInternal();
-            successful.set(true);
+            return true;
         } catch (NativeOutOfMemoryError e) {
             ignore(e);
         }
-    }
-
-    @Override
-    public boolean isSuccessful() {
-        return successful.get();
+        return false;
     }
 }

@@ -22,15 +22,13 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import java.util.stream.IntStream;
 
 /**
- * An {@link Eviction} operation that attempts to evict all an {@link com.hazelcast.map.IMap} partition entries
+ * An {@link ForcedEviction} operation that attempts to evict all an {@link com.hazelcast.map.IMap} partition entries
  * of current thread
  */
-class PartitionAllEntriesEviction extends PartitionEviction {
-    private final ThreadLocal<Boolean> successful = ThreadLocal.withInitial(() -> false);
+class PartitionAllEntriesForcedEviction extends PartitionForcedEviction {
 
     @Override
-    public void execute(int retries, MapOperation mapOperation, ILogger logger) {
-        successful.set(false);
+    public boolean execute(int retries, MapOperation mapOperation, ILogger logger) {
         if (logger.isInfoEnabled()) {
             logger.info("Evicting all entries in other RecordStores owned by the same partition thread"
                             + " because forced eviction was not enough!");
@@ -51,15 +49,10 @@ class PartitionAllEntriesEviction extends PartitionEviction {
                 recordStore.disposeDeferredBlocks();
             });
         mapOperation.runInternal();
-        successful.set(true);
+        return true;
     }
 
     private boolean backupOperation(MapOperation mapOperation) {
         return mapOperation instanceof BackupOperation;
-    }
-
-    @Override
-    public boolean isSuccessful() {
-        return successful.get();
     }
 }
