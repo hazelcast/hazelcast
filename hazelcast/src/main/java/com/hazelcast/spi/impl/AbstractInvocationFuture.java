@@ -263,7 +263,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         if (isDone()) {
             unblockWhenComplete(action, executor, future);
         } else {
-            Object result = registerWaiter(new WhenCompleteNode(future, action), executor);
+            Object result = registerWaiter(new WhenCompleteNode(future, action, logger), executor);
             if (result != UNRESOLVED) {
                 unblockWhenComplete(action, executor, future);
             }
@@ -871,6 +871,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 try {
                     biConsumer.accept((V) value, throwable);
                 } catch (Throwable t) {
+                    logger.severe(t);
                     completeDependentExceptionally(future, throwable, t);
                     return;
                 }
@@ -1516,10 +1517,13 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     private static final class WhenCompleteNode<V, T extends Throwable> implements BiWaiter<V, T> {
         final CompletableFuture<V> future;
         final BiConsumer<V, T> biConsumer;
+        private final ILogger logger;
 
-        WhenCompleteNode(@Nonnull CompletableFuture<V> future, @Nonnull BiConsumer<V, T> biConsumer) {
+        WhenCompleteNode(@Nonnull CompletableFuture<V> future, @Nonnull BiConsumer<V, T> biConsumer,
+                         ILogger logger) {
             this.future = future;
             this.biConsumer = biConsumer;
+            this.logger = logger;
         }
 
         @Override
@@ -1529,6 +1533,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 try {
                     biConsumer.accept(value, throwable);
                 } catch (Throwable t) {
+                    logger.severe(t);
                     completeDependentExceptionally(future, throwable, t);
                     return;
                 }
