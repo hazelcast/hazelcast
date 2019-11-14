@@ -632,7 +632,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                     ClientGetDistributedObjectsCodec.decodeResponse(response);
 
             Collection<? extends DistributedObject> distributedObjects = proxyManager.getDistributedObjects();
-            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<DistributedObjectInfo>();
+            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<>();
             for (DistributedObject localInfo : distributedObjects) {
                 localDistributedObjects.add(new DistributedObjectInfo(localInfo.getServiceName(), localInfo.getName()));
             }
@@ -640,7 +640,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             Collection<DistributedObjectInfo> newDistributedObjectInfo = resultParameters.response;
             for (DistributedObjectInfo distributedObjectInfo : newDistributedObjectInfo) {
                 localDistributedObjects.remove(distributedObjectInfo);
-                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName(), false);
             }
 
             for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
@@ -699,6 +699,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
                                                                 @Nonnull String name) {
         return (T) proxyManager.getOrCreateProxy(serviceName, name);
+    }
+
+    public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
+                                                                @Nonnull String name, boolean remote) {
+        return (T) proxyManager.getOrCreateProxy(serviceName, name, remote);
     }
 
     @Nonnull
