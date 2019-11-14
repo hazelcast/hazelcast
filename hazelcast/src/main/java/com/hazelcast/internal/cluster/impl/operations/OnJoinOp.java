@@ -18,7 +18,10 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,6 +30,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 
@@ -88,6 +92,18 @@ public class OnJoinOp
                     op.afterRun();
                 } catch (Exception e) {
                     getLogger().warning("Error while running post-join operation: " + op, e);
+                }
+            }
+
+            final ClusterService clusterService = getService();
+            // if executed on master, broadcast to all other members except sender (joining member)
+            if (clusterService.isMaster()) {
+                final OperationService operationService = getNodeEngine().getOperationService();
+                for (Member member : clusterService.getMembers()) {
+                    if (!member.localMember() && !member.getUuid().equals(getCallerUuid())) {
+                        OnJoinOp operation = new OnJoinOp(operations);
+                        operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
+                    }
                 }
             }
         }
