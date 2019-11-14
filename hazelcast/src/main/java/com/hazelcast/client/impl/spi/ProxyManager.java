@@ -268,11 +268,6 @@ public final class ProxyManager {
     }
 
     public ClientProxy getOrCreateProxy(@Nonnull String service,
-                                        @Nonnull String id) {
-        return getOrCreateProxy(service, id, true);
-    }
-
-    public ClientProxy getOrCreateProxy(@Nonnull String service,
                                         @Nonnull String id, boolean remote) {
         checkNotNull(service, "Service name is required!");
         checkNotNull(id, "Object name is required!");

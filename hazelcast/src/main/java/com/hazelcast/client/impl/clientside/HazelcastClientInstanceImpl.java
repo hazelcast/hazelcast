@@ -698,11 +698,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
                                                                 @Nonnull String name) {
-        return (T) proxyManager.getOrCreateProxy(serviceName, name);
+        return getDistributedObject(serviceName, name, true);
     }
 
-    public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
-                                                                @Nonnull String name, boolean remote) {
+    private <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
+                                                                 @Nonnull String name, boolean remote) {
         return (T) proxyManager.getOrCreateProxy(serviceName, name, remote);
     }
 
