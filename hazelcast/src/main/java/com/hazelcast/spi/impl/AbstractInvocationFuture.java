@@ -871,7 +871,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 try {
                     biConsumer.accept((V) value, throwable);
                 } catch (Throwable t) {
-                    logger.severe(t);
+                    logger.severe("WOOT WOOT exception", t);
                     completeDependentExceptionally(future, throwable, t);
                     return;
                 }
@@ -1533,7 +1533,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 try {
                     biConsumer.accept(value, throwable);
                 } catch (Throwable t) {
-                    logger.severe(t);
+                    logger.severe("WOOT WOOT exception", t);
                     completeDependentExceptionally(future, throwable, t);
                     return;
                 }
