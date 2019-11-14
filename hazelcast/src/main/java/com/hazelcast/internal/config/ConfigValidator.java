@@ -169,8 +169,6 @@ public final class ConfigValidator {
     }
 
     public static void checkMapEvictionConfig(EvictionConfig evictionConfig) {
-        checkEvictionConfig(evictionConfig, MAP_SUPPORTED_EVICTION_POLICIES);
-
         EvictionPolicyComparator comparator = evictionConfig.getComparator();
         String comparatorClassName = evictionConfig.getComparatorClassName();
         EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
