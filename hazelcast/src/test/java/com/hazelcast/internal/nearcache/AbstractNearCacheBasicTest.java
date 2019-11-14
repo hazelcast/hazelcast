@@ -1384,25 +1384,29 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context);
 
         assertTrueEventually(() -> {
-            // make assertions over near cache's backing map size.
-            long nearCacheSize = context.nearCache.size();
-            assertEquals("Near Cache should be empty but size is: " + nearCacheSize, 0, nearCacheSize);
-
-            // make assertions over near cache stats.
             NearCacheStatsImpl stats = context.stats;
 
+            // make assertions over near cache's backing map size.
+            long nearCacheSize = context.nearCache.size();
+            assertEquals(format("Expected zero near cache size but found: %d, [%s] ",
+                    nearCacheSize, stats), 0, nearCacheSize);
+
+            // make assertions over near cache stats.
             long ownedEntryCount = stats.getOwnedEntryCount();
-            assertEquals("Near Cache should have no owned entry but there is: " + ownedEntryCount, 0, ownedEntryCount);
+            assertEquals(format("Expected no owned entry but found: %d, [%s]",
+                    ownedEntryCount, stats), 0, ownedEntryCount);
 
             long ownedEntryMemoryCost = stats.getOwnedEntryMemoryCost();
-            assertEquals("Near Cache memory cost should be zero but found: " + ownedEntryMemoryCost, 0, ownedEntryMemoryCost);
+            assertEquals(format("Expected zero memory cost but found: %d, [%s]",
+                    ownedEntryMemoryCost, stats), 0, ownedEntryMemoryCost);
 
             long expiredCount = stats.getExpirations();
-            assertEquals("Expired entry count " + expiredCount + " is below expected number " + DEFAULT_RECORD_COUNT,
-                    DEFAULT_RECORD_COUNT, expiredCount);
+            assertEquals(format("Expected to see all entries as expired but found: %d, [%s]",
+                    expiredCount, stats), DEFAULT_RECORD_COUNT, expiredCount);
 
             long evictedCount = context.stats.getEvictions();
-            assertEquals("No eviction is expected but found: " + evictedCount, 0, evictedCount);
+            assertEquals(format("Expiration should not trigger eviction stat but found: %d, [%s]",
+                    evictedCount, stats), 0, evictedCount);
         });
     }
 
