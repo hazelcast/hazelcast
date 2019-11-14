@@ -28,7 +28,6 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -936,13 +935,15 @@ public class EvictionTest extends HazelcastTestSupport {
         int maxSizeMB = 50;
         String mapName = randomMapName();
 
-        Config config = newConfig(mapName, maxSizeMB, MaxSizePolicy.USED_HEAP_SIZE);
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         config.setProperty(GroupProperty.MAP_EVICTION_BATCH_SIZE.getName(), "2");
 
-        config.getMapConfig("default")
-                .getEvictionConfig()
-                .setComparator(RandomEvictionPolicyComparator.INSTANCE);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig.setComparator((o1, o2) -> 0)
+                .setMaxSizePolicy(MaxSizePolicy.USED_HEAP_SIZE)
+                .setSize(maxSizeMB);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, byte[]> map = instance.getMap(mapName);
