@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.managementcenter;
+package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -25,10 +26,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.zip.Deflater;
@@ -67,15 +66,17 @@ import static java.lang.Math.multiplyExact;
  * After both the metrics and the dictionary blob is constructed, they
  * are copied into a final blob in the following structure:
  *
- * +--------------------------+--------------------+
- * | Compressor version       |   2 bytes (short)  |
- * +--------------------------+--------------------+
- * | Size of dictionary blob  |   4 bytes (int)    |
- * +--------------------------+--------------------+
- * | Dictionary blob          |   variable size    |
- * +--------------------------+--------------------+
- * | Metrics blob             |   variable size    |
- * +--------------------------+--------------------+
+ * +--------------------------------+--------------------+
+ * | Compressor version             |   2 bytes (short)  |
+ * +--------------------------------+--------------------+
+ * | Size of dictionary blob        |   4 bytes (int)    |
+ * +--------------------------------+--------------------+
+ * | Dictionary blob                |   variable size    |
+ * +--------------------------------+--------------------+
+ * | Number of metrics in the blob  |   4 bytes (int)    |
+ * +--------------------------------+--------------------+
+ * | Metrics blob                   |   variable size    |
+ * +--------------------------------+--------------------+
  */
 public class MetricsCompressor {
 
@@ -108,6 +109,7 @@ public class MetricsCompressor {
     private static final int NULL_UNIT = -1;
     private static final int SIZE_VERSION = 2;
     private static final int SIZE_DICTIONARY_BLOB = 4;
+    private static final int SIZE_COUNT_METRICS = 4;
 
     private MetricsDictionary dictionary;
 
@@ -322,8 +324,9 @@ public class MetricsCompressor {
         byte[] dictionaryBytes = dictionaryBaos.toByteArray();
         byte[] metricsBytes = metricBaos.toByteArray();
 
-        // version info + dictionary length + dictionary blob + metrics blob
-        int completeSize = SIZE_VERSION + SIZE_DICTIONARY_BLOB + dictionaryBytes.length + metricsBytes.length;
+        // version info + dictionary length + dictionary blob + number of metrics + metrics blob
+        int completeSize =
+                SIZE_VERSION + SIZE_DICTIONARY_BLOB + dictionaryBytes.length + SIZE_COUNT_METRICS + metricsBytes.length;
         ByteArrayOutputStream baos = new ByteArrayOutputStream(completeSize);
         DataOutputStream dos = new DataOutputStream(baos);
         try {
@@ -331,6 +334,7 @@ public class MetricsCompressor {
             dos.write(BINARY_FORMAT_VERSION & BYTE_MASK);
             dos.writeInt(dictionaryBytes.length);
             dos.write(dictionaryBytes);
+            dos.writeInt(count);
             dos.write(metricsBytes);
             dos.close();
         } catch (IOException e) {
@@ -341,13 +345,13 @@ public class MetricsCompressor {
         return baos.toByteArray();
     }
 
-    public static Iterator<Metric> decompressingIterator(byte[] bytes) {
-        return decompressingIterator(bytes, DEFAULT_DESCRIPTOR_SUPPLIER);
+    public static void extractMetrics(byte[] blob, MetricConsumer consumer) {
+        extractMetrics(blob, consumer, DEFAULT_DESCRIPTOR_SUPPLIER);
     }
 
     @SuppressFBWarnings("RR_NOT_CHECKED")
-    public static Iterator<Metric> decompressingIterator(byte[] bytes, Supplier<? extends MetricDescriptor> supplier) {
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+    public static void extractMetrics(byte[] blob, MetricConsumer consumer, Supplier<? extends MetricDescriptor> supplier) {
+        ByteArrayInputStream bais = new ByteArrayInputStream(blob);
         int version = (bais.read() << BITS_IN_BYTE) + bais.read();
         if (version != BINARY_FORMAT_VERSION) {
             throw new RuntimeException("Incorrect format, expected version " + BINARY_FORMAT_VERSION + ", got " + version);
@@ -358,147 +362,22 @@ public class MetricsCompressor {
         try {
             int dictionaryBlobSize = dis.readInt();
             byte[] dictionaryBlob = new byte[dictionaryBlobSize];
-            // blob size - version - dictionary size int - dictionary blob size
-            int metricsBlobSize = bytes.length - SIZE_VERSION - SIZE_DICTIONARY_BLOB - dictionaryBlobSize;
-            byte[] metricsBlob = new byte[metricsBlobSize];
             dis.read(dictionaryBlob);
+
+            int countMetrics = dis.readInt();
+            // blob size - version - dictionary size int - dictionary blob size - count of metrics size
+            int metricsBlobSize = blob.length - SIZE_VERSION - SIZE_DICTIONARY_BLOB - dictionaryBlobSize - SIZE_COUNT_METRICS;
+            byte[] metricsBlob = new byte[metricsBlobSize];
             dis.read(metricsBlob);
 
             dis.close();
 
             String[] dictionary = readDictionary(dictionaryBlob);
-            return getIterator(metricsBlob, dictionary, supplier);
+            new MetricsDecompressor(metricsBlob, countMetrics, dictionary, supplier, consumer).extractMetrics();
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
         }
-    }
-
-    @SuppressWarnings({"checkstyle:AnonInnerLength", "checkstyle:MethodLength"})
-    private static Iterator<Metric> getIterator(byte[] metricsBlob, String[] dictionary,
-                                                Supplier<? extends MetricDescriptor> supplier) {
-        DataInputStream dis = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(metricsBlob)));
-
-        return new Iterator<Metric>() {
-            MetricDescriptor lastDescriptor = supplier.get();
-            Metric next;
-            int lastTagCount;
-
-            {
-                moveNext();
-            }
-
-            @Override
-            public boolean hasNext() {
-                return next != null;
-            }
-
-            @Override
-            public Metric next() {
-                try {
-                    return next;
-                } finally {
-                    moveNext();
-                }
-            }
-
-            @SuppressWarnings("checkstyle:NPathComplexity")
-            private void moveNext() {
-                ProbeUnit[] units = ProbeUnit.values();
-                MetricDescriptor newDescriptor = supplier.get();
-                try {
-                    int mask = dis.readUnsignedByte();
-
-                    // prefix
-                    if ((mask & MASK_PREFIX) != 0) {
-                        newDescriptor.withPrefix(lastDescriptor.prefix());
-                    } else {
-                        newDescriptor.withPrefix(readNextWord());
-                    }
-
-                    // metric
-                    if ((mask & MASK_METRIC) != 0) {
-                        newDescriptor.withMetric(lastDescriptor.metric());
-                    } else {
-                        newDescriptor.withMetric(readNextWord());
-                    }
-
-                    // discriminator
-                    final String discriminator;
-                    final String discriminatorValue;
-                    if ((mask & MASK_DISCRIMINATOR) != 0) {
-                        discriminator = lastDescriptor.discriminator();
-                    } else {
-                        discriminator = readNextWord();
-                    }
-                    if ((mask & MASK_DISCRIMINATOR_VALUE) != 0) {
-                        discriminatorValue = lastDescriptor.discriminatorValue();
-                    } else {
-                        discriminatorValue = readNextWord();
-                    }
-                    newDescriptor.withDiscriminator(discriminator, discriminatorValue);
-
-                    // unit
-                    if ((mask & MASK_UNIT) != 0) {
-                        newDescriptor.withUnit(lastDescriptor.unit());
-                    } else {
-                        int unitOrdinal = dis.readByte();
-                        ProbeUnit unit = unitOrdinal != NULL_UNIT ? units[unitOrdinal] : null;
-                        newDescriptor.withUnit(unit);
-                    }
-
-                    // excluded targets
-                    if ((mask & MASK_EXCLUDED_TARGETS) != 0) {
-                        newDescriptor.withExcludedTargets(lastDescriptor.excludedTargets());
-                    } else {
-                        int excludedMetricsBitset = dis.readByte();
-                        newDescriptor.withExcludedTargets(MetricTarget.asSet(excludedMetricsBitset));
-                    }
-
-                    // tags
-                    final int tagCount;
-                    if ((mask & MASK_TAG_COUNT) != 0) {
-                        tagCount = lastTagCount;
-                    } else {
-                        tagCount = dis.readUnsignedByte();
-                    }
-                    lastTagCount = tagCount;
-
-                    for (int i = 0; i < tagCount; i++) {
-                        int tagId = dis.readInt();
-                        int tagValueId = dis.readInt();
-                        String tag = dictionary[tagId];
-                        String tagValue = dictionary[tagValueId];
-                        newDescriptor.withTag(tag, tagValue);
-                    }
-
-                    lastDescriptor = newDescriptor;
-                    next = readNextMetric();
-                } catch (EOFException ignored) {
-                    next = null;
-                } catch (IOException e) {
-                    // should never be thrown
-                    throw new RuntimeException(e);
-                }
-            }
-
-            private String readNextWord() throws IOException {
-                int dictionaryId = dis.readInt();
-                return dictionaryId != NULL_DICTIONARY_ID ? dictionary[dictionaryId] : null;
-            }
-
-            private Metric readNextMetric() throws IOException {
-                ValueType type = ValueType.valueOf(dis.readByte());
-                switch (type) {
-                    case LONG:
-                        return new Metric(lastDescriptor.copy(), type, dis.readLong());
-                    case DOUBLE:
-                        return new Metric(lastDescriptor.copy(), type, dis.readDouble());
-                    default:
-                        throw new IllegalStateException("Unexpected metric value type: " + type);
-                }
-            }
-        };
     }
 
     private static String[] readDictionary(byte[] dictionaryBlob) throws IOException {
@@ -562,5 +441,133 @@ public class MetricsCompressor {
             }
         }
 
+    }
+
+    private static final class MetricsDecompressor {
+        private final int countMetrics;
+        private final MetricConsumer consumer;
+        private final String[] dictionary;
+        private final DataInputStream dis;
+        private final Supplier<? extends MetricDescriptor> supplier;
+        private final MetricDescriptor lastDescriptor;
+        private final ProbeUnit[] units = ProbeUnit.values();
+
+        private MetricsDecompressor(byte[] metricsBlob, int countMetrics, String[] dictionary,
+                                    Supplier<? extends MetricDescriptor> supplier,
+                                    MetricConsumer consumer) {
+            this.countMetrics = countMetrics;
+            this.consumer = consumer;
+            this.dictionary = dictionary;
+            this.dis = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(metricsBlob)));
+            this.supplier = supplier;
+            this.lastDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get();
+        }
+
+        private void extractMetrics() throws IOException {
+            for (int i = 0; i < countMetrics; i++) {
+                MetricDescriptor descriptor = readMetricDescriptor();
+                int typeOrdinal = dis.readUnsignedByte();
+                ValueType type = ValueType.valueOf(typeOrdinal);
+
+                switch (type) {
+                    case LONG:
+                        consumer.consumeLong(descriptor, dis.readLong());
+                        break;
+                    case DOUBLE:
+                            consumer.consumeDouble(descriptor, dis.readDouble());
+                        break;
+                    default:
+                        throw new IllegalStateException("Unexpected metric value type: " + type + " with ordinal " + typeOrdinal);
+                }
+
+                lastDescriptor.copy(descriptor);
+            }
+        }
+
+        private MetricDescriptor readMetricDescriptor() throws IOException {
+            int mask = dis.readUnsignedByte();
+            MetricDescriptor descriptor = supplier.get();
+            fillPrefix(descriptor, mask);
+            fillMetric(descriptor, mask);
+            fillDiscriminator(descriptor, mask);
+            fillUnit(descriptor, mask);
+            fillExcludedTargets(descriptor, mask);
+            fillTags(descriptor, mask);
+
+            return descriptor;
+        }
+
+        private void fillPrefix(MetricDescriptor descriptor, int mask) throws IOException {
+            if ((mask & MASK_PREFIX) != 0) {
+                descriptor.withPrefix(lastDescriptor.prefix());
+            } else {
+                descriptor.withPrefix(readNextWord());
+            }
+        }
+
+        private void fillMetric(MetricDescriptor descriptor, int mask) throws IOException {
+            if ((mask & MASK_METRIC) != 0) {
+                descriptor.withMetric(lastDescriptor.metric());
+            } else {
+                descriptor.withMetric(readNextWord());
+            }
+        }
+
+        private void fillDiscriminator(MetricDescriptor descriptor, int mask) throws IOException {
+            final String discriminator;
+            final String discriminatorValue;
+            if ((mask & MASK_DISCRIMINATOR) != 0) {
+                discriminator = lastDescriptor.discriminator();
+            } else {
+                discriminator = readNextWord();
+            }
+            if ((mask & MASK_DISCRIMINATOR_VALUE) != 0) {
+                discriminatorValue = lastDescriptor.discriminatorValue();
+            } else {
+                discriminatorValue = readNextWord();
+            }
+            descriptor.withDiscriminator(discriminator, discriminatorValue);
+        }
+
+        private void fillUnit(MetricDescriptor descriptor, int mask) throws IOException {
+            if ((mask & MASK_UNIT) != 0) {
+                descriptor.withUnit(lastDescriptor.unit());
+            } else {
+                int unitOrdinal = dis.readByte();
+                ProbeUnit unit = unitOrdinal != NULL_UNIT ? units[unitOrdinal] : null;
+                descriptor.withUnit(unit);
+            }
+        }
+
+        private void fillExcludedTargets(MetricDescriptor descriptor, int mask) throws IOException {
+            if ((mask & MASK_EXCLUDED_TARGETS) != 0) {
+                descriptor.withExcludedTargets(lastDescriptor.excludedTargets());
+            } else {
+                int excludedMetricsBitset = dis.readByte();
+                descriptor.withExcludedTargets(MetricTarget.asSet(excludedMetricsBitset));
+            }
+        }
+
+        private void fillTags(MetricDescriptor descriptor, int mask) throws IOException {
+            final int tagCount;
+            if ((mask & MASK_TAG_COUNT) != 0) {
+                tagCount = lastDescriptor.tagCount();
+            } else {
+                tagCount = dis.readUnsignedByte();
+            }
+
+            for (int i = 0; i < tagCount; i++) {
+                int tagId = dis.readInt();
+                int tagValueId = dis.readInt();
+                String tag = dictionary[tagId];
+                String tagValue = dictionary[tagValueId];
+                descriptor.withTag(tag, tagValue);
+            }
+        }
+
+        private String readNextWord() throws IOException {
+            int dictionaryId = dis.readInt();
+            return dictionaryId != NULL_DICTIONARY_ID ? dictionary[dictionaryId] : null;
+        }
     }
 }

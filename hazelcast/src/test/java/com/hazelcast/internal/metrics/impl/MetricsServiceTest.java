@@ -26,8 +26,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
-import com.hazelcast.internal.metrics.managementcenter.Metric;
-import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
+import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -50,7 +49,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -59,7 +57,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
-import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
+import static com.hazelcast.internal.metrics.impl.MetricsCompressor.extractMetrics;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -371,12 +369,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         RingbufferSlice<Map.Entry<Long, byte[]>> ringbufferSlice = future.get();
 
         MetricsResultSet metricsResultSet = new MetricsResultSet(ringbufferSlice.nextSequence(), ringbufferSlice.elements());
-
-        metricsResultSet.collections().forEach(entry -> {
-            Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
-            metricIterator.forEachRemaining(metric -> metric.provide(metricConsumer));
-        });
-
+        metricsResultSet.collections().forEach(entry -> extractMetrics(entry.getValue(), metricConsumer));
     }
 
     private static class TestProbeSource {
