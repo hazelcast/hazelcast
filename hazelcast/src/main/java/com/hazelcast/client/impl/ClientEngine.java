@@ -164,7 +164,9 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     Map<UUID, String> getClientStatistics();
 
     /**
-     * @param client to check if allowed through current ClientSelector
+     * @param client to check if allowed through current ClientSelector.
+     *               <p>
+     *               Note: Management Center clients ({@link ClientType#MC_JAVA}) are always allowed.
      * @return true if allowed, false otherwise
      */
     boolean isClientAllowed(Client client);
@@ -172,11 +174,12 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     /**
      * Only Clients that can pass through filter are allowed to connect to cluster.
      * Only one selector can be active at a time. Applying new one will override old selector.
+     * <p>
+     * Note: the only exception to this rule are Management Center clients ({@link ClientType#MC_JAVA}).
      *
      * @param selector to select a client or group of clients to act upon
      */
     void applySelector(ClientSelector selector);
-
 
     /**
      * Locates the cluster member that has the provided client address and returns its member address,

@@ -40,6 +40,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MemberAttributeServiceEvent;
@@ -60,7 +61,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionManagerService;
 
@@ -295,7 +295,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean bind(final ClientEndpoint endpoint) {
-        if (!clientSelector.select(endpoint)) {
+        if (isFilterableClient(endpoint) && !clientSelector.select(endpoint)) {
             return false;
         }
 
@@ -315,7 +315,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
 
         // Second check to catch concurrent change done via applySelector
-        if (!clientSelector.select(endpoint)) {
+        if (isFilterableClient(endpoint) && !clientSelector.select(endpoint)) {
             endpointManager.removeEndpoint(endpoint);
             return false;
         }
@@ -329,10 +329,14 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         clientSelector = newSelector;
 
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            if (!clientSelector.select(endpoint)) {
+            if (isFilterableClient(endpoint) && !clientSelector.select(endpoint)) {
                 endpoint.getConnection().close("Client disconnected from cluster via Management Center", null);
             }
         }
+    }
+
+    private static boolean isFilterableClient(ClientEndpoint endpoint) {
+        return endpoint.getClientType() != ClientType.MC_JAVA;
     }
 
     @Override
@@ -436,6 +440,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean isClientAllowed(Client client) {
+        if (client instanceof ClientEndpoint && !isFilterableClient((ClientEndpoint) client)) {
+            return true;
+        }
         return clientSelector.select(client);
     }
 
