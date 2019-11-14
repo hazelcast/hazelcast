@@ -124,11 +124,12 @@ public interface MetricDescriptor {
     MetricDescriptor withTag(String tag, String value);
 
     /**
-     * Returns the value associated with the given {@code tag}.
+     * Returns the value associated with the given {@code tag} or {@code null}
+     * if the given tag is not set for the descriptor. If tag is duplicated,
+     * returns the first occurrence.
      *
      * @param tag The tag
-     * @return the value of the tag or {@code null} if the given tag is
-     * not set for the descriptor
+     * @return the value of the tag or {@code null}
      */
     @Nullable
     String tagValue(String tag);
@@ -146,10 +147,10 @@ public interface MetricDescriptor {
      * Returns the name of the tag at the given index.
      *
      * @param index The index
-     * @return the name of the tag
      * @see #tagValue(int)
      * @see #tagCount()
      * @see #readTags(BiConsumer)
+     * @throws IndexOutOfBoundsException if index is out of bounds
      */
     @Nullable
     String tag(int index);
@@ -158,10 +159,10 @@ public interface MetricDescriptor {
      * Returns the value of the tag at the given index.
      *
      * @param index The index
-     * @return the value of the tag
      * @see #tag(int)
      * @see #tagCount()
      * @see #readTags(BiConsumer)
+     * @throws IndexOutOfBoundsException if index is out of bounds
      */
     @Nullable
     String tagValue(int index);
