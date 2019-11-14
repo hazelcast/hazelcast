@@ -17,7 +17,6 @@
 package com.hazelcast.client.config.impl;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
@@ -25,6 +24,7 @@ import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
@@ -294,11 +294,10 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     }
 
     @Override
-    protected void handleMap(Node node) {
+    protected void handlePartitionStrategy(Node node) {
         for (Node child : childElements(node)) {
-            ClientMapConfig mapConfig = new ClientMapConfig();
-            mapConfig.setName(child.getNodeName());
-            handleMapNode(child, mapConfig);
+            PartitioningStrategyConfig config = new PartitioningStrategyConfig();
+            handlePartitionStrategy(child, child.getNodeName(), config);
         }
     }
 }

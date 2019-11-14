@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
-import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
@@ -67,7 +66,7 @@ import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_NAM
 import static com.hazelcast.client.config.impl.ClientConfigSections.LABELS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LISTENERS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LOAD_BALANCER;
-import static com.hazelcast.client.config.impl.ClientConfigSections.MAP;
+import static com.hazelcast.client.config.impl.ClientConfigSections.PARTITION_STRATEGY;
 import static com.hazelcast.client.config.impl.ClientConfigSections.NATIVE_MEMORY;
 import static com.hazelcast.client.config.impl.ClientConfigSections.NEAR_CACHE;
 import static com.hazelcast.client.config.impl.ClientConfigSections.NETWORK;
@@ -143,8 +142,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleNetwork(node);
         } else if (LOAD_BALANCER.isEqual(nodeName)) {
             handleLoadBalancer(node);
-        } else if (MAP.isEqual(nodeName)) {
-            handleMap(node);
+        } else if (PARTITION_STRATEGY.isEqual(nodeName)) {
+            handlePartitionStrategy(node);
         } else if (NEAR_CACHE.isEqual(nodeName)) {
             handleNearCache(node);
         } else if (QUERY_CACHES.isEqual(nodeName)) {
@@ -259,22 +258,21 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         clientConfig.setExecutorPoolSize(poolSize);
     }
 
-    protected void handleMap(Node node) {
+    protected void handlePartitionStrategy(Node node) {
         String name = getAttribute(node, "name");
-        ClientMapConfig mapConfig = new ClientMapConfig();
-        mapConfig.setName(name);
-        handleMapNode(node, mapConfig);
+        PartitioningStrategyConfig config = new PartitioningStrategyConfig();
+        handlePartitionStrategy(node, name, config);
     }
 
-    protected void handleMapNode(Node node, final ClientMapConfig mapConfig) {
+    protected void handlePartitionStrategy(Node node, final String name, final PartitioningStrategyConfig config) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("partition-strategy".equals(nodeName)) {
-                mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
+            if ("class-name".equals(nodeName)) {
+                config.setPartitioningStrategyClass(value);
             }
         }
-        clientConfig.addMapConfig(mapConfig);
+        clientConfig.addPartitioningStrategyConfig(name, config);
     }
 
     protected void handleNearCache(Node node) {

@@ -44,6 +44,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
@@ -110,7 +111,7 @@ public class ClientConfig {
     private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
     private MetricsConfig metricsConfig = new MetricsConfig();
-    private final Map<String, ClientMapConfig> mapConfigs;
+    private final Map<String, PartitioningStrategyConfig> partitioningStrategyConfigs;
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -121,7 +122,7 @@ public class ClientConfig {
         queryCacheConfigs = new ConcurrentHashMap<>();
         labels = new HashSet<>();
         userContext = new ConcurrentHashMap<>();
-        mapConfigs = new ConcurrentHashMap<>();
+        partitioningStrategyConfigs = new ConcurrentHashMap<>();
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
@@ -175,9 +176,9 @@ public class ClientConfig {
         labels = new HashSet<>(config.labels);
         userContext = new ConcurrentHashMap<>(config.userContext);
         metricsConfig = new MetricsConfig(config.metricsConfig);
-        mapConfigs = new ConcurrentHashMap<>();
-        for (Entry<String, ClientMapConfig> entry : config.mapConfigs.entrySet()) {
-            mapConfigs.put(entry.getKey(), new ClientMapConfig(entry.getValue()));
+        partitioningStrategyConfigs = new ConcurrentHashMap<>();
+        for (Entry<String, PartitioningStrategyConfig> entry : config.partitioningStrategyConfigs.entrySet()) {
+            partitioningStrategyConfigs.put(entry.getKey(), entry.getValue());
         }
     }
 
@@ -914,102 +915,66 @@ public class ClientConfig {
     }
 
     /**
-     * Returns the map of {@link com.hazelcast.map.IMap} configurations,
-     * mapped by the configuration name. The configuration name may be a pattern
-     * which the configuration will be obtained in the future.
-     *
-     * @return the map of {@link com.hazelcast.map.IMap} configurations mapped by the configuration name.
-     */
-    public Map<String, ClientMapConfig> getMapConfigs() {
-        return mapConfigs;
-    }
-
-    /**
-     * Returns a {@link com.hazelcast.map.IMap} configuration for
-     * the given name.
-     * <p>
-     * The name is matched by pattern to the configuration and by stripping the
-     * partition ID qualifier from the given {@code name}.
-     * If there is no config found by the name, it will return the configuration
-     * with the name {@code default}.
-     *
-     * @param name name of the map config
-     * @return the map configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public ClientMapConfig findMapConfig(String name) {
-        name = getBaseName(name);
-        ClientMapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
-        if (config != null) {
-            return config;
-        }
-        return getMapConfig("default");
-    }
-
-    /**
-     * Returns the {@link ClientMapConfig} for the given name, creating one
-     * if necessary and adding it to the collection of known configurations.
-     * <p>
-     * The configuration is found by matching the configuration name
-     * pattern to the provided {@code name} without the partition qualifier
-     * (the part of the name after {@code '@'}).
-     * If no configuration matches, it will create one by cloning the
-     * {@code "default"} configuration and add it to the configuration
-     * collection.
-     * <p>
-     * This method is intended to easily and fluently create and add
-     * configurations more specific than the default configuration without
-     * explicitly adding it by invoking {@link #addMapConfig(ClientMapConfig)}.
-     * <p>
-     * Because it adds new configurations if they are not already present,
-     * this method is intended to be used before this config is used to
-     * create a hazelcast instance. Afterwards, newly added configurations
-     * may be ignored.
-     *
-     * @param name name of the map config
-     * @return the map configuration
-     * @throws InvalidConfigurationException if ambiguous configurations are
-     *                                       found
-     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
-     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
-     */
-    public ClientMapConfig getMapConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapConfigs, name, ClientMapConfig.class);
-    }
-
-    /**
-     * Adds the map configuration. The configuration is saved under the config
+     * Adds a {@link PartitioningStrategyConfig}. The configuration is saved under the config
      * name, which may be a pattern with which the configuration will be
      * obtained in the future.
      *
-     * @param mapConfig the map configuration
-     * @return the configured {@link ClientConfig} for chaining.
+     * @param name name or the pattern of the configuration
+     * @param config the partition strategy configuration
+     * @return this config instance
      */
-    public ClientConfig addMapConfig(ClientMapConfig mapConfig) {
-        mapConfigs.put(mapConfig.getName(), mapConfig);
+    public ClientConfig addPartitioningStrategyConfig(String name, PartitioningStrategyConfig config) {
+        partitioningStrategyConfigs.put(name, config);
         return this;
     }
 
     /**
-     * Sets the map of {@link ClientMapConfig},
-     * mapped by the configuration name. The configuration name may be a pattern
-     * which the configuration will be obtained in the future.
+     * Returns the {@link PartitioningStrategyConfig} for the given name.
+     * <p>
+     * The configuration is found by matching the the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
      *
-     * @param map the {@link ClientMapConfig} map to set.
-     * @return the configured {@link ClientConfig} for chaining.
+     * @param name name of the partition strategy config
+     * @return the partition strategy configuration
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
      */
-    public ClientConfig setMapConfigs(Map<String, ClientMapConfig> map) {
-        isNotNull(map, "mapConfigs cannot be null.");
-        mapConfigs.clear();
-        mapConfigs.putAll(map);
-        for (Entry<String, ClientMapConfig> entry : map.entrySet()) {
-            entry.getValue().setName(entry.getKey());
+    public PartitioningStrategyConfig getPartitioningStrategyConfig(String name) {
+        PartitioningStrategyConfig config = lookupByPattern(configPatternMatcher, partitioningStrategyConfigs, name);
+        if (config == null) {
+            config = partitioningStrategyConfigs.get("default");
+            if (config != null) {
+                config = new PartitioningStrategyConfig(config);
+            }
         }
+        return config;
+    }
+
+    /**
+     * Returns the map of {@link PartitioningStrategyConfig}s,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the partition strategy configurations mapped by config name
+     */
+    public Map<String, PartitioningStrategyConfig> getPartitioningStrategyConfigs() {
+        return partitioningStrategyConfigs;
+    }
+
+    /**
+     * Sets the map of {@link PartitioningStrategyConfig}s,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration will be obtained in the future.
+     *
+     * @param partitioningStrategyConfigs the partition strategy configuration map to set
+     * @return this config instance
+     */
+    public ClientConfig setPartitioningStrategyConfigs(Map<String, PartitioningStrategyConfig> partitioningStrategyConfigs) {
+        isNotNull(partitioningStrategyConfigs, "partitioningStrategyConfigs");
+        this.partitioningStrategyConfigs.clear();
+        this.partitioningStrategyConfigs.putAll(partitioningStrategyConfigs);
         return this;
     }
 
@@ -1019,7 +984,7 @@ public class ClientConfig {
                 executorPoolSize, flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext, mapConfigs);
+                userCodeDeploymentConfig, userContext, partitioningStrategyConfigs);
     }
 
     @Override
@@ -1054,7 +1019,7 @@ public class ClientConfig {
                 && Objects.equals(serializationConfig, other.serializationConfig)
                 && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
                 && Objects.equals(userContext, other.userContext)
-                && Objects.equals(mapConfigs, other.mapConfigs);
+                && Objects.equals(partitioningStrategyConfigs, other.partitioningStrategyConfigs);
     }
 
     @Override
@@ -1081,7 +1046,7 @@ public class ClientConfig {
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig
-                + ", mapConfigs=" + mapConfigs
+                + ", partitioningStrategyConfigs=" + partitioningStrategyConfigs
                 + '}';
     }
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -100,6 +99,7 @@ import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
 import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
@@ -216,9 +216,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
         lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
         queryCacheContext = getContext().getQueryCacheContext();
 
-        ClientMapConfig mapConfig = getClient().getClientConfig().findMapConfig(name);
+        PartitioningStrategyConfig partitioningStrategyConfig = getClient().getClientConfig()
+                .getPartitioningStrategyConfig(name);
         partitioningStrategy = getContext().getPartitioningStrategyFactory()
-                .getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
+                .getPartitioningStrategy(name, partitioningStrategyConfig);
     }
 
     @Override

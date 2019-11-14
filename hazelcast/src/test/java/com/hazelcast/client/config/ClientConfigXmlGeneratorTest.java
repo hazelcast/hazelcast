@@ -482,13 +482,12 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void map() {
-        ClientMapConfig expected = new ClientMapConfig(randomString());
-        expected.setPartitioningStrategyConfig(new PartitioningStrategyConfig(randomString()));
-        clientConfig.addMapConfig(expected);
+    public void partitioningStrategy() {
+        PartitioningStrategyConfig expected = new PartitioningStrategyConfig(randomString());
+        clientConfig.addPartitioningStrategyConfig(randomString(), expected);
 
-        Map<String, ClientMapConfig> actual = newConfigViaGenerator().getMapConfigs();
-        assertMap(clientConfig.getMapConfigs(), actual);
+        Map<String, PartitioningStrategyConfig> actual = newConfigViaGenerator().getPartitioningStrategyConfigs();
+        assertMap(clientConfig.getPartitioningStrategyConfigs(), actual);
     }
 
     private ClientConfig newConfigViaGenerator() {

@@ -22,7 +22,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
-import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
@@ -120,7 +119,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private final ManagedMap<String, BeanDefinition> nearCacheConfigMap = new ManagedMap<>();
         private final ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap = new ManagedMap<>();
         private final ManagedMap<String, BeanDefinition> reliableTopicConfigMap = new ManagedMap<>();
-        private final ManagedMap<String, BeanDefinition> mapConfigs = new ManagedMap<>();
+        private final ManagedMap<String, BeanDefinition> partitioningStrategyConfigs = new ManagedMap<>();
 
         SpringXmlBuilder(ParserContext parserContext) {
             this(parserContext, rootBeanDefinition(HazelcastClient.class)
@@ -136,7 +135,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
             configBuilder.addPropertyValue("flakeIdGeneratorConfigMap", flakeIdGeneratorConfigMap);
             configBuilder.addPropertyValue("reliableTopicConfigMap", reliableTopicConfigMap);
-            configBuilder.addPropertyValue("mapConfigs", mapConfigs);
+            configBuilder.addPropertyValue("partitioningStrategyConfigs", partitioningStrategyConfigs);
         }
 
         public AbstractBeanDefinition handleClient(Node rootNode) {
@@ -190,8 +189,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleLabels(node);
                 } else if ("backup-ack-to-client-enabled".equals(nodeName)) {
                     configBuilder.addPropertyValue("backupAckToClientEnabled", getTextContent(node));
-                } else if ("map".equals(nodeName)) {
-                    handleMap(node);
+                } else if ("partition-strategy".equals(nodeName)) {
+                    handlePartitionStrategy(node);
                 }
             }
             return configBuilder.getBeanDefinition();
@@ -390,18 +389,16 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             flakeIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
         }
 
-        private void handleMap(Node node) {
-            BeanDefinitionBuilder configBuilder = createBeanBuilder(ClientMapConfig.class);
-            fillAttributeValues(node, configBuilder);
+        private void handlePartitionStrategy(Node node) {
+            BeanDefinitionBuilder configBuilder = createBeanBuilder(PartitioningStrategyConfig.class);
             String name = getAttribute(node, "name");
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
-                if ("partition-strategy".equals(nodeName)) {
-                    PartitioningStrategyConfig psConfig = new PartitioningStrategyConfig(getTextContent(child));
-                    configBuilder.addPropertyValue("partitioningStrategyConfig", psConfig);
+                if ("class-name".equals(nodeName)) {
+                    configBuilder.addPropertyValue("partitioningStrategyClass", getTextContent(child));
                 }
             }
-            mapConfigs.put(name, configBuilder.getBeanDefinition());
+            partitioningStrategyConfigs.put(name, configBuilder.getBeanDefinition());
         }
 
         private void handleReliableTopic(Node node) {

@@ -20,6 +20,7 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
@@ -126,8 +127,8 @@ public final class ClientConfigXmlGenerator {
         proxyFactory(gen, clientConfig.getProxyFactoryConfigs());
         //LoadBalancer
         loadBalancer(gen, clientConfig.getLoadBalancer());
-        //Map
-        map(gen, clientConfig.getMapConfigs());
+        //PartitioningStrategy
+        partitioningStrategy(gen, clientConfig.getPartitioningStrategyConfigs());
         //NearCache
         nearCaches(gen, clientConfig.getNearCacheConfigMap());
         //QueryCaches
@@ -583,11 +584,11 @@ public final class ClientConfigXmlGenerator {
         gen.close();
     }
 
-    private static void map(XmlGenerator gen, Map<String, ClientMapConfig> mapConfigs) {
-        for (Map.Entry<String, ClientMapConfig> entry : mapConfigs.entrySet()) {
-            ClientMapConfig mapConfig = entry.getValue();
-            gen.open("map", "name", entry.getKey())
-                    .node("partition-strategy", mapConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass())
+    private static void partitioningStrategy(XmlGenerator gen, Map<String, PartitioningStrategyConfig> configs) {
+        for (Map.Entry<String, PartitioningStrategyConfig> entry : configs.entrySet()) {
+            PartitioningStrategyConfig config = entry.getValue();
+            gen.open("partition-strategy", "name", entry.getKey())
+                    .node("class-name", config.getPartitioningStrategyClass())
                     .close();
         }
     }

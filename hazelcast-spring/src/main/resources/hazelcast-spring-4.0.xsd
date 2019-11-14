@@ -1523,7 +1523,7 @@
                     <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="flake-id-generator" type="client-flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
                     <xs:element name="reliable-topic" type="client-reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
-                    <xs:element name="map" type="client-map" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="partition-strategy" type="client-partition-strategy" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:choice>
                 <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
             </xs:extension>
@@ -3338,9 +3338,9 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="client-map">
+    <xs:complexType name="client-partition-strategy">
         <xs:all>
-            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         The fully qualified name of the class implementing the
@@ -3352,7 +3352,7 @@
         <xs:attribute name="name" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Name of the map.
+                    Name of the map which this config will be applied to.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>

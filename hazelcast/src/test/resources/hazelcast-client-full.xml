@@ -227,9 +227,9 @@
 
     <load-balancer type="random"/>
 
-    <map name="default">
-        <partition-strategy>com.hazelcast.examples.MyPartitioningStrategy</partition-strategy>
-    </map>
+    <partition-strategy name="default">
+        <class-name>com.hazelcast.examples.MyPartitioningStrategy</class-name>
+    </partition-strategy>
 
     <!--
         Note that the Near Cache eviction configuration is different for NATIVE in-memory format.

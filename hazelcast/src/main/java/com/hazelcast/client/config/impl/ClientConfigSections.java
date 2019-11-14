@@ -31,7 +31,7 @@ public enum ClientConfigSections {
     LISTENERS("listeners", false),
     NETWORK("network", false),
     LOAD_BALANCER("load-balancer", false),
-    MAP("map", true),
+    PARTITION_STRATEGY("partition-strategy", true),
     NEAR_CACHE("near-cache", true),
     QUERY_CACHES("query-caches", false),
     EXECUTOR_POOL_SIZE("executor-pool-size", false),

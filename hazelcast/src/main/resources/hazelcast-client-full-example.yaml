@@ -513,19 +513,19 @@ hazelcast-client:
   load-balancer:
     type: random
   #
-  # ===== HAZELCAST MAP CONFIGURATION =====
+  # ===== HAZELCAST PARTITION STRATEGY CONFIGURATION =====
   #
-  # Configuration element's name is "map". It has the attribute "name" with which you
-  # can specify the name of your map.
+  # Configuration element's name is "partition-strategy". It has the attribute "name" with which you
+  # can specify the name of your map which this config will be applied to.
   # It has the following sub-elements:
-  # * partition-strategy:
+  # * class-name:
   #     The fully qualified name of the class implementing the PartitioningStrategy interface
   #     to allow you to store related data on the same location.
 
 
-  map:
+  partition-strategy:
     default:
-      partition-strategy: com.hazelcast.examples.MyPartitioningStrategy
+      class-name: com.hazelcast.examples.MyPartitioningStrategy
   #
   # ===== HAZELCAST NEAR CACHE CONFIGURATION =====
   #

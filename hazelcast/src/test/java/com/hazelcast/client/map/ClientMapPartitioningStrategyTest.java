@@ -17,7 +17,6 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientMapConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -46,8 +45,7 @@ public class ClientMapPartitioningStrategyTest extends AbstractClientMapPartitio
         memberMap = member.getMap(mapName);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addMapConfig(new ClientMapConfig(mapName)
-                .setPartitioningStrategyConfig(partitioningStrategyConfig));
+        clientConfig.addPartitioningStrategyConfig(mapName, partitioningStrategyConfig);
         clientConfig.addNearCacheConfig(new NearCacheConfig(mapName));
 
         client = factory.newHazelcastClient(clientConfig);

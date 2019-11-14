@@ -33,6 +33,7 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -408,9 +409,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     }
 
     @Test
-    public void testMapConfig() {
-        ClientMapConfig mapConfig = fullClientConfig.getMapConfig("default");
-        assertEquals("com.hazelcast.examples.MyPartitioningStrategy", mapConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
+    public void testPartitioningStrategyConfig() {
+        PartitioningStrategyConfig config = fullClientConfig.getPartitioningStrategyConfig("default");
+        assertEquals("com.hazelcast.examples.MyPartitioningStrategy", config.getPartitioningStrategyClass());
     }
 
     @Test(expected = HazelcastException.class)

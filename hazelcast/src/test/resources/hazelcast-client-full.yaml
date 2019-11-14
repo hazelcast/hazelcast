@@ -211,9 +211,9 @@ hazelcast-client:
   load-balancer:
     type: random
 
-  map:
+  partition-strategy:
     default:
-      partition-strategy: com.hazelcast.examples.MyPartitioningStrategy
+      class-name: com.hazelcast.examples.MyPartitioningStrategy
 
   # Note that the Near Cache eviction configuration is different for NATIVE in-memory format.
   # For the proper eviction configuration example for NATIVE in-memory format see "NearCacheEvictionConfigExample" below
