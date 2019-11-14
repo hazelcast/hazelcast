@@ -328,7 +328,7 @@ public final class HashUtil {
      *
      * @param length the length of the array/list
      * @return the mod of the hash
-     * @throws IllegalArgumentException if mod smaller than 1.
+     * @throws IllegalArgumentException if length is smaller than 1.
      */
     public static int hashToIndex(int hash, int length) {
         checkPositive(length, "length must be larger than 0");
