@@ -236,9 +236,6 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         JsonObject configJson = createConfig(Mode.WHITELIST);
         handler.handleNewConfig(configJson);
 
-        Client client = createClient("127.0.0.1", "a_name");
-        assertFalse(clientEngine.isClientAllowed(client));
-
         Connection mockConnection = mock(Connection.class);
         when(mockConnection.getType()).thenReturn(ConnectionType.MC_JAVA_CLIENT);
         ClientEndpointImpl mcClient = new ClientEndpointImpl(clientEngine, getNodeEngineImpl(instance), mockConnection);

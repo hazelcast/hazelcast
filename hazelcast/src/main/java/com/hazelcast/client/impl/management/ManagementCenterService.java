@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.management;
 
+import com.hazelcast.client.ClientType;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -57,6 +58,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class ManagementCenterService {
 
+    /**
+     * Internal property for enabling MC client mode ({@link ClientType#MC_JAVA}).
+     */
     public static final HazelcastProperty MC_CLIENT_MODE_PROPERTY
             = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
 
