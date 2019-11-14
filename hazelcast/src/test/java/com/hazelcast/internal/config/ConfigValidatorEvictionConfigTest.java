@@ -20,6 +20,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheMaxSizePolicy;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapMaxSizePolicyPerInMemoryFormat;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -241,6 +243,24 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
 
         checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), InMemoryFormat.NATIVE);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void checkMapMaxSizePolicyPerInMemoryFormat_when_BINARY() {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setInMemoryFormat(InMemoryFormat.BINARY);
+        mapConfig.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE);
+
+        checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void checkMapMaxSizePolicyPerInMemoryFormat_when_NATIVEY() {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setInMemoryFormat(InMemoryFormat.NATIVE);
+        mapConfig.getEvictionConfig().setMaxSizePolicy(MaxSizePolicy.USED_HEAP_SIZE);
+
+        checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
     }
 
     private EvictionConfig getEvictionConfig(boolean setComparatorClass, boolean setComparator) {
