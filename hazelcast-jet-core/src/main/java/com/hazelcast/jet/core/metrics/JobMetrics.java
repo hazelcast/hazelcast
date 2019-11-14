@@ -23,7 +23,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,7 +34,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -71,17 +69,13 @@ public final class JobMetrics implements IdentifiedDataSerializable {
     }
 
     /**
-     * Builds a {@link JobMetrics} object based on a stream of
+     * Builds a {@link JobMetrics} object based on a map of
      * {@link Measurement}s.
      */
     @Nonnull
     @PrivateApi
-    public static JobMetrics of(Stream<Measurement> measurements) {
-        Map<String, List<Measurement>> parsed = new HashMap<>();
-        measurements.forEach(m -> {
-            parsed.computeIfAbsent(m.metric(), mn -> new ArrayList<>()).add(m);
-        });
-        return new JobMetrics(parsed);
+    public static JobMetrics of(@Nonnull Map<String, List<Measurement>> metrics) {
+        return new JobMetrics(metrics);
     }
 
     /**

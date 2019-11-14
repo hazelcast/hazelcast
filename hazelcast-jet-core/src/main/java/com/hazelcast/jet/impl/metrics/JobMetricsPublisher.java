@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.metrics;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
-import com.hazelcast.internal.metrics.managementcenter.MetricsCompressor;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobMetricsUtil;
 
