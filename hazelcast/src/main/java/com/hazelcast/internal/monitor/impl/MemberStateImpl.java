@@ -39,7 +39,7 @@ import com.hazelcast.internal.monitor.MemberPartitionState;
 import com.hazelcast.internal.monitor.MemberState;
 import com.hazelcast.internal.monitor.NodeState;
 import com.hazelcast.internal.monitor.WanSyncState;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
@@ -66,20 +66,20 @@ public class MemberStateImpl implements MemberState {
     private UUID uuid;
     private UUID cpMemberUuid;
     private String name;
-    private Map<EndpointQualifier, Address> endpoints = new HashMap<EndpointQualifier, Address>();
-    private Map<String, Long> runtimeProps = new HashMap<String, Long>();
-    private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
-    private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
-    private Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
-    private Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
-    private Map<String, LocalTopicStats> reliableTopicStats = new HashMap<String, LocalTopicStats>();
-    private Map<String, LocalPNCounterStats> pnCounterStats = new HashMap<String, LocalPNCounterStats>();
-    private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
-    private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<String, LocalReplicatedMapStats>();
-    private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
-    private Map<String, LocalWanStats> wanStats = new HashMap<String, LocalWanStats>();
-    private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<String, LocalFlakeIdGeneratorStats>();
-    private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
+    private Map<EndpointQualifier, Address> endpoints = new HashMap<>();
+    private Map<String, Long> runtimeProps = new HashMap<>();
+    private Map<String, LocalMapStats> mapStats = new HashMap<>();
+    private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
+    private Map<String, LocalQueueStats> queueStats = new HashMap<>();
+    private Map<String, LocalTopicStats> topicStats = new HashMap<>();
+    private Map<String, LocalTopicStats> reliableTopicStats = new HashMap<>();
+    private Map<String, LocalPNCounterStats> pnCounterStats = new HashMap<>();
+    private Map<String, LocalExecutorStats> executorStats = new HashMap<>();
+    private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<>();
+    private Map<String, LocalCacheStats> cacheStats = new HashMap<>();
+    private Map<String, LocalWanStats> wanStats = new HashMap<>();
+    private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<>();
+    private Collection<ClientEndPointDTO> clients = new HashSet<>();
     private Map<UUID, String> clientStats = new HashMap<>();
     private MXBeansDTO beans = new MXBeansDTO();
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
@@ -348,6 +348,7 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
@@ -399,13 +400,13 @@ public class MemberStateImpl implements MemberState {
         }
         root.add("clients", clientsArray);
         root.add("beans", beans.toJson());
-        root.add("memoryStats", memoryStats.toJson());
-        root.add("operationStats", operationStats.toJson());
+        root.add("memoryStats", ((JsonSerializable) memoryStats).toJson());
+        root.add("operationStats", ((JsonSerializable) operationStats).toJson());
         root.add("memberPartitionState", memberPartitionState.toJson());
         root.add("nodeState", nodeState.toJson());
         root.add("hotRestartState", hotRestartState.toJson());
         root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
-        root.add("wanSyncState", wanSyncState.toJson());
+        root.add("wanSyncState", ((JsonSerializable) wanSyncState).toJson());
 
         JsonObject clientStatsObject = new JsonObject();
         for (Map.Entry<UUID, String> entry : clientStats.entrySet()) {
@@ -417,10 +418,10 @@ public class MemberStateImpl implements MemberState {
         return root;
     }
 
-    private static void serializeMap(JsonObject root, String key, Map<String, ? extends JsonSerializable> map) {
+    private static void serializeMap(JsonObject root, String key, Map<String, ?> map) {
         final JsonObject jsonObject = new JsonObject();
-        for (Entry<String, ? extends JsonSerializable> e : map.entrySet()) {
-            jsonObject.add(e.getKey(), e.getValue().toJson());
+        for (Entry<String, ?> e : map.entrySet()) {
+            jsonObject.add(e.getKey(), ((JsonSerializable) e.getValue()).toJson());
         }
         root.add(key, jsonObject);
     }
@@ -468,7 +469,7 @@ public class MemberStateImpl implements MemberState {
         }
         for (JsonObject.Member next : getObject(json, "replicatedMapStats", new JsonObject())) {
             LocalReplicatedMapStats stats = new LocalReplicatedMapStatsImpl();
-            stats.fromJson(next.getValue().asObject());
+            ((JsonSerializable) stats).fromJson(next.getValue().asObject());
             replicatedMapStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "queueStats")) {
@@ -498,17 +499,17 @@ public class MemberStateImpl implements MemberState {
         }
         for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
             LocalCacheStats stats = new LocalCacheStatsImpl();
-            stats.fromJson(next.getValue().asObject());
+            ((JsonSerializable) stats).fromJson(next.getValue().asObject());
             cacheStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
             LocalWanStats stats = new LocalWanStatsImpl();
-            stats.fromJson(next.getValue().asObject());
+            ((JsonSerializable) stats).fromJson(next.getValue().asObject());
             wanStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "flakeIdStats", new JsonObject())) {
             LocalFlakeIdGeneratorStats stats = new LocalFlakeIdGeneratorStatsImpl();
-            stats.fromJson(next.getValue().asObject());
+            ((JsonSerializable) stats).fromJson(next.getValue().asObject());
             flakeIdGeneratorStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "runtimeProps")) {
@@ -524,11 +525,11 @@ public class MemberStateImpl implements MemberState {
         beans.fromJson(getObject(json, "beans"));
         JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
         if (jsonMemoryStats != null) {
-            memoryStats.fromJson(jsonMemoryStats);
+            ((JsonSerializable) memoryStats).fromJson(jsonMemoryStats);
         }
         JsonObject jsonOperationStats = getObject(json, "operationStats", null);
         if (jsonOperationStats != null) {
-            operationStats.fromJson(jsonOperationStats);
+            ((JsonSerializable) operationStats).fromJson(jsonOperationStats);
         }
         JsonObject jsonMemberPartitionState = getObject(json, "memberPartitionState", null);
         if (jsonMemberPartitionState != null) {
@@ -553,7 +554,7 @@ public class MemberStateImpl implements MemberState {
         JsonObject jsonWanSyncState = getObject(json, "wanSyncState", null);
         if (jsonWanSyncState != null) {
             wanSyncState = new WanSyncStateImpl();
-            wanSyncState.fromJson(jsonWanSyncState);
+            ((JsonSerializable) wanSyncState).fromJson(jsonWanSyncState);
         }
         for (JsonObject.Member next : getObject(json, "clientStats")) {
             clientStats.put(UUID.fromString(next.getName()), next.getValue().asString());

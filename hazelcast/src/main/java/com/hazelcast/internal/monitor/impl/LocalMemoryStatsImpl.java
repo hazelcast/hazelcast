@@ -20,11 +20,12 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.monitor.LocalGCStats;
 import com.hazelcast.internal.monitor.LocalMemoryStats;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getObject;
 
-public class LocalMemoryStatsImpl implements LocalMemoryStats {
+public class LocalMemoryStatsImpl implements LocalMemoryStats, JsonSerializable {
 
     public static final String JSON_CREATION_TIME = "creationTime";
     public static final String JSON_TOTAL_PHYSICAL = "totalPhysical";
@@ -216,7 +217,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         if (gcStats == null) {
             gcStats = new LocalGCStatsImpl();
         }
-        root.add(JSON_GC_STATS, gcStats.toJson());
+        root.add(JSON_GC_STATS, ((JsonSerializable) gcStats).toJson());
         return root;
     }
 
@@ -234,7 +235,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         usedHeap = getLong(json, JSON_USED_HEAP, -1L);
         gcStats = new LocalGCStatsImpl();
         if (json.get(JSON_GC_STATS) != null) {
-            gcStats.fromJson(getObject(json, JSON_GC_STATS));
+            ((JsonSerializable) gcStats).fromJson(getObject(json, JSON_GC_STATS));
         }
     }
 

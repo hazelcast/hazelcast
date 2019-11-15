@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -29,7 +30,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 /**
  * Local PN counter statistics thread safe implementation
  */
-public class LocalPNCounterStatsImpl implements LocalPNCounterStats {
+public class LocalPNCounterStatsImpl implements LocalPNCounterStats, JsonSerializable {
     private static final AtomicLongFieldUpdater<LocalPNCounterStatsImpl> TOTAL_INCREMENT_OPERATION_COUNT =
             newUpdater(LocalPNCounterStatsImpl.class, "totalIncrementOperationCount");
     private static final AtomicLongFieldUpdater<LocalPNCounterStatsImpl> TOTAL_DECREMENT_OPERATION_COUNT =

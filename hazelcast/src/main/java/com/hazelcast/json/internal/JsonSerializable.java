@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.json;
+package com.hazelcast.json.internal;
 
 import com.hazelcast.internal.json.JsonObject;
 

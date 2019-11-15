@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.nearcache.NearCacheStats;
@@ -30,7 +31,7 @@ import java.util.Map;
  * disabled in {@link ReplicatedMapConfig}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats {
+public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats, JsonSerializable {
 
     private final JsonObject jsonObject;
 
