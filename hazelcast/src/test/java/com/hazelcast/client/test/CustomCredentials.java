@@ -23,7 +23,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
  */
 public class CustomCredentials extends UsernamePasswordCredentials {
 
-    public static final int CLASS_ID = 14;
+    public static final int CLASS_ID = 15;
 
     @Override
     public int getFactoryId() {
