@@ -703,7 +703,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
                                                                  @Nonnull String name, boolean remote) {
-        return (T) proxyManager.getOrCreateProxy(serviceName, name, remote);
+        if (remote) {
+            return (T) proxyManager.getOrCreateProxy(serviceName, name);
+        }
+        return (T) proxyManager.getOrCreateLocalProxy(serviceName, name);
     }
 
     @Nonnull
