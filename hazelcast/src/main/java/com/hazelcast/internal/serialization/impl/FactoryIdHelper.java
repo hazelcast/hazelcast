@@ -136,9 +136,6 @@ public final class FactoryIdHelper {
 
     // =========================== portables =============================================
 
-    public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
-    public static final int SPI_PORTABLE_FACTORY_ID = -1;
-
     public static final String PARTITION_PORTABLE_FACTORY = "hazelcast.serialization.portable.partition";
     public static final int PARTITION_PORTABLE_FACTORY_ID = -2;
 
