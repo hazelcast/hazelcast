@@ -34,68 +34,85 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the latest TimedMemberState of the member it's called on.
+ * Applies given MC config (client filter list).
  */
-@Generated("0e91faf8893963b5a550757f0348f034")
-public final class MCGetTimedMemberStateCodec {
-    //hex: 0x200B00
-    public static final int REQUEST_MESSAGE_TYPE = 2099968;
-    //hex: 0x200B01
-    public static final int RESPONSE_MESSAGE_TYPE = 2099969;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("bb9c2ffdbfa25922d043e92250c24962")
+public final class MCApplyMCConfigCodec {
+    //hex: 0x200D00
+    public static final int REQUEST_MESSAGE_TYPE = 2100480;
+    //hex: 0x200D01
+    public static final int RESPONSE_MESSAGE_TYPE = 2100481;
+    private static final int REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCGetTimedMemberStateCodec() {
+    private MCApplyMCConfigCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
+
+        /**
+         * ETag value of the config.
+         */
+        public java.lang.String eTag;
+
+        /**
+         * The mode for client filtering:
+         * 0 - DISABLED
+         * 1 - WHITELIST
+         * 2 - BLACKLIST
+         */
+        public int clientBwListMode;
+
+        /**
+         * Client filter list entries.
+         */
+        public @Nullable java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries;
     }
 
-    public static ClientMessage encodeRequest() {
+    public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, @Nullable java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(true);
+        clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
-        clientMessage.setOperationName("MC.GetTimedMemberState");
+        clientMessage.setOperationName("MC.ApplyMCConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET, clientBwListMode);
         clientMessage.add(initialFrame);
+        StringCodec.encode(clientMessage, eTag);
+        ListMultiFrameCodec.encodeNullable(clientMessage, clientBwListEntries, ClientBwListEntryCodec::encode);
         return clientMessage;
     }
 
-    public static MCGetTimedMemberStateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCApplyMCConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        request.clientBwListMode = decodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET);
+        request.eTag = StringCodec.decode(iterator);
+        request.clientBwListEntries = ListMultiFrameCodec.decodeNullable(iterator, ClientBwListEntryCodec::decode);
         return request;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
-        /**
-         * Latest TimedMemberState of the member, serialized as JSON.
-         */
-        public @Nullable java.lang.String timedMemberStateJson;
     }
 
-    public static ClientMessage encodeResponse(@Nullable java.lang.String timedMemberStateJson) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, timedMemberStateJson, StringCodec::encode);
         return clientMessage;
     }
 
-    public static MCGetTimedMemberStateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCApplyMCConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.timedMemberStateJson = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return response;
     }
 

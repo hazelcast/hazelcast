@@ -20,12 +20,14 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
@@ -35,17 +37,17 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.management.TimedMemberState;
+import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -333,6 +335,65 @@ public class ManagementCenterService {
                 serializationService,
                 clientMessage -> Optional.ofNullable(
                         MCGetTimedMemberStateCodec.decodeResponse(clientMessage).timedMemberStateJson)
+        );
+    }
+
+    /**
+     * Checks if local MC config (client B/W list) on a given member has the same ETag as provided.
+     *
+     * @param member    target member
+     * @param eTag      ETag value of MC config to match with (should be the latest value from MC)
+     * @return          operation future object with match result: <code>true</code> if config ETags match
+     */
+    @Nonnull
+    public CompletableFuture<Boolean> matchMCConfig(Member member, String eTag) {
+        checkNotNull(member);
+        checkNotNull(eTag);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCMatchMCConfigCodec.encodeRequest(eTag),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    MCMatchMCConfigCodec.ResponseParameters response =
+                            MCMatchMCConfigCodec.decodeResponse(clientMessage);
+                    return response.response;
+                },
+                false
+        );
+    }
+
+    /**
+     * Applies the MC config (client B/W list) on a given member.
+     *
+     * @param member        target member
+     * @param eTag          ETag of the new config
+     * @param clientBwList  new config for client B/W list filtering
+     * @return              operation future object
+     */
+    @Nonnull
+    public CompletableFuture<Void> applyMCConfig(Member member, String eTag, ClientBwListDTO clientBwList) {
+        checkNotNull(member);
+        checkNotNull(eTag);
+        checkNotNull(clientBwList);
+        checkNotNull(clientBwList.mode);
+        checkNotNull(clientBwList.entries);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCApplyMCConfigCodec.encodeRequest(eTag, clientBwList.mode.getId(), clientBwList.entries),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
         );
     }
 }

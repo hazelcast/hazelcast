@@ -24,7 +24,7 @@ import static com.hazelcast.internal.util.JsonUtil.getString;
 /**
  * A serializable DTO for client B/W list filtering configuration entries.
  */
-public class ClientBwListEntryDTO implements JsonSerializable {
+public final class ClientBwListEntryDTO implements JsonSerializable {
 
     public Type type;
     public String value;
@@ -35,6 +35,14 @@ public class ClientBwListEntryDTO implements JsonSerializable {
     public ClientBwListEntryDTO(Type type, String value) {
         this.type = type;
         this.value = value;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public String getValue() {
+        return value;
     }
 
     public JsonObject toJson() {
@@ -51,9 +59,52 @@ public class ClientBwListEntryDTO implements JsonSerializable {
         value = getString(json, "value");
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClientBwListEntryDTO that = (ClientBwListEntryDTO) o;
+
+        if (type != that.type) {
+            return false;
+        }
+        return value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type.hashCode();
+        result = 31 * result + value.hashCode();
+        return result;
+    }
+
     public enum Type {
 
-        IP_ADDRESS, INSTANCE_NAME, LABEL
+        IP_ADDRESS(0), INSTANCE_NAME(1), LABEL(2);
+
+        private final int id;
+
+        Type(int id) {
+            this.id = id;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public static Type getById(final int id) {
+            for (Type type : values()) {
+                if (type.id == id) {
+                    return type;
+                }
+            }
+            return null;
+        }
 
     }
 

@@ -7247,7 +7247,41 @@ public class MemberCompatibilityTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
-     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
+    @Test
+    public void test_MCMatchMCConfigCodec_decodeRequest() {
+        int fileClientMessageIndex = 803;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCMatchMCConfigCodec.RequestParameters parameters = MCMatchMCConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.eTag));
+    }
+
+    @Test
+    public void test_MCMatchMCConfigCodec_encodeResponse() {
+        int fileClientMessageIndex = 804;
+        ClientMessage encoded = MCMatchMCConfigCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCApplyMCConfigCodec_decodeRequest() {
+        int fileClientMessageIndex = 805;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCApplyMCConfigCodec.RequestParameters parameters = MCApplyMCConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.eTag));
+        assertTrue(isEqual(anInt, parameters.clientBwListMode));
+        assertTrue(isEqual(aListOfClientBwListEntries, parameters.clientBwListEntries));
+    }
+
+    @Test
+    public void test_MCApplyMCConfigCodec_encodeResponse() {
+        int fileClientMessageIndex = 806;
+        ClientMessage encoded = MCApplyMCConfigCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
         ClientMessage.ForwardFrameIterator binaryFrameIterator = binaryMessage.frameIterator();

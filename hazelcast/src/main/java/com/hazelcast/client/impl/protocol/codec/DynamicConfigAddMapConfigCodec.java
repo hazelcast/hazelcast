@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("df72e16ba3d88f3a0f1bc57edfaf1280")
+@Generated("ff4bb76ed1143746740acd860b71de02")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -191,7 +191,7 @@ public final class DynamicConfigAddMapConfigCodec {
         public @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig;
 
         /**
-         * event Journal configuration
+         * event journal configuration
          */
         public @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig;
 

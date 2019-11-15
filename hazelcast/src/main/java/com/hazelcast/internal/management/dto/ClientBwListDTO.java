@@ -67,7 +67,7 @@ public class ClientBwListDTO implements JsonSerializable {
         String modeStr = getString(json, "mode");
         mode = Mode.valueOf(modeStr);
 
-        entries = new ArrayList<ClientBwListEntryDTO>();
+        entries = new ArrayList<>();
         JsonArray entriesArray = getArray(json, "entries");
         for (JsonValue jsonValue : entriesArray) {
             ClientBwListEntryDTO entryDTO = new ClientBwListEntryDTO();
@@ -78,7 +78,26 @@ public class ClientBwListDTO implements JsonSerializable {
 
     public enum Mode {
 
-        DISABLED, WHITELIST, BLACKLIST
+        DISABLED(0), WHITELIST(1), BLACKLIST(2);
+
+        private final int id;
+
+        Mode(int id) {
+            this.id = id;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public static Mode getById(final int id) {
+            for (Mode mode : values()) {
+                if (mode.id == id) {
+                    return mode;
+                }
+            }
+            return null;
+        }
 
     }
 

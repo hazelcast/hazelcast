@@ -23,10 +23,12 @@ import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventBatch;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
@@ -116,6 +118,7 @@ public class ManagementCenterService {
     private final ILogger logger;
 
     private final ConsoleCommandHandler commandHandler;
+    private final ClientBwListConfigHandler bwListConfigHandler;
     private final ManagementCenterConfig managementCenterConfig;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
@@ -129,6 +132,7 @@ public class ManagementCenterService {
     private volatile boolean taskPollFailed;
     private volatile boolean eventSendFailed;
     private volatile ManagementCenterEventListener eventListener;
+    private volatile String lastMCConfigETag;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -136,6 +140,7 @@ public class ManagementCenterService {
         this.managementCenterConfig = getManagementCenterConfig();
         this.managementCenterUrl = getManagementCenterUrl();
         this.commandHandler = new ConsoleCommandHandler(instance);
+        this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         this.taskPollThread = new TaskPollThread();
         this.stateSendThread = new StateSendThread();
         this.prepareStateThread = new PrepareStateThread();
@@ -332,6 +337,36 @@ public class ManagementCenterService {
         }
     }
 
+    /**
+     * Returns ETag value of last applied MC config (client B/W list filtering).
+     *
+     * @return  last or <code>null</code>
+     */
+    public String getLastMCConfigETag() {
+        return lastMCConfigETag;
+    }
+
+    /**
+     * Applies given MC config (client B/W list filtering).
+     *
+     * @param eTag          ETag of new config
+     * @param bwListConfig  new config
+     */
+    public void applyMCConfig(String eTag, ClientBwListDTO bwListConfig) {
+        if (eTag.equals(lastMCConfigETag)) {
+            logger.warning("Client B/W list filtering config with the same ETag is already applied.");
+            return;
+        }
+
+        try {
+            bwListConfigHandler.applyConfig(bwListConfig);
+            lastMCConfigETag = eTag;
+        } catch (Exception e) {
+            logger.warning("Could not apply client B/W list filtering config.", e);
+            throw new HazelcastException("Error while applying MC config", e);
+        }
+    }
+
     private boolean isRunning() {
         return isRunning.get();
     }
@@ -486,14 +521,12 @@ public class ManagementCenterService {
     private final class StateSendThread extends Thread {
 
         private final long updateIntervalMs;
-        private final ClientBwListConfigHandler bwListConfigHandler;
 
         private String lastConfigETag;
 
         private StateSendThread() {
             super(createThreadName(instance.getName(), "MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
-            bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         }
 
         private long calcUpdateInterval() {
