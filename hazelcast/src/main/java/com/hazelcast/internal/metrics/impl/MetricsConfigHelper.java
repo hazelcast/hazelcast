@@ -85,7 +85,7 @@ public final class MetricsConfigHelper {
         try {
             if (propertyValue != null) {
                 setterFn.accept(propertyValue);
-                LOGGER.warning(String.format("Overridden metrics configuration with system property '%s'='%s' -> '%s'='%s'",
+                LOGGER.info(String.format("Overridden metrics configuration with system property '%s'='%s' -> '%s'='%s'",
                         property, propertyValue, configOverridden, getterFn.get()));
             }
         } catch (Exception ex) {

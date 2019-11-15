@@ -333,4 +333,3 @@ hazelcast:
     jmx:
       enabled: true
     collection-frequency-seconds: 5
-    data-structure-metrics-enabled: false

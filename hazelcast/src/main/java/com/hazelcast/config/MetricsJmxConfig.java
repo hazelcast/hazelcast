@@ -36,11 +36,15 @@ public class MetricsJmxConfig {
     }
 
     /**
-     * Returns whether metrics will be exposed through JMX MBeans.
+     * Returns whether metrics will be exposed through JMX MBeans. It's
+     * enabled by default.
      * <p/>
      * This configuration acts as a fine-tuning option beyond
-     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
-     * master switch.
+     * enabling/disabling the Metrics collection entirely via the
+     * {@link MetricsConfig#isEnabled()} master switch.
+     *
+     * @return {@code true} if exposing the metrics on JMX is enabled.
+     * @see MetricsConfig#isEnabled()
      */
     public boolean isEnabled() {
         return enabled;

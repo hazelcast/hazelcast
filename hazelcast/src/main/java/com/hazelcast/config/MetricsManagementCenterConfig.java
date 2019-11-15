@@ -52,7 +52,7 @@ public class MetricsManagementCenterConfig {
      * enabling/disabling the Metrics collection entirely via the
      * {@link MetricsConfig#isEnabled()} master switch.
      *
-     * @return true if exposing to Hazelcast Management Center is enabled.
+     * @return {@code true} if exposing to Hazelcast Management Center is enabled.
      * @see MetricsConfig#isEnabled()
      */
     public boolean isEnabled() {

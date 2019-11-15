@@ -1099,7 +1099,7 @@ public final class GroupProperty {
 
     /**
      * Enables/disables collecting metrics from the distributed data structures.
-     * By default, collecting data structure metrics are enabled.
+     * By default, data structure metrics collection is enabled.
      */
     public static final HazelcastProperty METRICS_DATASTRUCTURES
             = new HazelcastProperty("hazelcast.metrics.datastructures.enabled", "true");
