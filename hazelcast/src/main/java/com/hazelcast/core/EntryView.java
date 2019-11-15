@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.spi.eviction.EvictableEntryView;
 import com.hazelcast.map.MapStore;
 
 /**
@@ -24,7 +25,7 @@ import com.hazelcast.map.MapStore;
  * @param <K> the type of the key
  * @param <V> the type of the value
  */
-public interface EntryView<K, V> {
+public interface EntryView<K, V> extends EvictableEntryView<K, V> {
 
     /**
      * Returns the key of the entry.

@@ -14,15 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
-
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
-
-public class DummyMapEvictionPolicy extends MapEvictionPolicy {
-
-    @Override
-    public int compare(EntryView o1, EntryView o2) {
-        return 0;
-    }
-}
+/**
+ * This package contains interfaces for eviction
+ *
+ * @since 4.0
+ */
+package com.hazelcast.spi.eviction;

@@ -16,35 +16,30 @@
 
 package com.hazelcast.internal.eviction.impl.comparator;
 
-import com.hazelcast.internal.eviction.EvictableEntryView;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictableEntryView;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
 /**
- * {@link com.hazelcast.config.EvictionPolicy#LRU} policy based {@link EvictionPolicyComparator}.
+ * {@link com.hazelcast.config.EvictionPolicy#LRU}
+ * policy based {@link EvictionPolicyComparator}.
  */
 @SerializableByConvention
-public class LRUEvictionPolicyComparator extends EvictionPolicyComparator {
+public class LRUEvictionPolicyComparator
+        implements EvictionPolicyComparator<Object, Object, EvictableEntryView<Object, Object>> {
+
+    public static final LRUEvictionPolicyComparator INSTANCE
+            = new LRUEvictionPolicyComparator();
 
     @Override
     public int compare(EvictableEntryView e1, EvictableEntryView e2) {
-        long accessTime1 = e1.getLastAccessTime();
-        long accessTime2 = e2.getLastAccessTime();
-        if (accessTime2 < accessTime1) {
-            return SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-        } else if (accessTime1 < accessTime2) {
-            return FIRST_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-        } else {
-            long creationTime1 = e1.getCreationTime();
-            long creationTime2 = e2.getCreationTime();
-            // if access times are same, we select the oldest entry to evict
-            if (creationTime2 < creationTime1) {
-                return SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-            } else if (creationTime2 > creationTime1) {
-                return FIRST_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED;
-            } else {
-                return BOTH_OF_ENTRIES_HAVE_SAME_PRIORITY_TO_BE_EVICTED;
-            }
-        }
+        int result = Long.compare(e1.getLastAccessTime(), e2.getLastAccessTime());
+        // if access times are same, we try to select oldest entry to evict
+        return result == 0 ? Long.compare(e1.getCreationTime(), e2.getCreationTime()) : result;
+    }
+
+    @Override
+    public String toString() {
+        return "LRUEvictionPolicyComparator{" + super.toString() + "} ";
     }
 }

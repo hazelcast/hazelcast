@@ -65,17 +65,17 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      *
      * @param hit the access hit count for this {@link Evictable}
      */
-    void setAccessHit(int hit);
+    void setHits(int hit);
 
     /**
      * Increases the access hit count of this {@link Evictable} by {@code 1}.
      */
-    void incrementAccessHit();
+    void incrementHits();
 
     /**
      * Resets the access hit count of this {@link Evictable} to {@code 0}.
      */
-    void resetAccessHit();
+    void resetHits();
 
     /**
      * Checks whether the maximum idle time is passed with respect to the provided time

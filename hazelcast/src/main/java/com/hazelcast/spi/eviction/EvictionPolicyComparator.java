@@ -14,17 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring.context;
+package com.hazelcast.spi.eviction;
 
-import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.CacheEvictionPolicyComparator;
+import java.io.Serializable;
+import java.util.Comparator;
 
-public class MyEvictionPolicyComparator
-        implements CacheEvictionPolicyComparator<Object, Object> {
+/**
+ * A kind of {@link java.util.Comparator} to be
+ * used while comparing entries to be evicted.
+ *
+ * @param <K> type of the key
+ * @param <V> type of the value
+ * @param <E> type of the {@link EvictableEntryView}
+ *
+ * @see com.hazelcast.map.MapEvictionPolicyComparator
+ * @see com.hazelcast.cache.CacheEvictionPolicyComparator
+ */
 
-    @Override
-    public int compare(CacheEntryView e1, CacheEntryView e2) {
-        return 0;
-    }
+@SuppressWarnings("checkstyle:interfaceistype")
+@FunctionalInterface
+public interface EvictionPolicyComparator<K, V, E extends EvictableEntryView<K, V>>
+        extends Comparator<E>, Serializable {
 
 }

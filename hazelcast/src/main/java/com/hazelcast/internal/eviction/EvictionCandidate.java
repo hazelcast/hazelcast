@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.eviction;
 
+import com.hazelcast.spi.eviction.EvictableEntryView;
+
 /**
  * Interface for entries, records or whatever that can be evictable via its accessor (key or ID).
  *

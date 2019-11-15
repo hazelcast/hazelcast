@@ -102,7 +102,6 @@ import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
-import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -143,6 +142,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.WanReplicationPublisher;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -169,8 +169,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
@@ -1307,25 +1307,29 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testMapEvictionPolicyClassName() {
-        MapConfig mapConfig = config.getMapConfig("mapWithMapEvictionPolicyClassName");
-        String expectedComparatorClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
+        MapConfig mapConfig = config.getMapConfig("mapWithComparatorClassName");
+        String expectedComparatorClassName = "com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator";
 
-        assertEquals(expectedComparatorClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
+        assertEquals(expectedComparatorClassName, mapConfig.getEvictionConfig().getComparatorClassName());
     }
 
     @Test
     public void testMapEvictionPolicyImpl() {
-        MapConfig mapConfig = config.getMapConfig("mapWithMapEvictionPolicyImpl");
+        MapConfig mapConfig = config.getMapConfig("mapWithComparatorImpl");
 
-        assertEquals(DummyMapEvictionPolicy.class, mapConfig.getMapEvictionPolicy().getClass());
+        assertEquals(DummyMapEvictionPolicyComparator.class, mapConfig.getEvictionConfig().getComparator().getClass());
     }
 
     @Test
     public void testWhenBothMapEvictionPolicyClassNameAndEvictionPolicySet() {
-        MapConfig mapConfig = config.getMapConfig("mapBothMapEvictionPolicyClassNameAndEvictionPolicy");
-        String expectedComparatorClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
+        MapConfig mapConfig = config.getMapConfig("mapWithBothComparatorClassNameAndEvictionPolicy");
+        String expectedComparatorClassName = "com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator";
 
-        assertEquals(expectedComparatorClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
+
+        assertEquals(EvictionPolicy.LRU, evictionPolicy);
+        assertEquals(expectedComparatorClassName, evictionConfig.getComparatorClassName());
     }
 
     @Test

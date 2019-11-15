@@ -55,8 +55,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
@@ -2404,6 +2404,23 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testMapCustomEvictionPolicy() {
+        String comparatorClassName = "com.my.custom.eviction.policy.class";
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mappy:\n"
+                + "      eviction:\n"
+                + "         comparator-class-name: " + comparatorClassName + "\n";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("mappy");
+
+        assertEquals(comparatorClassName, mapConfig.getEvictionConfig().getComparatorClassName());
+    }
+
+    @Override
     @Test
     public void testIndexesConfig() {
         String yaml = ""
@@ -2917,39 +2934,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
         assertEquals(1, sslConfig.getProperties().size());
         assertEquals("TLS", sslConfig.getProperties().get("protocol"));
-    }
-
-    @Override
-    @Test
-    public void testMapEvictionPolicyClassName() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    test:\n"
-                + "      map-eviction-policy-class-name: " + mapEvictionPolicyClassName;
-
-        Config config = buildConfig(yaml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Override
-    @Test
-    public void testMapEvictionPolicyIsSelected_whenEvictionPolicySet() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    test:\n"
-                + "      map-eviction-policy-class-name: " + mapEvictionPolicyClassName + "\n"
-                + "      eviction-policy: LFU";
-
-        Config config = buildConfig(yaml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
     }
 
     @Override

@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-/**
- * <p>This package contains eviction specific classes.<br>
- */
-package com.hazelcast.map.eviction;
+package com.hazelcast.spring;
+
+import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
+
+public class DummyMapEvictionPolicyComparator extends RandomEvictionPolicyComparator {
+
+}

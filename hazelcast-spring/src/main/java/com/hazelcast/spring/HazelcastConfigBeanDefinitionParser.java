@@ -126,7 +126,6 @@ import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -155,8 +154,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
@@ -1276,8 +1273,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleHotRestartConfig(mapConfigBuilder, childNode);
                 } else if ("event-journal".equals(nodeName)) {
                     handleEventJournalConfig(mapConfigBuilder, childNode);
-                } else if ("map-eviction-policy".equals(nodeName)) {
-                    handleMapEvictionPolicyConfig(mapConfigBuilder, childNode);
                 } else if ("eviction".equals(nodeName)) {
                     handleEvictionConfig(childNode, mapConfigBuilder, false, true);
                 } else if ("partition-strategy".equals(nodeName)) {
@@ -1286,31 +1281,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
-        }
-
-        private void handleMapEvictionPolicyConfig(BeanDefinitionBuilder mapConfigBuilder, Node childNode) {
-            NamedNodeMap attributes = childNode.getAttributes();
-            Node implementationNode = attributes.getNamedItem("implementation");
-            Node classNameNode = attributes.getNamedItem("class-name");
-
-            String implementation = implementationNode != null ? getTextContent(implementationNode) : null;
-            String className = classNameNode != null ? getTextContent(classNameNode) : null;
-
-            if (implementation != null) {
-                mapConfigBuilder.addPropertyReference("mapEvictionPolicy", implementation);
-            } else if (className != null) {
-                className = checkHasText(className, "map-eviction-policy `className` cannot be null or empty");
-                try {
-                    MapEvictionPolicy mapEvictionPolicy = ClassLoaderUtil.newInstance(getClass().getClassLoader(), className);
-                    mapConfigBuilder.addPropertyValue("mapEvictionPolicy", mapEvictionPolicy);
-
-                } catch (Exception e) {
-                    throw rethrow(e);
-                }
-            } else {
-                throw new IllegalArgumentException("One of `className` or `implementation`"
-                        + " attributes is required to create map-eviction-policy");
-            }
         }
 
         private void handleMerkleTreeConfig(BeanDefinitionBuilder configBuilder, Node node) {

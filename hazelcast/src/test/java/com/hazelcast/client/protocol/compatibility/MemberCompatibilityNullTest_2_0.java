@@ -6764,18 +6764,16 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(anInt, parameters.asyncBackupCount));
         assertTrue(isEqual(anInt, parameters.timeToLiveSeconds));
         assertTrue(isEqual(anInt, parameters.maxIdleSeconds));
-        assertTrue(isEqual(aString, parameters.evictionPolicy));
+        assertTrue(isEqual(null, parameters.evictionConfig));
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(aString, parameters.cacheDeserializedValues));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(aString, parameters.inMemoryFormat));
         assertTrue(isEqual(null, parameters.listenerConfigs));
         assertTrue(isEqual(null, parameters.partitionLostListenerConfigs));
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
-        assertTrue(isEqual(null, parameters.mapEvictionPolicy));
-        assertTrue(isEqual(aString, parameters.maxSizeConfigMaxSizePolicy));
-        assertTrue(isEqual(anInt, parameters.maxSizeConfigSize));
         assertTrue(isEqual(null, parameters.mapStoreConfig));
         assertTrue(isEqual(null, parameters.nearCacheConfig));
         assertTrue(isEqual(null, parameters.wanReplicationRef));
@@ -6787,7 +6785,6 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(null, parameters.hotRestartConfig));
         assertTrue(isEqual(null, parameters.eventJournalConfig));
         assertTrue(isEqual(null, parameters.merkleTreeConfig));
-        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
     }
 
@@ -6841,6 +6838,7 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(aString, parameters.inMemoryFormat));
         assertTrue(isEqual(null, parameters.splitBrainProtectionName));
         assertTrue(isEqual(null, parameters.mergePolicy));
+        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(aBoolean, parameters.disablePerEntryInvalidationEvents));
         assertTrue(isEqual(null, parameters.partitionLostListenerConfigs));
         assertTrue(isEqual(null, parameters.expiryPolicyFactoryClassName));
@@ -7230,6 +7228,21 @@ public class MemberCompatibilityNullTest_2_0 {
     public void test_MCGetSystemPropertiesCodec_encodeResponse() {
         int fileClientMessageIndex = 800;
         ClientMessage encoded = MCGetSystemPropertiesCodec.encodeResponse(aListOfStringToString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCGetTimedMemberStateCodec_decodeRequest() {
+        int fileClientMessageIndex = 801;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetTimedMemberStateCodec.RequestParameters parameters = MCGetTimedMemberStateCodec.decodeRequest(fromFile);
+    }
+
+    @Test
+    public void test_MCGetTimedMemberStateCodec_encodeResponse() {
+        int fileClientMessageIndex = 802;
+        ClientMessage encoded = MCGetTimedMemberStateCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

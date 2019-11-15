@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 /**
  * Interface for configuration information about eviction.

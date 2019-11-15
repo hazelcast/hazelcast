@@ -74,9 +74,6 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.map.eviction.LFUEvictionPolicy;
-import com.hazelcast.map.eviction.LRUEvictionPolicy;
-import com.hazelcast.map.eviction.RandomEvictionPolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -176,9 +173,6 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[LISTENER_CONFIG] = arg -> new ListenerConfig();
         constructors[ENTRY_LISTENER_CONFIG] = arg -> new EntryListenerConfig();
         constructors[MAP_CONFIG] = arg -> new MapConfig();
-        constructors[RANDOM_EVICTION_POLICY] = arg -> new RandomEvictionPolicy();
-        constructors[LFU_EVICTION_POLICY] = arg -> new LFUEvictionPolicy();
-        constructors[LRU_EVICTION_POLICY] = arg -> new LRUEvictionPolicy();
         constructors[MAP_STORE_CONFIG] = arg -> new MapStoreConfig();
         constructors[MAP_PARTITION_LOST_LISTENER_CONFIG] = arg -> new MapPartitionLostListenerConfig();
         constructors[INDEX_CONFIG] = arg -> new IndexConfig();
