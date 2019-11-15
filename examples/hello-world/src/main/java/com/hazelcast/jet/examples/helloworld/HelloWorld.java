@@ -86,7 +86,7 @@ public class HelloWorld {
             if (top10numbers != null) {
                 LOGGER.info("Top 10 random numbers observed so far in the stream are: ");
                 for (int i = 0; i < top10numbers.size(); i++) {
-                    LOGGER.info(String.format("%d. %,d", i, top10numbers.get(i)));
+                    LOGGER.info(String.format("%d. %,d", i + 1, top10numbers.get(i)));
                 }
             }
             Thread.sleep(1000);
