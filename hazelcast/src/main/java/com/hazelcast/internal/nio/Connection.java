@@ -55,7 +55,7 @@ public interface Connection {
      *
      * @return the ConnectionType. It could be that <code>null</code> is returned.
      */
-    ConnectionType getType();
+    String getType();
 
     EndpointManager getEndpointManager();
 
@@ -64,7 +64,7 @@ public interface Connection {
      *
      * @param type to be set
      */
-    void setType(ConnectionType type);
+    void setType(String type);
 
     /**
      * Checks if it is a client connection.

@@ -20,7 +20,6 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientNotAllowedInClusterException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.AddressProvider;
@@ -43,6 +42,7 @@ import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.AddressUtil;
@@ -542,9 +542,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             String clusterName = currentClusterContext.getClusterName();
             if (credentials instanceof PasswordCredentials) {
                 PasswordCredentials cr = (PasswordCredentials) credentials;
-                return ClientAuthenticationCodec.encodeRequest(clusterName, cr.getName(),
-                        cr.getPassword(), clientUuid, ClientTypes.JAVA, serializationVersion,
-                        BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels, clusterPartitionCount,
+                return ClientAuthenticationCodec.encodeRequest(clusterName, cr.getName(), cr.getPassword(), clientUuid,
+                        ConnectionType.JAVA_CLIENT, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
+                        client.getName(), labels, clusterPartitionCount,
                         resolvedClusterId);
             } else {
                 Data data;
@@ -553,8 +553,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 } else {
                     data = ss.toData(credentials);
                 }
-                return ClientAuthenticationCustomCodec.encodeRequest(clusterName, data,
-                        clientUuid, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
+                return ClientAuthenticationCustomCodec.encodeRequest(clusterName, data, clientUuid,
+                        ConnectionType.JAVA_CLIENT, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
                         client.getName(), labels, clusterPartitionCount, resolvedClusterId);
             }
         }

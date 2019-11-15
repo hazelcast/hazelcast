@@ -102,7 +102,7 @@ public class BindHandlerTest {
 
     // connection type of TcpIpConnection for which BindMessage is processed
     @Parameter(1)
-    public ConnectionType connectionType;
+    public String connectionType;
 
     // this map populates BindMessage.localAddresses map
     @Parameter(2)

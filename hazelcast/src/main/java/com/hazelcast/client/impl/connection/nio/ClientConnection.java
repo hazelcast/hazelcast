@@ -124,12 +124,12 @@ public class ClientConnection implements Connection {
     }
 
     @Override
-    public void setType(ConnectionType type) {
+    public void setType(String type) {
         //NO OP
     }
 
     @Override
-    public ConnectionType getType() {
+    public String getType() {
         return ConnectionType.JAVA_CLIENT;
     }
 

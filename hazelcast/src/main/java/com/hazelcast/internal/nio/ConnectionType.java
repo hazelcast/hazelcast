@@ -19,34 +19,60 @@ package com.hazelcast.internal.nio;
 /**
  * An enumeration of all possible Connection types.
  */
-public enum ConnectionType {
+public final class ConnectionType {
 
-    NONE(false, false),
-    MEMBER(true, true),
-    JAVA_CLIENT(false, true),
-    CSHARP_CLIENT(false, true),
-    CPP_CLIENT(false, true),
-    PYTHON_CLIENT(false, true),
-    RUBY_CLIENT(false, true),
-    NODEJS_CLIENT(false, true),
-    GO_CLIENT(false, true),
-    BINARY_CLIENT(false, true),
-    REST_CLIENT(false, false),
-    MEMCACHE_CLIENT(false, false);
+    /**
+     * If connection type is not set yet
+     */
+    public static final String NONE = " NONE";
 
-    final boolean member;
-    final boolean binary;
+    /**
+     * Member Connection Type
+     */
+    public static final String MEMBER = "MEMBER";
 
-    ConnectionType(boolean member, boolean binary) {
-        this.member = member;
-        this.binary = binary;
+    /**
+     * JVM clients Connection Type
+     */
+    public static final String JAVA_CLIENT = "JVM";
+
+    /**
+     * CSHARP client Connection Type
+     */
+    public static final String CSHARP_CLIENT = "CSP";
+
+    /**
+     * CPP client Connection Type
+     */
+    public static final String CPP_CLIENT = "CPP";
+
+    /**
+     * PYTHON client Connection Type
+     */
+    public static final String PYTHON_CLIENT = "PYH";
+
+    /**
+     * Node.JS client Connection Type
+     */
+    public static final String NODEJS_CLIENT = "NJS";
+
+    /**
+     * Go client Connection Type
+     */
+    public static final String GO_CLIENT = "GOO";
+
+    /**
+     * Rest client Connection Type
+     */
+    public static final String REST_CLIENT = "REST";
+
+    /**
+     * Memcache client Connection Type
+     */
+    public static final String MEMCACHE_CLIENT = "MEMCACHE";
+
+    private ConnectionType() {
+
     }
 
-    public boolean isBinary() {
-        return binary;
-    }
-
-    public boolean isClient() {
-        return !member;
-    }
 }

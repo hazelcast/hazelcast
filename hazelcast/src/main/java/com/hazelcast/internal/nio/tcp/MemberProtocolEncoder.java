@@ -45,8 +45,8 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
      * Decodes first 3 incoming bytes, validates against {@code supportedProtocol} and, when
      * matching, replaces itself in the inbound pipeline with the {@code next InboundHandler}.
      *
-     * @param next              the {@link OutboundHandler} to replace this one in the outbound pipeline
-     *                          upon match of protocol bytes
+     * @param next the {@link OutboundHandler} to replace this one in the outbound pipeline
+     *             upon match of protocol bytes
      */
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public MemberProtocolEncoder(OutboundHandler[] next) {

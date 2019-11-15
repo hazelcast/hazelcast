@@ -89,12 +89,12 @@ class DroppingConnection implements Connection {
     }
 
     @Override
-    public void setType(ConnectionType type) {
+    public void setType(String type) {
         //NO OP
     }
 
     @Override
-    public ConnectionType getType() {
+    public String getType() {
         return ConnectionType.MEMBER;
     }
 

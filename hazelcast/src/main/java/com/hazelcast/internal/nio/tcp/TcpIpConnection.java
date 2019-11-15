@@ -48,8 +48,7 @@ import static com.hazelcast.internal.nio.ConnectionType.NONE;
  * @see Networking
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class TcpIpConnection
-        implements Connection {
+public class TcpIpConnection implements Connection {
 
     private final Channel channel;
     private final ConcurrentMap attributeMap;
@@ -71,7 +70,7 @@ public class TcpIpConnection
 
     private TcpIpConnectionErrorHandler errorHandler;
 
-    private volatile ConnectionType type = NONE;
+    private volatile String type = NONE;
 
     private volatile ConnectionLifecycleListener lifecycleListener;
 
@@ -99,27 +98,27 @@ public class TcpIpConnection
     }
 
     @Override
-    public ConnectionType getType() {
+    public String getType() {
         return type;
     }
 
     @Override
-    public void setType(ConnectionType type) {
-        if (this.type != NONE) {
+    public void setType(String type) {
+        if (!this.type.equals(NONE)) {
             return;
         }
 
         this.type = type;
-        if (type == MEMBER) {
+        if (type.equals(MEMBER)) {
             logger.info("Initialized new cluster connection between "
-                        + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
+                    + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
         }
     }
 
     @Probe
-    private int getConnectionType() {
-        ConnectionType t = type;
-        return t == null ? -1 : t.ordinal();
+    //TODO SANCAR
+    private String getConnectionType() {
+        return getType();
     }
 
     public TcpIpEndpointManager getEndpointManager() {
@@ -175,8 +174,7 @@ public class TcpIpConnection
 
     @Override
     public boolean isClient() {
-        ConnectionType t = type;
-        return t != null && t != NONE && t.isClient();
+        return !type.equals(MEMBER);
     }
 
     @Override
@@ -267,7 +265,7 @@ public class TcpIpConnection
         }
 
         if (closeCause == null || closeCause instanceof EOFException || closeCause instanceof CancelledKeyException) {
-            if (type == ConnectionType.REST_CLIENT || type == ConnectionType.MEMCACHE_CLIENT) {
+            if (type.equals(ConnectionType.REST_CLIENT) || type.equals(ConnectionType.MEMCACHE_CLIENT)) {
                 // text-based clients are expected to come and go frequently.
                 return Level.FINE;
             } else {

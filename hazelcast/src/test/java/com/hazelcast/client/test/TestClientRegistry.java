@@ -441,7 +441,7 @@ class TestClientRegistry {
         }
 
         @Override
-        public ConnectionType getType() {
+        public String getType() {
             return ConnectionType.JAVA_CLIENT;
         }
 
