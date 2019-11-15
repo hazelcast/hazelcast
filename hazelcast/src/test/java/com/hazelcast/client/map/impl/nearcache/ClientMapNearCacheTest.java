@@ -793,7 +793,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
         populateNearCache(clientMap, MAX_CACHE_SIZE);
 
-        assertNearCacheExpiration(clientMap, MAX_CACHE_SIZE, MAX_TTL_SECONDS);
+        assertNearCacheExpiration(clientMap, MAX_CACHE_SIZE);
     }
 
     @Test

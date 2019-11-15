@@ -254,7 +254,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
     }
 
     private Client createClient(String ip, String name, String... labels) {
-        Set<String> labelsSet = new HashSet<String>();
+        Set<String> labelsSet = new HashSet<>();
         if (labels != null && labels.length > 0) {
             labelsSet.addAll(Arrays.asList(labels));
         }

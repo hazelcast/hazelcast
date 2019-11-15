@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -115,7 +116,7 @@ public final class HazelcastServerCachingProvider extends AbstractHazelcastCachi
     private Config getDefaultConfig() {
         Config config = new XmlConfigBuilder().build();
         if (namedDefaultHzInstance && isNullOrEmpty(config.getInstanceName())) {
-            config.setInstanceName(SHARED_JCACHE_INSTANCE_NAME);
+            config.setInstanceName(HazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME);
         }
         return config;
     }
