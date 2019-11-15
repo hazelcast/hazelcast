@@ -296,7 +296,15 @@ public final class ProxyManager {
         }
     }
 
-    public ClientProxy getOrCreateProxy(String service, String id, boolean remote) {
+    public ClientProxy getOrCreateProxy(String service, String id) {
+        return getOrCreateProxyInternal(service, id, true);
+    }
+
+    public ClientProxy getOrCreateLocalProxy(String service, String id) {
+        return getOrCreateProxyInternal(service, id, false);
+    }
+
+    private ClientProxy getOrCreateProxyInternal(String service, String id, boolean remote) {
         final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
         ClientProxyFuture proxyFuture = proxies.get(ns);
         if (proxyFuture != null) {
