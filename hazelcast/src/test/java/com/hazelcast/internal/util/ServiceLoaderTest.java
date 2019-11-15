@@ -17,6 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -186,11 +187,11 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
                 = new ServiceLoader.ServiceDefinition(SpiDataSerializerHook.class.getName(), SpiDataSerializerHook.class.getClassLoader());
 
         Set<ServiceLoader.ServiceDefinition> definitions = setOf(definition1, definition2);
-        ServiceLoader.ClassIterator<PortableHook> iterator
-                = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+        ServiceLoader.ClassIterator<DataSerializerHook> iterator
+                = new ServiceLoader.ClassIterator<>(definitions, DataSerializerHook.class);
 
         assertTrue(iterator.hasNext());
-        Class<PortableHook> hook = iterator.next();
+        Class<DataSerializerHook> hook = iterator.next();
         assertEquals(SpiDataSerializerHook.class, hook);
         assertFalse(iterator.hasNext());
     }
