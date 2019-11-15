@@ -2404,6 +2404,23 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testMapCustomEvictionPolicy() {
+        String comparatorClassName = "com.my.custom.eviction.policy.class";
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mappy:\n"
+                + "      eviction:\n"
+                + "         comparator-class-name: " + comparatorClassName + "\n";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("mappy");
+
+        assertEquals(comparatorClassName, mapConfig.getEvictionConfig().getComparatorClassName());
+    }
+
+    @Override
     @Test
     public void testIndexesConfig() {
         String yaml = ""

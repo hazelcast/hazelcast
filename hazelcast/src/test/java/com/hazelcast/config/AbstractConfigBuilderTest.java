@@ -304,6 +304,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapConfig();
 
     @Test
+    public abstract void testMapCustomEvictionPolicy();
+
+    @Test
     public abstract void testIndexesConfig();
 
     @Test
