@@ -351,8 +351,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             futures.add(f);
         }
 
-        nodes.clear();
-
         for (InternalCompletableFuture future : futures) {
             try {
                 future.get();
@@ -360,6 +358,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 logger.warning(e);
             }
         }
+
+        nodes.clear();
 
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(RaftRemoteService.class)) {
             if (serviceInfo.getService() instanceof RaftManagedService) {
@@ -771,7 +771,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             if (nodes.putIfAbsent(groupId, node) == null) {
                 if (destroyedGroupIds.contains(groupId)) {
                     deregisterNodeMetrics(groupId);
-                    destroyRaftNode(node, true);
                     nodes.remove(groupId, node);
                     logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed.");
                     return;
@@ -857,8 +856,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             }
 
             terminatedRaftNodeGroupIds.add(groupId);
-            RaftNode node = nodes.remove(groupId);
-            deregisterNodeMetrics(groupId);
+            RaftNode node = nodes.get(groupId);
             CPPersistenceService persistenceService = getCPPersistenceService();
             if (node != null) {
                 destroyRaftNode(node, groupDestroyed);
@@ -890,8 +888,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             RaftNode node = nodes.get(groupId);
             if (node != null && node.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
                 terminatedRaftNodeGroupIds.add(groupId);
-                nodes.remove(groupId, node);
-                deregisterNodeMetrics(groupId);
                 destroyRaftNode(node, true);
                 logger.fine("RaftNode[" + groupId + "] has stepped down.");
             } else if (node == null && persistenceService.isEnabled()) {
@@ -906,6 +902,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private void destroyRaftNode(RaftNode node, boolean removeRaftStateStore) {
         RaftGroupId groupId = (RaftGroupId) node.getGroupId();
         node.forceSetTerminatedStatus().whenCompleteAsync((v, t) -> {
+            nodes.remove(groupId, node);
+            deregisterNodeMetrics(groupId);
             CPPersistenceService persistenceService = getCPPersistenceService();
             try {
                 if (removeRaftStateStore && persistenceService.isEnabled()) {
