@@ -20,6 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.examples.wordcount.WordCount;
 import com.hazelcast.jet.hadoop.HdfsSinks;
 import com.hazelcast.jet.hadoop.HdfsSources;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -82,7 +83,7 @@ public class HadoopWordCount {
     }
 
     public static void main(String[] args) throws Exception {
-        Path inputPath = new Path(HadoopWordCount.class.getResource("/books").getPath());
+        Path inputPath = new Path(WordCount.class.getResource("/books").getPath());
         Path outputPath = new Path(OUTPUT_PATH);
         // delete the output directory, if already exists
         FileSystem.get(new Configuration()).delete(outputPath, true);
