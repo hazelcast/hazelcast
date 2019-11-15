@@ -41,7 +41,9 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -215,6 +217,32 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         populateMap(map, 100);
         assertTrueEventually(() -> assertEquals(100, listener.getAddedEventCount()));
         assertTrueAllTheTime(() -> assertEquals(100, listener.getAddedEventCount()), 5);
+    }
+
+    @Test
+    public void published_event_contains_key_when_include_value_is_false() {
+        CountDownLatch waitEventLatch = new CountDownLatch(1);
+        AtomicReference<EntryEvent<Integer, Employee>> eventObject = new AtomicReference<>();
+
+        MapConfig mapConfig = new MapConfig(mapName);
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName)
+                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
+                .addEntryListenerConfig(
+                        new EntryListenerConfig((EntryAddedListener<Integer, Employee>) event -> {
+                            eventObject.set(event);
+                            waitEventLatch.countDown();
+                        }, true, false));
+        mapConfig.addQueryCacheConfig(queryCacheConfig);
+        Config config = new Config();
+        config.addMapConfig(mapConfig);
+
+        IMap<Integer, Employee> map = getIMap(config);
+        // trigger creation of the query cache
+        map.getQueryCache(cacheName);
+        map.put(1, new Employee(1));
+
+        assertOpenEventually(waitEventLatch);
+        assertEquals(1, eventObject.get().getKey().intValue());
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
