@@ -55,7 +55,7 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
 
     public void recreateCachesOnCluster() {
         for (CacheConfig cacheConfig : configs.values()) {
-            ClientCacheHelper.createCacheConfig(client, cacheConfig);
+            ClientCacheHelper.createCacheConfig(client, cacheConfig, true);
         }
     }
 
