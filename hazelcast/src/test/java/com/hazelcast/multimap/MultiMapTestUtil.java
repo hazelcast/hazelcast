@@ -63,7 +63,7 @@ public final class MultiMapTestUtil {
                     continue;
                 }
                 MultiMapPartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
-                MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(multiMapName, false);
+                MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainerWithoutAccess(multiMapName);
                 if (multiMapContainer == null) {
                     continue;
                 }

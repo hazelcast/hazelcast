@@ -423,7 +423,7 @@ public class AnswerTest extends HazelcastTestSupport {
         multiMap.put(key, "value2");
 
         MultiMapPartitionContainer partitionContainer = multiMapService.getPartitionContainer(partitionId);
-        MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer("myMultiMap", false);
+        MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer("myMultiMap");
 
         ConcurrentMap<Data, MultiMapValue> multiMapValues = multiMapContainer.getMultiMapValues();
         for (Map.Entry<Data, MultiMapValue> entry : multiMapValues.entrySet()) {

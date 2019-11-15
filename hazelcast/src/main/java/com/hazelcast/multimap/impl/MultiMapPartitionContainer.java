@@ -63,16 +63,29 @@ public class MultiMapPartitionContainer {
 
     /**
      * Returns the {@link MultiMapContainer} with the given {@code name}
-     * if exists or {@code null otherwise}. Depending on the {@code isAccess}
-     * parameter this call updates the {@code lastAccessTime} field of the
-     * container.
+     * if exists or {@code null otherwise}, without updating the
+     * {@code lastAccessTime} field of the container.
      *
-     * @param name     The name of the container to retrieve
-     * @param isAccess Indicates whether or not this call should be treated
-     *                 as an access
+     * @param name The name of the container to retrieve
      * @return the container or {@code null} if doesn't exist
      */
-    public MultiMapContainer getMultiMapContainer(String name, boolean isAccess) {
+    public MultiMapContainer getMultiMapContainerWithoutAccess(String name) {
+        return getMultiMapContainer(name, false);
+    }
+
+    /**
+     * Returns the {@link MultiMapContainer} with the given {@code name}
+     * if exists or {@code null otherwise} and updates the
+     * {@code lastAccessTime} field of the container.
+     *
+     * @param name The name of the container to retrieve
+     * @return the container or {@code null} if doesn't exist
+     */
+    public MultiMapContainer getMultiMapContainer(String name) {
+        return getMultiMapContainer(name, true);
+    }
+
+    private MultiMapContainer getMultiMapContainer(String name, boolean isAccess) {
         MultiMapContainer container = containerMap.get(name);
         if (container != null && isAccess) {
             container.access();
