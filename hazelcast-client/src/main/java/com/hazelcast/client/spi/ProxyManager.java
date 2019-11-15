@@ -297,6 +297,14 @@ public final class ProxyManager {
     }
 
     public ClientProxy getOrCreateProxy(String service, String id) {
+        return getOrCreateProxyInternal(service, id, true);
+    }
+
+    public ClientProxy getOrCreateLocalProxy(String service, String id) {
+        return getOrCreateProxyInternal(service, id, false);
+    }
+
+    private ClientProxy getOrCreateProxyInternal(String service, String id, boolean remote) {
         final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
         ClientProxyFuture proxyFuture = proxies.get(ns);
         if (proxyFuture != null) {
@@ -314,7 +322,11 @@ public final class ProxyManager {
 
         try {
             ClientProxy clientProxy = createClientProxy(id, factory);
-            initializeWithRetry(clientProxy);
+            if (remote) {
+                initializeWithRetry(clientProxy);
+            } else {
+                clientProxy.onInitialize();
+            }
             proxyFuture.set(clientProxy);
             return clientProxy;
         } catch (Throwable e) {

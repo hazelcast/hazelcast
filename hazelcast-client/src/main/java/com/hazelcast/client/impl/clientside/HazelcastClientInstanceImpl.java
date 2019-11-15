@@ -663,7 +663,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             Collection<DistributedObjectInfo> newDistributedObjectInfo = resultParameters.response;
             for (DistributedObjectInfo distributedObjectInfo : newDistributedObjectInfo) {
                 localDistributedObjects.remove(distributedObjectInfo);
-                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName(), false);
             }
 
             for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
@@ -712,7 +712,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
-        return (T) proxyManager.getOrCreateProxy(serviceName, name);
+        return getDistributedObject(serviceName, name, true);
+    }
+
+    private <T extends DistributedObject> T getDistributedObject(String serviceName, String name, boolean remote) {
+        if (remote) {
+            return (T) proxyManager.getOrCreateProxy(serviceName, name);
+        }
+        return (T) proxyManager.getOrCreateLocalProxy(serviceName, name);
     }
 
     @Override
