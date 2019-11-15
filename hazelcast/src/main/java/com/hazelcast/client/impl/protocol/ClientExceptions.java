@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.client.impl.StubAuthenticationException;
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec;
 import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
@@ -105,8 +105,6 @@ import java.util.concurrent.TimeoutException;
  */
 public class ClientExceptions {
 
-    private static final String CAUSED_BY_STACKTRACE_MARKER = "###### Caused by:";
-
     private final Map<Class, Integer> classToInt = new HashMap<Class, Integer>();
 
     public ClientExceptions(boolean jcacheAvailable) {
@@ -120,7 +118,7 @@ public class ClientExceptions {
 
         register(ClientProtocolErrorCodes.ARRAY_INDEX_OUT_OF_BOUNDS, ArrayIndexOutOfBoundsException.class);
         register(ClientProtocolErrorCodes.ARRAY_STORE, ArrayStoreException.class);
-        register(ClientProtocolErrorCodes.AUTHENTICATION, StubAuthenticationException.class);
+        register(ClientProtocolErrorCodes.AUTHENTICATION, AuthenticationException.class);
         register(ClientProtocolErrorCodes.CACHE_NOT_EXISTS, CacheNotExistsException.class);
         register(ClientProtocolErrorCodes.CALLER_NOT_MEMBER, CallerNotMemberException.class);
         register(ClientProtocolErrorCodes.CANCELLATION, CancellationException.class);
