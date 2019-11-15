@@ -25,6 +25,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalida
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
@@ -182,10 +183,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Data putIfAbsentInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected Data putIfAbsentInternal(Object key, Data value, long ttl, TimeUnit ttlUnit,
+                                       long maxIdle, TimeUnit maxIdleUnit, IMap.ReadPolicy readPolicy) {
         key = toNearCacheKeyWithStrategy(key);
         try {
-            return super.putIfAbsentInternal(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
+            return super.putIfAbsentInternal(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit, readPolicy);
         } finally {
             invalidateNearCache(key);
         }

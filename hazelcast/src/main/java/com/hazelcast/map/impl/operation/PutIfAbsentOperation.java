@@ -16,18 +16,25 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+
+import java.io.IOException;
 
 import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public class PutIfAbsentOperation extends BasePutOperation implements MutatingOperation {
 
     protected transient boolean successful;
+    private IMap.ReadPolicy readPolicy;
 
-    public PutIfAbsentOperation(String name, Data dataKey, Data value) {
+    public PutIfAbsentOperation(String name, Data dataKey, Data value, IMap.ReadPolicy readPolicy) {
         super(name, dataKey, value);
+        this.readPolicy = readPolicy;
     }
 
     public PutIfAbsentOperation() {
@@ -36,7 +43,7 @@ public class PutIfAbsentOperation extends BasePutOperation implements MutatingOp
     @Override
     protected void runInternal() {
         Object oldValue = recordStore.putIfAbsent(dataKey, dataValue,
-                getTtl(), getMaxIdle(), getCallerAddress());
+                getTtl(), getMaxIdle(), getCallerAddress(), readPolicy);
         this.oldValue = mapServiceContext.toData(oldValue);
         successful = this.oldValue == null;
     }
@@ -69,5 +76,22 @@ public class PutIfAbsentOperation extends BasePutOperation implements MutatingOp
     @Override
     public int getClassId() {
         return MapDataSerializerHook.PUT_IF_ABSENT;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(readPolicy.name());
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        readPolicy = IMap.ReadPolicy.valueOf(in.readUTF());
+    }
+
+    @Override
+    public boolean shouldWait() {
+        return readPolicy == IMap.ReadPolicy.LATEST_WRITE && super.shouldWait();
     }
 }

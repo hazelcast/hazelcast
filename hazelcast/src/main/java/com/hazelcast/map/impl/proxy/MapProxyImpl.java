@@ -160,7 +160,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
+        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS, ReadPolicy.LATEST_WRITE);
+        return toObject(result);
+    }
+
+    @Override
+    public V putIfAbsent(@Nonnull K key, @Nonnull V value, @Nonnull ReadPolicy readPolicy) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(readPolicy, "Null readPolicy is not allowed!");
+
+        Data valueData = toData(value);
+        Data result = putIfAbsentInternal(key, valueData, UNSET, TimeUnit.MILLISECONDS, UNSET, TimeUnit.MILLISECONDS, readPolicy);
         return toObject(result);
     }
 
@@ -174,7 +185,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
+        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, maxIdle, maxIdleUnit, ReadPolicy.LATEST_WRITE);
         return toObject(result);
     }
 

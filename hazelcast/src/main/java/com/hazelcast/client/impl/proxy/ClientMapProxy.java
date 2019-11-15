@@ -591,6 +591,15 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return putIfAbsentInternal(ttl, timeunit, null, null, key, value);
     }
 
+    //no-op for read policy
+    @Override
+    public V putIfAbsent(@Nonnull K key, @Nonnull V value, @Nonnull ReadPolicy readPolicy) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        return putIfAbsentInternal(UNSET, MILLISECONDS, null, null, key, value);
+    }
+
     @Override
     public V putIfAbsent(@Nonnull K key, @Nonnull V value,
                          long ttl, @Nonnull TimeUnit ttlUnit,

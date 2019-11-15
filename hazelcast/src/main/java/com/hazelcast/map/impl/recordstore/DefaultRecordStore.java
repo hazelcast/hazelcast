@@ -29,6 +29,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
@@ -1025,7 +1026,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object putIfAbsent(Data key, Object value, long ttl,
-                              long maxIdle, Address callerAddress) {
+                              long maxIdle, Address callerAddress, IMap.ReadPolicy readPolicy) {
         checkIfLoaded();
         long now = getNow();
         markRecordStoreExpirable(ttl, maxIdle);
@@ -1036,7 +1037,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             oldValue = mapDataStore.load(key);
             if (oldValue != null) {
                 record = createRecord(key, oldValue, UNSET, UNSET, now);
-                storage.put(key, record);
+                storage.put(key, record, readPolicy);
                 mutationObserver.onPutRecord(key, record, null, false);
                 mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED, key, null, oldValue);
             }
@@ -1047,7 +1048,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (oldValue == null) {
             value = mapServiceContext.interceptPut(interceptorRegistry, null, value);
             onStore(record);
-            putNewRecord(key, null, value, ttl, maxIdle, now, null);
+            putNewRecord(key, null, value, ttl, maxIdle, now, null, readPolicy);
         }
         return oldValue;
     }

@@ -23,6 +23,8 @@ package com.hazelcast.internal.util;
  */
 
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.map.IMap;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -780,6 +782,19 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             }
         }
 
+        /**
+         * This method must be called with exactly one of <code>value</code> and
+         * <code>function</code> non-null.
+         **/
+        V put(K key, int hash, V value, Function<? super K, ? extends V> function, boolean onlyIfAbsent, IMap.ReadPolicy readPolicy) {
+            System.out.println(readPolicy);
+            if (readPolicy == IMap.ReadPolicy.LATEST_WRITE) {
+                return put(key, hash, value, function, onlyIfAbsent);
+            } else {
+                return putInternal(key, hash, value, function, onlyIfAbsent);
+            }
+        }
+
         private V putInternal(K key, int hash, V value, Function<? super K, ? extends V> function, boolean onlyIfAbsent) {
             removeStale();
             int c = count;
@@ -1377,6 +1392,14 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
         int hash = hashOf(key);
         return segmentFor(hash).put(key, hash, value, null, false);
+    }
+
+    public V put(K key, V value, IMap.ReadPolicy readPolicy) {
+        if (value == null) {
+            throw new NullPointerException();
+        }
+        int hash = hashOf(key);
+        return segmentFor(hash).put(key, hash, value, null, false, readPolicy);
     }
 
     /**

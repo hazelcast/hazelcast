@@ -43,7 +43,8 @@ public interface MapOperationProvider {
 
     MapOperation createSetOperation(String name, Data dataKey, Data value, long ttl, long maxIdle);
 
-    MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle);
+    MapOperation createPutIfAbsentOperation(String name, Data key, Data value,
+                                            long ttl, long maxIdle, IMap.ReadPolicy readPolicy);
 
     MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl, long maxIdle);
 

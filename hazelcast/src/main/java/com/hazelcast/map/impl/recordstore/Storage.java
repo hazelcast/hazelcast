@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
@@ -36,6 +37,8 @@ import java.util.Iterator;
 public interface Storage<K, R> {
 
     void put(K key, R record);
+
+    void put(K key, R record, IMap.ReadPolicy readPolicy);
 
     void updateRecordValue(K key, R record, Object value);
 

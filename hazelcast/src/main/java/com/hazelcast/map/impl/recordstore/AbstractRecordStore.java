@@ -26,6 +26,7 @@ import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.comparators.ValueComparator;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.JsonMetadataInitializer;
 import com.hazelcast.map.impl.MapContainer;
@@ -204,6 +205,15 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Record record = createRecord(key, newValue, ttlMillis, maxIdleMillis, now);
         putIntoMapStore(record, key, newValue, now, transactionId);
         storage.put(key, record);
+        mutationObserver.onPutRecord(key, record, oldValue, false);
+        return record;
+    }
+
+    protected Record putNewRecord(Data key, Object oldValue, Object newValue, long ttlMillis,
+                                  long maxIdleMillis, long now, UUID transactionId, IMap.ReadPolicy readPolicy) {
+        Record record = createRecord(key, newValue, ttlMillis, maxIdleMillis, now);
+        putIntoMapStore(record, key, newValue, now, transactionId);
+        storage.put(key, record, readPolicy);
         mutationObserver.onPutRecord(key, record, oldValue, false);
         return record;
     }

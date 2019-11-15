@@ -425,19 +425,18 @@ abstract class MapProxySupport<K, V>
 
     protected Data putIfAbsentInternal(Object key, Data value,
                                        long ttl, TimeUnit ttlUnit,
-                                       long maxIdle, TimeUnit maxIdleUnit) {
-
+                                       long maxIdle, TimeUnit maxIdleUnit, ReadPolicy readPolicy) {
         Data keyData = toDataWithStrategy(key);
-        MapOperation operation = newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
+        MapOperation operation = newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit, readPolicy);
         return (Data) invokeOperation(keyData, operation);
     }
 
     private MapOperation newPutIfAbsentOperation(Data keyData, Data valueData,
                                                  long ttl, TimeUnit timeunit,
-                                                 long maxIdle, TimeUnit maxIdleUnit) {
+                                                 long maxIdle, TimeUnit maxIdleUnit, ReadPolicy readPolicy) {
         return operationProvider.createPutIfAbsentOperation(name, keyData, valueData,
                 timeInMsOrOneIfResultIsZero(ttl, timeunit),
-                timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
+                timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit), readPolicy);
     }
 
     protected void putTransientInternal(Object key, Data value,

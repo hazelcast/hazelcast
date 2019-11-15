@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryOperation;
@@ -79,11 +80,12 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutIfAbsentOperation(String name, Data key, Data value, long ttl, long maxIdle) {
+    public MapOperation createPutIfAbsentOperation(String name, Data key, Data value,
+                                                   long ttl, long maxIdle, IMap.ReadPolicy readPolicy) {
         if (hasNoExpiry(ttl, maxIdle)) {
-            return new PutIfAbsentOperation(name, key, value);
+            return new PutIfAbsentOperation(name, key, value, readPolicy);
         } else {
-            return new PutIfAbsentWithExpiryOperation(name, key, value, ttl, maxIdle);
+            return new PutIfAbsentWithExpiryOperation(name, key, value, ttl, maxIdle, readPolicy);
         }
     }
 

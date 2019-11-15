@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
@@ -80,6 +81,21 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         record.setKey(key);
 
         R previousRecord = records.put(key, record);
+
+        if (previousRecord == null) {
+            updateCostEstimate(entryCostEstimator.calculateEntryCost(key, record));
+        } else {
+            updateCostEstimate(-entryCostEstimator.calculateValueCost(previousRecord));
+            updateCostEstimate(entryCostEstimator.calculateValueCost(record));
+        }
+    }
+
+    @Override
+    public void put(Data key, R record, IMap.ReadPolicy readPolicy) {
+
+        record.setKey(key);
+
+        R previousRecord = records.put(key, record, readPolicy);
 
         if (previousRecord == null) {
             updateCostEstimate(entryCostEstimator.calculateEntryCost(key, record));

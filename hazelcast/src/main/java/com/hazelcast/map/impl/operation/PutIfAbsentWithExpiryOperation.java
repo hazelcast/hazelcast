@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,8 +29,8 @@ public class PutIfAbsentWithExpiryOperation extends PutIfAbsentOperation {
     private long ttl;
     private long maxIdle;
 
-    public PutIfAbsentWithExpiryOperation(String name, Data dataKey, Data value, long ttl, long maxIdle) {
-        super(name, dataKey, value);
+    public PutIfAbsentWithExpiryOperation(String name, Data dataKey, Data value, long ttl, long maxIdle, IMap.ReadPolicy readPolicy) {
+        super(name, dataKey, value, readPolicy);
         this.ttl = ttl;
         this.maxIdle = maxIdle;
     }

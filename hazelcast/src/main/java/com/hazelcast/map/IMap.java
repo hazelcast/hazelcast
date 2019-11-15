@@ -230,6 +230,10 @@ import java.util.concurrent.TimeUnit;
  * @see java.util.concurrent.ConcurrentMap
  */
 public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
+    enum ReadPolicy {
+        LATEST_WRITE,
+        WEAK
+    }
 
     /**
      * {@inheritDoc}
@@ -1430,6 +1434,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                              is {@code null}
      */
     V putIfAbsent(@Nonnull K key, @Nonnull V value, long ttl, @Nonnull TimeUnit ttlUnit);
+
+    V putIfAbsent(@Nonnull K key, @Nonnull V value, @Nonnull ReadPolicy readPolicy);
 
     /**
      * Puts an entry into this map with a given TTL (time to live) value and

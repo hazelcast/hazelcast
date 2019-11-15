@@ -217,7 +217,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return isTtlDefined(ttl) || isMaxIdleDefined(maxIdle);
     }
 
-
     @Override
     public Record getOrNullIfExpired(Record record, long now, boolean backup) {
         if (!isRecordStoreExpirable()) {

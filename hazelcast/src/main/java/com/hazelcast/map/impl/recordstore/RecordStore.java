@@ -68,7 +68,7 @@ public interface RecordStore<R extends Record> {
      */
     Object put(Data dataKey, Object dataValue, long ttl, long maxIdle);
 
-    Object putIfAbsent(Data dataKey, Object value, long ttl, long maxIdle, Address callerAddress);
+    Object putIfAbsent(Data dataKey, Object value, long ttl, long maxIdle, Address callerAddress, IMap.ReadPolicy readPolicy);
 
     /**
      * @param key        the key

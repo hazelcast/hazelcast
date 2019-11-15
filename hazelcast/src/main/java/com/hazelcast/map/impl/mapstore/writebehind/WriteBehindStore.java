@@ -74,7 +74,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final AtomicLong sequence = new AtomicLong(0);
 
     /**
-     * @see {@link com.hazelcast.config.MapStoreConfig#setWriteCoalescing(boolean)}
+     * @see com.hazelcast.config.MapStoreConfig#setWriteCoalescing(boolean)
      */
     private final boolean coalesce;
     private final int partitionId;
@@ -245,7 +245,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         // This may be a value with expirationTime. So we need
         // to return an ExtendedValue
         if (isWithExpirationTime() && delayedEntry.getValue() != null) {
-            return new MetadataAwareValue(toObject(delayedEntry.getValue()), delayedEntry.getExpirationTime());
+            return new MetadataAwareValue<>(toObject(delayedEntry.getValue()), delayedEntry.getExpirationTime());
         }
         return toObject(delayedEntry.getValue());
     }
