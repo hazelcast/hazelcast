@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl;
 
+import com.google.common.collect.ImmutableMap;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -95,6 +97,9 @@ public class LocalMapStatsProviderTest {
         MapContainer mapContainer = mock(MapContainer.class);
         doReturn(MAP_CONFIG).when(mapContainer).getMapConfig();
         doReturn(mapContainer).when(serviceContext).getMapContainer(MAP_NAME);
+        Config config = new Config();
+        config.setMapConfigs(ImmutableMap.of(MAP_NAME, MAP_CONFIG));
+        doReturn(config).when(nodeEngine).getConfig();
         return mapContainer;
     }
 

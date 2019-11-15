@@ -82,7 +82,7 @@ public class LocalMapStatsProvider {
     }
 
     private LocalMapStatsImpl initializeLocalMapStats(String mapName) {
-        return LocalMapStatsImpl.initForConfig(mapServiceContext.getMapContainer(mapName).getMapConfig());
+        return LocalMapStatsImpl.initForConfig(nodeEngine.getConfig().getMapConfig(mapName));
     }
 
     protected MapServiceContext getMapServiceContext() {
