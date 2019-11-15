@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a replicated map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("5b3f7d61cedaffe4685e9f38b2ada1f0")
+@Generated("3a2f16f9aabc20258d77cc359a9cf2e8")
 public final class DynamicConfigAddReplicatedMapConfigCodec {
     //hex: 0x1B0600
     public static final int REQUEST_MESSAGE_TYPE = 1771008;
@@ -80,7 +80,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
 
         /**
          * class name of a class implementing
-         * {@code com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy} to merge entries
+         * {@link com.hazelcast.spi.merge.SplitBrainMergePolicy} to merge entries
          * while recovering from a split brain
          */
         public java.lang.String mergePolicy;

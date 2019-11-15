@@ -269,6 +269,16 @@ public final class ProxyManager {
 
     public ClientProxy getOrCreateProxy(@Nonnull String service,
                                         @Nonnull String id) {
+        return getOrCreateProxyInternal(service, id, true);
+    }
+
+    public ClientProxy getOrCreateLocalProxy(@Nonnull String service,
+                                             @Nonnull String id) {
+        return getOrCreateProxyInternal(service, id, false);
+    }
+
+    private ClientProxy getOrCreateProxyInternal(@Nonnull String service,
+                                                 @Nonnull String id, boolean remote) {
         checkNotNull(service, "Service name is required!");
         checkNotNull(id, "Object name is required!");
 
@@ -289,7 +299,11 @@ public final class ProxyManager {
 
         try {
             ClientProxy clientProxy = createClientProxy(id, factory);
-            initializeWithRetry(clientProxy);
+            if (remote) {
+                initializeWithRetry(clientProxy);
+            } else {
+                clientProxy.onInitialize();
+            }
             proxyFuture.set(clientProxy);
             return clientProxy;
         } catch (Throwable e) {

@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -32,8 +34,8 @@ import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.partition.IPartition;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Collections;
@@ -41,13 +43,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 public class QueryOperation extends AbstractNamedOperation implements ReadonlyOperation {
+
     private Query query;
-    private Result result;
+
+    private transient Result result;
+    private transient CallStatus callStatus;
 
     public QueryOperation() {
     }
@@ -57,15 +63,27 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
         this.query = query;
     }
 
+    private InMemoryFormat getMapInMemoryFormat() {
+        MapContainer mapContainer = getMapServiceContext().getMapContainer(name);
+        return mapContainer.getMapConfig().getInMemoryFormat();
+    }
+
+    private MapServiceContext getMapServiceContext() {
+        MapService mapService = getService();
+        return mapService.getMapServiceContext();
+    }
+
     @Override
     public CallStatus call() throws Exception {
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        callStatus = callInternal();
+        return callStatus;
+    }
 
-        QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
-        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+    @Nonnull
+    private CallStatus callInternal() {
+        QueryRunner queryRunner = getMapServiceContext().getMapQueryRunner(getName());
 
-        switch (mapContainer.getMapConfig().getInMemoryFormat()) {
+        switch (getMapInMemoryFormat()) {
             case BINARY:
             case OBJECT:
                 result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
@@ -74,7 +92,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                 BitSet localPartitions = localPartitions();
                 if (localPartitions.cardinality() == 0) {
                     // important to deal with situation of not having any partitions
-                    result = queryRunner.populateEmptyResult(query, Collections.<Integer>emptyList());
+                    result = queryRunner.populateEmptyResult(query, Collections.emptyList());
                     return DONE_RESPONSE;
                 } else {
                     return new OffloadedImpl(queryRunner, localPartitions);
@@ -113,11 +131,14 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        // This is required since if the returnsResponse() method returns false
-        // there won't be any response sent to the invoking party - this means
-        // that the operation won't be retried if the exception is instanceof
-        // HazelcastRetryableException
-        sendResponse(e);
+        if (callStatus != null
+                && callStatus.ordinal() == OFFLOAD_ORDINAL) {
+            // This is required since if the returnsResponse() method returns false
+            // there won't be any response sent to the invoking party - this means
+            // that the operation won't be retried if the exception is instanceof
+            // HazelcastRetryableException
+            sendResponse(e);
+        }
     }
 
     @Override

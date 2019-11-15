@@ -30,8 +30,7 @@ public class DurableExecutorPartitionContainer {
     private final int partitionId;
     private final NodeEngineImpl nodeEngine;
 
-    private final Map<String, DurableExecutorContainer> executorContainerMap
-            = new HashMap<String, DurableExecutorContainer>();
+    private final Map<String, DurableExecutorContainer> executorContainerMap = new HashMap<>();
 
     public DurableExecutorPartitionContainer(NodeEngineImpl nodeEngine, int partitionId) {
         this.nodeEngine = nodeEngine;
@@ -54,7 +53,7 @@ public class DurableExecutorPartitionContainer {
     }
 
     public Operation prepareReplicationOperation(int replicaIndex) {
-        HashMap<String, DurableExecutorContainer> map = new HashMap<String, DurableExecutorContainer>();
+        HashMap<String, DurableExecutorContainer> map = new HashMap<>();
         for (DurableExecutorContainer executorContainer : executorContainerMap.values()) {
             if (replicaIndex > executorContainer.getDurability()) {
                 continue;

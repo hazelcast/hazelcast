@@ -17,15 +17,15 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.LazyEntryViewFromRecord;
-import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.Storage;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.LazyEvictableEntryView;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.Storage;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
@@ -34,17 +34,20 @@ import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThr
  * Evictor helper methods.
  */
 public class EvictorImpl implements Evictor {
+
     protected final EvictionChecker evictionChecker;
+    protected final EvictionPolicyComparator policy;
     protected final IPartitionService partitionService;
-    protected final MapEvictionPolicy mapEvictionPolicy;
 
     private final int batchSize;
 
-    public EvictorImpl(MapEvictionPolicy mapEvictionPolicy,
-                       EvictionChecker evictionChecker, IPartitionService partitionService, int batchSize) {
+    public EvictorImpl(EvictionPolicyComparator policy,
+                       EvictionChecker evictionChecker, int batchSize,
+                       IPartitionService partitionService) {
+
         this.evictionChecker = checkNotNull(evictionChecker);
         this.partitionService = checkNotNull(partitionService);
-        this.mapEvictionPolicy = checkNotNull(mapEvictionPolicy);
+        this.policy = checkNotNull(policy);
         this.batchSize = batchSize;
     }
 
@@ -53,46 +56,46 @@ public class EvictorImpl implements Evictor {
         assertRunningOnPartitionThread();
 
         for (int i = 0; i < batchSize; i++) {
-            EntryView evictableEntry = selectEvictableEntry(recordStore, excludedKey);
-            if (evictableEntry == null) {
+            EntryView entryView = selectEvictableEntry(recordStore, excludedKey);
+            if (entryView == null) {
                 return;
             }
-            evictEntry(recordStore, evictableEntry);
+            evictEntry(recordStore, entryView);
         }
     }
 
     @Override
     public void forceEvict(RecordStore recordStore) {
-
+        // NOP.
     }
 
+    @SuppressWarnings("checkstyle:rvcheckcomparetoforspecificreturnvalue")
     private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {
-        Iterable<EntryView> samples = getSamples(recordStore);
         EntryView excluded = null;
         EntryView selected = null;
 
-        for (EntryView candidate : samples) {
-            if (excludedKey != null && excluded == null && getDataKey(candidate).equals(excludedKey)) {
-                excluded = candidate;
+        for (EntryView current : getRandomSamples(recordStore)) {
+            if (excludedKey != null && excluded == null
+                    && getDataKey(current).equals(excludedKey)) {
+                excluded = current;
                 continue;
             }
 
-            if (selected == null) {
-                selected = candidate;
-            } else if (mapEvictionPolicy.compare(candidate, selected) < 0) {
-                selected = candidate;
+            if (selected == null
+                    || policy.compare(current, selected) < 0) {
+                selected = current;
             }
         }
 
         return selected == null ? excluded : selected;
     }
 
-    private Data getDataKey(EntryView candidate) {
-        return getRecordFromEntryView(candidate).getKey();
+    private Data getDataKey(EntryView evictable) {
+        return getRecordFromEntryView(evictable).getKey();
     }
 
-    private void evictEntry(RecordStore recordStore, EntryView selectedEntry) {
-        Record record = getRecordFromEntryView(selectedEntry);
+    private void evictEntry(RecordStore recordStore, EntryView evictable) {
+        Record record = getRecordFromEntryView(evictable);
         Data key = record.getKey();
 
         if (recordStore.isLocked(record.getKey())) {
@@ -115,8 +118,8 @@ public class EvictorImpl implements Evictor {
     }
 
     // this method is overridden in another context.
-    protected Record getRecordFromEntryView(EntryView selectedEntry) {
-        return ((LazyEntryViewFromRecord) selectedEntry).getRecord();
+    protected Record getRecordFromEntryView(EntryView evictableEntryView) {
+        return ((LazyEvictableEntryView) evictableEntryView).getRecord();
     }
 
     protected boolean isBackup(RecordStore recordStore) {
@@ -125,7 +128,7 @@ public class EvictorImpl implements Evictor {
         return !partition.isLocal();
     }
 
-    protected Iterable<EntryView> getSamples(RecordStore recordStore) {
+    protected Iterable<EntryView> getRandomSamples(RecordStore recordStore) {
         Storage storage = recordStore.getStorage();
         return storage.getRandomSamples(SAMPLE_COUNT);
     }
@@ -137,7 +140,7 @@ public class EvictorImpl implements Evictor {
     @Override
     public String toString() {
         return "EvictorImpl{"
-                + ", mapEvictionPolicy=" + mapEvictionPolicy
+                + ", evictionPolicyComparator=" + policy
                 + ", batchSize=" + batchSize
                 + '}';
     }

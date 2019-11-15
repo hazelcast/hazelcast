@@ -18,7 +18,6 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.config.mergepolicies.ComplexCustomMergePolicy;
@@ -101,7 +100,7 @@ public class MergePolicyValidatorCacheIntegrationTest extends AbstractMergePolic
     public void testCache_withComplexCustomMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("complexCustom", complexCustomMergePolicy);
 
-        expectedException.expect(InvalidConfigurationException.class);
+        expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage(containsString(complexCustomMergePolicy.getPolicy()));
         expectedException.expectMessage(containsString(MergingCosts.class.getName()));
         hz.getCacheManager().getCache("complexCustom");
@@ -118,7 +117,7 @@ public class MergePolicyValidatorCacheIntegrationTest extends AbstractMergePolic
     public void testCache_withCustomMapMergePolicyNoTypeVariable() {
         HazelcastInstance hz = getHazelcastInstance("customMapNoTypeVariable", customMapMergePolicyNoTypeVariable);
 
-        expectedException.expect(InvalidConfigurationException.class);
+        expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage(containsString(customMapMergePolicyNoTypeVariable.getPolicy()));
         expectedException.expectMessage(containsString(MapMergeTypes.class.getName()));
         hz.getCacheManager().getCache("customMapNoTypeVariable");
@@ -135,9 +134,21 @@ public class MergePolicyValidatorCacheIntegrationTest extends AbstractMergePolic
     public void testCache_withCustomMapMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("customMap", customMapMergePolicy);
 
-        expectedException.expect(InvalidConfigurationException.class);
+        expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage(containsString(customMapMergePolicy.getPolicy()));
         expectedException.expectMessage(containsString(MapMergeTypes.class.getName()));
         hz.getCacheManager().getCache("customMap");
+    }
+
+    @Override
+    void expectCardinalityEstimatorException() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(containsString("CardinalityEstimator"));
+    }
+
+    @Override
+    void expectedInvalidMergePolicyException() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(containsString(invalidMergePolicyConfig.getPolicy()));
     }
 }

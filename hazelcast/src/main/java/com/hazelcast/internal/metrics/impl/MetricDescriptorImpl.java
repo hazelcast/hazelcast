@@ -40,6 +40,7 @@ import static java.util.Objects.requireNonNull;
 public final class MetricDescriptorImpl implements MetricDescriptor {
     private static final int INITIAL_TAG_CAPACITY = 4;
     private static final double GROW_FACTOR = 1.2D;
+    private static final int INITIAL_STRING_CAPACITY = 64;
 
     private final LookupView lookupView = new LookupView();
 
@@ -64,8 +65,8 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
     public MetricDescriptorImpl withTag(String tag, String value) {
         ensureCapacity(tagPtr);
 
-        tags[tagPtr] = tag;
-        tags[tagPtr + 1] = value;
+        tags[tagPtr] = requireNonNull(tag);
+        tags[tagPtr + 1] = requireNonNull(value);
         tagPtr += 2;
         return this;
     }
@@ -74,7 +75,7 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
     @Override
     public String tagValue(String tag) {
         Objects.requireNonNull(tag);
-        for (int i = 0; i < tags.length; i += 2) {
+        for (int i = 0; i < tagPtr; i += 2) {
             String tagStored = tags[i];
             String tagValue = tags[i + 1];
             if (tag.equals(tagStored)) {
@@ -192,8 +193,8 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
     @Override
     public String tag(int index) {
         index = index << 1;
-        if (index < 0 || index >= tags.length) {
-            return null;
+        if (index < 0 || index >= tagPtr) {
+            throw new IndexOutOfBoundsException();
         }
 
         return tags[index];
@@ -202,8 +203,8 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
     @Override
     public String tagValue(int index) {
         index = (index << 1) + 1;
-        if (index < 0 || index >= tags.length) {
-            return null;
+        if (index < 0 || index >= tagPtr) {
+            throw new IndexOutOfBoundsException();
         }
 
         return tags[index];
@@ -215,59 +216,50 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
         return buildMetricString(false);
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private String buildMetricString(boolean includeExcludedTargets) {
-        StringBuilder sb = new StringBuilder().append('[');
+        StringBuilder sb = new StringBuilder(INITIAL_STRING_CAPACITY).append('[');
 
         if (discriminatorValue != null) {
-            sb.append(discriminator).append('=').append(discriminatorValue);
+            sb.append(discriminator).append('=').append(discriminatorValue).append(',');
         }
 
         if (unit != null) {
-            if (sb.length() > 1) {
-                sb.append(',');
-            }
-            sb.append("unit=").append(unit.name().toLowerCase());
+            sb.append("unit=").append(unit.name().toLowerCase()).append(',');
         }
 
         if (metric != null) {
-            if (sb.length() > 1) {
-                sb.append(',');
-            }
             sb.append("metric=");
-
             if (prefix != null) {
                 sb.append(prefix).append('.');
             }
             sb.append(metric);
+            sb.append(',');
         }
 
         for (int i = 0; i < tagPtr; i += 2) {
-            if (sb.length() > 1) {
-                sb.append(',');
-            }
-
             String tag = tags[i];
             String tagValue = tags[i + 1];
-            sb.append(tag).append('=').append(tagValue);
+            sb.append(tag).append('=').append(tagValue).append(',');
         }
 
         if (includeExcludedTargets) {
-            if (sb.length() > 1) {
-                sb.append(',');
-            }
             sb.append("excludedTargets={");
-            int i = 0;
-            for (MetricTarget target : excludedTargets) {
-                if (i++ != 0) {
-                    sb.append(',');
+            if (excludedTargets.isEmpty()) {
+                sb.append('}');
+            } else {
+                for (MetricTarget target : excludedTargets) {
+                    sb.append(target.name()).append(',');
                 }
-                sb.append(target.name());
+                sb.setCharAt(sb.length() - 1, '}');
             }
-            sb.append('}');
+            sb.append(',');
         }
 
-        sb.append(']');
+        if (sb.length() > 1) {
+            sb.setCharAt(sb.length() - 1, ']');
+        } else {
+            sb.append(']');
+        }
 
         return sb.toString();
     }
@@ -322,9 +314,9 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
         if (newCapacity % 2 != 0) {
             newCapacity++;
         }
-        String[] newTagIds = new String[newCapacity];
-        System.arraycopy(tags, 0, newTagIds, 0, tags.length);
-        tags = newTagIds;
+        String[] newTags = new String[newCapacity];
+        System.arraycopy(tags, 0, newTags, 0, tags.length);
+        tags = newTags;
     }
 
     @Override
@@ -363,19 +355,20 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
 
         // since we already checked that the two descriptors have the same number
         // of tags, we can safely compare them from only one side but we need
-        // to compare pairs
+        // to compare pairs. The order of tags doesn't matter.
+        outer:
         for (int i = 0; i < tagPtr; i += 2) {
             String thisTag = tags[i];
             String thisTagValue = tags[i + 1];
-            boolean match = false;
-            for (int j = 0; j < that.tagPtr && !match; j += 2) {
+            for (int j = 0; j < that.tagPtr; j += 2) {
                 String thatTag = that.tags[j];
                 String thatTagValue = that.tags[j + 1];
-                match = thisTag.equals(thatTag) && thisTagValue.equals(thatTagValue);
+                if (thisTag.equals(thatTag) && thisTagValue.equals(thatTagValue)) {
+                    continue outer;
+                }
             }
-            if (!match) {
-                return false;
-            }
+            // no match
+            return false;
         }
         return true;
     }
@@ -432,7 +425,7 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
 
     /**
      * Reduced view of the {@link MetricDescriptorImpl}. Used for looking
-     * up for {@link Gauge}s.
+     * up {@link Gauge}s.
      */
     public class LookupView {
 

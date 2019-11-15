@@ -18,12 +18,12 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,9 +40,9 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LazyEntryViewFromRecordTest {
+public class LazyEvictableEntryViewTest {
 
-    private static final int ENTRY_VIEW_COST_IN_BYTES = 73 + 4 * REFERENCE_COST_IN_BYTES;
+    private static final int ENTRY_VIEW_COST_IN_BYTES = 77 + 3 * REFERENCE_COST_IN_BYTES;
 
     private final String key = "key";
     private final String value = "value";
@@ -65,7 +65,7 @@ public class LazyEntryViewFromRecordTest {
         DataRecordFactory dataRecordFactory
                 = new DataRecordFactory(mapConfig, serializationService, mockPartitioningStrategy);
         recordInstance = dataRecordFactory.newRecord(serializationService.toData(key), value);
-        return new LazyEntryViewFromRecord(recordInstance, serializationService);
+        return new LazyEvictableEntryView(recordInstance, serializationService);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class LazyEntryViewFromRecordTest {
 
     @Test
     public void test_getRecord() throws Exception {
-        assertEquals(recordInstance, ((LazyEntryViewFromRecord) view).getRecord());
+        assertEquals(recordInstance, ((LazyEvictableEntryView) view).getRecord());
     }
 
     @Test

@@ -20,19 +20,19 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
-import com.hazelcast.client.impl.spi.impl.listener.ClientEventRegistration;
+import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
@@ -45,6 +45,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -461,13 +462,12 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
             @Override
             public void run() throws Exception {
                 int size = smartRouting ? clusterSize : 1;
-                Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client,
+                Map<Connection, ClientConnectionRegistration> registrations = getClientEventRegistrations(client,
                         registrationId);
                 assertEquals(size, registrations.size());
                 if (smartRouting) {
                     Collection<Member> members = clientInstanceImpl.getClientClusterService().getMemberList();
-                    for (ClientEventRegistration registration : registrations) {
-                        Connection registeredSubscriber = registration.getSubscriber();
+                    for (Connection registeredSubscriber : registrations.keySet()) {
                         boolean contains = false;
                         for (Member member : members) {
                             contains |= registeredSubscriber.getEndPoint().equals(member.getAddress());
@@ -476,9 +476,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                                 contains);
                     }
                 } else {
-                    ClientEventRegistration registration = registrations.iterator().next();
+                    Connection subscriber = registrations.keySet().iterator().next();
                     assertEquals(clientInstanceImpl.getConnectionManager().getActiveConnections().iterator().next().getEndPoint(),
-                            registration.getSubscriber().getEndPoint());
+                            subscriber.getEndPoint());
                 }
             }
         });
@@ -516,7 +516,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         instances[randNode].getLifecycleService().terminate();
     }
 
-    private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
+    private Map<Connection, ClientConnectionRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
         AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
         return listenerService.getActiveRegistrations(id);

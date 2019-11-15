@@ -17,7 +17,7 @@
 package com.hazelcast.spi.exception;
 
 /**
- * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that indicates operation is send to a
+ * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that indicates operation was sent to a
  * machine that isn't member of the cluster.
  */
 public class TargetNotMemberException extends RetryableHazelcastException {

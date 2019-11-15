@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,7 +41,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
  * <li>{@link MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
- * <li>{@value MapConfig#DEFAULT_MAX_SIZE as maximum size for on-heap {@link com.hazelcast.map.IMap}</li>
+ * <li>{@value MapConfig#DEFAULT_MAX_SIZE as maximum
+ * size for on-heap {@link com.hazelcast.map.IMap}</li>
  * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size
  *      for all other data structures and configurations</li>
  * </ul>
@@ -202,9 +203,11 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     }
 
     /**
-     * Returns the instance of the configured {@link EvictionPolicyComparator} implementation.
+     * Returns the instance of the configured {@link
+     * EvictionPolicyComparator} implementation.
      *
-     * @return the instance of the configured {@link EvictionPolicyComparator} implementation
+     * @return the instance of the configured {@link
+     * EvictionPolicyComparator} implementation
      */
     @Override
     public EvictionPolicyComparator getComparator() {
@@ -221,6 +224,8 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
      * @param comparator the instance of the configured
      *                   {@link EvictionPolicyComparator} implementation
      * @return this EvictionConfig instance
+     * @see com.hazelcast.map.MapEvictionPolicyComparator
+     * @see com.hazelcast.cache.CacheEvictionPolicyComparator
      */
     public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
         this.comparator = checkNotNull(comparator,

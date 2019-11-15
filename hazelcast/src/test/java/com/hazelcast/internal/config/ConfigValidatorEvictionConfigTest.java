@@ -22,8 +22,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
-import com.hazelcast.internal.eviction.EvictableEntryView;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -47,7 +45,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkCacheEvictionConfig(getEvictionConfig(false, false));
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void checkEvictionConfig_forCache_when_wrong_max_size_policy() {
         EvictionConfig evictionConfig = getEvictionConfig(false, false);
         evictionConfig.setMaxSizePolicy(MaxSizePolicy.PER_PARTITION);
@@ -237,7 +235,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkCacheMaxSizePolicy(evictionConfig.getMaxSizePolicy(), InMemoryFormat.BINARY);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void checkEvictionConfig_withEntryCountMaxSizePolicy_NATIVE() {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);
@@ -273,16 +271,7 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
             evictionConfig.setComparatorClassName("myComparatorClass");
         }
         if (setComparator) {
-            evictionConfig.setComparator(new EvictionPolicyComparator() {
-                @Override
-                public int compare(EvictableEntryView e1, EvictableEntryView e2) {
-                    return 0;
-                }
-
-                public int compare(Object o1, Object o2) {
-                    return 0;
-                }
-            });
+            evictionConfig.setComparator((o1, o2) -> 0);
         }
         evictionConfig.setEvictionPolicy(evictionPolicy);
         return evictionConfig;

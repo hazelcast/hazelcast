@@ -14,25 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache;
+package com.hazelcast.map;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 /**
- * {@link ICache} specific {@link EvictionPolicyComparator}
- * for comparing {@link CacheEntryView}s to be evicted.
+ * {@link IMap} specific {@link EvictionPolicyComparator} for
+ * comparing {@link com.hazelcast.core.EntryView}s to be evicted.
  *
  * @param <K> type of the key
  * @param <V> type of the value
  * @see EvictionPolicyComparator
- * @see CacheEntryView
+ * @see EntryView
  */
 @FunctionalInterface
-public interface CacheEvictionPolicyComparator<K, V>
-        extends EvictionPolicyComparator<K, V, CacheEntryView<K, V>> {
+public interface MapEvictionPolicyComparator<K, V>
+        extends EvictionPolicyComparator<K, V, EntryView<K, V>> {
 
     /**
-     * Compares the given {@link CacheEntryView} instances and
+     * Compares the given {@link EntryView} instances and
      * returns the result. The result should be one of
      * <ul>
      *   <li>-1: first entry has higher priority to be evicted</li>
@@ -40,10 +41,10 @@ public interface CacheEvictionPolicyComparator<K, V>
      *   <li> 0: both entries have same priority</li>
      * </ul>
      *
-     * @param o1 the first {@link CacheEntryView} instance to be compared
-     * @param o2 the second {@link CacheEntryView} instance to be compared
+     * @param o1 the first {@link EntryView} instance to be compared
+     * @param o2 the second {@link EntryView} instance to be compared
      * @return the result of comparison
      */
     @Override
-    int compare(CacheEntryView<K, V> o1, CacheEntryView<K, V> o2);
+    int compare(EntryView<K, V> o1, EntryView<K, V> o2);
 }

@@ -6764,18 +6764,16 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(anInt, parameters.asyncBackupCount));
         assertTrue(isEqual(anInt, parameters.timeToLiveSeconds));
         assertTrue(isEqual(anInt, parameters.maxIdleSeconds));
-        assertTrue(isEqual(aString, parameters.evictionPolicy));
+        assertTrue(isEqual(anEvictionConfigHolder, parameters.evictionConfig));
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(aString, parameters.cacheDeserializedValues));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(aString, parameters.inMemoryFormat));
         assertTrue(isEqual(aListOfListenerConfigHolders, parameters.listenerConfigs));
         assertTrue(isEqual(aListOfListenerConfigHolders, parameters.partitionLostListenerConfigs));
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
         assertTrue(isEqual(aString, parameters.splitBrainProtectionName));
-        assertTrue(isEqual(aData, parameters.mapEvictionPolicy));
-        assertTrue(isEqual(aString, parameters.maxSizeConfigMaxSizePolicy));
-        assertTrue(isEqual(anInt, parameters.maxSizeConfigSize));
         assertTrue(isEqual(aMapStoreConfigHolder, parameters.mapStoreConfig));
         assertTrue(isEqual(aNearCacheConfigHolder, parameters.nearCacheConfig));
         assertTrue(isEqual(aWanReplicationRef, parameters.wanReplicationRef));
@@ -6787,7 +6785,6 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(aHotRestartConfig, parameters.hotRestartConfig));
         assertTrue(isEqual(anEventJournalConfig, parameters.eventJournalConfig));
         assertTrue(isEqual(aMerkleTreeConfig, parameters.merkleTreeConfig));
-        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
     }
 
@@ -6841,6 +6838,7 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(aString, parameters.inMemoryFormat));
         assertTrue(isEqual(aString, parameters.splitBrainProtectionName));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(aBoolean, parameters.disablePerEntryInvalidationEvents));
         assertTrue(isEqual(aListOfListenerConfigHolders, parameters.partitionLostListenerConfigs));
         assertTrue(isEqual(aString, parameters.expiryPolicyFactoryClassName));
@@ -7283,7 +7281,7 @@ public class MemberCompatibilityTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
-     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
+    private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
         ClientMessage.ForwardFrameIterator binaryFrameIterator = binaryMessage.frameIterator();

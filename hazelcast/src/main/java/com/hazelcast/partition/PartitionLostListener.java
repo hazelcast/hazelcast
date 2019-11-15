@@ -63,6 +63,7 @@ import java.util.EventListener;
  * @see PartitionService
  * @since 3.5
  */
+@FunctionalInterface
 public interface PartitionLostListener extends EventListener {
 
     /**

@@ -20,18 +20,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
-import com.hazelcast.config.MaxSizePolicy;
-import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -74,23 +69,14 @@ public class AddMapConfigMessageTask
         config.setAttributeConfigs(parameters.attributeConfigs);
         config.setReadBackupData(parameters.readBackupData);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
-        if (parameters.mapEvictionPolicy != null) {
-            MapEvictionPolicy evictionPolicy = serializationService.toObject(parameters.mapEvictionPolicy);
-            config.setMapEvictionPolicy(evictionPolicy);
-        }
         config.setIndexConfigs(parameters.indexConfigs);
         if (parameters.mapStoreConfig != null) {
             config.setMapStoreConfig(parameters.mapStoreConfig.asMapStoreConfig(serializationService));
         }
         config.setTimeToLiveSeconds(parameters.timeToLiveSeconds);
         config.setMaxIdleSeconds(parameters.maxIdleSeconds);
-        config.setEvictionConfig(new EvictionConfig()
-                .setEvictionPolicy(EvictionPolicy.valueOf(parameters.evictionPolicy))
-                .setMaxSizePolicy(MaxSizePolicy.valueOf(parameters.maxSizeConfigMaxSizePolicy))
-                .setSize(parameters.maxSizeConfigSize));
-
-        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
-        config.setMergePolicyConfig(mergePolicyConfig);
+        config.setEvictionConfig(parameters.evictionConfig.asEvictionConfg(serializationService));
+        config.setMergePolicyConfig(mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize));
         if (parameters.nearCacheConfig != null) {
             config.setNearCacheConfig(parameters.nearCacheConfig.asNearCacheConfig(serializationService));
         }

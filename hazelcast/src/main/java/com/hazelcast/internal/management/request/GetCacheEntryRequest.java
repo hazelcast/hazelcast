@@ -83,7 +83,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             result.add("cacheBrowse_class", value != null ? value.getClass().getName() : "null");
             result.add("date_cache_creation_time", Long.toString(cacheEntry.getCreationTime()));
             result.add("date_cache_expiration_time", Long.toString(cacheEntry.getExpirationTime()));
-            result.add("cacheBrowse_hits", Long.toString(cacheEntry.getAccessHit()));
+            result.add("cacheBrowse_hits", Long.toString(cacheEntry.getHits()));
             result.add("date_cache_access_time", Long.toString(cacheEntry.getLastAccessTime()));
         }
         root.add("result", result);
@@ -145,7 +145,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             this.expirationTime = record.getExpirationTime();
             this.creationTime = record.getCreationTime();
             this.lastAccessTime = record.getLastAccessTime();
-            this.accessHit = record.getAccessHit();
+            this.accessHit = record.getHits();
             this.expiryPolicy = record.getExpiryPolicy();
         }
 
@@ -175,7 +175,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
 
         @Override
-        public long getAccessHit() {
+        public long getHits() {
             return accessHit;
         }
 

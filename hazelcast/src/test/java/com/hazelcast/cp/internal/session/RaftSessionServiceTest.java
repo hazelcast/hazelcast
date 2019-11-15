@@ -247,6 +247,13 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
 
         SessionResponse response = invocationManager.<SessionResponse>invoke(groupId, newCreateSessionOp()).get();
 
+        spawn(() -> {
+            for (int i = 0; i < 30; i++) {
+                invocationManager.invoke(groupId, new HeartbeatSessionOp(response.getSessionId())).joinInternal();
+                sleepAtLeastSeconds(5);
+            }
+        });
+
         for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
             invocationManager.invoke(groupId, new RaftTestApplyOp("value" + i)).get();
         }

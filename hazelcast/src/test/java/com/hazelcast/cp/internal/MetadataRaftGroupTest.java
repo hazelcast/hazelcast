@@ -324,6 +324,13 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         instances = newInstances(cpNodeCount, metadataGroupSize, 0);
 
         CPGroupId groupId = createNewRaftGroup(instances[0], "id", cpNodeCount);
+
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                assertNotNull(getRaftNode(instance, groupId));
+            }
+        });
+
         destroyRaftGroup(instances[0], groupId);
 
         assertTrueEventually(() -> {

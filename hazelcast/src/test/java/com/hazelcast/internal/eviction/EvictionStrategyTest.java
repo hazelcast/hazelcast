@@ -97,8 +97,8 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         }
 
         @Override
-        public long getAccessHit() {
-            return getEvictable().getAccessHit();
+        public long getHits() {
+            return getEvictable().getHits();
         }
     }
 
