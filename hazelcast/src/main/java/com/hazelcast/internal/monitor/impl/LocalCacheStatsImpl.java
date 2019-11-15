@@ -248,6 +248,7 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
                 + ", averageGetTime=" + averageGetTime
                 + ", averagePutTime=" + averagePutTime
                 + ", averageRemoveTime=" + averageRemoveTime
+                + ", inMemoryFormat='" + inMemoryFormat + "'"
                 + '}';
     }
 }

@@ -49,6 +49,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.MapUtil;
@@ -661,8 +662,12 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             if (configFuture.isDone()) {
                 try {
                     localCacheStats.setInMemoryFormat(configFuture.get().getInMemoryFormat());
-                } catch (InterruptedException | ExecutionException e) {
+                } catch (InterruptedException e) {
                     logger.severe(e);
+                    Thread.currentThread().interrupt();
+                    throw ExceptionUtil.rethrow(e);
+                } catch (ExecutionException e) {
+
                 }
             }
             stats.put(cacheName, localCacheStats);

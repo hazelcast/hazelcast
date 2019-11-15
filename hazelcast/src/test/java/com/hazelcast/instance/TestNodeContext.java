@@ -47,13 +47,6 @@ import static org.mockito.Mockito.when;
 
 public class TestNodeContext implements NodeContext {
 
-    public static NetworkingService mockNs() {
-        NetworkingService ns = mock(NetworkingService.class);
-        when(ns.getEndpointManager(ArgumentMatchers.<EndpointQualifier>any())).thenReturn(mock(EndpointManager.class));
-        when(ns.getAggregateEndpointManager()).thenReturn(mock(AggregateEndpointManager.class));
-        return ns;
-    }
-
     private final Address address;
     private final NodeExtension nodeExtension;
     private final NetworkingService networkingService;
@@ -146,6 +139,13 @@ public class TestNodeContext implements NodeContext {
         public Map<EndpointQualifier, ServerSocketChannel> getServerSocketChannels() {
             return null;
         }
+    }
+
+    public static NetworkingService mockNs() {
+        NetworkingService ns = mock(NetworkingService.class);
+        when(ns.getEndpointManager(ArgumentMatchers.<EndpointQualifier>any())).thenReturn(mock(EndpointManager.class));
+        when(ns.getAggregateEndpointManager()).thenReturn(mock(AggregateEndpointManager.class));
+        return ns;
     }
 
 }
