@@ -48,7 +48,7 @@ public class ClientSelectorManagementCenterClientTest extends HazelcastTestSuppo
     }
 
     @Test
-    public void testManagementCenterClient_doesNotGetDisconnected() throws InterruptedException {
+    public void testManagementCenterClient_doesNotGetDisconnected() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         final ClientEngineImpl clientEngineImpl = getClientEngineImpl(instance);
@@ -59,10 +59,10 @@ public class ClientSelectorManagementCenterClientTest extends HazelcastTestSuppo
 
         clientEngineImpl.applySelector(ClientSelectors.none());
 
-        sleepSeconds(3);
-
-        Collection<ClientEndpoint> endpoints = clientEngineImpl.getEndpointManager().getEndpoints();
-        assertEquals(1, endpoints.size());
+        assertTrueAllTheTime(() -> {
+            Collection<ClientEndpoint> endpoints = clientEngineImpl.getEndpointManager().getEndpoints();
+            assertEquals(1, endpoints.size());
+        }, 10);
     }
 
 }
