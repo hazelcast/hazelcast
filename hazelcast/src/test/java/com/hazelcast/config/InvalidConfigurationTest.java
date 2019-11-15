@@ -127,11 +127,6 @@ public class InvalidConfigurationTest {
     }
 
     @Test
-    public void testWhenValid_MapEvictionPolicy() {
-        buildConfig("map-eviction-policy", "NONE");
-    }
-
-    @Test
     public void testWhenInvalid_MultiMapBackupCount() {
         expectInvalid();
         buildConfig("multimap-backup-count", getInvalidBackupCount());

@@ -30,6 +30,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
@@ -65,6 +66,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperation;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigPreJoinOperation;
@@ -72,9 +74,6 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.map.eviction.LFUEvictionPolicy;
-import com.hazelcast.map.eviction.LRUEvictionPolicy;
-import com.hazelcast.map.eviction.RandomEvictionPolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -148,8 +147,10 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int AWS_CONFIG = 56;
     public static final int DISCOVERY_CONFIG = 57;
     public static final int DISCOVERY_STRATEGY_CONFIG = 58;
+    public static final int WAN_REPLICATION_REF = 59;
+    public static final int EVICTION_CONFIG = 60;
 
-    private static final int LEN = DISCOVERY_STRATEGY_CONFIG + 1;
+    private static final int LEN = EVICTION_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -172,9 +173,6 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[LISTENER_CONFIG] = arg -> new ListenerConfig();
         constructors[ENTRY_LISTENER_CONFIG] = arg -> new EntryListenerConfig();
         constructors[MAP_CONFIG] = arg -> new MapConfig();
-        constructors[RANDOM_EVICTION_POLICY] = arg -> new RandomEvictionPolicy();
-        constructors[LFU_EVICTION_POLICY] = arg -> new LFUEvictionPolicy();
-        constructors[LRU_EVICTION_POLICY] = arg -> new LRUEvictionPolicy();
         constructors[MAP_STORE_CONFIG] = arg -> new MapStoreConfig();
         constructors[MAP_PARTITION_LOST_LISTENER_CONFIG] = arg -> new MapPartitionLostListenerConfig();
         constructors[INDEX_CONFIG] = arg -> new IndexConfig();
@@ -223,6 +221,8 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[AWS_CONFIG] = arg -> new AwsConfig();
         constructors[DISCOVERY_CONFIG] = arg -> new DiscoveryConfig();
         constructors[DISCOVERY_STRATEGY_CONFIG] = arg -> new DiscoveryStrategyConfig();
+        constructors[WAN_REPLICATION_REF] = arg -> new WanReplicationRef();
+        constructors[EVICTION_CONFIG] = arg -> new EvictionConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

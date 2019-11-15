@@ -16,14 +16,17 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
+import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -35,9 +38,7 @@ import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -356,18 +357,18 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         };
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
-
-        MapEvictionPolicy mapEvictionPolicy = mapContainer.getMapEvictionPolicy();
         EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
         IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-        Evictor evictor = new TestEvictor(mapEvictionPolicy, evictionChecker, partitionService);
+        Evictor evictor = new TestEvictor(LRUEvictionPolicyComparator.INSTANCE, evictionChecker, partitionService);
         mapContainer.setEvictor(evictor);
     }
 
     private static final class TestEvictor extends EvictorImpl {
 
-        TestEvictor(MapEvictionPolicy mapEvictionPolicy, EvictionChecker evictionChecker, IPartitionService partitionService) {
-            super(mapEvictionPolicy, evictionChecker, partitionService, 1);
+        TestEvictor(EvictionPolicyComparator evictionPolicyComparator,
+                    EvictionChecker evictionChecker,
+                    IPartitionService partitionService) {
+            super(evictionPolicyComparator, evictionChecker, 1, partitionService);
         }
 
         @Override

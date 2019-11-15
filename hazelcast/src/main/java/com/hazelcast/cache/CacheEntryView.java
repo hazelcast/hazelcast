@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.internal.eviction.EvictableEntryView;
+import com.hazelcast.spi.eviction.EvictableEntryView;
 
 /**
  * Entry info for cache record.
@@ -59,7 +59,7 @@ public interface CacheEntryView<K, V> extends EvictableEntryView<K, V> {
      *
      * @return the count of how many time this cache entry has been accessed
      */
-    long getAccessHit();
+    long getHits();
 
     /**
      * Gets the expiry policy associated with this entry if there is one.

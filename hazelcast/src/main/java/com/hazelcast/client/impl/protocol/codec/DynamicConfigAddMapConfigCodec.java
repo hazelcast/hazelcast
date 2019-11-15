@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("04b98067353f6d45830300d38084a4c9")
+@Generated("ff4bb76ed1143746740acd860b71de02")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -49,10 +49,9 @@ public final class DynamicConfigAddMapConfigCodec {
     private static final int REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET = REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_READ_BACKUP_DATA_FIELD_OFFSET = REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_READ_BACKUP_DATA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int REQUEST_MAX_SIZE_CONFIG_SIZE_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_MAX_SIZE_CONFIG_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_METADATA_POLICY_FIELD_OFFSET = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_READ_BACKUP_DATA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_METADATA_POLICY_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_METADATA_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -63,7 +62,7 @@ public final class DynamicConfigAddMapConfigCodec {
     public static class RequestParameters {
 
         /**
-         * TODO DOC
+         * name of the map
          */
         public java.lang.String name;
 
@@ -88,11 +87,9 @@ public final class DynamicConfigAddMapConfigCodec {
         public int maxIdleSeconds;
 
         /**
-         * eviction policy. Valid values: {@code NONE} (no eviction), {@code LRU}
-         * (Least Recently Used), {@code LFU} (Least Frequently Used),
-         * {@code RANDOM} (evict random entry).
+         * map eviction configuration
          */
-        public java.lang.String evictionPolicy;
+        public @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig;
 
         /**
          * {@code true} to enable reading local backup entries, {@code false} otherwise
@@ -109,10 +106,15 @@ public final class DynamicConfigAddMapConfigCodec {
 
         /**
          * class name of a class implementing
-         * {@code com.hazelcast.map.merge.MapMergePolicy} to merge entries
+         * {@link com.hazelcast.spi.merge.SplitBrainMergePolicy} to merge entries
          * while recovering from a split brain
          */
         public java.lang.String mergePolicy;
+
+        /**
+         * number of entries to be sent in a merge operation
+         */
+        public int mergeBatchSize;
 
         /**
          * data type used to store entries. Valid values are {@code BINARY},
@@ -141,26 +143,6 @@ public final class DynamicConfigAddMapConfigCodec {
          * When {@code null}, split brain protection does not apply to this map's operations.
          */
         public @Nullable java.lang.String splitBrainProtectionName;
-
-        /**
-         * custom {@code com.hazelcast.map.eviction.MapEvictionPolicy} implementation
-         * or {@code null}
-         */
-        public @Nullable com.hazelcast.nio.serialization.Data mapEvictionPolicy;
-
-        /**
-         * maximum size policy. Valid values are {@code PER_NODE},
-         * {@code PER_PARTITION}, {@code USED_HEAP_PERCENTAGE}, {@code USED_HEAP_SIZE},
-         * {@code FREE_HEAP_PERCENTAGE}, {@code FREE_HEAP_SIZE},
-         * {@code USED_NATIVE_MEMORY_SIZE}, {@code USED_NATIVE_MEMORY_PERCENTAGE},
-         * {@code FREE_NATIVE_MEMORY_SIZE}, {@code FREE_NATIVE_MEMORY_PERCENTAGE}.
-         */
-        public java.lang.String maxSizeConfigMaxSizePolicy;
-
-        /**
-         * maximum size of map
-         */
-        public int maxSizeConfigSize;
 
         /**
          * configuration of backing map store or {@code null} for none
@@ -209,19 +191,14 @@ public final class DynamicConfigAddMapConfigCodec {
         public @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig;
 
         /**
-         * Event Journal configuration
+         * event journal configuration
          */
         public @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig;
 
         /**
-         * - merkle tree configuration
+         * merkle tree configuration
          */
         public @Nullable com.hazelcast.config.MerkleTreeConfig merkleTreeConfig;
-
-        /**
-         * TODO DOC
-         */
-        public int mergeBatchSize;
 
         /**
          * metadata policy configuration for the supported data types. Valid values
@@ -230,7 +207,7 @@ public final class DynamicConfigAddMapConfigCodec {
         public int metadataPolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, java.lang.String evictionPolicy, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, java.lang.String inMemoryFormat, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.nio.serialization.Data mapEvictionPolicy, java.lang.String maxSizeConfigMaxSizePolicy, int maxSizeConfigSize, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable java.util.Collection<com.hazelcast.config.IndexConfig> indexConfigs, @Nullable java.util.Collection<com.hazelcast.config.AttributeConfig> attributeConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, @Nullable java.lang.String partitioningStrategyClassName, @Nullable com.hazelcast.nio.serialization.Data partitioningStrategyImplementation, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int mergeBatchSize, int metadataPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, int mergeBatchSize, java.lang.String inMemoryFormat, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable java.util.Collection<com.hazelcast.config.IndexConfig> indexConfigs, @Nullable java.util.Collection<com.hazelcast.config.AttributeConfig> attributeConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, @Nullable java.lang.String partitioningStrategyClassName, @Nullable com.hazelcast.nio.serialization.Data partitioningStrategyImplementation, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int metadataPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -242,21 +219,18 @@ public final class DynamicConfigAddMapConfigCodec {
         encodeInt(initialFrame.content, REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET, timeToLiveSeconds);
         encodeInt(initialFrame.content, REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET, maxIdleSeconds);
         encodeBoolean(initialFrame.content, REQUEST_READ_BACKUP_DATA_FIELD_OFFSET, readBackupData);
-        encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);
-        encodeInt(initialFrame.content, REQUEST_MAX_SIZE_CONFIG_SIZE_FIELD_OFFSET, maxSizeConfigSize);
         encodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET, mergeBatchSize);
+        encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);
         encodeInt(initialFrame.content, REQUEST_METADATA_POLICY_FIELD_OFFSET, metadataPolicy);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        StringCodec.encode(clientMessage, evictionPolicy);
+        CodecUtil.encodeNullable(clientMessage, evictionConfig, EvictionConfigHolderCodec::encode);
         StringCodec.encode(clientMessage, cacheDeserializedValues);
         StringCodec.encode(clientMessage, mergePolicy);
         StringCodec.encode(clientMessage, inMemoryFormat);
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, partitionLostListenerConfigs, ListenerConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, mapEvictionPolicy, DataCodec::encode);
-        StringCodec.encode(clientMessage, maxSizeConfigMaxSizePolicy);
         CodecUtil.encodeNullable(clientMessage, mapStoreConfig, MapStoreConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, nearCacheConfig, NearCacheConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, wanReplicationRef, WanReplicationRefCodec::encode);
@@ -280,20 +254,17 @@ public final class DynamicConfigAddMapConfigCodec {
         request.timeToLiveSeconds = decodeInt(initialFrame.content, REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET);
         request.maxIdleSeconds = decodeInt(initialFrame.content, REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET);
         request.readBackupData = decodeBoolean(initialFrame.content, REQUEST_READ_BACKUP_DATA_FIELD_OFFSET);
-        request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
-        request.maxSizeConfigSize = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_CONFIG_SIZE_FIELD_OFFSET);
         request.mergeBatchSize = decodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET);
+        request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
         request.metadataPolicy = decodeInt(initialFrame.content, REQUEST_METADATA_POLICY_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.evictionPolicy = StringCodec.decode(iterator);
+        request.evictionConfig = CodecUtil.decodeNullable(iterator, EvictionConfigHolderCodec::decode);
         request.cacheDeserializedValues = StringCodec.decode(iterator);
         request.mergePolicy = StringCodec.decode(iterator);
         request.inMemoryFormat = StringCodec.decode(iterator);
         request.listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
         request.partitionLostListenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        request.mapEvictionPolicy = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        request.maxSizeConfigMaxSizePolicy = StringCodec.decode(iterator);
         request.mapStoreConfig = CodecUtil.decodeNullable(iterator, MapStoreConfigHolderCodec::decode);
         request.nearCacheConfig = CodecUtil.decodeNullable(iterator, NearCacheConfigHolderCodec::decode);
         request.wanReplicationRef = CodecUtil.decodeNullable(iterator, WanReplicationRefCodec::decode);

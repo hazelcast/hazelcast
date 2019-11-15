@@ -367,12 +367,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
         // it's seen during the tests that the collection time may be much larger (up to 9 seconds),
         // hence we will keep the upperThreshold a lot higher
         double lowerThreshold = STATS_PERIOD_MILLIS * 0.9;
-        double upperThreshold = STATS_PERIOD_MILLIS * 20.0;
         assertTrue("Time difference between two collections is " + timeDifferenceMillis
                         + " ms but, but it should be greater than " + lowerThreshold + " ms",
                 timeDifferenceMillis >= lowerThreshold);
-        assertTrue("Time difference between two collections is " + timeDifferenceMillis
-                        + " ms, but it should be less than " + upperThreshold + " ms",
-                timeDifferenceMillis <= upperThreshold);
     }
 }

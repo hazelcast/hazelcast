@@ -55,6 +55,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  * Contains eviction specific functionality.
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
+
     protected final long expiryDelayMillis;
     protected final Address thisAddress;
     protected final EventService eventService;
@@ -175,7 +176,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         Queue<Data> keysToRemove = new LinkedList<>();
         Iterable<EntryView> sample = storage.getRandomSamples(entryCountToRemove);
         for (EntryView entryView : sample) {
-            Data dataKey = storage.extractRecordFromLazy(entryView).getKey();
+            Data dataKey = storage.extractRecordFrom(entryView).getKey();
             keysToRemove.add(dataKey);
         }
 

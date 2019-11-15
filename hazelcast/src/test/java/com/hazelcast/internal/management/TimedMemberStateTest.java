@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
@@ -30,11 +30,15 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+
+import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -63,6 +67,16 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         hz = createHazelcastInstance(config);
         timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
         timedMemberState = createState();
+    }
+
+    @After
+    public void tearDown() {
+        // explicit cleanup is required because the MBean server is static so registrations
+        // will be left over when test's HazelcastInstance shuts down
+        Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+        for (DistributedObject object : distributedObjects) {
+            object.destroy();
+        }
     }
 
     @Test
@@ -109,7 +123,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         hz.getCacheManager().getCache(CACHE_WITH_STATS_PREFIX + "1");
         CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
         assertNotNull(cacheService.getStats()
-                          .get(CacheUtil.getDistributedObjectName(CACHE_WITH_STATS_PREFIX + "1")));
+                          .get(getDistributedObjectName(CACHE_WITH_STATS_PREFIX + "1")));
     }
 
     @Test
@@ -127,8 +141,8 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
 
         MemberStateImpl memberState = createState().getMemberState();
         for (int i = 0; i < 100; i++) {
-            assertNotNull(memberState.getLocalCacheStats(CacheUtil.getDistributedObjectName(CACHE_WITH_STATS_PREFIX + i)));
-            assertNull(memberState.getLocalCacheStats(CacheUtil.getDistributedObjectName(CACHE_WITHOUT_STATS_PREFIX + i)));
+            assertNotNull(memberState.getLocalCacheStats(getDistributedObjectName(CACHE_WITH_STATS_PREFIX + i)));
+            assertNull(memberState.getLocalCacheStats(getDistributedObjectName(CACHE_WITHOUT_STATS_PREFIX + i)));
         }
     }
 

@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 
-public class DummyMapEvictionPolicy extends MapEvictionPolicy {
+import java.util.function.Supplier;
+
+/**
+ * Default {@link MetricDescriptor} {@link Supplier} creating new instance
+ * on every call to {@link #get()}.
+ */
+public class DefaultMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> {
+    public static final Supplier<MetricDescriptorImpl> DEFAULT_DESCRIPTOR_SUPPLIER = new DefaultMetricDescriptorSupplier();
 
     @Override
-    public int compare(EntryView o1, EntryView o2) {
-        return 0;
+    public MetricDescriptorImpl get() {
+        return new MetricDescriptorImpl(this);
     }
 }

@@ -16,13 +16,20 @@
 
 package com.hazelcast.multimap.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.internal.locksupport.LockSupportService;
-import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.locksupport.LockStoreInfo;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.LockInterceptorService;
 import com.hazelcast.internal.services.ManagedService;
@@ -30,17 +37,18 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.multimap.LocalMultiMapStats;
-import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -49,18 +57,10 @@ import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MultiMapMergeTypes;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -208,12 +208,14 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         Set<Data> keySet = new HashSet<>();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             IPartition partition = nodeEngine.getPartitionService().getPartition(i);
+            boolean isLocalPartition = partition.isLocal();
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
-            MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name);
+            // we should not treat retrieving the container on backups an access
+            MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name, isLocalPartition);
             if (multiMapContainer == null) {
                 continue;
             }
-            if (partition.isLocal()) {
+            if (isLocalPartition) {
                 keySet.addAll(multiMapContainer.keySet());
             }
         }
@@ -378,7 +380,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         }
     }
 
-    public LocalMultiMapStats createStats(String name) {
+    LocalMultiMapStats createStats(String name) {
         LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(name);
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
@@ -394,7 +396,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         for (int partitionId = 0; partitionId < nodeEngine.getPartitionService().getPartitionCount(); partitionId++) {
             IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(partitionId);
-            MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name);
+            MultiMapContainer multiMapContainer = partitionContainer.getMultiMapContainer(name, false);
             if (multiMapContainer == null) {
                 continue;
             }

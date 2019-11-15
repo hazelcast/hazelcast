@@ -16,14 +16,12 @@
 
 package com.hazelcast.topic.impl;
 
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.MessageListener;
-import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.topic.MessageListener;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -36,14 +34,16 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
-    private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+    protected static final String NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
+    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
     public TopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
     }
 
     @Override
-    public void publish(@Nullable E message) {
+    public void publish(@Nonnull E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         publishInternal(message);
     }
 

@@ -17,24 +17,24 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * Interface used to get a {@link MetricTagger} based on its namespace.
- *
- * @see DynamicMetricsProvider#provideDynamicMetrics(MetricTaggerSupplier, MetricsCollectionContext)
+ * An interface for consuming metrics.
  */
-public interface MetricTaggerSupplier {
+public interface MetricConsumer {
 
     /**
-     * Gets the {@link MetricTagger} without {@code namespace}.
+     * Called when the Metric contains a {@code long} value.
      *
-     * @return The MetricTagger instance
+     * @param descriptor  metric descriptor
+     * @param value       metric value
      */
-    MetricTagger getMetricTagger();
+    void consumeLong(MetricDescriptor descriptor, long value);
 
     /**
-     * Gets the {@link MetricTagger} with the given {@code namespace}.
+     * Called when the Metric contains a {@code double} value.
      *
-     * @param namespace The namespace of the MetricTagger
-     * @return The MetricTagger instance
+     * @param descriptor  metric descriptor
+     * @param value       metric value
      */
-    MetricTagger getMetricTagger(String namespace);
+    void consumeDouble(MetricDescriptor descriptor, double value);
+
 }

@@ -136,7 +136,6 @@ import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -215,7 +214,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
@@ -1836,14 +1834,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setSplitBrainProtectionName(value);
             } else if ("query-caches".equals(nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
-            } else if ("map-eviction-policy-class-name".equals(nodeName)) {
-                String className = checkHasText(getTextContent(node), "map-eviction-policy-class-name cannot be null or empty");
-                try {
-                    MapEvictionPolicy mapEvictionPolicy = ClassLoaderUtil.newInstance(config.getClassLoader(), className);
-                    mapConfig.setMapEvictionPolicy(mapEvictionPolicy);
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
             }
         }
         config.addMapConfig(mapConfig);

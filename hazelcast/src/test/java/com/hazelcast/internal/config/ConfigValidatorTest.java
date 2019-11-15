@@ -107,7 +107,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkCacheConfig(cacheSimpleConfig, splitBrainMergePolicyProvider);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void checkCacheConfig_withEntryCountMaxSizePolicy_NATIVE() {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT);

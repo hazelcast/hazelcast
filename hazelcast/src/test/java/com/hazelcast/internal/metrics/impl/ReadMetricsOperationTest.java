@@ -18,9 +18,9 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
-import com.hazelcast.internal.metrics.managementcenter.Metric;
-import com.hazelcast.internal.metrics.managementcenter.MetricConsumer;
+import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.metrics.managementcenter.ReadMetricsOperation;
 import com.hazelcast.map.IMap;
@@ -35,12 +35,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.metrics.managementcenter.MetricsCompressor.decompressingIterator;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -77,29 +75,26 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
             List<Map.Entry<Long, byte[]>> collections = metricsResultSet.collections();
             MetricKeyConsumer metricConsumer = new MetricKeyConsumer();
             for (Map.Entry<Long, byte[]> entry : collections) {
-                Iterator<Metric> metricIterator = decompressingIterator(entry.getValue());
-                while (metricIterator.hasNext()) {
-                    Metric metric = metricIterator.next();
-                    metric.provide(metricConsumer);
-                    mapMetric |= metricConsumer.key.contains("name=map") & metricConsumer.key.contains("map.");
-                }
+                MetricsCompressor.extractMetrics(entry.getValue(), metricConsumer);
             }
-            assertTrue(mapMetric);
+            assertTrue(metricConsumer.mapMetric);
         });
     }
 
     private static class MetricKeyConsumer implements MetricConsumer {
 
-        String key;
+        boolean mapMetric;
 
         @Override
-        public void consumeLong(String key, long value) {
-            this.key = key;
+        public void consumeLong(MetricDescriptor descriptor, long value) {
+            mapMetric |= descriptor.metricString().contains("name=map")
+                    & descriptor.metricString().contains("map.");
         }
 
         @Override
-        public void consumeDouble(String key, double value) {
-            this.key = key;
+        public void consumeDouble(MetricDescriptor descriptor, double value) {
+            mapMetric |= descriptor.metricString().contains("name=map")
+                    & descriptor.metricString().contains("map.");
         }
     }
 }

@@ -14,30 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.managementcenter;
-
 /**
- * An interface that allows consuming keys and primitive values
- * stored in {@link Metric} objects.
+ * This package contains interfaces for eviction
  *
- * @see Metric#provide(MetricConsumer)
+ * @since 4.0
  */
-public interface MetricConsumer {
-
-    /**
-     * Called when the Metric contains a {@code long} value.
-     *
-     * @param key   metric key
-     * @param value metric value
-     */
-    void consumeLong(String key, long value);
-
-    /**
-     * Called when the Metric contains a {@code double} value.
-     *
-     * @param key   metric key
-     * @param value metric value
-     */
-    void consumeDouble(String key, double value);
-
-}
+package com.hazelcast.spi.eviction;

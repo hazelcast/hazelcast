@@ -80,7 +80,7 @@ public class DefaultCacheEntryView
     }
 
     @Override
-    public long getAccessHit() {
+    public long getHits() {
         return accessHit;
     }
 

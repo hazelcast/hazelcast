@@ -18,10 +18,9 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
@@ -326,39 +325,52 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
+    public void provideDynamicMetrics(MetricDescriptor descriptor,
+                                      MetricsCollectionContext context) {
         for (Channel channel : channels) {
             String pipelineId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
 
-            MetricTagger taggerIn = taggerSupplier.getMetricTagger("tcp.connection.in")
-                                                  .withIdTag("pipelineId", pipelineId);
-            context.collect(taggerIn, channel.inboundPipeline());
+            MetricDescriptor descriptorIn = descriptor
+                    .copy()
+                    .withPrefix("tcp.connection.in")
+                    .withDiscriminator("pipelineId", pipelineId);
+            context.collect(descriptorIn, channel.inboundPipeline());
 
-            MetricTagger taggerOut = taggerSupplier.getMetricTagger("tcp.connection.out")
-                                                   .withIdTag("pipelineId", pipelineId);
-            context.collect(taggerOut, channel.outboundPipeline());
+            MetricDescriptor descriptorOut = descriptor
+                    .copy()
+                    .withPrefix("tcp.connection.out")
+                    .withDiscriminator("pipelineId", pipelineId);
+            context.collect(descriptorOut, channel.outboundPipeline());
         }
 
         for (NioThread nioThread : inputThreads) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.inputThread")
-                                                .withIdTag("thread", nioThread.getName());
-            context.collect(tagger, nioThread);
+            MetricDescriptor descriptorInThread = descriptor
+                    .copy()
+                    .withPrefix("tcp.inputThread")
+                    .withDiscriminator("thread", nioThread.getName());
+            context.collect(descriptorInThread, nioThread);
         }
 
         for (NioThread nioThread : outputThreads) {
-            MetricTagger tagger = taggerSupplier.getMetricTagger("tcp.outputThread")
-                                                .withIdTag("thread", nioThread.getName());
-            context.collect(tagger, nioThread);
+            MetricDescriptor descriptorOutThread = descriptor
+                    .copy()
+                    .withPrefix("tcp.outputThread")
+                    .withDiscriminator("thread", nioThread.getName());
+            context.collect(descriptorOutThread, nioThread);
         }
 
         IOBalancer ioBalancer = this.ioBalancer;
         if (ioBalancer != null) {
-            MetricTagger taggerBalancer = taggerSupplier.getMetricTagger("tcp.balancer");
-            context.collect(taggerBalancer, ioBalancer);
+            MetricDescriptor descriptorBalancer = descriptor
+                    .copy()
+                    .withPrefix("tcp.balancer");
+            context.collect(descriptorBalancer, ioBalancer);
         }
 
-        MetricTagger tagger = taggerSupplier.getMetricTagger("tcp");
-        context.collect(tagger, this);
+        MetricDescriptor descriptorTcp = descriptor
+                .copy()
+                .withPrefix("tcp");
+        context.collect(descriptorTcp, this);
     }
 
     private class ChannelCloseListenerImpl implements ChannelCloseListener {

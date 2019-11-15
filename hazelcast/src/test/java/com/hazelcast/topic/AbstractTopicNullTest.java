@@ -18,49 +18,26 @@ package com.hazelcast.topic;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.internal.util.ExceptionUtil;
-import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.function.Consumer;
-
-import static org.junit.Assert.fail;
 
 public abstract class AbstractTopicNullTest extends HazelcastTestSupport {
 
-    @Test
-    public void testNullability() {
-        assertThrowsNPE(t -> t.addMessageListener(null));
-        assertThrowsNPE(t -> t.removeMessageListener(null));
+    @Test(expected = NullPointerException.class)
+    public void testAddNullMessageListener() {
+        ITopic<Object> topic = getDriver().getTopic(randomName());
+        topic.addMessageListener(null);
     }
 
-    private void assertThrowsNPE(ConsumerEx<ITopic<Object>> method) {
-        assertThrows(NullPointerException.class, method);
+    @Test(expected = NullPointerException.class)
+    public void testRemoveMessageListenerWithNullId() {
+        ITopic<Object> topic = getDriver().getTopic(randomName());
+        topic.removeMessageListener(null);
     }
 
-    private void assertThrows(Class<? extends Exception> expectedExceptionClass,
-                              ConsumerEx<ITopic<Object>> method) {
-        try {
-            method.accept(getDriver().getTopic(randomName()));
-            fail("Expected " + expectedExceptionClass
-                    + " but there was no exception!");
-        } catch (Exception e) {
-            Assert.assertSame(expectedExceptionClass, e.getClass());
-        }
-    }
-
-    @FunctionalInterface
-    public interface ConsumerEx<T> extends Consumer<T> {
-        void acceptEx(T t) throws Exception;
-
-        @Override
-        default void accept(T t) {
-            try {
-                acceptEx(t);
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
+    @Test(expected = NullPointerException.class)
+    public void testPublishNullMessage() {
+        ITopic<Object> topic = getDriver().getTopic(randomName());
+        topic.publish(null);
     }
 
     protected abstract HazelcastInstance getDriver();

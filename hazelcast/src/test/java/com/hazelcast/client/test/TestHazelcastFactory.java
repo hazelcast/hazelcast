@@ -86,6 +86,12 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         }
     }
 
+    // used by MC tests
+    public HazelcastInstance getHazelcastClientByName(String clientName) {
+        return clients.stream()
+                .filter(client -> client.getName().equals(clientName)).findFirst().orElse(null);
+    }
+
     private AddressProvider createAddressProvider(ClientConfig config) {
         boolean discoveryEnabled = new HazelcastProperties(config.getProperties())
                 .getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED);

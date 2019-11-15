@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics;
+package com.hazelcast.spring;
 
-/**
- * Interface that can return a Probe instance.
- */
-public interface ProbeAware {
-    /**
-     * Returns the probe.
-     *
-     * @return the probe
-     */
-    Probe getProbe();
+import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
+
+public class DummyMapEvictionPolicyComparator extends RandomEvictionPolicyComparator {
+
 }

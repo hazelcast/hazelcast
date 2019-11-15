@@ -26,12 +26,13 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulatorOrNull;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulatorOrNull;
 
 /**
- * Sets read cursor of {@code Accumulator} in this partition to the supplied sequence number.
+ * Sets read cursor of {@code Accumulator} in
+ * this partition to the supplied sequence number.
  *
  * @see Accumulator#setHead
  */

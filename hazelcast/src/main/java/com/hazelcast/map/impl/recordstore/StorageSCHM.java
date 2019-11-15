@@ -43,6 +43,6 @@ public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<D
 
     @Override
     protected <E extends SamplingEntry> E createSamplingEntry(Data key, R record) {
-        return (E) new LazyEntryViewFromRecord<>(record, serializationService);
+        return (E) new LazyEvictableEntryView<>(record, serializationService);
     }
 }

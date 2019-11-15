@@ -18,8 +18,7 @@ package com.hazelcast.client.map.impl.querycache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.impl.spi.impl.listener.ClientEventRegistration;
-import com.hazelcast.client.impl.spi.impl.listener.ClientRegistrationKey;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerRegistration;
 import com.hazelcast.client.impl.spi.impl.listener.SmartClientListenerService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -28,7 +27,6 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -42,6 +40,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -101,8 +100,7 @@ public class ClientQueryCacheDestroyResourcesTest extends HazelcastTestSupport {
         queryCache3.destroy();
 
         SmartClientListenerService smartListenerService = getSmartListenerService();
-        Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> registrations
-                = smartListenerService.getRegistrations();
+        Map<UUID, ClientListenerRegistration> registrations = smartListenerService.getRegistrations();
 
         //we expect at least 1 for backup listener.
         assertEquals(registrations.toString(), 1, registrations.size());

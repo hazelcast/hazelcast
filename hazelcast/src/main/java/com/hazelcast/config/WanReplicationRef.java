@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -34,8 +34,7 @@ import java.util.List;
  *
  * @see WanReplicationConfig
  */
-@BinaryInterface
-public class WanReplicationRef implements DataSerializable, Serializable {
+public class WanReplicationRef implements IdentifiedDataSerializable, Serializable {
 
     private boolean republishingEnabled = true;
     private String name;
@@ -153,6 +152,16 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     public WanReplicationRef setRepublishingEnabled(boolean republishEnabled) {
         this.republishingEnabled = republishEnabled;
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.WAN_REPLICATION_REF;
     }
 
     @Override

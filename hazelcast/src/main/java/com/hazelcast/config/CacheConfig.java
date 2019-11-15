@@ -16,13 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
@@ -65,7 +65,6 @@ import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
  * @param <K> the key type
  * @param <V> the value type
  */
-@BinaryInterface
 public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements SplitBrainMergeTypeProvider {
 
     private String name;
@@ -543,6 +542,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         for (CachePartitionLostListenerConfig partitionLostListenerConfig : partitionLostListenerConfigs) {
             out.writeObject(partitionLostListenerConfig);
         }
+    }
+
+    @Override
+    public int getClassId() {
+        return CacheDataSerializerHook.CACHE_CONFIG;
     }
 
     @Override

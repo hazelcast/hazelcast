@@ -154,7 +154,7 @@ public final class ClientProperty {
      * Optimization that allows sending of packets over the network to be done on the calling thread if the
      * conditions are right. This can reduce latency and increase performance for low threaded environments.
      *
-     * It is disabled by default.
+     * It is enabled by default.
      */
     public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
             = new HazelcastProperty("hazelcast.client.io.write.through", true);

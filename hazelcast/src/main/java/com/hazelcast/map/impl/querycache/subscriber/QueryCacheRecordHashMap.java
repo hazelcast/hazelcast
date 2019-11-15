@@ -86,8 +86,8 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
         }
 
         @Override
-        public long getAccessHit() {
-            return value.getAccessHit();
+        public long getHits() {
+            return value.getHits();
         }
     }
 

@@ -260,80 +260,79 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     @Category(SlowTest.class)
-    public void testTTL_prolongationAfterNonTTLUpdate()
+    public void testTTL_AfterNonTTLUpdate()
             throws ExecutionException, InterruptedException {
         final IMap<Integer, String> map = createSimpleMap();
 
-        long startRef = currentTimeMillis();
-        map.put(1, "value0", 10, SECONDS);
-        long endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
 
         // Prolong 1st round
-        startRef = currentTimeMillis();
         map.put(1, "value1");
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 2nd round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.set(1, "value2");
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 3rd round
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         final HashMap<Integer, String> items = new HashMap<Integer, String>();
         items.put(1, "value3");
         items.put(2, "value1");
         items.put(3, "value1");
-
-        startRef = currentTimeMillis();
         map.putAll(items);
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 4th round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.putAsync(1, "value4").toCompletableFuture().get();
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 5th round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.setAsync(1, "value5").toCompletableFuture().get();
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 6th round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.tryPut(1, "value6", 5, TimeUnit.SECONDS);
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 7th round
-        startRef = currentTimeMillis();
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
         map.replace(1, "value7");
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
 
         // Prolong 8th round
-        startRef = currentTimeMillis();
-        map.replace(1, "value7", "value8");
-        endRef = currentTimeMillis();
-        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
+        makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
+        map.replace(1, "value0", "value8");
+        assertTtlExpirationCorrectness(map, Long.MAX_VALUE);
+    }
 
-        // Confirm expiration
-        sleepAtLeastSeconds(10);
-        assertFalse(map.containsKey(1));
+    private void makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(IMap<Integer, String> map) {
+        long startRef = currentTimeMillis();
+        map.put(1, "value0", 10, SECONDS);
+        long endRef = currentTimeMillis();
+        sleepAndAssertTtlExpirationCorrectness(map, 10, startRef, endRef);
     }
 
     private void sleepAndAssertTtlExpirationCorrectness(IMap<Integer, String> map, long expected, long startRef, long endRef) {
         sleepAtLeastSeconds(3);
 
         EntryView view = map.getEntryView(1);
-        long actual = MILLISECONDS.toSeconds(view.getExpirationTime() - startRef);
-        long delta = (1 + MILLISECONDS.toSeconds(endRef - startRef));
-        assertEquals(expected, actual, delta);
+        if (expected == Long.MAX_VALUE) {
+            assertEquals(expected, view.getExpirationTime());
+        } else {
+            long actual = MILLISECONDS.toSeconds(view.getExpirationTime() - startRef);
+            long delta = (1 + MILLISECONDS.toSeconds(endRef - startRef));
+            assertEquals(expected, actual, delta);
+        }
+    }
+
+    private void assertTtlExpirationCorrectness(IMap<Integer, String> map, long expected) {
+        EntryView view = map.getEntryView(1);
+        assertEquals(expected, view.getExpirationTime());
         assertTrue(map.containsKey(1));
     }
 
@@ -936,9 +935,15 @@ public class EvictionTest extends HazelcastTestSupport {
         int maxSizeMB = 50;
         String mapName = randomMapName();
 
-        Config config = newConfig(mapName, maxSizeMB, MaxSizePolicy.USED_HEAP_SIZE);
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         config.setProperty(GroupProperty.MAP_EVICTION_BATCH_SIZE.getName(), "2");
+
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig.setComparator((o1, o2) -> 0)
+                .setMaxSizePolicy(MaxSizePolicy.USED_HEAP_SIZE)
+                .setSize(maxSizeMB);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, byte[]> map = instance.getMap(mapName);
@@ -954,6 +959,7 @@ public class EvictionTest extends HazelcastTestSupport {
         double toleranceFactor = 1.1d;
         long maxAllowedHeapCost = (long) (MemoryUnit.MEGABYTES.toBytes(maxSizeMB) * toleranceFactor);
         long minAllowedHeapCost = (long) (MemoryUnit.MEGABYTES.toBytes(maxSizeMB) / toleranceFactor);
+
         assertBetween("Maximum cost", maxObservedHeapCost, minAllowedHeapCost, maxAllowedHeapCost);
     }
 

@@ -14,7 +14,16 @@
  * limitations under the License.
  */
 
+package com.hazelcast.internal.metrics.impl;
+
 /**
- * <p>This package contains eviction specific classes.<br>
+ * Interface that can return a Probe instance.
  */
-package com.hazelcast.map.eviction;
+public interface ProbeAware {
+    /**
+     * Returns the probe.
+     *
+     * @return the probe
+     */
+    CachedProbe getProbe();
+}

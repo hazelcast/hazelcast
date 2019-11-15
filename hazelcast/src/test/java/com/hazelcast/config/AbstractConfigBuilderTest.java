@@ -304,6 +304,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapConfig();
 
     @Test
+    public abstract void testMapCustomEvictionPolicy();
+
+    @Test
     public abstract void testIndexesConfig();
 
     @Test
@@ -368,12 +371,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testHotRestartEncryptionAtRest_whenVault();
-
-    @Test
-    public abstract void testMapEvictionPolicyClassName();
-
-    @Test
-    public abstract void testMapEvictionPolicyIsSelected_whenEvictionPolicySet();
 
     @Test
     public abstract void testOnJoinPermissionOperation();

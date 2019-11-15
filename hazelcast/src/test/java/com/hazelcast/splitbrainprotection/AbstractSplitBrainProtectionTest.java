@@ -45,15 +45,13 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-
-import java.io.Serializable;
 
 import static com.hazelcast.splitbrainprotection.PartitionedCluster.SPLIT_BRAIN_PROTECTION_ID;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ_WRITE;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.WRITE;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Arrays.asList;
 
 /**
@@ -67,24 +65,21 @@ import static java.util.Arrays.asList;
  * </ul>
  */
 @SuppressWarnings("WeakerAccess")
-public abstract class AbstractSplitBrainProtectionTest {
+public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupport {
 
-    protected static final String REFERENCE_NAME = "reference" + "splitBrainProtection" + randomString();
-    protected static final String LONG_NAME = "long" + "splitBrainProtection" + randomString();
-    protected static final String CACHE_NAME = "splitBrainProtection" + randomString();
-    protected static final String ESTIMATOR_NAME = "splitBrainProtection" + randomString();
-    protected static final String DURABLE_EXEC_NAME = "splitBrainProtection" + randomString();
-    protected static final String EXEC_NAME = "splitBrainProtection" + randomString();
-    protected static final String LIST_NAME = "splitBrainProtection" + randomString();
-    protected static final String LOCK_NAME = "splitBrainProtection" + randomString();
-    protected static final String MAP_NAME = "splitBrainProtection" + randomString();
-    protected static final String MULTI_MAP_NAME = "splitBrainProtection" + randomString();
-    protected static final String QUEUE_NAME = "splitBrainProtection" + randomString();
-    protected static final String REPLICATED_MAP_NAME = "splitBrainProtection" + randomString();
-    protected static final String RINGBUFFER_NAME = "splitBrainProtection" + randomString();
-    protected static final String SCHEDULED_EXEC_NAME = "splitBrainProtection" + randomString();
-    protected static final String SET_NAME = "splitBrainProtection" + randomString();
-    protected static final String PN_COUNTER_NAME = "splitBrainProtection" + randomString();
+    protected static final String CACHE_NAME = "splitBrainProtection-cache-" + randomString();
+    protected static final String ESTIMATOR_NAME = "splitBrainProtection-estimator-" + randomString();
+    protected static final String DURABLE_EXEC_NAME = "splitBrainProtection-durable-exec-" + randomString();
+    protected static final String EXEC_NAME = "splitBrainProtection-exec-" + randomString();
+    protected static final String LIST_NAME = "splitBrainProtection-list-" + randomString();
+    protected static final String MAP_NAME = "splitBrainProtection-map-" + randomString();
+    protected static final String MULTI_MAP_NAME = "splitBrainProtection-multimap-" + randomString();
+    protected static final String QUEUE_NAME = "splitBrainProtection-queue-" + randomString();
+    protected static final String REPLICATED_MAP_NAME = "splitBrainProtection-replicated-map-" + randomString();
+    protected static final String RINGBUFFER_NAME = "splitBrainProtection-ringbuffer-" + randomString();
+    protected static final String SCHEDULED_EXEC_NAME = "splitBrainProtection-scheduled-exec-" + randomString();
+    protected static final String SET_NAME = "splitBrainProtection-set-" + randomString();
+    protected static final String PN_COUNTER_NAME = "splitBrainProtection-pn-counter-" + randomString();
 
     protected static PartitionedCluster cluster;
     protected static TestHazelcastInstanceFactory factory;
@@ -304,18 +299,7 @@ public abstract class AbstractSplitBrainProtectionTest {
     }
 
     protected static IFunction function() {
-        return new IFunction<Object, Object>() {
-            @Override
-            public Object apply(Object input) {
-                return input;
-            }
-        };
+        return (IFunction<Object, Object>) input -> input;
     }
 
-    public static class SplitBrainProtectionTestClass implements Serializable {
-
-        public static SplitBrainProtectionTestClass object() {
-            return new SplitBrainProtectionTestClass();
-        }
-    }
 }

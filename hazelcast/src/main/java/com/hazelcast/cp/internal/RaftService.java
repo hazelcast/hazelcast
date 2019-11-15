@@ -63,12 +63,15 @@ import com.hazelcast.cp.internal.raftop.metadata.RemoveCPMemberOp;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricTagger;
-import com.hazelcast.internal.metrics.MetricTaggerSupplier;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MemberAttributeServiceEvent;
@@ -89,10 +92,6 @@ import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
-import com.hazelcast.internal.partition.MigrationAwareService;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -352,8 +351,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             futures.add(f);
         }
 
-        nodes.clear();
-
         for (InternalCompletableFuture future : futures) {
             try {
                 future.get();
@@ -361,6 +358,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 logger.warning(e);
             }
         }
+
+        nodes.clear();
 
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(RaftRemoteService.class)) {
             if (serviceInfo.getService() instanceof RaftManagedService) {
@@ -772,7 +771,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             if (nodes.putIfAbsent(groupId, node) == null) {
                 if (destroyedGroupIds.contains(groupId)) {
                     deregisterNodeMetrics(groupId);
-                    destroyRaftNode(node, true);
                     nodes.remove(groupId, node);
                     logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed.");
                     return;
@@ -809,13 +807,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public void provideDynamicMetrics(MetricTaggerSupplier taggerSupplier, MetricsCollectionContext context) {
-        MetricTagger rootTagger = taggerSupplier.getMetricTagger("raft.group");
+    public void provideDynamicMetrics(MetricDescriptor descriptor,
+                                      MetricsCollectionContext context) {
+        MetricDescriptor rootDescriptor = descriptor.withPrefix("raft.group");
         for (Entry<CPGroupId, RaftNodeMetrics> entry : nodeMetrics.entrySet()) {
             CPGroupId groupId = entry.getKey();
-            MetricTagger tagger = rootTagger.withIdTag("groupId", String.valueOf(groupId.getId()))
+            MetricDescriptor groupDescriptor = rootDescriptor
+                    .copy()
+                    .withDiscriminator("groupId", String.valueOf(groupId.getId()))
                     .withTag("name", groupId.getName());
-            context.collect(tagger, entry.getValue());
+            context.collect(groupDescriptor, entry.getValue());
         }
     }
 
@@ -855,8 +856,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             }
 
             terminatedRaftNodeGroupIds.add(groupId);
-            RaftNode node = nodes.remove(groupId);
-            deregisterNodeMetrics(groupId);
+            RaftNode node = nodes.get(groupId);
             CPPersistenceService persistenceService = getCPPersistenceService();
             if (node != null) {
                 destroyRaftNode(node, groupDestroyed);
@@ -888,8 +888,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             RaftNode node = nodes.get(groupId);
             if (node != null && node.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
                 terminatedRaftNodeGroupIds.add(groupId);
-                nodes.remove(groupId, node);
-                deregisterNodeMetrics(groupId);
                 destroyRaftNode(node, true);
                 logger.fine("RaftNode[" + groupId + "] has stepped down.");
             } else if (node == null && persistenceService.isEnabled()) {
@@ -904,6 +902,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private void destroyRaftNode(RaftNode node, boolean removeRaftStateStore) {
         RaftGroupId groupId = (RaftGroupId) node.getGroupId();
         node.forceSetTerminatedStatus().whenCompleteAsync((v, t) -> {
+            nodes.remove(groupId, node);
+            deregisterNodeMetrics(groupId);
             CPPersistenceService persistenceService = getCPPersistenceService();
             try {
                 if (removeRaftStateStore && persistenceService.isEnabled()) {

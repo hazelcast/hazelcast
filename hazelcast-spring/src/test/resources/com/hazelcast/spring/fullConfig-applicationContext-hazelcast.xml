@@ -521,18 +521,17 @@
                 <hz:partition-strategy>com.hazelcast.spring.DummyPartitionStrategy</hz:partition-strategy>
             </hz:map>
 
-            <hz:map name="mapWithMapEvictionPolicyClassName">
-                <hz:map-eviction-policy class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
+            <hz:map name="mapWithComparatorClassName">
+                <hz:eviction comparator-class-name="com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator"/>
             </hz:map>
 
-            <hz:map name="mapWithMapEvictionPolicyImpl">
-                <hz:map-eviction-policy implementation="dummyMapEvictionPolicy"/>
+            <hz:map name="mapWithComparatorImpl">
+                <hz:eviction comparator-bean="dummyEvictionPolicyComparator"/>
             </hz:map>
 
-            <hz:map name="mapBothMapEvictionPolicyClassNameAndEvictionPolicy">
-                <hz:eviction eviction-policy="LRU"/>
-                <hz:map-eviction-policy
-                        class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
+            <hz:map name="mapWithBothComparatorClassNameAndEvictionPolicy">
+                <hz:eviction eviction-policy="LRU"
+                             comparator-class-name="com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator"/>
             </hz:map>
 
             <hz:cache name="testCache" disable-per-entry-invalidation-events="true">
@@ -969,7 +968,7 @@
     <bean id="dummyQueueStoreFactory" class="com.hazelcast.spring.DummyQueueStoreFactory"/>
     <bean id="dummyRingbufferStore" class="com.hazelcast.spring.DummyRingbufferStore"/>
     <bean id="dummyRingbufferStoreFactory" class="com.hazelcast.spring.DummyRingbufferStoreFactory"/>
-    <bean id="dummyMapEvictionPolicy" class="com.hazelcast.spring.DummyMapEvictionPolicy"/>
+    <bean id="dummyEvictionPolicyComparator" class="com.hazelcast.spring.DummyMapEvictionPolicyComparator"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>

@@ -26,8 +26,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricTagger;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
@@ -145,13 +145,15 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
-            MetricTagger tagger = registry.newMetricTagger("operation.partition")
-                                          .withTag("partitionId", String.valueOf(partitionId));
-            registry.registerStaticMetrics(tagger, this);
+            MetricDescriptor descriptor = registry.newMetricDescriptor()
+                                                  .withPrefix("operation.partition")
+                                                  .withDiscriminator("partitionId", String.valueOf(partitionId));
+            registry.registerStaticMetrics(descriptor, this);
         } else if (partitionId == -1) {
-            MetricTagger tagger = registry.newMetricTagger("operation.generic")
-                                          .withTag("genericId", String.valueOf(genericId));
-            registry.registerStaticMetrics(tagger, this);
+            MetricDescriptor descriptor = registry.newMetricDescriptor()
+                                                  .withPrefix("operation.generic")
+                                                  .withDiscriminator("genericId", String.valueOf(genericId));
+            registry.registerStaticMetrics(descriptor, this);
         } else {
             registry.registerStaticMetrics(this, "operation.adhoc");
         }

@@ -16,25 +16,34 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 /**
- * Cache specific {@link EvictionPolicyComparator} for comparing
- * {@link CacheEntryView}s to be evicted.
+ * {@link ICache} specific {@link EvictionPolicyComparator}
+ * for comparing {@link CacheEntryView}s to be evicted.
  *
  * @param <K> type of the key
  * @param <V> type of the value
- *
  * @see EvictionPolicyComparator
  * @see CacheEntryView
  */
-public abstract class CacheEvictionPolicyComparator<K, V>
+@FunctionalInterface
+public interface CacheEvictionPolicyComparator<K, V>
         extends EvictionPolicyComparator<K, V, CacheEntryView<K, V>> {
 
     /**
-     * {@inheritDoc}
+     * Compares the given {@link CacheEntryView} instances and
+     * returns the result. The result should be one of
+     * <ul>
+     *   <li>-1: first entry has higher priority to be evicted</li>
+     *   <li> 1: second entry has higher priority to be evicted</li>
+     *   <li> 0: both entries have same priority</li>
+     * </ul>
+     *
+     * @param o1 the first {@link CacheEntryView} instance to be compared
+     * @param o2 the second {@link CacheEntryView} instance to be compared
+     * @return the result of comparison
      */
     @Override
-    public abstract int compare(CacheEntryView<K, V> e1, CacheEntryView<K, V> e2);
-
+    int compare(CacheEntryView<K, V> o1, CacheEntryView<K, V> o2);
 }

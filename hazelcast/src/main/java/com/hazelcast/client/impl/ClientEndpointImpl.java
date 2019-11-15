@@ -20,7 +20,6 @@ import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -29,9 +28,6 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
 
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Set;
@@ -40,6 +36,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
@@ -70,12 +70,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.logger = clientEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
         this.connection = connection;
-        if (connection instanceof TcpIpConnection) {
-            TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-            socketAddress = tcpIpConnection.getRemoteSocketAddress();
-        } else {
-            socketAddress = null;
-        }
+        this.socketAddress = connection.getRemoteSocketAddress();
         this.clientVersion = "Unknown";
         this.creationTime = System.currentTimeMillis();
     }

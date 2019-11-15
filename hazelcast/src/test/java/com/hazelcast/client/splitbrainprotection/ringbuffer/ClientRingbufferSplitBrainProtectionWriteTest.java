@@ -18,9 +18,8 @@ package com.hazelcast.client.splitbrainprotection.ringbuffer;
 
 import com.hazelcast.client.splitbrainprotection.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.splitbrainprotection.ringbuffer.RingbufferSplitBrainProtectionWriteTest;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.splitbrainprotection.ringbuffer.RingbufferSplitBrainProtectionWriteTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,7 +40,7 @@ public class ClientRingbufferSplitBrainProtectionWriteTest extends RingbufferSpl
     @BeforeClass
     public static void setUp() {
         TestHazelcastFactory factory = new TestHazelcastFactory();
-        initTestEnvironment(new Config(), factory);
+        initTestEnvironment(smallInstanceConfig(), factory);
         clients = new PartitionedClusterClients(cluster, factory);
     }
 

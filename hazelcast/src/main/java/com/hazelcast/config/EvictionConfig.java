@@ -16,13 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
-import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -41,14 +41,13 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
  * <li>{@link MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
- * <li>{@value MapConfig#DEFAULT_MAX_SIZE as maximum size for on-heap {@link com.hazelcast.map.IMap}</li>
+ * <li>{@value MapConfig#DEFAULT_MAX_SIZE as maximum
+ * size for on-heap {@link com.hazelcast.map.IMap}</li>
  * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size
  *      for all other data structures and configurations</li>
  * </ul>
  */
-@BinaryInterface
-public class EvictionConfig implements EvictionConfiguration,
-        DataSerializable, Serializable {
+public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSerializable, Serializable {
 
     /**
      * Default maximum entry count.
@@ -204,9 +203,11 @@ public class EvictionConfig implements EvictionConfiguration,
     }
 
     /**
-     * Returns the instance of the configured {@link EvictionPolicyComparator} implementation.
+     * Returns the instance of the configured {@link
+     * EvictionPolicyComparator} implementation.
      *
-     * @return the instance of the configured {@link EvictionPolicyComparator} implementation
+     * @return the instance of the configured {@link
+     * EvictionPolicyComparator} implementation
      */
     @Override
     public EvictionPolicyComparator getComparator() {
@@ -223,11 +224,23 @@ public class EvictionConfig implements EvictionConfiguration,
      * @param comparator the instance of the configured
      *                   {@link EvictionPolicyComparator} implementation
      * @return this EvictionConfig instance
+     * @see com.hazelcast.map.MapEvictionPolicyComparator
+     * @see com.hazelcast.cache.CacheEvictionPolicyComparator
      */
     public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
         this.comparator = checkNotNull(comparator,
                 "Eviction policy comparator cannot be null!");
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.EVICTION_CONFIG;
     }
 
     @Override

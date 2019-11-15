@@ -88,7 +88,7 @@ final class ClientCacheHelper {
      * @see com.hazelcast.cache.impl.operation.AddCacheConfigOperation
      */
     static <K, V> CacheConfig<K, V> createCacheConfig(HazelcastClientInstanceImpl client,
-                                                      CacheConfig<K, V> newCacheConfig) {
+                                                      CacheConfig<K, V> newCacheConfig, boolean urgent) {
         try {
             String nameWithPrefix = newCacheConfig.getNameWithPrefix();
             int partitionId = client.getClientPartitionService().getPartitionId(nameWithPrefix);
@@ -97,7 +97,7 @@ final class ClientCacheHelper {
             ClientMessage request = CacheCreateConfigCodec
                     .encodeRequest(CacheConfigHolder.of(newCacheConfig, serializationService), true);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
-            Future<ClientMessage> future = clientInvocation.invoke();
+            Future<ClientMessage> future = urgent ? clientInvocation.invokeUrgent() : clientInvocation.invoke();
             final ClientMessage response = future.get();
             final CacheConfigHolder cacheConfigHolder = CacheCreateConfigCodec.decodeResponse(response).response;
             if (cacheConfigHolder == null) {

@@ -43,7 +43,7 @@ public class RestoredRaftState {
             @Nonnull RaftEndpoint localEndpoint,
             @Nonnull Collection<RaftEndpoint> initialMembers,
             int term,
-            @Nonnull RaftEndpoint votedFor,
+            @Nullable RaftEndpoint votedFor,
             @Nullable SnapshotEntry snapshot,
             @Nonnull LogEntry[] entries
     ) {
@@ -69,7 +69,7 @@ public class RestoredRaftState {
         return term;
     }
 
-    @Nonnull
+    @Nullable
     public RaftEndpoint votedFor() {
         return votedFor;
     }

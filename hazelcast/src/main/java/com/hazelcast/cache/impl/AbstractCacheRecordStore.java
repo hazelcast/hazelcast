@@ -577,7 +577,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     CacheEventContext cacheEventContext =
                             createBaseEventContext(CacheEventType.EXPIRATION_TIME_UPDATED, toEventData(key),
                                     toEventData(record.getValue()), expiryTime, null, IGNORE_COMPLETION);
-                    cacheEventContext.setAccessHit(record.getAccessHit());
+                    cacheEventContext.setAccessHit(record.getHits());
                     publishEvent(cacheEventContext);
                 }
             }
@@ -588,8 +588,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected long onRecordAccess(Data key, R record, ExpiryPolicy expiryPolicy, long now) {
-        record.setAccessTime(now);
-        record.incrementAccessHit();
+        record.setLastAccessTime(now);
+        record.incrementHits();
         return updateAccessDuration(key, record, expiryPolicy, now);
     }
 
@@ -813,7 +813,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 if (isEventsEnabled()) {
                     publishEvent(createCacheUpdatedEvent(eventDataKey, eventDataValue, eventDataOldValue,
                             record.getCreationTime(), record.getExpirationTime(),
-                            record.getLastAccessTime(), record.getAccessHit(),
+                            record.getLastAccessTime(), record.getHits(),
                             origin, completionId, eventDataExpiryPolicy));
                 }
             }
