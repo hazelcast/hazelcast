@@ -19,8 +19,8 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.SimpleTokenCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,7 +48,7 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testNoClusterFound() throws Exception {
+    public void testNoClusterFound() {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         hazelcastFactory.newHazelcastClient(clientConfig);
@@ -57,12 +57,11 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
 
     @Test
     public void testAuthenticationWithCustomCredentials_when_singleNode() {
-        PortableFactory factory = new CustomCredentialsPortableFactory();
+        DataSerializableFactory factory = new CustomCredentialsIdentifiedFactory();
 
         // with this config, the server will authenticate any credential of type CustomCredentials
         Config config = new Config();
-        config.getSerializationConfig()
-                .addPortableFactory(1, factory);
+        config.getSerializationConfig().addDataSerializableFactory(1, factory);
         hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
@@ -73,9 +72,9 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
-    private class CustomCredentialsPortableFactory implements PortableFactory {
+    private class CustomCredentialsIdentifiedFactory implements DataSerializableFactory {
         @Override
-        public Portable create(int classId) {
+        public IdentifiedDataSerializable create(int classId) {
             return new CustomCredentials();
         }
     }
