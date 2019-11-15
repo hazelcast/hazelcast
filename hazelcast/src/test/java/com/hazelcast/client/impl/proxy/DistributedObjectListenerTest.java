@@ -23,10 +23,10 @@ import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -114,6 +115,22 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
         assertEquals(1, client1.getDistributedObjects().size());
         assertEquals(1, client2.getDistributedObjects().size());
+    }
+
+    @Test
+    public void getDistributedObjects_ShouldNotRecreateProxy_AfterDestroy() {
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        Future destroyProxyFuture = spawn(() -> {
+            for (int i = 0; i < 1000; i++) {
+                IMap<Object, Object> map = member.getMap("map-" + i);
+                map.destroy();
+            }
+        });
+        while (!destroyProxyFuture.isDone()) {
+            client.getDistributedObjects();
+        }
+        assertEquals(0, client.getDistributedObjects().size());
     }
 
     @Test
