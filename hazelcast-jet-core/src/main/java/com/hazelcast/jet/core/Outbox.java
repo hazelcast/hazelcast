@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
  * Data sink for a {@link Processor}. The outbox consists of individual
  * output buckets, one per outbound edge of the vertex represented by the
  * associated processor and one for the snapshot state. The processor must
- * deliver its output items separated by destination edge, into the outbox
+ * deliver its output items separated by destination edge into the outbox
  * by calling {@link #offer(int, Object)} or {@link #offer(Object)}.
  * <p>
  * To save its current state to the snapshot, it must call {@link
