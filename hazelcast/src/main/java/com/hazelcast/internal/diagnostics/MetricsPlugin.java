@@ -91,21 +91,21 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         @Override
         public void collectLong(MetricDescriptor descriptor, long value) {
             if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
-                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), value);
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), value);
             }
         }
 
         @Override
         public void collectDouble(MetricDescriptor descriptor, double value) {
             if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
-                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), value);
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), value);
             }
         }
 
         @Override
         public void collectException(MetricDescriptor descriptor, Exception e) {
             if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
-                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(),
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(),
                         e.getClass().getName() + ':' + e.getMessage());
             }
         }
@@ -113,7 +113,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         @Override
         public void collectNoValue(MetricDescriptor descriptor) {
             if (descriptor.isTargetIncluded(DIAGNOSTICS)) {
-                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.toString(), "NA");
+                writer.writeSectionKeyValue(SECTION_NAME, timeMillis, descriptor.metricString(), "NA");
             }
         }
     }
