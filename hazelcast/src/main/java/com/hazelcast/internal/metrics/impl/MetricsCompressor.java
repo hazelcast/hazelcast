@@ -466,6 +466,8 @@ public class MetricsCompressor {
         private void extractMetrics() throws IOException {
             for (int i = 0; i < countMetrics; i++) {
                 MetricDescriptor descriptor = readMetricDescriptor();
+                lastDescriptor.copy(descriptor);
+
                 int typeOrdinal = dis.readUnsignedByte();
                 ValueType type = ValueType.valueOf(typeOrdinal);
 
@@ -480,7 +482,6 @@ public class MetricsCompressor {
                         throw new IllegalStateException("Unexpected metric value type: " + type + " with ordinal " + typeOrdinal);
                 }
 
-                lastDescriptor.copy(descriptor);
             }
         }
 
