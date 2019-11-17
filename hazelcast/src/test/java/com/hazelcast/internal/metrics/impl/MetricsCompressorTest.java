@@ -16,24 +16,26 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricConsumer;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -43,7 +45,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 public class MetricsCompressorTest {
 
     private final DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
-    private final Supplier<? extends MetricDescriptor> supplierSpy = Mockito.spy(supplier);
+    private final Supplier<? extends MetricDescriptor> supplierSpy = spy(supplier);
     private final MetricsCompressor compressor = new MetricsCompressor();
 
     @Test
@@ -257,5 +259,52 @@ public class MetricsCompressorTest {
         verify(metricConsumerMock).consumeLong(metric2, 43L);
         verifyNoMoreInteractions(metricConsumerMock);
         verify(supplierSpy, times(2)).get();
+    }
+
+    @Test
+    public void testModifyingExtractedDoesntImpactExtraction() {
+        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
+        MetricsCompressor compressor = new MetricsCompressor();
+
+        MetricDescriptor metric1 = supplier.get()
+                                           .withPrefix("prefix")
+                                           .withMetric("metricName")
+                                           .withDiscriminator("name", "objName")
+                                           .withUnit(PERCENT)
+                                           .withTag("tag0", "tag0Value")
+                                           .withTag("tag1", "tag1Value")
+                                           .withExcludedTarget(JMX);
+        MetricDescriptor sameMetric = metric1.copy();
+
+        compressor.addLong(metric1, 42L);
+        compressor.addLong(sameMetric, 43L);
+        byte[] blob = compressor.getBlobAndReset();
+
+        MetricConsumer metricConsumer = new MetricConsumer() {
+
+            @Override
+            public void consumeLong(MetricDescriptor descriptor, long value) {
+                if (value == 42L) {
+                    descriptor.reset()
+                              .withPrefix("modifiedPrefix")
+                              .withMetric("modifiedMetric")
+                              .withDiscriminator("name", "modifiedName")
+                              .withUnit(BYTES)
+                              .withTag("modifiedTag0", "modifiedTag0Value")
+                              .withTag("modifiedTag1", "modifiedTag1Value")
+                              .withExcludedTarget(DIAGNOSTICS);
+                }
+            }
+
+            @Override
+            public void consumeDouble(MetricDescriptor descriptor, double value) {
+
+            }
+        };
+
+        MetricConsumer metricConsumerSpy = spy(metricConsumer);
+        MetricsCompressor.extractMetrics(blob, metricConsumerSpy, supplierSpy);
+
+        verify(metricConsumerSpy).consumeLong(sameMetric, 43L);
     }
 }
