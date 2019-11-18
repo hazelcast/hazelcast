@@ -59,7 +59,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
@@ -600,7 +599,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener) {
-        return registerListenerAsync(cacheNameWithPrefix, listener, TrueEventFilter.INSTANCE);
+        return registerListenerAsync(cacheNameWithPrefix, listener, null);
     }
 
     @Override
@@ -632,6 +631,16 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
         EventRegistration registration = eventService
                 .registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
+
+        return updateRegisteredListeners(listener, registration);
+    }
+
+    @Override
+    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        EventRegistration registration = eventService
+                .registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener);
 
         return updateRegisteredListeners(listener, registration);
     }

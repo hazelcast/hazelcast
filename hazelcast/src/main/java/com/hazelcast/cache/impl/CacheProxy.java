@@ -282,7 +282,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration,
                 getNodeEngine().getSerializationService());
-        UUID regId = getService().registerListener(getDistributedObjectName(), entryListener);
+        UUID regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);

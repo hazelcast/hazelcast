@@ -111,6 +111,8 @@ public interface ICacheService
 
     UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener);
 
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter);
+
     CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener);
 
     CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener,
