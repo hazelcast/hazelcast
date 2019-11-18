@@ -20,6 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
@@ -32,7 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,7 +42,8 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LazyEvictableEntryViewTest {
 
-    private static final int ENTRY_VIEW_COST_IN_BYTES = 77 + 3 * REFERENCE_COST_IN_BYTES;
+    private static final int WITH_COMPRESSED_OOPS_ENTRY_VIEW_COST_IN_BYTES = 89;
+    private static final int WITH_OOPS_ENTRY_VIEW_COST_IN_BYTES = 105;
 
     private final String key = "key";
     private final String value = "value";
@@ -64,23 +65,26 @@ public class LazyEvictableEntryViewTest {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         DataRecordFactory dataRecordFactory
                 = new DataRecordFactory(mapConfig, serializationService, mockPartitioningStrategy);
-        recordInstance = dataRecordFactory.newRecord(serializationService.toData(key), value);
+        Data key = serializationService.toData(this.key);
+        recordInstance = dataRecordFactory.newRecord(key, value);
         return new LazyEvictableEntryView(recordInstance, serializationService);
     }
 
     @Test
-    public void test_getKey() throws Exception {
+    public void test_getKey() {
         assertEquals(key, view.getKey());
     }
 
     @Test
-    public void test_getValue() throws Exception {
+    public void test_getValue() {
         assertEquals(value, view.getValue());
     }
 
     @Test
-    public void test_getCost() throws Exception {
-        assertEquals(ENTRY_VIEW_COST_IN_BYTES, view.getCost());
+    public void test_getCost() {
+        int expectedHeapCost = JVMUtil.REFERENCE_COST_IN_BYTES == 4
+                ? WITH_COMPRESSED_OOPS_ENTRY_VIEW_COST_IN_BYTES : WITH_OOPS_ENTRY_VIEW_COST_IN_BYTES;
+        assertEquals(expectedHeapCost, view.getCost());
     }
 
     @Test
