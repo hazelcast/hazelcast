@@ -24,7 +24,7 @@ import com.hazelcast.wan.WanReplicationPublisher;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class DummyWanReplication implements WanReplicationPublisher {
+class DummyWanReplication implements WanReplicationPublisher, InternalWanReplicationPublisher {
 
     Queue<WanReplicationEvent> eventQueue = new ConcurrentLinkedQueue<>();
 
@@ -44,6 +44,18 @@ class DummyWanReplication implements WanReplicationPublisher {
 
     @Override
     public void publishReplicationEventBackup(WanReplicationEvent event) {
+    }
+
+    @Override
+    public void destroyMapData(String mapName) {
+
+    }
+
+    @Override
+    public int removeWanEvents(int partitionId, String serviceName, String objectName, int count) {
+        int size = eventQueue.size();
+        eventQueue.clear();
+        return size;
     }
 
     @Override

@@ -27,16 +27,30 @@ import com.hazelcast.internal.management.events.WanConsistencyCheckIgnoredEvent;
 import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.DistributedServiceWanEventCounters;
+import com.hazelcast.wan.MigrationAwareWanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationPublisher;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
@@ -49,7 +63,9 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 /**
  * Open source implementation of the {@link WanReplicationService}
  */
-public class WanReplicationServiceImpl implements WanReplicationService {
+@SuppressWarnings({"checkstyle:methodcount"})
+public class WanReplicationServiceImpl implements WanReplicationService,
+        FragmentedMigrationAwareService, ManagedService {
 
     private final Node node;
 
@@ -61,31 +77,32 @@ public class WanReplicationServiceImpl implements WanReplicationService {
 
     private final ConcurrentMap<String, DelegatingWanReplicationScheme> wanReplications = createConcurrentHashMap(1);
 
-    private final ConstructorFunction<String, DelegatingWanReplicationScheme> publisherDelegateConstructorFunction =
-            new ConstructorFunction<String, DelegatingWanReplicationScheme>() {
-                @Override
-                public DelegatingWanReplicationScheme createNew(String name) {
-                    final WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
-                    if (wanReplicationConfig == null) {
-                        return null;
-                    }
-                    List<WanBatchReplicationPublisherConfig> batchPublisherConfigs
-                            = wanReplicationConfig.getBatchPublisherConfigs();
-                    if (!batchPublisherConfigs.isEmpty()) {
-                        throw new InvalidConfigurationException("Built-in batching WAN replication implementation "
-                                + "is only available in Hazelcast enterprise edition.");
-                    }
-                    return new DelegatingWanReplicationScheme(name, createPublishers(wanReplicationConfig));
-                }
-            };
+    private final ConstructorFunction<String, DelegatingWanReplicationScheme> publisherDelegateConstructor;
 
     public WanReplicationServiceImpl(Node node) {
         this.node = node;
+        this.publisherDelegateConstructor = name -> {
+            final WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
+            if (wanReplicationConfig == null) {
+                return null;
+            }
+            List<WanBatchReplicationPublisherConfig> batchPublisherConfigs
+                    = wanReplicationConfig.getBatchPublisherConfigs();
+            if (!batchPublisherConfigs.isEmpty()) {
+                throw new InvalidConfigurationException("Built-in batching WAN replication implementation "
+                        + "is only available in Hazelcast enterprise edition.");
+            }
+            return new DelegatingWanReplicationScheme(name, createPublishers(wanReplicationConfig));
+        };
     }
 
     @Override
-    public DelegatingWanReplicationScheme getWanReplicationPublishers(String name) {
-        return getOrPutSynchronized(wanReplications, name, this, publisherDelegateConstructorFunction);
+    public DelegatingWanReplicationScheme getWanReplicationPublishers(String wanReplicationScheme) {
+        if (!wanReplications.containsKey(wanReplicationScheme)
+                && node.getConfig().getWanReplicationConfig(wanReplicationScheme) == null) {
+            return null;
+        }
+        return getOrPutSynchronized(wanReplications, wanReplicationScheme, this, publisherDelegateConstructor);
     }
 
     private ConcurrentMap<String, WanReplicationPublisher> createPublishers(WanReplicationConfig wanConfig) {
@@ -133,7 +150,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
      */
     private WanReplicationPublisher createPublisher(AbstractWanPublisherConfig publisherConfig) {
         WanReplicationPublisher publisher = getOrCreate(
-                (WanReplicationPublisher) publisherConfig.getImplementation(),
+                publisherConfig.getImplementation(),
                 node.getConfigClassLoader(),
                 publisherConfig.getClassName());
         if (publisher == null) {
@@ -267,5 +284,131 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     public List<Version> getSupportedWanProtocolVersions() {
         // EE WAN replication not supported in OS
         return Collections.emptyList();
+    }
+
+    @Override
+    public void beforeMigration(PartitionMigrationEvent event) {
+        for (DelegatingWanReplicationScheme wanReplication : wanReplications.values()) {
+            for (WanReplicationPublisher publisher : wanReplication.getPublishers()) {
+                if (publisher instanceof MigrationAwareWanReplicationPublisher) {
+                    ((MigrationAwareWanReplicationPublisher) publisher).onMigrationStart(event);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void commitMigration(PartitionMigrationEvent event) {
+        for (DelegatingWanReplicationScheme wanReplication : wanReplications.values()) {
+            for (WanReplicationPublisher publisher : wanReplication.getPublishers()) {
+                if (publisher instanceof MigrationAwareWanReplicationPublisher) {
+                    ((MigrationAwareWanReplicationPublisher) publisher).onMigrationCommit(event);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        for (DelegatingWanReplicationScheme wanReplication : wanReplications.values()) {
+            for (WanReplicationPublisher publisher : wanReplication.getPublishers()) {
+                if (publisher instanceof MigrationAwareWanReplicationPublisher) {
+                    ((MigrationAwareWanReplicationPublisher) publisher).onMigrationRollback(event);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        // NOP
+    }
+
+    @Override
+    public void reset() {
+        final Collection<DelegatingWanReplicationScheme> publishers = wanReplications.values();
+        for (DelegatingWanReplicationScheme publisherDelegate : publishers) {
+            for (WanReplicationPublisher publisher : publisherDelegate.getPublishers()) {
+                publisher.reset();
+            }
+        }
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        reset();
+    }
+
+    @Override
+    public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
+        if (wanReplications.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        final Set<ServiceNamespace> namespaces = new HashSet<>();
+        for (DelegatingWanReplicationScheme publisher : wanReplications.values()) {
+            publisher.collectAllServiceNamespaces(event, namespaces);
+        }
+        return namespaces;
+    }
+
+    @Override
+    public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
+        final String serviceName = namespace.getServiceName();
+        return namespace instanceof ObjectNamespace && (MapService.SERVICE_NAME.equals(serviceName));
+    }
+
+    @Override
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event,
+                                                 Collection<ServiceNamespace> namespaces) {
+        if (wanReplications.isEmpty() || namespaces.isEmpty()) {
+            return null;
+        }
+        Map<String, Map<String, Object>> eventContainers = createHashMap(wanReplications.size());
+
+        for (Entry<String, DelegatingWanReplicationScheme> wanReplicationEntry : wanReplications.entrySet()) {
+            String replicationScheme = wanReplicationEntry.getKey();
+            DelegatingWanReplicationScheme delegate = wanReplicationEntry.getValue();
+            Map<String, Object> publisherEventContainers = delegate.prepareEventContainerReplicationData(event, namespaces);
+            if (!publisherEventContainers.isEmpty()) {
+                eventContainers.put(replicationScheme, publisherEventContainers);
+            }
+        }
+
+        if (eventContainers.isEmpty()) {
+            return null;
+        } else {
+            return new WanEventContainerReplicationOperation(
+                    Collections.emptyList(), eventContainers, event.getPartitionId(), event.getReplicaIndex());
+        }
+    }
+
+    @Override
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        return prepareReplicationOperation(event, getAllServiceNamespaces(event));
+    }
+
+    @Override
+    public WanReplicationPublisher getPublisherOrFail(String wanReplicationName,
+                                                      String wanPublisherId) {
+        WanReplicationPublisher publisher = getPublisherOrNull(wanReplicationName, wanPublisherId);
+        if (publisher == null) {
+            throw new InvalidConfigurationException("WAN Replication Config doesn't exist with WAN configuration name "
+                    + wanReplicationName + " and publisher ID " + wanPublisherId);
+        }
+        return publisher;
+    }
+
+    @Override
+    public void appendWanReplicationConfig(WanReplicationConfig newConfig) {
+        // not implemented in OS
+    }
+
+    private WanReplicationPublisher getPublisherOrNull(String wanReplicationName,
+                                                       String wanPublisherId) {
+        DelegatingWanReplicationScheme publisherDelegate = getWanReplicationPublishers(wanReplicationName);
+        return publisherDelegate != null
+                ? publisherDelegate.getPublisher(wanPublisherId)
+                : null;
     }
 }

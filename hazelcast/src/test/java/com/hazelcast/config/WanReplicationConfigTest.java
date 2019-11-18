@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,7 +51,7 @@ public class WanReplicationConfigTest {
         WanConsumerConfig wanConsumerConfig = new WanConsumerConfig();
         wanConsumerConfig.setProperties(properties);
         wanConsumerConfig.setClassName("className");
-        wanConsumerConfig.setImplementation("implementation");
+        wanConsumerConfig.setImplementation(new DummyWanConsumer());
 
         WanBatchReplicationPublisherConfig wanPublisherConfig1 = new WanBatchReplicationPublisherConfig();
         WanBatchReplicationPublisherConfig wanPublisherConfig2 = new WanBatchReplicationPublisherConfig();

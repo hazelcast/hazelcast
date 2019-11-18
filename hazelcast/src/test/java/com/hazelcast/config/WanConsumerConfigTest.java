@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,7 +44,7 @@ public class WanConsumerConfigTest {
 
         config.setProperties(properties);
         config.setClassName("className");
-        config.setImplementation("implementation");
+        config.setImplementation(new DummyWanConsumer());
         config.setPersistWanReplicatedData(false);
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();

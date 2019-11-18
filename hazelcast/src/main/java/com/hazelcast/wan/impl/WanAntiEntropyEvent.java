@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.wan.impl;
 
 import java.util.Set;
 import java.util.UUID;
