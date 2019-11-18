@@ -253,7 +253,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     @Override
     public EventRegistration registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
                                                    @Nonnull EventFilter filter, @Nonnull Object listener) {
-        return registerLocalListenerInternal(serviceName, topic, filter, listener, true);
+        return registerListenerInternalLocally(serviceName, topic, filter, listener, true);
     }
 
     /**
@@ -268,8 +268,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
      * @return the event registration
      * @throws IllegalArgumentException if the listener or filter is null
      */
-    private EventRegistration registerLocalListenerInternal(@Nonnull String serviceName, @Nonnull String topic,
-                                                    @Nonnull EventFilter filter, @Nonnull Object listener, boolean isLocal) {
+    private EventRegistration registerListenerInternalLocally(@Nonnull String serviceName, @Nonnull String topic,
+                                                              @Nonnull EventFilter filter, @Nonnull Object listener, boolean isLocal) {
         checkNotNull(listener, "Null listener is not allowed!");
         checkNotNull(filter, "Null filter is not allowed!");
         EventServiceSegment segment = getSegment(serviceName, true);
@@ -327,7 +327,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     @Override
     public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
                                                                           @Nonnull EventFilter filter, @Nonnull Object listener) {
-        Registration registration = (Registration) registerLocalListenerInternal(serviceName, topic, filter, listener, false);
+        Registration registration = (Registration) registerListenerInternalLocally(serviceName, topic, filter, listener, false);
 
         if (registration == null) {
             newCompletedFuture(null);

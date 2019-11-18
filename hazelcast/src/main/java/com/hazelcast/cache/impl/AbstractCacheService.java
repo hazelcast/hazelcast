@@ -599,7 +599,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener) {
-        return registerListenerAsync(cacheNameWithPrefix, listener, null);
+        EventService eventService = getNodeEngine().getEventService();
+
+        return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener)
+                           .thenApply((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration));
     }
 
     @Override
