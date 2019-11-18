@@ -16,22 +16,23 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.EncryptionReplacer;
-import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.config.test.builders.ConfigReplacerBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Properties;
 
 import static com.hazelcast.client.config.XmlClientConfigBuilderTest.HAZELCAST_CLIENT_END_TAG;
@@ -44,6 +45,18 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class XmlClientConfigImportVariableReplacementTest extends AbstractClientConfigImportVariableReplacementTest {
+
+    private DeclarativeConfigFileHelper helper;
+
+    @Before
+    public void setUp() {
+        helper = new DeclarativeConfigFileHelper();
+    }
+
+    @After
+    public void tearDown() {
+        helper.ensureTestConfigDeleted();
+    }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
@@ -79,11 +92,88 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
         assertEquals(40, config.getExecutorPoolSize());
     }
 
+    @Test
+    public void testImportResourceWithConfigReplacers() throws Exception {
+        String configReplacer = HAZELCAST_CLIENT_START_TAG
+            + "    <config-replacers>\n"
+            + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
+            + "    </config-replacers>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+        String configLocation = helper.givenConfigFileInWorkDir("config-replacers.xml", configReplacer).getAbsolutePath();
+
+        String xml = HAZELCAST_CLIENT_START_TAG
+            + "    <import resource=\"${config.location}\"/>\n"
+            + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", configLocation);
+        ClientConfig groupConfig = buildConfig(xml, properties);
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
+    }
+
+    @Test
+    public void testImportResourceWithNestedImports() throws Exception {
+        String configReplacer = HAZELCAST_CLIENT_START_TAG
+            + "    <config-replacers>\n"
+            + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
+            + "    </config-replacers>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+        String configReplacerLocation = helper.givenConfigFileInWorkDir("config-replacers.xml", configReplacer).getAbsolutePath();
+
+        String clusterName = HAZELCAST_CLIENT_START_TAG
+            + "    <import resource=\"" + "file:///" + configReplacerLocation + "\"/>\n"
+            + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+
+        String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.xml", clusterName).getAbsolutePath();
+
+        String xml = HAZELCAST_CLIENT_START_TAG
+            + "    <import resource=\"${config.location}\"/>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", clusterNameLocation);
+        ClientConfig groupConfig = buildConfig(xml, properties);
+        assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
+    }
+
+    @Test
+    public void testImportResourceWithNestedImportsAndProperties() throws Exception {
+        ConfigReplacerBuilder testReplacer = new ConfigReplacerBuilder()
+            .withClass(TestReplacer.class)
+            .addProperty("p1", "${p1}")
+            .addProperty("p2", "")
+            .addProperty("p3", "another property")
+            .addProperty("p4", "&lt;test/&gt;");
+        String configReplacer = HAZELCAST_CLIENT_START_TAG
+            + "    <config-replacers fail-if-value-missing='false'>\n"
+            + testReplacer.build()
+            + "    </config-replacers>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+        String configReplacerLocation = helper.givenConfigFileInWorkDir("config-replacer.xml", configReplacer).getAbsolutePath();
+
+        String clusterName = HAZELCAST_CLIENT_START_TAG
+            + "    <import resource=\"" + "file:///" + configReplacerLocation + "\"/>\n"
+            + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+
+        String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.xml", clusterName).getAbsolutePath();
+
+        String xml = HAZELCAST_CLIENT_START_TAG
+            + "    <import resource=\"${config.location}\"/>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+
+        Properties properties = new Properties(System.getProperties());
+        properties.put("config.location", clusterNameLocation);
+        properties.put("p1", "a property");
+        ClientConfig config = buildConfig(xml, properties);
+        assertEquals("a property  another property <test/> $T{p5}", config.getClusterName());
+    }
+
     @Override
     @Test
     public void testImportConfigFromResourceVariables() throws IOException {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String networkConfig = HAZELCAST_CLIENT_START_TAG
                 + "<network>"
                 + "    <cluster-members>"
@@ -100,13 +190,13 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "    </socket-interceptor>"
                 + "  </network>"
                 + HAZELCAST_CLIENT_END_TAG;
-        writeStringToStreamAndClose(os, networkConfig);
+        String configLocationPath = helper.givenConfigFileInWorkDir("config-network.xml", networkConfig).getAbsolutePath();
 
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
-        ClientConfig config = buildConfig(xml, "config.location", file.getAbsolutePath());
+        ClientConfig config = buildConfig(xml, "config.location", configLocationPath);
         assertFalse(config.getNetworkConfig().isSmartRouting());
         assertTrue(config.getNetworkConfig().isRedoOperation());
         assertContains(config.getNetworkConfig().getAddresses(), "192.168.100.100");
@@ -116,8 +206,6 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Override
     @Test
     public void testImportedConfigVariableReplacement() throws IOException {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String networkConfig = HAZELCAST_CLIENT_START_TAG
                 + "  <network>"
                 + "    <cluster-members>"
@@ -125,72 +213,62 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
                 + "    </cluster-members>"
                 + "  </network>"
                 + HAZELCAST_CLIENT_END_TAG;
-        writeStringToStreamAndClose(os, networkConfig);
+        String configLocationPath = helper.givenConfigFileInWorkDir("config-network.xml", networkConfig).getAbsolutePath();
 
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
         Properties properties = new Properties();
-        properties.setProperty("config.location", file.getAbsolutePath());
+        properties.setProperty("config.location", configLocationPath);
         properties.setProperty("ip.address", "192.168.5.5");
         ClientConfig config = buildConfig(xml, properties);
         assertContains(config.getNetworkConfig().getAddresses(), "192.168.5.5");
     }
 
+    private String xmlContentWithImportResource(String url) {
+        return HAZELCAST_CLIENT_START_TAG
+            + "    <import resource=\"" + url + "\"/>\n"
+            + HAZELCAST_CLIENT_END_TAG;
+    }
+
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", ".xml");
-        File config2 = createConfigFile("hz2", ".xml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        FileOutputStream os2 = new FileOutputStream(config2);
-        String config1Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n"
-                + HAZELCAST_CLIENT_END_TAG;
-        String config2Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n"
-                + HAZELCAST_CLIENT_END_TAG;
-        writeStringToStreamAndClose(os1, config1Xml);
-        writeStringToStreamAndClose(os2, config2Xml);
+        String xmlWithCyclicImport = helper.createFilesWithCycleImports(
+            this::xmlContentWithImportResource,
+            helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz2.xml", "").getAbsolutePath()
+        );
 
-        buildConfig(config1Xml);
+        buildConfig(xmlWithCyclicImport);
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", ".xml");
-        File config2 = createConfigFile("hz2", ".xml");
-        File config3 = createConfigFile("hz3", ".xml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        FileOutputStream os2 = new FileOutputStream(config2);
-        FileOutputStream os3 = new FileOutputStream(config2);
-        String config1Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n"
-                + HAZELCAST_CLIENT_END_TAG;
-        String config2Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file:///" + config3.getAbsolutePath() + "\"/>\n"
-                + HAZELCAST_CLIENT_END_TAG;
-        String config3Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n"
-                + HAZELCAST_CLIENT_END_TAG;
-        writeStringToStreamAndClose(os1, config1Xml);
-        writeStringToStreamAndClose(os2, config2Xml);
-        writeStringToStreamAndClose(os3, config3Xml);
-        buildConfig(config1Xml);
+        String xmlWithCyclicImport = helper.createFilesWithCycleImports(
+            this::xmlContentWithImportResource,
+            helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz2.xml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz3.xml", "").getAbsolutePath()
+        );
+
+        buildConfig(xmlWithCyclicImport);
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
-        File config = createConfigFile("hz1", ".xml");
-        FileOutputStream os = new FileOutputStream(config);
+        String pathToEmptyFile = createEmptyFile();
         String configXml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file:///" + config.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + pathToEmptyFile + "\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
-        writeStringToStreamAndClose(os, "");
         buildConfig(configXml);
+    }
+
+    private String createEmptyFile() throws Exception {
+        return helper.givenConfigFileInWorkDir("hz1.xml", "").getAbsolutePath();
     }
 
     @Override
@@ -216,27 +294,27 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Override
     @Test
     public void testReplacers() throws Exception {
-        File passwordFile = tempFolder.newFile(getClass().getSimpleName() + ".pwd");
-        PrintWriter out = new PrintWriter(passwordFile);
-        try {
-            out.print("This is a password");
-        } finally {
-            IOUtil.closeResource(out);
-        }
+        String pathToFileWithPassword = helper.givenConfigFileInWorkDir(
+            getClass().getSimpleName() + ".pwd",
+            "This is a password"
+        ).getAbsolutePath();
+
+        ConfigReplacerBuilder encryptionReplacer = new ConfigReplacerBuilder()
+            .withClass(EncryptionReplacer.class)
+            .addProperty("passwordFile", pathToFileWithPassword)
+            .addProperty("passwordUserProperties", false)
+            .addProperty("keyLengthBits", 64)
+            .addProperty("saltLengthBytes", 8)
+            .addProperty("cipherAlgorithm", "DES")
+            .addProperty("secretKeyFactoryAlgorithm", "PBKDF2WithHmacSHA1")
+            .addProperty("secretKeyAlgorithm", "DES");
+        ConfigReplacerBuilder identityReplacer = new ConfigReplacerBuilder()
+            .withClass(IdentityReplacer.class);
+
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <config-replacers>\n"
-                + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'>\n"
-                + "            <properties>\n"
-                + "                <property name='passwordFile'>" + passwordFile.getAbsolutePath() + "</property>\n"
-                + "                <property name='passwordUserProperties'>false</property>\n"
-                + "                <property name='keyLengthBits'>64</property>\n"
-                + "                <property name='saltLengthBytes'>8</property>\n"
-                + "                <property name='cipherAlgorithm'>DES</property>\n"
-                + "                <property name='secretKeyFactoryAlgorithm'>PBKDF2WithHmacSHA1</property>\n"
-                + "                <property name='secretKeyAlgorithm'>DES</property>\n"
-                + "            </properties>\n"
-                + "        </replacer>\n"
-                + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
+                + encryptionReplacer.build()
+                + identityReplacer.build()
                 + "    </config-replacers>\n"
                 + "    <cluster-name>${java.version} $ID{dev}</cluster-name>\n"
                 + "    <instance-name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</instance-name>\n"
@@ -261,16 +339,16 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     @Override
     @Test
     public void testReplacerProperties() {
+        ConfigReplacerBuilder testReplacer = new ConfigReplacerBuilder()
+            .withClass(TestReplacer.class)
+            .addProperty("p1", "a property")
+            .addProperty("p2", "")
+            .addProperty("p3", "another property")
+            .addProperty("p4", "&lt;test/&gt;");
+
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <config-replacers fail-if-value-missing='false'>\n"
-                + "        <replacer class-name='" + TestReplacer.class.getName() + "'>\n"
-                + "            <properties>\n"
-                + "                <property name='p1'>a property</property>\n"
-                + "                <property name='p2'/>\n"
-                + "                <property name='p3'>another property</property>\n"
-                + "                <property name='p4'>&lt;test/&gt;</property>\n"
-                + "            </properties>\n"
-                + "        </replacer>\n"
+                + testReplacer.build()
                 + "    </config-replacers>\n"
                 + "    <cluster-name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</cluster-name>\n"
                 + HAZELCAST_CLIENT_END_TAG;
