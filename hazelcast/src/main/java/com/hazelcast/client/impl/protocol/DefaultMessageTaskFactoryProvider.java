@@ -52,7 +52,6 @@ import com.hazelcast.client.impl.protocol.task.IsFailoverSupportedMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheEventJournalReadTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheEventJournalSubscribeTask;
-import com.hazelcast.client.impl.protocol.task.cache.Pre38CacheAddInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAddMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorEstimateMessageTask;
 import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterAddMessageTask;
@@ -99,7 +98,6 @@ import com.hazelcast.client.impl.protocol.task.map.MapPutTransientWithMaxIdleMes
 import com.hazelcast.client.impl.protocol.task.map.MapPutWithMaxIdleMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapSetTtlMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapSetWithMaxIdleMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.Pre38MapAddNearCacheEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.metrics.ReadMetricsMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorGetAllScheduledMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorShutdownMessageTask;
@@ -172,7 +170,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
@@ -353,11 +350,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.CachePutCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.cache.CachePutMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new Pre38CacheAddInvalidationListenerTask(clientMessage, node, connection);
             }
         });
         factories.put(com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
@@ -1223,11 +1215,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.map.MapRemoveInterceptorMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new Pre38MapAddNearCacheEntryListenerMessageTask(clientMessage, node, connection);
             }
         });
         factories.put(com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {

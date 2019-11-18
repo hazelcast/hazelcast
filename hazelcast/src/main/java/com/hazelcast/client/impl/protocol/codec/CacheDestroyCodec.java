@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the cache. Clears the internal content and releases any resource.
  */
-@Generated("7855046fa822960752615bae500650d5")
+@Generated("e04b02178879f964819dfdf27ef836ac")
 public final class CacheDestroyCodec {
-    //hex: 0x130800
-    public static final int REQUEST_MESSAGE_TYPE = 1247232;
-    //hex: 0x130801
-    public static final int RESPONSE_MESSAGE_TYPE = 1247233;
+    //hex: 0x130700
+    public static final int REQUEST_MESSAGE_TYPE = 1246976;
+    //hex: 0x130701
+    public static final int RESPONSE_MESSAGE_TYPE = 1246977;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

@@ -39,12 +39,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CacheEntryRemoveListeners notified. java.util.Iterator#next() may return null if the entry is no longer present,
  * has expired or has been evicted.
  */
-@Generated("9eb7048c2387adc6e38bb7ea2bf1a1af")
+@Generated("841da9de824c3f1358964e758cdeb3ba")
 public final class CacheIterateCodec {
-    //hex: 0x130F00
-    public static final int REQUEST_MESSAGE_TYPE = 1249024;
-    //hex: 0x130F01
-    public static final int RESPONSE_MESSAGE_TYPE = 1249025;
+    //hex: 0x130E00
+    public static final int REQUEST_MESSAGE_TYPE = 1248768;
+    //hex: 0x130E01
+    public static final int RESPONSE_MESSAGE_TYPE = 1248769;
     private static final int REQUEST_TABLE_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_BATCH_FIELD_OFFSET = REQUEST_TABLE_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;
