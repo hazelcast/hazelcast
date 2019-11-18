@@ -20,7 +20,6 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
@@ -35,8 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Collection;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static org.junit.Assert.assertEquals;
@@ -73,10 +70,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
     public void tearDown() {
         // explicit cleanup is required because the MBean server is static so registrations
         // will be left over when test's HazelcastInstance shuts down
-        Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
-        for (DistributedObject object : distributedObjects) {
-            object.destroy();
-        }
+        destroyAllDistributedObjects(hz);
     }
 
     @Test

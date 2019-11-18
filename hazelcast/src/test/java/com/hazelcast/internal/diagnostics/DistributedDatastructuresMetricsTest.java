@@ -36,6 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +81,14 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         hz = createHazelcastInstance(config);
 
         warmUpPartitions(hz);
+    }
+
+    @After
+    public void tearDown() {
+        // explicit cleanup is required because the MBean server is static
+        // cache statistics registrations will be left over when test's
+        // HazelcastInstance shuts down
+        destroyAllDistributedObjects(hz);
     }
 
     @Test
