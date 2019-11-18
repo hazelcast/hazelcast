@@ -400,13 +400,13 @@ public class MemberStateImpl implements MemberState {
         }
         root.add("clients", clientsArray);
         root.add("beans", beans.toJson());
-        root.add("memoryStats", ((JsonSerializable) memoryStats).toJson());
-        root.add("operationStats", ((JsonSerializable) operationStats).toJson());
+        addJsonIfSerializable(root, "memoryStats", memoryStats);
+        addJsonIfSerializable(root, "operationStats", operationStats);
         root.add("memberPartitionState", memberPartitionState.toJson());
         root.add("nodeState", nodeState.toJson());
         root.add("hotRestartState", hotRestartState.toJson());
         root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
-        root.add("wanSyncState", ((JsonSerializable) wanSyncState).toJson());
+        addJsonIfSerializable(root, "wanSyncState", wanSyncState);
 
         JsonObject clientStatsObject = new JsonObject();
         for (Map.Entry<UUID, String> entry : clientStats.entrySet()) {
@@ -421,9 +421,32 @@ public class MemberStateImpl implements MemberState {
     private static void serializeMap(JsonObject root, String key, Map<String, ?> map) {
         final JsonObject jsonObject = new JsonObject();
         for (Entry<String, ?> e : map.entrySet()) {
-            jsonObject.add(e.getKey(), ((JsonSerializable) e.getValue()).toJson());
+            addJsonIfSerializable(jsonObject, e.getKey(), e.getValue());
         }
         root.add(key, jsonObject);
+    }
+
+    private static void addJsonIfSerializable(JsonObject root, String key, Object value) {
+        if (value instanceof JsonSerializable) {
+            root.add(key, ((JsonSerializable) value).toJson());
+        }
+    }
+
+    private static <T> void putDeserializedIfSerializable(Map<String, T> deserializedValueMap,
+                                                          String key,
+                                                          JsonObject serializedJson,
+                                                          T instance) {
+        if (instance instanceof JsonSerializable) {
+            ((JsonSerializable) instance).fromJson(serializedJson);
+            deserializedValueMap.put(key, instance);
+        }
+    }
+
+    private static <T> T readJsonIfDeserializable(JsonObject serializedJson, T instance) {
+        if (instance instanceof JsonSerializable) {
+            ((JsonSerializable) instance).fromJson(serializedJson);
+        }
+        return instance;
     }
 
     @Override
@@ -468,9 +491,8 @@ public class MemberStateImpl implements MemberState {
             multiMapStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "replicatedMapStats", new JsonObject())) {
-            LocalReplicatedMapStats stats = new LocalReplicatedMapStatsImpl();
-            ((JsonSerializable) stats).fromJson(next.getValue().asObject());
-            replicatedMapStats.put(next.getName(), stats);
+            putDeserializedIfSerializable(replicatedMapStats, next.getName(), next.getValue().asObject(),
+                    new LocalReplicatedMapStatsImpl());
         }
         for (JsonObject.Member next : getObject(json, "queueStats")) {
             LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
@@ -498,19 +520,16 @@ public class MemberStateImpl implements MemberState {
             executorStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
-            LocalCacheStats stats = new LocalCacheStatsImpl();
-            ((JsonSerializable) stats).fromJson(next.getValue().asObject());
-            cacheStats.put(next.getName(), stats);
+            putDeserializedIfSerializable(cacheStats, next.getName(), next.getValue().asObject(),
+                    new LocalCacheStatsImpl());
         }
         for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
-            LocalWanStats stats = new LocalWanStatsImpl();
-            ((JsonSerializable) stats).fromJson(next.getValue().asObject());
-            wanStats.put(next.getName(), stats);
+            putDeserializedIfSerializable(wanStats, next.getName(), next.getValue().asObject(),
+                    new LocalWanStatsImpl());
         }
         for (JsonObject.Member next : getObject(json, "flakeIdStats", new JsonObject())) {
-            LocalFlakeIdGeneratorStats stats = new LocalFlakeIdGeneratorStatsImpl();
-            ((JsonSerializable) stats).fromJson(next.getValue().asObject());
-            flakeIdGeneratorStats.put(next.getName(), stats);
+            putDeserializedIfSerializable(flakeIdGeneratorStats, next.getName(), next.getValue().asObject(),
+                    new LocalFlakeIdGeneratorStatsImpl());
         }
         for (JsonObject.Member next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());
@@ -525,11 +544,11 @@ public class MemberStateImpl implements MemberState {
         beans.fromJson(getObject(json, "beans"));
         JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
         if (jsonMemoryStats != null) {
-            ((JsonSerializable) memoryStats).fromJson(jsonMemoryStats);
+            memoryStats = readJsonIfDeserializable(jsonMemoryStats, memoryStats);
         }
         JsonObject jsonOperationStats = getObject(json, "operationStats", null);
         if (jsonOperationStats != null) {
-            ((JsonSerializable) operationStats).fromJson(jsonOperationStats);
+            operationStats = readJsonIfDeserializable(jsonOperationStats, operationStats);
         }
         JsonObject jsonMemberPartitionState = getObject(json, "memberPartitionState", null);
         if (jsonMemberPartitionState != null) {
@@ -553,8 +572,7 @@ public class MemberStateImpl implements MemberState {
         }
         JsonObject jsonWanSyncState = getObject(json, "wanSyncState", null);
         if (jsonWanSyncState != null) {
-            wanSyncState = new WanSyncStateImpl();
-            ((JsonSerializable) wanSyncState).fromJson(jsonWanSyncState);
+            wanSyncState = readJsonIfDeserializable(jsonWanSyncState, new WanSyncStateImpl());
         }
         for (JsonObject.Member next : getObject(json, "clientStats")) {
             clientStats.put(UUID.fromString(next.getName()), next.getValue().asString());
