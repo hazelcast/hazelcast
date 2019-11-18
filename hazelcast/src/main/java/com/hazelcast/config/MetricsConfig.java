@@ -142,7 +142,7 @@ public class MetricsConfig {
 
     @Override
     public final int hashCode() {
-        int result = (enabled ? 1 : 0);
+        int result = Boolean.hashCode(enabled);
         result = 31 * result + (managementCenterConfig != null ? managementCenterConfig.hashCode() : 0);
         result = 31 * result + (jmxConfig != null ? jmxConfig.hashCode() : 0);
         result = 31 * result + collectionFrequencySeconds;

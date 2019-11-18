@@ -124,7 +124,7 @@ public class MetricsManagementCenterConfig {
 
     @Override
     public final int hashCode() {
-        int result = (enabled ? 1 : 0);
+        int result = Boolean.hashCode(enabled);
         result = 31 * result + retentionSeconds;
         return result;
     }

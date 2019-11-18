@@ -84,7 +84,7 @@ public class MetricsJmxConfig {
 
     @Override
     public final int hashCode() {
-        return (enabled ? 1 : 0);
+        return Boolean.hashCode(enabled);
     }
 
     @Override
