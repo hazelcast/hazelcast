@@ -23,14 +23,14 @@ import com.hazelcast.client.test.ringbuffer.filter.StartsWithStringFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -197,7 +197,7 @@ public class RingbufferTest extends HazelcastTestSupport {
         Future<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, null).toCompletableFuture();
 
         ReadResultSet rs = f.get();
-        assertInstanceOf(PortableReadResultSet.class, rs);
+        assertInstanceOf(ReadResultSetImpl.class, rs);
 
         assertEquals(3, rs.readCount());
         assertEquals("1", rs.get(0));
@@ -218,7 +218,7 @@ public class RingbufferTest extends HazelcastTestSupport {
         Future<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, null).toCompletableFuture();
 
         ReadResultSet rs = f.get();
-        assertInstanceOf(PortableReadResultSet.class, rs);
+        assertInstanceOf(ReadResultSetImpl.class, rs);
 
         assertEquals(3, rs.readCount());
         assertEquals("1", rs.get(0));
@@ -239,7 +239,7 @@ public class RingbufferTest extends HazelcastTestSupport {
                 .readManyAsync(0, 3, 3, new StartsWithStringFilter("good")).toCompletableFuture();
 
         ReadResultSet rs = f.get();
-        assertInstanceOf(PortableReadResultSet.class, rs);
+        assertInstanceOf(ReadResultSetImpl.class, rs);
 
         assertEquals(5, rs.readCount());
         assertEquals("good1", rs.get(0));
@@ -264,7 +264,7 @@ public class RingbufferTest extends HazelcastTestSupport {
                 .readManyAsync(0, 3, 3, new StartsWithStringFilter("good")).toCompletableFuture();
 
         ReadResultSet rs = f.get();
-        assertInstanceOf(PortableReadResultSet.class, rs);
+        assertInstanceOf(ReadResultSetImpl.class, rs);
 
         assertEquals(5, rs.readCount());
         assertEquals("good1", rs.get(0));

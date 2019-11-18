@@ -145,9 +145,6 @@ public final class FactoryIdHelper {
     public static final String REPLICATED_PORTABLE_FACTORY = "hazelcast.serialization.portable.replicated_map";
     public static final int REPLICATED_PORTABLE_FACTORY_ID = -3;
 
-    public static final String RINGBUFFER_PORTABLE_FACTORY = "hazelcast.serialization.portable.ringbuffer";
-    public static final int RINGBUFFER_PORTABLE_FACTORY_ID = -4;
-
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
     private FactoryIdHelper() {
