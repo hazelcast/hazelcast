@@ -18,11 +18,12 @@ package com.hazelcast.wan;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.RestApiConfig;
+import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -173,8 +174,10 @@ public class WanRESTTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = smallInstanceConfig()
-                .setProperty(GroupProperty.REST_ENABLED.getName(), "true");
+        Config config = smallInstanceConfig();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
+        restApiConfig.setEnabled(true);
+        restApiConfig.enableGroups(RestEndpointGroup.WAN);
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig()
                   .setEnabled(false);

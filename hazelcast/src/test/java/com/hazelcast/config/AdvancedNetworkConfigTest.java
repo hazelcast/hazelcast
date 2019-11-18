@@ -62,17 +62,6 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFailFast_whenRestEnabledWithoutTextEndpoint() {
-        Config config = new Config();
-        config.getAdvancedNetworkConfig()
-              .setEnabled(true);
-        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
-
-        expected.expect(InvalidConfigurationException.class);
-        createHazelcastInstance(config);
-    }
-
-    @Test
     public void testFailFast_whenWanPublisherRequiresUndefinedEndpointConfig() {
         Config config = new Config();
         config.getAdvancedNetworkConfig().setEnabled(true);

@@ -23,7 +23,6 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
-import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -58,8 +57,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
-import static com.hazelcast.internal.config.ConfigValidator.checkAndLogPropertyDeprecated;
-import static com.hazelcast.internal.config.ConfigValidator.ensurePropertyNotConfigured;
+import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 
 @SuppressWarnings({"checkstyle:methodcount"})
@@ -73,74 +71,35 @@ public class NodeIOService implements IOService {
     public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
-        restApiConfig = initRestApiConfig(node.getProperties(), node.getConfig());
-        memcacheProtocolConfig = initMemcacheProtocolConfig(node.getProperties(), node.getConfig());
+        restApiConfig = initRestApiConfig(node.getConfig());
+        memcacheProtocolConfig = initMemcacheProtocolConfig(node.getConfig());
     }
 
     /**
-     * Initializes {@link RestApiConfig} if not provided based on legacy group properties. Also checks (fails fast)
-     * if both the {@link RestApiConfig} and system properties are used.
+     * Initializes {@link RestApiConfig} if not provided based on legacy group properties.
      */
-    @SuppressWarnings("deprecation")
-    private static RestApiConfig initRestApiConfig(HazelcastProperties properties, Config config) {
-        boolean isAdvancedNetwork = config.getAdvancedNetworkConfig().isEnabled();
+    private static RestApiConfig initRestApiConfig(Config config) {
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        boolean isAdvancedNetwork = advancedNetworkConfig.isEnabled();
         RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
-        boolean isRestConfigPresent = isAdvancedNetwork
-                ? config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.REST) != null
-                : restApiConfig != null;
 
-        if (isRestConfigPresent) {
-            // ensure the legacy Hazelcast group properties are not provided
-            ensurePropertyNotConfigured(properties, GroupProperty.REST_ENABLED);
-            ensurePropertyNotConfigured(properties, GroupProperty.HTTP_HEALTHCHECK_ENABLED);
-        }
-
-        if (isRestConfigPresent && isAdvancedNetwork) {
-            restApiConfig = new RestApiConfig();
-            restApiConfig.setEnabled(true);
-
-            RestServerEndpointConfig restServerEndpointConfig = config.getAdvancedNetworkConfig().getRestEndpointConfig();
-            restApiConfig.setEnabledGroups(restServerEndpointConfig.getEnabledGroups());
-
-        } else if (!isRestConfigPresent) {
-            restApiConfig = new RestApiConfig();
-            if (checkAndLogPropertyDeprecated(properties, GroupProperty.REST_ENABLED)) {
-                restApiConfig.setEnabled(true);
-                restApiConfig.enableAllGroups();
-            }
-            if (checkAndLogPropertyDeprecated(properties, GroupProperty.HTTP_HEALTHCHECK_ENABLED)) {
-                restApiConfig.setEnabled(true);
-                restApiConfig.enableGroups(RestEndpointGroup.HEALTH_CHECK);
-            }
+        if (isAdvancedNetwork && advancedNetworkConfig.getEndpointConfigs().get(REST) != null) {
+            RestServerEndpointConfig restServerEndpointConfig = advancedNetworkConfig.getRestEndpointConfig();
+            restApiConfig.setEnabled(true).setEnabledGroups(restServerEndpointConfig.getEnabledGroups());
         }
 
         return restApiConfig;
     }
 
-    @SuppressWarnings("deprecation")
-    private static MemcacheProtocolConfig initMemcacheProtocolConfig(HazelcastProperties properties, Config config) {
-        boolean isAdvancedNetwork = config.getAdvancedNetworkConfig().isEnabled();
-        MemcacheProtocolConfig memcacheProtocolConfig = config.getNetworkConfig().getMemcacheProtocolConfig();
-        boolean isMemcacheConfigPresent = isAdvancedNetwork
-                ? config.getAdvancedNetworkConfig().getEndpointConfigs().get(MEMCACHE) != null
-                : memcacheProtocolConfig != null;
+    private static MemcacheProtocolConfig initMemcacheProtocolConfig(Config config) {
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        boolean isAdvancedNetwork = advancedNetworkConfig.isEnabled();
 
-        if (isMemcacheConfigPresent) {
-            // ensure the legacy Hazelcast group properties are not provided
-            ensurePropertyNotConfigured(properties, GroupProperty.MEMCACHE_ENABLED);
+        if (isAdvancedNetwork && config.getAdvancedNetworkConfig().getEndpointConfigs().get(MEMCACHE) != null) {
+            return new MemcacheProtocolConfig().setEnabled(true);
         }
 
-        if (isMemcacheConfigPresent && isAdvancedNetwork) {
-            memcacheProtocolConfig = new MemcacheProtocolConfig();
-            memcacheProtocolConfig.setEnabled(true);
-        } else if (!isMemcacheConfigPresent) {
-            memcacheProtocolConfig = new MemcacheProtocolConfig();
-            if (checkAndLogPropertyDeprecated(properties, GroupProperty.MEMCACHE_ENABLED)) {
-                memcacheProtocolConfig.setEnabled(true);
-            }
-        }
-
-        return memcacheProtocolConfig;
+        return config.getNetworkConfig().getMemcacheProtocolConfig();
     }
 
     @Override
