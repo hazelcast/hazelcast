@@ -16,32 +16,30 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.AbstractConfigImportVariableReplacementTest;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.client.config.YamlClientConfigBuilderTest.buildConfig;
-import static com.hazelcast.config.helpers.IOUtils.createFileWithContent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -53,20 +51,30 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     @Rule
     public ExpectedException rule = ExpectedException.none();
 
+    private DeclarativeConfigFileHelper helper;
+
+    @Before
+    public void setUp() {
+        helper = new DeclarativeConfigFileHelper();
+    }
+
+    @After
+    public void tearDown() {
+        helper.ensureTestConfigDeleted();
+    }
+
     @Override
     @Test
     public void testImportElementOnlyAppearsInTopLevel() throws IOException {
-        File config1 = createConfigFile("hz1", ".yaml");
-        FileOutputStream os1 = new FileOutputStream(config1);
         String config1Yaml = ""
                 + "hazelcast-client:\n"
                 + "  instance-name: my-instance";
-        writeStringToStreamAndClose(os1, config1Yaml);
+        String configPath = helper.givenConfigFileInWorkDir("hz1.yaml", config1Yaml).getAbsolutePath();
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  network:\n"
                 + "    import:\n"
-                + "      - file:///" + config1.getAbsolutePath() + "\"";
+                + "      - file:///" + configPath + "\"";
 
         ClientConfig clientConfig = buildConfig(yaml);
 
@@ -77,19 +85,17 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
 
     @Test
     public void testImportNoHazelcastClientRootNode() throws Exception {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "properties:\n"
                 + "  prop1: value1\n"
                 + "  prop2: value2\n";
-        writeStringToStreamAndClose(os, importedYaml);
+        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
         String yaml = ""
                 + "import:\n"
                 + "  - file:///" + "${file}\n"
                 + "instance-name: my-instance";
-        ClientConfig clientConfig = buildConfig(yaml, "file", file.getAbsolutePath());
+        ClientConfig clientConfig = buildConfig(yaml, "file", configPath);
         assertEquals("my-instance", clientConfig.getInstanceName());
         assertEquals("value1", clientConfig.getProperty("prop1"));
         assertEquals("value2", clientConfig.getProperty("prop2"));
@@ -124,7 +130,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
             + "    replacers:\n"
             + "      - class-name: " + IdentityReplacer.class.getName() + "\n";
 
-        String configLocation = createFileWithContent("config-replacer", "yaml", configReplacer);
+        String configLocation = helper.givenConfigFileInWorkDir("config-replacer.yaml", configReplacer).getAbsolutePath();
 
         String clusterName = ""
             + "hazelcast:\n"
@@ -146,7 +152,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
             + "    replacers:\n"
             + "      - class-name: " + IdentityReplacer.class.getName() + "\n";
 
-        String configReplacerLocation = createFileWithContent("config-replacer", "yaml", configReplacer);
+        String configReplacerLocation = helper.givenConfigFileInWorkDir("config-replacer.yaml", configReplacer).getAbsolutePath();
 
         String clusterName = ""
             + "hazelcast:\n"
@@ -154,7 +160,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
             + "    - file:///" + configReplacerLocation + "\n"
             + "  cluster-name: ${java.version} $ID{dev}\n";
 
-        String clusterNameLocation = createFileWithContent("cluster-name", "yaml", clusterName);
+        String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.yaml", clusterName).getAbsolutePath();
 
         String yaml = ""
             + "hazelcast:\n"
@@ -181,7 +187,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
             + "          p3: another property\n"
             + "          p4: <test/>\n";
 
-        String configReplacerLocation = createFileWithContent("config-replacer", "yaml", configReplacer);
+        String configReplacerLocation = helper.givenConfigFileInWorkDir("config-replacer.yaml", configReplacer).getAbsolutePath();
 
         String clusterName = ""
             + "hazelcast:\n"
@@ -189,7 +195,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
             + "    - file:///" + configReplacerLocation + "\n"
             + "  cluster-name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}\n";
 
-        String clusterNameLocation = createFileWithContent("cluster-name", "yaml", clusterName);
+        String clusterNameLocation = helper.givenConfigFileInWorkDir("cluster-name.yaml", clusterName).getAbsolutePath();
 
         String yaml = ""
             + "hazelcast:\n"
@@ -206,8 +212,6 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     @Override
     @Test
     public void testImportConfigFromResourceVariables() throws IOException {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String networkConfig = ""
                 + "hazelcast-client:\n"
                 + "  network:\n"
@@ -221,14 +225,14 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "      class-name: com.hazelcast.examples.MySocketInterceptor\n"
                 + "      properties:\n"
                 + "        foo: bar";
-        writeStringToStreamAndClose(os, networkConfig);
+        String networkConfigPath = helper.givenConfigFileInWorkDir("foo.bar", networkConfig).getAbsolutePath();
 
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - ${config.location}";
 
-        ClientConfig config = buildConfig(yaml, "config.location", file.getAbsolutePath());
+        ClientConfig config = buildConfig(yaml, "config.location", networkConfigPath);
         assertFalse(config.getNetworkConfig().isSmartRouting());
         assertTrue(config.getNetworkConfig().isRedoOperation());
         assertContains(config.getNetworkConfig().getAddresses(), "192.168.100.100");
@@ -238,14 +242,12 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     @Override
     @Test
     public void testImportedConfigVariableReplacement() throws IOException {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String networkConfig = ""
                 + "hazelcast-client:\n"
                 + "  network:\n"
                 + "    cluster-members:\n"
                 + "      - ${ip.address}";
-        writeStringToStreamAndClose(os, networkConfig);
+        String networkConfigPath = helper.givenConfigFileInWorkDir("foo.bar", networkConfig).getAbsolutePath();
 
         String yaml = ""
                 + "hazelcast-client:\n"
@@ -253,7 +255,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "    - ${config.location}";
 
         Properties properties = new Properties();
-        properties.setProperty("config.location", file.getAbsolutePath());
+        properties.setProperty("config.location", networkConfigPath);
         properties.setProperty("ip.address", "192.168.5.5");
         ClientConfig config = buildConfig(yaml, properties);
         assertContains(config.getNetworkConfig().getAddresses(), "192.168.5.5");
@@ -262,61 +264,43 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", ".yaml");
-        File config2 = createConfigFile("hz2", ".yaml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        FileOutputStream os2 = new FileOutputStream(config2);
-        String config1Yaml = ""
-                + "hazelcast-client:\n"
-                + "  import:\n"
-                + "    - file:///" + config2.getAbsolutePath() + "\"";
-        String config2Yaml = ""
-                + "hazelcast-client:\n"
-                + "  import:\n"
-                + "    - file:///" + config1.getAbsolutePath() + "\"";
-        writeStringToStreamAndClose(os1, config1Yaml);
-        writeStringToStreamAndClose(os2, config2Yaml);
+        String yamlWithCyclicImport = helper.createFilesWithCycleImports(
+            this::contentWithImportResource,
+            helper.givenConfigFileInWorkDir("hz1.yaml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz2.yaml", "").getAbsolutePath()
+        );
 
-        buildConfig(config1Yaml);
+        buildConfig(yamlWithCyclicImport);
+    }
+
+    private String contentWithImportResource(String url) {
+        return ""
+            + "hazelcast:\n"
+            + "  import:\n"
+            + "    - file:///" + url;
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", ".yaml");
-        File config2 = createConfigFile("hz2", ".yaml");
-        File config3 = createConfigFile("hz3", ".yaml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        FileOutputStream os2 = new FileOutputStream(config2);
-        FileOutputStream os3 = new FileOutputStream(config2);
-        String config1Yaml = ""
-                + "hazelcast-client:\n"
-                + "  import:\n"
-                + "    - file:///" + config2.getAbsolutePath() + "\"";
-        String config2Yaml = ""
-                + "hazelcast-client:\n"
-                + "  import:\n"
-                + "    - file:///" + config3.getAbsolutePath() + "\"";
-        String config3Yaml = ""
-                + "hazelcast-client:\n"
-                + "  import:\n"
-                + "    - file:///" + config1.getAbsolutePath() + "\"";
-        writeStringToStreamAndClose(os1, config1Yaml);
-        writeStringToStreamAndClose(os2, config2Yaml);
-        writeStringToStreamAndClose(os3, config3Yaml);
-        buildConfig(config1Yaml);
+        String yamlWithCyclicImport = helper.createFilesWithCycleImports(
+            this::contentWithImportResource,
+            helper.givenConfigFileInWorkDir("hz1.yaml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz2.yaml", "").getAbsolutePath(),
+            helper.givenConfigFileInWorkDir("hz3.yaml", "").getAbsolutePath()
+        );
+
+        buildConfig(yamlWithCyclicImport);
     }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
-        File config = createConfigFile("hz1", ".yaml");
-        FileOutputStream os = new FileOutputStream(config);
+        String emptyFilePath = helper.givenConfigFileInWorkDir("hz1.yaml", "").getAbsolutePath();
         String configYaml = ""
                 + "hazelcast-client:\n"
                 + "  import:\n"
-                + "    - file:///" + config.getAbsolutePath() + "\"";
-        writeStringToStreamAndClose(os, "");
+                + "    - file:///" + emptyFilePath + "\"";
         buildConfig(configYaml);
     }
 
@@ -356,20 +340,15 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     @Override
     @Test
     public void testReplacers() throws Exception {
-        File passwordFile = tempFolder.newFile(getClass().getSimpleName() + ".pwd");
-        PrintWriter out = new PrintWriter(passwordFile);
-        try {
-            out.print("This is a password");
-        } finally {
-            IOUtil.closeResource(out);
-        }
+        String passwordFilePath = helper.givenConfigFileInWorkDir(getClass().getSimpleName() + ".pwd", "This is a password")
+            .getAbsolutePath();
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  config-replacers:\n"
                 + "    replacers:\n"
                 + "      - class-name: " + EncryptionReplacer.class.getName() + "\n"
                 + "        properties:\n"
-                + "          passwordFile: " + passwordFile.getAbsolutePath() + "\n"
+                + "          passwordFile: " + passwordFilePath + "\n"
                 + "          passwordUserProperties: false\n"
                 + "          keyLengthBits: 64\n"
                 + "          saltLengthBytes: 8\n"
@@ -464,12 +443,11 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
 
     @Test
     public void testImportRedefinesSameConfigScalarThrows() throws Exception {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
                 + "  cluster-name: name1";
-        writeStringToStreamAndClose(os, importedYaml);
+        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml)
+            .getAbsolutePath();
 
         String yaml = ""
                 + "hazelcast-client:\n"
@@ -479,17 +457,16 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
 
         rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/cluster-name"));
 
-        buildConfig(yaml, "config.location", file.getAbsolutePath());
+        buildConfig(yaml, "config.location", configPath);
     }
 
     @Test
     public void testImportSameScalarConfig() throws Exception {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
                 + "  cluster-name: name";
-        writeStringToStreamAndClose(os, importedYaml);
+        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml)
+            .getAbsolutePath();
 
         String yaml = ""
                 + "hazelcast-client:\n"
@@ -497,18 +474,16 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "    - ${config.location}\n"
                 + "  cluster-name: name";
 
-        ClientConfig config = buildConfig(yaml, "config.location", file.getAbsolutePath());
+        ClientConfig config = buildConfig(yaml, "config.location", configPath);
         assertEquals("name", config.getClusterName());
     }
 
     @Test
     public void testImportNodeScalarVsSequenceThrows() throws Exception {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
                 + "  cluster-name: name1";
-        writeStringToStreamAndClose(os, importedYaml);
+        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
         String yaml = ""
                 + "hazelcast-client:\n"
@@ -519,17 +494,15 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
 
         rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/cluster-name"));
 
-        buildConfig(yaml, "config.location", file.getAbsolutePath());
+        buildConfig(yaml, "config.location", configPath);
     }
 
     @Test
     public void testImportNodeScalarVsMappingThrows() throws Exception {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
                 + "  cluster-name: name1";
-        writeStringToStreamAndClose(os, importedYaml);
+        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
         String yaml = ""
                 + "hazelcast-client:\n"
@@ -539,18 +512,16 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
 
         rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/cluster-name"));
 
-        buildConfig(yaml, "config.location", file.getAbsolutePath());
+        buildConfig(yaml, "config.location", configPath);
     }
 
     @Test
     public void testImportNodeSequenceVsMappingThrows() throws Exception {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
                 + "  cluster-name:\n"
                 + "    - seqname";
-        writeStringToStreamAndClose(os, importedYaml);
+        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
         String yaml = ""
                 + "hazelcast-client:\n"
@@ -560,18 +531,16 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
 
         rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/cluster-name"));
 
-        buildConfig(yaml, "config.location", file.getAbsolutePath());
+        buildConfig(yaml, "config.location", configPath);
     }
 
     @Test
     public void testImportNodeSequenceVsSequenceMerges() throws Exception {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
         String importedYaml = ""
                 + "hazelcast-client:\n"
                 + "  client-labels:\n"
                 + "    - label1\n";
-        writeStringToStreamAndClose(os, importedYaml);
+        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
         String yaml = ""
                 + "hazelcast-client:\n"
@@ -580,11 +549,10 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "  client-labels:\n"
                 + "    - label2\n";
 
-        ClientConfig config = buildConfig(yaml, "config.location", file.getAbsolutePath());
+        ClientConfig config = buildConfig(yaml, "config.location", configPath);
         Set<String> labels = config.getLabels();
         assertEquals(2, labels.size());
         assertTrue(labels.contains("label1"));
         assertTrue(labels.contains("label2"));
     }
-
 }

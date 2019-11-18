@@ -16,17 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.helpers.IOUtils;
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.core.HazelcastException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.Properties;
 
 /**
@@ -38,38 +34,6 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     public ExpectedException rule = ExpectedException.none();
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
-
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static File createConfigFile(String filename, String suffix) throws Exception {
-        File file = File.createTempFile(filename, suffix);
-        file.setWritable(true);
-        file.deleteOnExit();
-        return file;
-    }
-
-    protected static void writeStringToStreamAndClose(FileOutputStream os, String string) throws Exception {
-        IOUtils.writeStringToStreamAndClose(os, string);
-    }
-
-    static String createFileWithContent(String filename, String suffix, String content) throws Exception {
-        File file = createConfigFile(filename, suffix);
-        FileOutputStream os = new FileOutputStream(file);
-        writeStringToStreamAndClose(os, content);
-        return file.getAbsolutePath();
-    }
-
-    String createFilesWithCycleImports(String... paths) throws Exception {
-        for (int i = 1; i < paths.length; i++) {
-            createFileWithDependencyImport(paths[i - 1], paths[i]);
-        }
-        return createFileWithDependencyImport(paths[0], paths[1]);
-    }
-
-    private String createFileWithDependencyImport(String dependent, String pathToDependency) throws Exception {
-        final String xmlContent = contentWithImportResource(pathToDependency);
-        writeStringToStreamAndClose(new FileOutputStream(dependent), xmlContent);
-        return xmlContent;
-    }
 
     abstract String contentWithImportResource(String url);
 
@@ -168,14 +132,6 @@ public abstract class AbstractConfigImportVariableReplacementTest {
 
     @Test
     public abstract void testReplaceVariablesUseSystemProperties() throws Exception;
-
-    protected void expectInvalid() {
-        InvalidConfigurationTest.expectInvalid(rule);
-    }
-
-    protected void expectHazelcastException() {
-        rule.expect(HazelcastException.class);
-    }
 
     public static class IdentityReplacer implements ConfigReplacer {
         @Override
