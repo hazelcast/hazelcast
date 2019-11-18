@@ -375,7 +375,11 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         if (segment == null) {
             return newCompletedFuture(false);
         }
+
         Registration reg = segment.removeRegistration(topic, (UUID) id);
+        if (reg == null) {
+            return newCompletedFuture(false);
+        }
 
         return invokeOnAllMembers(reg, new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService()))
                 .thenApply(Objects::nonNull);

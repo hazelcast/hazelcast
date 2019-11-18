@@ -89,7 +89,6 @@ import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
-import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
@@ -584,7 +583,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         if (registration == null) {
             return null;
         }
-        return registration.getId();
+        return updateRegisteredListeners(listener, registration);
     }
 
     @Override
@@ -596,7 +595,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         if (registration == null) {
             return null;
         }
-        return registration.getId();
+        return updateRegisteredListeners(listener, registration);
     }
 
     @Override
@@ -610,24 +609,31 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener)
-                           .thenApply((eventRegistration) -> {
-                               UUID id = eventRegistration.getId();
-                               if (listener instanceof Closeable) {
-                                   closeableListeners.put(id, (Closeable) listener);
-                               } else if (listener instanceof CacheEntryListenerProvider) {
-                                   CacheEntryListener cacheEntryListener = ((CacheEntryListenerProvider) listener)
-                                           .getCacheEntryListener();
-                                   if (cacheEntryListener instanceof Closeable) {
-                                       closeableListeners.put(id, (Closeable) cacheEntryListener);
-                                   }
-                               }
-                               return id;
-                           });
+                           .thenApply((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration));
+    }
+
+    private UUID updateRegisteredListeners(CacheEventListener listener, EventRegistration eventRegistration) {
+        UUID id = eventRegistration.getId();
+        if (listener instanceof Closeable) {
+            closeableListeners.put(id, (Closeable) listener);
+        } else if (listener instanceof CacheEntryListenerProvider) {
+            CacheEntryListener cacheEntryListener = ((CacheEntryListenerProvider) listener)
+                    .getCacheEntryListener();
+            if (cacheEntryListener instanceof Closeable) {
+                closeableListeners.put(id, (Closeable) cacheEntryListener);
+            }
+        }
+        return id;
     }
 
     @Override
     public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener) {
-        return getValue(registerListenerAsync(cacheNameWithPrefix, listener));
+        EventService eventService = getNodeEngine().getEventService();
+
+        EventRegistration registration = eventService
+                .registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
+
+        return updateRegisteredListeners(listener, registration);
     }
 
     @Override
@@ -636,19 +642,29 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
         return eventService.deregisterListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, registrationId)
                            .thenApply(result -> {
-                               Closeable listener = closeableListeners.remove(registrationId);
-                               if (listener != null) {
-                                   IOUtil.closeResource(listener);
-                               }
+                               removeFromLocalResources(registrationId);
                                return result;
                            });
     }
 
-    @Override
-    public boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId) {
-        return getValue(deregisterListenerAsync(cacheNameWithPrefix, registrationId));
+    private void removeFromLocalResources(UUID registrationId) {
+        Closeable listener = closeableListeners.remove(registrationId);
+        if (listener != null) {
+            IOUtil.closeResource(listener);
+        }
     }
 
+    @Override
+    public boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        if (eventService.deregisterListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, registrationId)) {
+            removeFromLocalResources(registrationId);
+            return true;
+        }
+
+        return false;
+    }
 
     @Override
     public void deregisterAllListener(String cacheNameWithPrefix) {
@@ -656,10 +672,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheNameWithPrefix);
         if (registrations != null) {
             for (EventRegistration registration : registrations) {
-                Closeable listener = closeableListeners.remove(registration.getId());
-                if (listener != null) {
-                    IOUtil.closeResource(listener);
-                }
+                removeFromLocalResources(registration.getId());
             }
         }
         eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix);
