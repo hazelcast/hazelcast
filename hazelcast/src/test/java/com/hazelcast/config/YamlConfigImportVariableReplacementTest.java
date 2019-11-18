@@ -17,13 +17,14 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -37,6 +38,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class YamlConfigImportVariableReplacementTest extends AbstractConfigImportVariableReplacementTest {
+    @Rule
+    public ExpectedException rule = ExpectedException.none();
 
     @Override
     String contentWithImportResource(String url) {
@@ -636,7 +639,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         assertEquals("foobar", config.getProperty("prop"));
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testImportRedefinesSameConfigScalarThrows() throws Exception {
         String importedYaml = ""
                 + "hazelcast:\n"
@@ -650,6 +653,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - ${config.location}\n"
                 + "  cluster-name: name2";
 
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
         buildConfig(yaml, "config.location", path);
     }
 
@@ -671,7 +675,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         assertEquals("name", config.getClusterName());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testImportNodeScalarVsSequenceThrows() throws Exception {
         String importedYaml = ""
                 + "hazelcast:\n"
@@ -684,11 +688,12 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - ${config.location}\n"
                 + "  cluster-name:\n"
                 + "    - seqName: {}";
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
         buildConfig(yaml, "config.location", path);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testImportNodeScalarVsMappingThrows() throws Exception {
         String importedYaml = ""
                 + "hazelcast:\n"
@@ -700,11 +705,12 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  import:\n"
                 + "    - ${config.location}\n"
                 + "  cluster-name: {}";
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
 
         buildConfig(yaml, "config.location", path);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testImportNodeSequenceVsMappingThrows() throws Exception {
         String importedYaml = ""
                 + "hazelcast:\n"
@@ -718,6 +724,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - ${config.location}\n"
                 + "  cluster-name: {}";
 
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/cluster-name"));
         buildConfig(yaml, "config.location", path);
     }
 
