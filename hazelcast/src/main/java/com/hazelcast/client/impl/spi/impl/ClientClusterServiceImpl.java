@@ -45,6 +45,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -150,8 +151,11 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     @Override
     public Client getLocalClient() {
         final ClientConnectionManager cm = client.getConnectionManager();
-        final ClientConnection connection = cm.getActiveConnections().iterator().next();
-        InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
+        InetSocketAddress inetSocketAddress = null;
+        Iterator<ClientConnection> iterator = cm.getActiveConnections().iterator();
+        if (iterator.hasNext()) {
+            inetSocketAddress = iterator.next().getLocalSocketAddress();
+        }
         UUID clientUuid = cm.getClientUuid();
         return new ClientImpl(clientUuid, inetSocketAddress, client.getName(), labels);
     }
