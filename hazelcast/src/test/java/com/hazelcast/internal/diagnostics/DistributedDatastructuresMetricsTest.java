@@ -25,9 +25,8 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -71,9 +70,6 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     public void setup() {
         Config config = new Config();
         config.addMapConfig(new MapConfig(NEAR_CACHE_MAP_NAME).setNearCacheConfig(new NearCacheConfig("nearCache")));
-        config.getMetricsConfig()
-              .setMetricsForDataStructuresEnabled(true)
-              .setMinimumLevel(ProbeLevel.INFO);
         config.addCacheConfig(new CacheSimpleConfig()
                 .setName(CACHE_NAME)
                 .setStatisticsEnabled(true));

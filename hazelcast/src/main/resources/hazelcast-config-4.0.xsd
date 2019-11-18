@@ -4722,20 +4722,49 @@
 
     <xs:complexType name="metrics">
         <xs:all>
-            <xs:element name="collection-interval-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
-            <xs:element name="retention-seconds" type="xs:unsignedInt" default="5" minOccurs="0"/>
-            <xs:element name="metrics-for-data-structures" type="xs:boolean" default="false" minOccurs="0"/>
-            <xs:element name="minimum-level" type="metric-minimum-level" default="INFO" minOccurs="0"/>
+            <xs:element name="management-center" type="metrics-management-center" minOccurs="0"/>
+            <xs:element name="jmx" type="metrics-jmx" minOccurs="0"/>
+            <xs:element name="collection-frequency-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the metrics collection frequency in seconds.
+                        By default, metrics are collected every 5 seconds.
+                        May be overridden by 'hazelcast.metrics.collection.frequency'
+                        system property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Master-switch for the metrics system. Controls whether
                     the metrics are collected and publishers are enabled.
+                    May be overridden by 'hazelcast.metrics.enabled'
+                    system property.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="mc-enabled" type="xs:boolean" default="true">
+    </xs:complexType>
+
+    <xs:complexType name="metrics-management-center">
+        <xs:all>
+            <xs:element name="retention-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of seconds the metrics will be retained on the
+                        instance. By default, metrics are retained for 5 seconds (that is for
+                        one collection of metrics values, if default "collection-frequency-seconds"
+                        collection frequency is used). More retention means more heap memory, but
+                        allows for longer client hiccups without losing a value (for example to
+                        restart the Management Center).
+                        May be overridden by 'hazelcast.metrics.mc.retention'
+                        system property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Controls whether the metrics collected are exposed to
@@ -4748,28 +4777,27 @@
                     used.
                     In order to expose the metrics, the metrics system need
                     to be enabled via the enabled master-switch attribute.
+                    May be overridden by 'hazelcast.metrics.mc.enabled'
+                    system property.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="jmx-enabled" type="xs:boolean" default="true">
+    </xs:complexType>
+
+    <xs:complexType name="metrics-jmx">
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Controls whether the metrics collected are exposed to
                     through JMX. It is enabled by default.
                     In order to expose the metrics, the metrics system need
                     to be enabled via the enabled master-switch attribute.
+                    May be overridden by 'hazelcast.metrics.jmx.enabled'
+                    system property.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-
-    <xs:simpleType name="metric-minimum-level">
-        <xs:restriction base="non-space-string">
-            <xs:enumeration value="MANDATORY"/>
-            <xs:enumeration value="INFO"/>
-            <xs:enumeration value="DEBUG"/>
-        </xs:restriction>
-    </xs:simpleType>
 
     <xs:complexType name="realms">
         <xs:sequence>

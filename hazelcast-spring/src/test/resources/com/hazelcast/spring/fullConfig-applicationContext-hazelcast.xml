@@ -933,6 +933,14 @@
                     </hz:fenced-lock>
                 </hz:locks>
             </hz:cp-subsystem>
+
+            <hz:metrics enabled="false">
+                <hz:management-center enabled="false">
+                    <hz:retention-seconds>42</hz:retention-seconds>
+                </hz:management-center>
+                <hz:jmx enabled="false"/>
+                <hz:collection-frequency-seconds>24</hz:collection-frequency-seconds>
+            </hz:metrics>
         </hz:config>
     </hz:hazelcast>
 

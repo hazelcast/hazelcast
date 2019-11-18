@@ -831,4 +831,12 @@
             </fenced-lock>
         </locks>
     </cp-subsystem>
+
+    <metrics enabled="false">
+        <management-center enabled="false">
+            <retention-seconds>42</retention-seconds>
+        </management-center>
+        <jmx enabled="false"/>
+        <collection-frequency-seconds>24</collection-frequency-seconds>
+    </metrics>
 </hazelcast>

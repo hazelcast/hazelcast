@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -26,7 +27,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
-import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -99,7 +99,6 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     public void setUp() {
         initMocks(this);
 
-        config.getMetricsConfig().setCollectionIntervalSeconds(10);
         metricsRegistry = new MetricsRegistryImpl(loggerMock, ProbeLevel.INFO);
 
         when(nodeMock.getLogger(any(Class.class))).thenReturn(loggerMock);
@@ -161,8 +160,9 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     public void testReadMetricsReadsLastTwoCollections() throws Exception {
         // configure metrics to keep the result of the last 2 collection cycles
         config.getMetricsConfig()
-              .setRetentionSeconds(2)
-              .setCollectionIntervalSeconds(1);
+              .setCollectionFrequencySeconds(1)
+              .getManagementCenterConfig()
+              .setRetentionSeconds(2);
 
         MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
         metricsService.init(nodeEngineMock, new Properties());
@@ -202,8 +202,9 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     public void testReadMetricsReadsOnlyLastCollection() throws Exception {
         // configure metrics to keep the result only of the last collection cycle
         config.getMetricsConfig()
-              .setRetentionSeconds(1)
-              .setCollectionIntervalSeconds(5);
+              .setCollectionFrequencySeconds(5)
+              .getManagementCenterConfig()
+              .setRetentionSeconds(1);
 
         MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
         metricsService.init(nodeEngineMock, new Properties());
@@ -254,9 +255,12 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     @Test
     public void testNoCollectionIfMetricsEnabledAndMcJmxDisabled() {
         config.getMetricsConfig()
-              .setEnabled(true)
-              .setMcEnabled(false)
-              .setJmxEnabled(false);
+              .setEnabled(true);
+        config.getMetricsConfig().getManagementCenterConfig()
+              .setEnabled(false);
+        config.getMetricsConfig().getJmxConfig()
+              .setEnabled(false);
+
         ExecutionService executionServiceMock = mock(ExecutionService.class);
         when(nodeEngineMock.getExecutionService()).thenReturn(executionServiceMock);
 
@@ -269,9 +273,11 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     @Test
     public void testMetricsCollectedIfMetricsEnabledAndMcJmxDisabledButCustomPublisherRegistered() {
         config.getMetricsConfig()
-              .setEnabled(true)
-              .setMcEnabled(false)
-              .setJmxEnabled(false);
+              .setEnabled(true);
+        config.getMetricsConfig().getManagementCenterConfig()
+              .setEnabled(false);
+        config.getMetricsConfig().getJmxConfig()
+              .setEnabled(false);
 
         MetricsPublisher publisherMock = mock(MetricsPublisher.class);
         MetricsService metricsService = new MetricsService(nodeEngineMock, () -> metricsRegistry);
@@ -333,8 +339,9 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     public void testExclusion() throws Exception {
         // configure metrics to keep the result only of the last collection cycle
         config.getMetricsConfig()
-              .setRetentionSeconds(1)
-              .setCollectionIntervalSeconds(5);
+              .setCollectionFrequencySeconds(5)
+              .getManagementCenterConfig()
+              .setRetentionSeconds(1);
 
         ExclusionProbeSource metricsSource = new ExclusionProbeSource();
         metricsRegistry.registerStaticMetrics(metricsSource, "testExclusion");

@@ -30,12 +30,12 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MetricsConfigTest {
+public class MetricsManagementCenterConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
-        EqualsVerifier.forClass(MetricsConfig.class)
+        EqualsVerifier.forClass(MetricsManagementCenterConfig.class)
                       .allFieldsShouldBeUsed()
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
@@ -43,19 +43,12 @@ public class MetricsConfigTest {
 
     @Test
     public void testCloneEquals() {
-        // create MetricsConfig with non-defaults
-        MetricsConfig original = new MetricsConfig()
-                .setEnabled(false)
-                .setCollectionFrequencySeconds(1);
-
-        original.getManagementCenterConfig()
+        // create MetricsManagementCenterConfig with non-defaults
+        MetricsManagementCenterConfig original = new MetricsManagementCenterConfig()
                 .setEnabled(false)
                 .setRetentionSeconds(1);
 
-        original.getJmxConfig()
-                .setEnabled(false);
-
-        MetricsConfig clone = new MetricsConfig(original);
+        MetricsManagementCenterConfig clone = new MetricsManagementCenterConfig(original);
 
         assertEquals(original.hashCode(), clone.hashCode());
         assertEquals(original, clone);

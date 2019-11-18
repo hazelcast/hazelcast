@@ -62,6 +62,9 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.config.MetricsJmxConfig;
+import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -333,6 +336,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handlePNCounter(node);
                     } else if ("cp-subsystem".equals(nodeName)) {
                         handleCPSubSystem(node);
+                    } else if ("metrics".equals(nodeName)) {
+                        handleMetrics(node);
                     }
                 }
             }
@@ -2121,6 +2126,36 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         // endpoint-config or server-socket-endpoint-config node
         private EndpointQualifier createEndpointQualifier(ProtocolType type, Node node) {
             return EndpointQualifier.resolve(type, getAttribute(node, "name"));
+        }
+
+        private void handleMetrics(Node node) {
+            BeanDefinitionBuilder metricsConfigBuilder = createBeanBuilder(MetricsConfig.class);
+
+            fillValues(node, metricsConfigBuilder, "managementCenter", "jmx");
+
+            NamedNodeMap attributes = node.getAttributes();
+            Node attrEnabled = attributes.getNamedItem("enabled");
+            boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+            metricsConfigBuilder.addPropertyValue("enabled", enabled);
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("management-center".equals(nodeName)) {
+                    BeanDefinitionBuilder metricsMcConfigBuilder = createBeanBuilder(MetricsManagementCenterConfig.class);
+                    fillValues(child, metricsMcConfigBuilder);
+
+                    metricsConfigBuilder.addPropertyValue("managementCenterConfig",
+                            metricsMcConfigBuilder.getBeanDefinition());
+                } else if ("jmx".equals(nodeName)) {
+                    BeanDefinitionBuilder metricsJmxConfigBuilder = createBeanBuilder(MetricsJmxConfig.class);
+                    fillValues(child, metricsJmxConfigBuilder);
+
+                    metricsConfigBuilder.addPropertyValue("jmxConfig",
+                            metricsJmxConfigBuilder.getBeanDefinition());
+                }
+            }
+
+            configBuilder.addPropertyValue("metricsConfig", metricsConfigBuilder.getBeanDefinition());
         }
     }
 }

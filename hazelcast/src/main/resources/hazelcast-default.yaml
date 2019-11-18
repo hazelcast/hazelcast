@@ -324,3 +324,12 @@ hazelcast:
 #    locks:
 #      default:
 #        lock-acquire-limit: 0
+
+  metrics:
+    enabled: true
+    management-center:
+      enabled: true
+      retention-seconds: 5
+    jmx:
+      enabled: true
+    collection-frequency-seconds: 5

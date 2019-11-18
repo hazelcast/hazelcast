@@ -68,6 +68,7 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MetadataPolicy;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -1416,5 +1417,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(lockConfig2);
         assertEquals(1, lockConfig1.getLockAcquireLimit());
         assertEquals(2, lockConfig2.getLockAcquireLimit());
+    }
+
+    @Test
+    public void testMetricsConfig() {
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertEquals(42, metricsConfig.getManagementCenterConfig().getRetentionSeconds());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+        assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
     }
 }
