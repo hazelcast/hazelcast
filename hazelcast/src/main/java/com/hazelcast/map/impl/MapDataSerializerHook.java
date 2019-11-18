@@ -131,6 +131,7 @@ import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.map.impl.query.Target;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.ConsumeAccumulatorOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.DestroyQueryCacheOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOperation;
@@ -167,6 +168,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE = 2;
     public static final int PUT_BACKUP = 3;
     public static final int REMOVE_BACKUP = 4;
+    public static final int CREATE_ACCUMULATOR_INFO = 5;
     public static final int DATA_COLLECTION = 6;
     public static final int ENTRIES = 7;
     public static final int ENTRY_VIEW = 8;
@@ -326,6 +328,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PUT_BACKUP] = arg -> new PutBackupOperation();
         constructors[REMOVE_BACKUP] = arg -> new RemoveBackupOperation();
         constructors[EVICT_BACKUP] = arg -> new EvictBackupOperation();
+        constructors[CREATE_ACCUMULATOR_INFO] = arg -> new AccumulatorInfo();
         constructors[DATA_COLLECTION] = arg -> new DataCollection();
         constructors[ENTRIES] = arg -> new MapEntries();
         constructors[ENTRY_VIEW] = arg -> (IdentifiedDataSerializable) EntryViews.createSimpleEntryView();

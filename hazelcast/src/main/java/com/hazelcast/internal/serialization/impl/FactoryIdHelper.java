@@ -139,9 +139,6 @@ public final class FactoryIdHelper {
     public static final String PARTITION_PORTABLE_FACTORY = "hazelcast.serialization.portable.partition";
     public static final int PARTITION_PORTABLE_FACTORY_ID = -1;
 
-    public static final String MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.map";
-    public static final int MAP_PORTABLE_FACTORY_ID = -2;
-
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
     private FactoryIdHelper() {
