@@ -20,10 +20,6 @@
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd">
 
-  <properties>
-    <property name="hazelcast.discovery.enabled">true</property>
-  </properties>
-
   <network>
     <discovery-strategies>
       <node-filter class="com.hazelcast.client.impl.spi.impl.discovery.ClientDiscoverySpiTest$TestNodeFilter"/>

@@ -22,7 +22,6 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,36 +30,11 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConflictingConfigTest {
 
-
-    @Test(expected = IllegalStateException.class)
-    public void testHazelcastCloud_and_DiscoverySPIEnabled() {
-        ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().getCloudConfig().setEnabled(true);
-        config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
-        HazelcastClient.newHazelcastClient(config);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testHazelcastCloudViaProperty_and_DiscoverySPIEnabled() {
-        ClientConfig config = new ClientConfig();
-        config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
-        config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), "TOKEN");
-        HazelcastClient.newHazelcastClient(config);
-    }
-
     @Test(expected = IllegalStateException.class)
     public void testHazelcastCloud_firstClass_and_propertyBased() {
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), "TOKEN");
         config.getNetworkConfig().getCloudConfig().setEnabled(true);
-        HazelcastClient.newHazelcastClient(config);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testClusterMembersGiven_and_DiscoverySPIEnabled() {
-        ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().addAddress("127.0.0.1");
-        config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         HazelcastClient.newHazelcastClient(config);
     }
 
@@ -77,18 +51,6 @@ public class ConflictingConfigTest {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().addAddress("127.0.0.1");
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), "TOKEN");
-        HazelcastClient.newHazelcastClient(config);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/15576")
-    public void testAwsEnabled_and_DiscoverySPIEnabled() {
-        ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().getAwsConfig()
-                .setEnabled(true)
-                .setProperty("access-key", "12345")
-                .setProperty("secret-key", "56789");
-        config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         HazelcastClient.newHazelcastClient(config);
     }
 }

@@ -33,6 +33,8 @@ import java.util.Map;
  * based on a parsed XML or configured manually using the config API
  */
 public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
+
+    private boolean enabled;
     private String className;
     // we skip serialization since this may be a user-supplied object and
     // it may not be serializable. Since we send the WAN config in the
@@ -135,10 +137,19 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         return ConfigDataSerializerHook.DISCOVERY_STRATEGY_CONFIG;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public DiscoveryStrategyConfig setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(className);
-
+        out.writeBoolean(enabled);
         out.writeInt(properties.size());
         for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -149,6 +160,7 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readUTF();
+        enabled = in.readBoolean();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             properties.put(in.readUTF(), (Comparable) in.readObject());

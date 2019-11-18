@@ -17,20 +17,18 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.properties.ClientProperty;
+import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
@@ -93,16 +91,12 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     }
 
     private AddressProvider createAddressProvider(ClientConfig config) {
-        boolean discoveryEnabled = new HazelcastProperties(config.getProperties())
-                .getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED);
-
         List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                 ClientAliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(config);
 
         List<String> userConfiguredAddresses = config.getNetworkConfig().getAddresses();
 
-        boolean isAtLeastAProviderConfigured = discoveryEnabled || !aliasedDiscoveryConfigs.isEmpty()
-                || !userConfiguredAddresses.isEmpty();
+        boolean isAtLeastAProviderConfigured = !aliasedDiscoveryConfigs.isEmpty() || !userConfiguredAddresses.isEmpty();
 
         if (isAtLeastAProviderConfigured) {
             // address providers or addresses are configured explicitly, don't add more addresses

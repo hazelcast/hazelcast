@@ -1366,7 +1366,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
 
-        discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(clazz, properties));
+        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(clazz, properties);
+        discoveryStrategyConfig.setEnabled(true);
+        discoveryConfig.addDiscoveryStrategyConfig(discoveryStrategyConfig);
     }
 
     private void handleAliasedDiscoveryStrategy(JoinConfig joinConfig, Node node, String tag) {

@@ -108,7 +108,9 @@ public final class AliasedDiscoveryConfigUtils {
         for (String key : config.getProperties().keySet()) {
             putIfKeyNotNull(properties, key, config.getProperties().get(key));
         }
-        return new DiscoveryStrategyConfig(className, properties);
+        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(className, properties);
+        discoveryStrategyConfig.setEnabled(true);
+        return discoveryStrategyConfig;
     }
 
     private static void validateConfig(AliasedDiscoveryConfig config) {

@@ -16,18 +16,18 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.impl.ClientExtension;
-import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils;
+import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.impl.spi.impl.discovery.HazelcastCloudDiscovery;
 import com.hazelcast.client.impl.spi.impl.discovery.RemoteAddressProvider;
-import com.hazelcast.client.properties.ClientProperty;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.SSLConfig;
@@ -36,7 +36,6 @@ import com.hazelcast.config.security.StaticCredentialsFactory;
 import com.hazelcast.internal.config.DiscoveryConfigReadOnly;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -48,15 +47,13 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import javax.security.auth.callback.UnsupportedCallbackException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.security.auth.callback.UnsupportedCallbackException;
-
-import static com.hazelcast.client.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -162,13 +159,19 @@ class ClientDiscoveryServiceBuilder {
     }
 
     private boolean discoverySpiEnabled(ClientNetworkConfig networkConfig) {
-        return (networkConfig.getDiscoveryConfig() != null && networkConfig.getDiscoveryConfig().isEnabled())
-                || Boolean.parseBoolean(properties.getString(DISCOVERY_SPI_ENABLED));
+        DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig();
+        if (discoveryConfig.getDiscoveryServiceProvider() != null) {
+            return true;
+        }
+        Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
+        if (discoveryStrategyConfigs.stream().anyMatch(DiscoveryStrategyConfig::isEnabled)) {
+            return true;
+        }
+        return networkConfig.getDiscoveryConfig() != null && networkConfig.getDiscoveryConfig().isEnabled();
     }
 
     private boolean usePublicAddress(ClientConfig config) {
-        return properties.getBoolean(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED)
-                || allUsePublicAddress(ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(config.getNetworkConfig()));
+        return allUsePublicAddress(ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(config.getNetworkConfig()));
     }
 
     @SuppressWarnings({"checkstyle:booleanexpressioncomplexity", "checkstyle:npathcomplexity"})
@@ -215,14 +218,13 @@ class ClientDiscoveryServiceBuilder {
     }
 
     private DiscoveryService initDiscoveryService(ClientConfig config) {
+        if (!discoverySpiEnabled(config.getNetworkConfig())) {
+            return null;
+        }
         // Prevent confusing behavior where the DiscoveryService is started
         // and strategies are resolved but the AddressProvider is never registered
         List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                 ClientAliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(config);
-
-        if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED) && aliasedDiscoveryConfigs.isEmpty()) {
-            return null;
-        }
 
         ILogger logger = loggingService.getLogger(DiscoveryService.class);
         ClientNetworkConfig networkConfig = config.getNetworkConfig();

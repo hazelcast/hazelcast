@@ -515,9 +515,7 @@
             Please refer to https://github.com/hazelcast/hazelcast-eureka#hazelcast-configuration for
             the configuration details.
         - <discovery-strategies>:
-            Set its "enabled" attribute to true for discovery in various cloud infrastructures. You also need to set the
-            value of "hazelcast.discovery.enabled" property to true. See the description of the <properties> element
-            to learn how to do this.
+            Set its "enabled" attribute to true for discovery in various cloud infrastructures.
             You can define multiple discovery strategies using the <discovery-strategy> sub-element and its
             properties. Please refer to
             http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
@@ -2695,9 +2693,7 @@
                 Please refer to https://github.com/hazelcast/hazelcast-eureka#hazelcast-configuration for
                 the configuration details.
             - <discovery-strategies>:
-                Set its "enabled" attribute to true for discovery in various cloud infrastructures. You also need to set the
-                value of "hazelcast.discovery.enabled" property to true. See the description of the <properties> element
-                to learn how to do this.
+                Set its "enabled" attribute to true for discovery in various cloud infrastructures.
                 You can define multiple discovery strategies using the <discovery-strategy> sub-element and its
                 properties. Please refer to
                 http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
