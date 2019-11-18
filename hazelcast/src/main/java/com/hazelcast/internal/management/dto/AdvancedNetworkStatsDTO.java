@@ -19,7 +19,7 @@ package com.hazelcast.internal.management.dto;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.EnumMap;
 

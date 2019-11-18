@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.query.LocalIndexStats;
 
 /**
@@ -25,7 +26,7 @@ import com.hazelcast.query.LocalIndexStats;
  * public API.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class LocalIndexStatsImpl implements LocalIndexStats {
+public class LocalIndexStatsImpl implements LocalIndexStats, JsonSerializable {
 
     @Probe
     private volatile long creationTime;

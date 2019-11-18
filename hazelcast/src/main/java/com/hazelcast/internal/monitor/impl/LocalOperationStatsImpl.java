@@ -23,6 +23,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.monitor.LocalOperationStats;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,7 @@ import static com.hazelcast.internal.util.JsonUtil.getLong;
 /**
  * Hazelcast statistic implementations for local operations.
  */
-public class LocalOperationStatsImpl implements LocalOperationStats {
+public class LocalOperationStatsImpl implements LocalOperationStats, JsonSerializable {
 
     private long maxVisibleSlowOperationCount;
     private List<SlowOperationDTO> slowOperations;

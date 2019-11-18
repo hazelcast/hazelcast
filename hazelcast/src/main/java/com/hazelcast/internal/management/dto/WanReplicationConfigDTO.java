@@ -23,7 +23,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 
 /**
  * A JSON representation of {@link WanReplicationConfig}.

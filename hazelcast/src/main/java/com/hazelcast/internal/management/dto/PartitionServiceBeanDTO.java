@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.cluster.Address;

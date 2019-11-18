@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.monitor;
 
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.List;
 
