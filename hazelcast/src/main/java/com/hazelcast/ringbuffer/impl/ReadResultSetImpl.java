@@ -81,6 +81,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         this.filter = filter;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public ReadResultSetImpl(int readCount, List<Data> items, long[] seqs, long nextSeq) {
         this.readCount = readCount;
         this.items = items.toArray(new Data[0]);

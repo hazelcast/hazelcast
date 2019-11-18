@@ -82,9 +82,9 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         //child classloader will steal bytecode from the parent and will define classes on its own
         ClassLoader childLoader = new StealingClassloader(parent);
 
-        Class<?> interfaceClass = childLoader.loadClass(PortableHook.class.getName());
+        Class<?> interfaceClass = childLoader.loadClass(DataSerializerHook.class.getName());
         Iterator<? extends Class<?>> iterator
-                = ServiceLoader.classIterator(interfaceClass, "com.hazelcast.PortableHook", childLoader);
+                = ServiceLoader.classIterator(interfaceClass, "com.hazelcast.DataSerializerHook", childLoader);
 
         //make sure some hook were found.
         assertTrue(iterator.hasNext());
