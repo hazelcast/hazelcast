@@ -31,6 +31,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 public class MapAddPartitionLostListenerMessageTask
         extends AbstractAddListenerMessageTask<MapAddPartitionLostListenerCodec.RequestParameters> {
 
@@ -53,10 +55,10 @@ public class MapAddPartitionLostListenerMessageTask
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 
         if (parameters.localOnly) {
-            return (CompletableFuture<UUID>) mapServiceContext.addLocalPartitionLostListener(listener, parameters.name);
-        } else {
-            return (CompletableFuture<UUID>) mapServiceContext.addPartitionLostListener(listener, parameters.name);
+            return newCompletedFuture(mapServiceContext.addLocalPartitionLostListener(listener, parameters.name));
         }
+
+        return mapServiceContext.addPartitionLostListenerAsync(listener, parameters.name);
     }
 
     @Override

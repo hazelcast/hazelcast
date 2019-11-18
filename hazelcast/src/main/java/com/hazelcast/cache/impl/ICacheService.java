@@ -21,19 +21,19 @@ import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.internal.monitor.LocalCacheStats;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
-import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.RemoteService;
 
 import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
@@ -105,12 +105,20 @@ public interface ICacheService
 
     NodeEngine getNodeEngine();
 
-    Future<UUID> registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
+    UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener);
 
-    Future<UUID> registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter,
-                                  boolean isLocal);
+    UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter);
 
-    Future<Boolean> deregisterListener(String cacheNameWithPrefix, UUID registrationId);
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener);
+
+    CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener);
+
+    CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener,
+                                                  EventFilter eventFilter);
+
+    boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId);
+
+    CompletableFuture<Boolean> deregisterListenerAsync(String cacheNameWithPrefix, UUID registrationId);
 
     void deregisterAllListener(String cacheNameWithPrefix);
 
@@ -120,8 +128,6 @@ public interface ICacheService
      * Creates cache operations according to the storage-type of the cache
      */
     CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat storageType);
-
-    Future<UUID> addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
 
     void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid);
 
@@ -137,6 +143,7 @@ public interface ICacheService
      * primary and backup WAN events for caches.
      */
     CacheWanEventPublisher getCacheWanEventPublisher();
+
 
     /**
      * @param cacheNameWithPrefix the full name of the {@link

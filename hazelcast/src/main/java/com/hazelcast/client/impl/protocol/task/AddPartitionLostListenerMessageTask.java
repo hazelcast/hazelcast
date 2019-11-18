@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class AddPartitionLostListenerMessageTask
         extends AbstractAddListenerMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters> {
@@ -49,10 +50,10 @@ public class AddPartitionLostListenerMessageTask
         };
 
         if (parameters.localOnly) {
-            return (CompletableFuture<UUID>) partitionService.addLocalPartitionLostListener(listener);
-        } else {
-            return (CompletableFuture<UUID>) partitionService.addPartitionLostListener(listener);
+            return newCompletedFuture(partitionService.addLocalPartitionLostListener(listener));
         }
+
+        return partitionService.addPartitionLostListenerAsync(listener);
     }
 
     @Override

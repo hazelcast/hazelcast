@@ -36,7 +36,7 @@ public class RemovePartitionLostListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         final InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
-        return service.removePartitionLostListener(parameters.registrationId);
+        return service.removePartitionLostListenerAsync(parameters.registrationId);
     }
 
     @Override

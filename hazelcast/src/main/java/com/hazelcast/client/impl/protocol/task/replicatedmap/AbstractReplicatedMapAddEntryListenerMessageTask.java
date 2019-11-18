@@ -39,6 +39,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter>
         extends AbstractAddListenerMessageTask<Parameter>
         implements EntryListener<Object, Object> {
@@ -53,13 +55,13 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
         ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
         Predicate predicate = getPredicate();
+        ReplicatedEntryEventFilter filter;
         if (predicate == null) {
-            return (CompletableFuture<UUID>) eventPublishingService
-                    .addEventListener(this, new ReplicatedEntryEventFilter(getKey()), getDistributedObjectName());
+            filter = new ReplicatedEntryEventFilter(getKey());
         } else {
-            return (CompletableFuture<UUID>) eventPublishingService
-                    .addEventListener(this, new ReplicatedQueryEventFilter(getKey(), predicate), getDistributedObjectName());
+            filter = new ReplicatedQueryEventFilter(getKey(), predicate);
         }
+        return newCompletedFuture(eventPublishingService.addLocalEventListener(this, filter, getDistributedObjectName()));
     }
 
     @Override

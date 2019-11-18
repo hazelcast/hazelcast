@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 public class CacheAddNearCacheInvalidationListenerTask
         extends AbstractAddListenerMessageTask<CacheAddNearCacheInvalidationListenerCodec.RequestParameters> {
 
@@ -47,7 +49,9 @@ public class CacheAddNearCacheInvalidationListenerTask
                 = new NearCacheInvalidationListener(endpoint, cacheContext,
                 nodeEngine.getLocalMember().getUuid(), clientMessage.getCorrelationId());
 
-        return (CompletableFuture<UUID>) cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
+        return parameters.localOnly ? newCompletedFuture(
+                cacheService.registerLocalListener(parameters.name, listener)) : (CompletableFuture<UUID>) cacheService
+                .registerListenerAsync(parameters.name, listener);
     }
 
     private final class NearCacheInvalidationListener extends AbstractCacheClientNearCacheInvalidationListener {

@@ -43,7 +43,7 @@ public class MultiMapRemoveEntryListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        return service.removeListener(parameters.name, parameters.registrationId);
+        return service.removeListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

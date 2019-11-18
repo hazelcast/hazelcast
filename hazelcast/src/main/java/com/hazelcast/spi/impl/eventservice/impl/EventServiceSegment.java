@@ -150,7 +150,7 @@ public class EventServiceSegment<S> {
      *
      * @param topic        the event topic
      * @param registration the listener registration
-     * @return if the registration is added
+     * @return true if the registration is added
      */
     public boolean addRegistration(@Nonnull String topic, Registration registration) {
         Collection<Registration> registrations = getRegistrations(topic, true);

@@ -39,7 +39,7 @@ public class TopicRemoveMessageListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         TopicService service = getService(TopicService.SERVICE_NAME);
-        return service.removeMessageListener(parameters.name, parameters.registrationId);
+        return service.removeMessageListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

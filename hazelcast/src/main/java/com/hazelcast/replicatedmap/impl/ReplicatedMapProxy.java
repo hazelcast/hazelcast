@@ -18,15 +18,14 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.ResultSet;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
+import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperation;
@@ -38,14 +37,15 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -59,12 +59,11 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
-import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Thread.currentThread;
@@ -154,8 +153,10 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private void requestDataForPartition(int partitionId) {
         RequestMapDataOperation requestMapDataOperation = new RequestMapDataOperation(name);
         OperationService operationService = nodeEngine.getOperationService();
-        operationService.createInvocationBuilder(SERVICE_NAME, requestMapDataOperation, partitionId)
-                        .setTryCount(ReplicatedMapService.INVOCATION_TRY_COUNT).invoke();
+        operationService
+                .createInvocationBuilder(SERVICE_NAME, requestMapDataOperation, partitionId)
+                .setTryCount(ReplicatedMapService.INVOCATION_TRY_COUNT)
+                .invoke();
     }
 
     @Override
@@ -367,15 +368,14 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public boolean removeEntryListener(@Nonnull UUID id) {
         checkNotNull(id, "Listener ID should not be null!");
-        Future<Boolean> registrationFuture = eventPublishingService.removeEventListener(name, id);
-        return getValue(registrationFuture);
+        return eventPublishingService.removeEventListener(name, id);
     }
 
+    @Nonnull
     @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        Future<UUID> registrationFuture = eventPublishingService.addEventListener(listener, TrueEventFilter.INSTANCE, name);
-        return getValue(registrationFuture);
+        return eventPublishingService.addLocalEventListener(listener, TrueEventFilter.INSTANCE, name);
     }
 
     @Nonnull
@@ -383,8 +383,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedEntryEventFilter(serializationService.toData(key));
-        Future<UUID> registrationFuture = eventPublishingService.addEventListener(listener, eventFilter, name);
-        return getValue(registrationFuture);
+        return eventPublishingService.addLocalEventListener(listener, eventFilter, name);
     }
 
     @Nonnull
@@ -393,18 +392,18 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(null, predicate);
-        Future<UUID> registrationFuture = eventPublishingService.addEventListener(listener, eventFilter, name);
-        return getValue(registrationFuture);
+        return eventPublishingService.addLocalEventListener(listener, eventFilter, name);
     }
 
     @Nonnull
     @Override
-    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nonnull Predicate<K, V> predicate, @Nullable K key) {
+    public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
+                                   @Nonnull Predicate<K, V> predicate,
+                                   @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(serializationService.toData(key), predicate);
-        Future<UUID> registrationFuture = eventPublishingService.addEventListener(listener, eventFilter, name);
-        return getValue(registrationFuture);
+        return eventPublishingService.addLocalEventListener(listener, eventFilter, name);
     }
 
     @Nonnull

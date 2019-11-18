@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -62,9 +61,8 @@ public class EventServiceTest extends HazelcastTestSupport {
         Set<UUID> registrationIds = new HashSet<UUID>();
         Object listener = new Object();
         while (getClusterService(hz2).getSize() < 3) {
-            Future<UUID> registration = eventService.registerListener(serviceName, topic, listener)
-                                                    .thenApply(EventRegistration::getId);
-            registrationIds.add(getValue(registration));
+            EventRegistration registration = eventService.registerListener(serviceName, topic, listener);
+            registrationIds.add(registration.getId());
         }
 
         HazelcastInstance hz3 = future.get();
@@ -88,15 +86,14 @@ public class EventServiceTest extends HazelcastTestSupport {
         Set<UUID> registrationIds = new HashSet<UUID>();
         Object listener = new Object();
         for (int i = 0; i < 500; i++) {
-            Future<UUID> registration = eventService.registerListener(serviceName, topic, listener)
-                                                    .thenApply(EventRegistration::getId);
-            registrationIds.add(getValue(registration));
+            EventRegistration registration = eventService.registerListener(serviceName, topic, listener);
+            registrationIds.add(registration.getId());
         }
 
         Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));
 
         for (UUID registrationId : registrationIds) {
-            eventService.deregisterListener(serviceName, topic, registrationId).get();
+            eventService.deregisterListener(serviceName, topic, registrationId);
         }
 
         assertThat(eventService.getRegistrations(serviceName, topic), Matchers.empty());

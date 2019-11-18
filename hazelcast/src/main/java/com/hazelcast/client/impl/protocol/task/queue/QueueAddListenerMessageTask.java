@@ -33,6 +33,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 /**
  * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec#REQUEST_MESSAGE_TYPE}
@@ -75,8 +77,12 @@ public class QueueAddListenerMessageTask
                 }
             }
         };
-        return (CompletableFuture<UUID>) service
-                .addItemListener(parameters.name, listener, parameters.includeValue, parameters.localOnly);
+
+        if (parameters.localOnly) {
+            return newCompletedFuture(service.addLocalItemListener(parameters.name, listener, parameters.includeValue));
+        }
+
+        return service.addItemListenerAsync(parameters.name, listener, parameters.includeValue);
     }
 
     @Override

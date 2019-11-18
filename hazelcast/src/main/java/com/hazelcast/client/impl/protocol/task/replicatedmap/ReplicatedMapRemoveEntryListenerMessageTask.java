@@ -41,7 +41,7 @@ public class ReplicatedMapRemoveEntryListenerMessageTask
     protected Future<Boolean> deRegisterListener() {
         ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
-        return eventPublishingService.removeEventListener(parameters.name, parameters.registrationId);
+        return eventPublishingService.removeEventListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

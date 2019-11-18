@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
@@ -40,15 +39,14 @@ import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.TransactionalService;
-import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -63,6 +61,8 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -75,7 +75,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -83,11 +82,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.internal.util.FutureUtil.getValue;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 import static java.lang.String.format;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
@@ -756,34 +754,30 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public UUID addMembershipListener(@Nonnull MembershipListener listener) {
-        Future<UUID> registrationFuture = addMembershipListenerAsync(listener);
-        return getValue(registrationFuture);
-    }
-
-    public Future<UUID> addMembershipListenerAsync(@Nonnull MembershipListener listener) {
         checkNotNull(listener, "listener cannot be null");
 
         EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration;
         if (listener instanceof InitialMembershipListener) {
             lock.lock();
             try {
                 ((InitialMembershipListener) listener).init(new InitialMembershipEvent(this, getMembers()));
-                return eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener)
-                                   .thenApply(EventRegistration::getId);
+                registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
             } finally {
                 lock.unlock();
             }
         } else {
-            return eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener).thenApply(EventRegistration::getId);
+            registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
         }
+
+        return registration.getId();
     }
 
     public boolean removeMembershipListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "registrationId cannot be null");
 
         EventService eventService = nodeEngine.getEventService();
-        Future<Boolean> registrationFuture = eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
-        return getValue(registrationFuture);
+        return eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST")

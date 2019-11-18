@@ -62,6 +62,7 @@ import java.util.logging.Level;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
@@ -243,69 +244,99 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public CompletableFuture<EventRegistration> registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
-                                                                      @Nonnull Object listener) {
-        return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, true);
+    public EventRegistration registerLocalListener(@Nonnull String serviceName,
+                                                   @Nonnull String topic,
+                                                   @Nonnull Object listener) {
+        return registerLocalListener(serviceName, topic, TrueEventFilter.INSTANCE, listener);
     }
 
     @Override
-    public CompletableFuture<EventRegistration> registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
-                                                                      @Nonnull EventFilter filter, @Nonnull Object listener) {
-        return registerListenerInternal(serviceName, topic, filter, listener, true);
-    }
-
-    @Override
-    public CompletableFuture<EventRegistration> registerListener(@Nonnull String serviceName, @Nonnull String topic,
-                                                                 @Nonnull Object listener) {
-        return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, false);
-    }
-
-    @Override
-    public CompletableFuture<EventRegistration> registerListener(@Nonnull String serviceName, @Nonnull String topic,
-                                                                 @Nonnull EventFilter filter, @Nonnull Object listener) {
-        return registerListenerInternal(serviceName, topic, filter, listener, false);
+    public EventRegistration registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                   @Nonnull EventFilter filter, @Nonnull Object listener) {
+        return registerLocalListenerInternal(serviceName, topic, filter, listener, true);
     }
 
     /**
-     * Registers the listener for events matching the service name, topic and filter.
-     * If {@code localOnly} is {@code true}, it will register only for events published on this node,
-     * otherwise, the registration is sent to other nodes and the listener will listen for
-     * events on all cluster members.
+     *
+     /**
+     * Registers the listener for events matching the service name, topic and filter on local member.
      *
      * @param serviceName the service name for which we are registering
      * @param topic       the event topic for which we are registering
      * @param filter      the filter for the listened events
      * @param listener    the event listener
-     * @param localOnly   whether to register on local events or on events on all cluster members
      * @return the event registration
      * @throws IllegalArgumentException if the listener or filter is null
      */
-    private CompletableFuture<EventRegistration> registerListenerInternal(@Nonnull String serviceName, @Nonnull String topic,
-                                                                          @Nonnull EventFilter filter, @Nonnull Object listener,
-                                                                          boolean localOnly) {
-        if (listener == null) {
-            throw new IllegalArgumentException("Null listener is not allowed!");
-        }
-        if (filter == null) {
-            throw new IllegalArgumentException("Null filter is not allowed!");
-        }
+    private EventRegistration registerLocalListenerInternal(@Nonnull String serviceName, @Nonnull String topic,
+                                                    @Nonnull EventFilter filter, @Nonnull Object listener, boolean isLocal) {
+        checkNotNull(listener, "Null listener is not allowed!");
+        checkNotNull(filter, "Null filter is not allowed!");
         EventServiceSegment segment = getSegment(serviceName, true);
         UUID id = UuidUtil.newUnsecureUUID();
-        final Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener,
-                localOnly);
+        final Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, isLocal);
         if (!segment.addRegistration(topic, reg)) {
-            return newCompletedFuture(null);
+            return null;
         }
 
-        return invokeOnAllMembersIfNeeded(reg, new RegistrationOperationSupplier(reg, nodeEngine.getClusterService()));
+        return reg;
     }
 
-    private CompletableFuture<EventRegistration> invokeOnAllMembersIfNeeded(Registration reg,
-                                                                            Supplier<Operation> operationSupplier) {
-        if (reg == null || reg.isLocalOnly()) {
-            return newCompletedFuture(reg);
+    @Override
+    public EventRegistration registerListener(@Nonnull String serviceName,
+                                              @Nonnull String topic,
+                                              @Nonnull Object listener) {
+        return getValue(registerListenerAsync(serviceName, topic, listener));
+    }
+
+    @Override
+    public EventRegistration registerListener(@Nonnull String serviceName,
+                                              @Nonnull String topic,
+                                              @Nonnull EventFilter filter,
+                                              @Nonnull Object listener) {
+        return getValue(registerListenerAsync(serviceName, topic, filter, listener));
+    }
+
+    /**
+     * Registers the listener for events matching the service name, topic and filter.
+     * It will register only for events published on this node and then the registration is sent to other nodes and the listener
+     * will listen for events on all cluster members.
+     *
+     * @param serviceName the service name for which we are registering
+     * @param topic       the event topic for which we are registering
+     * @param listener    the event listener
+     * @return the event registration future
+     */
+    @Override
+    public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+                                                                      @Nonnull Object listener) {
+        return registerListenerAsync(serviceName, topic, TrueEventFilter.INSTANCE, listener);
+    }
+
+    /**
+     * Registers the listener for events matching the service name, topic and filter.
+     * It will register only for events published on this node and then the registration is sent to other nodes and the listener
+     * will listen for events on all cluster members.
+     *
+     * @param serviceName the service name for which we are registering
+     * @param topic       the event topic for which we are registering
+     * @param filter      the filter for the listened events
+     * @param listener    the event listener
+     * @return the event registration future
+     */
+    @Override
+    public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+                                                                          @Nonnull EventFilter filter, @Nonnull Object listener) {
+        Registration registration = (Registration) registerLocalListenerInternal(serviceName, topic, filter, listener, false);
+
+        if (registration == null) {
+            newCompletedFuture(null);
         }
 
+        return invokeOnAllMembers(registration, new RegistrationOperationSupplier(registration, nodeEngine.getClusterService()));
+    }
+
+    private CompletableFuture<EventRegistration> invokeOnAllMembers(Registration reg, Supplier<Operation> operationSupplier) {
         return invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES).thenApply(result -> {
             boolean isSuccess = (boolean) result;
             if (!isSuccess) {
@@ -325,7 +356,17 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public Future<Boolean> deregisterListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull Object id) {
+    public boolean deregisterListener(@Nonnull String serviceName,
+                                      @Nonnull String topic,
+                                      @Nonnull Object id) {
+        Boolean value = getValue(deregisterListenerAsync(serviceName, topic, id));
+        return value != null && value;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deregisterListenerAsync(@Nonnull String serviceName,
+                                      @Nonnull String topic,
+                                      @Nonnull Object id) {
         checkNotNull(serviceName, "Null serviceName is not allowed!");
         checkNotNull(topic, "Null topic is not allowed!");
         checkNotNull(id, "Null id is not allowed!");
@@ -336,7 +377,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         }
         Registration reg = segment.removeRegistration(topic, (UUID) id);
 
-        return invokeOnAllMembersIfNeeded(reg, new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService()))
+        return invokeOnAllMembers(reg, new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService()))
                 .thenApply(Objects::nonNull);
     }
 

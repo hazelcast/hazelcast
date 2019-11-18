@@ -16,20 +16,13 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.internal.locksupport.LockSupportService;
-import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.locksupport.LockStoreInfo;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.LockInterceptorService;
 import com.hazelcast.internal.services.ManagedService;
@@ -37,18 +30,17 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
-import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.multimap.LocalMultiMapStats;
+import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -57,10 +49,18 @@ import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MultiMapMergeTypes;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -74,6 +74,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -242,19 +243,41 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         publisher.publishEntryEvent(multiMapName, eventType, key, newValue, oldValue);
     }
 
-    public Future<UUID> addListener(String name, @Nonnull EventListener listener, Data key, boolean includeValue, boolean local) {
+    public UUID addListener(String name,
+                              @Nonnull EventListener listener,
+                              Data key,
+                              boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
-        if (local) {
-            return eventService.registerLocalListener(SERVICE_NAME, name, filter, listener).thenApply(EventRegistration::getId);
-        } else {
-            return eventService.registerListener(SERVICE_NAME, name, filter, listener).thenApply(EventRegistration::getId);
-        }
+        return eventService.registerListener(SERVICE_NAME, name, filter, listener).getId();
     }
 
-    public Future<Boolean> removeListener(String name, UUID registrationId) {
+    public CompletableFuture<UUID> addListenerAsync(String name,
+                                                   @Nonnull EventListener listener,
+                                                   Data key,
+                                                   boolean includeValue) {
+        EventService eventService = nodeEngine.getEventService();
+        MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
+        return eventService.registerListenerAsync(SERVICE_NAME, name, filter, listener).thenApply(EventRegistration::getId);
+    }
+
+    public UUID addLocalListener(String name,
+                              @Nonnull EventListener listener,
+                              Data key,
+                              boolean includeValue) {
+        EventService eventService = nodeEngine.getEventService();
+        MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
+        return eventService.registerLocalListener(SERVICE_NAME, name, filter, listener).getId();
+    }
+
+    public boolean removeListener(String name, UUID registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
+    }
+
+    public Future<Boolean> removeListenerAsync(String name, UUID registrationId) {
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListenerAsync(SERVICE_NAME, name, registrationId);
     }
 
     @Override

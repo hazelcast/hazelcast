@@ -40,7 +40,7 @@ public class CacheRemovePartitionLostListenerMessageTask
     protected Future<Boolean> deRegisterListener() {
         ICacheService service = getService(CacheService.SERVICE_NAME);
         return service.getNodeEngine().getEventService()
-                      .deregisterListener(ICacheService.SERVICE_NAME, parameters.name, parameters.registrationId);
+                      .deregisterListenerAsync(ICacheService.SERVICE_NAME, parameters.name, parameters.registrationId);
     }
 
     @Override

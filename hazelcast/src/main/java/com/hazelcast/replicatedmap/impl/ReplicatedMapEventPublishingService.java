@@ -16,7 +16,6 @@
 
 package com.hazelcast.replicatedmap.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
@@ -24,24 +23,25 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.event.MapEventData;
+import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -53,6 +53,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 
 /**
@@ -131,22 +132,29 @@ public class ReplicatedMapEventPublishingService
     }
 
     public @Nonnull
-    Future<UUID> addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
+    UUID addLocalEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
-        return eventService.registerLocalListener(SERVICE_NAME, mapName, eventFilter, entryListener)
-                           .thenApply(EventRegistration::getId);
+        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, eventFilter,
+                entryListener);
+        return registration.getId();
     }
 
-    public Future<Boolean> removeEventListener(@Nonnull String mapName, @Nonnull UUID registrationId) {
+    public boolean removeEventListener(@Nonnull String mapName, @Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId cannot be null");
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
-        if (registrationId == null) {
-            throw new IllegalArgumentException("registrationId cannot be null");
-        }
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
+    }
+
+    public Future<Boolean> removeEventListenerAsync(@Nonnull String mapName, @Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId cannot be null");
+        if (nodeEngine.getLocalMember().isLiteMember()) {
+            throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
+        }
+        return eventService.deregisterListenerAsync(SERVICE_NAME, mapName, registrationId);
     }
 
     public void fireMapClearedEvent(int deletedEntrySize, String name) {

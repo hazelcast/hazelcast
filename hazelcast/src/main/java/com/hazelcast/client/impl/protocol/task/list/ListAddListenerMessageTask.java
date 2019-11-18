@@ -37,6 +37,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 public class ListAddListenerMessageTask
         extends AbstractAddListenerMessageTask<ListAddListenerCodec.RequestParameters> {
 
@@ -51,12 +53,12 @@ public class ListAddListenerMessageTask
         EventService eventService = clientEngine.getEventService();
         CollectionEventFilter filter = new CollectionEventFilter(parameters.includeValue);
         if (parameters.localOnly) {
-            return eventService.registerLocalListener(getServiceName(), parameters.name, filter, listener)
-                               .thenApply(EventRegistration::getId);
-        } else {
-            return eventService.registerListener(getServiceName(), parameters.name, filter, listener)
-                               .thenApply(EventRegistration::getId);
+            return newCompletedFuture(
+                    eventService.registerLocalListener(getServiceName(), parameters.name, filter, listener).getId());
         }
+
+        return eventService.registerListenerAsync(getServiceName(), parameters.name, filter, listener)
+                           .thenApply(EventRegistration::getId);
     }
 
     private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {

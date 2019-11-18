@@ -43,7 +43,7 @@ public class SetRemoveListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         final EventService eventService = clientEngine.getEventService();
-        return eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
+        return eventService.deregisterListenerAsync(getServiceName(), parameters.name, parameters.registrationId);
     }
 
     @Override

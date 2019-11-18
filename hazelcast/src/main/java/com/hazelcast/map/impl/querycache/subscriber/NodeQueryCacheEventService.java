@@ -16,12 +16,10 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -35,23 +33,23 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.Future;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.util.FutureUtil.getValue;
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Node side event service implementation for query cache.
@@ -89,14 +87,12 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
 
     @Override
     public UUID addPublisherListener(String mapName, String cacheId, ListenerAdapter listenerAdapter) {
-        Future<UUID> registrationFuture = mapServiceContext
-                .addListenerAdapter(listenerAdapter, TrueEventFilter.INSTANCE, cacheId);
-        return getValue(registrationFuture);
+        return mapServiceContext.addListenerAdapter(listenerAdapter, TrueEventFilter.INSTANCE, cacheId);
     }
 
     @Override
     public boolean removePublisherListener(String mapName, String cacheId, UUID listenerId) {
-        return getValue(mapServiceContext.removeEventListener(cacheId, listenerId));
+        return mapServiceContext.removeEventListener(cacheId, listenerId);
     }
 
     @Override
@@ -111,10 +107,9 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
         ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                Future<UUID> registration = eventService
-                        .registerLocalListener(SERVICE_NAME, cacheId, filter == null ? TrueEventFilter.INSTANCE : filter,
-                                listenerAdaptor).thenApply(EventRegistration::getId);
-                return getValue(registration);
+                EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, cacheId,
+                        filter == null ? TrueEventFilter.INSTANCE : filter, listenerAdaptor);
+                return registration.getId();
             }
         } finally {
             closeResource(mutex);
@@ -123,7 +118,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
 
     @Override
     public boolean removeListener(String mapName, String cacheId, UUID listenerId) {
-        return getValue(eventService.deregisterListener(SERVICE_NAME, cacheId, listenerId));
+        return eventService.deregisterListener(SERVICE_NAME, cacheId, listenerId);
     }
 
     @Override

@@ -34,6 +34,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 public class CacheAddPartitionLostListenerMessageTask
         extends AbstractAddListenerMessageTask<CacheAddPartitionLostListenerCodec.RequestParameters> {
 
@@ -57,12 +59,12 @@ public class CacheAddPartitionLostListenerMessageTask
         CacheService service = getService(CacheService.SERVICE_NAME);
         EventService eventService = service.getNodeEngine().getEventService();
         if (parameters.localOnly) {
-            return eventService.registerLocalListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter)
-                               .thenApply(EventRegistration::getId);
-        } else {
-            return eventService.registerListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter)
-                               .thenApply(EventRegistration::getId);
+            return newCompletedFuture(
+                    eventService.registerLocalListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter));
         }
+
+        return eventService.registerListenerAsync(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter)
+                           .thenApply(EventRegistration::getId);
     }
 
     @Override

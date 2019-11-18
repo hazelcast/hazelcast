@@ -36,6 +36,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         extends AbstractAddListenerMessageTask<Parameter> {
 
@@ -52,10 +54,10 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         String name = getDistributedObjectName();
         EventFilter eventFilter = getEventFilter();
         if (isLocalOnly()) {
-            return (CompletableFuture<UUID>) mapServiceContext.addLocalEventListener(listener, eventFilter, name);
-        } else {
-            return (CompletableFuture<UUID>) mapServiceContext.addEventListener(listener, eventFilter, name);
+            return newCompletedFuture(mapServiceContext.addLocalEventListener(listener, eventFilter, name));
         }
+
+        return mapServiceContext.addEventListenerAsync(listener, eventFilter, name);
     }
 
     protected Object newMapListener() {

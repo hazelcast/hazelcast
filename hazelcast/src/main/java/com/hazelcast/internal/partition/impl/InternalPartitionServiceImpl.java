@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -27,13 +26,10 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
-import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionEventListener;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
@@ -50,6 +46,7 @@ import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.NoDataMemberInClusterException;
@@ -64,6 +61,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -80,6 +80,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -1042,28 +1043,38 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
-    public Future<UUID> addMigrationListener(MigrationListener listener) {
+    public UUID addMigrationListener(MigrationListener listener) {
         return partitionEventManager.addMigrationListener(listener);
     }
 
     @Override
-    public Future<Boolean> removeMigrationListener(UUID registrationId) {
+    public boolean removeMigrationListener(UUID registrationId) {
         return partitionEventManager.removeMigrationListener(registrationId);
     }
 
     @Override
-    public Future<UUID> addPartitionLostListener(PartitionLostListener listener) {
+    public UUID addPartitionLostListener(PartitionLostListener listener) {
         return partitionEventManager.addPartitionLostListener(listener);
     }
 
     @Override
-    public Future<UUID> addLocalPartitionLostListener(PartitionLostListener listener) {
+    public CompletableFuture<UUID> addPartitionLostListenerAsync(PartitionLostListener listener) {
+        return partitionEventManager.addPartitionLostListenerAsync(listener);
+    }
+
+    @Override
+    public UUID addLocalPartitionLostListener(PartitionLostListener listener) {
         return partitionEventManager.addLocalPartitionLostListener(listener);
     }
 
     @Override
-    public Future<Boolean> removePartitionLostListener(UUID registrationId) {
+    public boolean removePartitionLostListener(UUID registrationId) {
         return partitionEventManager.removePartitionLostListener(registrationId);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removePartitionLostListenerAsync(UUID registrationId) {
+        return partitionEventManager.removePartitionLostListenerAsync(registrationId);
     }
 
     @Override

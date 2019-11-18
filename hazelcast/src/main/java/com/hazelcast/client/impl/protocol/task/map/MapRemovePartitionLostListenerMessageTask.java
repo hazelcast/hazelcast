@@ -38,7 +38,7 @@ public class MapRemovePartitionLostListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         MapService mapService = getService(MapService.SERVICE_NAME);
-        return mapService.getMapServiceContext().removePartitionLostListener(parameters.name, parameters.registrationId);
+        return mapService.getMapServiceContext().removePartitionLostListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

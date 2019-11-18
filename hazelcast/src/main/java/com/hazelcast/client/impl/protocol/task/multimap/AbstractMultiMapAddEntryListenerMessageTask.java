@@ -34,6 +34,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
         extends AbstractAddListenerMessageTask<P> {
 
@@ -49,7 +51,11 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P>
         final String name = getDistributedObjectName();
         Data key = getKey();
         boolean includeValue = shouldIncludeValue();
-        return (CompletableFuture<UUID>) service.addListener(name, listener, key, includeValue, isLocalOnly());
+        if (isLocalOnly()) {
+            return newCompletedFuture(service.addLocalListener(name, listener, key, includeValue));
+        }
+
+        return service.addListenerAsync(name, listener, key, includeValue);
     }
 
     protected abstract boolean shouldIncludeValue();

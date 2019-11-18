@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -211,7 +210,7 @@ public class CacheClearTest extends CacheTestSupport {
 
     private void registerInvalidationListener(CacheEventListener cacheEventListener, String name) {
         HazelcastInstanceProxy hzInstance = (HazelcastInstanceProxy) this.hazelcastInstance;
-        getValue(hzInstance.getOriginal().node.getNodeEngine().getEventService()
-                .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener));
+        hzInstance.getOriginal().node.getNodeEngine().getEventService()
+                .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
     }
 }

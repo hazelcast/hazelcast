@@ -35,6 +35,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class TopicAddMessageListenerMessageTask
         extends AbstractAddListenerMessageTask<TopicAddMessageListenerCodec.RequestParameters>
@@ -51,7 +52,10 @@ public class TopicAddMessageListenerMessageTask
     protected CompletableFuture<UUID> processInternal() {
         partitionKey = serializationService.toData(parameters.name);
         TopicService service = getService(TopicService.SERVICE_NAME);
-        return (CompletableFuture<UUID>) service.addMessageListener(parameters.name, this, parameters.localOnly);
+        if (parameters.localOnly) {
+            return newCompletedFuture(service.addLocalMessageListener(parameters.name, this));
+        }
+        return (CompletableFuture<UUID>) service.addMessageListenerAsync(parameters.name, this);
     }
 
     @Override

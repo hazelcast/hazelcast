@@ -49,7 +49,7 @@ public class CacheRemoveEntryListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         CacheService service = getService(CacheService.SERVICE_NAME);
-        return service.deregisterListener(parameters.name, parameters.registrationId);
+        return service.deregisterListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

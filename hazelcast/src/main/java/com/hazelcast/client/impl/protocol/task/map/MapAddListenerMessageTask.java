@@ -35,6 +35,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+
 /**
  * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec#REQUEST_MESSAGE_TYPE}
@@ -52,11 +54,10 @@ public class MapAddListenerMessageTask
         MapService mapService = getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         if (parameters.localOnly) {
-            return (CompletableFuture<UUID>) mapServiceContext.addLocalListenerAdapter(this, parameters.listenerName);
-        } else {
-            return (CompletableFuture<UUID>) mapServiceContext
-                    .addListenerAdapter(this, TrueEventFilter.INSTANCE, parameters.listenerName);
+            return newCompletedFuture(mapServiceContext.addLocalListenerAdapter(this, parameters.listenerName));
         }
+
+        return mapServiceContext.addListenerAdapterAsync(this, TrueEventFilter.INSTANCE, parameters.listenerName);
     }
 
     @Override

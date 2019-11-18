@@ -43,7 +43,7 @@ public class QueueRemoveListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         final QueueService service = getService(getServiceName());
-        return service.removeItemListener(parameters.name, parameters.registrationId);
+        return service.removeItemListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

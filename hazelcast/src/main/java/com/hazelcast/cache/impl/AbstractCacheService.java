@@ -59,6 +59,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
@@ -81,7 +82,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
@@ -89,6 +89,7 @@ import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
@@ -575,63 +576,79 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public Future<UUID> registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal) {
-        return registerListenerInternal(cacheNameWithPrefix, listener, null, isLocal);
+    public UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        EventRegistration registration = eventService
+                .registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
+        if (registration == null) {
+            return null;
+        }
+        return registration.getId();
     }
 
     @Override
-    public Future<UUID> registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter,
-                                         boolean isLocal) {
-        return registerListenerInternal(cacheNameWithPrefix, listener, eventFilter, isLocal);
-    }
-
-    protected Future<UUID> registerListenerInternal(String cacheNameWithPrefix, CacheEventListener listener,
-                                                    EventFilter eventFilter, boolean isLocal) {
+    public UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter) {
         EventService eventService = getNodeEngine().getEventService();
-        CompletableFuture<EventRegistration> registrationFuture;
-        if (isLocal) {
-            if (eventFilter == null) {
-                registrationFuture = eventService
-                        .registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
-            } else {
-                registrationFuture = eventService
-                        .registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener);
-            }
-        } else {
-            if (eventFilter == null) {
-                registrationFuture = eventService
-                        .registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
-            } else {
-                registrationFuture = eventService
-                        .registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener);
-            }
+
+        EventRegistration registration = eventService
+                .registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener);
+        if (registration == null) {
+            return null;
         }
-
-        return registrationFuture.thenApply((eventRegistration) -> {
-            UUID id = eventRegistration.getId();
-            if (listener instanceof Closeable) {
-                closeableListeners.put(id, (Closeable) listener);
-            } else if (listener instanceof CacheEntryListenerProvider) {
-                CacheEntryListener cacheEntryListener = ((CacheEntryListenerProvider) listener).getCacheEntryListener();
-                if (cacheEntryListener instanceof Closeable) {
-                    closeableListeners.put(id, (Closeable) cacheEntryListener);
-                }
-            }
-            return id;
-        });
-
+        return registration.getId();
     }
 
     @Override
-    public Future<Boolean> deregisterListener(String cacheNameWithPrefix, UUID registrationId) {
-        EventService eventService = getNodeEngine().getEventService();
-        Future<Boolean> result = eventService.deregisterListener(SERVICE_NAME, cacheNameWithPrefix, registrationId);
-        Closeable listener = closeableListeners.remove(registrationId);
-        if (listener != null) {
-            IOUtil.closeResource(listener);
-        }
-        return result;
+    public CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener) {
+        return registerListenerAsync(cacheNameWithPrefix, listener, TrueEventFilter.INSTANCE);
     }
+
+    @Override
+    public CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener,
+                                                         EventFilter eventFilter) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener)
+                           .thenApply((eventRegistration) -> {
+                               UUID id = eventRegistration.getId();
+                               if (listener instanceof Closeable) {
+                                   closeableListeners.put(id, (Closeable) listener);
+                               } else if (listener instanceof CacheEntryListenerProvider) {
+                                   CacheEntryListener cacheEntryListener = ((CacheEntryListenerProvider) listener)
+                                           .getCacheEntryListener();
+                                   if (cacheEntryListener instanceof Closeable) {
+                                       closeableListeners.put(id, (Closeable) cacheEntryListener);
+                                   }
+                               }
+                               return id;
+                           });
+    }
+
+    @Override
+    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener) {
+        return getValue(registerListenerAsync(cacheNameWithPrefix, listener));
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deregisterListenerAsync(String cacheNameWithPrefix, UUID registrationId) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        return eventService.deregisterListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, registrationId)
+                           .thenApply(result -> {
+                               Closeable listener = closeableListeners.remove(registrationId);
+                               if (listener != null) {
+                                   IOUtil.closeResource(listener);
+                               }
+                               return result;
+                           });
+    }
+
+    @Override
+    public boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId) {
+        return getValue(deregisterListenerAsync(cacheNameWithPrefix, registrationId));
+    }
+
 
     @Override
     public void deregisterAllListener(String cacheNameWithPrefix) {
@@ -779,28 +796,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             return null;
         }
         return cacheConfig.getSplitBrainProtectionName();
-    }
-
-    /**
-     * Registers and {@link com.hazelcast.cache.impl.CacheEventListener} for specified {@code cacheNameWithPrefix}
-     *
-     * @param cacheNameWithPrefix the full name of the cache (including manager scope prefix)
-     *                            that {@link CacheEventListener} will be registered for
-     * @param listener            the {@link CacheEventListener} to be registered
-     *                            for specified {@code cacheNameWithPrefix}
-     * @param localOnly           true if only events originated from this member wants be listened, false if all
-     *                            invalidation events in the cluster wants to be listened
-     * @return the registration future.
-     */
-    @Override
-    public Future<UUID> addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly) {
-        EventService eventService = nodeEngine.getEventService();
-        if (localOnly) {
-            return eventService.registerLocalListener(SERVICE_NAME, cacheNameWithPrefix, listener)
-                               .thenApply(EventRegistration::getId);
-        } else {
-            return eventService.registerListener(SERVICE_NAME, cacheNameWithPrefix, listener).thenApply(EventRegistration::getId);
-        }
     }
 
     /**

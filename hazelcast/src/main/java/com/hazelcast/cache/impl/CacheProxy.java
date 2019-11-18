@@ -17,12 +17,12 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
 import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
@@ -64,7 +64,6 @@ import java.util.function.Predicate;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
-import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -283,11 +282,8 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration,
                 getNodeEngine().getSerializationService());
-        Future<UUID> eventRegistration = getService()
-                .registerListener(getDistributedObjectName(), entryListener, entryListener, false);
-
-        if (eventRegistration != null) {
-            UUID regId = getValue(eventRegistration);
+        UUID regId = getService().registerListener(getDistributedObjectName(), entryListener);
+        if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             }
@@ -304,8 +300,7 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
 
         UUID regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId != null) {
-            Future<Boolean> eventRegistration = getService().deregisterListener(getDistributedObjectName(), regId);
-            if (getValue(eventRegistration)) {
+            if (getService().deregisterListener(getDistributedObjectName(), regId)) {
                 removeListenerLocally(cacheEntryListenerConfiguration);
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
@@ -338,18 +333,17 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         EventFilter filter = new CachePartitionLostEventFilter();
         InternalCachePartitionLostListenerAdapter listenerAdapter = new InternalCachePartitionLostListenerAdapter(listener);
         injectDependencies(listener);
-        Future<UUID> registration = getService().getNodeEngine().getEventService()
-                                                .registerListener(AbstractCacheService.SERVICE_NAME, name, filter,
-                                                        listenerAdapter).thenApply(EventRegistration::getId);
-        return getValue(registration);
+        EventRegistration registration = getService().getNodeEngine().getEventService()
+                .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
+
+        return registration.getId();
     }
 
     @Override
     public boolean removePartitionLostListener(UUID id) {
         checkNotNull(id, "Listener ID should not be null!");
-        Future<Boolean> registration = getService().getNodeEngine().getEventService()
-                                                   .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
-        return getValue(registration);
+        return getService().getNodeEngine().getEventService()
+                .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
     }
 
     @Override

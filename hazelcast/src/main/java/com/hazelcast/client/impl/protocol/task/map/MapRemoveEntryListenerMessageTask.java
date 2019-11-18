@@ -39,7 +39,7 @@ public class MapRemoveEntryListenerMessageTask
     @Override
     protected Future<Boolean> deRegisterListener() {
         MapService service = getService(MapService.SERVICE_NAME);
-        return service.getMapServiceContext().removeEventListener(parameters.name, parameters.registrationId);
+        return service.getMapServiceContext().removeEventListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

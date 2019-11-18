@@ -171,19 +171,30 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
     }
 
-    public @Nonnull
-    Future<UUID> addMessageListener(@Nonnull String name, @Nonnull MessageListener listener, boolean localOnly) {
-        if (localOnly) {
-            return eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener)
-                               .thenApply(EventRegistration::getId);
-        } else {
-            return eventService.registerListener(TopicService.SERVICE_NAME, name, listener).thenApply(EventRegistration::getId);
-
+    public UUID addLocalMessageListener(@Nonnull String name, @Nonnull MessageListener listener) {
+        EventRegistration registration = eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener);
+        if (registration == null) {
+            return null;
         }
+        return registration.getId();
     }
 
-    public Future<Boolean> removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {
+    public
+    UUID addMessageListener(@Nonnull String name, @Nonnull MessageListener listener) {
+        return eventService.registerListener(TopicService.SERVICE_NAME, name, listener).getId();
+    }
+
+    public
+    Future<UUID> addMessageListenerAsync(@Nonnull String name, @Nonnull MessageListener listener) {
+        return eventService.registerListenerAsync(TopicService.SERVICE_NAME, name, listener).thenApply(EventRegistration::getId);
+    }
+
+    public boolean removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
+    }
+
+    public Future<Boolean> removeMessageListenerAsync(@Nonnull String name, @Nonnull UUID registrationId) {
+        return eventService.deregisterListenerAsync(TopicService.SERVICE_NAME, name, registrationId);
     }
 
     @Override

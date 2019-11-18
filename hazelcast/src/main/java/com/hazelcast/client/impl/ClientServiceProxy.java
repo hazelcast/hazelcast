@@ -20,16 +20,14 @@ import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientListener;
 import com.hazelcast.client.ClientService;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.Future;
 
-import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -57,10 +55,9 @@ public final class ClientServiceProxy implements ClientService {
         checkNotNull(clientListener, "clientListener should not be null");
 
         EventService eventService = nodeEngine.getEventService();
-        Future<UUID> registration = eventService
-                .registerLocalListener(ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, clientListener)
-                .thenApply(EventRegistration::getId);
-        return getValue(registration);
+        EventRegistration registration = eventService.registerLocalListener(
+                ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, clientListener);
+        return registration.getId();
     }
 
     @Override
@@ -68,8 +65,7 @@ public final class ClientServiceProxy implements ClientService {
         checkNotNull(registrationId, "registrationId should not be null");
 
         EventService eventService = nodeEngine.getEventService();
-        Future<Boolean> registrationFuture = eventService
-                .deregisterListener(ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, registrationId);
-        return getValue(registrationFuture);
+        return eventService.deregisterListener(
+                ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, registrationId);
     }
 }

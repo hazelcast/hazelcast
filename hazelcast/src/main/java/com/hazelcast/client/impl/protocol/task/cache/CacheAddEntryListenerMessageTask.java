@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.internal.util.FutureUtil.getValue;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 /**
  * Client request which registers an event listener on behalf of the client and delegates the received events
@@ -60,14 +60,17 @@ public class CacheAddEntryListenerMessageTask
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
 
-        return (CompletableFuture<UUID>) service
-                .registerListener(parameters.name, cacheEntryListener, cacheEntryListener, parameters.localOnly);
+        if (parameters.localOnly) {
+            return newCompletedFuture(service.registerLocalListener(parameters.name, cacheEntryListener, cacheEntryListener));
+        }
+
+        return service.registerListenerAsync(parameters.name, cacheEntryListener, cacheEntryListener);
     }
 
     @Override
     protected void addDestroyAction(UUID registrationId) {
         final CacheService service = getService(CacheService.SERVICE_NAME);
-        endpoint.addDestroyAction(registrationId, () -> getValue(service.deregisterListener(parameters.name, registrationId)));
+        endpoint.addDestroyAction(registrationId, () -> service.deregisterListener(parameters.name, registrationId));
     }
 
     private static final class CacheEntryListener

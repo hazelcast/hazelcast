@@ -20,25 +20,33 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.UUID;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Helper event listener methods for {@link MapServiceContext}.
  */
 public interface MapServiceContextEventListenerSupport {
 
-    Future<UUID> addLocalEventListener(Object mapListener, String mapName);
+    UUID addLocalEventListener(Object mapListener, String mapName);
 
-    Future<UUID> addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
+    UUID addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
-    Future<UUID> addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName);
+    UUID addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName);
 
-    Future<UUID> addEventListener(Object mapListener, EventFilter eventFilter, String mapName);
+    UUID addEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
-    Future<UUID> addPartitionLostListener(MapPartitionLostListener listener, String mapName);
+    CompletableFuture<UUID> addEventListenerAsync(Object mapListener, EventFilter eventFilter, String mapName);
 
-    Future<Boolean> removeEventListener(String mapName, UUID registrationId);
+    UUID addPartitionLostListener(MapPartitionLostListener listener, String mapName);
 
-    Future<Boolean> removePartitionLostListener(String mapName, UUID registrationId);
+    CompletableFuture<UUID> addPartitionLostListenerAsync(MapPartitionLostListener listener, String mapName);
+
+    boolean removeEventListener(String mapName, UUID registrationId);
+
+    CompletableFuture<Boolean> removeEventListenerAsync(String mapName, UUID registrationId);
+
+    boolean removePartitionLostListener(String mapName, UUID registrationId);
+
+    CompletableFuture<Boolean> removePartitionLostListenerAsync(String mapName, UUID registrationId);
 
 }

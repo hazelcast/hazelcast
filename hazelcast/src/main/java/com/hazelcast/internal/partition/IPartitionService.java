@@ -16,18 +16,18 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.services.CoreService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.internal.services.CoreService;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An SPI service for accessing partition related information.
@@ -129,15 +129,19 @@ public interface IPartitionService extends CoreService {
      */
     Map<Address, List<Integer>> getMemberPartitionsMap();
 
-    Future<UUID> addMigrationListener(MigrationListener migrationListener);
+    UUID addMigrationListener(MigrationListener migrationListener);
 
-    Future<Boolean> removeMigrationListener(UUID registrationId);
+    boolean removeMigrationListener(UUID registrationId);
 
-    Future<UUID> addPartitionLostListener(PartitionLostListener partitionLostListener);
+    UUID addPartitionLostListener(PartitionLostListener partitionLostListener);
 
-    Future<UUID> addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
+    CompletableFuture<UUID> addPartitionLostListenerAsync(PartitionLostListener partitionLostListener);
 
-    Future<Boolean> removePartitionLostListener(UUID registrationId);
+    UUID addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
+
+    boolean removePartitionLostListener(UUID registrationId);
+
+    CompletableFuture<Boolean> removePartitionLostListenerAsync(UUID registrationId);
 
     long getMigrationQueueSize();
 

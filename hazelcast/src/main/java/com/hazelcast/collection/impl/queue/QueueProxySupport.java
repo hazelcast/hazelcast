@@ -51,7 +51,6 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueService> implements InitializingObject {
@@ -215,13 +214,11 @@ abstract class QueueProxySupport<E> extends AbstractDistributedObject<QueueServi
     UUID addItemListener(@Nonnull ItemListener<E> listener,
                            boolean includeValue) {
         checkNotNull(listener, "Null listener is not allowed!");
-        Future<UUID> eventRegistration = getService().addItemListener(name, listener, includeValue, false);
-        return getValue(eventRegistration);
+        return getService().addItemListener(name, listener, includeValue);
     }
 
     public boolean removeItemListener(@Nonnull UUID registrationId) {
         checkNotNull(registrationId, "Null registrationId is not allowed!");
-        Future<Boolean> eventRegistration = getService().removeItemListener(name, registrationId);
-        return getValue(eventRegistration);
+        return getService().removeItemListener(name, registrationId);
     }
 }
