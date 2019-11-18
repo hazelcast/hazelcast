@@ -32,6 +32,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.OperatingSystemMXBeanSupport;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.lang.management.ClassLoadingMXBean;
@@ -149,6 +150,11 @@ final class TimedMemberStateFactoryHelper {
     }
 
     private static Long get(OperatingSystemMXBean mbean, String methodName, Long defaultValue) {
+        if (OperatingSystemMXBeanSupport.GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED
+                && methodName.equals("getFreePhysicalMemorySize")) {
+            return defaultValue;
+        }
+
         try {
             Method method = mbean.getClass().getMethod(methodName);
             method.setAccessible(true);

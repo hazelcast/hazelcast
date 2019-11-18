@@ -19,19 +19,35 @@ package com.hazelcast.util;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Support class for reading attributes from OperatingSystemMXBean.
  */
+@SuppressWarnings("checkstyle:declarationorder")
 public final class OperatingSystemMXBeanSupport {
 
+    static final String COM_HAZELCAST_FREE_PHYSICAL_MEMORY_SIZE_DISABLED = "hazelcast.os.free.physical.memory.disabled";
+    /**
+     * On AIX it can happen that the getFreePhysicalMemorySize method is very slow.
+     * This flags allows one to prevent executing this method and returns the default.
+     *
+     * This field is made volatile for testing purposes. Having this field volatile isn't relevant for performance
+     * since the logic for obtaining the attribute isn't very efficient.
+     */
+    @SuppressWarnings({"checkstyle:visibilitymodifier", "checkstyle:staticvariablename"})
+    public static volatile boolean GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED
+            = Boolean.getBoolean(COM_HAZELCAST_FREE_PHYSICAL_MEMORY_SIZE_DISABLED);
     private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = ManagementFactory.getOperatingSystemMXBean();
     private static final double PERCENTAGE_MULTIPLIER = 100d;
 
     private OperatingSystemMXBeanSupport() {
+    }
+
+    // for testing purposes.
+    static void reload() {
+        GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED = Boolean.getBoolean(COM_HAZELCAST_FREE_PHYSICAL_MEMORY_SIZE_DISABLED);
     }
 
     /**
@@ -41,15 +57,19 @@ public final class OperatingSystemMXBeanSupport {
      * @param defaultValue default value if the attribute value is null
      * @return value of the attribute
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public static long readLongAttribute(String attributeName, long defaultValue) {
         try {
             String methodName = "get" + attributeName;
+            if (GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED && methodName.equals("getFreePhysicalMemorySize")) {
+                return defaultValue;
+            }
+
             OperatingSystemMXBean systemMXBean = OPERATING_SYSTEM_MX_BEAN;
             Method method = systemMXBean.getClass().getMethod(methodName);
+
             // the method is public in Java 9
-            if (!Modifier.isPublic(method.getModifiers())) {
-                method.setAccessible(true);
-            }
+            method.setAccessible(true);
 
             Object value = method.invoke(systemMXBean);
             if (value == null) {
@@ -68,7 +88,6 @@ public final class OperatingSystemMXBeanSupport {
             if (value instanceof Number) {
                 return ((Number) value).longValue();
             }
-
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception ignored) {
