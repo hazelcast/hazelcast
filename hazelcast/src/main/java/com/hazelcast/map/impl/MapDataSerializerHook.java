@@ -167,8 +167,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE = 2;
     public static final int PUT_BACKUP = 3;
     public static final int REMOVE_BACKUP = 4;
-    public static final int KEY_SET = 5;
-    public static final int VALUES = 6;
+    public static final int DATA_COLLECTION = 6;
     public static final int ENTRIES = 7;
     public static final int ENTRY_VIEW = 8;
     public static final int QUERY_RESULT_ROW = 9;
@@ -327,8 +326,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PUT_BACKUP] = arg -> new PutBackupOperation();
         constructors[REMOVE_BACKUP] = arg -> new RemoveBackupOperation();
         constructors[EVICT_BACKUP] = arg -> new EvictBackupOperation();
-        constructors[KEY_SET] = arg -> new MapKeySet();
-        constructors[VALUES] = arg -> new MapValueCollection();
+        constructors[DATA_COLLECTION] = arg -> new DataCollection();
         constructors[ENTRIES] = arg -> new MapEntries();
         constructors[ENTRY_VIEW] = arg -> (IdentifiedDataSerializable) EntryViews.createSimpleEntryView();
         constructors[QUERY_RESULT_ROW] = arg -> new QueryResultRow();

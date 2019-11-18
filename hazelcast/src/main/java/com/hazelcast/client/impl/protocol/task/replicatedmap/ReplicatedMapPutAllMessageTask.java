@@ -21,13 +21,13 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.security.Permission;
 import java.util.Map;
@@ -43,7 +43,7 @@ public class ReplicatedMapPutAllMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new PutAllOperationFactory(parameters.name, new ReplicatedMapEntries(parameters.entries));
+        return new PutAllOperationFactory(parameters.name, new MapEntries(parameters.entries));
     }
 
     @Override
