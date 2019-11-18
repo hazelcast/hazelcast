@@ -27,10 +27,23 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
  */
 public final class OperatingSystemMXBeanSupport {
 
+    static final String COM_HAZELCAST_FREE_PHYSICAL_MEMORY_SIZE_DISABLED = "hazelcast.os.free.physical.memory.disabled";
+    // On AIX it can happen that the getFreePhysicalMemorySize method is very slow.
+    // This flags allows one to prevent executing this method and returns the default.
+    // This field is made volatile for testing purposes. Having this field volatile isn't relevant for performance
+    // since the logic for obtaining the attribute isn't very efficient.
+    @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:StaticVariableName"})
+    public static volatile boolean GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED
+            = Boolean.getBoolean(COM_HAZELCAST_FREE_PHYSICAL_MEMORY_SIZE_DISABLED);
     private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = ManagementFactory.getOperatingSystemMXBean();
     private static final double PERCENTAGE_MULTIPLIER = 100d;
 
     private OperatingSystemMXBeanSupport() {
+    }
+
+    // for testing purposes.
+    static void reload() {
+        GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED = Boolean.getBoolean(COM_HAZELCAST_FREE_PHYSICAL_MEMORY_SIZE_DISABLED);
     }
 
     /**
@@ -43,6 +56,10 @@ public final class OperatingSystemMXBeanSupport {
     public static long readLongAttribute(String attributeName, long defaultValue) {
         try {
             String methodName = "get" + attributeName;
+            if (GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED && methodName.equals("getFreePhysicalMemorySize")) {
+                return defaultValue;
+            }
+
             OperatingSystemMXBean systemMXBean = OPERATING_SYSTEM_MX_BEAN;
             Method method = systemMXBean.getClass().getMethod(methodName);
             try {
