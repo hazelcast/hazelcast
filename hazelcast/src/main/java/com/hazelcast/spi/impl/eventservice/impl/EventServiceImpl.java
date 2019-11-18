@@ -269,7 +269,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
      * @throws IllegalArgumentException if the listener or filter is null
      */
     private EventRegistration registerListenerInternalLocally(@Nonnull String serviceName, @Nonnull String topic,
-                                                              @Nonnull EventFilter filter, @Nonnull Object listener, boolean isLocal) {
+                                                              @Nonnull EventFilter filter, @Nonnull Object listener,
+                                                              boolean isLocal) {
         checkNotNull(listener, "Null listener is not allowed!");
         checkNotNull(filter, "Null filter is not allowed!");
         EventServiceSegment segment = getSegment(serviceName, true);
