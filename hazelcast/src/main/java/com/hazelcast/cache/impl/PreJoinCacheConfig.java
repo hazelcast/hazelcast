@@ -22,6 +22,7 @@ import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -84,7 +85,8 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
 
     @Override
     protected void writeFactories(ObjectDataOutput out) throws IOException {
-        SerializationService serializationService = out.getSerializationService();
+        assert (out instanceof SerializationServiceSupport) : "out must implement SerializationServiceSupport";
+        SerializationService serializationService = ((SerializationServiceSupport) out).getSerializationService();
         out.writeData(cacheLoaderFactory.getSerializedValue(serializationService));
         out.writeData(cacheWriterFactory.getSerializedValue(serializationService));
         out.writeData(expiryPolicyFactory.getSerializedValue(serializationService));
@@ -99,9 +101,10 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
 
     @Override
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
+        assert (out instanceof SerializationServiceSupport) : "out must implement SerializationServiceSupport";
         out.writeInt(listenerConfigurations.size());
         for (DeferredValue<CacheEntryListenerConfiguration<K, V>> config : listenerConfigurations) {
-            out.writeData(config.getSerializedValue(out.getSerializationService()));
+            out.writeData(config.getSerializedValue(((SerializationServiceSupport) out).getSerializationService()));
         }
     }
 

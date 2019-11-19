@@ -17,11 +17,11 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -40,7 +40,7 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.cache.CacheException;
@@ -102,7 +102,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         super.onInitialize();
         eventJournalReadResponseDecoder = message -> {
             final CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(message);
-            final PortableReadResultSet<?> resultSet = new PortableReadResultSet<>(
+            final ReadResultSetImpl resultSet = new ReadResultSetImpl<>(
                     params.readCount, params.items, params.itemSeqs, params.nextSeq);
             resultSet.setSerializationService(getSerializationService());
             return resultSet;

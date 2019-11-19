@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.impl.DataCollection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapKeys;
 import com.hazelcast.replicatedmap.impl.operation.KeySetOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
@@ -49,8 +49,8 @@ public class ReplicatedMapKeySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        ReplicatedMapKeys keySet = (ReplicatedMapKeys) response;
-        return ReplicatedMapKeySetCodec.encodeResponse(keySet.getKeys());
+        DataCollection keySet = (DataCollection) response;
+        return ReplicatedMapKeySetCodec.encodeResponse(keySet.getCollection());
     }
 
     @Override

@@ -134,20 +134,6 @@ public final class FactoryIdHelper {
     public static final String METRICS_DS_FACTORY = "hazelcast.serialization.metrics";
     public static final int METRICS_DS_FACTORY_ID = -37;
 
-    // =========================== portables =============================================
-
-    public static final String PARTITION_PORTABLE_FACTORY = "hazelcast.serialization.portable.partition";
-    public static final int PARTITION_PORTABLE_FACTORY_ID = -1;
-
-    public static final String MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.map";
-    public static final int MAP_PORTABLE_FACTORY_ID = -2;
-
-    public static final String REPLICATED_PORTABLE_FACTORY = "hazelcast.serialization.portable.replicated_map";
-    public static final int REPLICATED_PORTABLE_FACTORY_ID = -3;
-
-    public static final String RINGBUFFER_PORTABLE_FACTORY = "hazelcast.serialization.portable.ringbuffer";
-    public static final int RINGBUFFER_PORTABLE_FACTORY_ID = -4;
-
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
     private FactoryIdHelper() {

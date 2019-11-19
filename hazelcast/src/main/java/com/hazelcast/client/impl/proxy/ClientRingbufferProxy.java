@@ -39,7 +39,7 @@ import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
@@ -87,7 +87,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
         readManyAsyncResponseDecoder = clientMessage -> {
             final RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(clientMessage);
-            final PortableReadResultSet readResultSet = new PortableReadResultSet(
+            final ReadResultSetImpl readResultSet = new ReadResultSetImpl(
                     params.readCount, params.items, params.itemSeqs, params.nextSeq);
             readResultSet.setSerializationService(getSerializationService());
             return readResultSet;
