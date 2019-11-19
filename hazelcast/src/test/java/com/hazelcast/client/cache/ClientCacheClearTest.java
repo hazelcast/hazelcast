@@ -133,7 +133,7 @@ public class ClientCacheClearTest extends CacheClearTest {
                     throws Exception {
                 assertEquals(1, counter.get());
             }
-        }, 2);
+        });
 
         // Make sure that the callback is not called for a while
         assertTrueAllTheTime(new AssertTask() {
@@ -193,7 +193,7 @@ public class ClientCacheClearTest extends CacheClearTest {
                     throws Exception {
                 assertEquals(1, counter.get());
             }
-        }, 2);
+        });
 
         // Make sure that the callback is not called for a while
         assertTrueAllTheTime(new AssertTask() {
