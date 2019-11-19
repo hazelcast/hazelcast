@@ -18,15 +18,16 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.util.ResultSet;
-import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.ResultSet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperation;
 import com.hazelcast.replicatedmap.impl.operation.PutOperation;
@@ -37,15 +38,14 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
-import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -59,11 +59,11 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
-import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Thread.currentThread;
@@ -298,7 +298,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
         try {
             List<Future> futures = new ArrayList<>(partitionCount);
-            ReplicatedMapEntries[] entrySetPerPartition = new ReplicatedMapEntries[partitionCount];
+            MapEntries[] entrySetPerPartition = new MapEntries[partitionCount];
 
             // first we fill entrySetPerPartition
             for (Entry entry : entries.entrySet()) {
@@ -306,9 +306,9 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
                 checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
                 int partitionId = partitionService.getPartitionId(entry.getKey());
-                ReplicatedMapEntries mapEntries = entrySetPerPartition[partitionId];
+                MapEntries mapEntries = entrySetPerPartition[partitionId];
                 if (mapEntries == null) {
-                    mapEntries = new ReplicatedMapEntries(initialSize);
+                    mapEntries = new MapEntries(initialSize);
                     entrySetPerPartition[partitionId] = mapEntries;
                 }
 
@@ -319,7 +319,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
             // then we invoke the operations
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                ReplicatedMapEntries entrySet = entrySetPerPartition[partitionId];
+                MapEntries entrySet = entrySetPerPartition[partitionId];
                 if (entrySet != null) {
                     Future future = createPutAllOperationFuture(name, entrySet, partitionId);
                     futures.add(future);
@@ -344,7 +344,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         return (int) ceil(20f * mapSize / partitionCount / log10(mapSize));
     }
 
-    private Future createPutAllOperationFuture(String name, ReplicatedMapEntries entrySet, int partitionId) {
+    private Future createPutAllOperationFuture(String name, MapEntries entrySet, int partitionId) {
         OperationService operationService = nodeEngine.getOperationService();
         Operation op = new PutAllOperation(name, entrySet);
         return operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);

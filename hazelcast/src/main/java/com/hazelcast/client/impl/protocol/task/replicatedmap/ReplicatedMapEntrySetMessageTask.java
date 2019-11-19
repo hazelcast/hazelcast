@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.EntrySetOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
@@ -49,7 +49,7 @@ public class ReplicatedMapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        ReplicatedMapEntries entries = (ReplicatedMapEntries) response;
+        MapEntries entries = (MapEntries) response;
         return ReplicatedMapEntrySetCodec.encodeResponse(entries.entries());
     }
 

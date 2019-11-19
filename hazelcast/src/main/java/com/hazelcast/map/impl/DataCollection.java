@@ -14,63 +14,58 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap.impl.client;
+package com.hazelcast.map.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * Class implementing a replicated map value collection result
- */
-public class ReplicatedMapValueCollection implements Portable {
+public class DataCollection implements IdentifiedDataSerializable {
 
     private Collection<Data> values;
 
-    ReplicatedMapValueCollection() {
-    }
-
-    public ReplicatedMapValueCollection(Collection<Data> values) {
+    public DataCollection(Collection<Data> values) {
         this.values = values;
     }
 
-    public Collection<Data> getValues() {
+    public DataCollection() {
+    }
+
+    public Collection<Data> getCollection() {
         return values;
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("size", values.size());
-        ObjectDataOutput out = writer.getRawDataOutput();
-        for (Data value : values) {
-            out.writeData(value);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        int size = values.size();
+        out.writeInt(size);
+        for (Data o : values) {
+            out.writeData(o);
         }
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        int size = reader.readInt("size");
-        ObjectDataInput in = reader.getRawDataInput();
+    public void readData(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
         values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            values.add(in.readData());
+            Data data = in.readData();
+            values.add(data);
         }
     }
 
     @Override
     public int getFactoryId() {
-        return ReplicatedMapPortableHook.F_ID;
+        return MapDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return ReplicatedMapPortableHook.VALUES_COLLECTION;
+        return MapDataSerializerHook.DATA_COLLECTION;
     }
 }

@@ -17,12 +17,10 @@
 package com.hazelcast.map.impl.querycache.accumulator;
 
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.map.impl.client.MapPortableHook;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
@@ -36,7 +34,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @see QueryCacheConfig
  */
-public class AccumulatorInfo implements Portable {
+public class AccumulatorInfo implements IdentifiedDataSerializable {
 
     private String mapName;
     private String cacheId;
@@ -159,42 +157,40 @@ public class AccumulatorInfo implements Portable {
 
     @Override
     public int getFactoryId() {
-        return MapPortableHook.F_ID;
+        return MapDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return MapPortableHook.CREATE_ACCUMULATOR_INFO;
+        return MapDataSerializerHook.CREATE_ACCUMULATOR_INFO;
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("mn", mapName);
-        writer.writeUTF("cn", cacheId);
-        writer.writeInt("bas", batchSize);
-        writer.writeInt("bus", bufferSize);
-        writer.writeLong("ds", delaySeconds);
-        writer.writeBoolean("iv", includeValue);
-        writer.writeBoolean("ps", publishable);
-        writer.writeBoolean("co", coalesce);
-        writer.writeBoolean("po", populate);
-        ObjectDataOutput output = writer.getRawDataOutput();
-        output.writeObject(predicate);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(mapName);
+        out.writeUTF(cacheId);
+        out.writeInt(batchSize);
+        out.writeInt(bufferSize);
+        out.writeLong(delaySeconds);
+        out.writeBoolean(includeValue);
+        out.writeBoolean(publishable);
+        out.writeBoolean(coalesce);
+        out.writeBoolean(populate);
+        out.writeObject(predicate);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        mapName = reader.readUTF("mn");
-        cacheId = reader.readUTF("cn");
-        batchSize = reader.readInt("bas");
-        bufferSize = reader.readInt("bus");
-        delaySeconds = reader.readLong("ds");
-        includeValue = reader.readBoolean("iv");
-        publishable = reader.readBoolean("ps");
-        coalesce = reader.readBoolean("co");
-        populate = reader.readBoolean("po");
-        ObjectDataInput input = reader.getRawDataInput();
-        predicate = input.readObject();
+    public void readData(ObjectDataInput in) throws IOException {
+        mapName = in.readUTF();
+        cacheId = in.readUTF();
+        batchSize = in.readInt();
+        bufferSize = in.readInt();
+        delaySeconds = in.readLong();
+        includeValue = in.readBoolean();
+        publishable = in.readBoolean();
+        coalesce = in.readBoolean();
+        populate = in.readBoolean();
+        predicate = in.readObject();
     }
 
     @Override

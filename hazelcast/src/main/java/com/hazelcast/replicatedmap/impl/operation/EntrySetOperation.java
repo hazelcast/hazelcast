@@ -16,15 +16,15 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -61,7 +61,7 @@ public class EntrySetOperation extends AbstractNamedSerializableOperation implem
             Data value = serializationService.toData(entry.getValue().getValue());
             dataEntries.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
         }
-        response = new ReplicatedMapEntries(dataEntries);
+        response = new MapEntries(dataEntries);
     }
 
     @Override

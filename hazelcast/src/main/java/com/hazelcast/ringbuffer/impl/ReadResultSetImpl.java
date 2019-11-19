@@ -31,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractList;
+import java.util.List;
 import java.util.function.Predicate;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
@@ -78,6 +79,15 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         this.seqs = new long[maxSize];
         this.serializationService = serializationService;
         this.filter = filter;
+    }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
+    public ReadResultSetImpl(int readCount, List<Data> items, long[] seqs, long nextSeq) {
+        this.readCount = readCount;
+        this.items = items.toArray(new Data[0]);
+        this.size = items.size();
+        this.seqs = seqs;
+        this.nextSeq = nextSeq;
     }
 
     public ReadResultSetImpl(int minSize, int maxSize,
