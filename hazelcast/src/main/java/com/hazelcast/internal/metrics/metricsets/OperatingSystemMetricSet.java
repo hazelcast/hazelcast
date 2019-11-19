@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.util.OperatingSystemMXBeanSupport;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -73,7 +74,12 @@ public final class OperatingSystemMetricSet {
     }
 
     static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name) {
-        registerMethod(metricsRegistry, osBean, methodName, name, 1);
+        if (OperatingSystemMXBeanSupport.GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED
+                && methodName.equals("getFreePhysicalMemorySize")) {
+            metricsRegistry.registerStaticProbe(osBean, name, MANDATORY, (LongProbeFunction<Object>) source -> -1);
+        } else {
+            registerMethod(metricsRegistry, osBean, methodName, name, 1);
+        }
     }
 
     private static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name,
@@ -98,7 +104,7 @@ public final class OperatingSystemMetricSet {
      *
      * @param source     the source object.
      * @param methodName the name of the method to retrieve.
-     * @param name the probe name
+     * @param name       the probe name
      * @return the method
      */
     private static Method getMethod(Object source, String methodName, String name) {
