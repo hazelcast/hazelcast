@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
  * Returns the results mapped by each key in the map.
  */
-@Generated("df2ecb1710f8310eb46d88a845ac8a49")
+@Generated("cb92d09ac6b3d3990a53ebbccd761f0c")
 public final class MapExecuteWithPredicateCodec {
-    //hex: 0x013200
-    public static final int REQUEST_MESSAGE_TYPE = 78336;
-    //hex: 0x013201
-    public static final int RESPONSE_MESSAGE_TYPE = 78337;
+    //hex: 0x013100
+    public static final int REQUEST_MESSAGE_TYPE = 78080;
+    //hex: 0x013101
+    public static final int RESPONSE_MESSAGE_TYPE = 78081;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
