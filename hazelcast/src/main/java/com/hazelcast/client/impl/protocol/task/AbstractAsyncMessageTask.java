@@ -60,17 +60,18 @@ public abstract class AbstractAsyncMessageTask<P, T> extends AbstractMessageTask
      * @param response  The response sent to the client
      * @param throwable The throwable to be sent to the client if an exception occured
      */
-    protected void afterResponse(Object response, Throwable throwable) {
+    protected void afterSendingResponse(Object response, Throwable throwable) {
     }
 
     @Override
     protected void processMessage() {
         beforeProcess();
         CompletableFuture<T> internalFuture = processInternal();
-        internalFuture.thenApply(this::beforeResponse).whenComplete(this::handleResponse).whenComplete(this::afterResponse);
+        internalFuture.thenApply(this::beforeResponse).whenComplete(this::sendResponseOrHandleFailure)
+                      .whenComplete(this::afterSendingResponse);
     }
 
-    private void handleResponse(Object response, Throwable throwable) {
+    private void sendResponseOrHandleFailure(Object response, Throwable throwable) {
         if (throwable == null) {
             sendResponse(response);
         } else {

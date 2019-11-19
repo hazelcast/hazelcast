@@ -46,7 +46,7 @@ public class MapContainsKeyMessageTask
     }
 
     @Override
-    protected void afterResponse(Object response, Throwable throwable) {
+    protected void afterSendingResponse(Object response, Throwable throwable) {
         if (throwable != null) {
             return;
         }

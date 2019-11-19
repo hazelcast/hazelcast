@@ -27,6 +27,7 @@ import java.io.IOException;
 public class RegistrationOperation extends AbstractRegistrationOperation {
 
     private Registration registration;
+    private boolean response;
 
     public RegistrationOperation() {
     }
@@ -39,12 +40,12 @@ public class RegistrationOperation extends AbstractRegistrationOperation {
     @Override
     protected void runInternal() {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-        eventService.handleRegistration(registration);
+        response = eventService.handleRegistration(registration);
     }
 
     @Override
     public Object getResponse() {
-        return true;
+        return response;
     }
 
     @Override
