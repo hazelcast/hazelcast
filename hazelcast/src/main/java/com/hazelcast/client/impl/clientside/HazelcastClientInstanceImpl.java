@@ -94,6 +94,7 @@ import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
+import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
@@ -203,6 +204,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                                        AddressProvider externalAddressProvider) {
         assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
         assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
+        MetricsConfigHelper.overrideClientMetricsConfig(clientConfig);
         if (clientConfig != null) {
             this.config = clientConfig;
         } else {

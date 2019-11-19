@@ -869,6 +869,12 @@
 
         Configuration element's name is <metrics>.
 
+        It has the following attributes:
+        - enabled:
+            The master-switch for the metrics collection. If this is set
+            to false no metrics collection is done, regardless of the other
+            settings. Its default value is true.
+
         It has the following sub-elements:
         * <jmx>:
             Defines the JMX related metrics configuration.
