@@ -16,12 +16,12 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.wan.MigrationAwareWanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.MigrationAwareWanReplicationPublisher;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -67,6 +67,17 @@ public final class DelegatingWanReplicationScheme {
         return publishers.get(publisherId);
     }
 
+    /**
+     * Adds the WAN replication publisher under the provided ID, if not already
+     * present.
+     * If there is already a publisher with the same ID, the method throws a
+     * {@link IllegalStateException}, even if it's the same publisher as the
+     * provided one.
+     * NOTE: used only in Hazelcast Enterprise
+     *
+     * @param publisherId the WAN replication publisher ID
+     * @param publisher   the WAN replication publisher to add
+     */
     public void addPublisher(@Nonnull String publisherId,
                              @Nonnull WanReplicationPublisher publisher) {
         if (publishers.putIfAbsent(publisherId, publisher) != null) {
@@ -103,6 +114,7 @@ public final class DelegatingWanReplicationScheme {
      * Publishes a replication event to all publishers to which this publisher
      * delegates.
      * Silently skips publishers not supporting republication.
+     * NOTE: used only in Hazelcast Enterprise
      */
     public void republishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
         for (WanReplicationPublisher publisher : publishers.values()) {
@@ -185,6 +197,7 @@ public final class DelegatingWanReplicationScheme {
 
     /**
      * Releases all resources for the map with the given {@code mapName}.
+     * NOTE: used only in Hazelcast Enterprise
      *
      * @param mapName the map mapName
      */

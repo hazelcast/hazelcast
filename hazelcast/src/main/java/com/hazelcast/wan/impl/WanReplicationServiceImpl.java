@@ -53,6 +53,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.ClassLoaderUtil.getOrCreate;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -288,35 +289,17 @@ public class WanReplicationServiceImpl implements WanReplicationService,
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
-        for (DelegatingWanReplicationScheme wanReplication : wanReplications.values()) {
-            for (WanReplicationPublisher publisher : wanReplication.getPublishers()) {
-                if (publisher instanceof MigrationAwareWanReplicationPublisher) {
-                    ((MigrationAwareWanReplicationPublisher) publisher).onMigrationStart(event);
-                }
-            }
-        }
+        notifyMigrationAwarePublishers(p -> p.onMigrationStart(event));
     }
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
-        for (DelegatingWanReplicationScheme wanReplication : wanReplications.values()) {
-            for (WanReplicationPublisher publisher : wanReplication.getPublishers()) {
-                if (publisher instanceof MigrationAwareWanReplicationPublisher) {
-                    ((MigrationAwareWanReplicationPublisher) publisher).onMigrationCommit(event);
-                }
-            }
-        }
+        notifyMigrationAwarePublishers(p -> p.onMigrationCommit(event));
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
-        for (DelegatingWanReplicationScheme wanReplication : wanReplications.values()) {
-            for (WanReplicationPublisher publisher : wanReplication.getPublishers()) {
-                if (publisher instanceof MigrationAwareWanReplicationPublisher) {
-                    ((MigrationAwareWanReplicationPublisher) publisher).onMigrationRollback(event);
-                }
-            }
-        }
+        notifyMigrationAwarePublishers(p -> p.onMigrationRollback(event));
     }
 
     @Override
@@ -352,6 +335,11 @@ public class WanReplicationServiceImpl implements WanReplicationService,
         return namespaces;
     }
 
+    /**
+     * {@inheritDoc}
+     * On OS side we emit WAN events only for MapService.
+     * On EE side we emit events for MapService and CacheService.
+     */
     @Override
     public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
         final String serviceName = namespace.getServiceName();
@@ -410,5 +398,15 @@ public class WanReplicationServiceImpl implements WanReplicationService,
         return publisherDelegate != null
                 ? publisherDelegate.getPublisher(wanPublisherId)
                 : null;
+    }
+
+    private void notifyMigrationAwarePublishers(Consumer<MigrationAwareWanReplicationPublisher> publisherConsumer) {
+        for (DelegatingWanReplicationScheme wanReplication : wanReplications.values()) {
+            for (WanReplicationPublisher publisher : wanReplication.getPublishers()) {
+                if (publisher instanceof MigrationAwareWanReplicationPublisher) {
+                    publisherConsumer.accept((MigrationAwareWanReplicationPublisher) publisher);
+                }
+            }
+        }
     }
 }
