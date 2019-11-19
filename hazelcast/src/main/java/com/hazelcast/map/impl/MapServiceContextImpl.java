@@ -21,6 +21,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -70,7 +72,6 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
@@ -84,7 +85,6 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.partition.IPartitionService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -172,11 +172,18 @@ class MapServiceContextImpl implements MapServiceContext {
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    ConstructorFunction<String, MapContainer> createMapConstructor() {
+    private ConstructorFunction<String, MapContainer> createMapConstructor() {
         return mapName -> {
-            MapServiceContext mapServiceContext = getService().getMapServiceContext();
-            return new MapContainer(mapName, nodeEngine.getConfig(), mapServiceContext);
+            MapContainer mapContainer = createMapContainer(mapName);
+            mapContainer.init();
+            return mapContainer;
         };
+    }
+
+    // this method is overridden in another context
+    MapContainer createMapContainer(String mapName) {
+        MapServiceContext mapServiceContext = getService().getMapServiceContext();
+        return new MapContainer(mapName, nodeEngine.getConfig(), mapServiceContext);
     }
 
     // this method is overridden in another context

@@ -16,12 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.impl.ClientBackupAwareResponse;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngine;
-import com.hazelcast.client.impl.StubAuthenticationException;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -132,7 +132,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             logger.severe(message);
-            exception = new RetryableHazelcastException(new StubAuthenticationException(message));
+            exception = new RetryableHazelcastException(new AuthenticationException(message));
         } else {
             exception = new HazelcastInstanceNotActiveException();
         }

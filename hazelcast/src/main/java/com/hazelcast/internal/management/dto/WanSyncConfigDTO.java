@@ -20,7 +20,7 @@ import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 
 /**
  * A JSON representation of {@link WanSyncConfig}.

@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * ConcurrentHashMap to extend iterator capability.
@@ -49,7 +50,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     }
 
     private SampleableConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
-                                       ReferenceType keyType, ReferenceType valueType, EnumSet<Option> options) {
+                                        ReferenceType keyType, ReferenceType valueType, EnumSet<Option> options) {
         super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
     }
 
@@ -164,11 +165,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             }
             @SuppressWarnings("unchecked")
             SamplingEntry e = (SamplingEntry) o;
-            return eq(key, e.key) && eq(value, e.value);
-        }
-
-        private static boolean eq(Object o1, Object o2) {
-            return o1 == null ? o2 == null : o1.equals(o2);
+            return Objects.equals(key, e.key) && Objects.equals(value, e.value);
         }
 
         @Override
@@ -199,7 +196,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         if (sampleCount == 0 || size() == 0) {
             return Collections.EMPTY_LIST;
         }
-        return new LazySamplingEntryIterableIterator<E>(sampleCount);
+        return new LazySamplingEntryIterableIterator<>(sampleCount);
     }
 
     /**

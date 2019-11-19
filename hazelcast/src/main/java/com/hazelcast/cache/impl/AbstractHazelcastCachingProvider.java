@@ -44,6 +44,7 @@ import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_NA
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.System.getProperty;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Abstract {@link CachingProvider} implementation providing shared
@@ -61,12 +62,6 @@ import static java.lang.System.getProperty;
  * @see CachingProvider
  */
 public abstract class AbstractHazelcastCachingProvider implements CachingProvider {
-
-    /**
-     * Name of default {@link HazelcastInstance} which may be started when
-     * obtaining the default {@link CachingProvider}.
-     */
-    public static final String SHARED_JCACHE_INSTANCE_NAME = "_hzinstance_jcache_shared";
 
     /**
      * System property to control whether the default Hazelcast instance, which
@@ -87,15 +82,16 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
             + " Please specify your Hazelcast configuration file path via"
             + " \"HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION\" property or specify Hazelcast instance name via"
             + " \"HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME\" property in the \"properties\" parameter.";
+
     private static final Set<String> SUPPORTED_SCHEMES;
 
     static {
-        Set<String> supportedSchemes = new HashSet<String>();
+        Set<String> supportedSchemes = new HashSet<>();
         supportedSchemes.add("classpath");
         supportedSchemes.add("file");
         supportedSchemes.add("http");
         supportedSchemes.add("https");
-        SUPPORTED_SCHEMES = supportedSchemes;
+        SUPPORTED_SCHEMES = unmodifiableSet(supportedSchemes);
     }
 
     protected final boolean namedDefaultHzInstance = parseBoolean(getProperty(NAMED_JCACHE_HZ_INSTANCE, "true"));
@@ -330,24 +326,13 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
         // resolving HazelcastInstance via properties failed, try with URI as XML configuration file location
         String instanceName = properties.getProperty(HAZELCAST_INSTANCE_NAME);
         boolean isDefaultURI = (uri == null || uri.equals(getDefaultURI()));
-        if (!isDefaultURI) {
+        if (!isDefaultURI && isConfigLocation(uri)) {
             // attempt to resolve URI as config location or as instance name
-            if (isConfigLocation(uri)) {
-                try {
-                    return getOrCreateFromUri(uri, classLoader, instanceName);
-                } catch (Exception e) {
-                    if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("Could not get or create Hazelcast instance from URI " + uri.toString(), e);
-                    }
-                }
-            } else {
-                try {
-                    // try again, this time interpreting CacheManager URI as Hazelcast instance name
-                    return getOrCreateByInstanceName(uri.toString());
-                } catch (Exception e) {
-                    if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("Could not get Hazelcast instance from instance name " + uri.toString(), e);
-                    }
+            try {
+                return getOrCreateFromUri(uri, classLoader, instanceName);
+            } catch (Exception e) {
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Could not get or create Hazelcast instance from URI " + uri.toString(), e);
                 }
             }
             // could not locate the Hazelcast instance, return null and an exception will be thrown by the invoker

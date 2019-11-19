@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.json;
+package com.hazelcast.spi.eviction;
 
-import com.hazelcast.internal.json.JsonObject;
+import java.io.Serializable;
+import java.util.Comparator;
 
 /**
- * JsonSerializable is a serialization interface that serializes/de-serializes
- * to/from JSON.
+ * A kind of {@link java.util.Comparator} to be
+ * used while comparing entries to be evicted.
+ *
+ * @param <K> type of the key
+ * @param <V> type of the value
+ * @param <E> type of the {@link EvictableEntryView}
+ *
+ * @see com.hazelcast.map.MapEvictionPolicyComparator
+ * @see com.hazelcast.cache.CacheEvictionPolicyComparator
  */
-public interface JsonSerializable {
 
-    /**
-     * Serializes state represented by this object into a {@link JsonObject}.
-     *
-     * @return the JSON representation of this object
-     */
-    JsonObject toJson();
+@SuppressWarnings("checkstyle:interfaceistype")
+@FunctionalInterface
+public interface EvictionPolicyComparator<K, V, E extends EvictableEntryView<K, V>>
+        extends Comparator<E>, Serializable {
 
-    /**
-     * Extracts the state from the given {@code json} object and mutates the
-     * state of this object.
-     *
-     * @param json the JSON object carrying state for this object
-     */
-    void fromJson(JsonObject json);
 }

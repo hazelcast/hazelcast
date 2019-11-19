@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -44,7 +45,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 
 @BenchmarkMode({Mode.AverageTime})
@@ -65,13 +65,11 @@ public class MetricsCollectionBenchmark {
     public void setup() {
         Config config = new Config();
         config.setProperty(GroupProperty.LOGGING_TYPE.getName(), "none");
-        config.getMetricsConfig()
-              .setMcEnabled(true)
-              .setMetricsForDataStructuresEnabled(true)
-              // we disable scheduled collection
-              .setCollectionIntervalSeconds(Integer.MAX_VALUE)
-              .setJmxEnabled(false)
-              .setMinimumLevel(DEBUG);
+        config.setProperty(GroupProperty.METRICS_DEBUG.getName(), "true");
+        MetricsConfig metricsConfig = config.getMetricsConfig();
+        // we disable scheduled collection
+        metricsConfig.setCollectionFrequencySeconds(Integer.MAX_VALUE);
+        metricsConfig.getJmxConfig().setEnabled(false);
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         metricsService = getNodeEngineImpl(hazelcastInstance).getService(MetricsService.SERVICE_NAME);

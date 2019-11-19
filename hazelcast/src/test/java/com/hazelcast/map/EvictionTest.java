@@ -935,9 +935,15 @@ public class EvictionTest extends HazelcastTestSupport {
         int maxSizeMB = 50;
         String mapName = randomMapName();
 
-        Config config = newConfig(mapName, maxSizeMB, MaxSizePolicy.USED_HEAP_SIZE);
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         config.setProperty(GroupProperty.MAP_EVICTION_BATCH_SIZE.getName(), "2");
+
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig.setComparator((o1, o2) -> 0)
+                .setMaxSizePolicy(MaxSizePolicy.USED_HEAP_SIZE)
+                .setSize(maxSizeMB);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, byte[]> map = instance.getMap(mapName);
@@ -953,6 +959,7 @@ public class EvictionTest extends HazelcastTestSupport {
         double toleranceFactor = 1.1d;
         long maxAllowedHeapCost = (long) (MemoryUnit.MEGABYTES.toBytes(maxSizeMB) * toleranceFactor);
         long minAllowedHeapCost = (long) (MemoryUnit.MEGABYTES.toBytes(maxSizeMB) / toleranceFactor);
+
         assertBetween("Maximum cost", maxObservedHeapCost, minAllowedHeapCost, maxAllowedHeapCost);
     }
 

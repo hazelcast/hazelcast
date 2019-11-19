@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getInt;

@@ -20,11 +20,13 @@ import com.hazelcast.internal.nio.tcp.TcpIpConnection_AbstractBasicTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class SelectWithSelectorFix_TcpIpConnection_BasicTest
         extends TcpIpConnection_AbstractBasicTest {
 

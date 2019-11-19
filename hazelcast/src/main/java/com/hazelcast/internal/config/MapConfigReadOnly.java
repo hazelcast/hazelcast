@@ -34,7 +34,6 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.internal.util.CollectionUtil;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -262,11 +261,6 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Override
     public MapConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        throw throwReadOnly();
-    }
-
-    @Override
-    public MapConfig setMapEvictionPolicy(MapEvictionPolicy mapEvictionPolicy) {
         throw throwReadOnly();
     }
 

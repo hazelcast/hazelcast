@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.spring;
 
+import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
 
-/**
- * This is equivalent of AuthenticationException from client side. When this is thrown to client
- * AuthenticationException comes out of from other side.
- */
-public class StubAuthenticationException extends Exception {
+public class DummyMapEvictionPolicyComparator extends RandomEvictionPolicyComparator {
 
-    public StubAuthenticationException(String message) {
-        super(message);
-    }
 }

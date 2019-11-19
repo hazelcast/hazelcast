@@ -250,10 +250,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             return;
         }
 
-        boolean retry = isRetrySafeException(exception)
-                || invocationService.isRedoOperation()
-                || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable());
-        if (!retry) {
+        if (!shouldRetry(exception)) {
             completeExceptionally(exception);
             return;
         }
@@ -264,7 +261,15 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 logger.finest("Exception will not be retried because invocation timed out", exception);
             }
 
-            completeExceptionally(newOperationTimeoutException(exception));
+            StringBuilder sb = new StringBuilder();
+            sb.append(this);
+            sb.append(" timed out because exception occurred after client invocation timeout ");
+            sb.append(invocationService.getInvocationTimeoutMillis()).append(" ms. ");
+            sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
+            sb.append("Start time: ").append(timeToString(startTimeMillis)).append(". ");
+            sb.append("Total elapsed time: ").append(currentTimeMillis() - startTimeMillis).append(" ms. ");
+            String msg = sb.toString();
+            completeExceptionally(new OperationTimeoutException(msg, exception));
             return;
         }
 
@@ -348,6 +353,16 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         return sendConnection;
     }
 
+    private boolean shouldRetry(Throwable t) {
+        if (isRetrySafeException(t)) {
+            return true;
+        }
+        if (t instanceof TargetDisconnectedException) {
+            return clientMessage.isRetryable() || invocationService.isRedoOperation();
+        }
+        return false;
+    }
+
     public static boolean isRetrySafeException(Throwable t) {
         return t instanceof IOException
                 || t instanceof HazelcastInstanceNotActiveException
@@ -356,18 +371,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
 
     public Executor getUserExecutor() {
         return executionService.getUserExecutor();
-    }
-
-    private Exception newOperationTimeoutException(Throwable e) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this);
-        sb.append(" timed out because exception occurred after client invocation timeout ");
-        sb.append(invocationService.getInvocationTimeoutMillis()).append(" ms. ");
-        sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
-        sb.append("Start time: ").append(timeToString(startTimeMillis)).append(". ");
-        sb.append("Total elapsed time: ").append(currentTimeMillis() - startTimeMillis).append(" ms. ");
-        String msg = sb.toString();
-        return new OperationTimeoutException(msg, e);
     }
 
 

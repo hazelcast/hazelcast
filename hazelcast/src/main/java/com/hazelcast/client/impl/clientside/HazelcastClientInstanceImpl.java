@@ -94,7 +94,6 @@ import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
@@ -152,6 +151,7 @@ import static com.hazelcast.client.properties.ClientProperty.CONCURRENT_WINDOW_M
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
+import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.clientMetricsLevel;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -311,9 +311,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
-        ProbeLevel probeLevel = config.getMetricsConfig().getMinimumLevel();
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, probeLevel);
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, clientMetricsLevel(properties));
         return metricsRegistry;
     }
 
@@ -632,7 +631,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                     ClientGetDistributedObjectsCodec.decodeResponse(response);
 
             Collection<? extends DistributedObject> distributedObjects = proxyManager.getDistributedObjects();
-            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<DistributedObjectInfo>();
+            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<>();
             for (DistributedObject localInfo : distributedObjects) {
                 localDistributedObjects.add(new DistributedObjectInfo(localInfo.getServiceName(), localInfo.getName()));
             }
@@ -640,7 +639,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             Collection<DistributedObjectInfo> newDistributedObjectInfo = resultParameters.response;
             for (DistributedObjectInfo distributedObjectInfo : newDistributedObjectInfo) {
                 localDistributedObjects.remove(distributedObjectInfo);
-                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName(), false);
             }
 
             for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
@@ -698,7 +697,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
                                                                 @Nonnull String name) {
-        return (T) proxyManager.getOrCreateProxy(serviceName, name);
+        return getDistributedObject(serviceName, name, true);
+    }
+
+    private <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName,
+                                                                 @Nonnull String name, boolean remote) {
+        if (remote) {
+            return (T) proxyManager.getOrCreateProxy(serviceName, name);
+        }
+        return (T) proxyManager.getOrCreateLocalProxy(serviceName, name);
     }
 
     @Nonnull

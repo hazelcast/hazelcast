@@ -18,9 +18,11 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.security.SimpleTokenCredentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
@@ -72,6 +74,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int DISTRIBUTED_OBJECT_NS = 20;
     public static final int REGISTRATION = 21;
     public static final int NOOP_TENANT_CONTROL = 22;
+    public static final int USERNAME_PWD_CRED = 23;
+    public static final int SIMPLE_TOKEN_CRED = 24;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -131,6 +135,10 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new Registration();
                     case NOOP_TENANT_CONTROL:
                         return (IdentifiedDataSerializable) TenantControl.NOOP_TENANT_CONTROL;
+                    case USERNAME_PWD_CRED:
+                        return new UsernamePasswordCredentials();
+                    case SIMPLE_TOKEN_CRED:
+                        return new SimpleTokenCredentials();
                     default:
                         return null;
                 }

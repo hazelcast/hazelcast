@@ -24,6 +24,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -1794,4 +1795,10 @@ public abstract class HazelcastTestSupport {
         return results;
     }
 
+    public static void destroyAllDistributedObjects(HazelcastInstance hz) {
+        Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+        for (DistributedObject object : distributedObjects) {
+            object.destroy();
+        }
+    }
 }

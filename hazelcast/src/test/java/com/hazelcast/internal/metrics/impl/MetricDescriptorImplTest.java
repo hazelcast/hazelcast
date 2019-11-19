@@ -44,6 +44,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
@@ -66,6 +67,22 @@ public class MetricDescriptorImplTest {
     @Test(expected = NullPointerException.class)
     public void testConstructorWithNullThrows() {
         new MetricDescriptorImpl(null);
+    }
+
+    @Test
+    public void testToString_emptyWithExcludedTargets() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier);
+
+        assertEquals("[excludedTargets={}]",
+                descriptor.toString());
+    }
+
+    @Test
+    public void testToString_emptyWithoutExcludedTargets() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier);
+
+        assertEquals("[]",
+                descriptor.metricString());
     }
 
     @Test
@@ -205,6 +222,15 @@ public class MetricDescriptorImplTest {
 
         assertEquals("[discriminatorTag=discriminatorValue,unit=ms,metric=prefix.metricValue,tag0=tag0Value,"
                         + "excludedTargets={MANAGEMENT_CENTER,JMX}]",
+                descriptor.toString());
+    }
+
+    @Test
+    public void testToString_includesEmptyExcludedTargets() {
+        MetricDescriptorImpl descriptor = new MetricDescriptorImpl(supplier)
+                .withTag("tag0", "tag0Value");
+
+        assertEquals("[tag0=tag0Value,excludedTargets={}]",
                 descriptor.toString());
     }
 
@@ -382,6 +408,25 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
+    public void testEqualsDifferentTagOrder() {
+        MetricDescriptorImpl metricDescriptor1 = new MetricDescriptorImpl(mock(Supplier.class));
+        MetricDescriptorImpl metricDescriptor2 = new MetricDescriptorImpl(mock(Supplier.class));
+
+        metricDescriptor1
+                .withMetric("metricName")
+                .withTag("tag0", "tag0Value")
+                .withTag("tag1", "tag1Value");
+
+        metricDescriptor2
+                .withMetric("metricName")
+                .withTag("tag1", "tag1Value")
+                .withTag("tag0", "tag0Value");
+
+        assertEquals(metricDescriptor1, metricDescriptor2);
+        assertEquals(metricDescriptor1.hashCode(), metricDescriptor2.hashCode());
+    }
+
+    @Test
     public void testEqualsDifferentClass() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(mock(Supplier.class));
         assertNotEquals(descriptor, new Object());
@@ -542,17 +587,31 @@ public class MetricDescriptorImplTest {
     }
 
     @Test
-    public void testTagsWithNegativeIndexReturnsNull() {
+    public void testTagsWithNegativeIndexFails() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(mock(Supplier.class));
-        assertNull(descriptor.tag(-1));
-        assertNull(descriptor.tagValue(-1));
+        try {
+            assertNull(descriptor.tag(-1));
+            fail("should have failed");
+        } catch (IndexOutOfBoundsException expected) { }
+
+        try {
+            assertNull(descriptor.tagValue(-1));
+            fail("should have failed");
+        } catch (IndexOutOfBoundsException expected) { }
     }
 
     @Test
     public void testTagsWithTooHighIndexReturnsNull() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(mock(Supplier.class));
-        assertNull(descriptor.tag(MAX_VALUE));
-        assertNull(descriptor.tagValue(MAX_VALUE));
+        try {
+            assertNull(descriptor.tag(MAX_VALUE));
+            fail("should have failed");
+        } catch (IndexOutOfBoundsException expected) { }
+
+        try {
+            assertNull(descriptor.tagValue(MAX_VALUE));
+            fail("should have failed");
+        } catch (IndexOutOfBoundsException expected) { }
     }
 
     @Test

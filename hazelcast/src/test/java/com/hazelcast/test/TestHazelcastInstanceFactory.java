@@ -273,7 +273,9 @@ public class TestHazelcastInstanceFactory {
     public void terminate(HazelcastInstance instance) {
         Address address = getNode(instance).address;
         terminateInstance(instance);
-        registry.removeInstance(address);
+        if (isMockNetwork) {
+            registry.removeInstance(address);
+        }
     }
 
     /**
@@ -374,6 +376,9 @@ public class TestHazelcastInstanceFactory {
      * instances. This allows an address to be reused.
      */
     public void cleanup() {
+        if (!isMockNetwork) {
+            return;
+        }
         final TestNodeRegistry registry = getRegistry();
         synchronized (addressMap) {
             final Iterator<Entry<Integer, Address>> addressIterator = addressMap.entrySet().iterator();

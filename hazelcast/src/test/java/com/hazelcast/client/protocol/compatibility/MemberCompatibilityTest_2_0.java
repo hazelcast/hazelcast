@@ -6764,18 +6764,16 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(anInt, parameters.asyncBackupCount));
         assertTrue(isEqual(anInt, parameters.timeToLiveSeconds));
         assertTrue(isEqual(anInt, parameters.maxIdleSeconds));
-        assertTrue(isEqual(aString, parameters.evictionPolicy));
+        assertTrue(isEqual(anEvictionConfigHolder, parameters.evictionConfig));
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(aString, parameters.cacheDeserializedValues));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(aString, parameters.inMemoryFormat));
         assertTrue(isEqual(aListOfListenerConfigHolders, parameters.listenerConfigs));
         assertTrue(isEqual(aListOfListenerConfigHolders, parameters.partitionLostListenerConfigs));
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
         assertTrue(isEqual(aString, parameters.splitBrainProtectionName));
-        assertTrue(isEqual(aData, parameters.mapEvictionPolicy));
-        assertTrue(isEqual(aString, parameters.maxSizeConfigMaxSizePolicy));
-        assertTrue(isEqual(anInt, parameters.maxSizeConfigSize));
         assertTrue(isEqual(aMapStoreConfigHolder, parameters.mapStoreConfig));
         assertTrue(isEqual(aNearCacheConfigHolder, parameters.nearCacheConfig));
         assertTrue(isEqual(aWanReplicationRef, parameters.wanReplicationRef));
@@ -6787,7 +6785,6 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(aHotRestartConfig, parameters.hotRestartConfig));
         assertTrue(isEqual(anEventJournalConfig, parameters.eventJournalConfig));
         assertTrue(isEqual(aMerkleTreeConfig, parameters.merkleTreeConfig));
-        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
     }
 
@@ -6841,6 +6838,7 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(aString, parameters.inMemoryFormat));
         assertTrue(isEqual(aString, parameters.splitBrainProtectionName));
         assertTrue(isEqual(aString, parameters.mergePolicy));
+        assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(isEqual(aBoolean, parameters.disablePerEntryInvalidationEvents));
         assertTrue(isEqual(aListOfListenerConfigHolders, parameters.partitionLostListenerConfigs));
         assertTrue(isEqual(aString, parameters.expiryPolicyFactoryClassName));
@@ -7250,53 +7248,40 @@ public class MemberCompatibilityTest_2_0 {
     }
 
     @Test
-    public void test_MCGetClusterMetadataCodec_decodeRequest() {
+    public void test_MCMatchMCConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 803;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCGetClusterMetadataCodec.RequestParameters parameters = MCGetClusterMetadataCodec.decodeRequest(fromFile);
+        MCMatchMCConfigCodec.RequestParameters parameters = MCMatchMCConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.eTag));
     }
 
     @Test
-    public void test_MCGetClusterMetadataCodec_encodeResponse() {
+    public void test_MCMatchMCConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 804;
-        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong);
+        ClientMessage encoded = MCMatchMCConfigCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_MCShutdownClusterCodec_decodeRequest() {
+    public void test_MCApplyMCConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 805;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCShutdownClusterCodec.RequestParameters parameters = MCShutdownClusterCodec.decodeRequest(fromFile);
+        MCApplyMCConfigCodec.RequestParameters parameters = MCApplyMCConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.eTag));
+        assertTrue(isEqual(anInt, parameters.clientBwListMode));
+        assertTrue(isEqual(aListOfClientBwListEntries, parameters.clientBwListEntries));
     }
 
     @Test
-    public void test_MCShutdownClusterCodec_encodeResponse() {
+    public void test_MCApplyMCConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 806;
-        ClientMessage encoded = MCShutdownClusterCodec.encodeResponse();
+        ClientMessage encoded = MCApplyMCConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
-    @Test
-    public void test_MCChangeClusterVersionCodec_decodeRequest() {
-        int fileClientMessageIndex = 807;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCChangeClusterVersionCodec.RequestParameters parameters = MCChangeClusterVersionCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aByte, parameters.majorVersion));
-        assertTrue(isEqual(aByte, parameters.minorVersion));
-    }
-
-    @Test
-    public void test_MCChangeClusterVersionCodec_encodeResponse() {
-        int fileClientMessageIndex = 808;
-        ClientMessage encoded = MCChangeClusterVersionCodec.encodeResponse();
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
+    private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
         ClientMessage.ForwardFrameIterator binaryFrameIterator = binaryMessage.frameIterator();

@@ -67,6 +67,8 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.config.MetricsJmxConfig;
+import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -130,13 +132,11 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -215,7 +215,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
@@ -1836,14 +1835,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setSplitBrainProtectionName(value);
             } else if ("query-caches".equals(nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
-            } else if ("map-eviction-policy-class-name".equals(nodeName)) {
-                String className = checkHasText(getTextContent(node), "map-eviction-policy-class-name cannot be null or empty");
-                try {
-                    MapEvictionPolicy mapEvictionPolicy = ClassLoaderUtil.newInstance(config.getClassLoader(), className);
-                    mapConfig.setMapEvictionPolicy(mapEvictionPolicy);
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
             }
         }
         config.addMapConfig(mapConfig);
@@ -3045,26 +3036,52 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("enabled".equals(att.getNodeName())) {
                 boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
                 metricsConfig.setEnabled(enabled);
-            } else if ("mc-enabled".equals(att.getNodeName())) {
-                boolean enabled = getBooleanValue(getAttribute(node, "mc-enabled"));
-                metricsConfig.setMcEnabled(enabled);
-            } else if ("jmx-enabled".equals(att.getNodeName())) {
-                boolean enabled = getBooleanValue(getAttribute(node, "jmx-enabled"));
-                metricsConfig.setJmxEnabled(enabled);
             }
         }
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
-            if ("collection-interval-seconds".equals(nodeName)) {
-                metricsConfig.setCollectionIntervalSeconds(Integer.parseInt(value));
-            } else if ("retention-seconds".equals(nodeName)) {
-                metricsConfig.setRetentionSeconds(Integer.parseInt(value));
-            } else if ("metrics-for-data-structures".equals(nodeName)) {
-                metricsConfig.setMetricsForDataStructuresEnabled(Boolean.parseBoolean(value));
-            } else if ("minimum-level".equals(nodeName)) {
-                metricsConfig.setMinimumLevel(ProbeLevel.valueOf(value));
+            if ("management-center".equals(nodeName)) {
+                handleMetricsManagementCenter(child);
+            } else if ("jmx".equals(nodeName)) {
+                handleMetricsJmx(child);
+            } else if ("collection-frequency-seconds".equals(nodeName)) {
+                metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(value));
+            }
+        }
+    }
+
+    private void handleMetricsManagementCenter(Node node) {
+        MetricsManagementCenterConfig managementCenterConfig = config.getMetricsConfig().getManagementCenterConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                managementCenterConfig.setEnabled(enabled);
+            }
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                String value = getTextContent(child).trim();
+                if ("retention-seconds".equals(nodeName)) {
+                    managementCenterConfig.setRetentionSeconds(Integer.parseInt(value));
+                }
+            }
+        }
+    }
+
+    private void handleMetricsJmx(Node node) {
+        MetricsJmxConfig jmxConfig = config.getMetricsConfig().getJmxConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                jmxConfig.setEnabled(enabled);
             }
         }
     }

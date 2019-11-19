@@ -45,6 +45,7 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
@@ -714,6 +715,7 @@ public class ReferenceObjects {
     public static RingbufferStoreConfigHolder aRingbufferStoreConfigHolder = new RingbufferStoreConfigHolder(aString, aString, aData, aData, aMapOfStringToString, aBoolean);
     public static DurationConfig aDurationConfig = CustomTypeFactory.createDurationConfig(aLong, anEnum);
     public static TimedExpiryPolicyFactoryConfig aTimedExpiryPolicyFactoryConfig = CustomTypeFactory.createTimedExpiryPolicyFactoryConfig(anEnum, aDurationConfig);
+    public static ClientBwListEntryDTO aClientBwListEntry = CustomTypeFactory.createClientBwListEntry(anEnum, aString);
     public static List<Map.Entry<String, String>> aListOfStringToString
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aString, aString));
     public static List<Map.Entry<String, byte[]>> aListOfStringToByteArray
@@ -742,6 +744,7 @@ public class ReferenceObjects {
     public static List<Xid> aListOfXids = Collections.singletonList(anXid);
     public static List<Map.Entry<Member, List<ScheduledTaskHandler>>> aListOfMemberToListOfScheduledTaskHandlers
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aMember, aListOfScheduledTaskHandler));
+    public static List<ClientBwListEntryDTO> aListOfClientBwListEntries = Collections.singletonList(aClientBwListEntry);
     public static MergePolicyConfig aMergePolicyConfig = new MergePolicyConfig(aString, anInt);
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,

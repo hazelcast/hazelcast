@@ -17,21 +17,24 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
+import com.hazelcast.map.impl.record.Record;
 
 
 /**
- * Internally used {@link EntryView} implementation for sampling based eviction specific purposes.
- * <p>
+ * Internally used {@link EntryView} implementation
+ * for sampling based eviction specific purposes.
+ * <p/>
  * Mainly :
  * - Wraps a {@link Record} and reaches all {@link EntryView} specific info over it
  * - Lazily de-serializes key and value.
  *
  * @param <R> Type of record to construct {@link EntryView} over it.
  */
-public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurrentHashMap.SamplingEntry implements EntryView {
+@SuppressWarnings("checkstyle:cyclomaticcomplexity")
+public class LazyEvictableEntryView<R extends Record>
+        extends SampleableConcurrentHashMap.SamplingEntry implements EntryView {
 
     private Object key;
     private Object value;
@@ -39,7 +42,7 @@ public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurr
 
     private SerializationService serializationService;
 
-    public LazyEntryViewFromRecord(R record, SerializationService serializationService) {
+    public LazyEvictableEntryView(R record, SerializationService serializationService) {
         super(record.getKey(), record);
         this.record = record;
         this.serializationService = serializationService;

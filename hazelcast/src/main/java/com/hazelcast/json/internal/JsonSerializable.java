@@ -14,7 +14,28 @@
  * limitations under the License.
  */
 
+package com.hazelcast.json.internal;
+
+import com.hazelcast.internal.json.JsonObject;
+
 /**
- * <p>This package contains eviction specific classes.<br>
+ * JsonSerializable is a serialization interface that serializes/de-serializes
+ * to/from JSON.
  */
-package com.hazelcast.map.eviction;
+public interface JsonSerializable {
+
+    /**
+     * Serializes state represented by this object into a {@link JsonObject}.
+     *
+     * @return the JSON representation of this object
+     */
+    JsonObject toJson();
+
+    /**
+     * Extracts the state from the given {@code json} object and mutates the
+     * state of this object.
+     *
+     * @param json the JSON object carrying state for this object
+     */
+    void fromJson(JsonObject json);
+}

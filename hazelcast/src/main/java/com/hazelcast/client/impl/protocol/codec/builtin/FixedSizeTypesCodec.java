@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.nio.Bits;
 
 import java.util.UUID;
@@ -76,6 +77,10 @@ public final class FixedSizeTypesCodec {
             timeUnitId = -1;
         }
         encodeInt(buffer, pos, timeUnitId);
+    }
+
+    public static void encodeEnum(byte[] buffer, int pos, ClientBwListEntryDTO.Type clientBwListEntryType) {
+        encodeInt(buffer, pos, clientBwListEntryType.getId());
     }
 
     public static int decodeEnum(byte[] buffer, int pos) {

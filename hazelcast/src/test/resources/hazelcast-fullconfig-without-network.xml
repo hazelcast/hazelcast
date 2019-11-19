@@ -254,8 +254,7 @@
         <max-idle-seconds>2</max-idle-seconds>
 
         <!-- By default map's eviction mechanism is disabled. -->
-        <eviction max-size-policy="PER_NODE" eviction-policy="LRU"
-                  size="20"/>
+        <eviction max-size-policy="PER_NODE" eviction-policy="LRU" size="20"/>
 
         <!--
             While recovering from split-brain (network partitioning), data structure entries in the small cluster
@@ -832,4 +831,12 @@
             </fenced-lock>
         </locks>
     </cp-subsystem>
+
+    <metrics enabled="false">
+        <management-center enabled="false">
+            <retention-seconds>42</retention-seconds>
+        </management-center>
+        <jmx enabled="false"/>
+        <collection-frequency-seconds>24</collection-frequency-seconds>
+    </metrics>
 </hazelcast>

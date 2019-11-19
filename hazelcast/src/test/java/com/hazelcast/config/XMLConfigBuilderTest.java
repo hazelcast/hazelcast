@@ -56,15 +56,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -2375,6 +2374,23 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testMapCustomEvictionPolicy() {
+        String comparatorClassName = "com.my.custom.eviction.policy.class";
+
+        String xml = HAZELCAST_START_TAG
+                + "   <map name=\"mappy\">\n"
+                + "       <eviction comparator-class-name=\"" + comparatorClassName + "\" />"
+                + "   </map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("mappy");
+
+        assertEquals(comparatorClassName, mapConfig.getEvictionConfig().getComparatorClassName());
+    }
+
+    @Override
+    @Test
     public void testIndexesConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
@@ -2902,37 +2918,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapEvictionPolicyClassName() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"test\">"
-                + "<map-eviction-policy-class-name>" + mapEvictionPolicyClassName + "</map-eviction-policy-class-name> "
-                + "</map>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Override
-    @Test
-    public void testMapEvictionPolicyIsSelected_whenEvictionPolicySet() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String xml = HAZELCAST_START_TAG
-                + "<map name=\"test\">"
-                + "<map-eviction-policy-class-name>" + mapEvictionPolicyClassName + "</map-eviction-policy-class-name> "
-                + "<eviction eviction-policy=\"LFU\"/>"
-                + "</map>"
-                + HAZELCAST_END_TAG;
-        Config config = buildConfig(xml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Override
-    @Test
     public void testOnJoinPermissionOperation() {
         for (OnJoinPermissionOperationName onJoinOp : OnJoinPermissionOperationName.values()) {
             String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
@@ -3441,22 +3426,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testMetricsConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<metrics enabled=\"false\" mc-enabled=\"false\" jmx-enabled=\"false\">\n"
-                + "  <collection-interval-seconds>10</collection-interval-seconds>\n"
-                + "  <retention-seconds>11</retention-seconds>\n"
-                + "  <metrics-for-data-structures>true</metrics-for-data-structures>\n"
-                + "  <minimum-level>DEBUG</minimum-level>\n"
+                + "<metrics enabled=\"false\">"
+                + "  <management-center enabled=\"false\">"
+                + "    <retention-seconds>11</retention-seconds>"
+                + "  </management-center>"
+                + "  <jmx enabled=\"false\" />"
+                + "  <collection-frequency-seconds>10</collection-frequency-seconds>\n"
                 + "</metrics>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
+        MetricsManagementCenterConfig metricsMcConfig = metricsConfig.getManagementCenterConfig();
         assertFalse(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isMcEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
-        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
-        assertEquals(11, metricsConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
-        assertEquals(DEBUG, metricsConfig.getMinimumLevel());
+        assertFalse(metricsMcConfig.isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+        assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
+        assertEquals(11, metricsMcConfig.getRetentionSeconds());
     }
 
     @Override
@@ -3468,33 +3453,37 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new InMemoryXmlConfig(xml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
-        assertTrue(metricsConfig.isMcEnabled());
-        assertTrue(metricsConfig.isJmxEnabled());
+        assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
     }
 
     @Override
     @Test
     public void testMetricsConfigMcDisabled() {
         String xml = HAZELCAST_START_TAG
-                + "<metrics mc-enabled=\"false\"/>"
+                + "<metrics>"
+                + "  <management-center enabled=\"false\" />"
+                + "</metrics>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isMcEnabled());
-        assertTrue(metricsConfig.isJmxEnabled());
+        assertFalse(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
     }
 
     @Override
     @Test
     public void testMetricsConfigJmxDisabled() {
         String xml = HAZELCAST_START_TAG
-                + "<metrics jmx-enabled=\"false\"/>"
+                + "<metrics>"
+                + "  <jmx enabled=\"false\" />"
+                + "</metrics>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
-        assertTrue(metricsConfig.isMcEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
+        assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
     }
 }

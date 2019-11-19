@@ -20,10 +20,11 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.memory.GarbageCollectorStats;
 import com.hazelcast.internal.monitor.LocalGCStats;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 
-public class LocalGCStatsImpl implements LocalGCStats {
+public class LocalGCStatsImpl implements LocalGCStats, JsonSerializable {
 
     private long creationTime;
     private long minorCount;

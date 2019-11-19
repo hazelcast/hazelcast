@@ -608,14 +608,6 @@
                                     <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="event-journal" type="event-journal" minOccurs="0" maxOccurs="1"/>
-                                    <xs:element name="map-eviction-policy" type="map-eviction-policy" minOccurs="0" maxOccurs="1">
-                                        <xs:annotation>
-                                            <xs:documentation>
-                                                Internal eviction algorithm finds most appropriate entry
-                                                to evict from this map by using this policy.
-                                            </xs:documentation>
-                                        </xs:annotation>
-                                    </xs:element>
                                     <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
@@ -1311,6 +1303,7 @@
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="cp-subsystem" type="cp-subsystem" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -2036,10 +2029,6 @@
 
     <xs:complexType name="map-merge-policy">
         <xs:attribute name="name" type="xs:string" use="required"/>
-        <xs:attributeGroup ref="class-or-bean-name"/>
-    </xs:complexType>
-
-    <xs:complexType name="map-eviction-policy">
         <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
@@ -4735,6 +4724,84 @@
         </xs:all>
     </xs:complexType>
 
+    <xs:complexType name="metrics">
+        <xs:all>
+            <xs:element name="management-center" type="metrics-management-center" minOccurs="0"/>
+            <xs:element name="jmx" type="metrics-jmx" minOccurs="0"/>
+            <xs:element name="collection-frequency-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the metrics collection frequency in seconds.
+                        By default, metrics are collected every 5 seconds.
+                        May be overridden by 'hazelcast.metrics.collection.frequency'
+                        system property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Master-switch for the metrics system. Controls whether
+                    the metrics are collected and publishers are enabled.
+                    May be overridden by 'hazelcast.metrics.enabled'
+                    system property.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="metrics-management-center">
+        <xs:all>
+            <xs:element name="retention-seconds" type="xs:unsignedInt" default="5" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of seconds the metrics will be retained on the
+                        instance. By default, metrics are retained for 5 seconds (that is for
+                        one collection of metrics values, if default "collection-frequency-seconds"
+                        collection frequency is used). More retention means more heap memory, but
+                        allows for longer client hiccups without losing a value (for example to
+                        restart the Management Center).
+                        May be overridden by 'hazelcast.metrics.mc.retention'
+                        system property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls whether the metrics collected are exposed to
+                    Hazelcast Management Center. It is enabled by default.
+                    Please note that the metrics are polled by the
+                    Hazelcast Management Center, hence the members need to
+                    buffer the collected metrics between two polls. The aim
+                    for this switch is to reduce memory consumption of the
+                    metrics system if the Hazelcast Management Center is not
+                    used.
+                    In order to expose the metrics, the metrics system need
+                    to be enabled via the enabled master-switch attribute.
+                    May be overridden by 'hazelcast.metrics.mc.enabled'
+                    system property.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="metrics-jmx">
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls whether the metrics collected are exposed to
+                    through JMX. It is enabled by default.
+                    In order to expose the metrics, the metrics system need
+                    to be enabled via the enabled master-switch attribute.
+                    May be overridden by 'hazelcast.metrics.jmx.enabled'
+                    system property.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 
     <xs:complexType name="realms">
         <xs:sequence>

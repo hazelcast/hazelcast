@@ -169,8 +169,8 @@ public class CacheRecordHashMap
         }
 
         @Override
-        public long getAccessHit() {
-            return value.getAccessHit();
+        public long getHits() {
+            return value.getHits();
         }
 
     }

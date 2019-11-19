@@ -30,7 +30,7 @@ import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.function.Consumer;
 

@@ -20,13 +20,14 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStats {
+public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStats, JsonSerializable {
 
     private static final AtomicLongFieldUpdater<LocalFlakeIdGeneratorStatsImpl> BATCH_COUNT =
             newUpdater(LocalFlakeIdGeneratorStatsImpl.class, "batchCount");

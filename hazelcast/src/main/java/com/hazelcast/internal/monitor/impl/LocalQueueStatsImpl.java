@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -27,7 +28,7 @@ import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalQueueStatsImpl implements LocalQueueStats {
+public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
 
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");

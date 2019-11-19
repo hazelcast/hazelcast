@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
@@ -59,7 +60,7 @@ public class LocalWanStatsImplTest {
         JsonObject serialized = localWanStats.toJson();
 
         LocalWanStats deserialized = new LocalWanStatsImpl();
-        deserialized.fromJson(serialized);
+        ((JsonSerializable) deserialized).fromJson(serialized);
 
         LocalWanPublisherStats deserializedTokyo = deserialized.getLocalWanPublisherStats().get("tokyo");
         LocalWanPublisherStats deserializedSingapore = deserialized.getLocalWanPublisherStats().get("singapore");

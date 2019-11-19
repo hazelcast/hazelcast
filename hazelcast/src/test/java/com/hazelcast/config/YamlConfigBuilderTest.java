@@ -55,14 +55,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -2404,6 +2403,23 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testMapCustomEvictionPolicy() {
+        String comparatorClassName = "com.my.custom.eviction.policy.class";
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mappy:\n"
+                + "      eviction:\n"
+                + "         comparator-class-name: " + comparatorClassName + "\n";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("mappy");
+
+        assertEquals(comparatorClassName, mapConfig.getEvictionConfig().getComparatorClassName());
+    }
+
+    @Override
     @Test
     public void testIndexesConfig() {
         String yaml = ""
@@ -2917,39 +2933,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
         assertEquals(1, sslConfig.getProperties().size());
         assertEquals("TLS", sslConfig.getProperties().get("protocol"));
-    }
-
-    @Override
-    @Test
-    public void testMapEvictionPolicyClassName() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    test:\n"
-                + "      map-eviction-policy-class-name: " + mapEvictionPolicyClassName;
-
-        Config config = buildConfig(yaml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
-    }
-
-    @Override
-    @Test
-    public void testMapEvictionPolicyIsSelected_whenEvictionPolicySet() {
-        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  map:\n"
-                + "    test:\n"
-                + "      map-eviction-policy-class-name: " + mapEvictionPolicyClassName + "\n"
-                + "      eviction-policy: LFU";
-
-        Config config = buildConfig(yaml);
-        MapConfig mapConfig = config.getMapConfig("test");
-
-        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
     }
 
     @Override
@@ -3479,21 +3462,20 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  metrics:\n"
                 + "    enabled: false\n"
-                + "    mc-enabled: false\n"
-                + "    jmx-enabled: false\n"
-                + "    collection-interval-seconds: 10\n"
-                + "    retention-seconds: 11\n"
-                + "    metrics-for-data-structures: true\n"
-                + "    minimum-level: DEBUG";
+                + "    management-center:\n"
+                + "      enabled: false\n"
+                + "      retention-seconds: 11\n"
+                + "    jmx:\n"
+                + "      enabled: false\n"
+                + "    collection-frequency-seconds: 10";
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isMcEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
-        assertEquals(10, metricsConfig.getCollectionIntervalSeconds());
-        assertEquals(11, metricsConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
-        assertEquals(DEBUG, metricsConfig.getMinimumLevel());
+        MetricsManagementCenterConfig metricsMcConfig = metricsConfig.getManagementCenterConfig();
+        assertFalse(metricsMcConfig.isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+        assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
+        assertEquals(11, metricsMcConfig.getRetentionSeconds());
     }
 
     @Override
@@ -3506,8 +3488,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());
-        assertTrue(metricsConfig.isMcEnabled());
-        assertTrue(metricsConfig.isJmxEnabled());
+        assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
     }
 
     @Override
@@ -3516,12 +3498,13 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  metrics:\n"
-                + "    mc-enabled: false";
+                + "    management-center:\n"
+                + "      enabled: false";
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.isMcEnabled());
-        assertTrue(metricsConfig.isJmxEnabled());
+        assertFalse(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertTrue(metricsConfig.getJmxConfig().isEnabled());
     }
 
     @Override
@@ -3530,12 +3513,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  metrics:\n"
-                + "    jmx-enabled: false";
+                + "    jmx:\n"
+                + "      enabled: false";
         Config config = new InMemoryYamlConfig(yaml);
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
-        assertTrue(metricsConfig.isMcEnabled());
-        assertFalse(metricsConfig.isJmxEnabled());
-
+        assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
     }
 }

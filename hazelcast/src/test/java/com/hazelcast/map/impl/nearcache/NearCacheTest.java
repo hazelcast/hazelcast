@@ -809,7 +809,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> nearCachedMap = instance2.getMap(mapName);
         populateNearCache(nearCachedMap, MAX_CACHE_SIZE);
 
-        assertNearCacheExpiration(nearCachedMap, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
+        assertNearCacheExpiration(nearCachedMap, MAX_CACHE_SIZE);
     }
 
     @Test(expected = InvalidConfigurationException.class)

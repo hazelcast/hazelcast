@@ -21,7 +21,7 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.Collection;
 
