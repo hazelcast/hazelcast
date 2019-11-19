@@ -22,6 +22,7 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.config.test.builders.ConfigReplacerBuilder;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -284,6 +285,16 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     public void testImportNotExistingResourceThrowsException() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"notexisting.xml\"/>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test(expected = HazelcastException.class)
+    public void testImportNotExistingUrlResourceThrowsException() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <import resource=\"file:///notexisting.xml\"/>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);

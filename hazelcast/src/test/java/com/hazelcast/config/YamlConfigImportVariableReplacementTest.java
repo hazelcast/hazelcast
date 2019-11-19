@@ -18,9 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -198,6 +198,17 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - notexisting.yaml";
+        buildConfig(yaml, null);
+    }
+
+    @Override
+    @Test
+    public void testImportNotExistingUrlResourceThrowsException() {
+        expectHazelcastException();
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  import:\n"
+                + "    - file:///notexisting.yaml";
         buildConfig(yaml, null);
     }
 

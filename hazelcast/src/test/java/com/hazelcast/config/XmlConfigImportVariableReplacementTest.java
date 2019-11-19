@@ -24,7 +24,6 @@ import com.hazelcast.config.test.builders.MapXmlStoreConfigBuilder;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -260,13 +259,13 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
         String pathToEmptyFile = createEmptyFile();
-        buildConfig(xmlContentWithImportResource("file://" + pathToEmptyFile), null);
+        buildConfig(xmlContentWithImportResource(pathToEmptyFile), null);
     }
 
-    private String xmlContentWithImportResource(String url) {
+    private String xmlContentWithImportResource(String importPath) {
         return HAZELCAST_START_TAG
-            + "    <import resource=\"" + url + "\"/>\n"
-            + HAZELCAST_END_TAG;
+                + "    <import resource=\"" + importPath + "\"/>\n"
+                + HAZELCAST_END_TAG;
     }
 
     private String createEmptyFile() throws Exception {
@@ -283,6 +282,12 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() {
         buildConfig(xmlContentWithImportResource("not_existing.xml"), null);
+    }
+
+    @Override
+    @Test(expected = HazelcastException.class)
+    public void testImportNotExistingUrlResourceThrowsException() {
+        buildConfig(xmlContentWithImportResource("file:///not_existing.xml"), null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -310,9 +315,9 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        </join>\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
-        String path = helper.givenConfigFileInWorkDir("config-netword.xml", networkConfig).getAbsolutePath();
+        String path = helper.givenConfigFileInWorkDir("config-network.xml", networkConfig).getAbsolutePath();
 
-        Config config = buildConfig(xmlContentWithImportResource("file:///" + path), null);
+        Config config = buildConfig(xmlContentWithImportResource(path), null);
         JoinConfig join = config.getNetworkConfig().getJoin();
         assertFalse(join.getMulticastConfig().isEnabled());
         assertTrue(join.getTcpIpConfig().isEnabled());
@@ -342,7 +347,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + HAZELCAST_END_TAG;
         String path = helper.givenConfigFileInWorkDir("mymap.xml", mapConfig).getAbsolutePath();
 
-        Config config = buildConfig(xmlContentWithImportResource("file://" + path), null);
+        Config config = buildConfig(xmlContentWithImportResource(path), null);
 
         MapConfig myMapConfig = config.getMapConfig(mapName);
         assertEquals(mapName, myMapConfig.getName());
