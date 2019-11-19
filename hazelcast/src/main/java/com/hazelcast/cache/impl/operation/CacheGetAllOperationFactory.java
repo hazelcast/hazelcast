@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -74,7 +75,7 @@ public class CacheGetAllOperationFactory
         out.writeObject(expiryPolicy);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
     }
 
@@ -86,7 +87,7 @@ public class CacheGetAllOperationFactory
         int size = in.readInt();
         keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
-            Data data = in.readData();
+            Data data = IOUtil.readData(in);
             keys.add(data);
         }
     }

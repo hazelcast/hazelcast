@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 
+import static com.hazelcast.internal.nio.IOUtil.readDataAsObject;
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
@@ -258,7 +260,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             out.writeObject(backupOp);
         } else {
             out.writeBoolean(true);
-            out.writeData(backupOpData);
+            IOUtil.writeData(out, backupOpData);
         }
 
         if (originalCaller == null) {
@@ -287,7 +289,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         if (in.readBoolean()) {
-            backupOp = in.readDataAsObject();
+            backupOp = readDataAsObject(in);
         } else {
             backupOp = in.readObject();
         }

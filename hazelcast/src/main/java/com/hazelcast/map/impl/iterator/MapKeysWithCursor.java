@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.iterator;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,12 +46,12 @@ public class MapKeysWithCursor extends AbstractCursor<Data> {
 
     @Override
     void writeElement(ObjectDataOutput out, Data element) throws IOException {
-        out.writeData(element);
+        IOUtil.writeData(out, element);
     }
 
     @Override
     Data readElement(ObjectDataInput in) throws IOException {
-        return in.readData();
+        return IOUtil.readData(in);
     }
 
     @Override

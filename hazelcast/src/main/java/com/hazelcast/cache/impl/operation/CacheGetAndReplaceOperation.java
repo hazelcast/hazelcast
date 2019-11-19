@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -78,7 +79,7 @@ public class CacheGetAndReplaceOperation extends MutatingCacheOperation {
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
         out.writeObject(expiryPolicy);
     }
 
@@ -86,7 +87,7 @@ public class CacheGetAndReplaceOperation extends MutatingCacheOperation {
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        value = in.readData();
+        value = IOUtil.readData(in);
         expiryPolicy = in.readObject();
     }
 

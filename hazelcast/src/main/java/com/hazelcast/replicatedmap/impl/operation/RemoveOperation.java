@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -67,13 +68,13 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeData(key);
+        IOUtil.writeData(out, key);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        key = in.readData();
+        key = IOUtil.readData(in);
     }
 
     @Override

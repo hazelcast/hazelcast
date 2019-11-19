@@ -17,6 +17,7 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -93,14 +94,14 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(recordId);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         recordId = in.readLong();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -69,12 +70,12 @@ public class ByteArrayObjectDataInputIntegrationTest {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeData(data);
+            IOUtil.writeData(out, data);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            o = in.readDataAsObject();
+            o = IOUtil.readDataAsObject(in);
         }
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -113,14 +114,14 @@ public class AddOperation extends AbstractRingBufferOperation implements Notifie
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(item);
+        IOUtil.writeData(out, item);
         out.writeInt(overflowPolicy.getId());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        item = in.readData();
+        item = IOUtil.readData(in);
         overflowPolicy = OverflowPolicy.getById(in.readInt());
     }
 }

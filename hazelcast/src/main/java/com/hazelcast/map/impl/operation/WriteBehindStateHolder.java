@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
@@ -154,8 +155,8 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
                 Data value = mapServiceContext.toData(e.getValue());
                 long expirationTime = e.getExpirationTime();
 
-                out.writeData(key);
-                out.writeData(value);
+                IOUtil.writeData(out, key);
+                IOUtil.writeData(out, value);
                 out.writeLong(expirationTime);
                 out.writeLong(e.getStoreTime());
                 out.writeInt(e.getPartitionId());
@@ -198,8 +199,8 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
             int listSize = in.readInt();
             List<DelayedEntry> delayedEntriesList = new ArrayList<>(listSize);
             for (int j = 0; j < listSize; j++) {
-                Data key = in.readData();
-                Data value = in.readData();
+                Data key = IOUtil.readData(in);
+                Data value = IOUtil.readData(in);
                 long expirationTime = in.readLong();
                 long storeTime = in.readLong();
                 int partitionId = in.readInt();

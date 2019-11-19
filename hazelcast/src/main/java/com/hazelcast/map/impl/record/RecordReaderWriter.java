@@ -22,6 +22,9 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.nio.IOUtil.readData;
+import static com.hazelcast.internal.nio.IOUtil.writeData;
+
 /**
  * Used when reading and writing records
  * for backup and replication operations
@@ -31,8 +34,8 @@ public enum RecordReaderWriter {
         @Override
         void writeRecord(ObjectDataOutput out,
                          Record record, Data dataValue) throws IOException {
-            out.writeData(record.getKey());
-            out.writeData(dataValue);
+            writeData(out, record.getKey());
+            writeData(out, dataValue);
             out.writeInt(record.getRawTtl());
             out.writeInt(record.getRawMaxIdle());
             out.writeInt(record.getRawCreationTime());
@@ -45,8 +48,8 @@ public enum RecordReaderWriter {
         @Override
         Record readRecord(ObjectDataInput in) throws IOException {
             DataRecord record = new DataRecord();
-            record.setKey(in.readData());
-            record.setValue(in.readData());
+            record.setKey(readData(in));
+            record.setValue(readData(in));
             record.setRawTtl(in.readInt());
             record.setRawMaxIdle(in.readInt());
             record.setRawCreationTime(in.readInt());
@@ -62,8 +65,8 @@ public enum RecordReaderWriter {
         @Override
         void writeRecord(ObjectDataOutput out,
                          Record record, Data dataValue) throws IOException {
-            out.writeData(record.getKey());
-            out.writeData(dataValue);
+            writeData(out, record.getKey());
+            writeData(out, dataValue);
             out.writeInt(record.getRawTtl());
             out.writeInt(record.getRawMaxIdle());
             out.writeInt(record.getRawCreationTime());
@@ -78,8 +81,8 @@ public enum RecordReaderWriter {
         @Override
         Record readRecord(ObjectDataInput in) throws IOException {
             DataRecordWithStats record = new DataRecordWithStats();
-            record.setKey(in.readData());
-            record.setValue(in.readData());
+            record.setKey(readData(in));
+            record.setValue(readData(in));
             record.setRawTtl(in.readInt());
             record.setRawMaxIdle(in.readInt());
             record.setRawCreationTime(in.readInt());

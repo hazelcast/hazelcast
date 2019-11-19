@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -60,13 +61,13 @@ public class ContainsValueOperation extends AbstractNamedSerializableOperation i
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 
     @Override

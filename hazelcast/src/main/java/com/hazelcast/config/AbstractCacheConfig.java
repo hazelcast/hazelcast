@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
@@ -96,7 +96,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      * The ClassLoader to be used to resolve key &amp; value types, if set
      */
     protected transient ClassLoader classLoader;
-    protected transient InternalSerializationService serializationService;
+    protected transient SerializationService serializationService;
 
     /**
      * The {@link CacheEntryListenerConfiguration}s for the {@link javax.cache.configuration.Configuration}.

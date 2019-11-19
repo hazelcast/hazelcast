@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
@@ -593,7 +594,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         disablePerEntryInvalidationEvents = in.readBoolean();
 
         setClassLoader(in.getClassLoader());
-        this.serializationService = in.getSerializationService();
+        assert in instanceof SerializationServiceSupport;
+        this.serializationService = ((SerializationServiceSupport) in).getSerializationService();
 
         readPartitionLostListenerConfigs(in);
     }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.collection;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -101,12 +102,12 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 }
