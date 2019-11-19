@@ -1447,8 +1447,11 @@ public final class RaftNodeImpl implements RaftNode {
             flushTaskSubmitted = false;
             RaftLog log = state.log();
             log.flush();
-            state.leaderState().flushedLogIndex(log.lastLogOrSnapshotIndex());
-            tryAdvanceCommitIndex();
+            LeaderState leaderState = state.leaderState();
+            if (leaderState != null) {
+                leaderState.flushedLogIndex(log.lastLogOrSnapshotIndex());
+                tryAdvanceCommitIndex();
+            }
         }
     }
 
