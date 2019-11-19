@@ -76,6 +76,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.ACTIVE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
@@ -291,7 +292,6 @@ public final class RaftNodeImpl implements RaftNode {
                     }
                 }
                 state.completeLeadershipTransfer(new LeaderDemotedException(state.localEndpoint(), null));
-                closeStateStore();
                 setStatus(TERMINATED);
                 resultFuture.complete(null);
             } catch (Exception e) {
@@ -459,14 +459,25 @@ public final class RaftNodeImpl implements RaftNode {
         this.status = newStatus;
 
         if (prevStatus != newStatus) {
+            Level level = Level.WARNING;
             if (newStatus == ACTIVE) {
-                logger.info("Status is set to: " + newStatus);
-            } else {
-                logger.warning("Status is set to: " + newStatus);
+                level = Level.INFO;
+            } else if (newStatus == TERMINATED || newStatus == STEPPED_DOWN) {
+                closeStateStore();
             }
+            logger.log(level, "Status is set to: " + newStatus);
         }
 
         raftIntegration.onNodeStatusChange(newStatus);
+    }
+
+    private void groupDestroyed() {
+        if (status != TERMINATED) {
+            status = TERMINATED;
+            closeStateStore();
+            logger.warning("Status is set to: " + TERMINATED);
+        }
+        raftIntegration.onGroupDestroyed(groupId);
     }
 
     /**
@@ -793,8 +804,7 @@ public final class RaftNodeImpl implements RaftNode {
         Object operation = entry.operation();
         if (operation instanceof RaftGroupCmd) {
             if (operation instanceof DestroyRaftGroupCmd) {
-                setStatus(TERMINATED);
-                closeStateStore();
+                groupDestroyed();
             } else if (operation instanceof UpdateRaftGroupMembersCmd) {
                 if (state.lastGroupMembers().index() < entry.index()) {
                     setStatus(UPDATING_GROUP_MEMBER_LIST);
@@ -816,7 +826,6 @@ public final class RaftNodeImpl implements RaftNode {
                     // Although LeaderDemotedException is designed for another case, we use it here since
                     // invocations internally retry when they receive LeaderDemotedException.
                     invalidateFuturesUntil(entry.index() - 1, new LeaderDemotedException(state.localEndpoint(), null));
-                    closeStateStore();
                 } else {
                     setStatus(ACTIVE);
                 }
