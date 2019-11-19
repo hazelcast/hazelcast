@@ -75,9 +75,6 @@ public class NodeIOService implements IOService {
         memcacheProtocolConfig = initMemcacheProtocolConfig(node.getConfig());
     }
 
-    /**
-     * Initializes {@link RestApiConfig} if not provided based on legacy group properties.
-     */
     private static RestApiConfig initRestApiConfig(Config config) {
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         boolean isAdvancedNetwork = advancedNetworkConfig.isEnabled();
