@@ -60,7 +60,8 @@ public class CacheAddPartitionLostListenerMessageTask
         EventService eventService = service.getNodeEngine().getEventService();
         if (parameters.localOnly) {
             return newCompletedFuture(
-                    eventService.registerLocalListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter));
+                    eventService.registerLocalListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter)
+                                .getId());
         }
 
         return eventService.registerListenerAsync(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter)
