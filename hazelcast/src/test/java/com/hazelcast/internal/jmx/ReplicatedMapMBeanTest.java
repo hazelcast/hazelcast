@@ -19,7 +19,6 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.config.Config;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -146,8 +145,7 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAttributeHitsAndOwnedEntryCountUpdatedAfterInterval()
-            throws Exception {
+    public void testAttributeHitsAndOwnedEntryCountUpdatedAfterInterval() throws Exception {
         String firstKey = "firstKey";
         String secondKey = "secondKey";
         replicatedMap.put(firstKey, "firstValue");
@@ -165,13 +163,9 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
         assertEquals(1, localEntryCount);
         assertEquals(1, localEntryCountNotUpdated);
         sleepAtLeastSeconds(1);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(2, getLongAttribute(localHitsName).longValue());
-                assertEquals(2, getLongAttribute(localOwnedEntryCountName).longValue());
-            }
+        assertTrueEventually(() -> {
+            assertEquals(2, getLongAttribute(localHitsName).longValue());
+            assertEquals(2, getLongAttribute(localOwnedEntryCountName).longValue());
         });
     }
 
