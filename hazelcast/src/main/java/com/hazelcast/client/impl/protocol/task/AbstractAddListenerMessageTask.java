@@ -33,7 +33,7 @@ public abstract class AbstractAddListenerMessageTask<P>
     }
 
     @Override
-    protected Object beforeResponse(UUID response) {
+    protected Object processResponseBeforeSending(UUID response) {
         addDestroyAction(response);
         return response;
     }

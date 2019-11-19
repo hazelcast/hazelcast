@@ -48,7 +48,7 @@ public abstract class AbstractMultiPartitionMessageTask<P>
     protected abstract Object reduce(Map<Integer, Object> map);
 
     @Override
-    protected Object beforeResponse(Map<Integer, Object> response) {
+    protected Object processResponseBeforeSending(Map<Integer, Object> response) {
         return reduce(response);
     }
 }

@@ -54,7 +54,7 @@ public class ReplicatedMapGetMessageTask
     }
 
     @Override
-    protected Object beforeResponse(Object response) {
+    protected Object processResponseBeforeSending(Object response) {
         long latencyNanos = System.nanoTime() - startTimeNanos;
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
 

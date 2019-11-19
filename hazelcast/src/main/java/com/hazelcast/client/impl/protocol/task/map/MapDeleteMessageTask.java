@@ -53,7 +53,7 @@ public class MapDeleteMessageTask
     }
 
     @Override
-    protected Object beforeResponse(Object response) {
+    protected Object processResponseBeforeSending(Object response) {
         final long latencyNanos = System.nanoTime() - startTimeNanos;
         final MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);

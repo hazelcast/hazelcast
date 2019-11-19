@@ -50,7 +50,7 @@ public abstract class AbstractAsyncMessageTask<P, T> extends AbstractMessageTask
      * @param response The response for the task. It can be modified to a different object by overriding this method.
      * @return The object to be sent to the client. The user may choose to return a different
      */
-    protected Object beforeResponse(T response) {
+    protected Object processResponseBeforeSending(T response) {
         return response;
     }
 
@@ -67,7 +67,7 @@ public abstract class AbstractAsyncMessageTask<P, T> extends AbstractMessageTask
     protected void processMessage() {
         beforeProcess();
         CompletableFuture<T> internalFuture = processInternal();
-        internalFuture.thenApply(this::beforeResponse).whenComplete(this::sendResponseOrHandleFailure)
+        internalFuture.thenApply(this::processResponseBeforeSending).whenComplete(this::sendResponseOrHandleFailure)
                       .whenComplete(this::afterSendingResponse);
     }
 
