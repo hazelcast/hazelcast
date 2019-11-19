@@ -644,12 +644,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
         RaftEndpoint localEndpoint = getLocalCPMember().toRaftEndpoint();
         OperationService operationService = nodeEngine.getOperationService();
-        Operation op = new TerminateRaftNodesOp(Collections.singleton(group.id()));
         for (RaftEndpoint endpoint : group.members())  {
             if (endpoint.equals(localEndpoint)) {
                 terminateRaftNodeAsync(group.id());
             } else {
-                operationService.send(op, activeMembersMap.get(endpoint.getUuid()).getAddress());
+                Operation op = new TerminateRaftNodesOp(Collections.singleton(group.id()));
+                CPMemberInfo cpMember = activeMembersMap.get(endpoint.getUuid());
+                operationService.invokeOnTarget(RaftService.SERVICE_NAME, op, cpMember.getAddress());
             }
         }
     }
