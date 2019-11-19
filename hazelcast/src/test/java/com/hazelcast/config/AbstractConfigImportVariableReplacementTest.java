@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.helpers.IOUtils;
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import com.hazelcast.core.HazelcastException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -72,6 +73,9 @@ public abstract class AbstractConfigImportVariableReplacementTest {
 
     @Test
     public abstract void testImportNotExistingResourceThrowsException();
+
+    @Test
+    public abstract void testImportNotExistingUrlResourceThrowsException();
 
     @Test
     public abstract void testImportNetworkConfigFromFile() throws Exception;
@@ -141,6 +145,10 @@ public abstract class AbstractConfigImportVariableReplacementTest {
 
     protected void expectInvalid() {
         InvalidConfigurationTest.expectInvalid(rule);
+    }
+
+    protected void expectHazelcastException() {
+        rule.expect(HazelcastException.class);
     }
 
     public static class IdentityReplacer implements ConfigReplacer {
