@@ -23,6 +23,9 @@ import com.hazelcast.spi.eviction.EvictionPolicyComparator;
  * {@link IMap} specific {@link EvictionPolicyComparator} for
  * comparing {@link com.hazelcast.core.EntryView}s to be evicted.
  *
+ * Implementors of the comparator have to implement {@code equals} and {@code hashCode} methods
+ * to support correct config comparison.
+ *
  * @param <K> type of the key
  * @param <V> type of the value
  * @see EvictionPolicyComparator
