@@ -51,8 +51,8 @@ public class ServerQueryCacheRecreationTest extends HazelcastTestSupport {
     private final String queryCacheName = "queryCacheName";
     private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
-    private HazelcastInstance serverWithQueryCache;
     private HazelcastInstance server;
+    private HazelcastInstance serverWithQueryCache;
 
     @Override
     protected Config getConfig() {
