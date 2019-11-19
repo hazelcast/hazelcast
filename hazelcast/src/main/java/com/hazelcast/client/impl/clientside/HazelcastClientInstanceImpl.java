@@ -204,12 +204,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                                        AddressProvider externalAddressProvider) {
         assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
         assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
-        MetricsConfigHelper.overrideClientMetricsConfig(clientConfig);
         if (clientConfig != null) {
+            MetricsConfigHelper.overrideClientMetricsConfig(clientConfig);
             this.config = clientConfig;
         } else {
+            for (ClientConfig failoverClientConfig : clientFailoverConfig.getClientConfigs()) {
+                MetricsConfigHelper.overrideClientMetricsConfig(failoverClientConfig);
+            }
             this.config = clientFailoverConfig.getClientConfigs().get(0);
         }
+        MetricsConfigHelper.overrideClientMetricsConfig(this.config);
         this.clientFailoverConfig = clientFailoverConfig;
         if (config.getInstanceName() != null) {
             instanceName = config.getInstanceName();
