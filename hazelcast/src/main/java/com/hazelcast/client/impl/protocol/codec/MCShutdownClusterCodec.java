@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Shuts down the cluster.
  */
-@Generated("23ad7474c2065ed1897bd22042c0c15e")
+@Generated("1c731320757159bf2e906a98e36bc798")
 public final class MCShutdownClusterCodec {
-    //hex: 0x200D00
-    public static final int REQUEST_MESSAGE_TYPE = 2100480;
-    //hex: 0x200D01
-    public static final int RESPONSE_MESSAGE_TYPE = 2100481;
+    //hex: 0x200F00
+    public static final int REQUEST_MESSAGE_TYPE = 2100992;
+    //hex: 0x200F01
+    public static final int RESPONSE_MESSAGE_TYPE = 2100993;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
