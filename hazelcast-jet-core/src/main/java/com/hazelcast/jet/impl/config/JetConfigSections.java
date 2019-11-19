@@ -25,8 +25,7 @@ enum JetConfigSections {
     INSTANCE("instance", false),
     IMPORT("import", true),
     PROPERTIES("properties", false),
-    EDGE_DEFAULTS("edge-defaults", false),
-    METRICS("metrics", false);
+    EDGE_DEFAULTS("edge-defaults", false);
 
     final String name;
     final boolean multipleOccurrence;

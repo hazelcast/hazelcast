@@ -16,6 +16,7 @@
 
 package integration;
 
+import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -35,12 +36,12 @@ public class Metrics {
     static void s1() {
         //tag::s1[]
         JetConfig jetConfig = new JetConfig();
-        jetConfig.getHazelcastConfig().getMetricsConfig()
+        MetricsConfig metricsConfig = jetConfig.getHazelcastConfig().getMetricsConfig();
+        metricsConfig
                  .setEnabled(true)
-                 .setJmxEnabled(true)
-                .setRetentionSeconds(5)
-                .setCollectionIntervalSeconds(5)
-                .setMetricsForDataStructuresEnabled(false);
+                 .setCollectionFrequencySeconds(5);
+        metricsConfig.getManagementCenterConfig().setRetentionSeconds(5);
+        metricsConfig.getJmxConfig().setEnabled(true);
         //end::s1[]
     }
 

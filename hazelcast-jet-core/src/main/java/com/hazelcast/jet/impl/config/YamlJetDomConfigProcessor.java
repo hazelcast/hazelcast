@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.config;
 
-import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -25,30 +24,13 @@ import org.w3c.dom.Node;
 
 import java.util.Properties;
 
-import static com.hazelcast.internal.config.DomConfigHelper.childElements;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 
 public class YamlJetDomConfigProcessor extends JetDomConfigProcessor {
 
-
-    protected YamlJetDomConfigProcessor(boolean domLevel3, JetConfig config) {
+    YamlJetDomConfigProcessor(boolean domLevel3, JetConfig config) {
         super(domLevel3, config);
-    }
-
-    @Override
-    protected void parseMetrics(Node node, JetConfig config) {
-        MetricsConfig metricsConfig = config.getHazelcastConfig().getMetricsConfig();
-        for (Node metricsNode : childElements(node)) {
-            if (metricsNode.getNodeName().equals("enabled")) {
-                metricsConfig.setEnabled(getBooleanValue(metricsNode.getNodeValue()));
-            }
-            if (metricsNode.getNodeName().equals("jmx-enabled")) {
-                metricsConfig.setJmxEnabled(getBooleanValue(metricsNode.getNodeValue()));
-            }
-        }
-        handleMetricsNode(node, metricsConfig);
     }
 
     @Override
@@ -61,5 +43,4 @@ public class YamlJetDomConfigProcessor extends JetDomConfigProcessor {
             properties.put(key, value);
         }
     }
-
 }

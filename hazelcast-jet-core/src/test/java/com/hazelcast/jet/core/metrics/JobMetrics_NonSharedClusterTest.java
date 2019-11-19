@@ -58,7 +58,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
     @Test
     public void when_noMetricCollectionYet_then_emptyMetrics() {
         JetConfig config = new JetConfig()
-                .configureHazelcast(c -> c.getMetricsConfig().setCollectionIntervalSeconds(10_000));
+                .configureHazelcast(c -> c.getMetricsConfig().setCollectionFrequencySeconds(10_000));
         JetInstance inst = createJetMember(config);
 
         DAG dag = new DAG();

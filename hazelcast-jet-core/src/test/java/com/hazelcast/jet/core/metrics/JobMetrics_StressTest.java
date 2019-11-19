@@ -61,7 +61,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
         IncrementingProcessor.completeCount.set(0);
 
         JetConfig config = new JetConfig();
-        config.getHazelcastConfig().getMetricsConfig().setCollectionIntervalSeconds(1);
+        config.getHazelcastConfig().getMetricsConfig().setCollectionFrequencySeconds(1);
         instance = createJetMember(config);
     }
 

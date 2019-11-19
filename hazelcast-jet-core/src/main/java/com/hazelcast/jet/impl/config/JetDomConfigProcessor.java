@@ -17,15 +17,12 @@
 package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.config.AbstractDomConfigProcessor;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import org.w3c.dom.Node;
-
-import java.util.Optional;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -35,7 +32,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.jet.impl.config.JetConfigSections.EDGE_DEFAULTS;
 import static com.hazelcast.jet.impl.config.JetConfigSections.IMPORT;
 import static com.hazelcast.jet.impl.config.JetConfigSections.INSTANCE;
-import static com.hazelcast.jet.impl.config.JetConfigSections.METRICS;
 import static com.hazelcast.jet.impl.config.JetConfigSections.PROPERTIES;
 import static com.hazelcast.jet.impl.config.JetConfigSections.canOccurMultipleTimes;
 
@@ -75,15 +71,13 @@ public class JetDomConfigProcessor extends AbstractDomConfigProcessor {
             fillProperties(node, config.getProperties());
         } else if (EDGE_DEFAULTS.isEqual(name)) {
             parseEdgeDefaults(node, config);
-        } else if (METRICS.isEqual(name)) {
-            parseMetrics(node, config);
         } else {
             return true;
         }
         return false;
     }
 
-    protected void parseInstanceConfig(Node instanceNode, JetConfig config) {
+    private void parseInstanceConfig(Node instanceNode, JetConfig config) {
         final InstanceConfig instanceConfig = config.getInstanceConfig();
         for (Node node : childElements(instanceNode)) {
             String name = cleanNodeName(node);
@@ -117,7 +111,7 @@ public class JetDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void parseEdgeDefaults(Node edgeNode, JetConfig config) {
+    private void parseEdgeDefaults(Node edgeNode, JetConfig config) {
         EdgeConfig edgeConfig = config.getDefaultEdgeConfig();
         for (Node child : childElements(edgeNode)) {
             String name = cleanNodeName(child);
@@ -142,44 +136,4 @@ public class JetDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
     }
-
-    protected void parseMetrics(Node metricsNode, JetConfig config) {
-        MetricsConfig metricsConfig = config.getHazelcastConfig().getMetricsConfig();
-        getBooleanAttribute(metricsNode, "enabled").ifPresent(metricsConfig::setEnabled);
-        getBooleanAttribute(metricsNode, "jmxEnabled").ifPresent(metricsConfig::setJmxEnabled);
-        handleMetricsNode(metricsNode, metricsConfig);
-    }
-
-    protected void handleMetricsNode(Node metricsNode, MetricsConfig metricsConfig) {
-        for (Node child : childElements(metricsNode)) {
-            String name = cleanNodeName(child);
-            switch (name) {
-                case "retention-seconds":
-                    metricsConfig.setRetentionSeconds(
-                            getIntegerValue("retention-seconds", getTextContent(child))
-                    );
-                    break;
-                case "collection-interval-seconds":
-                    metricsConfig.setCollectionIntervalSeconds(
-                            getIntegerValue("collection-interval-seconds", getTextContent(child))
-                    );
-                    break;
-                case "metrics-for-data-structures":
-                    metricsConfig.setMetricsForDataStructuresEnabled(getBooleanValue(getTextContent(child)));
-                    break;
-                case "enabled":
-                case "jmx-enabled":
-                    break;
-                default:
-                    throw new AssertionError("Unrecognized element: " + name);
-
-            }
-        }
-    }
-
-    private Optional<Boolean> getBooleanAttribute(Node node, String name) {
-        return Optional.ofNullable(node.getAttributes().getNamedItem(name))
-                       .map(n -> getBooleanValue(getTextContent(n)));
-    }
-
 }

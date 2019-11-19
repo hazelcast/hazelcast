@@ -31,7 +31,6 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -249,7 +248,5 @@ public final class Jet {
                     "The following path will be used: " + hzConfig.getHotRestartPersistenceConfig().getBaseDir());
             hzConfig.getHotRestartPersistenceConfig().setEnabled(true);
         }
-
-        jetConfig.getHazelcastConfig().getMetricsConfig().setMinimumLevel(ProbeLevel.INFO);
     }
 }
