@@ -136,7 +136,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
                     assertTrue(String.format("Some partitions has non-null containers for executor %s:\n%s", executorName, failMessage.toString()), allEmpty);
                 }
             }
-        }, 10);
+        }, 30);
     }
 
     @Test
