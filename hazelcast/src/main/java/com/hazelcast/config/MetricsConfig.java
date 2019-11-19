@@ -16,10 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Configuration options specific to metrics collection.
@@ -33,36 +36,28 @@ public class MetricsConfig {
      */
     public static final int DEFAULT_METRICS_COLLECTION_SECONDS = 5;
 
-    /**
-     * Default retention period for metrics.
-     */
-    public static final int DEFAULT_METRICS_RETENTION_SECONDS = 5;
-
     private boolean enabled = true;
-    private boolean mcEnabled = true;
-    private boolean jmxEnabled = true;
-    private int retentionSeconds = DEFAULT_METRICS_RETENTION_SECONDS;
-    private boolean metricsForDataStructuresEnabled;
-    private int intervalSeconds = DEFAULT_METRICS_COLLECTION_SECONDS;
-    private ProbeLevel minimumLevel = ProbeLevel.INFO;
+    private MetricsManagementCenterConfig managementCenterConfig = new MetricsManagementCenterConfig();
+    private MetricsJmxConfig jmxConfig = new MetricsJmxConfig();
+    private int collectionFrequencySeconds = DEFAULT_METRICS_COLLECTION_SECONDS;
 
     public MetricsConfig() {
     }
 
     public MetricsConfig(MetricsConfig metricsConfig) {
         this.enabled = metricsConfig.enabled;
-        this.mcEnabled = metricsConfig.mcEnabled;
-        this.jmxEnabled = metricsConfig.jmxEnabled;
-        this.retentionSeconds = metricsConfig.retentionSeconds;
-        this.metricsForDataStructuresEnabled = metricsConfig.metricsForDataStructuresEnabled;
-        this.intervalSeconds = metricsConfig.intervalSeconds;
-        this.minimumLevel = metricsConfig.minimumLevel;
+        this.managementCenterConfig = new MetricsManagementCenterConfig(metricsConfig.managementCenterConfig);
+        this.jmxConfig = new MetricsJmxConfig(metricsConfig.jmxConfig);
+        this.collectionFrequencySeconds = metricsConfig.collectionFrequencySeconds;
     }
 
     /**
      * Sets whether metrics collection should be enabled for the node. If
      * enabled, Hazelcast Management Center will be able to connect to this
      * member. It's enabled by default.
+     * <p/>
+     * May be overridden by {@link GroupProperty#METRICS_ENABLED}
+     * system property.
      */
     @Nonnull
     public MetricsConfig setEnabled(boolean enabled) {
@@ -77,148 +72,48 @@ public class MetricsConfig {
         return enabled;
     }
 
-    /**
-     * Returns whether metrics will be exposed to Hazelcast Management
-     * Center. If enabled, Hazelcast Management Center will be able to read
-     * out the recorder metrics from this member. It's enabled by default.
-     * <p/>
-     * This configuration acts as a fine-tuning option beyond
-     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
-     * master switch.
-     *
-     * @return true if exporting to Hazelcast Management Center is enabled.
-     * @see #isEnabled()
-     */
-    public boolean isMcEnabled() {
-        return mcEnabled;
-    }
-
-    /**
-     * Enables exposing metrics to Hazelcast Management Center. If enabled,
-     * Hazelcast Management Center will be able to read out the recorded
-     * metrics from this member. It's enabled by default.
-     * <p/>
-     * This configuration acts as a fine-tuning option beyond
-     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
-     * master switch.
-     *
-     * @see #setEnabled(boolean)
-     */
-    public MetricsConfig setMcEnabled(boolean mcEnabled) {
-        this.mcEnabled = mcEnabled;
-        return this;
-    }
-
-    /**
-     * Returns whether metrics will be exposed through JMX MBeans.
-     * <p/>
-     * This configuration acts as a fine-tuning option beyond
-     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
-     * master switch.
-     */
-    public boolean isJmxEnabled() {
-        return jmxEnabled;
-    }
-
-    /**
-     * Enables metrics exposure through JMX. It's enabled by default. Metric
-     * values are collected in the {@linkplain #setCollectionIntervalSeconds
-     * metric collection interval} and written to a set of MBeans.
-     * <p/>
-     * This configuration acts as a fine-tuning option beyond
-     * enabling/disabling the Metrics collection entirely via the {@link #enabled}
-     * master switch.
-     */
-    public MetricsConfig setJmxEnabled(boolean jmxEnabled) {
-        this.jmxEnabled = jmxEnabled;
-        return this;
-    }
-
-    /**
-     * Sets the number of seconds the metrics will be retained on the
-     * instance. By default, metrics are retained for 5 seconds (that is for
-     * one collection of metrics values, if default {@linkplain
-     * #setCollectionIntervalSeconds(int) collection interval} is used). More
-     * retention means more heap memory, but allows for longer client hiccups
-     * without losing a value (for example to restart the Management Center).
-     * <p>
-     * This setting applies only to Management Center metrics API. It
-     * doesn't affect how metrics are exposed through JMX.
-     */
     @Nonnull
-    public MetricsConfig setRetentionSeconds(int retentionSeconds) {
-        Preconditions.checkPositive(intervalSeconds, "retentionSeconds must be positive");
-        this.retentionSeconds = retentionSeconds;
+    public MetricsConfig setManagementCenterConfig(MetricsManagementCenterConfig managementCenterConfig) {
+        this.managementCenterConfig = requireNonNull(managementCenterConfig, "Management Center config must not be null");
         return this;
     }
 
-    /**
-     * Returns the number of seconds the metrics will be retained on the
-     * instance.
-     */
-    public int getRetentionSeconds() {
-        return retentionSeconds;
+    @Nonnull
+    public MetricsManagementCenterConfig getManagementCenterConfig() {
+        return managementCenterConfig;
+    }
+
+    @Nonnull
+    public MetricsConfig setJmxConfig(MetricsJmxConfig jmxConfig) {
+        this.jmxConfig = requireNonNull(jmxConfig, "JMX config must not be null");
+        return this;
+    }
+
+    @Nonnull
+    public MetricsJmxConfig getJmxConfig() {
+        return jmxConfig;
     }
 
     /**
-     * Sets the metrics collection interval in seconds. The same interval is
+     * Sets the metrics collection frequency in seconds. The same interval is
      * used for collection for Management Center and for JMX publisher. By default,
      * metrics are collected every 5 seconds.
-     */
-    @Nonnull
-    public MetricsConfig setCollectionIntervalSeconds(int intervalSeconds) {
-        Preconditions.checkPositive(intervalSeconds, "intervalSeconds must be positive");
-        this.intervalSeconds = intervalSeconds;
-        return this;
-    }
-
-    /**
-     * Returns the metrics collection interval.
-     */
-    public int getCollectionIntervalSeconds() {
-        return this.intervalSeconds;
-    }
-
-    /**
-     * Sets whether statistics for data structures are added to metrics.
-     * It's disabled by default.
      * <p/>
-     * Note that enabling the data structures metrics also sets {@link #minimumLevel}
-     * to {@link ProbeLevel#INFO}.
-     *
-     * @see #setMinimumLevel(ProbeLevel)
+     * May be overridden by {@link GroupProperty#METRICS_COLLECTION_FREQUENCY}
+     * system property.
      */
     @Nonnull
-    public MetricsConfig setMetricsForDataStructuresEnabled(boolean metricsForDataStructuresEnabled) {
-        this.metricsForDataStructuresEnabled = metricsForDataStructuresEnabled;
-        return setMinimumLevel(ProbeLevel.INFO);
-    }
-
-    /**
-     * Returns if statistics for data structures are added to metrics.
-     */
-    public boolean isMetricsForDataStructuresEnabled() {
-        return metricsForDataStructuresEnabled;
-    }
-
-    /**
-     * Sets the minimum probe level to be collected.
-     *
-     * @param minimumLevel The minimum level to be collected
-     */
-    public MetricsConfig setMinimumLevel(ProbeLevel minimumLevel) {
-        this.minimumLevel = minimumLevel;
+    public MetricsConfig setCollectionFrequencySeconds(int intervalSeconds) {
+        Preconditions.checkPositive(intervalSeconds, "collectionFrequencySeconds must be positive");
+        this.collectionFrequencySeconds = intervalSeconds;
         return this;
     }
 
     /**
-     * Returns the minimum probe level to be collected.
-     *
-     * @return the minimum probe level
+     * Returns the metrics collection frequency in seconds.
      */
-    @Nonnull
-    public ProbeLevel getMinimumLevel() {
-        return minimumLevel;
+    public int getCollectionFrequencySeconds() {
+        return this.collectionFrequencySeconds;
     }
 
     @Override
@@ -227,7 +122,7 @@ public class MetricsConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || !(o instanceof MetricsConfig)) {
+        if (!(o instanceof MetricsConfig)) {
             return false;
         }
 
@@ -236,33 +131,21 @@ public class MetricsConfig {
         if (enabled != that.enabled) {
             return false;
         }
-        if (mcEnabled != that.mcEnabled) {
+        if (collectionFrequencySeconds != that.collectionFrequencySeconds) {
             return false;
         }
-        if (jmxEnabled != that.jmxEnabled) {
+        if (!Objects.equals(managementCenterConfig, that.managementCenterConfig)) {
             return false;
         }
-        if (retentionSeconds != that.retentionSeconds) {
-            return false;
-        }
-        if (metricsForDataStructuresEnabled != that.metricsForDataStructuresEnabled) {
-            return false;
-        }
-        if (intervalSeconds != that.intervalSeconds) {
-            return false;
-        }
-        return minimumLevel == that.minimumLevel;
+        return Objects.equals(jmxConfig, that.jmxConfig);
     }
 
     @Override
     public final int hashCode() {
-        int result = (enabled ? 1 : 0);
-        result = 31 * result + (mcEnabled ? 1 : 0);
-        result = 31 * result + (jmxEnabled ? 1 : 0);
-        result = 31 * result + retentionSeconds;
-        result = 31 * result + (metricsForDataStructuresEnabled ? 1 : 0);
-        result = 31 * result + intervalSeconds;
-        result = 31 * result + (minimumLevel != null ? minimumLevel.hashCode() : 0);
+        int result = Boolean.hashCode(enabled);
+        result = 31 * result + (managementCenterConfig != null ? managementCenterConfig.hashCode() : 0);
+        result = 31 * result + (jmxConfig != null ? jmxConfig.hashCode() : 0);
+        result = 31 * result + collectionFrequencySeconds;
         return result;
     }
 
@@ -270,12 +153,9 @@ public class MetricsConfig {
     public String toString() {
         return "MetricsConfig{"
                 + "enabled=" + enabled
-                + ", mcEnabled=" + mcEnabled
-                + ", jmxEnabled=" + jmxEnabled
-                + ", retentionSeconds=" + retentionSeconds
-                + ", metricsForDataStructuresEnabled=" + metricsForDataStructuresEnabled
-                + ", intervalSeconds=" + intervalSeconds
-                + ", minimumLevel=" + minimumLevel
+                + ", managementCenterConfig=" + managementCenterConfig
+                + ", jmxConfig=" + jmxConfig
+                + ", collectionFrequencySeconds=" + collectionFrequencySeconds
                 + '}';
     }
 }

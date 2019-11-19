@@ -3231,11 +3231,60 @@ hazelcast:
       lock2:
         lock-acquire-limit: 2
 
+  #
+  # ===== HAZELCAST METRICS CONFIGURATION =====
+  #
+  # Configuration element's name is "metrics".
+  #
+  # It has the following sub-elements:
+  #     * "enabled":
+  #         The master-switch for the metrics collection. If this is set
+  #         to false no metrics collection is done, regardless of the other
+  #         settings. Its default value is true.
+  #
+  # * "management-center":
+  #     Defines the Hazelcast Management Center related metrics configuration.
+  #
+  #       It has the following sub-elements:
+  #     * "enabled":
+  #         Controls whether the metrics collected are exposed to
+  #         Hazelcast Management Center. It is enabled by default.
+  #         Please note that the metrics are polled by the
+  #         Hazelcast Management Center, hence the members need to
+  #         buffer the collected metrics between two polls. The aim
+  #         for this switch is to reduce memory consumption of the
+  #         metrics system if the Hazelcast Management Center is not
+  #         used.
+  #
+  #       It has the following  sub-elements:
+  #     * "retention-seconds":
+  #         Sets the number of seconds the metrics will be retained on the
+  #         instance. By default, metrics are retained for 5 seconds (that is for
+  #         one collection of metrics values, if default "collection-frequency-seconds"
+  #         collection frequency is used). More retention means more heap memory, but
+  #         allows for longer client hiccups without losing a value (for example to
+  #         restart the Management Center).
+  #
+  # * "jmx":
+  #     Defines the JMX related metrics configuration.
+  #
+  #       It has the following attributes:
+  #     * "enabled":
+  #         Controls whether the metrics collected are exposed to
+  #         through JMX. It is enabled by default.
+  #         In order to expose the metrics, the metrics system need
+  #         to be enabled via the enabled master-switch attribute.
+  #
+  # * "collection-frequency-seconds":
+  #     Sets the metrics collection frequency in seconds.
+  #     By default, metrics are collected every 5 seconds.
+  #
+  #
   metrics:
     enabled: false
-    mc-enabled: false
-    jmx-enabled: false
-    collection-interval-seconds: 10
-    retention-seconds: 30
-    metrics-for-data-structures: true
-    minimum-level: DEBUG
+    management-center:
+      enabled: false
+      retention-seconds: 30
+    jmx:
+      enabled: false
+    collection-frequency-seconds: 10

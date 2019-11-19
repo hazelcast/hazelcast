@@ -18,6 +18,8 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.monitor.LocalOperationStats;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
@@ -95,7 +97,10 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static JsonObject getOperationStats(HazelcastInstance instance) {
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
-        return timedMemberStateFactory.createTimedMemberState().getMemberState().getOperationStats().toJson();
+        LocalOperationStats operationStats = timedMemberStateFactory.createTimedMemberState()
+                                                                    .getMemberState()
+                                                                    .getOperationStats();
+        return ((JsonSerializable) operationStats).toJson();
     }
 
     static Collection<SlowOperationLog> getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(final HazelcastInstance instance,

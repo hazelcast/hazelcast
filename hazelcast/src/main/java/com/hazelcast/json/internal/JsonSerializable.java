@@ -14,16 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.json.internal;
 
+import com.hazelcast.internal.json.JsonObject;
 
 /**
- * This is equivalent of AuthenticationException from client side. When this is thrown to client
- * AuthenticationException comes out of from other side.
+ * JsonSerializable is a serialization interface that serializes/de-serializes
+ * to/from JSON.
  */
-public class StubAuthenticationException extends Exception {
+public interface JsonSerializable {
 
-    public StubAuthenticationException(String message) {
-        super(message);
-    }
+    /**
+     * Serializes state represented by this object into a {@link JsonObject}.
+     *
+     * @return the JSON representation of this object
+     */
+    JsonObject toJson();
+
+    /**
+     * Extracts the state from the given {@code json} object and mutates the
+     * state of this object.
+     *
+     * @param json the JSON object carrying state for this object
+     */
+    void fromJson(JsonObject json);
 }

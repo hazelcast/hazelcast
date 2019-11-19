@@ -17,13 +17,14 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
-import com.hazelcast.spi.impl.SpiPortableHook;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -173,7 +174,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
 
     @Test
     public void testSkipHookLoadedByDifferentClassloader() {
-        Class<?> otherInterface = newInterface(PortableHook.class.getName());
+        Class<?> otherInterface = newInterface(SpiDataSerializerHook.class.getName());
         ClassLoader otherClassloader = otherInterface.getClassLoader();
 
         Class<?> otherHook = newClassImplementingInterface("com.hazelcast.internal.serialization.DifferentHook",
@@ -183,15 +184,15 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ServiceLoader.ServiceDefinition definition1 = new ServiceLoader.ServiceDefinition(otherHook.getName(), otherClassloader);
         //this hook should be loaded
         ServiceLoader.ServiceDefinition definition2
-                = new ServiceLoader.ServiceDefinition(SpiPortableHook.class.getName(), SpiPortableHook.class.getClassLoader());
+                = new ServiceLoader.ServiceDefinition(SpiDataSerializerHook.class.getName(), SpiDataSerializerHook.class.getClassLoader());
 
         Set<ServiceLoader.ServiceDefinition> definitions = setOf(definition1, definition2);
-        ServiceLoader.ClassIterator<PortableHook> iterator
-                = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+        ServiceLoader.ClassIterator<DataSerializerHook> iterator
+                = new ServiceLoader.ClassIterator<>(definitions, DataSerializerHook.class);
 
         assertTrue(iterator.hasNext());
-        Class<PortableHook> hook = iterator.next();
-        assertEquals(SpiPortableHook.class, hook);
+        Class<DataSerializerHook> hook = iterator.next();
+        assertEquals(SpiDataSerializerHook.class, hook);
         assertFalse(iterator.hasNext());
     }
 

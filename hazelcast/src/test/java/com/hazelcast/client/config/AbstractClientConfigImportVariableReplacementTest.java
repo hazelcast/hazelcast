@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.helpers.IOUtils;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Rule;
@@ -25,9 +26,6 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static java.io.File.createTempFile;
 
 public abstract class AbstractClientConfigImportVariableReplacementTest extends HazelcastTestSupport {
     @Rule
@@ -91,15 +89,10 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
     public abstract void testReplaceVariablesWithClasspathConfig();
 
     protected static File createConfigFile(String filename, String suffix) throws IOException {
-        File file = createTempFile(filename, suffix);
-        file.setWritable(true);
-        file.deleteOnExit();
-        return file;
+        return IOUtils.createConfigFile(filename, suffix);
     }
 
     protected static void writeStringToStreamAndClose(FileOutputStream os, String string) throws IOException {
-        os.write(string.getBytes());
-        os.flush();
-        closeResource(os);
+        IOUtils.writeStringToStreamAndClose(os, string);
     }
 }

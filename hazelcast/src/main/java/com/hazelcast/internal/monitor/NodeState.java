@@ -17,7 +17,7 @@
 package com.hazelcast.internal.monitor;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 

@@ -239,6 +239,14 @@ public final class ClientProperty {
     public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new HazelcastProperty(
             "hazelcast.client.statistics.period.seconds", 3, SECONDS);
 
+    /**
+     * Enables collecting debug metrics. Debug metrics are sent to the
+     * diagnostics only.
+     */
+    public static final HazelcastProperty METRICS_DEBUG
+            = new HazelcastProperty("hazelcast.client.metrics.debug.enabled");
+
+
     private ClientProperty() {
     }
 }

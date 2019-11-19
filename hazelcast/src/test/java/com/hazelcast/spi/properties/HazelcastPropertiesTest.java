@@ -17,7 +17,7 @@
 package com.hazelcast.spi.properties;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -264,18 +264,21 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getEnum() {
-        config.getMetricsConfig().setMinimumLevel(ProbeLevel.DEBUG);
+        config.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL.getName(), "NOISY");
+        HazelcastProperties properties = new HazelcastProperties(config.getProperties());
+        HealthMonitorLevel healthMonitorLevel = properties
+                .getEnum(GroupProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.class);
 
-        ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
-
-        assertEquals(ProbeLevel.DEBUG, level);
+        assertEquals(HealthMonitorLevel.NOISY, healthMonitorLevel);
     }
 
     @Test
     public void getEnum_default() {
-        ProbeLevel level = config.getMetricsConfig().getMinimumLevel();
+        HazelcastProperties properties = new HazelcastProperties(config.getProperties());
+        HealthMonitorLevel healthMonitorLevel = properties
+                .getEnum(GroupProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.class);
 
-        assertEquals(ProbeLevel.INFO, level);
+        assertEquals(HealthMonitorLevel.SILENT, healthMonitorLevel);
     }
 
     @Test

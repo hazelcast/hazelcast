@@ -21,7 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.monitor.MemberState;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
-import com.hazelcast.json.JsonSerializable;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.ArrayList;
 import java.util.List;

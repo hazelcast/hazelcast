@@ -25,9 +25,8 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -36,6 +35,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,9 +70,6 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     public void setup() {
         Config config = new Config();
         config.addMapConfig(new MapConfig(NEAR_CACHE_MAP_NAME).setNearCacheConfig(new NearCacheConfig("nearCache")));
-        config.getMetricsConfig()
-              .setMetricsForDataStructuresEnabled(true)
-              .setMinimumLevel(ProbeLevel.INFO);
         config.addCacheConfig(new CacheSimpleConfig()
                 .setName(CACHE_NAME)
                 .setStatisticsEnabled(true));
@@ -80,6 +77,14 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         hz = createHazelcastInstance(config);
 
         warmUpPartitions(hz);
+    }
+
+    @After
+    public void tearDown() {
+        // explicit cleanup is required because the MBean server is static
+        // cache statistics registrations will be left over when test's
+        // HazelcastInstance shuts down
+        destroyAllDistributedObjects(hz);
     }
 
     @Test

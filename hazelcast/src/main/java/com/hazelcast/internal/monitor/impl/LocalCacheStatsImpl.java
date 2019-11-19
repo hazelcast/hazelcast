@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalCacheStats;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
@@ -42,7 +43,7 @@ import static com.hazelcast.internal.util.JsonUtil.getLong;
  *
  * @see com.hazelcast.cache.CacheStatistics
  */
-public class LocalCacheStatsImpl implements LocalCacheStats {
+public class LocalCacheStatsImpl implements LocalCacheStats, JsonSerializable {
 
     @Probe(unit = MS)
     private long creationTime;

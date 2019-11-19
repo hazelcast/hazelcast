@@ -19,6 +19,9 @@ package com.hazelcast.spi.properties;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.config.MetricsJmxConfig;
+import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -1023,6 +1026,98 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty NETWORK_STATS_REFRESH_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.network.stats.refresh.interval.seconds", 3, SECONDS);
+
+    /**
+     * Enables/disables metrics collection altogether. This is a master
+     * switch for all metrics related functionality.
+     * <p/>
+     * NOTE: This property overrides {@link MetricsConfig#isEnabled()}.
+     * <p/>
+     * Using {@link MetricsConfig#setEnabled(boolean)} and the declarative
+     * counterparts are preferred over using this property. The main purpose
+     * of making metrics collection configurable from properties too is
+     * allowing operators to configure the metrics subsystem from the outside
+     * during investigation without touching or copying the configuration
+     * potentially embedded into a signed artifact.
+     */
+    public static final HazelcastProperty METRICS_ENABLED
+            = new HazelcastProperty("hazelcast.metrics.enabled");
+
+    /**
+     * Enables/disables collecting metrics for Management Center. If disabled,
+     * Management Center can't consume the metrics from this member.
+     * <p/>
+     * NOTE: This property overrides {@link MetricsManagementCenterConfig#isEnabled()}.
+     * <p/>
+     * Using {@link MetricsManagementCenterConfig#setEnabled(boolean)} and the declarative
+     * counterparts are preferred over using this property. The main purpose
+     * of making metrics collection configurable from properties too is
+     * allowing operators to configure the metrics subsystem from the outside
+     * during investigation without touching or copying the configuration
+     * potentially embedded into a signed artifact.
+     */
+    public static final HazelcastProperty METRICS_MC_ENABLED
+            = new HazelcastProperty("hazelcast.metrics.mc.enabled");
+
+    /**
+     * Sets the duration in seconds for which the collected metrics are retained
+     * and Management Center can consume them.
+     * <p/>
+     * NOTE: This property overrides {@link MetricsManagementCenterConfig#getRetentionSeconds()}.
+     * <p/>
+     * Using {@link MetricsManagementCenterConfig#setRetentionSeconds(int)} and the declarative
+     * counterparts are preferred over using this property. The main purpose
+     * of making metrics collection configurable from properties too is
+     * allowing operators to configure the metrics subsystem from the outside
+     * during investigation without touching or copying the configuration
+     * potentially embedded into a signed artifact.
+     */
+    public static final HazelcastProperty METRICS_MC_RETENTION
+            = new HazelcastProperty("hazelcast.metrics.mc.retention");
+
+    /**
+     * Enables/disables exposing metrics on JMX.
+     * <p/>
+     * NOTE: This property overrides {@link MetricsJmxConfig#isEnabled()}.
+     * <p/>
+     * Using {@link MetricsJmxConfig#setEnabled(boolean)} and the declarative
+     * counterparts are preferred over using this property. The main purpose
+     * of making metrics collection configurable from properties too is
+     * allowing operators to configure the metrics subsystem from the outside
+     * during investigation without touching or copying the configuration
+     * potentially embedded into a signed artifact.
+     */
+    public static final HazelcastProperty METRICS_JMX_ENABLED
+            = new HazelcastProperty("hazelcast.metrics.jmx.enabled");
+
+    /**
+     * Enables collecting debug metrics. Debug metrics are sent to the
+     * diagnostics only.
+     */
+    public static final HazelcastProperty METRICS_DEBUG
+            = new HazelcastProperty("hazelcast.metrics.debug.enabled");
+
+    /**
+     * Enables/disables collecting metrics from the distributed data structures.
+     * By default, data structure metrics collection is enabled.
+     */
+    public static final HazelcastProperty METRICS_DATASTRUCTURES
+            = new HazelcastProperty("hazelcast.metrics.datastructures.enabled", "true");
+
+    /**
+     * Sets the metrics collection frequency in seconds.
+     * <p/>
+     * NOTE: This property overrides {@link MetricsConfig#getCollectionFrequencySeconds()}.
+     * <p/>
+     * Using {@link MetricsConfig#setCollectionFrequencySeconds(int)} and the declarative
+     * counterparts are preferred over using this property. The main purpose
+     * of making metrics collection configurable from properties too is
+     * allowing operators to configure the metrics subsystem from the outside
+     * during investigation without touching or copying the configuration
+     * potentially embedded into a signed artifact.
+     */
+    public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
+            = new HazelcastProperty("hazelcast.metrics.collection.frequency");
 
     private GroupProperty() {
     }

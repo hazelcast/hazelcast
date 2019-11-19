@@ -61,7 +61,6 @@ import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.T
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -1457,13 +1456,15 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config();
 
         config.getMetricsConfig()
-                .setEnabled(false)
-                .setMcEnabled(false)
-                .setJmxEnabled(false)
-                .setCollectionIntervalSeconds(10)
-                .setRetentionSeconds(11)
-                .setMetricsForDataStructuresEnabled(true)
-                .setMinimumLevel(DEBUG);
+              .setEnabled(false)
+              .setCollectionFrequencySeconds(10);
+
+        config.getMetricsConfig().getManagementCenterConfig()
+              .setEnabled(false)
+              .setRetentionSeconds(11);
+
+        config.getMetricsConfig().getJmxConfig()
+              .setEnabled(false);
 
         MetricsConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMetricsConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getMetricsConfig(),

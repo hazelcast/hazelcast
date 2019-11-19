@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +31,7 @@ import java.util.Map;
  * A single WAN replication scheme can contain multiple WAN replication
  * publishers, identified by name.
  */
-public class LocalWanStatsImpl implements LocalWanStats {
+public class LocalWanStatsImpl implements LocalWanStats, JsonSerializable {
     /**
      * Local WAN replication statistics for a single scheme, grouped by WAN
      * publisher ID.

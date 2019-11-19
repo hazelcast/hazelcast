@@ -20,12 +20,13 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 
-public class LocalExecutorStatsImpl implements LocalExecutorStats {
+public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializable {
 
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "pending");

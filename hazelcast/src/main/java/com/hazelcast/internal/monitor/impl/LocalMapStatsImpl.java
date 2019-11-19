@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.JsonObject.Member;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.LocalIndexStats;
@@ -45,7 +46,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * Default implementation of {@link LocalMapStats}
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public class LocalMapStatsImpl implements LocalMapStats {
+public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
 
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
@@ -498,7 +499,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         root.add("heapCost", heapCost);
         root.add("merkleTreesCost", merkleTreesCost);
         if (nearCacheStats != null) {
-            root.add("nearCacheStats", nearCacheStats.toJson());
+            root.add("nearCacheStats", ((JsonSerializable) nearCacheStats).toJson());
         }
 
         root.add("queryCount", queryCount);
@@ -507,7 +508,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         if (!localIndexStats.isEmpty()) {
             JsonObject indexes = new JsonObject();
             for (Map.Entry<String, LocalIndexStats> indexEntry : localIndexStats.entrySet()) {
-                indexes.add(indexEntry.getKey(), indexEntry.getValue().toJson());
+                indexes.add(indexEntry.getKey(), ((JsonSerializable) indexEntry.getValue()).toJson());
             }
             root.add("indexStats", indexes);
         }
@@ -550,7 +551,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         JsonValue jsonNearCacheStats = json.get("nearCacheStats");
         if (jsonNearCacheStats != null) {
             nearCacheStats = new NearCacheStatsImpl();
-            nearCacheStats.fromJson(jsonNearCacheStats.asObject());
+            ((JsonSerializable) nearCacheStats).fromJson(jsonNearCacheStats.asObject());
         }
 
         queryCount = getLong(json, "queryCount", -1L);

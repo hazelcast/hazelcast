@@ -153,8 +153,16 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     @Override
     public boolean isReachable(RaftEndpoint target) {
+        if (!isStartCompleted()) {
+            return true;
+        }
+
         CPMember targetMember = getCPMember(target);
         return targetMember != null && nodeEngine.getClusterService().getMember(targetMember.getAddress()) != null;
+    }
+
+    private boolean isStartCompleted() {
+        return nodeEngine.getNode().getNodeExtension().isStartCompleted();
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -68,7 +69,7 @@ public class EmptyLocalReplicatedMapStatsTest {
 
     @Test
     public void testSerialization() {
-        JsonObject serialized = localReplicatedMapStats.toJson();
+        JsonObject serialized = ((JsonSerializable) localReplicatedMapStats).toJson();
         EmptyLocalReplicatedMapStats deserialized = new EmptyLocalReplicatedMapStats();
         deserialized.fromJson(serialized);
 
@@ -105,7 +106,7 @@ public class EmptyLocalReplicatedMapStatsTest {
     @Test
     public void testToJsonReturnSameKeysAsRegularEmptyStats() {
         JsonObject jsonOfRegularEmptyStats = new LocalReplicatedMapStatsImpl().toJson();
-        JsonObject actual = localReplicatedMapStats.toJson();
+        JsonObject actual = ((JsonSerializable) localReplicatedMapStats).toJson();
         assertEquals(jsonOfRegularEmptyStats.size(), actual.size());
         assertEquals(jsonOfRegularEmptyStats.names(), actual.names());
     }
