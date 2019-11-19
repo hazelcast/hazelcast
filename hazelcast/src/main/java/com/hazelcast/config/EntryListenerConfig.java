@@ -56,7 +56,7 @@ public class EntryListenerConfig extends ListenerConfig {
     }
 
     public EntryListenerConfig setImplementation(MapListener implementation) {
-        this.implementation = isNotNull(implementation, "implementation");;
+        this.implementation = isNotNull(implementation, "implementation");
         this.className = null;
         return this;
     }
