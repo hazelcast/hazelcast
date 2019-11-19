@@ -22,7 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.EventListener;
 
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
@@ -55,15 +57,21 @@ public class EntryListenerConfig extends ListenerConfig {
         className = config.getClassName();
     }
 
+    @Override
+    public ListenerConfig setImplementation(EventListener implementation) {
+        checkInstanceOf(MapListener.class, isNotNull(implementation, "implementation"));
+        super.setImplementation(implementation);
+        return this;
+    }
+
     public EntryListenerConfig setImplementation(MapListener implementation) {
-        this.implementation = isNotNull(implementation, "implementation");
-        this.className = null;
+        super.setImplementation(implementation);
         return this;
     }
 
     @Override
     public MapListener getImplementation() {
-        return ((MapListener) implementation);
+        return (MapListener) implementation;
     }
 
     @Override

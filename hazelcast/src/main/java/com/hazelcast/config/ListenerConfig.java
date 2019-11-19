@@ -35,7 +35,6 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 public class ListenerConfig implements IdentifiedDataSerializable {
 
     protected String className;
-
     protected EventListener implementation;
 
     /**
