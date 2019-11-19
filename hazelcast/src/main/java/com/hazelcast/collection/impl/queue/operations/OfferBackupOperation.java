@@ -18,6 +18,7 @@ package com.hazelcast.collection.impl.queue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -64,14 +65,14 @@ public final class OfferBackupOperation extends QueueOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(data);
+        IOUtil.writeData(out, data);
         out.writeLong(itemId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        data = in.readData();
+        data = IOUtil.readData(in);
         itemId = in.readLong();
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.recordstore.Storage;
@@ -78,7 +79,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
         final int size = keys.size();
         out.writeInt(size);
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
     }
 
@@ -90,7 +91,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
             keys = new ArrayList<>(size);
         }
         for (int i = 0; i < size; i++) {
-            Data data = in.readData();
+            Data data = IOUtil.readData(in);
             keys.add(data);
         }
     }

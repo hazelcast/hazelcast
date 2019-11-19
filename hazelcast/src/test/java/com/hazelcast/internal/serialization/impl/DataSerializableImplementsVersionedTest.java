@@ -17,6 +17,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.nio.DataReader;
+import com.hazelcast.internal.nio.DataWriter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,7 +45,6 @@ import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -176,7 +177,7 @@ public class DataSerializableImplementsVersionedTest {
     // overridden in EE
     protected ObjectDataOutput getObjectDataOutput() {
         ObjectDataOutput output = mock(ObjectDataOutput.class,
-                withSettings().extraInterfaces(SerializationServiceSupport.class));
+                withSettings().extraInterfaces(SerializationServiceSupport.class, DataWriter.class));
         when(((SerializationServiceSupport) output).getSerializationService())
                 .thenReturn(serializationService);
         return output;
@@ -184,6 +185,7 @@ public class DataSerializableImplementsVersionedTest {
 
     // overridden in EE
     protected ObjectDataInput getObjectDataInput() {
-        return spy(ObjectDataInput.class);
+        return mock(ObjectDataInput.class,
+                withSettings().extraInterfaces(DataReader.class));
     }
 }

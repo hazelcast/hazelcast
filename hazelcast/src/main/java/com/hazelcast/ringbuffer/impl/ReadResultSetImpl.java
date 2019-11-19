@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -218,7 +219,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         out.writeInt(readCount);
         out.writeInt(size);
         for (int k = 0; k < size; k++) {
-            out.writeData(items[k]);
+            IOUtil.writeData(out, items[k]);
         }
         out.writeLongArray(seqs);
         out.writeLong(nextSeq);
@@ -230,7 +231,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         size = in.readInt();
         items = new Data[size];
         for (int k = 0; k < size; k++) {
-            items[k] = in.readData();
+            items[k] = IOUtil.readData(in);
         }
         seqs = in.readLongArray();
         nextSeq = in.readLong();

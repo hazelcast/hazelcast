@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -69,7 +70,7 @@ public class PutBackupOperation extends AbstractKeyBasedMultiMapOperation implem
         super.writeInternal(out);
         out.writeLong(recordId);
         out.writeInt(index);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class PutBackupOperation extends AbstractKeyBasedMultiMapOperation implem
         super.readInternal(in);
         recordId = in.readLong();
         index = in.readInt();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -51,14 +52,14 @@ public class TaskBackupOperation extends AbstractDurableExecutorOperation implem
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(sequence);
-        out.writeData(callableData);
+        IOUtil.writeData(out, callableData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         sequence = in.readInt();
-        callableData = in.readData();
+        callableData = IOUtil.readData(in);
     }
 
     @Override

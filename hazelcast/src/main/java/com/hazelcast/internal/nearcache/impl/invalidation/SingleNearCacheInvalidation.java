@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -50,13 +51,13 @@ public class SingleNearCacheInvalidation extends Invalidation {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeData(key);
+        IOUtil.writeData(out, key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        key = in.readData();
+        key = IOUtil.readData(in);
     }
 
     @Override

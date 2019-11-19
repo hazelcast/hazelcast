@@ -16,6 +16,7 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -120,7 +121,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
 
         out.writeInt(items.length);
         for (Data item : items) {
-            out.writeData(item);
+            IOUtil.writeData(out, item);
         }
     }
 
@@ -133,7 +134,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
         int length = in.readInt();
         items = new Data[length];
         for (int k = 0; k < items.length; k++) {
-            items[k] = in.readData();
+            items[k] = IOUtil.readData(in);
         }
     }
 }

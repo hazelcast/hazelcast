@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -167,14 +168,14 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
                 final Data key = e.getKey();
                 final CacheRecord record = e.getValue();
 
-                out.writeData(key);
+                IOUtil.writeData(out, key);
                 out.writeObject(record);
             }
             // Empty data will terminate the iteration for read in case
             // expired entries were found while serializing, since the
             // real subCount will then be different from the one written
             // before
-            out.writeData(null);
+            IOUtil.writeData(out, null);
         }
 
         nearCacheStateHolder.writeData(out);
@@ -198,7 +199,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
             // subCount + 1 because of the DefaultData written as the last entry
             // which adds another Data entry at the end of the stream!
             for (int j = 0; j < subCount + 1; j++) {
-                Data key = in.readData();
+                Data key = IOUtil.readData(in);
                 // Empty data received so reading can be stopped here since
                 // since the real object subCount might be different from
                 // the number on the stream due to found expired entries

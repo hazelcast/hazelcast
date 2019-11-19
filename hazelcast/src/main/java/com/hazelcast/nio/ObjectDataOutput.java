@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -86,12 +84,6 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
      * @throws IOException
      */
     void writeObject(Object object) throws IOException;
-
-    /**
-     * @param data data to be written
-     * @throws IOException
-     */
-    void writeData(Data data) throws IOException;
 
     /**
      * @return copy of internal byte array

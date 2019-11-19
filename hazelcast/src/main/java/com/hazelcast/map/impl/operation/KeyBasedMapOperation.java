@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -65,16 +66,16 @@ public abstract class KeyBasedMapOperation extends MapOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(dataKey);
-        out.writeData(dataValue);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataValue);
         out.writeLong(threadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        dataKey = in.readData();
-        dataValue = in.readData();
+        dataKey = IOUtil.readData(in);
+        dataValue = IOUtil.readData(in);
         threadId = in.readLong();
     }
 }

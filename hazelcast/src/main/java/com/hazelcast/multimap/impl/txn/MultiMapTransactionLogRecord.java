@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -73,7 +74,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
         for (Operation op : opList) {
             out.writeObject(op);
         }
-        out.writeData(key);
+        IOUtil.writeData(out, key);
         out.writeLong(ttl);
         out.writeLong(threadId);
     }
@@ -86,7 +87,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }
-        key = in.readData();
+        key = IOUtil.readData(in);
         ttl = in.readLong();
         threadId = in.readLong();
     }

@@ -20,6 +20,7 @@ import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRef;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -131,7 +132,7 @@ public class ApplyOp extends AbstractAtomicRefOp implements IdentifiedDataSerial
     public void writeData(ObjectDataOutput out)
             throws IOException {
         super.writeData(out);
-        out.writeData(function);
+        IOUtil.writeData(out, function);
         out.writeUTF(returnValueType.name());
         out.writeBoolean(alter);
     }
@@ -140,7 +141,7 @@ public class ApplyOp extends AbstractAtomicRefOp implements IdentifiedDataSerial
     public void readData(ObjectDataInput in)
             throws IOException {
         super.readData(in);
-        function = in.readData();
+        function = IOUtil.readData(in);
         returnValueType = ReturnValueType.valueOf(in.readUTF());
         alter = in.readBoolean();
     }

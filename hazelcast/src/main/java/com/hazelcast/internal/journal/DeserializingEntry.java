@@ -18,6 +18,7 @@ package com.hazelcast.internal.journal;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -96,14 +97,14 @@ public class DeserializingEntry<K, V> implements Entry<K, V>, HazelcastInstanceA
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(toData(key, dataKey));
-        out.writeData(toData(value, dataValue));
+        IOUtil.writeData(out, toData(key, dataKey));
+        IOUtil.writeData(out, toData(value, dataValue));
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataKey = in.readData();
-        dataValue = in.readData();
+        dataKey = IOUtil.readData(in);
+        dataValue = IOUtil.readData(in);
     }
 
     private Data toData(Object value, Data defaultValue) {

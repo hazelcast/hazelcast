@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -48,13 +49,13 @@ public class MultiMapEventFilter implements EventFilter, IdentifiedDataSerializa
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(includeValue);
-        out.writeData(key);
+        IOUtil.writeData(out, key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
-        key = in.readData();
+        key = IOUtil.readData(in);
     }
 
     @Override

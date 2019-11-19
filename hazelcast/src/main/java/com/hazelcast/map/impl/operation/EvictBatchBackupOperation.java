@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.eviction.ExpiredKey;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -132,7 +133,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         out.writeUTF(name);
         out.writeInt(expiredKeys.size());
         for (ExpiredKey expiredKey : expiredKeys) {
-            out.writeData(expiredKey.getKey());
+            IOUtil.writeData(out, expiredKey.getKey());
             out.writeLong(expiredKey.getCreationTime());
         }
         out.writeInt(primaryEntryCount);
@@ -146,7 +147,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         int size = in.readInt();
         expiredKeys = new LinkedList<>();
         for (int i = 0; i < size; i++) {
-            expiredKeys.add(new ExpiredKey(in.readData(), in.readLong()));
+            expiredKeys.add(new ExpiredKey(IOUtil.readData(in), in.readLong()));
         }
         primaryEntryCount = in.readInt();
     }
