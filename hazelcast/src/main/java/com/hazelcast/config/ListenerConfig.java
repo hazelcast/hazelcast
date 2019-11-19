@@ -54,11 +54,6 @@ public class ListenerConfig implements IdentifiedDataSerializable {
         setClassName(className);
     }
 
-    public ListenerConfig(ListenerConfig config) {
-        implementation = config.getImplementation();
-        className = config.getClassName();
-    }
-
     /**
      * Creates a ListenerConfig with the given implementation.
      *
@@ -66,7 +61,12 @@ public class ListenerConfig implements IdentifiedDataSerializable {
      * @throws IllegalArgumentException if the implementation is {@code null}
      */
     public ListenerConfig(EventListener implementation) {
-        this.implementation = isNotNull(implementation, "implementation");
+        setImplementation(implementation);
+    }
+
+    public ListenerConfig(ListenerConfig config) {
+        implementation = config.getImplementation();
+        className = config.getClassName();
     }
 
     /**

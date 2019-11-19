@@ -203,8 +203,6 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[SIMPLE_CACHE_CONFIG_DURATION_CONFIG] =
                 arg -> new CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig();
         constructors[SPLIT_BRAIN_PROTECTION_CONFIG] = arg -> new SplitBrainProtectionConfig();
-        constructors[MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER] =
-                arg -> new EntryListenerConfig.MapListenerToEntryListenerAdapter();
         constructors[EVENT_JOURNAL_CONFIG] = arg -> new EventJournalConfig();
         constructors[SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG] = arg -> new SplitBrainProtectionListenerConfig();
         constructors[CACHE_PARTITION_LOST_LISTENER_CONFIG] = arg -> new CachePartitionLostListenerConfig();
