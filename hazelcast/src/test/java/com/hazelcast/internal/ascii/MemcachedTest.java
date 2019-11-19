@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -62,8 +61,7 @@ public class MemcachedTest extends HazelcastTestSupport {
 
     protected Config createConfig() {
         Config config = smallInstanceConfig();
-        config.setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "true");
-
+        config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);
         // Join is disabled intentionally. will start standalone HazelcastInstances.
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
