@@ -19,7 +19,6 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
-import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
@@ -58,26 +57,21 @@ import com.hazelcast.config.MCMutualAuthConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.MerkleTreeConfig;
-import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
-import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
@@ -132,11 +126,10 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.config.processors.MapConfigProcessor;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.services.ServiceConfigurationParser;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -229,8 +222,6 @@ import static java.lang.Long.parseLong;
         "checkstyle:methodcount",
         "checkstyle:methodlength"})
 public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
-
-    private static final ILogger LOGGER = Logger.getLogger(MemberDomConfigProcessor.class);
 
     protected final Config config;
 
@@ -1767,114 +1758,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.addReplicatedMapConfig(replicatedMapConfig);
     }
 
-    @SuppressWarnings("deprecation")
     protected void handleMap(Node parentNode) throws Exception {
-        String name = getAttribute(parentNode, "name");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName(name);
-        handleMapNode(parentNode, mapConfig);
+        config.addMapConfig(new MapConfigProcessor(parentNode, domLevel3).process());
     }
 
-    void handleMapNode(Node parentNode, final MapConfig mapConfig) throws Exception {
-        for (Node node : childElements(parentNode)) {
-            String nodeName = cleanNodeName(node);
-            String value = getTextContent(node).trim();
-            if ("backup-count".equals(nodeName)) {
-                mapConfig.setBackupCount(getIntegerValue("backup-count", value));
-            } else if ("metadata-policy".equals(nodeName)) {
-                mapConfig.setMetadataPolicy(MetadataPolicy.valueOf(upperCaseInternal(value)));
-            } else if ("in-memory-format".equals(nodeName)) {
-                mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
-            } else if ("async-backup-count".equals(nodeName)) {
-                mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
-            } else if ("eviction".equals(nodeName)) {
-                mapConfig.setEvictionConfig(getEvictionConfig(node, false, true));
-            } else if ("time-to-live-seconds".equals(nodeName)) {
-                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
-            } else if ("max-idle-seconds".equals(nodeName)) {
-                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value));
-            } else if ("map-store".equals(nodeName)) {
-                MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
-                mapConfig.setMapStoreConfig(mapStoreConfig);
-            } else if ("near-cache".equals(nodeName)) {
-                mapConfig.setNearCacheConfig(handleNearCacheConfig(node));
-            } else if ("merge-policy".equals(nodeName)) {
-                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(node);
-                mapConfig.setMergePolicyConfig(mergePolicyConfig);
-            } else if ("merkle-tree".equals(nodeName)) {
-                MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
-                handleViaReflection(node, mapConfig, merkleTreeConfig);
-            } else if ("event-journal".equals(nodeName)) {
-                EventJournalConfig eventJournalConfig = new EventJournalConfig();
-                handleViaReflection(node, mapConfig, eventJournalConfig);
-            } else if ("hot-restart".equals(nodeName)) {
-                mapConfig.setHotRestartConfig(createHotRestartConfig(node));
-            } else if ("read-backup-data".equals(nodeName)) {
-                mapConfig.setReadBackupData(getBooleanValue(value));
-            } else if ("statistics-enabled".equals(nodeName)) {
-                mapConfig.setStatisticsEnabled(getBooleanValue(value));
-            } else if ("cache-deserialized-values".equals(nodeName)) {
-                CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues.parseString(value);
-                mapConfig.setCacheDeserializedValues(cacheDeserializedValues);
-            } else if ("wan-replication-ref".equals(nodeName)) {
-                mapWanReplicationRefHandle(node, mapConfig);
-            } else if ("indexes".equals(nodeName)) {
-                mapIndexesHandle(node, mapConfig);
-            } else if ("attributes".equals(nodeName)) {
-                attributesHandle(node, mapConfig);
-            } else if ("entry-listeners".equals(nodeName)) {
-                handleEntryListeners(node, entryListenerConfig -> {
-                    mapConfig.addEntryListenerConfig(entryListenerConfig);
-                    return null;
-                });
-            } else if ("partition-lost-listeners".equals(nodeName)) {
-                mapPartitionLostListenerHandle(node, mapConfig);
-            } else if ("partition-strategy".equals(nodeName)) {
-                mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
-            } else if ("split-brain-protection-ref".equals(nodeName)) {
-                mapConfig.setSplitBrainProtectionName(value);
-            } else if ("query-caches".equals(nodeName)) {
-                mapQueryCacheHandler(node, mapConfig);
-            }
-        }
-        config.addMapConfig(mapConfig);
-    }
-
-    private NearCacheConfig handleNearCacheConfig(Node node) {
-        String name = getAttribute(node, "name");
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
-        Boolean serializeKeys = null;
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
-            if ("time-to-live-seconds".equals(nodeName)) {
-                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
-            } else if ("max-idle-seconds".equals(nodeName)) {
-                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
-            } else if ("in-memory-format".equals(nodeName)) {
-                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
-            } else if ("serialize-keys".equals(nodeName)) {
-                serializeKeys = Boolean.parseBoolean(value);
-                nearCacheConfig.setSerializeKeys(serializeKeys);
-            } else if ("invalidate-on-change".equals(nodeName)) {
-                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
-            } else if ("cache-local-entries".equals(nodeName)) {
-                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
-            } else if ("local-update-policy".equals(nodeName)) {
-                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
-                nearCacheConfig.setLocalUpdatePolicy(policy);
-            } else if ("eviction".equals(nodeName)) {
-                nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true, false));
-            }
-        }
-        if (serializeKeys != null && !serializeKeys && nearCacheConfig.getInMemoryFormat() == InMemoryFormat.NATIVE) {
-            LOGGER.warning("The Near Cache doesn't support keys by-reference with NATIVE in-memory-format."
-                    + " This setting will have no effect!");
-        }
-        return nearCacheConfig;
-    }
-
-    private HotRestartConfig createHotRestartConfig(Node node) {
+    HotRestartConfig createHotRestartConfig(Node node) {
         HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
         Node attrEnabled = node.getAttributes().getNamedItem("enabled");
@@ -2018,7 +1906,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return new CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig(expiryPolicyType, durationConfig);
     }
 
-    private EvictionConfig getEvictionConfig(Node node, boolean isNearCache, boolean isIMap) {
+    EvictionConfig getEvictionConfig(Node node, boolean isNearCache, boolean isIMap) {
         EvictionConfig evictionConfig = new EvictionConfig();
         if (isIMap) {
             // Set IMap defaults
@@ -2264,46 +2152,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             predicateConfig.setSql(textContent);
         }
         queryCacheConfig.setPredicateConfig(predicateConfig);
-    }
-
-    private MapStoreConfig createMapStoreConfig(Node node) {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        NamedNodeMap attributes = node.getAttributes();
-        for (int a = 0; a < attributes.getLength(); a++) {
-            Node att = attributes.item(a);
-            String value = getTextContent(att).trim();
-            if ("enabled".equals(att.getNodeName())) {
-                mapStoreConfig.setEnabled(getBooleanValue(value));
-            } else if ("initial-mode".equals(att.getNodeName())) {
-                MapStoreConfig.InitialLoadMode mode = MapStoreConfig.InitialLoadMode
-                        .valueOf(upperCaseInternal(getTextContent(att)));
-                mapStoreConfig.setInitialLoadMode(mode);
-            }
-        }
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            if ("class-name".equals(nodeName)) {
-                mapStoreConfig.setClassName(getTextContent(n).trim());
-            } else if ("factory-class-name".equals(nodeName)) {
-                mapStoreConfig.setFactoryClassName(getTextContent(n).trim());
-            } else if ("write-delay-seconds".equals(nodeName)) {
-                mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n).trim()
-                ));
-            } else if ("write-batch-size".equals(nodeName)) {
-                mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim()
-                ));
-            } else if ("write-coalescing".equals(nodeName)) {
-                String writeCoalescing = getTextContent(n).trim();
-                if (isNullOrEmpty(writeCoalescing)) {
-                    mapStoreConfig.setWriteCoalescing(MapStoreConfig.DEFAULT_WRITE_COALESCING);
-                } else {
-                    mapStoreConfig.setWriteCoalescing(getBooleanValue(writeCoalescing));
-                }
-            } else if ("properties".equals(nodeName)) {
-                fillProperties(n, mapStoreConfig.getProperties());
-            }
-        }
-        return mapStoreConfig;
     }
 
     private RingbufferStoreConfig createRingbufferStoreConfig(Node node) {

@@ -91,6 +91,14 @@ import static java.lang.String.format;
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class ConfigValidator {
 
+    public static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+        = EnumSet.of(PER_NODE, PER_PARTITION, USED_NATIVE_MEMORY_PERCENTAGE,
+                     FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
+
+    public static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
+        = EnumSet.of(PER_NODE, PER_PARTITION, USED_HEAP_SIZE, USED_HEAP_PERCENTAGE,
+                     FREE_HEAP_SIZE, FREE_HEAP_PERCENTAGE);
+
     public static final EnumSet<EvictionPolicy> COMMONLY_SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
 
     private static final EnumSet<MaxSizePolicy> NEAR_CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
@@ -98,14 +106,6 @@ public final class ConfigValidator {
 
     private static final EnumSet<EvictionPolicy> MAP_SUPPORTED_EVICTION_POLICIES
             = EnumSet.of(LRU, LFU, RANDOM, NONE);
-
-    private static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES
-            = EnumSet.of(PER_NODE, PER_PARTITION, USED_NATIVE_MEMORY_PERCENTAGE,
-            FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
-
-    private static final EnumSet<MaxSizePolicy> MAP_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
-            = EnumSet.of(PER_NODE, PER_PARTITION, USED_HEAP_SIZE, USED_HEAP_PERCENTAGE,
-            FREE_HEAP_SIZE, FREE_HEAP_PERCENTAGE);
 
     private static final EnumSet<MaxSizePolicy> CACHE_SUPPORTED_ON_HEAP_MAX_SIZE_POLICIES
             = EnumSet.of(ENTRY_COUNT);
