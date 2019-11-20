@@ -362,7 +362,7 @@ public class ManagementCenterService {
                 clientMessage -> {
                     MCMatchMCConfigCodec.ResponseParameters response =
                             MCMatchMCConfigCodec.decodeResponse(clientMessage);
-                    return response.response;
+                    return response.result;
                 },
                 false
         );

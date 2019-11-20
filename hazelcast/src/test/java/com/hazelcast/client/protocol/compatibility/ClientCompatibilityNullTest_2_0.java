@@ -6716,7 +6716,7 @@ public class ClientCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 796;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCMatchMCConfigCodec.ResponseParameters parameters = MCMatchMCConfigCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aBoolean, parameters.response));
+        assertTrue(isEqual(aBoolean, parameters.result));
     }
 
     @Test
