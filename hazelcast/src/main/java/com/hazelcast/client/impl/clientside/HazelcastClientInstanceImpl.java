@@ -213,7 +213,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
             this.config = clientFailoverConfig.getClientConfigs().get(0);
         }
-        MetricsConfigHelper.overrideClientMetricsConfig(this.config);
         this.clientFailoverConfig = clientFailoverConfig;
         if (config.getInstanceName() != null) {
             instanceName = config.getInstanceName();
