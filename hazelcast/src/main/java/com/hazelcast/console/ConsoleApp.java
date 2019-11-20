@@ -609,15 +609,10 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     protected void handleListRemove(String[] args) {
-        int index;
         try {
-            index = Integer.parseInt(args[1]);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException(e);
-        }
-        if (index >= 0) {
+            int index = Integer.parseInt(args[1]);
             println(getList().remove(index));
-        } else {
+        } catch (NumberFormatException e) {
             println(getList().remove(args[1]));
         }
     }
@@ -1409,7 +1404,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("jvm                                  //displays info about the runtime");
         println("who                                  //displays info about the cluster");
         println("whoami                               //displays info about this cluster member");
-        println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list "
+        println("ns <string>                          //switch the namespace for using the distributed data structure (e.g. queue/map/set/list) "
                 + "<string> (defaults to \"default\")");
         println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
         println("");
@@ -1510,24 +1505,24 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     private void printAtomicLongCommands() {
         println("-- IAtomicLong commands:");
-        println("a.get");
-        println("a.set <long>");
-        println("a.inc");
-        println("a.dec");
+        println("a.get                                 //returns the value of the atomic long");
+        println("a.set <long>                          //sets a value to the atomic long");
+        println("a.inc                                 //increments the value of the atomic long by one");
+        println("a.dec                                 //decrements the value of the atomic long by one");
         println("");
     }
 
     private void printListCommands() {
         println("-- List commands:");
-        println("l.add <string>");
-        println("l.add <index> <string>");
-        println("l.contains <string>");
-        println("l.remove <string>");
-        println("l.remove <index>");
-        println("l.set <index> <string>");
-        println("l.iterator [remove]");
-        println("l.size");
-        println("l.clear");
+        println("l.add <string>                        //adds a string object to the list");
+        println("l.add <index> <string>                //adds a string object as an item with given index in the list");
+        println("l.contains <string>                   //checks if the list contains a string object");
+        println("l.remove <string>                     //removes a string object from the list");
+        println("l.remove <index>                      //removes the item with given index from the list");
+        println("l.set <index> <string>                //sets a string object to the item with given index in the list");
+        println("l.iterator [remove]                   //iterates the list, remove if specified");
+        println("l.size                                //size of the list");
+        println("l.clear                               //clears the list");
         println("");
     }
 
