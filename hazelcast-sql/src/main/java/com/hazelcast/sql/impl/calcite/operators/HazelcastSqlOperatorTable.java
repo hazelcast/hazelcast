@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl.calcite.operators;
 
+import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
@@ -23,6 +24,9 @@ import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
+/**
+ * Custom functions.
+ */
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
     public static final SqlFunction LENGTH =
         new SqlFunction(
@@ -33,6 +37,9 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
             OperandTypes.CHARACTER,
             SqlFunctionCategory.NUMERIC
         );
+
+    /** Function to calculate distributed average. */
+    public static final SqlAggFunction DISTRIBUTED_AVG = new DistirbutedAvgAggFunction();
 
     private static final HazelcastSqlOperatorTable INSTANCE = new HazelcastSqlOperatorTable();
 

@@ -37,8 +37,8 @@ import java.util.Map;
  * only a single aggregated row is allocated at a time. Otherwise, the whole result set is consumed from the upstream.
  */
 public class LocalAggregateExec extends AbstractUpstreamAwareExec {
-    /** Number of keys in the group. */
-    private final int groupKeySize;
+    /** Group key. */
+    private final List<Integer> groupKey;
 
     /** Expressions. */
     // TODO: Use array instead?
@@ -65,17 +65,19 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
 
     public LocalAggregateExec(
         Exec upstream,
-        int groupKeySize,
+        List<Integer> groupKey,
         List<AggregateExpression> expressions,
-        boolean sorted
+        int sortedGroupKeySize
     ) {
         super(upstream);
 
-        this.groupKeySize = groupKeySize;
+        this.groupKey = groupKey;
         this.expressions = expressions;
-        this.sorted = sorted;
 
-        columnCount = groupKeySize + expressions.size();
+        // TODO: Currently we only do full sort of the whole key for the sake of simplicty.
+        this.sorted = sortedGroupKeySize == groupKey.size();
+
+        columnCount = groupKey.size() + expressions.size();
     }
 
     @Override
@@ -270,18 +272,20 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
      * @return Key.
      */
     private AggregateKey createKey(Row row) {
-        switch (groupKeySize) {
+        int size = groupKey.size();
+
+        switch (size) {
             case 1:
-                return AggregateKey.single(row.getColumn(0));
+                return AggregateKey.single(row.getColumn(groupKey.get(0)));
 
             case 2:
-                return AggregateKey.dual(row.getColumn(0), row.getColumn(1));
+                return AggregateKey.dual(row.getColumn(groupKey.get(0)), row.getColumn(groupKey.get(1)));
 
             default:
-                Object[] items = new Object[groupKeySize];
+                Object[] items = new Object[size];
 
-                for (int i = 0; i < groupKeySize; i++) {
-                    items[i] = row.getColumn(i);
+                for (int i = 0; i < items.length; i++) {
+                    items[i] = row.getColumn(groupKey.get(i));
                 }
 
                 return AggregateKey.multiple(items);

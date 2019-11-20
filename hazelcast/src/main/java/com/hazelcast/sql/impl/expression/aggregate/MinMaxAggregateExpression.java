@@ -16,50 +16,58 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
 
+import java.io.IOException;
+
 /**
- * Summing accumulator.
+ * MIN/MAX expression.
  */
-public class SumAggregateExpression<T> extends SingleAggregateExpression<T> {
-    public SumAggregateExpression() {
+public class MinMaxAggregateExpression extends SingleAggregateExpression<Comparable> {
+    /** Whether this is MIN. */
+    private boolean min;
+
+    public MinMaxAggregateExpression() {
         // No-op.
     }
 
-    public SumAggregateExpression(boolean distinct, Expression operand) {
+    public MinMaxAggregateExpression(boolean min, boolean distinct, Expression operand) {
         super(distinct, operand);
+
+        this.min = min;
     }
 
     @Override
     public AggregateCollector newCollector(QueryContext ctx) {
-        return new SumAggregateCollector(distinct);
+        return new MinMaxAggregateCollector(min);
     }
 
     @Override
     protected DataType resolveReturnType(DataType operandType) {
-        switch (operandType.getType()) {
-            case BIT:
-            case TINYINT:
-            case SMALLINT:
-            case INT:
-                return DataType.INT;
+        return operandType;
+    }
 
-            case BIGINT:
-                return DataType.BIGINT;
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
 
-            case DECIMAL:
-                return DataType.DECIMAL;
+        out.writeBoolean(min);
+    }
 
-            case REAL:
-            case DOUBLE:
-                return DataType.DOUBLE;
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
 
-            default:
-                throw new HazelcastSqlException(-1, "Unsupported operand type: " + operandType);
-        }
+        min = in.readBoolean();
+    }
+
+    @Override
+    public String toString() {
+        return getClass() + "{min=" + min + ", distinct=" + distinct + '}';
     }
 }

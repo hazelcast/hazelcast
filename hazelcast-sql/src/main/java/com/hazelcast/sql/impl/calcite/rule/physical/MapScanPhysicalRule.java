@@ -73,6 +73,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
+        // TODO: Check member count and return SINGLETON if possible.
         MapScanLogicalRel scan = call.rel(0);
 
         if (scan.isReplicated()) {

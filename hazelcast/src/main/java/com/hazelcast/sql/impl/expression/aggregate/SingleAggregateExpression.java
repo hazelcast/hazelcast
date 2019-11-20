@@ -16,11 +16,15 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+
+import java.io.IOException;
 
 /**
  * Aggregate accumulator which uses only a single input.
@@ -58,7 +62,7 @@ public abstract class SingleAggregateExpression<T> extends AggregateExpression<T
             resType = resolveReturnType(operandType);
         }
 
-        collector.collect(operandValue);
+        collector.collect(operandValue, operandType, resType);
     }
 
     /**
@@ -68,4 +72,18 @@ public abstract class SingleAggregateExpression<T> extends AggregateExpression<T
      * @return Return type.
      */
     protected abstract DataType resolveReturnType(DataType operandType);
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+
+        out.writeObject(operand);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+
+        operand = in.readObject();
+    }
 }

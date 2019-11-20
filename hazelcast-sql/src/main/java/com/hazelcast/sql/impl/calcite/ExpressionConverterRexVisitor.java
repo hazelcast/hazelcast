@@ -20,6 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlDaySecondInterval;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
+import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;

@@ -28,77 +28,77 @@ import java.util.Objects;
 /**
  * Collocated aggregation.
  */
-public class CollocatedAggregatePhysicalNode implements PhysicalNode {
+public class AggregatePhysicalNode implements PhysicalNode {
     /** Upstream node. */
     private PhysicalNode upstream;
 
-    /** Group key size, i.e. how many columns are participating in the group key. */
-    private int groupKeySize;
+    /** Group key. */
+    private List<Integer> groupKey;
 
     /** Accumulators. */
-    private List<AggregateExpression> accumulators;
+    private List<AggregateExpression> expressions;
 
     /** Whether group key is already sorted, and hence blocking behavior is not needed. */
-    private boolean sorted;
+    private int sortedGroupKeySize;
 
-    public CollocatedAggregatePhysicalNode() {
+    public AggregatePhysicalNode() {
         // No-op.
     }
 
-    public CollocatedAggregatePhysicalNode(
+    public AggregatePhysicalNode(
         PhysicalNode upstream,
-        int groupKeySize,
-        List<AggregateExpression> accumulators,
-        boolean sorted
+        List<Integer> groupKey,
+        List<AggregateExpression> expressions,
+        int sortedGroupKeySize
     ) {
         this.upstream = upstream;
-        this.groupKeySize = groupKeySize;
-        this.accumulators = accumulators;
-        this.sorted = sorted;
+        this.groupKey = groupKey;
+        this.expressions = expressions;
+        this.sortedGroupKeySize = sortedGroupKeySize;
     }
 
     public PhysicalNode getUpstream() {
         return upstream;
     }
 
-    public int getGroupKeySize() {
-        return groupKeySize;
+    public List<Integer> getGroupKey() {
+        return groupKey;
     }
 
-    public List<AggregateExpression> getAccumulators() {
-        return accumulators;
+    public List<AggregateExpression> getExpressions() {
+        return expressions;
     }
 
-    public boolean isSorted() {
-        return sorted;
+    public int getSortedGroupKeySize() {
+        return sortedGroupKeySize;
     }
 
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         upstream.visit(visitor);
 
-        visitor.onCollocatedAggregateNode(this);
+        visitor.onAggregateNode(this);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(upstream);
-        out.writeInt(groupKeySize);
-        SerializationUtil.writeList(accumulators, out);
-        out.writeBoolean(sorted);
+        SerializationUtil.writeList(groupKey, out);
+        SerializationUtil.writeList(expressions, out);
+        out.writeInt(sortedGroupKeySize);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         upstream = in.readObject();
-        groupKeySize = in.readInt();
-        accumulators = SerializationUtil.readList(in);
-        sorted = in.readBoolean();
+        groupKey = SerializationUtil.readList(in);
+        expressions = SerializationUtil.readList(in);
+        sortedGroupKeySize = in.readInt();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(upstream, groupKeySize, accumulators, sorted);
+        return Objects.hash(upstream, groupKey, expressions, sortedGroupKeySize);
     }
 
     @Override
@@ -111,15 +111,15 @@ public class CollocatedAggregatePhysicalNode implements PhysicalNode {
             return false;
         }
 
-        CollocatedAggregatePhysicalNode that = (CollocatedAggregatePhysicalNode) o;
+        AggregatePhysicalNode that = (AggregatePhysicalNode) o;
 
-        return groupKeySize == that.groupKeySize && sorted == that.sorted && upstream.equals(that.upstream)
-            && accumulators.equals(that.accumulators);
+        return upstream.equals(that.upstream) && Objects.equals(groupKey, that.groupKey)
+            && expressions.equals(that.expressions) && sortedGroupKeySize == that.sortedGroupKeySize ;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{accumulators=" + accumulators + ", groupKeySize=" + groupKeySize
-            + ", sorted=" + sorted + ", upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{groupKey=" + groupKey + ", expressions=" + expressions
+            + ", sortedGroupKeySize=" + sortedGroupKeySize + ", upstream=" + upstream + '}';
     }
 }

@@ -47,6 +47,7 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.SINGL
  *     member with data in the cluster.</li>
  * </ul>
  */
+// TODO: Rework to RelMultipleTrait!!
 public class DistributionTrait implements RelTrait {
     /** Data is distributed between nodes, but actual distribution column is unknown. */
     public static final DistributionTrait DISTRIBUTED_DIST = Builder.ofType(DISTRIBUTED).build();
@@ -303,6 +304,16 @@ public class DistributionTrait implements RelTrait {
             fieldGroups.add(Collections.unmodifiableList(new ArrayList<>(fields)));
 
             return this;
+        }
+
+        public Builder addFieldGroupPlain(List<Integer> fields) {
+            List<DistributionField> fields0 = new ArrayList<>();
+
+            for (Integer field : fields) {
+                fields0.add(new DistributionField(field));
+            }
+
+            return addFieldGroup(fields0);
         }
 
         public DistributionTrait build() {

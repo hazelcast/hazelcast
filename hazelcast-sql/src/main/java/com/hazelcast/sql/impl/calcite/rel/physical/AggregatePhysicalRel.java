@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.rel.physical;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.util.ImmutableBitSet;
@@ -26,25 +27,28 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.List;
 
 /**
- * Collocated physical aggregation is performed locally on top of locally available data set. This includes:
- * - SINGLETON and REPLICATED inputs, because the whole data set is available on the local member;
- * - DISTRIBUTED_PARTITIONED when distribution fields are a prefix of grouping fields.
- *
- * That is, {@code SELECT a FROM t GROUP BY a, b} is collocated if {@code a} is the distribution field, while
- * {@code SELECT a FROM t GROUP BY b} is not.
+ * Base class for physical aggregations.
  */
-public class CollocatedAggregatePhysicalRel extends AbstractAggregatePhysicalRel {
-    public CollocatedAggregatePhysicalRel(
+public class AggregatePhysicalRel extends Aggregate implements PhysicalRel {
+    /** Sorted prefix of a group set.  */
+    private final ImmutableBitSet sortedGroupSet;
+
+    public AggregatePhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traits,
         RelNode child,
-        boolean indicator,
         ImmutableBitSet groupSet,
         List<ImmutableBitSet> groupSets,
         List<AggregateCall> aggCalls,
-        boolean sorted
+        ImmutableBitSet sortedGroupSet
     ) {
-        super(cluster, traits, child, indicator, groupSet, groupSets, aggCalls, sorted);
+        super(cluster, traits, child, groupSet, groupSets, aggCalls);
+
+        this.sortedGroupSet = sortedGroupSet;
+    }
+
+    public ImmutableBitSet getSortedGroupSet() {
+        return sortedGroupSet;
     }
 
     @Override
@@ -55,15 +59,14 @@ public class CollocatedAggregatePhysicalRel extends AbstractAggregatePhysicalRel
         List<ImmutableBitSet> groupSets,
         List<AggregateCall> aggCalls
     ) {
-        return new CollocatedAggregatePhysicalRel(
+        return new AggregatePhysicalRel(
             getCluster(),
             traitSet,
             input,
-            indicator,
             groupSet,
             groupSets,
             aggCalls,
-            sorted
+            sortedGroupSet
         );
     }
 
@@ -71,6 +74,13 @@ public class CollocatedAggregatePhysicalRel extends AbstractAggregatePhysicalRel
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel) input).visit(visitor);
 
-        visitor.onCollocatedAggregate(this);
+        visitor.onAggregate(this);
     }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
+    }
+
+    // TODO: Cost estimates: sorted, unsorted
 }

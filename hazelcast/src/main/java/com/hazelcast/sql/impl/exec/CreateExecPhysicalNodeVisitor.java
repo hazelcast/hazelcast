@@ -33,7 +33,7 @@ import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.mailbox.SingleInbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
-import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
@@ -313,8 +313,8 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     }
 
     @Override
-    public void onCollocatedAggregateNode(CollocatedAggregatePhysicalNode node) {
-        Exec res = new LocalAggregateExec(pop(), node.getGroupKeySize(), node.getAccumulators(), node.isSorted());
+    public void onAggregateNode(AggregatePhysicalNode node) {
+        Exec res = new LocalAggregateExec(pop(), node.getGroupKey(), node.getExpressions(), node.getSortedGroupKeySize());
 
         push(res);
     }

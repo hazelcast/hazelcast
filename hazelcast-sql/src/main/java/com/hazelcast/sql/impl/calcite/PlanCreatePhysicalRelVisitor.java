@@ -22,7 +22,8 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryPlan;
-import com.hazelcast.sql.impl.calcite.rel.physical.CollocatedAggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.calcite.rel.physical.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.MapScanPhysicalRel;
@@ -41,9 +42,12 @@ import com.hazelcast.sql.impl.calcite.rel.physical.join.NestedLoopJoinPhysicalRe
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.AverageAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.DistributedAverageAggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.MinMaxAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
-import com.hazelcast.sql.impl.physical.CollocatedAggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
@@ -66,6 +70,7 @@ import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -324,11 +329,11 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     }
 
     @Override
-    public void onCollocatedAggregate(CollocatedAggregatePhysicalRel rel) {
+    public void onAggregate(AggregatePhysicalRel rel) {
         PhysicalNode upstreamNode = pollSingleUpstream();
 
-        int groupKeySize = rel.getGroupSet().cardinality();
-        boolean sorted = rel.isSorted();
+        List<Integer> groupKey = rel.getGroupSet().toList();
+        int sortedGroupKeySize = rel.getSortedGroupSet().toList().size();
 
         List<AggregateCall> aggCalls = rel.getAggCallList();
 
@@ -340,11 +345,11 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
             aggAccumulators.add(aggAccumulator);
         }
 
-        CollocatedAggregatePhysicalNode aggNode = new CollocatedAggregatePhysicalNode(
+        AggregatePhysicalNode aggNode = new AggregatePhysicalNode(
             upstreamNode,
-            groupKeySize,
+            groupKey,
             aggAccumulators,
-            sorted
+            sortedGroupKeySize
         );
 
         pushUpstream(aggNode);
@@ -404,7 +409,25 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
                 return new SumAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
 
             case COUNT:
+                // TODO: COUNT(*) goes without aggregate! The whole row is the aggregate then!
                 return new CountAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+
+            case MIN:
+                return new MinMaxAggregateExpression(true, distinct, new ColumnExpression<>(argList.get(0)));
+
+            case MAX:
+                return new MinMaxAggregateExpression(false, distinct, new ColumnExpression<>(argList.get(0)));
+
+            case AVG:
+                return new AverageAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+
+            case OTHER_FUNCTION:
+                assert aggFunc == HazelcastSqlOperatorTable.DISTRIBUTED_AVG;
+
+                return new DistributedAverageAggregateExpression(
+                    new ColumnExpression(argList.get(0)),
+                    new ColumnExpression(argList.get(1))
+                );
 
             default:
                 throw new HazelcastSqlException(-1, "Unsupported aggregate call: " + aggFunc.getName());

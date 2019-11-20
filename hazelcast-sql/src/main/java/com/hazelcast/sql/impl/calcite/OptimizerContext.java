@@ -25,16 +25,17 @@ import com.hazelcast.sql.impl.calcite.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.rel.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.rule.logical.LogicalRules;
-import com.hazelcast.sql.impl.calcite.rule.physical.CollocatedAggregatePhysicalRule;
 import com.hazelcast.sql.impl.calcite.rule.physical.FilterPhysicalRule;
 import com.hazelcast.sql.impl.calcite.rule.physical.MapScanPhysicalRule;
 import com.hazelcast.sql.impl.calcite.rule.physical.ProjectPhysicalRule;
 import com.hazelcast.sql.impl.calcite.rule.physical.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.rule.physical.SortPhysicalRule;
+import com.hazelcast.sql.impl.calcite.rule.physical.agg.AggregatePhysicalRule;
 import com.hazelcast.sql.impl.calcite.rule.physical.join.JoinPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
@@ -253,7 +254,7 @@ public final class OptimizerContext {
             FilterPhysicalRule.INSTANCE,
             ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
-            CollocatedAggregatePhysicalRule.INSTANCE,
+            AggregatePhysicalRule.INSTANCE,
             JoinPhysicalRule.INSTANCE,
 
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)

@@ -16,31 +16,31 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
 
 /**
- * Counting accumulator.
+ * Counting collector.
  */
-public class CountAggregateExpression extends SingleAggregateExpression<Long> {
-    public CountAggregateExpression() {
-        // No-op.
-    }
+public final class CountAggregateCollector extends AggregateCollector {
+    /** Final result. */
+    private long res;
 
-    public CountAggregateExpression(boolean distinct, Expression operand) {
-        super(distinct, operand);
+    public CountAggregateCollector(boolean distinct) {
+        super(distinct);
     }
 
     @Override
-    public AggregateCollector newCollector(QueryContext ctx) {
-        return new CountAggregateCollector(distinct);
+    protected void collect0(Object operandValue, DataType operandType, DataType resType) {
+        collectMany(1);
     }
 
-    // TODO: Do we really need that kind of aggressive type expansion?
+    public void collectMany(long cnt) {
+        res += cnt;
+    }
+
     @Override
-    protected DataType resolveReturnType(DataType operandType) {
-        return DataType.BIGINT;
+    public Object reduce() {
+        return res;
     }
 }

@@ -38,7 +38,7 @@ public interface PhysicalNodeVisitor {
     void onReceiveSortMergeNode(ReceiveSortMergePhysicalNode node);
     void onProjectNode(ProjectPhysicalNode node);
     void onFilterNode(FilterPhysicalNode node);
-    void onCollocatedAggregateNode(CollocatedAggregatePhysicalNode node);
+    void onAggregateNode(AggregatePhysicalNode node);
     void onNestedLoopJoinNode(NestedLoopJoinPhysicalNode node);
     void onHashJoinNode(HashJoinPhysicalNode node);
     void onMaterializedInputNode(MaterializedInputPhysicalNode node);

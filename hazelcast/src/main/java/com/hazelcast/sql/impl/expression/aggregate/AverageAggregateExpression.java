@@ -23,37 +23,36 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
 
 /**
- * Summing accumulator.
+ * Local average expression.
  */
-public class SumAggregateExpression<T> extends SingleAggregateExpression<T> {
-    public SumAggregateExpression() {
+public class AverageAggregateExpression<T> extends SingleAggregateExpression<T> {
+    public AverageAggregateExpression() {
         // No-op.
     }
 
-    public SumAggregateExpression(boolean distinct, Expression operand) {
+    public AverageAggregateExpression(boolean distinct, Expression operand) {
         super(distinct, operand);
     }
 
     @Override
     public AggregateCollector newCollector(QueryContext ctx) {
-        return new SumAggregateCollector(distinct);
+        return new AverageAggregateCollector(distinct);
     }
 
     @Override
     protected DataType resolveReturnType(DataType operandType) {
+        return returnType(operandType);
+    }
+
+    // TODO: Read ANSI standard on how to infer return types here.
+    public static DataType returnType(DataType operandType) {
         switch (operandType.getType()) {
             case BIT:
             case TINYINT:
             case SMALLINT:
             case INT:
-                return DataType.INT;
-
             case BIGINT:
-                return DataType.BIGINT;
-
             case DECIMAL:
-                return DataType.DECIMAL;
-
             case REAL:
             case DOUBLE:
                 return DataType.DOUBLE;
