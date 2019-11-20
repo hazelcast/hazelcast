@@ -137,7 +137,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public String getClientType() {
-        return connection.getType();
+        return connection.getConnectionType();
     }
 
     @Override

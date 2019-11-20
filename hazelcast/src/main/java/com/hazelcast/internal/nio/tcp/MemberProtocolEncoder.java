@@ -87,7 +87,7 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
             // replace!
             TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-            connection.setType(ConnectionType.MEMBER);
+            connection.setConnectionType(ConnectionType.MEMBER);
             channel.outboundPipeline().replace(this, outboundHandlers);
 
             return CLEAN;

@@ -85,9 +85,9 @@ final class BindHandler {
         // in 192.168.1.2:5701's connectionsMap the connection must be registered with
         // key 192.168.1.1:5701.
         assert (tcpIpEndpointManager.getEndpointQualifier() != EndpointQualifier.MEMBER
-                || connection.getType() == ConnectionType.MEMBER) : "When handling MEMBER connections, connection type"
+                || connection.getConnectionType() == ConnectionType.MEMBER) : "When handling MEMBER connections, connection type"
                 + " must be already set";
-        boolean isMemberConnection = (connection.getType() == ConnectionType.MEMBER
+        boolean isMemberConnection = (connection.getConnectionType() == ConnectionType.MEMBER
                 && (tcpIpEndpointManager.getEndpointQualifier() == EndpointQualifier.MEMBER
                     || unifiedEndpointManager));
         boolean mustRegisterRemoteSocketAddress = !bindMessage.isReply();

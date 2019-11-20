@@ -46,7 +46,7 @@ public interface Client extends Endpoint {
     InetSocketAddress getSocketAddress();
 
     /**
-     * Type could be a client type from @{link ConnectionType} or
+     * Type could be a client type from {@link com.hazelcast.internal.nio.ConnectionType} or
      * it can be a custom client implementation with a name outside of this @{link ConnectionType}
      *
      * @return the type of this client

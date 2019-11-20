@@ -205,7 +205,7 @@ public class BindHandlerTest {
         Packet packet = new Packet(serializationService.toBytes(bindMessage));
         TcpIpConnection connection = new TcpIpConnection(endpointManager, null, 1, channel);
         if (connectionType != null) {
-            connection.setType(connectionType);
+            connection.setConnectionType(connectionType);
         }
         packet.setConn(connection);
         return packet;

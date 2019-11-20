@@ -16,22 +16,23 @@
 
 package com.hazelcast.internal.nio.tcp;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.IOService;
+import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.security.cert.Certificate;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -70,7 +71,8 @@ public class TcpIpConnection implements Connection {
 
     private TcpIpConnectionErrorHandler errorHandler;
 
-    private volatile String type = NONE;
+    @Probe
+    private volatile String connectionType = NONE;
 
     private volatile ConnectionLifecycleListener lifecycleListener;
 
@@ -98,27 +100,22 @@ public class TcpIpConnection implements Connection {
     }
 
     @Override
-    public String getType() {
-        return type;
+    public String getConnectionType() {
+        return connectionType;
     }
 
     @Override
-    public void setType(String type) {
-        if (!this.type.equals(NONE)) {
+    public void setConnectionType(String connectionType) {
+        Objects.requireNonNull(connectionType);
+        if (!this.connectionType.equals(NONE)) {
             return;
         }
 
-        this.type = type;
-        if (type.equals(MEMBER)) {
+        this.connectionType = connectionType;
+        if (connectionType.equals(MEMBER)) {
             logger.info("Initialized new cluster connection between "
                     + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
         }
-    }
-
-    @Probe
-    //TODO SANCAR
-    private String getConnectionType() {
-        return getType();
     }
 
     public TcpIpEndpointManager getEndpointManager() {
@@ -174,7 +171,7 @@ public class TcpIpConnection implements Connection {
 
     @Override
     public boolean isClient() {
-        return !type.equals(MEMBER);
+        return !connectionType.equals(MEMBER);
     }
 
     @Override
@@ -265,7 +262,7 @@ public class TcpIpConnection implements Connection {
         }
 
         if (closeCause == null || closeCause instanceof EOFException || closeCause instanceof CancelledKeyException) {
-            if (type.equals(ConnectionType.REST_CLIENT) || type.equals(ConnectionType.MEMCACHE_CLIENT)) {
+            if (connectionType.equals(ConnectionType.REST_CLIENT) || connectionType.equals(ConnectionType.MEMCACHE_CLIENT)) {
                 // text-based clients are expected to come and go frequently.
                 return Level.FINE;
             } else {
@@ -297,7 +294,7 @@ public class TcpIpConnection implements Connection {
                 + ", qualifier=" + endpointManager.getEndpointQualifier()
                 + ", endpoint=" + endPoint
                 + ", alive=" + alive
-                + ", type=" + type
+                + ", connectionType=" + connectionType
                 + "]";
     }
 

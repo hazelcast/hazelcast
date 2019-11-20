@@ -150,7 +150,7 @@ public class MockConnection implements Connection {
     }
 
     @Override
-    public void setType(String type) {
+    public void setConnectionType(String connectionType) {
         //NO OP
     }
 
@@ -159,7 +159,7 @@ public class MockConnection implements Connection {
     }
 
     @Override
-    public String getType() {
+    public String getConnectionType() {
         return ConnectionType.MEMBER;
     }
 

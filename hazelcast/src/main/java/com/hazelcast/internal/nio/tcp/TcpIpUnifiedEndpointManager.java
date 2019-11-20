@@ -50,7 +50,7 @@ class TcpIpUnifiedEndpointManager
                 : new HashSet<>(activeConnections.size());
 
         for (TcpIpConnection conn : activeConnections) {
-            if (conn.isAlive() && conn.getType() == REST_CLIENT) {
+            if (conn.isAlive() && conn.getConnectionType() == REST_CLIENT) {
                 connections.add(conn);
             }
         }
@@ -63,7 +63,7 @@ class TcpIpUnifiedEndpointManager
                 : new HashSet<>(activeConnections.size());
 
         for (TcpIpConnection conn : activeConnections) {
-            if (conn.isAlive() && conn.getType() == MEMCACHE_CLIENT) {
+            if (conn.isAlive() && conn.getConnectionType() == MEMCACHE_CLIENT) {
                 connections.add(conn);
             }
         }
@@ -77,7 +77,7 @@ class TcpIpUnifiedEndpointManager
                 : new HashSet<>(activeConnections.size());
 
         for (TcpIpConnection conn : activeConnections) {
-            if (conn.isAlive() && conn.getType() == REST_CLIENT || conn.getType() == MEMCACHE_CLIENT) {
+            if (conn.isAlive() && conn.getConnectionType() == REST_CLIENT || conn.getConnectionType() == MEMCACHE_CLIENT) {
                 connections.add(conn);
             }
         }

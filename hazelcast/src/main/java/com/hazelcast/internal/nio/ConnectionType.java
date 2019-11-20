@@ -17,14 +17,16 @@
 package com.hazelcast.internal.nio;
 
 /**
- * An enumeration of all possible Connection types.
+ * An enumeration of in-house Connection types.
+ * Note that a type could be provided by a custom client
+ * and it can be a string outside of {@link ConnectionType}
  */
 public final class ConnectionType {
 
     /**
      * If connection type is not set yet
      */
-    public static final String NONE = " NONE";
+    public static final String NONE = "NONE";
 
     /**
      * Member Connection Type

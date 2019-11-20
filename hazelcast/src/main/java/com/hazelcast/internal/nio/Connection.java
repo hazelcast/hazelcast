@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.nio;
 
-import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.networking.OutboundFrame;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -51,20 +51,22 @@ public interface Connection {
     long lastWriteTimeMillis();
 
     /**
-     * Returns the {@link ConnectionType} of this Connection.
+     * Returns the connection type
+     * See  {@link ConnectionType} for in-house candidates. Note that a type could be provided by a custom client
+     * and it can be a string outside of {@link ConnectionType}
      *
-     * @return the ConnectionType. It could be that <code>null</code> is returned.
+     * @return the the connection type. It could be that <code>null</code> is returned.
      */
-    String getType();
+    String getConnectionType();
 
     EndpointManager getEndpointManager();
 
     /**
      * Sets the type of the connection
      *
-     * @param type to be set
+     * @param connectionType to be set
      */
-    void setType(String type);
+    void setConnectionType(String connectionType);
 
     /**
      * Checks if it is a client connection.

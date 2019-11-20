@@ -192,7 +192,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private void setConnectionType() {
-        connection.setType(getClientType());
+        connection.setConnectionType(getClientType());
     }
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
