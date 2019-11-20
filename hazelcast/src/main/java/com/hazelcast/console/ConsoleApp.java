@@ -74,6 +74,7 @@ import static com.hazelcast.internal.util.StringUtil.trim;
 import static com.hazelcast.memory.MemoryUnit.BYTES;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -235,19 +236,16 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             ExecutorService pool = Executors.newFixedThreadPool(fork);
             for (int i = 0; i < fork; i++) {
                 final int threadID = i;
-                pool.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        String command = threadCommand;
-                        String[] threadArgs = trim(command.replaceAll("\\$t", "" + threadID)).split(" ");
-                        // TODO &t #4 m.putmany x k
-                        if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
-                            if (threadArgs.length < 4) {
-                                command += " " + Integer.parseInt(threadArgs[1]) * threadID;
-                            }
+                pool.submit(() -> {
+                    String sanitizedCommand = threadCommand;
+                    String[] threadArgs = trim(sanitizedCommand.replaceAll("\\$t", "" + threadID)).split(" ");
+                    // TODO &t #4 m.putmany x k
+                    if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
+                        if (threadArgs.length < 4) {
+                            sanitizedCommand += " " + Integer.parseInt(threadArgs[1]) * threadID;
                         }
-                        handleCommand(command);
                     }
+                    handleCommand(sanitizedCommand);
                 });
             }
             pool.shutdown();
@@ -437,8 +435,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         long startMs = System.currentTimeMillis();
 
         IExecutorService executor = hazelcast.getExecutorService(EXECUTOR_NAMESPACE + " " + threadCount);
-        List<Future> futures = new LinkedList<Future>();
-        List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
+        List<Future> futures = new LinkedList<>();
+        List<Member> members = new LinkedList<>(hazelcast.getCluster().getMembers());
 
         int totalThreadCount = hazelcast.getCluster().getMembers().size() * threadCount;
 
@@ -486,7 +484,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         if (f.exists()) {
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(f), UTF_8));
                 String l = br.readLine();
                 while (l != null) {
                     handleCommand(l);
@@ -578,7 +576,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     protected void handlePartitions(String[] args) {
         Set<Partition> partitions = hazelcast.getPartitionService().getPartitions();
-        Map<Member, Integer> partitionCounts = new HashMap<Member, Integer>();
+        Map<Member, Integer> partitionCounts = new HashMap<>();
         for (Partition partition : partitions) {
             Member owner = partition.getOwner();
             if (owner != null) {
@@ -1289,7 +1287,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 future = executorService.submitToKeyOwner(callable, key);
             } else if (onMember) {
                 int memberIndex = Integer.parseInt(args[2]);
-                List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
+                List<Member> members = new LinkedList<>(hazelcast.getCluster().getMembers());
                 if (memberIndex >= members.size()) {
                     throw new IndexOutOfBoundsException("Member index: " + memberIndex + " must be smaller than "
                             + members.size());
@@ -1412,7 +1410,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("who                                  //displays info about the cluster");
         println("whoami                               //displays info about this cluster member");
         println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list "
-                + "<string> (defaults to \"default\"");
+                + "<string> (defaults to \"default\")");
         println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
         println("");
     }
@@ -1444,10 +1442,10 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     private void printLockCommands() {
         println("-- Lock commands");
-        println("lock <key>                           //same as Hazelcast.getLock(key).lock()");
-        println("tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()");
+        println("lock <key>                           //same as Hazelcast.getCPSubsystem().getLock(key).lock()");
+        println("tryLock <key>                        //same as Hazelcast.getCPSubsystem().getLock(key).tryLock()");
         println("tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds");
-        println("unlock <key>                         //same as Hazelcast.getLock(key).unlock()");
+        println("unlock <key>                         //same as Hazelcast.getCPSubsystem().getLock(key).unlock()");
         println("");
     }
 
@@ -1500,13 +1498,13 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     private void printExecutorServiceCommands() {
         println("-- Executor Service commands:");
-        println("execute <echo-input>                            //executes an echo task on random member");
-        println("executeOnKey <echo-input> <key>                  //executes an echo task on the member that owns the given key");
-        println("executeOnMember <echo-input> <memberIndex>         //executes an echo task on the member with given index");
-        println("executeOnMembers <echo-input>                      //executes an echo task on all of the members");
-        println("e<threadcount>.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with given number "
+        println("execute <echo-input>                                     //executes an echo task on random member");
+        println("executeOnKey <echo-input> <key>                          //executes an echo task on the member that owns "
+                + "the given key");
+        println("executeOnMember <echo-input> <memberIndex>               //executes an echo task on the member with given index");
+        println("executeOnMembers <echo-input>                            //executes an echo task on all of the members");
+        println("e<threadcount>.simulateLoad <task-count> <delaySeconds>  //simulates load on executor with given number "
                 + "of thread (e1..e16)");
-
         println("");
     }
 
@@ -1516,7 +1514,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("a.set <long>");
         println("a.inc");
         println("a.dec");
-        print("");
+        println("");
     }
 
     private void printListCommands() {
@@ -1530,7 +1528,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("l.iterator [remove]");
         println("l.size");
         println("l.clear");
-        print("");
+        println("");
     }
 
     public void println(Object obj) {
