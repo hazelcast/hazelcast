@@ -7214,6 +7214,40 @@ public class MemberCompatibilityNullTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_MCRunScriptCodec_decodeRequest() {
+        int fileClientMessageIndex = 799;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCRunScriptCodec.RequestParameters parameters = MCRunScriptCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.script));
+        assertTrue(isEqual(aString, parameters.engine));
+    }
+
+    @Test
+    public void test_MCRunScriptCodec_encodeResponse() {
+        int fileClientMessageIndex = 800;
+        ClientMessage encoded = MCRunScriptCodec.encodeResponse(aString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCRunConsoleCommandCodec_decodeRequest() {
+        int fileClientMessageIndex = 801;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCRunConsoleCommandCodec.RequestParameters parameters = MCRunConsoleCommandCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.command));
+        assertTrue(isEqual(null, parameters.namespace));
+    }
+
+    @Test
+    public void test_MCRunConsoleCommandCodec_encodeResponse() {
+        int fileClientMessageIndex = 802;
+        ClientMessage encoded = MCRunConsoleCommandCodec.encodeResponse(aString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
      private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
