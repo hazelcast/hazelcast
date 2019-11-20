@@ -102,7 +102,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
 
     public @Nonnull
     UUID addMessageListenerInternal(@Nonnull MessageListener listener) {
-        return topicService.addMessageListener(name, listener, false);
+        return topicService.addMessageListener(name, listener);
     }
 
     public boolean removeMessageListenerInternal(@Nonnull UUID registrationId) {

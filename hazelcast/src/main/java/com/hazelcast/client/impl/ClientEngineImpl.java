@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.AuthenticationBaseMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
 import com.hazelcast.client.impl.protocol.task.UrgentMessageTask;
@@ -40,6 +39,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MemberAttributeServiceEvent;
@@ -60,7 +60,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionManagerService;
 
@@ -224,8 +223,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         } else if (messageTask instanceof TransactionalMessageTask) {
             blockingExecutor.execute(messageTask);
         } else if (messageTask instanceof BlockingMessageTask) {
-            blockingExecutor.execute(messageTask);
-        } else if (messageTask instanceof ListenerMessageTask) {
             blockingExecutor.execute(messageTask);
         } else {
             executor.execute(messageTask);

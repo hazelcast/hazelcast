@@ -96,11 +96,11 @@ public class EventServiceTest extends HazelcastTestSupport {
             eventService.deregisterListener(serviceName, topic, registrationId);
         }
 
-        assertThat(eventService.getRegistrations(serviceName, topic), Matchers.<EventRegistration>empty());
+        assertThat(eventService.getRegistrations(serviceName, topic), Matchers.empty());
 
         HazelcastInstance hz3 = future.get();
         EventService eventService3 = getEventService(hz3);
-        assertThat(eventService3.getRegistrations(serviceName, topic), Matchers.<EventRegistration>empty());
+        assertThat(eventService3.getRegistrations(serviceName, topic), Matchers.empty());
     }
 
     private Config newConfigWithDummyService() {

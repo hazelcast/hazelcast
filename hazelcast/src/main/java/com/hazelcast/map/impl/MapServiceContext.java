@@ -47,6 +47,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 /**
@@ -184,6 +185,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     QueryCacheContext getQueryCacheContext();
 
     UUID addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
+
+    CompletableFuture<UUID> addListenerAdapterAsync(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName);
 
     UUID addLocalListenerAdapter(ListenerAdapter listenerAdaptor, String mapName);
 

@@ -18,12 +18,11 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
-import com.hazelcast.collection.impl.common.DataAwareItemEvent;
-import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -32,20 +31,23 @@ import com.hazelcast.security.permission.QueuePermission;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_ADDLISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec#REQUEST_MESSAGE_TYPE}
  */
 public class QueueAddListenerMessageTask
-        extends AbstractCallableMessageTask<QueueAddListenerCodec.RequestParameters> implements ListenerMessageTask {
+        extends AbstractAddListenerMessageTask<QueueAddListenerCodec.RequestParameters> {
 
     public QueueAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected CompletableFuture<UUID> processInternal() {
         final QueueService service = getService(QueueService.SERVICE_NAME);
         final Data partitionKey = serializationService.toData(parameters.name);
         ItemListener listener = new ItemListener() {
@@ -75,11 +77,12 @@ public class QueueAddListenerMessageTask
                 }
             }
         };
-        UUID registrationId =
-                service.addItemListener(parameters.name, listener, parameters.includeValue, parameters.localOnly);
-        endpoint.addListenerDestroyAction(QueueService.SERVICE_NAME, parameters.name, registrationId);
-        return registrationId;
 
+        if (parameters.localOnly) {
+            return newCompletedFuture(service.addLocalItemListener(parameters.name, listener, parameters.includeValue));
+        }
+
+        return service.addItemListenerAsync(parameters.name, listener, parameters.includeValue);
     }
 
     @Override

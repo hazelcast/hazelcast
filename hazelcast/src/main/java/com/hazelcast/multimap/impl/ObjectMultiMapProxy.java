@@ -229,14 +229,14 @@ public class ObjectMultiMapProxy<K, V>
     @Override
     public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        return getService().addListener(name, listener, null, false, true);
+        return getService().addLocalListener(name, listener, null, false);
     }
 
     @Nonnull
     @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        return getService().addListener(name, listener, null, includeValue, false);
+        return getService().addListener(name, listener, null, includeValue);
     }
 
     @Override
@@ -252,7 +252,7 @@ public class ObjectMultiMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        return getService().addListener(name, listener, dataKey, includeValue, false);
+        return getService().addListener(name, listener, dataKey, includeValue);
     }
 
     @Override

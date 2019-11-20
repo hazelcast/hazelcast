@@ -32,7 +32,6 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -50,10 +49,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
@@ -62,11 +62,12 @@ import java.util.logging.Level;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.FutureUtil.getValue;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
@@ -246,22 +247,47 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     public EventRegistration registerLocalListener(@Nonnull String serviceName,
                                                    @Nonnull String topic,
                                                    @Nonnull Object listener) {
-        return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, true);
+        return registerLocalListener(serviceName, topic, TrueEventFilter.INSTANCE, listener);
     }
 
     @Override
-    public EventRegistration registerLocalListener(@Nonnull String serviceName,
-                                                   @Nonnull String topic,
-                                                   @Nonnull EventFilter filter,
-                                                   @Nonnull Object listener) {
-        return registerListenerInternal(serviceName, topic, filter, listener, true);
+    public EventRegistration registerLocalListener(@Nonnull String serviceName, @Nonnull String topic,
+                                                   @Nonnull EventFilter filter, @Nonnull Object listener) {
+        return registerListener0(serviceName, topic, filter, listener, true);
+    }
+
+    /**
+     *
+     /**
+     * Registers the listener for events matching the service name, topic and filter on local member.
+     *
+     * @param serviceName the service name for which we are registering
+     * @param topic       the event topic for which we are registering
+     * @param filter      the filter for the listened events
+     * @param listener    the event listener
+     * @return the event registration
+     * @throws IllegalArgumentException if the listener or filter is null
+     */
+    private EventRegistration registerListener0(@Nonnull String serviceName, @Nonnull String topic,
+                                                @Nonnull EventFilter filter, @Nonnull Object listener,
+                                                boolean isLocal) {
+        checkNotNull(listener, "Null listener is not allowed!");
+        checkNotNull(filter, "Null filter is not allowed!");
+        EventServiceSegment segment = getSegment(serviceName, true);
+        UUID id = UuidUtil.newUnsecureUUID();
+        final Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, isLocal);
+        if (!segment.addRegistration(topic, reg)) {
+            return null;
+        }
+
+        return reg;
     }
 
     @Override
     public EventRegistration registerListener(@Nonnull String serviceName,
                                               @Nonnull String topic,
                                               @Nonnull Object listener) {
-        return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, false);
+        return getValue(registerListenerAsync(serviceName, topic, listener));
     }
 
     @Override
@@ -269,46 +295,51 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
                                               @Nonnull String topic,
                                               @Nonnull EventFilter filter,
                                               @Nonnull Object listener) {
-        return registerListenerInternal(serviceName, topic, filter, listener, false);
+        return getValue(registerListenerAsync(serviceName, topic, filter, listener));
     }
 
     /**
      * Registers the listener for events matching the service name, topic and filter.
-     * If {@code localOnly} is {@code true}, it will register only for events published on this node,
-     * otherwise, the registration is sent to other nodes and the listener will listen for
-     * events on all cluster members.
+     * It will register only for events published on this node and then the registration is sent to other nodes and the listener
+     * will listen for events on all cluster members.
+     *
+     * @param serviceName the service name for which we are registering
+     * @param topic       the event topic for which we are registering
+     * @param listener    the event listener
+     * @return the event registration future
+     */
+    @Override
+    public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+                                                                      @Nonnull Object listener) {
+        return registerListenerAsync(serviceName, topic, TrueEventFilter.INSTANCE, listener);
+    }
+
+    /**
+     * Registers the listener for events matching the service name, topic and filter.
+     * It will register only for events published on this node and then the registration is sent to other nodes and the listener
+     * will listen for events on all cluster members.
      *
      * @param serviceName the service name for which we are registering
      * @param topic       the event topic for which we are registering
      * @param filter      the filter for the listened events
      * @param listener    the event listener
-     * @param localOnly   whether to register on local events or on events on all cluster members
-     * @return the event registration
-     * @throws IllegalArgumentException if the listener or filter is null
+     * @return the event registration future
      */
-    private EventRegistration registerListenerInternal(@Nonnull String serviceName,
-                                                       @Nonnull String topic,
-                                                       @Nonnull EventFilter filter,
-                                                       @Nonnull Object listener,
-                                                       boolean localOnly) {
-        if (listener == null) {
-            throw new IllegalArgumentException("Null listener is not allowed!");
-        }
-        if (filter == null) {
-            throw new IllegalArgumentException("Null filter is not allowed!");
-        }
-        EventServiceSegment segment = getSegment(serviceName, true);
-        UUID id = UuidUtil.newUnsecureUUID();
-        Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly);
-        if (!segment.addRegistration(topic, reg)) {
-            return null;
+    @Override
+    public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+                                                                          @Nonnull EventFilter filter, @Nonnull Object listener) {
+        Registration registration = (Registration) registerListener0(serviceName, topic, filter, listener, false);
+
+        if (registration == null) {
+            newCompletedFuture(null);
         }
 
-        if (!localOnly) {
-            Supplier<Operation> supplier = new RegistrationOperationSupplier(reg, nodeEngine.getClusterService());
-            invokeOnAllMembers(supplier);
-        }
-        return reg;
+        return invokeOnAllMembers(registration, new RegistrationOperationSupplier(registration, nodeEngine.getClusterService()));
+    }
+
+    private CompletableFuture<EventRegistration> invokeOnAllMembers(Registration reg, Supplier<Operation> operationSupplier) {
+        // we do not check the result value but always return registration. The method will throw exception if a failure.
+        return invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES).thenApply(result -> reg);
     }
 
     public boolean handleRegistration(Registration reg) {
@@ -323,32 +354,30 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     public boolean deregisterListener(@Nonnull String serviceName,
                                       @Nonnull String topic,
                                       @Nonnull Object id) {
+        Boolean value = getValue(deregisterListenerAsync(serviceName, topic, id));
+        return value != null && value;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deregisterListenerAsync(@Nonnull String serviceName,
+                                      @Nonnull String topic,
+                                      @Nonnull Object id) {
         checkNotNull(serviceName, "Null serviceName is not allowed!");
         checkNotNull(topic, "Null topic is not allowed!");
         checkNotNull(id, "Null id is not allowed!");
 
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment == null) {
-            return false;
+            return newCompletedFuture(false);
         }
-        Registration reg = segment.removeRegistration(topic, (UUID) id);
-        if (reg != null && !reg.isLocalOnly()) {
-            Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
-            invokeOnAllMembers(supplier);
-        }
-        return reg != null;
-    }
 
-    private void invokeOnAllMembers(Supplier<Operation> operationSupplier) {
-        InternalCompletableFuture<Object> future = invokeOnStableClusterSerial(nodeEngine, operationSupplier, MAX_RETRIES);
-        try {
-            future.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw rethrow(e);
-        } catch (ExecutionException e) {
-            throw rethrow(e);
+        Registration reg = segment.removeRegistration(topic, (UUID) id);
+        if (reg == null) {
+            return newCompletedFuture(false);
         }
+
+        return invokeOnAllMembers(reg, new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService()))
+                .thenApply(Objects::nonNull);
     }
 
     @Override
@@ -394,9 +423,9 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
         Collection<Registration> registrations = segment.getRegistrations(topic, false);
         if (registrations == null || registrations.isEmpty()) {
-            return Collections.<EventRegistration>emptySet();
+            return Collections.emptySet();
         } else {
-            return Collections.<EventRegistration>unmodifiableCollection(registrations);
+            return Collections.unmodifiableCollection(registrations);
         }
     }
 
@@ -651,7 +680,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
      * @return the on join operation containing all non-local registrations
      */
     private OnJoinRegistrationOperation getOnJoinRegistrationOperation() {
-        Collection<Registration> registrations = new LinkedList<Registration>();
+        Collection<Registration> registrations = new LinkedList<>();
         for (EventServiceSegment segment : segments.values()) {
             segment.collectRemoteRegistrations(registrations);
         }

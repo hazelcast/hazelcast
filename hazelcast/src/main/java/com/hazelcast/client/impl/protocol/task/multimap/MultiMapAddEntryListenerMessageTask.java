@@ -26,7 +26,7 @@ import java.util.UUID;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_ADDENTRYLISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MultiMapAddEntryListenerMessageTask
         extends AbstractMultiMapAddEntryListenerMessageTask<MultiMapAddEntryListenerCodec.RequestParameters> {

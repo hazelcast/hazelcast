@@ -282,7 +282,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                 if (listener instanceof HazelcastInstanceAware) {
                     ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
                 }
-                eventPublishingService.addEventListener(listener, TrueEventFilter.INSTANCE, name);
+                eventPublishingService.addLocalEventListener(listener, TrueEventFilter.INSTANCE, name);
             }
         }
     }

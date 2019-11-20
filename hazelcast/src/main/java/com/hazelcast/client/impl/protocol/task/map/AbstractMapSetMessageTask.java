@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 
@@ -40,7 +40,7 @@ public abstract class AbstractMapSetMessageTask<P> extends AbstractMapPartitionM
     }
 
     @Override
-    protected void beforeResponse() {
+    protected Object processResponseBeforeSending(Object response) {
         final long latencyNanos = System.nanoTime() - startTimeNanos;
         final MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(getDistributedObjectName());
@@ -48,6 +48,7 @@ public abstract class AbstractMapSetMessageTask<P> extends AbstractMapPartitionM
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(getDistributedObjectName())
                     .incrementSetLatencyNanos(latencyNanos);
         }
+        return response;
     }
 
     @Override

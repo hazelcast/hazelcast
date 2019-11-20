@@ -208,12 +208,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public void addListenerDestroyAction(final String service, final String topic, final UUID id) {
         final EventService eventService = clientEngine.getEventService();
-        addDestroyAction(id, new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                return eventService.deregisterListener(service, topic, id);
-            }
-        });
+        addDestroyAction(id, () -> eventService.deregisterListener(service, topic, id));
     }
 
     @Override

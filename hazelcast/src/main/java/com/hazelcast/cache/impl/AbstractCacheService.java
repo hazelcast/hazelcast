@@ -574,41 +574,53 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal) {
-        return registerListenerInternal(cacheNameWithPrefix, listener, null, isLocal);
+    public UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        EventRegistration registration = eventService
+                .registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
+        if (registration == null) {
+            return null;
+        }
+        return updateRegisteredListeners(listener, registration);
     }
 
     @Override
-    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener,
-                                 EventFilter eventFilter, boolean isLocal) {
-        return registerListenerInternal(cacheNameWithPrefix, listener, eventFilter, isLocal);
+    public UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        EventRegistration registration = eventService
+                .registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener);
+        if (registration == null) {
+            return null;
+        }
+        return updateRegisteredListeners(listener, registration);
     }
 
-    protected UUID registerListenerInternal(String cacheNameWithPrefix, CacheEventListener listener,
-                                            EventFilter eventFilter, boolean isLocal) {
+    @Override
+    public CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener) {
         EventService eventService = getNodeEngine().getEventService();
-        EventRegistration reg;
-        if (isLocal) {
-            if (eventFilter == null) {
-                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
-            } else {
-                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix,
-                        eventFilter, listener);
-            }
-        } else {
-            if (eventFilter == null) {
-                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
-            } else {
-                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix,
-                        eventFilter, listener);
-            }
-        }
 
-        UUID id = reg.getId();
+        return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener)
+                           .thenApply((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration));
+    }
+
+    @Override
+    public CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener,
+                                                         EventFilter eventFilter) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener)
+                           .thenApply((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration));
+    }
+
+    private UUID updateRegisteredListeners(CacheEventListener listener, EventRegistration eventRegistration) {
+        UUID id = eventRegistration.getId();
         if (listener instanceof Closeable) {
             closeableListeners.put(id, (Closeable) listener);
         } else if (listener instanceof CacheEntryListenerProvider) {
-            CacheEntryListener cacheEntryListener = ((CacheEntryListenerProvider) listener).getCacheEntryListener();
+            CacheEntryListener cacheEntryListener = ((CacheEntryListenerProvider) listener)
+                    .getCacheEntryListener();
             if (cacheEntryListener instanceof Closeable) {
                 closeableListeners.put(id, (Closeable) cacheEntryListener);
             }
@@ -617,14 +629,53 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId) {
+    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener) {
         EventService eventService = getNodeEngine().getEventService();
-        boolean result = eventService.deregisterListener(SERVICE_NAME, cacheNameWithPrefix, registrationId);
+
+        EventRegistration registration = eventService
+                .registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener);
+
+        return updateRegisteredListeners(listener, registration);
+    }
+
+    @Override
+    public UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        EventRegistration registration = eventService
+                .registerListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener);
+
+        return updateRegisteredListeners(listener, registration);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deregisterListenerAsync(String cacheNameWithPrefix, UUID registrationId) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        return eventService.deregisterListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, registrationId)
+                           .thenApply(result -> {
+                               removeFromLocalResources(registrationId);
+                               return result;
+                           });
+    }
+
+    private void removeFromLocalResources(UUID registrationId) {
         Closeable listener = closeableListeners.remove(registrationId);
         if (listener != null) {
             IOUtil.closeResource(listener);
         }
-        return result;
+    }
+
+    @Override
+    public boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId) {
+        EventService eventService = getNodeEngine().getEventService();
+
+        if (eventService.deregisterListener(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, registrationId)) {
+            removeFromLocalResources(registrationId);
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -633,10 +684,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheNameWithPrefix);
         if (registrations != null) {
             for (EventRegistration registration : registrations) {
-                Closeable listener = closeableListeners.remove(registration.getId());
-                if (listener != null) {
-                    IOUtil.closeResource(listener);
-                }
+                removeFromLocalResources(registration.getId());
             }
         }
         eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix);
@@ -773,29 +821,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             return null;
         }
         return cacheConfig.getSplitBrainProtectionName();
-    }
-
-    /**
-     * Registers and {@link com.hazelcast.cache.impl.CacheEventListener} for specified {@code cacheNameWithPrefix}
-     *
-     * @param cacheNameWithPrefix the full name of the cache (including manager scope prefix)
-     *                            that {@link com.hazelcast.cache.impl.CacheEventListener} will be registered for
-     * @param listener            the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered
-     *                            for specified {@code cacheNameWithPrefix}
-     * @param localOnly           true if only events originated from this member wants be listened, false if all
-     *                            invalidation events in the cluster wants to be listened
-     * @return the ID which is unique for current registration
-     */
-    @Override
-    public UUID addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly) {
-        EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration;
-        if (localOnly) {
-            registration = eventService.registerLocalListener(SERVICE_NAME, cacheNameWithPrefix, listener);
-        } else {
-            registration = eventService.registerListener(SERVICE_NAME, cacheNameWithPrefix, listener);
-        }
-        return registration.getId();
     }
 
     /**

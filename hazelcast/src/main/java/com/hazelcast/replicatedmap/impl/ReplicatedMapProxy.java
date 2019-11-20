@@ -375,7 +375,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        return eventPublishingService.addEventListener(listener, TrueEventFilter.INSTANCE, name);
+        return eventPublishingService.addLocalEventListener(listener, TrueEventFilter.INSTANCE, name);
     }
 
     @Nonnull
@@ -383,7 +383,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedEntryEventFilter(serializationService.toData(key));
-        return eventPublishingService.addEventListener(listener, eventFilter, name);
+        return eventPublishingService.addLocalEventListener(listener, eventFilter, name);
     }
 
     @Nonnull
@@ -392,7 +392,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(null, predicate);
-        return eventPublishingService.addEventListener(listener, eventFilter, name);
+        return eventPublishingService.addLocalEventListener(listener, eventFilter, name);
     }
 
     @Nonnull
@@ -403,7 +403,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         EventFilter eventFilter = new ReplicatedQueryEventFilter(serializationService.toData(key), predicate);
-        return eventPublishingService.addEventListener(listener, eventFilter, name);
+        return eventPublishingService.addLocalEventListener(listener, eventFilter, name);
     }
 
     @Nonnull

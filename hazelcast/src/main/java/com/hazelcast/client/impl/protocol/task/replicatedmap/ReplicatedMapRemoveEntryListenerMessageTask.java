@@ -28,6 +28,7 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 public class ReplicatedMapRemoveEntryListenerMessageTask
         extends AbstractRemoveListenerMessageTask<ReplicatedMapRemoveEntryListenerCodec.RequestParameters> {
@@ -37,10 +38,10 @@ public class ReplicatedMapRemoveEntryListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
-        return eventPublishingService.removeEventListener(parameters.name, parameters.registrationId);
+        return eventPublishingService.removeEventListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

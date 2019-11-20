@@ -24,14 +24,33 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-public class AddBackupListenerMessageTask extends AbstractCallableMessageTask<ClientLocalBackupListenerCodec.RequestParameters>
-        implements Consumer<Long> {
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
+public class AddBackupListenerMessageTask
+        extends AbstractAddListenerMessageTask<ClientLocalBackupListenerCodec.RequestParameters>
+        implements Consumer<Long> {
 
     public AddBackupListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected CompletableFuture<UUID> processInternal() {
+        UUID uuid = endpoint.getUuid();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Client is adding backup listener. client uuid " + uuid);
+        }
+        clientEngine.addBackupListener(uuid, this);
+
+        return newCompletedFuture(uuid);
+    }
+
+    @Override
+    protected void addDestroyAction(UUID registrationId) {
+        endpoint.addDestroyAction(registrationId, () -> clientEngine.deregisterBackupListener(registrationId));
     }
 
     @Override
@@ -39,17 +58,6 @@ public class AddBackupListenerMessageTask extends AbstractCallableMessageTask<Cl
         ClientMessage eventMessage = ClientLocalBackupListenerCodec.encodeBackupEvent(backupCorrelationId);
         eventMessage.getStartFrame().flags |= ClientMessage.BACKUP_EVENT_FLAG;
         sendClientMessage(eventMessage);
-    }
-
-    @Override
-    protected Object call() {
-        UUID uuid = endpoint.getUuid();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Client is adding backup listener. client uuid " + uuid);
-        }
-        clientEngine.addBackupListener(uuid, this);
-        endpoint.addDestroyAction(uuid, () -> clientEngine.deregisterBackupListener(uuid));
-        return uuid;
     }
 
     @Override

@@ -53,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -262,13 +263,32 @@ public class MockIOService implements IOService {
             }
 
             @Override
+            public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+                                                                              @Nonnull Object listener) {
+                return null;
+            }
+
+            @Override
             public EventRegistration registerListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
+                return null;
+            }
+
+            @Override
+            public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+                                                                              @Nonnull EventFilter filter,
+                                                                              @Nonnull Object listener) {
                 return null;
             }
 
             @Override
             public boolean deregisterListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull Object id) {
                 return false;
+            }
+
+            @Override
+            public CompletableFuture<Boolean> deregisterListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+                                                                      @Nonnull Object id) {
+                return null;
             }
 
             @Override
