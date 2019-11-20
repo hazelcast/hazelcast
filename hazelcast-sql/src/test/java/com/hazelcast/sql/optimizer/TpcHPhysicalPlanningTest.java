@@ -554,7 +554,7 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 
     // TODO: Hash agg
     @Test
-    public void test14() {
+    public void testQ14() {
         RelNode rootInput = optimizePhysical(
             "select\n" +
                 "    100.00 * sum(case\n" +
@@ -578,14 +578,14 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 
     // TODO: Views!
     @Test
-    public void test15() {
+    public void testQ15() {
         fail("We need views or table expressions to support this query");
     }
 
     // TODO: Grouping set assertion
     // TODO: COUNT DISTINCT
     @Test
-    public void test16() {
+    public void testQ16() {
         RelNode rootInput = optimizePhysical(
             "select\n" +
                 "    p.p_brand,\n" +
@@ -625,7 +625,7 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 
     // TODO: Hash agg
     @Test
-    public void test17() {
+    public void testQ17() {
         RelNode rootInput = optimizePhysical(
             "select\n" +
                 "    sum(l.l_extendedprice) / 7.0 as avg_yearly\n" +
@@ -651,7 +651,7 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 
     // TODO: Grouping set assert
     @Test
-    public void test18() {
+    public void testQ18() {
         RelNode rootInput = optimizePhysical(
             "select\n" +
                 "    c.c_name,\n" +
@@ -693,7 +693,7 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 
     // TODO: Hash agg
     @Test
-    public void test19() {
+    public void testQ19() {
         RelNode rootInput = optimizePhysical(
             "select\n" +
                 "    sum(l.l_extendedprice * (1 - l.l_discount) ) as revenue\n" +
@@ -740,7 +740,7 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 
     // TODO: Grouping set assertion
     @Test
-    public void test20() {
+    public void testQ20() {
         RelNode rootInput = optimizePhysical(
             "select\n" +
                 "    s.s_name,\n" +
@@ -788,7 +788,7 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 
     // TODO: Grouping set assertion
     @Test
-    public void test21() {
+    public void testQ21() {
         RelNode rootInput = optimizePhysical(
             "select\n" +
                 "    s.s_name,\n" +
@@ -836,7 +836,7 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 
     // TODO: Hash agg
     @Test
-    public void test22() {
+    public void testQ22() {
         RelNode rootInput = optimizePhysical(
             "select\n" +
                 "    cntrycode,\n" +

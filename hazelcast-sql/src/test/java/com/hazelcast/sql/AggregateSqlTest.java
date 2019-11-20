@@ -32,10 +32,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 
 /**
  * Tests for aggregates.
@@ -65,23 +67,13 @@ public class AggregateSqlTest extends SqlTestSupport {
 
     @Test
     public void testSimpleAggregate() {
-        Map<PersonKey, Person> personMap = member.<PersonKey, Person>getMap("person");
+        Map<PersonKey, Person> personMap = member.getMap("person");
 
-        long sum = 0;
-        long cnt = 0;
-        long min = Long.MAX_VALUE;
-        long max = Long.MIN_VALUE;
+        PersonSalaryCollector collector = new PersonSalaryCollector();
 
         for (Person person : personMap.values()) {
-            long salary = person.getSalary();
-
-            sum += salary;
-            cnt += 1;
-            min = Math.min(salary, min);
-            max = Math.max(salary, max);
+            collector.add(person.getSalary());
         }
-
-        double avg = (double)sum / cnt;
 
         SqlCursorImpl cursor = executeQuery(
             member,
@@ -94,10 +86,83 @@ public class AggregateSqlTest extends SqlTestSupport {
         SqlRow row = rows.get(0);
         assertEquals(5, row.getColumnCount());
 
-        assertEquals((Long)sum, row.getColumn(0));
-        assertEquals((Long)cnt, row.getColumn(1));
-        assertEquals(avg, row.getColumn(2));
-        assertEquals((Long)min, row.getColumn(3));
-        assertEquals((Long)max, row.getColumn(4));
+        assertEquals(collector.getSum(), row.getColumn(0));
+        assertEquals(collector.getCnt(), row.getColumn(1));
+        assertEquals(collector.getAvg(), row.getColumn(2));
+        assertEquals(collector.getMin(), row.getColumn(3));
+        assertEquals(collector.getMax(), row.getColumn(4));
+    }
+
+    @Test
+    public void testSimpleAggregateWithGroupBy() {
+        Map<PersonKey, Person> personMap = member.getMap("person");
+
+        Map<Long, PersonSalaryCollector> collectors = new HashMap<>();
+
+        for (Map.Entry<PersonKey, Person> entry : personMap.entrySet()) {
+            long deptId = entry.getKey().getDeptId();
+            long salary = entry.getValue().getSalary();
+
+            collectors.computeIfAbsent(deptId, (k) -> new PersonSalaryCollector()).add(salary);
+        }
+
+        SqlCursorImpl cursor = executeQuery(
+            member,
+            "SELECT deptId, SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person GROUP BY deptId"
+        );
+
+        List<SqlRow> rows = getQueryRows(cursor);
+        assertEquals(collectors.size(), rows.size());
+
+        for (SqlRow row : rows) {
+            assertEquals(6, row.getColumnCount());
+
+            long deptId = row.getColumn(0);
+            PersonSalaryCollector collector = collectors.get(deptId);
+            assertNotNull(collector);
+
+            assertEquals(collector.getSum(), row.getColumn(1));
+            assertEquals(collector.getCnt(), row.getColumn(2));
+            assertEquals(collector.getAvg(), row.getColumn(3));
+            assertEquals(collector.getMin(), row.getColumn(4));
+            assertEquals(collector.getMax(), row.getColumn(5));
+        }
+    }
+
+    /**
+     * Convenient collector for results.
+     */
+    private static class PersonSalaryCollector {
+        private long sum;
+        private long cnt;
+        private long min = Long.MAX_VALUE;
+        private long max = Long.MIN_VALUE;
+
+        public void add(long salary) {
+            sum += salary;
+            cnt++;
+            min = Math.min(salary, min);
+            max = Math.max(salary, max);
+        }
+
+        public Long getSum() {
+            return cnt == 0 ? null : sum;
+        }
+
+        public Long getCnt() {
+            return cnt;
+        }
+
+        public Long getMin() {
+            return cnt == 0 ? null : min;
+        }
+
+        public Long getMax() {
+            return cnt == 0 ? null : max;
+        }
+
+        public double getAvg() {
+            return cnt == 0 ? 0 : (double)sum/cnt;
+        }
     }
 }
