@@ -181,7 +181,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected boolean isRecordExpired(R record) {
         if (!canUpdateStats(record)) {
             // A record can only be checked for expiry if its record state is
-            // READ_PERMITTED. We can check reserved records for expiry.
+            // READ_PERMITTED. We can't check reserved records for expiry.
             return false;
         }
 
@@ -357,7 +357,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
         return null;
     }
-
 
     protected boolean canUpdateStats(R record) {
         return record != null && record.getRecordState() == READ_PERMITTED;

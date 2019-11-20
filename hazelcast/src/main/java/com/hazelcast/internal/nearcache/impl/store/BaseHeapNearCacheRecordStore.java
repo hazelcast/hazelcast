@@ -25,8 +25,8 @@ import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker;
 import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -142,7 +142,12 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     @Override
     @SuppressWarnings("unchecked")
     protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
-        R existingRecord = records.applyIfPresent(key, (key1, reservedRecord) -> updateReservedRecordInternal(key1, value, reservedRecord, reservationId));
+        R existingRecord = records.applyIfPresent(key, new BiFunction<K, R, R>() {
+            @Override
+            public R apply(K key, R reservedRecord) {
+                return updateReservedRecordInternal(key, value, reservedRecord, reservationId);
+            }
+        });
 
         if (existingRecord == null || !deserialize) {
             return null;
