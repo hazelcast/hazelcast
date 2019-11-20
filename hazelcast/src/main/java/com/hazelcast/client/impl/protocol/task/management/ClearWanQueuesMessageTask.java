@@ -17,21 +17,20 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
-import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
+import com.hazelcast.internal.management.operation.ClearWanQueuesOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.security.Permission;
 
-public class ChangeWanReplicationStateMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
-    public ChangeWanReplicationStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public class ClearWanQueuesMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+    public ClearWanQueuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -43,20 +42,17 @@ public class ChangeWanReplicationStateMessageTask extends AbstractInvocationMess
 
     @Override
     protected Operation prepareOperation() {
-        return new ChangeWanStateOperation(
-                parameters.wanReplicationName,
-                parameters.wanPublisherId,
-                WanPublisherState.getByType(parameters.newState));
+        return new ClearWanQueuesOperation(parameters.wanReplicationName, parameters.wanPublisherId);
     }
 
     @Override
     protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCChangeWanReplicationStateCodec.decodeRequest(clientMessage);
+        return MCClearWanQueuesCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCChangeWanReplicationStateCodec.encodeResponse();
+        return MCClearWanQueuesCodec.encodeResponse();
     }
 
     @Override
@@ -76,11 +72,11 @@ public class ChangeWanReplicationStateMessageTask extends AbstractInvocationMess
 
     @Override
     public String getMethodName() {
-        return "changeWanReplicationState";
+        return "clearWanQueues";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {parameters.wanReplicationName, parameters.wanPublisherId, parameters.newState};
+        return new Object[] {parameters.wanPublisherId, parameters.wanReplicationName};
     }
 }

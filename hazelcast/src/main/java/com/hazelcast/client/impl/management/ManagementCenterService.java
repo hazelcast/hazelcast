@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
@@ -350,9 +351,9 @@ public class ManagementCenterService {
     /**
      * Checks if local MC config (client B/W list) on a given member has the same ETag as provided.
      *
-     * @param member    target member
-     * @param eTag      ETag value of MC config to match with (should be the latest value from MC)
-     * @return          operation future object with match result: <code>true</code> if config ETags match
+     * @param member target member
+     * @param eTag   ETag value of MC config to match with (should be the latest value from MC)
+     * @return operation future object with match result: <code>true</code> if config ETags match
      */
     @Nonnull
     public CompletableFuture<Boolean> matchMCConfig(Member member, String eTag) {
@@ -380,10 +381,10 @@ public class ManagementCenterService {
     /**
      * Applies the MC config (client B/W list) on a given member.
      *
-     * @param member        target member
-     * @param eTag          ETag of the new config
-     * @param clientBwList  new config for client B/W list filtering
-     * @return              operation future object
+     * @param member       target member
+     * @param eTag         ETag of the new config
+     * @param clientBwList new config for client B/W list filtering
+     * @return operation future object
      */
     @Nonnull
     public CompletableFuture<Void> applyMCConfig(Member member, String eTag, ClientBwListDTO clientBwList) {
@@ -478,9 +479,39 @@ public class ManagementCenterService {
                                                              String wanReplicationName,
                                                              String wanPublisherId,
                                                              WanPublisherState newState) {
+        checkNotNull(member);
+
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCChangeWanReplicationStateCodec.encodeRequest(wanReplicationName, wanPublisherId, newState.getId()),
+                null,
+                member.getAddress()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Clear WAN replication queues for the given {@code wanReplicationName} and
+     * {@code wanPublisherId} on the given {@link Member}.
+     *
+     * @param member             {@link Member} to clear WAN replication queues on
+     * @param wanReplicationName name of the WAN replication to clear queues of
+     * @param wanPublisherId     ID of the WAN publisher to clear queues of
+     */
+    @Nonnull
+    public CompletableFuture<Void> clearWanQueues(Member member,
+                                                  String wanReplicationName,
+                                                  String wanPublisherId) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCClearWanQueuesCodec.encodeRequest(wanReplicationName, wanPublisherId),
                 null,
                 member.getAddress()
         );

@@ -79,6 +79,7 @@ import com.hazelcast.client.impl.protocol.task.management.ApplyMCConfigMessageTa
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterVersionMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeWanReplicationStateMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ClearWanQueuesMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetClusterMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMemberConfigMessageTask;
@@ -2278,6 +2279,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 new MessageTaskFactory() {
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new ChangeWanReplicationStateMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new ClearWanQueuesMessageTask(clientMessage, node, connection);
                     }
                 });
     }
