@@ -71,7 +71,6 @@ public class TcpIpConnection implements Connection {
 
     private TcpIpConnectionErrorHandler errorHandler;
 
-    @Probe
     private volatile String connectionType = NONE;
 
     private volatile ConnectionLifecycleListener lifecycleListener;
@@ -102,6 +101,11 @@ public class TcpIpConnection implements Connection {
     @Override
     public String getConnectionType() {
         return connectionType;
+    }
+
+    @Probe
+    private int getType() {
+        return ConnectionType.getTypeId(connectionType);
     }
 
     @Override

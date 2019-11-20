@@ -16,11 +16,15 @@
 
 package com.hazelcast.internal.nio;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * An enumeration of in-house Connection types.
  * Note that a type could be provided by a custom client
  * and it can be a string outside of {@link ConnectionType}
  */
+@SuppressWarnings("MagicNumber")
 public final class ConnectionType {
 
     /**
@@ -73,8 +77,26 @@ public final class ConnectionType {
      */
     public static final String MEMCACHE_CLIENT = "MEMCACHE";
 
+    private static final Map<String, Integer> ID_MAP = new HashMap<>();
+
+    static {
+        ID_MAP.put(NONE, 0);
+        ID_MAP.put(MEMBER, 1);
+        ID_MAP.put(JAVA_CLIENT, 2);
+        ID_MAP.put(CPP_CLIENT, 3);
+        ID_MAP.put(PYTHON_CLIENT, 4);
+        ID_MAP.put(NODEJS_CLIENT, 5);
+        ID_MAP.put(GO_CLIENT, 6);
+        ID_MAP.put(REST_CLIENT, 7);
+        ID_MAP.put(MEMCACHE_CLIENT, 8);
+    }
+
     private ConnectionType() {
 
+    }
+
+    public static int getTypeId(String type) {
+        return ID_MAP.get(type);
     }
 
 }
