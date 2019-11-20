@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -78,7 +79,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         hazelcastInstances[0] = factory.newHazelcastInstance(getConfig());
         hazelcastInstances[1] = factory.newHazelcastInstance(getConfig().setLiteMember(true));
         Config config = getConfig();
-        config.getManagementCenterConfig().setEnabled(true).setUrl("a");
+        config.getManagementCenterConfig().setEnabled(true).setUrl("a").setScriptingEnabled(false);
         hazelcastInstances[2] = factory.newHazelcastInstance(config);
 
         members = Arrays.stream(hazelcastInstances)
@@ -251,6 +252,30 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         managementCenterService.applyMCConfig(members[0], "testETag", bwListDTO).get();
 
         assertEquals("testETag", getMemberMCService(hazelcastInstances[0]).getLastMCConfigETag());
+    }
+
+    @Test
+    public void runScript() throws Exception {
+        String result = resolve(managementCenterService.runScript(members[0], "javascript", "'hello world';"));
+        assertEquals("hello world", result);
+    }
+
+    @Test
+    public void runScript_scriptingDisabled() {
+        assertThrows(AccessControlException.class, () -> {
+            try {
+                resolve(managementCenterService.runScript(members[2], "javascript", "'hello world';"));
+            } catch (Exception e) {
+                //noinspection ThrowableNotThrown
+                rethrow(e);
+            }
+        });
+    }
+
+    @Test
+    public void runConsoleCommand_noNamespace() throws Exception {
+        String result = resolve(managementCenterService.runConsoleCommand(members[0], null, "m.put foo bar"));
+        assertEquals("", result);
     }
 
     private static com.hazelcast.internal.management.ManagementCenterService getMemberMCService(HazelcastInstance instance) {
