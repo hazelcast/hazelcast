@@ -23,12 +23,12 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
-import com.hazelcast.sql.impl.calcite.rule.logical.LogicalRules;
-import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.rel.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.rule.logical.LogicalRules;
 import com.hazelcast.sql.impl.calcite.rule.physical.CollocatedAggregatePhysicalRule;
 import com.hazelcast.sql.impl.calcite.rule.physical.FilterPhysicalRule;
 import com.hazelcast.sql.impl.calcite.rule.physical.MapScanPhysicalRule;
@@ -48,6 +48,9 @@ import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
+import org.apache.calcite.plan.RelOptCostImpl;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
@@ -57,6 +60,7 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
+import org.apache.calcite.rel.rules.SubQueryRemoveRule;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
@@ -77,6 +81,22 @@ import java.util.Properties;
  * Optimizer context which holds the whole environment for the given optimization session.
  */
 public final class OptimizerContext {
+    /** Converter: whether to convert LogicalTableScan to some physical form immediately or not. We do not need this. */
+    private static final boolean CONVERTER_CONVERT_TABLE_ACCESS = false;
+
+    /**
+     * Converter: whether to expand subqueries. When set to {@code false}, subqueries are left as is in the form of
+     * {@link org.apache.calcite.rex.RexSubQuery}. Otherwise they are expanded into {@link org.apache.calcite.rel.core.Correlate}
+     * instances.
+     * Do not enable this because you may run into https://issues.apache.org/jira/browse/CALCITE-3484. Instead, subquery
+     * elimination rules are executed during logical planning. In addition, resulting plans are slightly better that those
+     * produced by "expand" flag.
+     */
+    private static final boolean CONVERTER_EXPAND = false;
+
+    /** Converter: whether to trim unused fields. */
+    private static final boolean CONVERTER_TRIM_UNUSED_FIELDS = true;
+
     /** Basic Calcite config. */
     private final VolcanoPlanner planner;
 
@@ -125,6 +145,12 @@ public final class OptimizerContext {
         return new OptimizerContext(validator, sqlToRelConverter, planner);
     }
 
+    /**
+     * Parse SQL statement.
+     *
+     * @param sql SQL string.
+     * @return SQL tree.
+     */
     public SqlNode parse(String sql) {
         SqlNode node;
 
@@ -146,12 +172,58 @@ public final class OptimizerContext {
         return validator.validate(node);
     }
 
+    /**
+     * Perform initial conversion of an SQL tree to a relational tree.
+     *
+     * @param node SQL tree.
+     * @return Relational tree.
+     */
     public RelNode convert(SqlNode node) {
+        // 1. Perform initial conversion.
         RelRoot root = sqlToRelConverter.convertQuery(node, false, true);
 
-        return root.rel;
+        // 2. Remove subquery expressions, converting them to Correlate nodes.
+        RelNode relNoSubqueries = rewriteSubqueries(root.rel);
+
+        // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
+        // to a variation of joins, semijoins and aggregations, which could be executed much more efficiently.
+        // See "Unnesting Arbitrary Queries", Thomas Neumann and Alfons Kemper.
+        RelNode relDecorrelated = sqlToRelConverter.decorrelate(node, relNoSubqueries);
+
+        // 4. The side effect of subquery rewrite and decorrelation in Apache Calcite is a number of unnecessary fields,
+        // primarily in projections. This steps removes unused fields from the tree.
+        RelNode relTrimmed = sqlToRelConverter.trimUnusedFields(true, relDecorrelated);
+
+        return relTrimmed;
     }
 
+    /**
+     * Special substep of an initial query conversion which eliminates correlated subqueries, converting them to various forms
+     * of joins. It is used instead of "expand" flag due to bugs in Calcite (see {@link #CONVERTER_EXPAND}).
+     *
+     * @param rel Initial relation.
+     * @return Resulting relation.
+     */
+    private RelNode rewriteSubqueries(RelNode rel) {
+        HepProgramBuilder hepPgmBldr = new HepProgramBuilder();
+
+        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.FILTER);
+        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.PROJECT);
+        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.JOIN);
+
+        HepPlanner planner = new HepPlanner(hepPgmBldr.build(), Contexts.empty(), true, null, RelOptCostImpl.FACTORY);
+
+        planner.setRoot(rel);
+
+        return planner.findBestExp();
+    }
+
+    /**
+     * Perform logical optimization.
+     *
+     * @param rel Original logical tree.
+     * @return Optimized logical tree.
+     */
     public LogicalRel optimizeLogical(RelNode rel) {
         RuleSet rules = LogicalRules.getRuleSet();
 
@@ -168,6 +240,12 @@ public final class OptimizerContext {
         return new RootLogicalRel(res.getCluster(), res.getTraitSet(), res);
     }
 
+    /**
+     * Perform physical optimization. This is where proper access methods and algorithms for joins and aggregations are chosen.
+     *
+     * @param rel Optimized logical tree.
+     * @return Optimized physical tree.
+     */
     public PhysicalRel optimizePhysical(RelNode rel) {
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
@@ -260,10 +338,9 @@ public final class OptimizerContext {
         HazelcastRelOptCluster cluster
     ) {
         SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder = SqlToRelConverter.configBuilder()
-            .withTrimUnusedFields(true)
-            .withExpand(false)
-            .withExplain(false)
-            .withConvertTableAccess(false);
+            .withConvertTableAccess(CONVERTER_CONVERT_TABLE_ACCESS)
+            .withTrimUnusedFields(CONVERTER_TRIM_UNUSED_FIELDS)
+            .withExpand(CONVERTER_EXPAND);
 
         return new SqlToRelConverter(
             null,

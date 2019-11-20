@@ -31,6 +31,7 @@ import java.util.List;
 /**
  * Nested loop join.
  */
+// TODO: Remove!
 public class NestedLoopJoinPhysicalRel extends AbstractJoinPhysicalRel implements PhysicalRel {
     public NestedLoopJoinPhysicalRel(
         RelOptCluster cluster,

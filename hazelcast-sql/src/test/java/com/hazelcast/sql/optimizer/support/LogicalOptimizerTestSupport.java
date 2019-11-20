@@ -17,12 +17,19 @@
 package com.hazelcast.sql.optimizer.support;
 
 import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
+import com.hazelcast.sql.impl.calcite.PlanCreatePhysicalRelVisitor;
+import com.hazelcast.sql.impl.calcite.rel.logical.AggregateLogicalRel;
+import com.hazelcast.sql.impl.calcite.rel.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.rel.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.rel.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.rel.logical.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayList;
@@ -73,8 +80,52 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         return project;
     }
 
-    protected static void assertScan(RelNode node, List<String> expFields, List<Integer> expProjects, Expression expFilter) {
+    protected JoinLogicalRel assertJoin(RelNode rel, JoinRelType expType, Expression expFilter) {
+        JoinLogicalRel join = assertClass(rel, JoinLogicalRel.class);
+
+        assertEquals(expType, join.getJoinType());
+
+        Expression filter = join.getCondition() != null ? join.getCondition().accept(ExpressionConverterRexVisitor.INSTANCE) : null;
+        assertEquals(expFilter, filter);
+
+        return join;
+    }
+
+    protected AggregateLogicalRel assertAggregate(RelNode rel, List<Integer> expGroup, List<AggregateExpression> expAggExps) {
+        AggregateLogicalRel agg = assertClass(rel, AggregateLogicalRel.class);
+
+        assertEquals(expGroup, agg.getGroupSet().toList());
+
+        List<AggregateExpression> aggExps = new ArrayList<>(agg.getAggCallList().size());
+        for (AggregateCall aggCall : agg.getAggCallList()) {
+            aggExps.add(PlanCreatePhysicalRelVisitor.convertAggregateCall(aggCall));
+        }
+        assertEquals(expAggExps, aggExps);
+
+        return agg;
+    }
+
+    protected static void assertScan(
+        RelNode node,
+        List<String> expFields,
+        List<Integer> expProjects,
+        Expression expFilter
+    ) {
+        assertScan(node, null, expFields, expProjects, expFilter);
+    }
+
+    protected static void assertScan(
+        RelNode node,
+        String expMapName,
+        List<String> expFields,
+        List<Integer> expProjects,
+        Expression expFilter
+    ) {
         MapScanLogicalRel scan = assertClass(node, MapScanLogicalRel.class);
+
+        if (expMapName != null) {
+            assertEquals(expMapName, scan.getTable().unwrap(HazelcastTable.class).getName());
+        }
 
         assertFieldNames(expFields, scan.getTable().getRowType().getFieldNames());
         assertFieldIndexes(expProjects, scan.getProjects());

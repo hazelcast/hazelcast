@@ -16,14 +16,21 @@
 
 package com.hazelcast.sql.optimizer;
 
+import com.hazelcast.sql.impl.calcite.rel.logical.JoinLogicalRel;
+import com.hazelcast.sql.impl.calcite.rel.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
+import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.schema.Table;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,6 +42,7 @@ import java.util.Map;
 /**
  * Tests for join filter pushdown.
  */
+// TODO: More tests with different join types and different expressions and permutations
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport {
@@ -47,14 +55,16 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
         return new HazelcastSchema(tableMap);
     }
 
+    /**
+     * Make sure that join conditions are pushed down to the underlying operators.
+     */
     @Test
     public void testJoinOnFilterPush() {
         RelNode rootInput = optimizeLogical(
             "SELECT r.r_f1, s.s_f1 FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2"
         );
 
-        // TODO: Implement me.
-        System.out.println(rootInput);
+        checkJoinFilterPush(rootInput);
     }
 
     @Test
@@ -63,18 +73,47 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
             "SELECT r.r_f1, s.s_f1 FROM r, s WHERE r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2"
         );
 
-        // TODO: Implement me.
-        System.out.println(rootInput);
+        checkJoinFilterPush(rootInput);
     }
 
     @Test
     public void testJoinOnAndWhereFilterPush() {
         RelNode rootInput = optimizeLogical(
-            "SELECT r.r_f1, s.s_f1 "
-                + "FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2"
-                + "WHERE s.s_f4 = 3 AND r.r_f4 = 4");
+            "SELECT r.r_f1, s.s_f1 FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 WHERE s.s_f3 = 2"
+        );
 
-        // TODO: Implement me.
-        System.out.println(rootInput);
+        checkJoinFilterPush(rootInput);
+    }
+
+    private void checkJoinFilterPush(RelNode rootInput) {
+        ProjectLogicalRel project = assertProject(
+            rootInput,
+            list(
+                new ColumnExpression(1),
+                new ColumnExpression(3)
+            )
+        );
+
+        JoinLogicalRel join = assertJoin(
+            project.getInput(),
+            JoinRelType.INNER,
+            new ComparisonPredicate(new ColumnExpression(0), new ColumnExpression(2), CallOperator.EQUALS)
+        );
+
+        assertScan(
+            join.getLeft(),
+            "r",
+            list("r_f2", "r_f3", "r_f1"),
+            list(0, 2),
+            new ComparisonPredicate(new ColumnExpression(1), new ConstantExpression<>(1), CallOperator.EQUALS)
+        );
+
+        assertScan(
+            join.getRight(),
+            "s",
+            list("s_f2", "s_f3", "s_f1"),
+            list(0, 2),
+            new ComparisonPredicate(new ColumnExpression(1), new ConstantExpression<>(2), CallOperator.EQUALS)
+        );
     }
 }

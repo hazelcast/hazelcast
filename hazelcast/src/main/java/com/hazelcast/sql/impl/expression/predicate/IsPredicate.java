@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Predicates: IS NULL / IS NOT NULL / IS TRUE / IS NOT TRUE / IS FALSE / IS NOT FALSE
@@ -121,5 +122,30 @@ public class IsPredicate extends UniCallExpression<Boolean> {
         super.readData(in);
 
         operator = in.readInt();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operator, operand);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        IsPredicate that = (IsPredicate) o;
+
+        return operator == that.operator && Objects.equals(operand, that.operand);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{operator=" + operator + ", operand=" + operand + '}';
     }
 }

@@ -51,7 +51,6 @@ public class CollocatedAggregatePhysicalRel extends AbstractAggregatePhysicalRel
     public final Aggregate copy(
         RelTraitSet traitSet,
         RelNode input,
-        boolean indicator,
         ImmutableBitSet groupSet,
         List<ImmutableBitSet> groupSets,
         List<AggregateCall> aggCalls

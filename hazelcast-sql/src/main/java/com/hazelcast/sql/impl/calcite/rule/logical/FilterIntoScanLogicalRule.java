@@ -24,7 +24,6 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.util.mapping.Mapping;
@@ -50,23 +49,28 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
         Filter filter = call.rel(0);
         TableScan scan = call.rel(1);
 
+        int scanFieldCount = scan.getTable().getRowType().getFieldCount();
+
         List<Integer> projects;
         RexNode oldFilter;
+
+        Mapping mapping;
 
         if (scan instanceof MapScanLogicalRel) {
             MapScanLogicalRel scan0 = (MapScanLogicalRel) scan;
 
             projects = scan0.getProjects();
             oldFilter = scan0.getFilter();
+
+            mapping = Mappings.source(projects, scanFieldCount);
         } else {
             projects = null;
             oldFilter = null;
+
+            mapping = Mappings.source(scan.identity(), scanFieldCount);
         }
 
-        RelDataType rowType = scan.getRowType();
-
-        Mapping mapping = Mappings.target(scan.identity(), scan.getTable().getRowType().getFieldCount());
-
+        //Mapping mapping = Mappings.target(scan.identity(), scan.getTable().getRowType().getFieldCount()); // TODO: Old mode
         RexNode newFilter = RexUtil.apply(mapping, filter.getCondition());
 
         if (oldFilter != null) {

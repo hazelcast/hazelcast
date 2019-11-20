@@ -175,7 +175,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
     }
 
     /**
-     * Visitor which collects fields from project expressions and map them to respective scna fields.
+     * Visitor which collects fields from project expressions and map them to respective scan fields.
      */
     private static final class ProjectFieldVisitor extends RexVisitorImpl<Void> {
         /** Originally available scan fields. */

@@ -311,14 +311,13 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             list(
                 new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
                 new ColumnExpression(2),
-                new ColumnExpression(3),
-                new ColumnExpression(4)
+                new ColumnExpression(3)
             )
         );
 
         assertScan(
             bottomProject.getInput(),
-            list("f1", "f2", "f3", "f4", "f5"), list(0, 1, 2, 3, 4),
+            list("f1", "f2", "f3", "f4", "f5"), list(0, 1, 2, 3),
             new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
         );
     }
@@ -368,14 +367,14 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             list(
                 new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
                 new ColumnExpression(2),
-                new ColumnExpression(3),
-                new ColumnExpression(4)
+                new ColumnExpression(3)
             )
         );
 
         assertScan(
             bottomProject.getInput(),
-            list("f1", "f2", "f3", "f4", "f5"), list(0, 1, 2, 3, 4),
+            list("f1", "f2", "f3", "f4", "f5"),
+            list(0, 1, 2, 3),
             new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
         );
     }
@@ -406,34 +405,23 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
      */
     @Test
     public void testProjectFilterProjectExpressionFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 1");
+        RelNode rootInput = optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2");
 
-        // TODO: Two projects cannot be merged together because ProjectMergeRule is disabled. Implement or fail this test intentionally.
-        ProjectLogicalRel topProject = assertProject(
+        ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new ColumnExpression(0),
-                new ColumnExpression(1)
-            )
-        );
-
-        ProjectLogicalRel bottomProject = assertProject(
-            topProject.getInput(),
-            list(
-                new PlusMinusFunction(new ColumnExpression(1), new ColumnExpression(2), false),
-                new ColumnExpression(3),
-                new ColumnExpression(0),
-                new ColumnExpression(4)
+                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
+                new ColumnExpression(2)
             )
         );
 
         assertScan(
-            bottomProject.getInput(),
+            project.getInput(),
             list("f4", "f1", "f2", "f3", "f5"),
-            list(0, 1, 2, 3, 4),
+            list(1, 2, 3),
             new AndOrPredicate(
                 new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
-                new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
+                new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(2), CallOperator.GREATER_THAN),
                 false
             )
         );
@@ -472,7 +460,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
      */
     @Test
     public void testProjectExpressionFilterProjectExpressionFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 1");
+        RelNode rootInput = optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2");
 
         // TODO: Two projects cannot be merged together because ProjectMergeRule is disabled. Implement or fail this test intentionally.
         ProjectLogicalRel topProject = assertProject(
@@ -485,20 +473,18 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel bottomProject = assertProject(
             topProject.getInput(),
             list(
-                new PlusMinusFunction(new ColumnExpression(1), new ColumnExpression(2), false),
-                new ColumnExpression(3),
-                new ColumnExpression(0),
-                new ColumnExpression(4)
+                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
+                new ColumnExpression(2)
             )
         );
 
         assertScan(
             bottomProject.getInput(),
             list("f4", "f1", "f2", "f3", "f5"),
-            list(0, 1, 2, 3, 4),
+            list(1, 2, 3),
             new AndOrPredicate(
                 new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
-                new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
+                new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(2), CallOperator.GREATER_THAN),
                 false
             )
         );

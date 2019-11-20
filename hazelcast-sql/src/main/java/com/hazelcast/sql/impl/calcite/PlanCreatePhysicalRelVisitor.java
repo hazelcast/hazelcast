@@ -393,7 +393,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
          pushUpstream(node);
      }
 
-     private static AggregateExpression convertAggregateCall(AggregateCall aggCall) {
+     public static AggregateExpression convertAggregateCall(AggregateCall aggCall) {
         SqlAggFunction aggFunc = aggCall.getAggregation();
         List<Integer> argList = aggCall.getArgList();
 

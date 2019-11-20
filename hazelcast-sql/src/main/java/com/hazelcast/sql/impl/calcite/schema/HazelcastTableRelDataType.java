@@ -33,6 +33,9 @@ public class HazelcastTableRelDataType extends RelDataTypeImpl {
     /** Type name. */
     private static final String TYPE_NAME = "HazelcastRow";
 
+    /** Special "extra" field which is used by trimmer. */
+    private static final String EXTRA = "_extra";
+
     /** Type factory. */
     private final RelDataTypeFactory typeFactory;
 
@@ -53,6 +56,11 @@ public class HazelcastTableRelDataType extends RelDataTypeImpl {
 
     @Override
     public RelDataTypeField getField(String fieldName, boolean caseSensitive, boolean elideRecord) {
+        // Special case of "_extra" field for trimmer.
+        if (fieldName.equals(EXTRA)) {
+            return null;
+        }
+
         RelDataTypeField res = fields.getField(typeFactory, fieldName, caseSensitive);
 
         if (fields.isFieldCreated()) {

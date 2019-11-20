@@ -358,6 +358,6 @@ public class ComparisonPredicate extends BiCallExpressionWithType<Boolean> {
 
     @Override
     public String toString() {
-        return "ComparisonPredicate{operator=" + operator + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
+        return getClass().getSimpleName() + "{operator=" + operator + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
     }
 }

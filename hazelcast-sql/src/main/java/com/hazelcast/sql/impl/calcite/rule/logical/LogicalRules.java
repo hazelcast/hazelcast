@@ -27,6 +27,7 @@ import org.apache.calcite.rel.rules.JoinPushExpressionsRule;
 import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rel.rules.ProjectJoinTransposeRule;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
+import org.apache.calcite.rel.rules.SemiJoinRule;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.tools.RuleSet;
@@ -73,6 +74,12 @@ public final class LogicalRules {
     /** Rule which merges project and scan. */
     private static final ProjectIntoScanLogicalRule PROJECT_INTO_SCAN_RULE = ProjectIntoScanLogicalRule.INSTANCE;
 
+    /** Rule which creates a semi-join from the Project-Join-Aggregate. */
+    private static final SemiJoinRule SEMI_JOIN_PROJECT_RULE = SemiJoinRule.PROJECT;
+
+    /** Rule which creates a semi-join from the Project-Join. */
+    private static final SemiJoinRule SEMI_JOIN_JOIN_RULE = SemiJoinRule.JOIN;
+
     private LogicalRules() {
         // No-op.
     }
@@ -96,6 +103,9 @@ public final class LogicalRules {
             PROJECT_INTO_SCAN_RULE,
 
             // TODO: Aggregate rules
+
+            SEMI_JOIN_PROJECT_RULE,
+            SEMI_JOIN_JOIN_RULE,
 
             // Convert Calcite node into Hazelcast nodes.
             // TODO: Should we extend converter here instead (see Flink)?

@@ -127,4 +127,9 @@ public class AndOrPredicate extends BiCallExpression<Boolean> {
     public int hashCode() {
         return Objects.hash(or, operand1, operand2);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{or=" + or + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
+    }
 }
