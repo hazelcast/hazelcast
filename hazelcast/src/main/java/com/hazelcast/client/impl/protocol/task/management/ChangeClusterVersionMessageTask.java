@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeClusterVersionOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
@@ -48,11 +49,6 @@ public class ChangeClusterVersionMessageTask extends AbstractInvocationMessageTa
     }
 
     @Override
-    protected void sendResponse(Object response) {
-        super.sendResponse(response);
-    }
-
-    @Override
     protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MCChangeClusterVersionCodec.decodeRequest(clientMessage);
     }
@@ -64,7 +60,7 @@ public class ChangeClusterVersionMessageTask extends AbstractInvocationMessageTa
 
     @Override
     public String getServiceName() {
-        return null;
+        return ManagementCenterService.SERVICE_NAME;
     }
 
     @Override
