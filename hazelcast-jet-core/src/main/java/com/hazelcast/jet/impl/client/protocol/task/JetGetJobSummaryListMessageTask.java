@@ -40,13 +40,9 @@ public class JetGetJobSummaryListMessageTask
     }
 
     @Override
-    public void accept(Object response, Throwable throwable) {
-        if (throwable == null) {
-            SerializationService serializationService = nodeEngine.getSerializationService();
-            sendResponse(serializationService.toData(response));
-        } else {
-            handleProcessingFailure(throwable);
-        }
+    protected Object processResponseBeforeSending(Object response) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        return serializationService.toData(response);
     }
 
     @Override
