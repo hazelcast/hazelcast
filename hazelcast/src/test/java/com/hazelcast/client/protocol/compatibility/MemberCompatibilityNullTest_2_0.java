@@ -7268,7 +7268,7 @@ public class MemberCompatibilityNullTest_2_0 {
         MCChangeWanReplicationStateCodec.RequestParameters parameters = MCChangeWanReplicationStateCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.wanReplicationName));
         assertTrue(isEqual(aString, parameters.wanPublisherId));
-        assertTrue(isEqual(anInt, parameters.newState));
+        assertTrue(isEqual(aByte, parameters.newState));
     }
 
     @Test
@@ -7304,12 +7304,12 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aString, parameters.targetCluster));
         assertTrue(isEqual(aString, parameters.endpoints));
-        assertTrue(isEqual(null, parameters.queueCapacity));
-        assertTrue(isEqual(null, parameters.batchSize));
-        assertTrue(isEqual(null, parameters.batchMaxDelayMillis));
-        assertTrue(isEqual(null, parameters.responseTimeoutMillis));
-        assertTrue(isEqual(null, parameters.ackType));
-        assertTrue(isEqual(null, parameters.queueFullBehavior));
+        assertTrue(isEqual(anInt, parameters.queueCapacity));
+        assertTrue(isEqual(anInt, parameters.batchSize));
+        assertTrue(isEqual(anInt, parameters.batchMaxDelayMillis));
+        assertTrue(isEqual(anInt, parameters.responseTimeoutMillis));
+        assertTrue(isEqual(anInt, parameters.ackType));
+        assertTrue(isEqual(anInt, parameters.queueFullBehavior));
     }
 
     @Test

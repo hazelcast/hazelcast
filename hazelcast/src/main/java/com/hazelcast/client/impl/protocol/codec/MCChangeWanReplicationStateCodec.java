@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stop, pause or resume WAN replication for the given WAN replication and publisher.
  */
-@Generated("189977afa8db30381169580515f633d5")
+@Generated("874b7e50d28b86ae4278684b365ad0eb")
 public final class MCChangeWanReplicationStateCodec {
     //hex: 0x201100
     public static final int REQUEST_MESSAGE_TYPE = 2101504;
     //hex: 0x201101
     public static final int RESPONSE_MESSAGE_TYPE = 2101505;
     private static final int REQUEST_NEW_STATE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_STATE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_STATE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private MCChangeWanReplicationStateCodec() {
@@ -68,17 +68,17 @@ public final class MCChangeWanReplicationStateCodec {
          * 1 - PAUSED
          * 2 - STOPPED
          */
-        public int newState;
+        public byte newState;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String wanReplicationName, java.lang.String wanPublisherId, int newState) {
+    public static ClientMessage encodeRequest(java.lang.String wanReplicationName, java.lang.String wanPublisherId, byte newState) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MC.ChangeWanReplicationState");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET, newState);
+        encodeByte(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET, newState);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, wanReplicationName);
         StringCodec.encode(clientMessage, wanPublisherId);
@@ -89,7 +89,7 @@ public final class MCChangeWanReplicationStateCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.newState = decodeInt(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET);
+        request.newState = decodeByte(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET);
         request.wanReplicationName = StringCodec.decode(iterator);
         request.wanPublisherId = StringCodec.decode(iterator);
         return request;

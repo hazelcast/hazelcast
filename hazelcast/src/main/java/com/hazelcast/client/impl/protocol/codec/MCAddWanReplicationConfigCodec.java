@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add a new WAN replication configuration
  */
-@Generated("feba60352f911a2db0ff3b1d2b36472a")
+@Generated("49d44ccc74f5f414f3daf75323bfcc4f")
 public final class MCAddWanReplicationConfigCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;
@@ -75,26 +75,26 @@ public final class MCAddWanReplicationConfigCodec {
         /**
          * Capacity of the primary and backup queue for WAN replication events
          */
-        public @Nullable int queueCapacity;
+        public int queueCapacity;
 
         /**
          * The maximum batch size that can be sent to target cluster
          */
-        public @Nullable int batchSize;
+        public int batchSize;
 
         /**
          * The maximum amount of time in milliseconds to wait before sending a batch
          *  of events to target cluster, if `batch size` of events have not arrived
          *  within this duration
          */
-        public @Nullable int batchMaxDelayMillis;
+        public int batchMaxDelayMillis;
 
         /**
          * The duration in milliseconds for the wait time before retrying to
          * send the events to target cluster again in case the acknowledgement
          * has not arrived.
          */
-        public @Nullable int responseTimeoutMillis;
+        public int responseTimeoutMillis;
 
         /**
          * The strategy for when the target cluster should acknowledge that
@@ -102,7 +102,7 @@ public final class MCAddWanReplicationConfigCodec {
          * 0 - ACK_ON_RECEIPT
          * 1 - ACK_ON_OPERATION_COMPLETE
          */
-        public @Nullable int ackType;
+        public int ackType;
 
         /**
          * Behaviour of this WAN publisher when the WAN queue is full:
@@ -110,10 +110,10 @@ public final class MCAddWanReplicationConfigCodec {
          * 1 - THROW_EXCEPTION
          * 2 - THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE
          */
-        public @Nullable int queueFullBehavior;
+        public int queueFullBehavior;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String targetCluster, java.lang.String endpoints, @Nullable int queueCapacity, @Nullable int batchSize, @Nullable int batchMaxDelayMillis, @Nullable int responseTimeoutMillis, @Nullable int ackType, @Nullable int queueFullBehavior) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String targetCluster, java.lang.String endpoints, int queueCapacity, int batchSize, int batchMaxDelayMillis, int responseTimeoutMillis, int ackType, int queueFullBehavior) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);

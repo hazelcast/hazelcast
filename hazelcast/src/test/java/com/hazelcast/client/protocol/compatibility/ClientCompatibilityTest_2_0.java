@@ -6786,7 +6786,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCChangeWanReplicationStateCodec_encodeRequest() {
         int fileClientMessageIndex = 805;
-        ClientMessage encoded = MCChangeWanReplicationStateCodec.encodeRequest(aString, aString, anInt);
+        ClientMessage encoded = MCChangeWanReplicationStateCodec.encodeRequest(aString, aString, aByte);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

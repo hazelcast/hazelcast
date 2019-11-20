@@ -7268,7 +7268,7 @@ public class MemberCompatibilityTest_2_0 {
         MCChangeWanReplicationStateCodec.RequestParameters parameters = MCChangeWanReplicationStateCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.wanReplicationName));
         assertTrue(isEqual(aString, parameters.wanPublisherId));
-        assertTrue(isEqual(anInt, parameters.newState));
+        assertTrue(isEqual(aByte, parameters.newState));
     }
 
     @Test

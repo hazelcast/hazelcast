@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
+import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
@@ -45,8 +46,10 @@ import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.version.Version;
+import com.hazelcast.wan.WanPublisherState;
 
 import javax.annotation.Nonnull;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -452,6 +455,34 @@ public class ManagementCenterService {
                 client,
                 MCChangeClusterVersionCodec.encodeRequest(version.getMajor(), version.getMinor()),
                 null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Stop, pause or resume WAN replication for the given {@code wanReplicationName} and
+     * {@code wanPublisherId} on the given {@link Member}.
+     *
+     * @param member             {@link Member} to change WAN replication state on
+     * @param wanReplicationName name of the WAN replication to change state of
+     * @param wanPublisherId     ID of the WAN publisher to change state of
+     * @param newState           new state for the WAN publisher
+     */
+    @Nonnull
+    public CompletableFuture<Void> changeWanReplicationState(Member member,
+                                                             String wanReplicationName,
+                                                             String wanPublisherId,
+                                                             WanPublisherState newState) {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCChangeWanReplicationStateCodec.encodeRequest(wanReplicationName, wanPublisherId, newState.getId()),
+                null,
+                member.getAddress()
         );
 
         return new ClientDelegatingFuture<>(
