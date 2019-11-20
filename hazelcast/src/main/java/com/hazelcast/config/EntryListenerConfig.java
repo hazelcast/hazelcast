@@ -16,36 +16,23 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.map.MapEvent;
-import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.map.listener.EntryEvictedListener;
-import com.hazelcast.map.listener.EntryExpiredListener;
-import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.map.listener.EntryUpdatedListener;
-import com.hazelcast.map.listener.MapClearedListener;
-import com.hazelcast.map.listener.MapEvictedListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.EventListener;
 
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
- * Configuration for EntryListener
+ * Configuration for {@link com.hazelcast.core.EntryListener}
  */
 public class EntryListenerConfig extends ListenerConfig {
 
     private boolean local;
-
     private boolean includeValue = true;
 
     public EntryListenerConfig() {
@@ -57,14 +44,8 @@ public class EntryListenerConfig extends ListenerConfig {
         this.includeValue = includeValue;
     }
 
-    public EntryListenerConfig(EntryListener implementation, boolean local, boolean includeValue) {
-        super(implementation);
-        this.local = local;
-        this.includeValue = includeValue;
-    }
-
     public EntryListenerConfig(MapListener implementation, boolean local, boolean includeValue) {
-        super(toEntryListener(implementation));
+        super(implementation);
         this.local = local;
         this.includeValue = includeValue;
     }
@@ -78,159 +59,19 @@ public class EntryListenerConfig extends ListenerConfig {
 
     @Override
     public ListenerConfig setImplementation(EventListener implementation) {
-        isNotNull(implementation, "implementation");
-        this.implementation = toEntryListener(implementation);
-        this.className = null;
+        checkInstanceOf(MapListener.class, isNotNull(implementation, "implementation"));
+        super.setImplementation(implementation);
+        return this;
+    }
+
+    public EntryListenerConfig setImplementation(MapListener implementation) {
+        super.setImplementation(implementation);
         return this;
     }
 
     @Override
-    public EntryListener getImplementation() {
-        return (EntryListener) implementation;
-    }
-
-    /**
-     * This method provides a workaround by converting a MapListener to EntryListener
-     * when it is added via EntryListenerConfig object.
-     * <p>
-     * With this method, we are trying to fix two problems :
-     * First, if we do not introduce the conversion in this method, {@link EntryListenerConfig#getImplementation}
-     * will give {@link ClassCastException} with a MapListener implementation.
-     * <p>
-     * Second goal of the conversion is to preserve backward compatibility.
-     */
-    private static EventListener toEntryListener(Object implementation) {
-        if (implementation instanceof EntryListener) {
-            return (EventListener) implementation;
-        }
-
-        if (implementation instanceof MapListener) {
-            return new MapListenerToEntryListenerAdapter((MapListener) implementation);
-        }
-
-        throw new IllegalArgumentException(implementation + " is not an expected EventListener implementation."
-                + " A valid one has to be an implementation of EntryListener or MapListener");
-
-    }
-
-    /**
-     * Wraps a MapListener into an EntryListener.
-     */
-    public static class MapListenerToEntryListenerAdapter implements EntryListener, HazelcastInstanceAware,
-            IdentifiedDataSerializable {
-
-        private MapListener mapListener;
-
-        public MapListenerToEntryListenerAdapter() {
-
-        }
-
-        public MapListenerToEntryListenerAdapter(MapListener mapListener) {
-            this.mapListener = mapListener;
-        }
-
-        @Override
-        public void entryAdded(EntryEvent event) {
-            if (mapListener instanceof EntryAddedListener) {
-                ((EntryAddedListener) mapListener).entryAdded(event);
-            }
-        }
-
-        @Override
-        public void entryEvicted(EntryEvent event) {
-            if (mapListener instanceof EntryEvictedListener) {
-                ((EntryEvictedListener) mapListener).entryEvicted(event);
-            }
-        }
-
-        @Override
-        public void entryExpired(EntryEvent event) {
-            if (mapListener instanceof EntryExpiredListener) {
-                ((EntryExpiredListener) mapListener).entryExpired(event);
-            }
-        }
-
-        @Override
-        public void entryRemoved(EntryEvent event) {
-            if (mapListener instanceof EntryRemovedListener) {
-                ((EntryRemovedListener) mapListener).entryRemoved(event);
-            }
-        }
-
-        @Override
-        public void entryUpdated(EntryEvent event) {
-            if (mapListener instanceof EntryUpdatedListener) {
-                ((EntryUpdatedListener) mapListener).entryUpdated(event);
-            }
-        }
-
-        @Override
-        public void mapCleared(MapEvent event) {
-            if (mapListener instanceof MapClearedListener) {
-                ((MapClearedListener) mapListener).mapCleared(event);
-            }
-        }
-
-        @Override
-        public void mapEvicted(MapEvent event) {
-            if (mapListener instanceof MapEvictedListener) {
-                ((MapEvictedListener) mapListener).mapEvicted(event);
-            }
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            if (mapListener instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) mapListener).setHazelcastInstance(hazelcastInstance);
-            }
-        }
-
-        public MapListener getMapListener() {
-            return mapListener;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return ConfigDataSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return ConfigDataSerializerHook.MAP_LISTENER_TO_ENTRY_LISTENER_ADAPTER;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(mapListener);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            mapListener = in.readObject();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            MapListenerToEntryListenerAdapter that = (MapListenerToEntryListenerAdapter) o;
-            return mapListener.equals(that.mapListener);
-        }
-
-        @Override
-        public int hashCode() {
-            return mapListener.hashCode();
-        }
-    }
-
-    public EntryListenerConfig setImplementation(final EntryListener implementation) {
-        super.setImplementation(implementation);
-        return this;
+    public MapListener getImplementation() {
+        return (MapListener) implementation;
     }
 
     @Override
