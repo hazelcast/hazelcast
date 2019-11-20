@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.properties;
 
+import com.hazelcast.client.config.ClientMetricsConfig;
+import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -240,11 +242,57 @@ public final class ClientProperty {
             "hazelcast.client.statistics.period.seconds", 3, SECONDS);
 
     /**
+     * Enables/disables metrics collection altogether. This is a master
+     * switch for all metrics related functionality.
+     * <p/>
+     * NOTE: This property overrides {@link ClientMetricsConfig#isEnabled()}.
+     * <p/>
+     * Using {@link ClientMetricsConfig#setEnabled(boolean)} and the declarative
+     * counterparts are preferred over using this property. The main purpose
+     * of making metrics collection configurable from properties too is
+     * allowing operators to configure the metrics subsystem from the outside
+     * during investigation without touching or copying the configuration
+     * potentially embedded into a signed artifact.
+     */
+    public static final HazelcastProperty METRICS_ENABLED
+            = new HazelcastProperty("hazelcast.client.metrics.enabled");
+
+    /**
+     * Enables/disables exposing metrics on JMX.
+     * <p/>
+     * NOTE: This property overrides {@link MetricsJmxConfig#isEnabled()}.
+     * <p/>
+     * Using {@link MetricsJmxConfig#setEnabled(boolean)} and the declarative
+     * counterparts are preferred over using this property. The main purpose
+     * of making metrics collection configurable from properties too is
+     * allowing operators to configure the metrics subsystem from the outside
+     * during investigation without touching or copying the configuration
+     * potentially embedded into a signed artifact.
+     */
+    public static final HazelcastProperty METRICS_JMX_ENABLED
+            = new HazelcastProperty("hazelcast.client.metrics.jmx.enabled");
+
+    /**
      * Enables collecting debug metrics. Debug metrics are sent to the
      * diagnostics only.
      */
     public static final HazelcastProperty METRICS_DEBUG
             = new HazelcastProperty("hazelcast.client.metrics.debug.enabled");
+
+    /**
+     * Sets the metrics collection frequency in seconds.
+     * <p/>
+     * NOTE: This property overrides {@link ClientMetricsConfig#getCollectionFrequencySeconds()}.
+     * <p/>
+     * Using {@link ClientMetricsConfig#setCollectionFrequencySeconds(int)} and the declarative
+     * counterparts are preferred over using this property. The main purpose
+     * of making metrics collection configurable from properties too is
+     * allowing operators to configure the metrics subsystem from the outside
+     * during investigation without touching or copying the configuration
+     * potentially embedded into a signed artifact.
+     */
+    public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
+            = new HazelcastProperty("hazelcast.client.metrics.collection.frequency");
 
 
     private ClientProperty() {

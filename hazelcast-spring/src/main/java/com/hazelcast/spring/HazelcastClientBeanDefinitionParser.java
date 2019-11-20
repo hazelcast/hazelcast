@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
+import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
@@ -36,6 +37,7 @@ import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -186,6 +188,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleLabels(node);
                 } else if ("backup-ack-to-client-enabled".equals(nodeName)) {
                     configBuilder.addPropertyValue("backupAckToClientEnabled", getTextContent(node));
+                } else if ("metrics".equals(nodeName)) {
+                    handleMetrics(node);
                 }
             }
             return configBuilder.getBeanDefinition();
@@ -527,6 +531,26 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 labels.add(label);
             }
             configBuilder.addPropertyValue("labels", labels);
+        }
+
+        private void handleMetrics(Node node) {
+            BeanDefinitionBuilder metricsConfigBuilder = createBeanBuilder(ClientMetricsConfig.class);
+            fillValues(node, metricsConfigBuilder, "jmx");
+            Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+            boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+            metricsConfigBuilder.addPropertyValue("enabled", enabled);
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("jmx".equals(nodeName)) {
+                    BeanDefinitionBuilder metricsJmxConfigBuilder = createBeanBuilder(MetricsJmxConfig.class);
+                    fillValues(child, metricsJmxConfigBuilder);
+
+                    metricsConfigBuilder.addPropertyValue("jmxConfig", metricsJmxConfigBuilder.getBeanDefinition());
+                }
+            }
+
+            configBuilder.addPropertyValue("metricsConfig", metricsConfigBuilder.getBeanDefinition());
         }
 
     }

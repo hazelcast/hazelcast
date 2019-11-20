@@ -20,7 +20,6 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
-import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -40,6 +39,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -60,8 +60,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * The ClientConfigXmlGenerator is responsible for transforming a
@@ -136,6 +136,8 @@ public final class ClientConfigXmlGenerator {
         userCodeDeployment(gen, clientConfig.getUserCodeDeploymentConfig());
         //FlakeIdGenerator
         flakeIdGenerator(gen, clientConfig.getFlakeIdGeneratorConfigMap());
+        //Metrics
+        metrics(gen, clientConfig.getMetricsConfig());
 
         //close HazelcastClient
         gen.close();
@@ -585,5 +587,13 @@ public final class ClientConfigXmlGenerator {
         return !isNullOrEmpty(className) ? className
                 : impl != null ? impl.getClass().getName()
                 : null;
+    }
+
+    private static void metrics(XmlGenerator gen, ClientMetricsConfig metricsConfig) {
+        gen.open("metrics", "enabled", metricsConfig.isEnabled())
+           .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
+           .close()
+           .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
+           .close();
     }
 }

@@ -14,40 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.client.config;
 
-import javax.annotation.Nonnull;
+import com.hazelcast.config.BaseMetricsConfig;
+
 import java.util.Objects;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * Member-side metrics collection configuration.
+ * Client-side metrics collection configuration.
  *
  * @since 4.0
  */
-public class MetricsConfig extends BaseMetricsConfig<MetricsConfig> {
-
-    private MetricsManagementCenterConfig managementCenterConfig = new MetricsManagementCenterConfig();
-
-    public MetricsConfig() {
+public class ClientMetricsConfig extends BaseMetricsConfig<ClientMetricsConfig> {
+    public ClientMetricsConfig() {
         super();
     }
 
-    public MetricsConfig(MetricsConfig metricsConfig) {
+    public ClientMetricsConfig(ClientMetricsConfig metricsConfig) {
         super(metricsConfig);
-        this.managementCenterConfig = new MetricsManagementCenterConfig(metricsConfig.managementCenterConfig);
-    }
-
-    @Nonnull
-    public MetricsConfig setManagementCenterConfig(MetricsManagementCenterConfig managementCenterConfig) {
-        this.managementCenterConfig = requireNonNull(managementCenterConfig, "Management Center config must not be null");
-        return this;
-    }
-
-    @Nonnull
-    public MetricsManagementCenterConfig getManagementCenterConfig() {
-        return managementCenterConfig;
     }
 
     @Override
@@ -56,11 +40,11 @@ public class MetricsConfig extends BaseMetricsConfig<MetricsConfig> {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MetricsConfig)) {
+        if (!(o instanceof ClientMetricsConfig)) {
             return false;
         }
 
-        MetricsConfig that = (MetricsConfig) o;
+        ClientMetricsConfig that = (ClientMetricsConfig) o;
 
         if (enabled != that.enabled) {
             return false;
@@ -68,16 +52,12 @@ public class MetricsConfig extends BaseMetricsConfig<MetricsConfig> {
         if (collectionFrequencySeconds != that.collectionFrequencySeconds) {
             return false;
         }
-        if (!Objects.equals(managementCenterConfig, that.managementCenterConfig)) {
-            return false;
-        }
         return Objects.equals(jmxConfig, that.jmxConfig);
     }
 
     @Override
     public final int hashCode() {
-        int result = Boolean.hashCode(enabled);
-        result = 31 * result + (managementCenterConfig != null ? managementCenterConfig.hashCode() : 0);
+        int result = (enabled ? 1 : 0);
         result = 31 * result + (jmxConfig != null ? jmxConfig.hashCode() : 0);
         result = 31 * result + collectionFrequencySeconds;
         return result;
@@ -85,11 +65,11 @@ public class MetricsConfig extends BaseMetricsConfig<MetricsConfig> {
 
     @Override
     public String toString() {
-        return "MetricsConfig{"
+        return "ClientMetricsConfig{"
                 + "enabled=" + enabled
-                + ", managementCenterConfig=" + managementCenterConfig
                 + ", jmxConfig=" + jmxConfig
                 + ", collectionFrequencySeconds=" + collectionFrequencySeconds
                 + '}';
     }
+
 }
