@@ -18,7 +18,6 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.EntryListener;
 
 import java.util.EventListener;
 
@@ -29,11 +28,6 @@ public class EntryListenerConfigReadOnly extends EntryListenerConfig {
 
     public EntryListenerConfigReadOnly(EntryListenerConfig config) {
         super(config);
-    }
-
-    @Override
-    public EntryListenerConfig setImplementation(EntryListener implementation) {
-        throw new UnsupportedOperationException("this config is read-only");
     }
 
     @Override
@@ -52,7 +46,7 @@ public class EntryListenerConfigReadOnly extends EntryListenerConfig {
     }
 
     @Override
-    public ListenerConfig setImplementation(EventListener implementation) {
+    public EntryListenerConfig setImplementation(EventListener implementation) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 }

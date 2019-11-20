@@ -19,11 +19,12 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.EncryptionReplacer;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -247,6 +248,17 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "hazelcast-client:\n"
                 + "  import:\n"
                 + "    - notexisting.yaml";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test(expected = HazelcastException.class)
+    public void testImportNotExistingUrlResourceThrowsException() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  import:\n"
+                + "    - file:///notexisting.yaml";
 
         buildConfig(yaml);
     }

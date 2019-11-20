@@ -2111,8 +2111,6 @@
             <xs:enumeration value="hazelcast.jmx"/>
             <xs:enumeration value="hazelcast.jmx.detailed"/>
             <xs:enumeration value="hazelcast.mancenter.enabled"/>
-            <xs:enumeration value="hazelcast.memcache.enabled"/>
-            <xs:enumeration value="hazelcast.rest.enabled"/>
             <xs:enumeration value="hazelcast.map.load.chunk.size"/>
             <xs:enumeration value="hazelcast.in.thread.priority"/>
             <xs:enumeration value="hazelcast.out.thread.priority"/>

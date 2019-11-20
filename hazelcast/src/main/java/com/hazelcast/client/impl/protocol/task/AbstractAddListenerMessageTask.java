@@ -17,35 +17,29 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
 
 /**
- * AbstractAddressMessageTask
+ * Base message task for listener registration tasks
  */
-public abstract class AbstractAddressMessageTask<P>
-        extends AbstractAsyncMessageTask<P, Object> {
+public abstract class AbstractAddListenerMessageTask<P>
+        extends AbstractAsyncMessageTask<P, UUID> {
 
-    protected AbstractAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    protected AbstractAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected CompletableFuture<Object> processInternal() {
-        Operation op = prepareOperation();
-        op.setCallerUuid(endpoint.getUuid());
-        return nodeEngine.getOperationService()
-                         .createInvocationBuilder(getServiceName(), op, getAddress())
-                         .setResultDeserialized(false)
-                         .invoke();
+    protected Object processResponseBeforeSending(UUID response) {
+        addDestroyAction(response);
+        return response;
     }
 
-    protected abstract Address getAddress();
-
-    protected abstract Operation prepareOperation();
+    protected void addDestroyAction(UUID registrationId) {
+        endpoint.addListenerDestroyAction(getServiceName(), getDistributedObjectName(), registrationId);
+    }
 
 }

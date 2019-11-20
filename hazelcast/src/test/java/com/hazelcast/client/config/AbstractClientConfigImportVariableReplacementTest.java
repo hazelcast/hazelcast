@@ -16,8 +16,9 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.helpers.IOUtils;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.helpers.IOUtils;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Rule;
 import org.junit.Test;
@@ -60,6 +61,9 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testImportNotExistingResourceThrowsException();
+
+    @Test(expected = HazelcastException.class)
+    public abstract void testImportNotExistingUrlResourceThrowsException();
 
     @Test
     public abstract void testReplacers() throws Exception;

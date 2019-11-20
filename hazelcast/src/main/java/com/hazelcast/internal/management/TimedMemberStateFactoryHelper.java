@@ -24,15 +24,16 @@ import com.hazelcast.internal.management.dto.ManagedExecutorDTO;
 import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.internal.management.dto.PartitionServiceBeanDTO;
 import com.hazelcast.internal.management.dto.ProxyServiceDTO;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.OperatingSystemMXBeanSupport;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
@@ -53,7 +54,8 @@ final class TimedMemberStateFactoryHelper {
 
     private static final int PERCENT_MULTIPLIER = 100;
 
-    private TimedMemberStateFactoryHelper() { }
+    private TimedMemberStateFactoryHelper() {
+    }
 
     static void registerJMXBeans(HazelcastInstanceImpl instance, MemberStateImpl memberState) {
         final EventService es = instance.node.nodeEngine.getEventService();
@@ -149,6 +151,11 @@ final class TimedMemberStateFactoryHelper {
     }
 
     private static Long get(OperatingSystemMXBean mbean, String methodName, Long defaultValue) {
+        if (OperatingSystemMXBeanSupport.GET_FREE_PHYSICAL_MEMORY_SIZE_DISABLED
+                && methodName.equals("getFreePhysicalMemorySize")) {
+            return defaultValue;
+        }
+
         try {
             Method method = mbean.getClass().getMethod(methodName);
             method.setAccessible(true);

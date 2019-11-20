@@ -80,6 +80,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -1057,6 +1058,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
+    public CompletableFuture<UUID> addPartitionLostListenerAsync(PartitionLostListener listener) {
+        return partitionEventManager.addPartitionLostListenerAsync(listener);
+    }
+
+    @Override
     public UUID addLocalPartitionLostListener(PartitionLostListener listener) {
         return partitionEventManager.addLocalPartitionLostListener(listener);
     }
@@ -1064,6 +1070,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     @Override
     public boolean removePartitionLostListener(UUID registrationId) {
         return partitionEventManager.removePartitionLostListener(registrationId);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removePartitionLostListenerAsync(UUID registrationId) {
+        return partitionEventManager.removePartitionLostListenerAsync(registrationId);
     }
 
     @Override

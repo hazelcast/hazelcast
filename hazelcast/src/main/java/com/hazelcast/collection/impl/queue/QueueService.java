@@ -71,6 +71,7 @@ import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -274,25 +275,33 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         splitBrainProtectionConfigCache.remove(name);
     }
 
-    public UUID addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
+    public UUID addLocalItemListener(String name, ItemListener listener, boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         QueueEventFilter filter = new QueueEventFilter(includeValue);
-        EventRegistration registration;
-        if (isLocal) {
-            registration = eventService.registerLocalListener(
-                    QueueService.SERVICE_NAME, name, filter, listener);
+        return eventService.registerLocalListener(QueueService.SERVICE_NAME, name, filter, listener).getId();
+    }
 
-        } else {
-            registration = eventService.registerListener(
-                    QueueService.SERVICE_NAME, name, filter, listener);
+    public UUID addItemListener(String name, ItemListener listener, boolean includeValue) {
+        EventService eventService = nodeEngine.getEventService();
+        QueueEventFilter filter = new QueueEventFilter(includeValue);
+        return eventService.registerListener(QueueService.SERVICE_NAME, name, filter, listener).getId();
+    }
 
-        }
-        return registration.getId();
+    public CompletableFuture<UUID> addItemListenerAsync(String name, ItemListener listener, boolean includeValue) {
+        EventService eventService = nodeEngine.getEventService();
+        QueueEventFilter filter = new QueueEventFilter(includeValue);
+        return eventService.registerListenerAsync(QueueService.SERVICE_NAME, name, filter, listener)
+                           .thenApply(EventRegistration::getId);
     }
 
     public boolean removeItemListener(String name, UUID registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
+    }
+
+    public CompletableFuture<Boolean> removeItemListenerAsync(String name, UUID registrationId) {
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListenerAsync(SERVICE_NAME, name, registrationId);
     }
 
     public NodeEngine getNodeEngine() {

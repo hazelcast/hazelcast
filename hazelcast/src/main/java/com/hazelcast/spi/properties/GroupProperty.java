@@ -326,30 +326,6 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.connect.all.wait.seconds", 120, SECONDS);
 
     /**
-     * Enables or disables MEMCACHE protocol on members.
-     *
-     * @see com.hazelcast.config.MemcacheProtocolConfig
-     */
-    public static final HazelcastProperty MEMCACHE_ENABLED
-            = new HazelcastProperty("hazelcast.memcache.enabled", false);
-    /**
-     * Enables or disables REST API on members.
-     *
-     * @see com.hazelcast.config.RestEndpointGroup
-     * @see com.hazelcast.config.RestApiConfig
-     */
-    public static final HazelcastProperty REST_ENABLED
-            = new HazelcastProperty("hazelcast.rest.enabled", false);
-
-    /**
-     * Enables or disables HTTP health check API on members.
-     *
-     * @see com.hazelcast.config.RestEndpointGroup#HEALTH_CHECK
-     */
-    public static final HazelcastProperty HTTP_HEALTHCHECK_ENABLED
-            = new HazelcastProperty("hazelcast.http.healthcheck.enabled", false);
-
-    /**
      * The maximum size of the key batch sent to the partition owners for value loading
      * and the maximum size of a key batch for which values are loaded in a single partition.
      */

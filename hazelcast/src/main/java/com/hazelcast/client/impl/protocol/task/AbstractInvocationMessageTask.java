@@ -22,32 +22,20 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.function.BiConsumer;
+import java.util.concurrent.CompletableFuture;
 
-public abstract class AbstractInvocationMessageTask<P> extends AbstractMessageTask<P>
-        implements BiConsumer<Object, Throwable> {
+public abstract class AbstractInvocationMessageTask<P>
+        extends AbstractAsyncMessageTask<P, Object> {
 
     protected AbstractInvocationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected void processMessage() {
+    protected CompletableFuture<Object> processInternal() {
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-
-        InvocationBuilder builder = getInvocationBuilder(op)
-                .setResultDeserialized(false);
-        builder.invoke().whenCompleteAsync(this);
-    }
-
-    @Override
-    public void accept(Object response, Throwable throwable) {
-        if (throwable == null) {
-            sendResponse(response);
-        } else {
-            handleProcessingFailure(throwable);
-        }
+        return getInvocationBuilder(op).setResultDeserialized(false).invoke();
     }
 
     protected abstract InvocationBuilder getInvocationBuilder(Operation op);

@@ -16,26 +16,26 @@
 
 package com.hazelcast.topic.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.eventservice.EventPublishingService;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -44,6 +44,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -57,16 +58,12 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public static final int ORDERING_LOCKS_LENGTH = 1000;
 
-    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
+    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<>();
     private final Lock[] orderingLocks = new Lock[ORDERING_LOCKS_LENGTH];
     private NodeEngine nodeEngine;
 
     private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction =
-            new ConstructorFunction<String, LocalTopicStatsImpl>() {
-                public LocalTopicStatsImpl createNew(String mapName) {
-                    return new LocalTopicStatsImpl();
-                }
-            };
+            mapName -> new LocalTopicStatsImpl();
     private EventService eventService;
     private final AtomicInteger counter = new AtomicInteger(0);
     private Address localAddress;
@@ -174,22 +171,30 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
     }
 
-    public @Nonnull
-    UUID addMessageListener(@Nonnull String name,
-                              @Nonnull MessageListener listener,
-                              boolean localOnly) {
-        EventRegistration eventRegistration;
-        if (localOnly) {
-            eventRegistration = eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener);
-        } else {
-            eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
-
+    public UUID addLocalMessageListener(@Nonnull String name, @Nonnull MessageListener listener) {
+        EventRegistration registration = eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener);
+        if (registration == null) {
+            return null;
         }
-        return eventRegistration.getId();
+        return registration.getId();
+    }
+
+    public
+    UUID addMessageListener(@Nonnull String name, @Nonnull MessageListener listener) {
+        return eventService.registerListener(TopicService.SERVICE_NAME, name, listener).getId();
+    }
+
+    public
+    Future<UUID> addMessageListenerAsync(@Nonnull String name, @Nonnull MessageListener listener) {
+        return eventService.registerListenerAsync(TopicService.SERVICE_NAME, name, listener).thenApply(EventRegistration::getId);
     }
 
     public boolean removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
+    }
+
+    public Future<Boolean> removeMessageListenerAsync(@Nonnull String name, @Nonnull UUID registrationId) {
+        return eventService.deregisterListenerAsync(TopicService.SERVICE_NAME, name, registrationId);
     }
 
     @Override
