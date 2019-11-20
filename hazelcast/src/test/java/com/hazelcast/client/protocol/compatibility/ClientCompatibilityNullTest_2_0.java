@@ -6753,7 +6753,7 @@ public class ClientCompatibilityNullTest_2_0 {
     @Test
     public void test_MCRunConsoleCommandCodec_encodeRequest() {
         int fileClientMessageIndex = 801;
-        ClientMessage encoded = MCRunConsoleCommandCodec.encodeRequest(aString, null);
+        ClientMessage encoded = MCRunConsoleCommandCodec.encodeRequest(null, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

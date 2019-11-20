@@ -7219,8 +7219,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 799;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCRunScriptCodec.RequestParameters parameters = MCRunScriptCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aString, parameters.script));
         assertTrue(isEqual(aString, parameters.engine));
+        assertTrue(isEqual(aString, parameters.script));
     }
 
     @Test
@@ -7236,8 +7236,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 801;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCRunConsoleCommandCodec.RequestParameters parameters = MCRunConsoleCommandCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aString, parameters.command));
         assertTrue(isEqual(null, parameters.namespace));
+        assertTrue(isEqual(aString, parameters.command));
     }
 
     @Test

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given script on the member it's called on.
  */
-@Generated("2d9f4e4c9e02dae69641cfe6faca6ec3")
+@Generated("5994636aba82e4cedcc6fdb0beed05dd")
 public final class MCRunScriptCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -52,17 +52,17 @@ public final class MCRunScriptCodec {
     public static class RequestParameters {
 
         /**
-         * The script to be executed.
-         */
-        public java.lang.String script;
-
-        /**
          * The name of script engine which will be used for the execution.
          */
         public java.lang.String engine;
+
+        /**
+         * The script to be executed.
+         */
+        public java.lang.String script;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String script, java.lang.String engine) {
+    public static ClientMessage encodeRequest(java.lang.String engine, java.lang.String script) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -70,8 +70,8 @@ public final class MCRunScriptCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, script);
         StringCodec.encode(clientMessage, engine);
+        StringCodec.encode(clientMessage, script);
         return clientMessage;
     }
 
@@ -80,8 +80,8 @@ public final class MCRunScriptCodec {
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.script = StringCodec.decode(iterator);
         request.engine = StringCodec.decode(iterator);
+        request.script = StringCodec.decode(iterator);
         return request;
     }
 

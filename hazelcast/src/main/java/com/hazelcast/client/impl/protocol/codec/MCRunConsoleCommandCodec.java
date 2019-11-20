@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given console command on the member it's called on.
  */
-@Generated("da8337fd26851c29c29a3c00f8acc971")
+@Generated("195860b717793180e282cf835ed634e0")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x200F00
     public static final int REQUEST_MESSAGE_TYPE = 2100992;
@@ -52,17 +52,17 @@ public final class MCRunConsoleCommandCodec {
     public static class RequestParameters {
 
         /**
-         * The console command to be executed.
-         */
-        public java.lang.String command;
-
-        /**
          * Optional namespace to be set before the command is executed.
          */
         public @Nullable java.lang.String namespace;
+
+        /**
+         * The console command to be executed.
+         */
+        public java.lang.String command;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String command, @Nullable java.lang.String namespace) {
+    public static ClientMessage encodeRequest(@Nullable java.lang.String namespace, java.lang.String command) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -70,8 +70,8 @@ public final class MCRunConsoleCommandCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, command);
         CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
+        StringCodec.encode(clientMessage, command);
         return clientMessage;
     }
 
@@ -80,8 +80,8 @@ public final class MCRunConsoleCommandCodec {
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.command = StringCodec.decode(iterator);
         request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.command = StringCodec.decode(iterator);
         return request;
     }
 

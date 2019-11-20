@@ -17,41 +17,59 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.management.ConsoleCommandHandler;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
-    public ApplyMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public class RunConsoleCommandMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+
+    public RunConsoleCommandMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Object call() throws Exception {
         ManagementCenterService mcService = nodeEngine.getManagementCenterService();
-        ClientBwListDTO.Mode mode = ClientBwListDTO.Mode.getById(parameters.clientBwListMode);
-        if (mode == null) {
-            throw new IllegalArgumentException("Unexpected client B/W list mode = [" + parameters.clientBwListMode + "]");
+        ConsoleCommandHandler handler = mcService.getCommandHandler();
+        try {
+            final String ns = parameters.namespace;
+            String command = parameters.command;
+            if (!isNullOrEmpty(ns)) {
+                // set namespace as a part of the command
+                command = ns + "__" + command;
+            }
+            return handler.handleCommand(command);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw wrap(e);
+        } catch (Throwable e) {
+            throw wrap(e);
         }
-        mcService.applyMCConfig(parameters.eTag, new ClientBwListDTO(mode, parameters.clientBwListEntries));
-        return null;
+    }
+
+    private static HazelcastException wrap(Throwable e) {
+        HazelcastException hazelcastException = new HazelcastException(e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
+        hazelcastException.setStackTrace(e.getStackTrace());
+        return hazelcastException;
     }
 
     @Override
     protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCApplyMCConfigCodec.decodeRequest(clientMessage);
+        return MCRunConsoleCommandCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCApplyMCConfigCodec.encodeResponse();
+        return MCRunConsoleCommandCodec.encodeResponse((String) response);
     }
 
     @Override
@@ -71,15 +89,14 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<Reques
 
     @Override
     public String getMethodName() {
-        return "applyMCConfig";
+        return "runConsoleCommand";
     }
 
     @Override
     public Object[] getParameters() {
         return new Object[] {
-                parameters.eTag,
-                parameters.clientBwListMode,
-                parameters.clientBwListEntries
+                parameters.command,
+                parameters.namespace
         };
     }
 }

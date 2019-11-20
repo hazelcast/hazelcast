@@ -17,41 +17,42 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.dto.ClientBwListDTO;
+import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class RunScriptMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
-    public ApplyMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public RunScriptMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ManagementCenterService mcService = nodeEngine.getManagementCenterService();
-        ClientBwListDTO.Mode mode = ClientBwListDTO.Mode.getById(parameters.clientBwListMode);
-        if (mode == null) {
-            throw new IllegalArgumentException("Unexpected client B/W list mode = [" + parameters.clientBwListMode + "]");
-        }
-        mcService.applyMCConfig(parameters.eTag, new ClientBwListDTO(mode, parameters.clientBwListEntries));
-        return null;
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), op, nodeEngine.getThisAddress());
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return new ScriptExecutorOperation(parameters.engine, parameters.script);
     }
 
     @Override
     protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCApplyMCConfigCodec.decodeRequest(clientMessage);
+        return MCRunScriptCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCApplyMCConfigCodec.encodeResponse();
+        return MCRunScriptCodec.encodeResponse((String) response);
     }
 
     @Override
@@ -71,15 +72,14 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<Reques
 
     @Override
     public String getMethodName() {
-        return "applyMCConfig";
+        return "runScript";
     }
 
     @Override
     public Object[] getParameters() {
         return new Object[] {
-                parameters.eTag,
-                parameters.clientBwListMode,
-                parameters.clientBwListEntries
+                parameters.script,
+                parameters.engine
         };
     }
 }
