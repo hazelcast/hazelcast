@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.eviction.impl.comparator;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.spi.eviction.EvictableEntryView;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
-import com.hazelcast.internal.serialization.SerializableByConvention;
 
 /**
  * {@link com.hazelcast.config.EvictionPolicy#LRU}
@@ -41,5 +41,18 @@ public class LRUEvictionPolicyComparator
     @Override
     public String toString() {
         return "LRUEvictionPolicyComparator{" + super.toString() + "} ";
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        return getClass().equals(o.getClass());
+    }
+
+    @Override
+    public final int hashCode() {
+        return getClass().hashCode();
     }
 }
