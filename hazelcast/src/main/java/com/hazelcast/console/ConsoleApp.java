@@ -1404,8 +1404,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("jvm                                  //displays info about the runtime");
         println("who                                  //displays info about the cluster");
         println("whoami                               //displays info about this cluster member");
-        println("ns <string>                          //switch the namespace for using the distributed data structure (e.g. queue/map/set/list) "
-                + "<string> (defaults to \"default\")");
+        println("ns <string>                          //switch the namespace for using the distributed data structure name "
+                + " <string> (e.g. queue/map/set/list name; defaults to \"default\")");
         println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
         println("");
     }
@@ -1496,7 +1496,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("execute <echo-input>                                     //executes an echo task on random member");
         println("executeOnKey <echo-input> <key>                          //executes an echo task on the member that owns "
                 + "the given key");
-        println("executeOnMember <echo-input> <memberIndex>               //executes an echo task on the member with given index");
+        println("executeOnMember <echo-input> <memberIndex>               //executes an echo task on the member "
+                + "with given index");
         println("executeOnMembers <echo-input>                            //executes an echo task on all of the members");
         println("e<threadcount>.simulateLoad <task-count> <delaySeconds>  //simulates load on executor with given number "
                 + "of thread (e1..e16)");
