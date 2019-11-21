@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 
@@ -68,7 +68,7 @@ public class MetricsManagementCenterConfig {
      * enabling/disabling the Metrics collection entirely via the {@link #enabled}
      * master switch.
      * <p/>
-     * May be overridden by {@link GroupProperty#METRICS_MC_ENABLED}
+     * May be overridden by {@link ClusterProperty#METRICS_MC_ENABLED}
      * system property.
      *
      * @see #setEnabled(boolean)
@@ -96,7 +96,7 @@ public class MetricsManagementCenterConfig {
      * client hiccups without losing a value (for example to restart the
      * Management Center).
      * <p/>
-     * May be overridden by {@link GroupProperty#METRICS_MC_RETENTION}
+     * May be overridden by {@link ClusterProperty#METRICS_MC_RETENTION}
      * system property.
      */
     @Nonnull

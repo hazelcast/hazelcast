@@ -55,10 +55,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.TCP_JOIN_PORT_TRY_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.WAIT_SECONDS_BEFORE_JOIN;
+import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.TCP_JOIN_PORT_TRY_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

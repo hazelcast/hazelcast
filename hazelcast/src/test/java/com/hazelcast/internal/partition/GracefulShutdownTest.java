@@ -23,7 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -127,8 +127,8 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     @SuppressWarnings("unused")
     public void shutdownSlaveMember_whilePartitionsMigrating() {
         Config config = new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "12")
-                .setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "12")
+                .setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         warmUpPartitions(hz1);
@@ -496,7 +496,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         Config config = new Config();
         // setting a very graceful shutdown high timeout value
         // to guarantee instance.shutdown() not to timeout
-        config.setProperty(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "99999999999");
+        config.setProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "99999999999");
 
         final HazelcastInstance[] instances = factory.newInstances(config, 4);
         assertClusterSizeEventually(4, instances);
@@ -581,7 +581,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     private static Config newConfig() {
         return new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "6")
-                .setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "6")
+                .setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
     }
 }

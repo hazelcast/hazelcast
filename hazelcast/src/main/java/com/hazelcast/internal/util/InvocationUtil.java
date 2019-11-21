@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
@@ -123,7 +123,7 @@ public final class InvocationUtil {
             this.operationSupplier = operationSupplier;
             this.nodeEngine = nodeEngine;
             this.memberIterator = memberIterator;
-            this.retryDelayMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
+            this.retryDelayMillis = nodeEngine.getProperties().getMillis(ClusterProperty.INVOCATION_RETRY_PAUSE);
         }
 
         @Override

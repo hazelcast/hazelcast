@@ -57,7 +57,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
@@ -130,7 +130,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         logger = node.getLogger(ClusterService.class.getName());
         clusterClock = new ClusterClockImpl(logger);
 
-        useLegacyMemberListFormat = node.getProperties().getBoolean(GroupProperty.USE_LEGACY_MEMBER_LIST_FORMAT);
+        useLegacyMemberListFormat = node.getProperties().getBoolean(ClusterProperty.USE_LEGACY_MEMBER_LIST_FORMAT);
 
         membershipManager = new MembershipManager(node, this, lock);
         clusterStateManager = new ClusterStateManager(node, lock);
@@ -156,9 +156,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        long mergeFirstRunDelayMs = node.getProperties().getPositiveMillisOrDefault(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS,
+        long mergeFirstRunDelayMs = node.getProperties().getPositiveMillisOrDefault(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS,
                 DEFAULT_MERGE_RUN_DELAY_MILLIS);
-        long mergeNextRunDelayMs = node.getProperties().getPositiveMillisOrDefault(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS,
+        long mergeNextRunDelayMs = node.getProperties().getPositiveMillisOrDefault(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS,
                 DEFAULT_MERGE_RUN_DELAY_MILLIS);
 
         ExecutionService executionService = nodeEngine.getExecutionService();
@@ -931,7 +931,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             changeClusterState(ClusterState.PASSIVE, options, true);
         }
 
-        long timeoutNanos = node.getProperties().getNanos(GroupProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
         long startNanos = System.nanoTime();
         node.getNodeExtension().getInternalHotRestartService()
             .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);

@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 /**
  * Health monitor can be configured with system properties.
  *
- * {@link GroupProperty#HEALTH_MONITORING_LEVEL}
+ * {@link ClusterProperty#HEALTH_MONITORING_LEVEL}
  */
 public enum HealthMonitorLevel {
 

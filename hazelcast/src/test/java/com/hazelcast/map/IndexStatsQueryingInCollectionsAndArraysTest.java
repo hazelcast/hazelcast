@@ -23,7 +23,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -66,7 +66,7 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
         mapName = randomMapName();
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
 
         instance = createHazelcastInstance(config);

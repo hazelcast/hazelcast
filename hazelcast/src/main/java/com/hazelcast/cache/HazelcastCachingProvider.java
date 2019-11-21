@@ -19,7 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -184,7 +184,7 @@ public final class HazelcastCachingProvider implements CachingProvider {
 
     public HazelcastCachingProvider() {
         CachingProvider cp = null;
-        String providerType = GroupProperty.JCACHE_PROVIDER_TYPE.getSystemProperty();
+        String providerType = ClusterProperty.JCACHE_PROVIDER_TYPE.getSystemProperty();
         if (providerType != null) {
             if (PROVIDER_TYPE_CLIENT.equals(providerType)) {
                 cp = new HazelcastClientCachingProvider();

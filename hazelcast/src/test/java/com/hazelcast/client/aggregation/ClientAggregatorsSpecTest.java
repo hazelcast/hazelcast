@@ -31,8 +31,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

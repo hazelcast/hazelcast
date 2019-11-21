@@ -39,7 +39,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.nio.ByteOrder;
 import java.util.HashMap;
@@ -262,8 +262,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     private void initVersions() {
         if (version < 0) {
-            String defaultVal = GroupProperty.SERIALIZATION_VERSION.getDefaultValue();
-            byte versionCandidate = Byte.parseByte(System.getProperty(GroupProperty.SERIALIZATION_VERSION.getName(), defaultVal));
+            String defaultVal = ClusterProperty.SERIALIZATION_VERSION.getDefaultValue();
+            byte versionCandidate = Byte.parseByte(System.getProperty(ClusterProperty.SERIALIZATION_VERSION.getName(), defaultVal));
             byte maxVersion = Byte.parseByte(defaultVal);
             if (versionCandidate > maxVersion) {
                 throw new IllegalArgumentException(

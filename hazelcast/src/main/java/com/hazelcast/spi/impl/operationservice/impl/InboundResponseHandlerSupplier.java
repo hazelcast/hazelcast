@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.internal.util.MutableInteger;
@@ -37,7 +38,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.properties.GroupProperty.RESPONSE_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
@@ -49,7 +50,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * A {@link Supplier} responsible for providing a {@link Consumer} that
  * processes inbound responses.
  *
- * Depending on the {@link com.hazelcast.spi.properties.GroupProperty#RESPONSE_THREAD_COUNT}
+ * Depending on the {@link ClusterProperty#RESPONSE_THREAD_COUNT}
  * it will return the appropriate response handler:
  * <ol>
  * <li>a 'sync' response handler that doesn't offload to a different thread and

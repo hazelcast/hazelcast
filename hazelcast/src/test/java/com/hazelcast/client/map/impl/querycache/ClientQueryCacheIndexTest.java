@@ -27,7 +27,7 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -57,7 +57,7 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         factory = new TestHazelcastFactory();
         factory.newHazelcastInstance(config);

@@ -29,7 +29,7 @@ import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.SampleTestObjects.ValueType;
 import com.hazelcast.query.impl.IndexCopyBehavior;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -70,7 +70,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
 
     private HazelcastInstance createTestHazelcastInstance() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.INDEX_COPY_BEHAVIOR.getName(), copyBehavior.name());
+        config.setProperty(ClusterProperty.INDEX_COPY_BEHAVIOR.getName(), copyBehavior.name());
         return createHazelcastInstance(config);
     }
 

@@ -45,7 +45,7 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
@@ -233,12 +233,12 @@ public class NodeIOService implements IOService {
 
     @Override
     public boolean isSocketBind() {
-        return node.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BIND);
+        return node.getProperties().getBoolean(ClusterProperty.SOCKET_CLIENT_BIND);
     }
 
     @Override
     public boolean isSocketBindAny() {
-        return node.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BIND_ANY);
+        return node.getProperties().getBoolean(ClusterProperty.SOCKET_CLIENT_BIND_ANY);
     }
 
     @Override
@@ -275,17 +275,17 @@ public class NodeIOService implements IOService {
             return config != null ? config.getSocketConnectTimeoutSeconds() : 0;
         }
 
-        return node.getProperties().getSeconds(GroupProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
+        return node.getProperties().getSeconds(ClusterProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
     }
 
     @Override
     public long getConnectionMonitorInterval() {
-        return node.getProperties().getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL);
+        return node.getProperties().getMillis(ClusterProperty.CONNECTION_MONITOR_INTERVAL);
     }
 
     @Override
     public int getConnectionMonitorMaxFaults() {
-        return node.getProperties().getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS);
+        return node.getProperties().getInteger(ClusterProperty.CONNECTION_MONITOR_MAX_FAULTS);
     }
 
     @Override

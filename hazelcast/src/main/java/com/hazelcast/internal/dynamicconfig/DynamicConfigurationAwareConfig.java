@@ -81,7 +81,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
-import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
+import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
 
 @SuppressWarnings({"unchecked",
         "checkstyle:methodcount",

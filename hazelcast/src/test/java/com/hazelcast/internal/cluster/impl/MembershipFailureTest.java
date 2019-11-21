@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -51,11 +51,11 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMB
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
 import static com.hazelcast.internal.cluster.impl.MembershipUpdateTest.assertMemberViewsAreSame;
 import static com.hazelcast.internal.cluster.impl.MembershipUpdateTest.getMemberMap;
-import static com.hazelcast.spi.properties.GroupProperty.HEARTBEAT_INTERVAL_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MAX_NO_HEARTBEAT_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.HEARTBEAT_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MAX_NO_HEARTBEAT_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
@@ -528,8 +528,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     private void masterCandidate_canGracefullyShutdown_whenMasterGoesDown(boolean terminate) throws Exception {
         Config config = smallInstanceConfig();
         // slow down the migrations
-        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "12");
+        config.setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "12");
 
         HazelcastInstance master = factory.newHazelcastInstance(config);
         final HazelcastInstance masterCandidate = factory.newHazelcastInstance(config);
@@ -553,12 +553,12 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void secondMastershipClaimByYounger_shouldRetry_when_firstMastershipClaimByElder_accepted() {
         Config config = smallInstanceConfig();
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
 
         HazelcastInstance member1 = newHazelcastInstance(config);
         final HazelcastInstance member2 = newHazelcastInstance(config);
         HazelcastInstance member3 = newHazelcastInstance(smallInstanceConfig()
-                .setProperty(GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS.getName(), "10"));
+                .setProperty(ClusterProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS.getName(), "10"));
         final HazelcastInstance member4 = newHazelcastInstance(config);
 
         assertClusterSize(4, member1, member4);
@@ -600,7 +600,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void secondMastershipClaimByElder_shouldFail_when_firstMastershipClaimByYounger_accepted() {
         Config config = smallInstanceConfig();
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
 
         HazelcastInstance member1 = newHazelcastInstance(config);
         final HazelcastInstance member2 = newHazelcastInstance(config);
@@ -691,7 +691,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     }
 
     HazelcastInstance newHazelcastInstance(Config config) {
-        config.setProperty(GroupProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE.getName(), failureDetectorType.toString());
+        config.setProperty(ClusterProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE.getName(), failureDetectorType.toString());
         return factory.newHazelcastInstance(config);
     }
 

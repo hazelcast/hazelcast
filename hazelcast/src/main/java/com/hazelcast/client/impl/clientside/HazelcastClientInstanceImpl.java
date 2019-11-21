@@ -122,7 +122,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.topic.ITopic;
@@ -220,7 +220,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             instanceName = "hz.client_" + id;
         }
 
-        String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
+        String loggingType = config.getProperty(ClusterProperty.LOGGING_TYPE.getName());
         loggingService = new ClientLoggingService(config.getClusterName(),
                 loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
         ClassLoader classLoader = config.getClassLoader();

@@ -65,7 +65,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.starter.HazelcastStarter;
 import junit.framework.AssertionFailedError;
@@ -176,10 +176,10 @@ public abstract class HazelcastTestSupport {
     public static Config smallInstanceConfig() {
         // make the test instances consume less resources per default
         return new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "11")
-                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
-                .setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
-                .setProperty(GroupProperty.EVENT_THREAD_COUNT.getName(), "1");
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
+                .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
     }
 
     public static Config regularInstanceConfig() {

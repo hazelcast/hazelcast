@@ -30,7 +30,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -155,8 +155,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      */
     protected Config config() {
         return smallInstanceConfig()
-                .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
-                .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+                .setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
+                .setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
 
     protected final Config getConfig() {

@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.Clock;
 
@@ -261,7 +261,7 @@ public class StoreWorker implements Runnable {
 
     private long getReplicaWaitTimeMillis() {
         HazelcastProperties hazelcastProperties = mapServiceContext.getNodeEngine().getProperties();
-        return hazelcastProperties.getMillis(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS);
+        return hazelcastProperties.getMillis(ClusterProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS);
     }
 
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {

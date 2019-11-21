@@ -22,7 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -64,8 +64,8 @@ public class MetricsCollectionBenchmark {
     @Setup
     public void setup() {
         Config config = new Config();
-        config.setProperty(GroupProperty.LOGGING_TYPE.getName(), "none");
-        config.setProperty(GroupProperty.METRICS_DEBUG.getName(), "true");
+        config.setProperty(ClusterProperty.LOGGING_TYPE.getName(), "none");
+        config.setProperty(ClusterProperty.METRICS_DEBUG.getName(), "true");
         MetricsConfig metricsConfig = config.getMetricsConfig();
         // we disable scheduled collection
         metricsConfig.setCollectionFrequencySeconds(Integer.MAX_VALUE);

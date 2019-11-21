@@ -46,8 +46,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;

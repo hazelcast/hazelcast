@@ -47,7 +47,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -240,7 +240,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
 
-        clientConfig.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        clientConfig.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         DiscoveryConfig discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
         DiscoveryStrategyFactory factory = new ExceptionThrowingDiscoveryStrategyFactory();
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.emptyMap());
@@ -277,7 +277,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void test_enabled_whenDiscoveryConfigIsNull() {
         ClientConfig config = new ClientConfig();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.setDiscoveryConfig(null);
@@ -286,7 +286,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void test_enabled_whenDiscoveryConfigIsEmpty() {
         ClientConfig config = new ClientConfig();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
 
@@ -300,7 +300,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void test_CustomDiscoveryService_whenDiscoveredNodes_isNull() {
         ClientConfig config = new ClientConfig();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         final DiscoveryService discoveryService = mock(DiscoveryService.class);
         when(discoveryService.discoverNodes()).thenReturn(null);
@@ -322,7 +322,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void test_CustomDiscoveryService_whenDiscoveredNodes_isEmpty() {
         ClientConfig config = new ClientConfig();
-        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         final DiscoveryService discoveryService = mock(DiscoveryService.class);
         when(discoveryService.discoverNodes()).thenReturn(Collections.emptyList());
@@ -345,7 +345,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        clientConfig.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);

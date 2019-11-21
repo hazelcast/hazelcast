@@ -80,7 +80,7 @@ import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePo
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergeTypeProviderHasRequiredTypes;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.spi.properties.GroupProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.spi.properties.ClusterProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
 import static java.lang.String.format;
 
 /**

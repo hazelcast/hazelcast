@@ -36,7 +36,7 @@ import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -562,7 +562,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         String mapName = randomMapName();
         Random random = new Random();
         Config config = newConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         IMap<Integer, Integer> memberMap = member.getMap(mapName);
         populateMap(memberMap, mapSize);

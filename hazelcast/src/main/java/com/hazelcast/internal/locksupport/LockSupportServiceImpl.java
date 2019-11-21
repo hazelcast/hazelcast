@@ -39,7 +39,7 @@ import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
@@ -304,6 +304,6 @@ public final class LockSupportServiceImpl implements LockSupportService, Managed
     }
 
     public static long getMaxLeaseTimeInMillis(HazelcastProperties hazelcastProperties) {
-        return hazelcastProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
+        return hazelcastProperties.getMillis(ClusterProperty.LOCK_MAX_LEASE_TIME_SECONDS);
     }
 }

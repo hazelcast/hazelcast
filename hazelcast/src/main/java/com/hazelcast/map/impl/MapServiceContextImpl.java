@@ -106,10 +106,10 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
-import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
-import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.ClusterProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.ClusterProperty.INDEX_COPY_BEHAVIOR;
+import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 import static java.lang.Thread.currentThread;
 
 /**

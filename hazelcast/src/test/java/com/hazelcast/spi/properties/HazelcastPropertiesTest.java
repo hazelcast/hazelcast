@@ -28,7 +28,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static com.hazelcast.spi.properties.GroupProperty.ENTERPRISE_LICENSE_KEY;
+import static com.hazelcast.spi.properties.ClusterProperty.ENTERPRISE_LICENSE_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -162,22 +162,22 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void setProperty_inheritActualValueOfParentProperty() {
-        config.setProperty(GroupProperty.IO_THREAD_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "1");
         HazelcastProperties properties = new HazelcastProperties(config);
 
-        String inputIOThreadCount = properties.getString(GroupProperty.IO_INPUT_THREAD_COUNT);
+        String inputIOThreadCount = properties.getString(ClusterProperty.IO_INPUT_THREAD_COUNT);
 
         assertEquals("1", inputIOThreadCount);
-        assertNotEquals(GroupProperty.IO_THREAD_COUNT.getDefaultValue(), inputIOThreadCount);
+        assertNotEquals(ClusterProperty.IO_THREAD_COUNT.getDefaultValue(), inputIOThreadCount);
     }
 
     @Test
     public void getSystemProperty() {
-        GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("12");
+        ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("12");
 
-        assertEquals("12", GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getSystemProperty());
+        assertEquals("12", ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getSystemProperty());
 
-        System.clearProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName());
+        System.clearProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName());
     }
 
     @Test
@@ -199,7 +199,7 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getLong() {
-        long lockMaxLeaseTimeSeconds = defaultProperties.getLong(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
+        long lockMaxLeaseTimeSeconds = defaultProperties.getLong(ClusterProperty.LOCK_MAX_LEASE_TIME_SECONDS);
 
         assertEquals(Long.MAX_VALUE, lockMaxLeaseTimeSeconds);
     }
@@ -215,7 +215,7 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getPositiveMillisOrDefault() {
-        String name = GroupProperty.PARTITION_TABLE_SEND_INTERVAL.getName();
+        String name = ClusterProperty.PARTITION_TABLE_SEND_INTERVAL.getName();
         config.setProperty(name, "-300");
         HazelcastProperty property = new HazelcastProperty(name, "20", TimeUnit.MILLISECONDS);
 
@@ -226,7 +226,7 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getPositiveMillisOrDefaultWithManualDefault() {
-        String name = GroupProperty.PARTITION_TABLE_SEND_INTERVAL.getName();
+        String name = ClusterProperty.PARTITION_TABLE_SEND_INTERVAL.getName();
         config.setProperty(name, "-300");
         HazelcastProperties properties = new HazelcastProperties(config);
         HazelcastProperty property = new HazelcastProperty(name, "20", TimeUnit.MILLISECONDS);
@@ -238,19 +238,19 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getTimeUnit() {
-        config.setProperty(GroupProperty.PARTITION_TABLE_SEND_INTERVAL.getName(), "300");
+        config.setProperty(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL.getName(), "300");
         HazelcastProperties properties = new HazelcastProperties(config);
 
-        assertEquals(300, properties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL));
+        assertEquals(300, properties.getSeconds(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL));
     }
 
     @Test
     public void getTimeUnit_default() {
         long expectedSeconds = 15;
 
-        long intervalNanos = defaultProperties.getNanos(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
-        long intervalMillis = defaultProperties.getMillis(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
-        long intervalSeconds = defaultProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalNanos = defaultProperties.getNanos(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalMillis = defaultProperties.getMillis(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalSeconds = defaultProperties.getSeconds(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL);
 
         assertEquals(TimeUnit.SECONDS.toNanos(expectedSeconds), intervalNanos);
         assertEquals(TimeUnit.SECONDS.toMillis(expectedSeconds), intervalMillis);
@@ -259,15 +259,15 @@ public class HazelcastPropertiesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void getTimeUnit_noTimeUnitProperty() {
-        defaultProperties.getMillis(GroupProperty.AUDIT_LOG_ENABLED);
+        defaultProperties.getMillis(ClusterProperty.AUDIT_LOG_ENABLED);
     }
 
     @Test
     public void getEnum() {
-        config.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL.getName(), "NOISY");
+        config.setProperty(ClusterProperty.HEALTH_MONITORING_LEVEL.getName(), "NOISY");
         HazelcastProperties properties = new HazelcastProperties(config.getProperties());
         HealthMonitorLevel healthMonitorLevel = properties
-                .getEnum(GroupProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.class);
+                .getEnum(ClusterProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.class);
 
         assertEquals(HealthMonitorLevel.NOISY, healthMonitorLevel);
     }
@@ -276,7 +276,7 @@ public class HazelcastPropertiesTest {
     public void getEnum_default() {
         HazelcastProperties properties = new HazelcastProperties(config.getProperties());
         HealthMonitorLevel healthMonitorLevel = properties
-                .getEnum(GroupProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.class);
+                .getEnum(ClusterProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.class);
 
         assertEquals(HealthMonitorLevel.SILENT, healthMonitorLevel);
     }

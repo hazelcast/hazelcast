@@ -37,7 +37,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

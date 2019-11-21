@@ -36,7 +36,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 

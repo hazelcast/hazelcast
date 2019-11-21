@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Member;
 
 /**
  * In Hazelcast the data is split up in partitions: by default, 271 and configurable through the 'hazelcast.partition.count'
- * GroupProperty. Each partition is owned by one member and the ownership can change if members join or leave the cluster.
+ * ClusterProperty. Each partition is owned by one member and the ownership can change if members join or leave the cluster.
  *
  * Using this Partition object, you get access to who is the owner of a given partition. This object is not a DTO, so it will
  * be updated when a member changes ownership.

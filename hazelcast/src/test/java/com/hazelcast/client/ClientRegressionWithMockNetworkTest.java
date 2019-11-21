@@ -45,7 +45,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -798,7 +798,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     public void testServerShouldNotCloseClientWhenClientOnlyListening() {
         Config config = new Config();
         int clientHeartbeatSeconds = 8;
-        config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), String.valueOf(clientHeartbeatSeconds));
+        config.setProperty(ClusterProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), String.valueOf(clientHeartbeatSeconds));
         hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();

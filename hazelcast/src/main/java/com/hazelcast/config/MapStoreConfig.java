@@ -21,7 +21,7 @@ import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -307,7 +307,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      *
      * @param writeCoalescing {@code true} to enable
      *                        write-coalescing, otherwise {@code false}.
-     * @see GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
+     * @see ClusterProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
      */
     public MapStoreConfig setWriteCoalescing(boolean writeCoalescing) {
         this.writeCoalescing = writeCoalescing;

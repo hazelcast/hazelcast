@@ -52,7 +52,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Defines the name and default value for Hazelcast properties.
  */
 @SuppressWarnings({"checkstyle:javadocvariable", "checkstyle:magicnumber"})
-public final class GroupProperty {
+public final class ClusterProperty {
 
     /**
      * Total number of partitions in the Hazelcast cluster.
@@ -1093,6 +1093,6 @@ public final class GroupProperty {
     public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
             = new HazelcastProperty("hazelcast.metrics.collection.frequency");
 
-    private GroupProperty() {
+    private ClusterProperty() {
     }
 }

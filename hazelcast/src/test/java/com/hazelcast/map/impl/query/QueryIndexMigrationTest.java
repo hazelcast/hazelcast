@@ -26,7 +26,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.impl.IndexCopyBehavior;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -103,7 +103,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
     private Config getTestConfig() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.INDEX_COPY_BEHAVIOR.getName(), copyBehavior.name());
+        config.setProperty(ClusterProperty.INDEX_COPY_BEHAVIOR.getName(), copyBehavior.name());
         return config;
     }
 
@@ -212,7 +212,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
     private Config newConfigWithIndex(String mapName, String attribute) {
         Config config = getTestConfig();
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config.getMapConfig(mapName).addIndexConfig(new IndexConfig(IndexType.HASH, attribute));
         return config;
     }

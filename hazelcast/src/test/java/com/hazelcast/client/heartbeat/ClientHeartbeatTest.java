@@ -38,7 +38,7 @@ import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -198,7 +198,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     public void testClientEndpointsDelaySeconds_whenHeartbeatResumed() throws Exception {
         int delaySeconds = 2;
         Config config = new Config();
-        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(delaySeconds)));
+        config.setProperty(ClusterProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(delaySeconds)));
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());

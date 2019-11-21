@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -59,7 +59,7 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
                 .setProperty(OverloadedConnectionsPlugin.PERIOD_SECONDS.getName(), "1")
                 .setProperty(OverloadedConnectionsPlugin.SAMPLES.getName(), "10")
                 .setProperty(OverloadedConnectionsPlugin.THRESHOLD.getName(), "2")
-                .setProperty(GroupProperty.IO_OUTPUT_THREAD_COUNT.getName(), "1");
+                .setProperty(ClusterProperty.IO_OUTPUT_THREAD_COUNT.getName(), "1");
 
         local = Hazelcast.newHazelcastInstance(config);
         serializationService = getSerializationService(local);

@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.IOException;
@@ -95,7 +95,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         otherJoinConfig.getMulticastConfig().setEnabled(false);
         // Mis-configured to point to Client port of 1st member
         otherJoinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + firstClientPort);
-        other.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "1");
+        other.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "1");
 
         expect.expect(IllegalStateException.class);
         expect.expectMessage("Node failed to start!");

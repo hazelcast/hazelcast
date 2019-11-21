@@ -68,7 +68,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -85,8 +85,8 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.memberMetricsLevel;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.CONCURRENT_WINDOW_MS;
+import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.CONCURRENT_WINDOW_MS;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -171,7 +171,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private ConcurrencyDetection newConcurrencyDetection() {
         HazelcastProperties properties = node.getProperties();
-        boolean writeThrough = properties.getBoolean(GroupProperty.IO_WRITE_THROUGH_ENABLED);
+        boolean writeThrough = properties.getBoolean(ClusterProperty.IO_WRITE_THROUGH_ENABLED);
         boolean backPressureEnabled = properties.getBoolean(BACKPRESSURE_ENABLED);
 
         if (writeThrough || backPressureEnabled) {
@@ -216,7 +216,7 @@ public class NodeEngineImpl implements NodeEngine {
 
         MetricsConfig metricsConfig = node.getConfig().getMetricsConfig();
         HazelcastProperties properties = new HazelcastProperties(node.getConfig().getProperties());
-        boolean dataStructureMetrics = properties.getBoolean(GroupProperty.METRICS_DATASTRUCTURES);
+        boolean dataStructureMetrics = properties.getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
         if (metricsConfig.isEnabled() && dataStructureMetrics) {
             StatisticsAwareMetricsSet.register(serviceManager, metricsRegistry);
         }

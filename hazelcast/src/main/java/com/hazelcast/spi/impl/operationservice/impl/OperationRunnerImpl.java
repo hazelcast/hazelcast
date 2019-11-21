@@ -81,7 +81,7 @@ import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFa
 import static com.hazelcast.spi.impl.operationservice.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationservice.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationservice.Operations.isWanReplicationOperation;
-import static com.hazelcast.spi.properties.GroupProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION;
+import static com.hazelcast.spi.properties.ClusterProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;

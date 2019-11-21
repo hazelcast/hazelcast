@@ -28,7 +28,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -57,7 +57,7 @@ public class Query2Benchmark {
     public void prepare() {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig("map");
-        config.setProperty(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
+        config.setProperty(ClusterProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f1"));
         mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, "f2"));

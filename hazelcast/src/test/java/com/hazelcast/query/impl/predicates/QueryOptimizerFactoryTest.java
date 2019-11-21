@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.spi.properties.GroupProperty.QUERY_OPTIMIZER_TYPE;
+import static com.hazelcast.spi.properties.ClusterProperty.QUERY_OPTIMIZER_TYPE;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;

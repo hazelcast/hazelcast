@@ -17,6 +17,7 @@
 package com.hazelcast.internal.locksupport;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Set;
 import java.util.UUID;
@@ -47,7 +48,7 @@ public interface LockStore {
      * @param referenceId the identifier for the invocation of the caller (e.g. operation call ID)
      * @param leaseTime   the lease duration in milliseconds
      * @return if the lock was successfully acquired
-     * @see com.hazelcast.spi.properties.GroupProperty#LOCK_MAX_LEASE_TIME_SECONDS
+     * @see ClusterProperty#LOCK_MAX_LEASE_TIME_SECONDS
      */
     boolean localLock(Data key, UUID caller, long threadId, long referenceId, long leaseTime);
 

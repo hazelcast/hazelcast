@@ -31,7 +31,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -92,7 +92,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void testQueryCache_withLocalListener() {
-        Config config = new Config().setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        Config config = new Config().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
         config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);

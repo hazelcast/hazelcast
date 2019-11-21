@@ -21,7 +21,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -39,7 +39,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
      * <p>
      * The MetricsPlugin periodically writes the contents of the MetricsRegistry
      * to the logfile. For debugging purposes make sure
-     * {@link GroupProperty#METRICS_DEBUG} is set to {@code true}.
+     * {@link ClusterProperty#METRICS_DEBUG} is set to {@code true}.
      * <p>
      * This plugin is very cheap to use.
      * <p>

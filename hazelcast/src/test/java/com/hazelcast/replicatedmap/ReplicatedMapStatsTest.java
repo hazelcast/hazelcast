@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;

@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -179,7 +179,7 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     @Ignore
     public void test_DoesNotReturn_DuplicateEntry_When_Migration_Happens() throws Exception {
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "2");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());

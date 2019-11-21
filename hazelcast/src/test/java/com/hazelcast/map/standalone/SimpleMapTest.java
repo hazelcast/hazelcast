@@ -25,7 +25,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -64,8 +64,8 @@ public final class SimpleMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build()
-                .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "false")
-                .setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "true");
+                .setProperty(ClusterProperty.PHONE_HOME_ENABLED.getName(), "false")
+                .setProperty(ClusterProperty.PREFER_IPv4_STACK.getName(), "true");
 
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");

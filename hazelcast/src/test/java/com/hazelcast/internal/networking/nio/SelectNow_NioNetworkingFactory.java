@@ -23,9 +23,9 @@ import com.hazelcast.internal.nio.tcp.NetworkingFactory;
 import com.hazelcast.internal.nio.tcp.TcpIpConnectionChannelErrorHandler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
 
 public class SelectNow_NioNetworkingFactory implements NetworkingFactory {
 

@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -318,6 +318,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * of other value loading tasks on other partitions.
      */
     private int getLoadBatchSize() {
-        return mapServiceContext.getNodeEngine().getProperties().getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE);
+        return mapServiceContext.getNodeEngine().getProperties().getInteger(ClusterProperty.MAP_LOAD_CHUNK_SIZE);
     }
 }
