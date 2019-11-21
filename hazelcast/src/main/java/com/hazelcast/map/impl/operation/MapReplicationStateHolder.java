@@ -236,7 +236,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             out.writeInt(recordStore.size());
             // TODO this should be read-only iterator, no expiration
             // should be done. Since we serialize size before
-            recordStore.iterator((dataKey, record) -> {
+            recordStore.forEach((dataKey, record) -> {
                 try {
                     out.writeData(dataKey);
                     Records.writeRecord(out, record, ss.toData(record.getValue()));

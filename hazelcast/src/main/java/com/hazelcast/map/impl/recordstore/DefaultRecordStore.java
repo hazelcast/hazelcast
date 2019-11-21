@@ -212,7 +212,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void iterator(BiConsumer<Data, Record> consumer, boolean backup) {
+    public void forEach(BiConsumer<Data, Record> consumer, boolean backup) {
         long now = Clock.currentTimeMillis();
         Iterator<Map.Entry<Data, Record>> entries = storage.entryIterator();
         while (entries.hasNext()) {
@@ -228,7 +228,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void loadAwareIterator(BiConsumer<Data, Record> consumer, boolean backup) {
         checkIfLoaded();
-        iterator(consumer, backup);
+        forEach(consumer, backup);
     }
 
     @Override
@@ -1197,7 +1197,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         ArrayList<Data> keys = new ArrayList<>();
         ArrayList<Record> records = new ArrayList<>();
         // we don't remove locked keys. These are clearable records.
-        iterator(new BiConsumer<Data, Record>() {
+        forEach(new BiConsumer<Data, Record>() {
             Set<Data> lockedKeySet = lockStore.getLockedKeys();
 
             @Override
@@ -1222,7 +1222,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         ArrayList<Data> keys = new ArrayList<>();
         ArrayList<Record> records = new ArrayList<>();
         // we don't remove locked keys. These are clearable records.
-        iterator(new BiConsumer<Data, Record>() {
+        forEach(new BiConsumer<Data, Record>() {
             Set<Data> lockedKeySet = lockStore.getLockedKeys();
 
             @Override

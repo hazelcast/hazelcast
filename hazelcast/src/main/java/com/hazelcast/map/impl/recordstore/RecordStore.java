@@ -262,7 +262,7 @@ public interface RecordStore<R extends Record> {
      */
     R putReplicatedRecord(Data dataKey, R record, long nowInMillis, boolean indexesMustBePopulated);
 
-    void iterator(BiConsumer<Data, R> consumer, boolean backup);
+    void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
     /**
      * Iterates over record store entries but first waits map store to

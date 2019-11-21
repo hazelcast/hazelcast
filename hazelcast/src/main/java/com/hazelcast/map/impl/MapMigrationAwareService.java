@@ -283,7 +283,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
             InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
-            recordStore.iterator((key, record) -> {
+            recordStore.forEach((key, record) -> {
                 Object value = Records.getValueOrCachedValue(record, serializationService);
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
@@ -318,7 +318,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
             InternalIndex[] indexesSnapshot = indexes.getIndexes();
 
-            recordStore.iterator((key, record) -> {
+            recordStore.forEach((key, record) -> {
                 Object value = Records.getValueOrCachedValue(record, serializationService);
                 indexes.removeEntry(key, value, Index.OperationSource.SYSTEM);
             }, false);

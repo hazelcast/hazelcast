@@ -53,7 +53,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
 
     private void runWithPartitionScan() {
         EntryOperator operator = operator(this, backupProcessor, getPredicate());
-        recordStore.iterator((key, record) -> operator.operateOnKey(key).doPostOperateOps(), true);
+        recordStore.forEach((key, record) -> operator.operateOnKey(key).doPostOperateOps(), true);
     }
 
     // TODO unify this method with `runWithPartitionScan`
@@ -61,7 +61,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
         EntryOperator operator = operator(this, backupProcessor, getPredicate());
 
         Queue<Object> outComes = new LinkedList<>();
-        recordStore.iterator((key, record) -> {
+        recordStore.forEach((key, record) -> {
             Data dataKey = toHeapData(key);
             operator.operateOnKey(dataKey);
 

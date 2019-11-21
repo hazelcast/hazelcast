@@ -50,7 +50,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
     protected void mergeStore(RecordStore store, BiConsumer<Integer, MapMergeTypes> consumer) {
         int partitionId = store.getPartitionId();
 
-        store.iterator((BiConsumer<Data, Record>) (key, record) -> {
+        store.forEach((BiConsumer<Data, Record>) (key, record) -> {
             Data dataKey = toHeapData(key);
             Data dataValue = toHeapData(record.getValue());
             consumer.accept(partitionId,

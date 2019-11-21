@@ -138,7 +138,7 @@ public class PartitionWideEntryOperation extends MapOperation
     private void runWithPartitionScan() {
         responses = new MapEntries(recordStore.size());
         operator = operator(this, entryProcessor, getPredicate());
-        recordStore.iterator((dataKey, record) -> {
+        recordStore.forEach((dataKey, record) -> {
             Data response = operator.operateOnKey(dataKey).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(dataKey, response);
@@ -154,7 +154,7 @@ public class PartitionWideEntryOperation extends MapOperation
         Queue<Object> outComes = new LinkedList<>();
         operator = operator(this, entryProcessor, getPredicate());
 
-        recordStore.iterator((key, record) -> {
+        recordStore.forEach((key, record) -> {
             Data dataKey = toHeapData(key);
 
             Data response = operator.operateOnKey(dataKey).getResult();

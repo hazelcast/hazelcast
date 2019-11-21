@@ -91,7 +91,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
-        recordStore.iterator((dataKey, record) -> {
+        recordStore.forEach((dataKey, record) -> {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryEntry = mapContainer.newQueryEntry(dataKey, value);
             queryEntry.setRecord(record);
