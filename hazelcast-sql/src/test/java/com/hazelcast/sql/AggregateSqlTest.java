@@ -94,7 +94,7 @@ public class AggregateSqlTest extends SqlTestSupport {
     }
 
     @Test
-    public void testSimpleAggregateWithGroupBy() {
+    public void testSimpleAggregateWithGroupByCollocated() {
         Map<PersonKey, Person> personMap = member.getMap("person");
 
         Map<Long, PersonSalaryCollector> collectors = new HashMap<>();
@@ -119,6 +119,42 @@ public class AggregateSqlTest extends SqlTestSupport {
 
             long deptId = row.getColumn(0);
             PersonSalaryCollector collector = collectors.get(deptId);
+            assertNotNull(collector);
+
+            assertEquals(collector.getSum(), row.getColumn(1));
+            assertEquals(collector.getCnt(), row.getColumn(2));
+            assertEquals(collector.getAvg(), row.getColumn(3));
+            assertEquals(collector.getMin(), row.getColumn(4));
+            assertEquals(collector.getMax(), row.getColumn(5));
+        }
+    }
+
+    @Test
+    public void testSimpleAggregateWithGroupByNonCollocated() {
+        Map<PersonKey, Person> personMap = member.getMap("person");
+
+        Map<String, PersonSalaryCollector> collectors = new HashMap<>();
+
+        for (Person person : personMap.values()) {
+            String deptTitle = person.getDepartmentTitle();
+            long salary = person.getSalary();
+
+            collectors.computeIfAbsent(deptTitle, (k) -> new PersonSalaryCollector()).add(salary);
+        }
+
+        SqlCursorImpl cursor = executeQuery(
+            member,
+            "SELECT deptTitle, SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person GROUP BY deptTitle"
+        );
+
+        List<SqlRow> rows = getQueryRows(cursor);
+        assertEquals(collectors.size(), rows.size());
+
+        for (SqlRow row : rows) {
+            assertEquals(6, row.getColumnCount());
+
+            String deptTitle = row.getColumn(0);
+            PersonSalaryCollector collector = collectors.get(deptTitle);
             assertNotNull(collector);
 
             assertEquals(collector.getSum(), row.getColumn(1));
