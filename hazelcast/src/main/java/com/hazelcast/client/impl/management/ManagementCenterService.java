@@ -61,7 +61,7 @@ public class ManagementCenterService {
     /**
      * Internal property for enabling MC client mode ({@link ConnectionType#MC_JAVA_CLIENT}).
      */
-    public static final HazelcastProperty MC_CLIENT_MODE_PROPERTY
+    public static final HazelcastProperty MC_CLIENT_MODE_PROP
             = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
 
     private final HazelcastClientInstanceImpl client;

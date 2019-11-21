@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROPERTY;
+import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -205,7 +205,7 @@ class TestClientRegistry {
             this.executor = new TwoWayBlockableExecutor(lockPair);
             this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress,
                     localAddress, serverNodeEngine, this);
-            this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROPERTY)
+            this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
                     ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
         }
 

@@ -291,7 +291,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean bind(final ClientEndpoint endpoint) {
-        if (isFilterableClient(endpoint) && !clientSelector.select(endpoint)) {
+        if (isMCClient(endpoint) && !clientSelector.select(endpoint)) {
             return false;
         }
 
@@ -311,7 +311,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
 
         // Second check to catch concurrent change done via applySelector
-        if (isFilterableClient(endpoint) && !clientSelector.select(endpoint)) {
+        if (!isMCClient(endpoint) && !clientSelector.select(endpoint)) {
             endpointManager.removeEndpoint(endpoint);
             return false;
         }
@@ -325,14 +325,14 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         clientSelector = newSelector;
 
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            if (isFilterableClient(endpoint) && !clientSelector.select(endpoint)) {
+            if (!isMCClient(endpoint) && !clientSelector.select(endpoint)) {
                 endpoint.getConnection().close("Client disconnected from cluster via Management Center", null);
             }
         }
     }
 
-    private static boolean isFilterableClient(ClientEndpoint endpoint) {
-        return !ConnectionType.MC_JAVA_CLIENT.equals(endpoint.getClientType());
+    private static boolean isMCClient(Client client) {
+        return ConnectionType.MC_JAVA_CLIENT.equals(client.getClientType());
     }
 
     @Override
@@ -436,10 +436,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean isClientAllowed(Client client) {
-        if (client instanceof ClientEndpoint && !isFilterableClient((ClientEndpoint) client)) {
-            return true;
-        }
-        return clientSelector.select(client);
+        return isMCClient(client) || clientSelector.select(client);
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {

@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROPERTY;
+import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -54,7 +54,7 @@ public class ClientSelectorManagementCenterClientTest extends HazelcastTestSuppo
         final ClientEngineImpl clientEngineImpl = getClientEngineImpl(instance);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(MC_CLIENT_MODE_PROPERTY.getName(), "true");
+        clientConfig.setProperty(MC_CLIENT_MODE_PROP.getName(), "true");
         hazelcastFactory.newHazelcastClient(clientConfig);
 
         clientEngineImpl.applySelector(ClientSelectors.none());

@@ -33,7 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROPERTY;
+import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -78,7 +78,7 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(MC_CLIENT_MODE_PROPERTY.getName(), "true");
+        clientConfig.setProperty(MC_CLIENT_MODE_PROP.getName(), "true");
         // if the client is able to connect, it's a pass
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
