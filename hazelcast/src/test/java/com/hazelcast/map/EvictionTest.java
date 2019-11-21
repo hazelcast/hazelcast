@@ -40,7 +40,6 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -85,12 +84,10 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@SuppressWarnings("deprecation")
 public class EvictionTest extends HazelcastTestSupport {
 
     @Rule
-    public final OverridePropertyRule overrideTaskSecondsRule
-            = set(PROP_TASK_PERIOD_SECONDS, String.valueOf(1));
+    public final OverridePropertyRule overrideTaskSecondsRule = set(PROP_TASK_PERIOD_SECONDS, String.valueOf(1));
 
     @Test
     public void testTTL_entryShouldNotBeReachableAfterTTL() {
@@ -98,12 +95,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 1, SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(map.containsKey(1));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(map.containsKey(1)));
     }
 
     @Test
@@ -112,12 +104,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 0, SECONDS, 1, SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(map.containsKey(1));
-            }
-        });
+        assertTrueEventually(() -> assertFalse(map.containsKey(1)));
     }
 
     @Test
@@ -132,34 +119,30 @@ public class EvictionTest extends HazelcastTestSupport {
         instanceA.getMap("Test")
                 .put(keyOwnedByInstanceA, "value0", 0, SECONDS, 3, SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RecordStore recordStore = getRecordStore(instanceB, keyOwnedByInstanceA);
-                assertEquals(0, recordStore.size());
-            }
+        assertTrueEventually(() -> {
+            RecordStore recordStore = getRecordStore(instanceB, keyOwnedByInstanceA);
+            assertEquals(0, recordStore.size());
         });
     }
 
     @Test
     public void testMaxIdle_backupRecordStore_mustBeExpirable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
+        Config config = getConfig()
+                .setProperty(PROP_TASK_PERIOD_SECONDS, String.valueOf(MAX_VALUE));
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instanceB = factory.newHazelcastInstance(config);
 
-        final HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
-
-        final String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
+        String keyOwnedByInstanceA = generateKeyOwnedBy(instance);
 
         IMap<String, String> map = instance.getMap("Test");
         map.put(keyOwnedByInstanceA, "value0", 0, SECONDS, 30, SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                RecordStore store = getRecordStore(instanceB, keyOwnedByInstanceA);
-                assertEquals(1, store.size());
-                assertEquals(true, store.isExpirable());
-            }
+        assertTrueEventually(() -> {
+            RecordStore store = getRecordStore(instanceB, keyOwnedByInstanceA);
+            assertNotNull(store);
+            assertEquals(1, store.size());
+            assertTrue(store.isExpirable());
         });
     }
 
@@ -277,7 +260,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         // Prolong 3rd round
         makeUpdateWithTTLAndSleepAndAssertTtlCorrectness(map);
-        final HashMap<Integer, String> items = new HashMap<Integer, String>();
+        final HashMap<Integer, String> items = new HashMap<>();
         items.put(1, "value3");
         items.put(2, "value1");
         items.put(3, "value1");
@@ -342,12 +325,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value", 1, SECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNull(map.getEntryView(1));
-            }
-        });
+        assertTrueEventually(() -> assertNull(map.getEntryView(1)));
     }
 
     @Test
@@ -428,32 +406,26 @@ public class EvictionTest extends HazelcastTestSupport {
         final IMap firstMap = instances[0].getMap(mapName);
         final CountDownLatch latch = new CountDownLatch(clusterSize);
         final AtomicBoolean success = new AtomicBoolean(true);
-        new Thread() {
-            @Override
-            public void run() {
-                sleepAtLeastSeconds(1);
-                while (latch.getCount() != 0) {
-                    int mapSize = firstMap.size();
-                    if (mapSize > (size * clusterSize + size * clusterSize * 10 / 100)) {
-                        success.set(false);
-                        break;
-                    }
-                    sleepAtLeastSeconds(1);
+        new Thread(() -> {
+            sleepAtLeastSeconds(1);
+            while (latch.getCount() != 0) {
+                int mapSize = firstMap.size();
+                if (mapSize > (size * clusterSize + size * clusterSize * 10 / 100)) {
+                    success.set(false);
+                    break;
                 }
+                sleepAtLeastSeconds(1);
             }
-        }.start();
+        }).start();
 
         for (int i = 0; i < clusterSize; i++) {
             final IMap<String, Integer> map = instances[i].getMap(mapName);
-            new Thread() {
-                @Override
-                public void run() {
-                    for (int j = 0; j < size; j++) {
-                        map.put(clusterSize + "-" + j, j);
-                    }
-                    latch.countDown();
+            new Thread(() -> {
+                for (int j = 0; j < size; j++) {
+                    map.put(clusterSize + "-" + j, j);
                 }
-            }.start();
+                latch.countDown();
+            }).start();
         }
 
         assertTrue(latch.await(10, TimeUnit.MINUTES));
@@ -482,29 +454,24 @@ public class EvictionTest extends HazelcastTestSupport {
         final int partitionCount = instances[0].getPartitionService().getPartitions().size();
         final CountDownLatch latch = new CountDownLatch(clusterSize);
         final AtomicBoolean error = new AtomicBoolean(false);
-        new Thread() {
-            @Override
-            public void run() {
-                sleepAtLeastSeconds(1);
-                while (latch.getCount() != 0) {
-                    if (firstMap.size() > (size * partitionCount * 1.2)) {
-                        error.set(true);
-                    }
-                    sleepAtLeastSeconds(1);
+        new Thread(() -> {
+            sleepAtLeastSeconds(1);
+            while (latch.getCount() != 0) {
+                if (firstMap.size() > (size * partitionCount * 1.2)) {
+                    error.set(true);
                 }
+                sleepAtLeastSeconds(1);
             }
-        }.start();
+        }).start();
 
         for (int i = 0; i < clusterSize; i++) {
             final IMap<String, Integer> map = instances[i].getMap(mapName);
-            new Thread() {
-                public void run() {
-                    for (int j = 0; j < 10000; j++) {
-                        map.put(clusterSize + "-" + j, j);
-                    }
-                    latch.countDown();
+            new Thread(() -> {
+                for (int j = 0; j < 10000; j++) {
+                    map.put(clusterSize + "-" + j, j);
                 }
-            }.start();
+                latch.countDown();
+            }).start();
         }
 
         assertOpenEventually(latch);
@@ -684,12 +651,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
         // wait until eviction is complete
         assertSizeEventually(0, map, 300);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(size, entryEvictedEventCount.get());
-            }
-        }, 300);
+        assertTrueEventually(() -> assertEquals(size, entryEvictedEventCount.get()), 300);
     }
 
     @Test
@@ -734,12 +696,9 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(1, 2, 0, SECONDS);
 
         latch.await(10, SECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull(map.get(2));
-                assertEquals(2, map.get(1));
-            }
+        assertTrueEventually(() -> {
+            assertNull(map.get(2));
+            assertEquals(2, map.get(1));
         });
     }
 
@@ -870,13 +829,10 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     private void assertHeapCostsZeroEventually(final String mapName, final HazelcastInstance... nodes) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance node : nodes) {
-                    long heapCostOfNode = node.getMap(mapName).getLocalMapStats().getHeapCost();
-                    assertEquals(0L, heapCostOfNode);
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance node : nodes) {
+                long heapCostOfNode = node.getMap(mapName).getLocalMapStats().getHeapCost();
+                assertEquals(0L, heapCostOfNode);
             }
         });
     }
@@ -901,12 +857,7 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(1, 1, 2, SECONDS);
 
         final int expected = (map.remove(1) == null ? 1 : 0);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expected, count.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expected, count.get()));
     }
 
     @Test
@@ -985,12 +936,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final IMap<String, String> map = createSimpleMap();
         map.put("foo", "bar", 1, TimeUnit.NANOSECONDS);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNull(map.get("foo"));
-            }
-        }, 30);
+        assertTrueEventually(() -> assertNull(map.get("foo")), 30);
     }
 
     @Test
@@ -1254,24 +1200,16 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Integer> map = node.getMap("test");
 
-        final AtomicReference<Integer> evictedKey = new AtomicReference<Integer>(null);
-        map.addEntryListener(new EntryEvictedListener<Integer, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-                evictedKey.set(event.getKey());
-            }
-        }, false);
+        final AtomicReference<Integer> evictedKey = new AtomicReference<>(null);
+        map.addEntryListener(
+                (EntryEvictedListener<Integer, Integer>) event -> evictedKey.set(event.getKey()), false);
 
         map.put(1, 1);
         map.put(2, 1);
 
         final Integer expected = 1;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Eviction impl. cannot evict latest added key 2", expected, evictedKey.get());
-            }
-        });
+        assertTrueEventually(
+                () -> assertEquals("Eviction impl. cannot evict latest added key 2", expected, evictedKey.get()));
     }
 
     /**
@@ -1295,13 +1233,9 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Integer> map = node.getMap("test");
 
-        final AtomicReference<Integer> evictedKey = new AtomicReference<Integer>(null);
-        map.addEntryListener(new EntryEvictedListener<Integer, Integer>() {
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-                evictedKey.set(event.getKey());
-            }
-        }, false);
+        final AtomicReference<Integer> evictedKey = new AtomicReference<>(null);
+        map.addEntryListener(
+                (EntryEvictedListener<Integer, Integer>) event -> evictedKey.set(event.getKey()), false);
 
         // 1. make available free-heap-percentage 10. availableFree = maxMemoryMB - (totalMemoryMB - freeMemoryMB)
         // free-heap-percentage = availableFree/maxMemoryMB
@@ -1315,13 +1249,9 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(1, 1);
 
         final Integer expected = 1;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Eviction impl. should evict latest added key when heap based max-size-policy is used",
-                        expected, evictedKey.get());
-            }
-        });
+        assertTrueEventually(
+                () -> assertEquals("Eviction impl. should evict latest added key when heap based max-size-policy is used",
+                        expected, evictedKey.get()));
     }
 
     private <K, V> IMap<K, V> createSimpleMap() {
@@ -1352,5 +1282,10 @@ public class EvictionTest extends HazelcastTestSupport {
 
         return getConfig()
                 .addMapConfig(mapConfig);
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 }
