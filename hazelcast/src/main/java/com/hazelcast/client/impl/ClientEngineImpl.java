@@ -291,7 +291,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean bind(final ClientEndpoint endpoint) {
-        if (isMCClient(endpoint) && !clientSelector.select(endpoint)) {
+        if (!isClientAllowed(endpoint)) {
             return false;
         }
 
@@ -311,7 +311,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
 
         // Second check to catch concurrent change done via applySelector
-        if (!isMCClient(endpoint) && !clientSelector.select(endpoint)) {
+        if (!isClientAllowed(endpoint)) {
             endpointManager.removeEndpoint(endpoint);
             return false;
         }
@@ -325,14 +325,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         clientSelector = newSelector;
 
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            if (!isMCClient(endpoint) && !clientSelector.select(endpoint)) {
+            if (!isClientAllowed(endpoint)) {
                 endpoint.getConnection().close("Client disconnected from cluster via Management Center", null);
             }
         }
-    }
-
-    private static boolean isMCClient(Client client) {
-        return ConnectionType.MC_JAVA_CLIENT.equals(client.getClientType());
     }
 
     @Override
@@ -436,7 +432,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean isClientAllowed(Client client) {
-        return isMCClient(client) || clientSelector.select(client);
+        return ConnectionType.MC_JAVA_CLIENT.equals(client.getClientType()) || clientSelector.select(client);
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {

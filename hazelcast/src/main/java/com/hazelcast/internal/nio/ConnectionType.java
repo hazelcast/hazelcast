@@ -80,7 +80,7 @@ public final class ConnectionType {
     /**
      * Management Center Java client Connection Type
      */
-    public static final String MC_JAVA_CLIENT = "MCCLIENT";
+    public static final String MC_JAVA_CLIENT = "MCJVM";
 
     private static final Map<String, Integer> ID_MAP = new HashMap<>();
 
