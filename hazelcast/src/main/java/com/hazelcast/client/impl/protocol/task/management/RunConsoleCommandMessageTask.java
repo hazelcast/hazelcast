@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ConsoleCommandHandler;
@@ -30,7 +31,8 @@ import java.security.Permission;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
-public class RunConsoleCommandMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class RunConsoleCommandMessageTask
+        extends AbstractCallableMessageTask<RequestParameters> implements BlockingMessageTask {
 
     public RunConsoleCommandMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

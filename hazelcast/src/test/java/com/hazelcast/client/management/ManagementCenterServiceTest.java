@@ -273,9 +273,15 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runConsoleCommand_noNamespace() throws Exception {
-        String result = resolve(managementCenterService.runConsoleCommand(members[0], null, "m.put foo bar"));
-        assertEquals("", result);
+    public void runConsoleCommand_defaultNamespace() throws Exception {
+        String result = resolve(managementCenterService.runConsoleCommand(members[0], null, "m.size"));
+        assertContains(result, "0");
+    }
+
+    @Test
+    public void runConsoleCommand_withNamespace() throws Exception {
+        String result = resolve(managementCenterService.runConsoleCommand(members[0], "baz", "m.size"));
+        assertContains(result, "0");
     }
 
     private static com.hazelcast.internal.management.ManagementCenterService getMemberMCService(HazelcastInstance instance) {
