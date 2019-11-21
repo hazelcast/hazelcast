@@ -68,9 +68,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -184,14 +185,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Set<Map.Entry<K, V>> entrySet() {
         ClientMessage request = MultiMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MultiMapEntrySetCodec.ResponseParameters resultParameters = MultiMapEntrySetCodec.decodeResponse(response);
 
-        Set<Map.Entry<K, V>> entrySet = new HashSet<>(resultParameters.response.size());
-        for (Map.Entry<Data, Data> entry : resultParameters.response) {
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            entrySet.add(new AbstractMap.SimpleEntry<>(key, value));
-        }
+        Set<Map.Entry<K, V>> entrySet = createHashSet(0);
+        MultiMapEntrySetCodec.decodeResponse(response, (key, value) -> {
+            entrySet.add(new AbstractMap.SimpleEntry<>(toObject(key), toObject(value)));
+        });
+
         return entrySet;
     }
 

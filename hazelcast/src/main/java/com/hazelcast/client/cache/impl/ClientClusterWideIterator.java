@@ -28,7 +28,10 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.serialization.Data;
 
 import javax.cache.Cache;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -77,10 +80,13 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
             try {
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
                 ClientInvocationFuture future = clientInvocation.invoke();
+                List result = new ArrayList();
                 CacheIterateEntriesCodec.ResponseParameters responseParameters = CacheIterateEntriesCodec.decodeResponse(
-                        future.get());
-                setLastTableIndex(responseParameters.entries, responseParameters.tableIndex);
-                return responseParameters.entries;
+                        future.get(), (key, value) -> {
+                            result.add(new AbstractMap.SimpleEntry<>(key, value));
+                        });
+                setLastTableIndex(result, responseParameters.tableIndex);
+                return result;
             } catch (Exception e) {
                 throw rethrow(e);
             }

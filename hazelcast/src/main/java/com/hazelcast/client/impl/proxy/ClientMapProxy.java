@@ -149,6 +149,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1135,22 +1136,15 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
 
         int keysSize = keys.size();
-        Map<Integer, List<Data>> partitionToKeyData = new HashMap<>();
-        List<Object> resultingKeyValuePairs = new ArrayList<>(keysSize * 2);
-        getAllInternal(keys, partitionToKeyData, resultingKeyValuePairs);
-
         Map<K, V> result = createHashMap(keysSize);
-        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
-            K key = toObject(resultingKeyValuePairs.get(i++));
-            V value = toObject(resultingKeyValuePairs.get(i++));
-            result.put(key, value);
-        }
+        Map<Integer, List<Data>> partitionToKeyData = new HashMap<>();
+        getAllInternal(keys, partitionToKeyData, result);
         return Collections.unmodifiableMap(result);
     }
 
-    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, List<Object> resultingKeyValuePairs) {
+    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
         if (partitionToKeyData.isEmpty()) {
-            fillPartitionToKeyData(keys, partitionToKeyData, null, null);
+            fillPartitionToKeyData(keys, partitionToKeyData, null);
         }
         List<Future<ClientMessage>> futures = new ArrayList<>(partitionToKeyData.size());
         for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
@@ -1165,21 +1159,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
         for (Future<ClientMessage> future : futures) {
             try {
                 ClientMessage response = future.get();
-                MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
-                for (Entry<Data, Data> entry : resultParameters.response) {
-                    resultingKeyValuePairs.add(entry.getKey());
-                    resultingKeyValuePairs.add(entry.getValue());
-                }
+                MapGetAllCodec.decodeResponse(response, (key, value) -> {
+                    result.put(toObject(key), toObject(value));
+                });
             } catch (Exception e) {
                 throw rethrow(e);
             }
         }
     }
 
-    protected void fillPartitionToKeyData(Set<K> keys,
-                                          Map<Integer, List<Data>> partitionToKeyData,
-                                          Map<Object, Data> keyMap,
-                                          Map<Data, Object> reverseKeyMap) {
+    protected void fillPartitionToKeyData(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData,
+                                          Map<Object, Data> keyMap) {
         ClientPartitionService partitionService = getContext().getPartitionService();
         for (K key : keys) {
             Data keyData = toData(key);
@@ -1192,9 +1182,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
             keyList.add(keyData);
             if (keyMap != null) {
                 keyMap.put(key, keyData);
-            }
-            if (reverseKeyMap != null) {
-                reverseKeyMap.put(keyData, key);
             }
         }
     }
@@ -1213,15 +1200,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public Set<Entry<K, V>> entrySet() {
         ClientMessage request = MapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
 
         ImmutableInflatableSet.ImmutableSetBuilder<Entry<K, V>> setBuilder =
-                ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
+                ImmutableInflatableSet.newImmutableSetBuilder(0);
         InternalSerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService);
-            setBuilder.add(entry);
-        }
+        MapEntrySetCodec.decodeResponse(response, (key, value) -> {
+            setBuilder.add(new LazyMapEntry<>(key, value, serializationService));
+        });
+
         return setBuilder.build();
     }
 
@@ -1281,15 +1267,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapEntriesWithPredicateCodec.encodeRequest(name, toData(predicate));
 
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
-
         ImmutableInflatableSet.ImmutableSetBuilder<Entry<K, V>> setBuilder =
-                ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
+                ImmutableInflatableSet.newImmutableSetBuilder(0);
         InternalSerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService);
-            setBuilder.add(entry);
-        }
+
+        MapEntriesWithPredicateCodec.decodeResponse(response, (key, value) -> {
+            setBuilder.add(new LazyMapEntry<>(key, value, serializationService));
+        });
+
         return setBuilder.build();
     }
 
@@ -1300,15 +1285,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapEntriesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
 
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec
-                .decodeResponse(response);
 
-        ArrayList<Map.Entry> resultList = new ArrayList<>();
-        for (Entry<Data, Data> entry : resultParameters.response) {
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            resultList.add(new AbstractMap.SimpleEntry<>(key, value));
-        }
+        List<Map.Entry> resultList = new ArrayList<>();
+        MapEntriesWithPagingPredicateCodec.decodeResponse(response, (key, value) -> {
+            resultList.add(new AbstractMap.SimpleEntry<>(toObject(key), toObject(value)));
+        });
+
         return getSortedQueryResultSet(resultList, pagingPredicate, iterationType);
     }
 
@@ -1344,15 +1326,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec
-                .decodeResponse(response);
 
-        List<Entry> resultList = new ArrayList<>(resultParameters.response.size());
-        for (Entry<Data, Data> entry : resultParameters.response) {
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            resultList.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
-        }
+        List<Entry> resultList = new ArrayList<>();
+        MapValuesWithPagingPredicateCodec.decodeResponse(response, (key, value) -> {
+            resultList.add(new AbstractMap.SimpleEntry<>(toObject(key), toObject(value)));
+        });
+
         return (Collection<V>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.VALUE);
     }
 
@@ -1439,21 +1418,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
-        MapExecuteOnAllKeysCodec.ResponseParameters resultParameters = MapExecuteOnAllKeysCodec.decodeResponse(response);
-        return prepareResult(resultParameters.response);
+
+        Map<K, R> result = createHashMap(0);
+
+        MapExecuteOnAllKeysCodec.decodeResponse(response, createResponseConsumer(result));
+        return result;
     }
 
-    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries) {
-        if (CollectionUtil.isEmpty(entries)) {
-            return emptyMap();
-        }
 
-        Map<K, R> result = createHashMap(entries.size());
-        for (Entry<Data, Data> entry : entries) {
-            K key = toObject(entry.getKey());
-            result.put(key, toObject(entry.getValue()));
-        }
-        return result;
+    protected <R> BiConsumer<Data, Data> createResponseConsumer(Map<K, R> result) {
+        return (key, value) -> result.put(toObject(key), toObject(value));
     }
 
     @Override
@@ -1462,8 +1436,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
 
-        MapExecuteWithPredicateCodec.ResponseParameters resultParameters = MapExecuteWithPredicateCodec.decodeResponse(response);
-        return prepareResult(resultParameters.response);
+        Map<K, R> result = createHashMap(0);
+        MapExecuteWithPredicateCodec.decodeResponse(response, createResponseConsumer(result));
+        return result;
     }
 
     @Override
@@ -1606,8 +1581,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
         return new ClientDelegatingFuture<>(
-            future, getSerializationService(),
-            message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message).response));
+                future, getSerializationService(),
+                message -> {
+                    Map<K, R> result = createHashMap(0);
+                    MapExecuteOnKeysCodec.decodeResponse(message, createResponseConsumer(result));
+                    return result;
+                });
     }
 
     @Override

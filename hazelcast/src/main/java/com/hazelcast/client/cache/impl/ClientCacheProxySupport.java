@@ -694,7 +694,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     protected void getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys, ExpiryPolicy expiryPolicy,
-                                  List<Object> resultingKeyValuePairs, long startNanos) {
+                                  Map<K, V> result, long startNanos, BiConsumer<Data, Data> biConsumer) {
         if (dataKeys.isEmpty()) {
             objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -703,14 +703,10 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, dataKeys, expiryPolicyData);
         ClientMessage responseMessage = invoke(request);
 
-        List<Map.Entry<Data, Data>> response = CacheGetAllCodec.decodeResponse(responseMessage).response;
-        for (Map.Entry<Data, Data> entry : response) {
-            resultingKeyValuePairs.add(entry.getKey());
-            resultingKeyValuePairs.add(entry.getValue());
-        }
+        CacheGetAllCodec.decodeResponse(responseMessage, biConsumer);
 
         if (statisticsEnabled) {
-            statsHandler.onBatchGet(startNanos, response.size());
+            statsHandler.onBatchGet(startNanos, result.size());
         }
     }
 

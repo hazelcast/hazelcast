@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -78,5 +79,29 @@ public final class EntryListCodec {
                                                               Function<ClientMessage.ForwardFrameIterator, K> decodeKeyFunc,
                                                               Function<ClientMessage.ForwardFrameIterator, V> decodeValueFunc) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator, decodeKeyFunc, decodeValueFunc);
+    }
+
+    public static <K, V> void decode(ClientMessage.ForwardFrameIterator iterator,
+                                     Function<ClientMessage.ForwardFrameIterator, K> decodeKeyFunc,
+                                     Function<ClientMessage.ForwardFrameIterator, V> decodeValueFunc,
+                                     BiConsumer<K, V> kvBiConsumer) {
+        //begin frame, map
+        iterator.next();
+        while (!nextFrameIsDataStructureEndFrame(iterator)) {
+            K key = decodeKeyFunc.apply(iterator);
+            V value = decodeValueFunc.apply(iterator);
+            kvBiConsumer.accept(key, value);
+        }
+        //end frame, map
+        iterator.next();
+    }
+
+    public static <K, V> void decodeNullable(ClientMessage.ForwardFrameIterator iterator,
+                                             Function<ClientMessage.ForwardFrameIterator, K> decodeKeyFunc,
+                                             Function<ClientMessage.ForwardFrameIterator, V> decodeValueFunc,
+                                             BiConsumer<K, V> kvBiConsumer) {
+        if (!nextFrameIsNullEndFrame(iterator)) {
+            decode(iterator, decodeKeyFunc, decodeValueFunc, kvBiConsumer);
+        }
     }
 }

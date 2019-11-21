@@ -525,16 +525,11 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         }
 
         int keysSize = keys.size();
-        List<Data> dataKeys = new LinkedList<Data>();
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
-        getAllInternal(keys, dataKeys, expiryPolicy, resultingKeyValuePairs, startNanos);
-
+        List<Data> dataKeys = new LinkedList<>();
         Map<K, V> result = createHashMap(keysSize);
-        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
-            K key = toObject(resultingKeyValuePairs.get(i++));
-            V value = toObject(resultingKeyValuePairs.get(i++));
-            result.put(key, value);
-        }
+        getAllInternal(keys, dataKeys, expiryPolicy, result, startNanos, (key, value) -> {
+            result.put(toObject(key), toObject(value));
+        });
         return result;
     }
 

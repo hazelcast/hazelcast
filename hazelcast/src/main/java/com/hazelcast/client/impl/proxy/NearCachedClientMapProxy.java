@@ -34,7 +34,6 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.LocalMapStats;
@@ -52,6 +51,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
@@ -62,7 +62,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
-import static java.util.Collections.emptyMap;
 
 /**
  * A Client-side {@code IMap} implementation which is fronted by a Near Cache.
@@ -394,42 +393,41 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, List<Object> resultingKeyValuePairs) {
+    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
         Map<Object, Data> keyMap = createHashMap(keys.size());
         if (serializeKeys) {
-            fillPartitionToKeyData(keys, partitionToKeyData, keyMap, null);
+            fillPartitionToKeyData(keys, partitionToKeyData, keyMap);
         }
         Collection<?> ncKeys = serializeKeys ? keyMap.values() : new LinkedList<>(keys);
 
-        populateResultFromNearCache(ncKeys, resultingKeyValuePairs);
+        Map<K, V> nearCacheResult = createHashMap(ncKeys.size());
+        populateResultFromNearCache(ncKeys, nearCacheResult);
         if (ncKeys.isEmpty()) {
+            result.putAll(nearCacheResult);
             return;
         }
 
-        Map<Data, Object> reverseKeyMap = null;
         if (!serializeKeys) {
-            reverseKeyMap = createHashMap(ncKeys.size());
-            fillPartitionToKeyData(keys, partitionToKeyData, keyMap, reverseKeyMap);
+            fillPartitionToKeyData(keys, partitionToKeyData, keyMap);
         }
 
         Map<Object, Long> reservations = getNearCacheReservations(ncKeys, keyMap);
         try {
-            int currentSize = resultingKeyValuePairs.size();
-            super.getAllInternal(keys, partitionToKeyData, resultingKeyValuePairs);
-            populateResultFromRemote(currentSize, resultingKeyValuePairs, reservations, reverseKeyMap);
+            super.getAllInternal(keys, partitionToKeyData, result);
+            populateResultFromRemote(result, reservations, keyMap);
+            result.putAll(nearCacheResult);
         } finally {
             releaseRemainingReservedKeys(reservations);
         }
     }
 
-    private void populateResultFromNearCache(Collection<?> keys, List<Object> resultingKeyValuePairs) {
+    private void populateResultFromNearCache(Collection<?> keys, Map<K, V> result) {
         Iterator<?> iterator = keys.iterator();
         while (iterator.hasNext()) {
             Object key = iterator.next();
             Object cached = getCachedValue(key, true);
             if (cached != null && cached != NOT_CACHED) {
-                resultingKeyValuePairs.add(key);
-                resultingKeyValuePairs.add(cached);
+                result.put(toObject(key), (V) cached);
                 iterator.remove();
             }
         }
@@ -447,21 +445,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return reservations;
     }
 
-    private void populateResultFromRemote(int currentSize, List<Object> resultingKeyValuePairs, Map<Object, Long> reservations,
-                                          Map<Data, Object> reverseKeyMap) {
-        for (int i = currentSize; i < resultingKeyValuePairs.size(); i += 2) {
-            Data keyData = (Data) resultingKeyValuePairs.get(i);
-            Data valueData = (Data) resultingKeyValuePairs.get(i + 1);
-
-            Object ncKey = serializeKeys ? keyData : reverseKeyMap.get(keyData);
-            if (!serializeKeys) {
-                resultingKeyValuePairs.set(i, ncKey);
-            }
+    private void populateResultFromRemote(Map<K, V> result, Map<Object, Long> reservations, Map<Object, Data> keyMap) {
+        for (Map.Entry<K, V> entry : result.entrySet()) {
+            K key = entry.getKey();
+            Object ncKey = serializeKeys ? keyMap.get(key) : key;
 
             Long reservationId = reservations.get(ncKey);
             if (reservationId != null) {
-                Object cachedValue = tryPublishReserved(ncKey, valueData, reservationId);
-                resultingKeyValuePairs.set(i + 1, cachedValue);
+                Object cachedValue = tryPublishReserved(ncKey, entry.getValue(), reservationId);
+                result.put(key, (V) cachedValue);
                 reservations.remove(ncKey);
             }
         }
@@ -521,20 +513,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entrySet) {
-        if (CollectionUtil.isEmpty(entrySet)) {
-            return emptyMap();
-        }
-        Map<K, R> result = createHashMap(entrySet.size());
-        for (Entry<Data, Data> entry : entrySet) {
-            Data dataKey = entry.getKey();
-            K key = toObject(dataKey);
-            R value = toObject(entry.getValue());
-
-            invalidateNearCache(serializeKeys ? dataKey : key);
-            result.put(key, value);
-        }
-        return result;
+    protected <R> BiConsumer<Data, Data> createResponseConsumer(Map<K, R> result) {
+        return (key, value) -> {
+            K deserializedKey = toObject(key);
+            invalidateNearCache(serializeKeys ? key : deserializedKey);
+            result.put(deserializedKey, toObject(value));
+        };
     }
 
     @Override

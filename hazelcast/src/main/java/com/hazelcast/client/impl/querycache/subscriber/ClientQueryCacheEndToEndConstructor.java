@@ -28,7 +28,10 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructo
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.internal.serialization.Data;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -51,8 +54,10 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(publisherCreateMessage, urgent);
 
         if (info.isIncludeValue()) {
-            Collection<Map.Entry<Data, Data>> result =
-                    ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response).response;
+            Collection<Map.Entry<Data, Data>> result = new ArrayList<>();
+            ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response, (key, value) -> {
+                result.add(new AbstractMap.SimpleEntry<>(key, value));
+            });
             prepopulate(queryCache, result);
         } else {
             List<Data> result = ContinuousQueryPublisherCreateCodec.decodeResponse(response).response;
