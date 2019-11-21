@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec;
 import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
@@ -602,6 +603,35 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> MCWanSyncMapCodec.decodeResponse(clientMessage).uuid
+        );
+    }
+
+    /**
+     * Initiate WAN consistency check for a specific map.
+     *
+     * @param wanReplicationName name of the WAN replication to check WAN consistency for
+     * @param wanPublisherId     ID of the WAN publisher to check WAN consistency for
+     * @param mapName            name of the map to check WAN consistency for
+     * @return a {@link CompletableFuture} that holds the UUID of the WAN consistency check
+     */
+    @Nonnull
+    public CompletableFuture<UUID> checkWanConsistency(String wanReplicationName,
+                                                       String wanPublisherId,
+                                                       String mapName) {
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+        checkNotNull(mapName);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCCheckWanConsistencyCodec.encodeRequest(wanReplicationName, wanPublisherId, mapName),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCCheckWanConsistencyCodec.decodeResponse(clientMessage).uuid
         );
     }
 }
