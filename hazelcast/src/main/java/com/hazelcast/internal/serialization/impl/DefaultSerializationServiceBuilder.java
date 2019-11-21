@@ -263,7 +263,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     private void initVersions() {
         if (version < 0) {
             String defaultVal = ClusterProperty.SERIALIZATION_VERSION.getDefaultValue();
-            byte versionCandidate = Byte.parseByte(System.getProperty(ClusterProperty.SERIALIZATION_VERSION.getName(), defaultVal));
+            byte versionCandidate = Byte.parseByte(
+                    System.getProperty(ClusterProperty.SERIALIZATION_VERSION.getName(), defaultVal));
             byte maxVersion = Byte.parseByte(defaultVal);
             if (versionCandidate > maxVersion) {
                 throw new IllegalArgumentException(
