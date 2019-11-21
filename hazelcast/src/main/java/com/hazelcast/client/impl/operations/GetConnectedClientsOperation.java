@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.ClientType;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngine;
@@ -32,7 +31,7 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class GetConnectedClientsOperation extends AbstractClientOperation implements ReadonlyOperation {
 
-    private Map<UUID, ClientType> clients;
+    private Map<UUID, String> clients;
 
     public GetConnectedClientsOperation() {
     }

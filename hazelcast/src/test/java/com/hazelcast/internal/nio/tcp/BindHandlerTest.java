@@ -102,7 +102,7 @@ public class BindHandlerTest {
 
     // connection type of TcpIpConnection for which BindMessage is processed
     @Parameter(1)
-    public ConnectionType connectionType;
+    public String connectionType;
 
     // this map populates BindMessage.localAddresses map
     @Parameter(2)
@@ -205,7 +205,7 @@ public class BindHandlerTest {
         Packet packet = new Packet(serializationService.toBytes(bindMessage));
         TcpIpConnection connection = new TcpIpConnection(endpointManager, null, 1, channel);
         if (connectionType != null) {
-            connection.setType(connectionType);
+            connection.setConnectionType(connectionType);
         }
         packet.setConn(connection);
         return packet;
