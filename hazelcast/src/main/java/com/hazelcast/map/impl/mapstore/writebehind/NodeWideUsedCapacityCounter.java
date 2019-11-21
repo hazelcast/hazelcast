@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.ReachedMaxSizeException;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,7 +37,7 @@ public class NodeWideUsedCapacityCounter {
     private final AtomicLong nodeWideUsedCapacityCounter = new AtomicLong(0);
 
     public NodeWideUsedCapacityCounter(HazelcastProperties properties) {
-        this.maxPerNodeCapacity = properties.getLong(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
+        this.maxPerNodeCapacity = properties.getLong(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
     }
 
     /**

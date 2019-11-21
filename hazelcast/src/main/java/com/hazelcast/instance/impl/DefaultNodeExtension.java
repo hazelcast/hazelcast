@@ -97,7 +97,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -217,7 +217,7 @@ public class DefaultNodeExtension implements NodeExtension {
             SerializationConfig serializationConfig = config.getSerializationConfig() != null
                     ? config.getSerializationConfig() : new SerializationConfig();
 
-            byte version = (byte) node.getProperties().getInteger(GroupProperty.SERIALIZATION_VERSION);
+            byte version = (byte) node.getProperties().getInteger(ClusterProperty.SERIALIZATION_VERSION);
 
             ss = builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
@@ -244,7 +244,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
-        String partitioningStrategyClassName = node.getProperties().getString(GroupProperty.PARTITIONING_STRATEGY_CLASS);
+        String partitioningStrategyClassName = node.getProperties().getString(ClusterProperty.PARTITIONING_STRATEGY_CLASS);
         if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {
@@ -443,13 +443,13 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     // obtain cluster version, if already initialized (not null)
-    // otherwise, if overridden with GroupProperty#INIT_CLUSTER_VERSION, use this one
+    // otherwise, if overridden with ClusterProperty#INIT_CLUSTER_VERSION, use this one
     // otherwise, if not overridden, use current node's codebase version
     private Version getClusterOrNodeVersion() {
         if (node.getClusterService() != null && !node.getClusterService().getClusterVersion().isUnknown()) {
             return node.getClusterService().getClusterVersion();
         } else {
-            String overriddenClusterVersion = node.getProperties().getString(GroupProperty.INIT_CLUSTER_VERSION);
+            String overriddenClusterVersion = node.getProperties().getString(ClusterProperty.INIT_CLUSTER_VERSION);
             return (overriddenClusterVersion != null) ? MemberVersion.of(overriddenClusterVersion).asVersion()
                     : node.getVersion().asVersion();
         }

@@ -58,8 +58,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Packet.Type.BIND;
-import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
 
 public class MockIOService implements IOService {
 

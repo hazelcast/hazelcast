@@ -25,7 +25,7 @@ import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -126,9 +126,9 @@ public abstract class ClientMapUnboundReturnValuesTestSupport extends HazelcastT
 
     private Config createConfig(int partitionCount, int limit, int preCheckTrigger) {
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), valueOf(partitionCount));
-        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), valueOf(limit));
-        config.setProperty(GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName(), valueOf(preCheckTrigger));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), valueOf(partitionCount));
+        config.setProperty(ClusterProperty.QUERY_RESULT_SIZE_LIMIT.getName(), valueOf(limit));
+        config.setProperty(ClusterProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName(), valueOf(preCheckTrigger));
         return config;
     }
 

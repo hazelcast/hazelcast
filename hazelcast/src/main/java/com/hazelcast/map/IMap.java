@@ -29,7 +29,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -2163,11 +2163,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return an immutable set clone of the keys contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
     Set<K> keySet();
@@ -2182,11 +2182,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return an immutable collection clone of the values contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
     Collection<V> values();
@@ -2201,11 +2201,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return an immutable set clone of the keys mappings in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Nonnull
     Set<Map.Entry<K, V>> entrySet();
@@ -2223,13 +2223,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
      * @return result key set of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is {@code null}
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet(@Nonnull Predicate<K, V> predicate);
 
@@ -2245,13 +2245,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
      * @return result entry set of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is {@code null}
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate<K, V> predicate);
 
@@ -2268,13 +2268,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
      * @return result value collection of the query
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is {@code null}
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values(@Nonnull Predicate<K, V> predicate);
 
@@ -2295,11 +2295,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return locally owned immutable set of keys
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
 
@@ -2320,12 +2320,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
      * @return an immutable set of the keys of matching locally owned entries
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet(@Nonnull Predicate<K, V> predicate);
 

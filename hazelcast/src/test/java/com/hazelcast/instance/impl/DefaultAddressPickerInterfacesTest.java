@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -79,7 +79,7 @@ public class DefaultAddressPickerInterfacesTest {
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv6 = clear(PREFER_IPV6_ADDRESSES);
     @Rule
-    public final OverridePropertyRule ruleSysPropHzPreferIpv4 = set(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
+    public final OverridePropertyRule ruleSysPropHzPreferIpv4 = set(ClusterProperty.PREFER_IPv4_STACK.getName(), "false");
 
     /**
      * Enable NetworkInterface static methods mocking before each tests.

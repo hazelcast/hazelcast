@@ -27,7 +27,7 @@ import com.hazelcast.internal.partition.impl.MigrationCommitTest.DelayMigrationS
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.MigrationStats;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -88,7 +88,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         Config config = new Config();
         int partitionCount = 100;
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         warmUpPartitions(hz);
@@ -160,7 +160,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     @Test
     public void testMigrationStats_afterPartitionsLost_when_NO_MIGRATION() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Config config = new Config().setProperty(GroupProperty.PARTITION_COUNT.getName(), "2000");
+        Config config = new Config().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2000");
         HazelcastInstance[] instances = factory.newInstances(config, 10);
         assertClusterSizeEventually(instances.length, instances);
         warmUpPartitions(instances);
@@ -233,7 +233,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         Config config = new Config();
         // even partition count to make migration count deterministic
         int partitionCount = 10;
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
 
         // hold the migrations until all nodes join so that there will be no retries / failed migrations etc.
         CountDownLatch migrationStartLatch = new CountDownLatch(1);

@@ -22,7 +22,7 @@ import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,7 +48,7 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
     public void setup() {
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory();
         Config config = new Config();
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "5");
 
         HazelcastInstance[] cluster = instanceFactory.newInstances(config, 1);
 

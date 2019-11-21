@@ -21,7 +21,7 @@ import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,11 +44,11 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
     @Test
     public void testSystemPropertiesOverrideConfig() {
         // setting non-defaults
-        System.setProperty(GroupProperty.METRICS_ENABLED.getName(), "false");
-        System.setProperty(GroupProperty.METRICS_MC_ENABLED.getName(), "false");
-        System.setProperty(GroupProperty.METRICS_MC_RETENTION.getName(), "42");
-        System.setProperty(GroupProperty.METRICS_JMX_ENABLED.getName(), "false");
-        System.setProperty(GroupProperty.METRICS_COLLECTION_FREQUENCY.getName(), "24");
+        System.setProperty(ClusterProperty.METRICS_ENABLED.getName(), "false");
+        System.setProperty(ClusterProperty.METRICS_MC_ENABLED.getName(), "false");
+        System.setProperty(ClusterProperty.METRICS_MC_RETENTION.getName(), "42");
+        System.setProperty(ClusterProperty.METRICS_JMX_ENABLED.getName(), "false");
+        System.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "24");
 
         HazelcastInstance instance = createHazelcastInstance();
         Config instanceConfig = instance.getConfig();
@@ -68,11 +68,11 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
     @Test
     public void testInvalidSystemPropertiesIgnored() {
         // setting non-defaults
-        System.setProperty(GroupProperty.METRICS_ENABLED.getName(), "invalid");
-        System.setProperty(GroupProperty.METRICS_MC_ENABLED.getName(), "invalid");
-        System.setProperty(GroupProperty.METRICS_MC_RETENTION.getName(), "invalid");
-        System.setProperty(GroupProperty.METRICS_JMX_ENABLED.getName(), "invalid");
-        System.setProperty(GroupProperty.METRICS_COLLECTION_FREQUENCY.getName(), "invalid");
+        System.setProperty(ClusterProperty.METRICS_ENABLED.getName(), "invalid");
+        System.setProperty(ClusterProperty.METRICS_MC_ENABLED.getName(), "invalid");
+        System.setProperty(ClusterProperty.METRICS_MC_RETENTION.getName(), "invalid");
+        System.setProperty(ClusterProperty.METRICS_JMX_ENABLED.getName(), "invalid");
+        System.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "invalid");
 
         HazelcastInstance instance = createHazelcastInstance();
         Config instanceConfig = instance.getConfig();
@@ -98,11 +98,11 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
     public void testConfigPropertiesOverrideConfig() {
         Config originalConfig = smallInstanceConfig();
         // setting non-defaults
-        originalConfig.setProperty(GroupProperty.METRICS_ENABLED.getName(), "false");
-        originalConfig.setProperty(GroupProperty.METRICS_MC_ENABLED.getName(), "false");
-        originalConfig.setProperty(GroupProperty.METRICS_MC_RETENTION.getName(), "42");
-        originalConfig.setProperty(GroupProperty.METRICS_JMX_ENABLED.getName(), "false");
-        originalConfig.setProperty(GroupProperty.METRICS_COLLECTION_FREQUENCY.getName(), "24");
+        originalConfig.setProperty(ClusterProperty.METRICS_ENABLED.getName(), "false");
+        originalConfig.setProperty(ClusterProperty.METRICS_MC_ENABLED.getName(), "false");
+        originalConfig.setProperty(ClusterProperty.METRICS_MC_RETENTION.getName(), "42");
+        originalConfig.setProperty(ClusterProperty.METRICS_JMX_ENABLED.getName(), "false");
+        originalConfig.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "24");
 
         HazelcastInstance instance = createHazelcastInstance(originalConfig);
         Config instanceConfig = instance.getConfig();
@@ -123,11 +123,11 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
     public void testInvalidConfigPropertiesIgnored() {
         Config originalConfig = smallInstanceConfig();
         // setting non-defaults
-        originalConfig.setProperty(GroupProperty.METRICS_ENABLED.getName(), "invalid");
-        originalConfig.setProperty(GroupProperty.METRICS_MC_ENABLED.getName(), "invalid");
-        originalConfig.setProperty(GroupProperty.METRICS_MC_RETENTION.getName(), "invalid");
-        originalConfig.setProperty(GroupProperty.METRICS_JMX_ENABLED.getName(), "invalid");
-        originalConfig.setProperty(GroupProperty.METRICS_COLLECTION_FREQUENCY.getName(), "invalid");
+        originalConfig.setProperty(ClusterProperty.METRICS_ENABLED.getName(), "invalid");
+        originalConfig.setProperty(ClusterProperty.METRICS_MC_ENABLED.getName(), "invalid");
+        originalConfig.setProperty(ClusterProperty.METRICS_MC_RETENTION.getName(), "invalid");
+        originalConfig.setProperty(ClusterProperty.METRICS_JMX_ENABLED.getName(), "invalid");
+        originalConfig.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "invalid");
 
         HazelcastInstance instance = createHazelcastInstance(originalConfig);
         Config instanceConfig = instance.getConfig();
@@ -159,7 +159,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
 
     @Test
     public void testDebugMetricsSysPropDisabled() {
-        System.setProperty(GroupProperty.METRICS_DEBUG.getName(), "false");
+        System.setProperty(ClusterProperty.METRICS_DEBUG.getName(), "false");
         HazelcastInstance instance = createHazelcastInstance();
         MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
 
@@ -168,7 +168,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
 
     @Test
     public void testDebugMetricsSysPropEnabled() {
-        System.setProperty(GroupProperty.METRICS_DEBUG.getName(), "true");
+        System.setProperty(ClusterProperty.METRICS_DEBUG.getName(), "true");
         HazelcastInstance instance = createHazelcastInstance();
         MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
 
@@ -183,14 +183,14 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
 
     @Test
     public void testDataStructureMetricsSysPropDisabled() {
-        System.setProperty(GroupProperty.METRICS_DATASTRUCTURES.getName(), "false");
+        System.setProperty(ClusterProperty.METRICS_DATASTRUCTURES.getName(), "false");
         HazelcastInstance instance = createHazelcastInstance();
         verifyDataStructureMetricPresent(instance, false);
     }
 
     @Test
     public void testDataStructureMetricsSysPropEnabled() {
-        System.setProperty(GroupProperty.METRICS_DATASTRUCTURES.getName(), "true");
+        System.setProperty(ClusterProperty.METRICS_DATASTRUCTURES.getName(), "true");
         HazelcastInstance instance = createHazelcastInstance();
         verifyDataStructureMetricPresent(instance, true);
     }

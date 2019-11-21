@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -125,7 +125,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
     public void test_lifecycleEvents_whenMergeFailed() throws Exception {
         final HazelcastInstance h1 = factory.newHazelcastInstance(newConfig());
         final HazelcastInstance h2 = factory.newHazelcastInstance(newConfig()
-                .setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5"));
+                .setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "5"));
 
         MergeLifecycleListener lifecycleListener = new MergeLifecycleListener();
         h2.getLifecycleService().addLifecycleListener(lifecycleListener);
@@ -151,8 +151,8 @@ public class SplitMergeTest extends HazelcastTestSupport {
     private Config newConfig() {
         Config config = new Config();
         // to avoid accidental merge
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "600");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "600");
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "600");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "600");
         return config;
     }
 

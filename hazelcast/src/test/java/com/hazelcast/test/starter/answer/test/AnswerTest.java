@@ -60,7 +60,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -188,7 +188,7 @@ public class AnswerTest extends HazelcastTestSupport {
     public void testPartitionService() {
         Node node = HazelcastStarter.getNode(hz);
         InternalPartitionService partitionService = node.getPartitionService();
-        int expectedPartitionCount = Integer.parseInt(hz.getConfig().getProperty(GroupProperty.PARTITION_COUNT.getName()));
+        int expectedPartitionCount = Integer.parseInt(hz.getConfig().getProperty(ClusterProperty.PARTITION_COUNT.getName()));
 
         IPartition[] partitions = partitionService.getPartitions();
         assertNotNull("partitions should not be null", partitions);

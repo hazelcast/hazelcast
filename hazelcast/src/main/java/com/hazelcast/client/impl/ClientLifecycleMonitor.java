@@ -20,7 +20,7 @@ import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
@@ -57,8 +57,8 @@ public class ClientLifecycleMonitor implements Runnable {
         this.executionService = executionService;
         this.nodeEngine = nodeEngine;
         this.clientEngine = clientEngine;
-        checkMillis = hazelcastProperties.getPositiveMillisOrDefault(GroupProperty.CLIENT_CLEANUP_PERIOD);
-        timeoutMillis = hazelcastProperties.getSeconds(GroupProperty.CLIENT_CLEANUP_TIMEOUT);
+        checkMillis = hazelcastProperties.getPositiveMillisOrDefault(ClusterProperty.CLIENT_CLEANUP_PERIOD);
+        timeoutMillis = hazelcastProperties.getSeconds(ClusterProperty.CLIENT_CLEANUP_TIMEOUT);
 
     }
 

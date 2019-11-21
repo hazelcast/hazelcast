@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.partition.impl.MigrationManager.MigrateTask;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.concurrent.TimeUnit;
 
@@ -79,7 +79,7 @@ class MigrationThread extends Thread implements Runnable {
 
     /**
      * Polls the migration queue and processes the tasks, sleeping if there are no tasks, if migration is not allowed or
-     * if configured to do so (see {@link GroupProperty#PARTITION_MIGRATION_INTERVAL}).
+     * if configured to do so (see {@link ClusterProperty#PARTITION_MIGRATION_INTERVAL}).
      *
      * @throws InterruptedException if the sleep was interrupted
      */

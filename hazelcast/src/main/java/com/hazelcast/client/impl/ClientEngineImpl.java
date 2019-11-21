@@ -60,7 +60,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
@@ -149,7 +149,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = RuntimeAvailableProcessors.get();
 
-        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
+        int threadCount = node.getProperties().getInteger(ClusterProperty.CLIENT_ENGINE_THREAD_COUNT);
         if (threadCount <= 0) {
             threadCount = coreSize * threadsPerCore;
         }
@@ -177,7 +177,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = RuntimeAvailableProcessors.get();
 
-        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_QUERY_THREAD_COUNT);
+        int threadCount = node.getProperties().getInteger(ClusterProperty.CLIENT_ENGINE_QUERY_THREAD_COUNT);
         if (threadCount <= 0) {
             threadCount = coreSize * QUERY_THREADS_PER_CORE;
         }
@@ -192,7 +192,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = Runtime.getRuntime().availableProcessors();
 
-        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_BLOCKING_THREAD_COUNT);
+        int threadCount = node.getProperties().getInteger(ClusterProperty.CLIENT_ENGINE_BLOCKING_THREAD_COUNT);
         if (threadCount <= 0) {
             threadCount = coreSize * BLOCKING_THREADS_PER_CORE;
         }

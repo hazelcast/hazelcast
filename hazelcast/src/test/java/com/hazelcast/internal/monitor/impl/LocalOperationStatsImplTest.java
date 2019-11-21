@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -56,7 +56,7 @@ public class LocalOperationStatsImplTest extends HazelcastTestSupport {
     @Test
     public void testNodeConstructor() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT.getName(), "139");
+        config.setProperty(ClusterProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT.getName(), "139");
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         Node node = getNode(hazelcastInstance);
@@ -71,7 +71,7 @@ public class LocalOperationStatsImplTest extends HazelcastTestSupport {
     @Test
     public void testSerialization() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT.getName(), "127");
+        config.setProperty(ClusterProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT.getName(), "127");
 
         SlowOperationInvocationDTO slowOperationInvocationDTO = new SlowOperationInvocationDTO();
         slowOperationInvocationDTO.id = 12345;

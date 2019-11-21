@@ -68,10 +68,10 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
-import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
-import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
-import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
-import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.EVENT_QUEUE_CAPACITY;
+import static com.hazelcast.spi.properties.ClusterProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.EVENT_SYNC_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.EVENT_THREAD_COUNT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**

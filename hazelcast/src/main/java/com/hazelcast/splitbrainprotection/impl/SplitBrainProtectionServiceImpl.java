@@ -38,7 +38,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.HeartbeatAware;
 import com.hazelcast.splitbrainprotection.PingAware;
@@ -106,7 +106,7 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
         // single thread split brain protection executor
         executionService.register(SPLIT_BRAIN_PROTECTION_EXECUTOR, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
 
-        long heartbeatInterval = nodeEngine.getProperties().getSeconds(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+        long heartbeatInterval = nodeEngine.getProperties().getSeconds(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS);
         executionService.scheduleWithRepetition(SPLIT_BRAIN_PROTECTION_EXECUTOR, new UpdateSplitBrainProtections(),
                 heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
     }
@@ -144,8 +144,8 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
 
     private void validateSplitBrainProtectionParameters(String splitBrainProtectionName, long value, String parameterName) {
         HazelcastProperties nodeProperties = nodeEngine.getProperties();
-        long maxNoHeartbeatMillis = nodeProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
-        long heartbeatIntervalMillis = nodeProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+        long maxNoHeartbeatMillis = nodeProperties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
+        long heartbeatIntervalMillis = nodeProperties.getMillis(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS);
 
         if (value > maxNoHeartbeatMillis) {
             throw new InvalidConfigurationException("This member is configured with maximum no-heartbeat duration "

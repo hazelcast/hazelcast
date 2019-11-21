@@ -27,7 +27,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -827,7 +827,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     /**
      * <pre>
-     * Given: Operation heartbeats are sent four times per {@link GroupProperty#OPERATION_CALL_TIMEOUT_MILLIS}
+     * Given: Operation heartbeats are sent four times per {@link ClusterProperty#OPERATION_CALL_TIMEOUT_MILLIS}
      *        (see {@link InvocationMonitor#getHeartbeatBroadcastPeriodMillis()})
      * When: An offloaded EntryProcessor takes a long time to run.
      * Then: Heartbeats are still coming while the task is offloaded.
@@ -841,7 +841,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         int heartbeatsIntervalSec = 2;
         Config config = getConfig();
-        config.getProperties().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+        config.getProperties().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 String.valueOf(heartbeatsIntervalSec * 4 * 1000));
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         instances = factory.newInstances(config);

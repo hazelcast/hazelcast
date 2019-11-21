@@ -22,7 +22,7 @@ import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.CountDownLatchProxy;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -94,7 +94,7 @@ public class CountDownLatchLongAwaitTest extends HazelcastRaftTestSupport {
     protected Config createConfig(int cpNodeCount, int groupSize) {
         String callTimeoutStr = String.valueOf(SECONDS.toMillis(callTimeoutSeconds));
         return super.createConfig(cpNodeCount, groupSize)
-                    .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), callTimeoutStr);
+                    .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), callTimeoutStr);
     }
 
 }

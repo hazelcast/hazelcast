@@ -27,7 +27,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -85,7 +85,7 @@ public class PhoneHome {
     }
 
     public void check(final Node hazelcastNode) {
-        if (!hazelcastNode.getProperties().getBoolean(GroupProperty.PHONE_HOME_ENABLED)) {
+        if (!hazelcastNode.getProperties().getBoolean(ClusterProperty.PHONE_HOME_ENABLED)) {
             return;
         }
         if (FALSE.equals(getenv("HZ_PHONE_HOME_ENABLED"))) {

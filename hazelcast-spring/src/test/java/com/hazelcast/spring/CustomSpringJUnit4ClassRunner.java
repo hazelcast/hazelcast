@@ -18,7 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.TestLoggingUtils;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
@@ -33,8 +33,8 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
     static {
         TestLoggingUtils.initializeLogging();
         System.setProperty("java.net.preferIPv4Stack", "true");
-        GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
-        GroupProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
+        ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
+        ClusterProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 

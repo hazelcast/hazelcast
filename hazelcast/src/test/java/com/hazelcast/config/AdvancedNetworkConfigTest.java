@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -55,9 +55,9 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         assertEquals(ServerSocketEndpointConfig.DEFAULT_PORT, defaultEndpointConfig.getPort());
         assertEquals(ServerSocketEndpointConfig.PORT_AUTO_INCREMENT, defaultEndpointConfig.getPortCount());
         assertTrue(defaultEndpointConfig.isPortAutoIncrement());
-        assertEquals(Integer.parseInt(GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE.getDefaultValue()),
+        assertEquals(Integer.parseInt(ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE.getDefaultValue()),
                 defaultEndpointConfig.getSocketRcvBufferSizeKb());
-        assertEquals(Integer.parseInt(GroupProperty.SOCKET_SEND_BUFFER_SIZE.getDefaultValue()),
+        assertEquals(Integer.parseInt(ClusterProperty.SOCKET_SEND_BUFFER_SIZE.getDefaultValue()),
                 defaultEndpointConfig.getSocketSendBufferSizeKb());
     }
 

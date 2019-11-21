@@ -23,7 +23,7 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.crdt.pncounter.AbstractPNCounterBasicIntegrationTest;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -78,7 +78,7 @@ public class ClientPNCounterBasicIntegrationTest extends AbstractPNCounterBasicI
                 .setReplicaCount(replicaCount)
                 .setStatisticsEnabled(true);
         final Config config = new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "5")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "5")
                 .setCRDTReplicationConfig(new CRDTReplicationConfig()
                         .setReplicationPeriodMillis(200)
                         .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE))

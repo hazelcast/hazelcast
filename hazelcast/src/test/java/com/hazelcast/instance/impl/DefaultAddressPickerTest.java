@@ -24,7 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
@@ -123,7 +123,7 @@ public class DefaultAddressPickerTest {
         InetAddress address = findIPv6NonLoopbackInterface();
         assumeNotNull(address);
 
-        config.setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
+        config.setProperty(ClusterProperty.PREFER_IPv4_STACK.getName(), "false");
         config.getNetworkConfig().getInterfaces().setEnabled(true)
                 .clear().addInterface(address.getHostAddress());
 
@@ -146,7 +146,7 @@ public class DefaultAddressPickerTest {
         InetAddress address = findIPv6NonLoopbackInterface();
         assumeNotNull(address);
 
-        config.setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
+        config.setProperty(ClusterProperty.PREFER_IPv4_STACK.getName(), "false");
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true)
                 .clear().addMember(getHostAddress(address));
 
@@ -273,7 +273,7 @@ public class DefaultAddressPickerTest {
 
         System.setProperty(DefaultAddressPicker.PREFER_IPV4_STACK, "false");
         System.setProperty(DefaultAddressPicker.PREFER_IPV6_ADDRESSES, "true");
-        config.setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
+        config.setProperty(ClusterProperty.PREFER_IPv4_STACK.getName(), "false");
 
         addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
