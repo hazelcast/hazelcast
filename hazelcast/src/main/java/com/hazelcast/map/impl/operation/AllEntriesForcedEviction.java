@@ -30,8 +30,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 class AllEntriesForcedEviction implements ForcedEviction {
     @Override
     public boolean execute(int retries, MapOperation mapOperation, ILogger logger) {
-        RecordStore recordStore = mapOperation.recordStore;
-        if (recordStore == null) {
+        if (doesNotHaveRecordStore(mapOperation)) {
             return false;
         }
 
@@ -41,6 +40,7 @@ class AllEntriesForcedEviction implements ForcedEviction {
             logger.info("Evicting all entries in current RecordStores because forced eviction was not enough!");
         }
         try {
+            RecordStore recordStore = mapOperation.recordStore;
             recordStore.evictAll(isBackup);
             recordStore.disposeDeferredBlocks();
             mapOperation.runInternal();

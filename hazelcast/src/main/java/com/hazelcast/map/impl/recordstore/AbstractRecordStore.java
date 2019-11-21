@@ -121,7 +121,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public InMemoryFormat getInMemoryFormat() {
-        return getMapContainer().getMapConfig().getInMemoryFormat();
+        return inMemoryFormat;
     }
 
     @Override

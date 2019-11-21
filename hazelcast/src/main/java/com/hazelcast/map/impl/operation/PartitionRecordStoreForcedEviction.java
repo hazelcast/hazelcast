@@ -34,16 +34,16 @@ import static java.lang.String.format;
 class PartitionRecordStoreForcedEviction extends PartitionForcedEviction {
     @Override
     public boolean execute(int retries, MapOperation mapOperation, ILogger logger) {
+        int partitionCount = numberOfPartitions(mapOperation);
+        int threadCount = threadCount(mapOperation);
+        int mod = mod(mapOperation, threadCount);
+
         for (int i = 0; i < retries; i++) {
             try {
                 if (logger.isFineEnabled()) {
                     logger.fine(format("Applying forced eviction on other RecordStores owned by the same partition thread"
                                            + " (map %s, partitionId: %d", mapOperation.getName(), mapOperation.getPartitionId()));
                 }
-
-                int partitionCount = numberOfPartitions(mapOperation);
-                int threadCount = threadCount(mapOperation);
-                int mod = mod(mapOperation, threadCount);
 
                 IntStream.range(0, partitionCount)
                     .filter(partitionId -> partitionId % threadCount == mod)

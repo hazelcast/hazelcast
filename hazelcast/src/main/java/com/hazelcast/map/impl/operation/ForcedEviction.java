@@ -17,7 +17,20 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+
+import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 
 interface ForcedEviction {
     boolean execute(int retries, MapOperation mapOperation, ILogger logger);
+
+    default boolean nativeFormatWithEvictionPolicy(RecordStore recordStore) {
+        return recordStore.getInMemoryFormat() == NATIVE
+            && recordStore.getEvictionPolicy() != NONE;
+    }
+
+    default boolean doesNotHaveRecordStore(MapOperation mapOperation) {
+        return mapOperation.recordStore == null;
+    }
 }

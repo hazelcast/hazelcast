@@ -22,8 +22,6 @@ import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 
-import static com.hazelcast.config.EvictionPolicy.NONE;
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.String.format;
 
@@ -34,12 +32,12 @@ import static java.lang.String.format;
 class RecordStoreForcedEviction implements ForcedEviction {
     @Override
     public boolean execute(int retries, MapOperation mapOperation, ILogger logger) {
-        RecordStore recordStore = mapOperation.recordStore;
-        if (recordStore == null) {
+        if (doesNotHaveRecordStore(mapOperation)) {
             return false;
         }
 
-        if (recordStore.getInMemoryFormat() != NATIVE || recordStore.getEvictionPolicy() == NONE) {
+        RecordStore recordStore = mapOperation.recordStore;
+        if (!nativeFormatWithEvictionPolicy(recordStore)) {
             return false;
         }
 
