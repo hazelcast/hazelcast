@@ -19,20 +19,24 @@ package com.hazelcast.partition.membergroup;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,13 +45,8 @@ import static org.junit.Assert.assertEquals;
 public class MemberGroupFactoryTest {
 
     private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
-
-    private InetAddress fakeAddress;
-
-    @Before
-    public void setUp() throws Exception {
-        fakeAddress = InetAddress.getLocalHost();
-    }
+    private static final AtomicInteger IP_COUNTER = new AtomicInteger(0);
+    private static final ConcurrentMap<String, InetAddress> FAKE_IPS = new ConcurrentHashMap<>();
 
     @Test
     public void testHostAwareMemberGroupFactoryCreateMemberGroups() {
@@ -75,9 +74,9 @@ public class MemberGroupFactoryTest {
 
     private Collection<Member> createMembersWithNoMetadata() {
         Collection<Member> members = new HashSet<Member>();
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress("192.168.3.101"), 5701), VERSION, false));
         return members;
     }
 
@@ -95,13 +94,13 @@ public class MemberGroupFactoryTest {
 
     private Collection<Member> createMembersWithZoneAwareMetadata() {
         Collection<Member> members = new HashSet<Member>();
-        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5701), VERSION, true);
         member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-east-1");
 
-        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress("192.192.0.2"), 5701), VERSION, true);
         member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "us-west-1");
 
-        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress("192.192.0.3"), 5701), VERSION, true);
         member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE, "eu-central-1");
 
         members.add(member1);
@@ -124,13 +123,13 @@ public class MemberGroupFactoryTest {
 
     private Collection<Member> createMembersWithRackAwareMetadata() {
         Collection<Member> members = new HashSet<Member>();
-        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5701), VERSION, true);
         member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-1");
 
-        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress("192.192.0.2"), 5701), VERSION, true);
         member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-2");
 
-        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress("192.192.0.3"), 5701), VERSION, true);
         member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK, "rack-3");
 
         members.add(member1);
@@ -153,13 +152,13 @@ public class MemberGroupFactoryTest {
 
     private Collection<Member> createMembersWithHostAwareMetadata() {
         Collection<Member> members = new HashSet<Member>();
-        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5701), VERSION, true);
         member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-1");
 
-        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress("192.192.0.2"), 5701), VERSION, true);
         member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-2");
 
-        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress("192.192.0.3"), 5701), VERSION, true);
         member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST, "host-3");
 
         members.add(member1);
@@ -206,25 +205,25 @@ public class MemberGroupFactoryTest {
 
     private Collection<Member> createMembers() {
         Collection<Member> members = new HashSet<Member>();
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress("192.168.3.101"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("192.168.3.101", fakeAddress("192.168.3.101"), 5702), VERSION, false));
 
-        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress("172.16.5.11"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("172.16.5.11", fakeAddress("172.16.5.11"), 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress("172.123.0.13"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("172.123.0.13", fakeAddress("172.123.0.13"), 5702), VERSION, false));
 
-        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress("www.hazelcast.com.tr"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.com.tr", fakeAddress("www.hazelcast.com.tr"), 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress("jobs.hazelcast.com"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("jobs.hazelcast.com", fakeAddress("jobs.hazelcast.com"), 5702), VERSION, false));
 
-        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress("www.hazelcast.org"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("www.hazelcast.org", fakeAddress("www.hazelcast.org"), 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress("download.hazelcast.org"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress("download.hazelcast.org"), 5702), VERSION, false));
         return members;
     }
 
@@ -250,5 +249,22 @@ public class MemberGroupFactoryTest {
             groupConfigs.add(group4);
         }
         return groupConfigs;
+    }
+
+    private static InetAddress fakeAddress(String host) {
+        if (AddressUtil.isIpAddress(host)) {
+            try {
+                return InetAddress.getByName(host);
+            } catch (UnknownHostException e) {
+                throw new AssertionError(e);
+            }
+        }
+        return FAKE_IPS.computeIfAbsent(host, s -> {
+            try {
+                return InetAddress.getByName("10.0.254." + IP_COUNTER.incrementAndGet());
+            } catch (UnknownHostException e) {
+                throw new AssertionError(e);
+            }
+        });
     }
 }

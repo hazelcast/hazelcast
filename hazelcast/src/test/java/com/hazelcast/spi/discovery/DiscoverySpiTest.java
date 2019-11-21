@@ -734,11 +734,10 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
     private static Collection<Member> createMembers() throws UnknownHostException {
         Collection<Member> members = new HashSet<Member>();
-        InetAddress fakeAddress = InetAddress.getLocalHost();
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true));
-        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), VERSION, false));
-        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5701), VERSION, true));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress("192.192.0.1"), 5702), VERSION, false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress("192.192.0.2"), 5701), VERSION, false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress("192.192.0.2"), 5702), VERSION, false));
         return members;
     }
 
@@ -760,5 +759,13 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
         return config;
+    }
+
+    private static InetAddress fakeAddress(String host) {
+        try {
+            return InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            throw new AssertionError(e);
+        }
     }
 }
