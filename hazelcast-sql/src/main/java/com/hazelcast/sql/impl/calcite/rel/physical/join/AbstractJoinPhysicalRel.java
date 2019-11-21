@@ -42,6 +42,10 @@ public abstract class AbstractJoinPhysicalRel extends AbstractJoinRel implements
         List<Integer> rightKeys
     ) {
         super(cluster, traitSet, left, right, condition, joinType, leftKeys, rightKeys);
+
+        // TODO: Right joins should be eliminated during reorder, aren't they?
+        assert joinType != JoinRelType.RIGHT : "RIGHT join should not be produced";
+        assert joinType != JoinRelType.FULL : "Full joins are not implemented";
     }
 
     @Override
@@ -59,4 +63,16 @@ public abstract class AbstractJoinPhysicalRel extends AbstractJoinRel implements
      * @param visitor Visitor.
      */
     protected abstract void visitAfterInputs(PhysicalRelVisitor visitor);
+
+    public boolean isOuter() {
+        return joinType == JoinRelType.LEFT;
+    }
+
+    public boolean isSemi() {
+        return joinType == JoinRelType.SEMI;
+    }
+
+    public int getRightRowColumnCount() {
+        return right.getRowType().getFieldCount();
+    }
 }

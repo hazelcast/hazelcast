@@ -20,8 +20,10 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
 import com.hazelcast.sql.optimizer.support.PhysicalOptimizerTestSupport;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -71,7 +73,6 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
         return new HazelcastSchema(tableMap);
     }
 
-    // TODO: Assert with grouping sets
     @Test
     public void testQ1() {
         RelNode rootInput = optimizePhysical(
@@ -99,11 +100,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
             "    l_linestatus"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Corellated scalar subquery - analyze it!
-    // TODO: Hash agg - root cause of failure
     @Test
     public void testQ2() {
         RelNode rootInput = optimizePhysical(
@@ -151,10 +150,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    p.p_partkey"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Assert with grouping sets
     @Test
     public void testQ3() {
         RelNode rootInput = optimizePhysical(
@@ -184,11 +182,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    o.o_orderdate"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: "EXISTS" is not processed in the condition, LogicalAggregate is not created (because hash agg is not implemented yet)
-    // TODO: See HiveRelDecorrelator, RelDecorrelator
     @Test
     public void testQ4() {
         RelNode rootInput = optimizePhysical(
@@ -217,10 +213,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    o.o_orderpriority"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ5() {
         RelNode rootInput = optimizePhysical(
@@ -252,10 +247,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    revenue desc"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ6() {
         RelNode rootInput = optimizePhysical(
@@ -274,10 +268,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 //                "    and l.l_quantity < [QUANTITY]"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Assert with grouping sets
     @Test
     public void testQ7() {
         RelNode rootInput = optimizePhysical(
@@ -320,10 +313,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    l_year"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ8() {
         RelNode rootInput = optimizePhysical(
@@ -366,10 +358,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    o_year"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Grouping set assertion
     @Test
     public void testQ9() {
         RelNode rootInput = optimizePhysical(
@@ -406,10 +397,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    o_year desc"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Agg grouping sets
     @Test
     public void testQ10() {
         RelNode rootInput = optimizePhysical(
@@ -448,10 +438,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    revenue desc"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ11() {
         RelNode rootInput = optimizePhysical(
@@ -485,10 +474,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    val desc"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ12() {
         RelNode rootInput = optimizePhysical(
@@ -522,10 +510,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    l.l_shipmode"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ13() {
         RelNode rootInput = optimizePhysical(
@@ -549,10 +536,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    c_count desc"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ14() {
         RelNode rootInput = optimizePhysical(
@@ -573,17 +559,15 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
 //                "    and l.l_shipdate < date '[DATE]' + interval '1' month;"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Views!
+    @Ignore("This test requires CTEs")
     @Test
     public void testQ15() {
         fail("We need views or table expressions to support this query");
     }
 
-    // TODO: Grouping set assertion
-    // TODO: COUNT DISTINCT
     @Test
     public void testQ16() {
         RelNode rootInput = optimizePhysical(
@@ -620,10 +604,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    p.p_size"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ17() {
         RelNode rootInput = optimizePhysical(
@@ -646,10 +629,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 ")"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Grouping set assert
     @Test
     public void testQ18() {
         RelNode rootInput = optimizePhysical(
@@ -688,10 +670,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    o.o_orderdate"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ19() {
         RelNode rootInput = optimizePhysical(
@@ -735,10 +716,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    )"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Grouping set assertion
     @Test
     public void testQ20() {
         RelNode rootInput = optimizePhysical(
@@ -783,10 +763,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    s.s_name"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Grouping set assertion
     @Test
     public void testQ21() {
         RelNode rootInput = optimizePhysical(
@@ -831,10 +810,9 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    s.s_name"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 
-    // TODO: Hash agg
     @Test
     public void testQ22() {
         RelNode rootInput = optimizePhysical(
@@ -874,6 +852,6 @@ public class TpcHPhysicalPlanningTest extends PhysicalOptimizerTestSupport {
                 "    cntrycode"
         );
 
-        return;
+        System.out.println(RelOptUtil.toString(rootInput));
     }
 }

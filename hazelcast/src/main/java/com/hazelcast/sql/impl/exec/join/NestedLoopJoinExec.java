@@ -42,6 +42,9 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
     /** Whether this is the outer join. */
     private final boolean outer;
 
+    /** Whether this is the semi join. */
+    private final boolean semi;
+
     /** Empty right row. */
     private final Row rightEmptyRow;
 
@@ -59,6 +62,7 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
         Exec right,
         Expression<Boolean> filter,
         boolean outer,
+        boolean semi,
         int rightRowColumnCount
     ) {
         super(left);
@@ -68,6 +72,8 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
         this.filter = filter;
 
         this.outer = outer;
+        this.semi = semi;
+
         rightEmptyRow = outer ? new HeapRow(rightRowColumnCount) : null;
     }
 
@@ -119,11 +125,15 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
                         rightMatchFound = true;
 
                         if (state.isDone() && rightState.isDone()) {
-                            leftRow = null;
-                            rightMatchFound = false;
+                            resetLeftRow();
 
                             return IterationResult.FETCHED_DONE;
                         } else {
+                            if (semi) {
+                                // Make sure that only one tuple is produced for the given left row in case of semi-join.
+                                resetLeftRow();
+                            }
+
                             return IterationResult.FETCHED;
                         }
                     }
@@ -135,16 +145,19 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
                 // If no match were found, then create a [left, null] row for the outer join, and then clear the state.
                 curRow = new JoinRow(leftRow, rightEmptyRow);
 
-                leftRow = null;
-                rightMatchFound = false;
+                resetLeftRow();
 
                 return IterationResult.FETCHED;
             } else {
                 // Just clear the state.
-                leftRow = null;
-                rightMatchFound = false;
+                resetLeftRow();
             }
         }
+    }
+
+    private void resetLeftRow() {
+        leftRow = null;
+        rightMatchFound = false;
     }
 
     @Override

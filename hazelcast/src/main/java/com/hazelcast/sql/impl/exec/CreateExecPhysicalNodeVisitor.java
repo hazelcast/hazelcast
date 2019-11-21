@@ -326,6 +326,7 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
             pop(),
             node.getCondition(),
             node.isOuter(),
+            node.isSemi(),
             node.getRightRowColumnCount()
         );
 
@@ -341,6 +342,7 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
             node.getLeftHashKeys(),
             node.getRightHashKeys(),
             node.isOuter(),
+            node.isSemi(),
             node.getRightRowColumnCount()
         );
 

@@ -34,6 +34,7 @@ import static com.hazelcast.sql.impl.calcite.rule.physical.join.JoinDistribution
 import static com.hazelcast.sql.impl.calcite.rule.physical.join.JoinType.FULL;
 import static com.hazelcast.sql.impl.calcite.rule.physical.join.JoinType.INNER;
 import static com.hazelcast.sql.impl.calcite.rule.physical.join.JoinType.OUTER;
+import static com.hazelcast.sql.impl.calcite.rule.physical.join.JoinType.SEMI;
 
 /**
  * Join strategy which described which actions should be performed on inputs to achieve collocation.
@@ -69,66 +70,89 @@ public final class JoinCollocationStrategy {
         prepareStrategiesInner();
         prepareStrategiesOuter();
         prepareStrategiesFull();
+        prepareStrategiesSemi();
     }
 
     private static void prepareStrategiesInner() {
-        addStrategy(INNER, EQUI, REPLICATED, REPLICATED, pair(NONE, NONE, REPLICATED));
-        addStrategy(INNER, EQUI, REPLICATED, PARTITIONED, pair(NONE, NONE, PARTITIONED));
-        addStrategy(INNER, EQUI, REPLICATED, RANDOM, pair(NONE, NONE, RANDOM));
+        addStrategy(INNER, EQUI, REPLICATED, REPLICATED, collocatedPair(REPLICATED));
+        addStrategy(INNER, EQUI, REPLICATED, PARTITIONED, collocatedPair(PARTITIONED));
+        addStrategy(INNER, EQUI, REPLICATED, RANDOM, collocatedPair(RANDOM));
 
-        addStrategy(INNER, EQUI, PARTITIONED, REPLICATED, pair(NONE, NONE, PARTITIONED));
-        addStrategy(INNER, EQUI, PARTITIONED, PARTITIONED, pair(NONE, NONE, PARTITIONED));
+        addStrategy(INNER, EQUI, PARTITIONED, REPLICATED, collocatedPair(PARTITIONED));
+        addStrategy(INNER, EQUI, PARTITIONED, PARTITIONED, collocatedPair(PARTITIONED));
         addStrategy(INNER, EQUI, PARTITIONED, RANDOM, pair(BROADCAST, NONE, RANDOM), pair(NONE, UNICAST, PARTITIONED));
 
-        addStrategy(INNER, EQUI, RANDOM, REPLICATED, pair(NONE, NONE, RANDOM));
+        addStrategy(INNER, EQUI, RANDOM, REPLICATED, collocatedPair(RANDOM));
         addStrategy(INNER, EQUI, RANDOM, PARTITIONED, pair(UNICAST, NONE, PARTITIONED), pair(NONE, BROADCAST, RANDOM));
         addStrategy(INNER, EQUI, RANDOM, RANDOM, pair(UNICAST, UNICAST, PARTITIONED));
 
-        addStrategy(INNER, OTHER, REPLICATED, REPLICATED, pair(NONE, NONE, REPLICATED));
-        addStrategy(INNER, OTHER, REPLICATED, RANDOM, pair(NONE, NONE, RANDOM));
+        addStrategy(INNER, OTHER, REPLICATED, REPLICATED, collocatedPair(REPLICATED));
+        addStrategy(INNER, OTHER, REPLICATED, RANDOM, collocatedPair(RANDOM));
 
-        addStrategy(INNER, OTHER, RANDOM, REPLICATED, pair(NONE, NONE, RANDOM));
+        addStrategy(INNER, OTHER, RANDOM, REPLICATED, collocatedPair(RANDOM));
         addStrategy(INNER, OTHER, RANDOM, RANDOM, pair(BROADCAST, NONE, RANDOM), pair(NONE, BROADCAST, RANDOM));
     }
 
     private static void prepareStrategiesOuter() {
-        addStrategy(OUTER, EQUI, REPLICATED, REPLICATED, pair(NONE, NONE, REPLICATED));
+        addStrategy(OUTER, EQUI, REPLICATED, REPLICATED, collocatedPair(REPLICATED));
         addStrategy(OUTER, EQUI, REPLICATED, PARTITIONED, pair(REPLICATED_HASH, NONE, PARTITIONED));
         addStrategy(OUTER, EQUI, REPLICATED, RANDOM, pair(REPLICATED_HASH, UNICAST, PARTITIONED));
 
-        addStrategy(OUTER, EQUI, PARTITIONED, REPLICATED, pair(NONE, NONE, PARTITIONED));
-        addStrategy(OUTER, EQUI, PARTITIONED, PARTITIONED, pair(NONE, NONE, PARTITIONED));
+        addStrategy(OUTER, EQUI, PARTITIONED, REPLICATED, collocatedPair(PARTITIONED));
+        addStrategy(OUTER, EQUI, PARTITIONED, PARTITIONED, collocatedPair(PARTITIONED));
         addStrategy(OUTER, EQUI, PARTITIONED, RANDOM, pair(NONE, UNICAST, PARTITIONED));
 
-        addStrategy(OUTER, EQUI, RANDOM, REPLICATED, pair(NONE, NONE, RANDOM));
+        addStrategy(OUTER, EQUI, RANDOM, REPLICATED, collocatedPair(RANDOM));
         addStrategy(OUTER, EQUI, RANDOM, PARTITIONED, pair(UNICAST, NONE, PARTITIONED), pair(NONE, BROADCAST, RANDOM));
         addStrategy(OUTER, EQUI, RANDOM, RANDOM, pair(UNICAST, UNICAST, PARTITIONED));
 
-        addStrategy(OUTER, OTHER, REPLICATED, REPLICATED, pair(NONE, NONE, REPLICATED));
+        addStrategy(OUTER, OTHER, REPLICATED, REPLICATED, collocatedPair(REPLICATED));
         addStrategy(OUTER, OTHER, REPLICATED, RANDOM, pair(NONE, BROADCAST, REPLICATED));
 
-        addStrategy(OUTER, OTHER, RANDOM, REPLICATED, pair(NONE, NONE, RANDOM));
+        addStrategy(OUTER, OTHER, RANDOM, REPLICATED, collocatedPair(RANDOM));
         addStrategy(OUTER, OTHER, RANDOM, RANDOM, pair(NONE, BROADCAST, RANDOM));
     }
 
     private static void prepareStrategiesFull() {
-        addStrategy(FULL, EQUI, REPLICATED, REPLICATED, pair(NONE, NONE, REPLICATED));
+        addStrategy(FULL, EQUI, REPLICATED, REPLICATED, collocatedPair(REPLICATED));
         addStrategy(FULL, EQUI, REPLICATED, PARTITIONED, pair(REPLICATED_HASH, NONE, PARTITIONED));
         addStrategy(FULL, EQUI, REPLICATED, RANDOM, pair(REPLICATED_HASH, UNICAST, PARTITIONED));
 
         addStrategy(FULL, EQUI, PARTITIONED, REPLICATED, pair(NONE, REPLICATED_HASH, PARTITIONED));
-        addStrategy(FULL, EQUI, PARTITIONED, PARTITIONED, pair(NONE, NONE, PARTITIONED));
+        addStrategy(FULL, EQUI, PARTITIONED, PARTITIONED, collocatedPair(PARTITIONED));
         addStrategy(FULL, EQUI, PARTITIONED, RANDOM, pair(NONE, UNICAST, PARTITIONED));
 
         addStrategy(FULL, EQUI, RANDOM, REPLICATED, pair(UNICAST, REPLICATED_HASH, PARTITIONED));
         addStrategy(FULL, EQUI, RANDOM, PARTITIONED, pair(UNICAST, NONE, PARTITIONED));
         addStrategy(FULL, EQUI, RANDOM, RANDOM, pair(UNICAST, UNICAST, PARTITIONED));
 
-        addStrategy(FULL, OTHER, REPLICATED, REPLICATED, pair(NONE, NONE, REPLICATED));
+        addStrategy(FULL, OTHER, REPLICATED, REPLICATED, collocatedPair(REPLICATED));
         addStrategy(FULL, OTHER, REPLICATED, RANDOM, pair(NONE, BROADCAST, REPLICATED));
 
         addStrategy(FULL, OTHER, RANDOM, REPLICATED, pair(BROADCAST, NONE, REPLICATED));
         addStrategy(FULL, OTHER, RANDOM, RANDOM, pair(BROADCAST, BROADCAST, REPLICATED));
+    }
+
+    private static void prepareStrategiesSemi() {
+        addStrategy(SEMI, EQUI, REPLICATED, REPLICATED, collocatedPair(REPLICATED));
+        addStrategy(SEMI, EQUI, REPLICATED, PARTITIONED, pair(REPLICATED_HASH, NONE, PARTITIONED));
+        addStrategy(SEMI, EQUI, REPLICATED, RANDOM, pair(REPLICATED_HASH, UNICAST, PARTITIONED));
+
+        addStrategy(SEMI, EQUI, PARTITIONED, REPLICATED, collocatedPair(PARTITIONED));
+        addStrategy(SEMI, EQUI, PARTITIONED, PARTITIONED, collocatedPair(PARTITIONED));
+        addStrategy(SEMI, EQUI, PARTITIONED, RANDOM, pair(NONE, UNICAST, PARTITIONED));
+
+        addStrategy(SEMI, EQUI, RANDOM, REPLICATED, collocatedPair(RANDOM));
+        addStrategy(SEMI, EQUI, RANDOM, PARTITIONED, pair(UNICAST, NONE, PARTITIONED), pair(NONE, BROADCAST, RANDOM));
+        addStrategy(SEMI, EQUI, RANDOM, RANDOM, pair(UNICAST, UNICAST, PARTITIONED));
+
+        // TODO: Need to optimize ANIT-case for semi joins, since they may behave the same way as equi joins! But the optimizer
+        //  is not ready for that yet, and not optimal plans are produced.
+        addStrategy(SEMI, OTHER, REPLICATED, REPLICATED, collocatedPair(REPLICATED));
+        addStrategy(SEMI, OTHER, REPLICATED, RANDOM, pair(NONE, BROADCAST, REPLICATED));
+
+        addStrategy(SEMI, OTHER, RANDOM, REPLICATED, collocatedPair(RANDOM));
+        addStrategy(SEMI, OTHER, RANDOM, RANDOM, pair(NONE, BROADCAST, RANDOM));
     }
 
     private static void addStrategy(JoinType type,
@@ -198,6 +222,16 @@ public final class JoinCollocationStrategy {
     public String toString() {
         return getClass().getSimpleName() + "{leftAction=" + leftAction + ", rightAction=" + rightAction
             + ", result=" + resultDistribution + '}';
+    }
+
+    /**
+     * Special tuple to denote already collocated mode with no data movement.
+     *
+     * @param resultDistribution Result distribution.
+     * @return Tuple.
+     */
+    private static ActionTuple collocatedPair(JoinDistribution resultDistribution) {
+        return pair(NONE, NONE, resultDistribution);
     }
 
     private static ActionTuple pair(

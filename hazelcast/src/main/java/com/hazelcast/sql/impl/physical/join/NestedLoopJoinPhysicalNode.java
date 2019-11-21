@@ -16,25 +16,16 @@
 
 package com.hazelcast.sql.impl.physical.join;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
-import java.io.IOException;
 import java.util.Objects;
 
 /**
  * Nested loop join node.
  */
 public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
-    /** Outer join flag. */
-    private boolean outer;
-
-    /** Number of columns in the right row. */
-    private int rightRowColumnCount;
-
     public NestedLoopJoinPhysicalNode() {
         // No-op.
     }
@@ -44,20 +35,10 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
         PhysicalNode right,
         Expression<Boolean> condition,
         boolean outer,
+        boolean semi,
         int rightRowColumnCount
     ) {
-        super(left, right, condition);
-
-        this.outer = outer;
-        this.rightRowColumnCount = rightRowColumnCount;
-    }
-
-    public boolean isOuter() {
-        return outer;
-    }
-
-    public int getRightRowColumnCount() {
-        return rightRowColumnCount;
+        super(left, right, condition, outer, semi, rightRowColumnCount);
     }
 
     @Override
@@ -69,26 +50,8 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(left);
-        out.writeObject(right);
-        out.writeObject(condition);
-        out.writeBoolean(outer);
-        out.writeInt(rightRowColumnCount);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        left = in.readObject();
-        right = in.readObject();
-        condition = in.readObject();
-        outer = in.readBoolean();
-        rightRowColumnCount = in.readInt();
-    }
-
-    @Override
     public int hashCode() {
-        return Objects.hash(left, right, condition, outer, rightRowColumnCount);
+        return Objects.hash(left, right, condition, outer, semi, rightRowColumnCount);
     }
 
     @Override
@@ -104,12 +67,12 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
         NestedLoopJoinPhysicalNode that = (NestedLoopJoinPhysicalNode) o;
 
         return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition)
-            && outer == that.outer && rightRowColumnCount == that.rightRowColumnCount;
+            && outer == that.outer && semi == that.semi && rightRowColumnCount == that.rightRowColumnCount;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{condition=" + condition + ", outer=" + outer
+        return getClass().getSimpleName() + "{condition=" + condition + ", outer=" + outer + ", semi=" + semi
             + ", rightRowColumnCount=" + rightRowColumnCount + ", left=" + left + ", right=" + right + '}';
     }
 }

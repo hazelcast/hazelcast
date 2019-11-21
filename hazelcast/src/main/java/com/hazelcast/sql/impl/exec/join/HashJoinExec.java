@@ -56,6 +56,9 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
     /** Whether this is the outer join. */
     private final boolean outer;
 
+    /** Whether this is the semi join. */
+    private final boolean semi;
+
     /** Empty right row. */
     private final Row rightEmptyRow;
 
@@ -81,6 +84,7 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
         List<Integer> leftHashKeys,
         List<Integer> rightHashKeys,
         boolean outer,
+        boolean semi,
         int rightRowColumnCount
     ) {
         super(left);
@@ -92,6 +96,8 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
         this.rightHashKeys = rightHashKeys;
 
         this.outer = outer;
+        this.semi = semi;
+
         rightEmptyRow = outer ? new HeapRow(rightRowColumnCount) : null;
     }
 
@@ -142,7 +148,7 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
                     // ... get matching right rows.
                     List<Row> rightRows0 = get(leftRow0);
 
-                    // If there are matching right rows, then stop move to the next step where we actually produce the join rows.
+                    // If there are matching right rows, then move to the next step where we actually produce the join rows.
                     // We also switch to the next step for outer join, to produce [left, null] row.
                     // Otherwise, switch to the next left row.
                     if (!rightRows0.isEmpty() || outer) {
@@ -155,7 +161,7 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
                 }
             }
 
-            // Match left and right inputs.
+            // We have a specific left row and a set of matching right rows. Match them.
             boolean found = false;
 
             for (int i = rightRowPos; i < rightRows.size(); i++) {
@@ -187,6 +193,12 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
             }
 
             if (found) {
+                // If a single match was found, and this is the semi join, then nullify the left row, so no more pairs for this
+                // row is produced.
+                if (semi) {
+                    leftRow = null;
+                }
+
                 return IterationResult.FETCHED;
             }
         }
