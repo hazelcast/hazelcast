@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -165,7 +166,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     /**
      * @param client to check if allowed through current ClientSelector.
      *               <p>
-     *               Note: Management Center clients ({@link ClientType#MC_JAVA}) are always allowed.
+     *               Note: Management Center clients ({@link ConnectionType#MC_JAVA_CLIENT}) are always allowed.
      * @return true if allowed, false otherwise
      */
     boolean isClientAllowed(Client client);
@@ -174,7 +175,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * Only Clients that can pass through filter are allowed to connect to cluster.
      * Only one selector can be active at a time. Applying new one will override old selector.
      * <p>
-     * Note: the only exception to this rule are Management Center clients ({@link ClientType#MC_JAVA}).
+     * Note: the only exception to this rule are Management Center clients ({@link ConnectionType#MC_JAVA_CLIENT}).
      *
      * @param selector to select a client or group of clients to act upon
      */

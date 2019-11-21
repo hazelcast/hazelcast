@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.management;
 
-import com.hazelcast.client.ClientType;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -40,6 +39,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -59,7 +59,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class ManagementCenterService {
 
     /**
-     * Internal property for enabling MC client mode ({@link ClientType#MC_JAVA}).
+     * Internal property for enabling MC client mode ({@link ConnectionType#MC_JAVA_CLIENT}).
      */
     public static final HazelcastProperty MC_CLIENT_MODE_PROPERTY
             = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
