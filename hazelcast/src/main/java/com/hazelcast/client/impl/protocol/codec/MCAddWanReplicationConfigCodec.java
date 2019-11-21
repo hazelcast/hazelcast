@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add a new WAN replication configuration
  */
-@Generated("49d44ccc74f5f414f3daf75323bfcc4f")
+@Generated("6e5ed36e94d4ea1d3eb766bd653500ed")
 public final class MCAddWanReplicationConfigCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;
@@ -66,6 +66,11 @@ public final class MCAddWanReplicationConfigCodec {
          * Name of the target cluster
          */
         public java.lang.String targetCluster;
+
+        /**
+         * - ID used for identifying the publisher in a WanReplicationConfig.
+         */
+        public @Nullable java.lang.String publisherId;
 
         /**
          * Comma separated list of target cluster members
@@ -113,7 +118,7 @@ public final class MCAddWanReplicationConfigCodec {
         public int queueFullBehavior;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String targetCluster, java.lang.String endpoints, int queueCapacity, int batchSize, int batchMaxDelayMillis, int responseTimeoutMillis, int ackType, int queueFullBehavior) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String targetCluster, @Nullable java.lang.String publisherId, java.lang.String endpoints, int queueCapacity, int batchSize, int batchMaxDelayMillis, int responseTimeoutMillis, int ackType, int queueFullBehavior) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setAcquiresResource(false);
@@ -129,6 +134,7 @@ public final class MCAddWanReplicationConfigCodec {
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         StringCodec.encode(clientMessage, targetCluster);
+        CodecUtil.encodeNullable(clientMessage, publisherId, StringCodec::encode);
         StringCodec.encode(clientMessage, endpoints);
         return clientMessage;
     }
@@ -145,20 +151,34 @@ public final class MCAddWanReplicationConfigCodec {
         request.queueFullBehavior = decodeInt(initialFrame.content, REQUEST_QUEUE_FULL_BEHAVIOR_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.targetCluster = StringCodec.decode(iterator);
+        request.publisherId = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.endpoints = StringCodec.decode(iterator);
         return request;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
+        /**
+         * Returns the IDs for the WAN publishers which were added to the configuration.
+         */
+        public java.util.List<java.lang.String> addedPublisherIds;
+
+        /**
+         * Returns the IDs for the WAN publishers which were ignored and not added to
+         * the configuration.
+         */
+        public java.util.List<java.lang.String> ignoredPublisherIds;
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(java.util.Collection<java.lang.String> addedPublisherIds, java.util.Collection<java.lang.String> ignoredPublisherIds) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
+        ListMultiFrameCodec.encode(clientMessage, addedPublisherIds, StringCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, ignoredPublisherIds, StringCodec::encode);
         return clientMessage;
     }
 
@@ -167,6 +187,8 @@ public final class MCAddWanReplicationConfigCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
+        response.addedPublisherIds = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
+        response.ignoredPublisherIds = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
         return response;
     }
 

@@ -7303,6 +7303,7 @@ public class MemberCompatibilityNullTest_2_0 {
         MCAddWanReplicationConfigCodec.RequestParameters parameters = MCAddWanReplicationConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aString, parameters.targetCluster));
+        assertTrue(isEqual(null, parameters.publisherId));
         assertTrue(isEqual(aString, parameters.endpoints));
         assertTrue(isEqual(anInt, parameters.queueCapacity));
         assertTrue(isEqual(anInt, parameters.batchSize));
@@ -7315,7 +7316,7 @@ public class MemberCompatibilityNullTest_2_0 {
     @Test
     public void test_MCAddWanReplicationConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 810;
-        ClientMessage encoded = MCAddWanReplicationConfigCodec.encodeResponse();
+        ClientMessage encoded = MCAddWanReplicationConfigCodec.encodeResponse(aListOfStrings, aListOfStrings);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

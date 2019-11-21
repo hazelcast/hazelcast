@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MCAddWanReplicationConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
@@ -48,6 +49,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
+import com.hazelcast.wan.impl.AddWanConfigResult;
 
 import javax.annotation.Nonnull;
 
@@ -480,6 +482,9 @@ public class ManagementCenterService {
                                                              String wanPublisherId,
                                                              WanPublisherState newState) {
         checkNotNull(member);
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+        checkNotNull(newState);
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
@@ -508,6 +513,8 @@ public class ManagementCenterService {
                                                   String wanReplicationName,
                                                   String wanPublisherId) {
         checkNotNull(member);
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
@@ -520,6 +527,43 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> null
+        );
+    }
+
+    /**
+     * Add a new WAN replication configuration.
+     *
+     * @param config the new WAN replication configuration
+     */
+    @Nonnull
+    public CompletableFuture<AddWanConfigResult> addWanReplicationConfig(MCWanReplicationConfig config) {
+        checkNotNull(config);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCAddWanReplicationConfigCodec.encodeRequest(
+                        config.getName(),
+                        config.getTargetCluster(),
+                        config.getPublisherId(),
+                        config.getEndpoints(),
+                        config.getQueueCapacity(),
+                        config.getBatchSize(),
+                        config.getBatchMaxDelayMillis(),
+                        config.getResponseTimeoutMillis(),
+                        config.getAckType().getId(),
+                        config.getQueueFullBehaviour().getId()
+                ),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    MCAddWanReplicationConfigCodec.ResponseParameters response =
+                            MCAddWanReplicationConfigCodec.decodeResponse(clientMessage);
+                    return new AddWanConfigResult(response.addedPublisherIds, response.ignoredPublisherIds);
+                }
         );
     }
 }

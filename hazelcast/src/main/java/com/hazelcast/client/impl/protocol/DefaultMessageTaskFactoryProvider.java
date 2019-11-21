@@ -75,6 +75,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddTopicConfigMessa
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.AddWanReplicationConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ApplyMCConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterVersionMessageTask;
@@ -2285,6 +2286,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 new MessageTaskFactory() {
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new ClearWanQueuesMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCAddWanReplicationConfigCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new AddWanReplicationConfigMessageTask(clientMessage, node, connection);
                     }
                 });
     }

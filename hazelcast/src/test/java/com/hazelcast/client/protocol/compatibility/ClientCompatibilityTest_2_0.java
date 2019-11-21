@@ -6816,7 +6816,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCAddWanReplicationConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 809;
-        ClientMessage encoded = MCAddWanReplicationConfigCodec.encodeRequest(aString, aString, aString, anInt, anInt, anInt, anInt, anInt, anInt);
+        ClientMessage encoded = MCAddWanReplicationConfigCodec.encodeRequest(aString, aString, aString, aString, anInt, anInt, anInt, anInt, anInt, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6826,6 +6826,8 @@ public class ClientCompatibilityTest_2_0 {
         int fileClientMessageIndex = 810;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCAddWanReplicationConfigCodec.ResponseParameters parameters = MCAddWanReplicationConfigCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aListOfStrings, parameters.addedPublisherIds));
+        assertTrue(isEqual(aListOfStrings, parameters.ignoredPublisherIds));
     }
 
     @Test
