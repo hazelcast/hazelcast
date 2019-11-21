@@ -103,7 +103,7 @@ public class TcpIpConnection implements Connection {
         return connectionType;
     }
 
-    @Probe
+    @Probe(name = "connectionType")
     private int getType() {
         return ConnectionType.getTypeId(connectionType);
     }

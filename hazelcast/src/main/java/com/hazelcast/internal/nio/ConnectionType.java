@@ -95,8 +95,13 @@ public final class ConnectionType {
 
     }
 
+    /**
+     * @param type name of the client
+     * @return corresponding type id for in-house connection types(member/client),
+     *         or -1 if connection is opened via a custom client
+     */
     public static int getTypeId(String type) {
-        return ID_MAP.get(type);
+        return ID_MAP.getOrDefault(type, -1);
     }
 
 }
