@@ -37,6 +37,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.CoreService;
@@ -331,7 +332,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     private static boolean isFilterableClient(ClientEndpoint endpoint) {
-        return endpoint.getClientType() != ClientType.MC_JAVA;
+        return !ConnectionType.MC_JAVA_CLIENT.equals(endpoint.getClientType());
     }
 
     @Override

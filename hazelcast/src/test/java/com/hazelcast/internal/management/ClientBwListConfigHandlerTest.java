@@ -237,7 +237,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
         handler.handleNewConfig(configJson);
 
         Connection mockConnection = mock(Connection.class);
-        when(mockConnection.getType()).thenReturn(ConnectionType.MC_JAVA_CLIENT);
+        when(mockConnection.getConnectionType()).thenReturn(ConnectionType.MC_JAVA_CLIENT);
         ClientEndpointImpl mcClient = new ClientEndpointImpl(clientEngine, getNodeEngineImpl(instance), mockConnection);
         assertTrue(clientEngine.isClientAllowed(mcClient));
     }
