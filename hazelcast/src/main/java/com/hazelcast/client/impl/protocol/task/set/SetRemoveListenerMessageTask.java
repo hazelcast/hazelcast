@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * SetRemoveListenerMessageTask
@@ -40,9 +41,9 @@ public class SetRemoveListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         final EventService eventService = clientEngine.getEventService();
-        return eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
+        return eventService.deregisterListenerAsync(getServiceName(), parameters.name, parameters.registrationId);
     }
 
     @Override

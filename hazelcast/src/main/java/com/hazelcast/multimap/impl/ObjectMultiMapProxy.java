@@ -20,20 +20,21 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -66,7 +68,9 @@ public class ObjectMultiMapProxy<K, V>
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
             if (listenerConfig.getImplementation() != null) {
-                listener = listenerConfig.getImplementation();
+                EventListener impl = listenerConfig.getImplementation();
+                listener = checkInstanceOf(EntryListener.class, impl,
+                        impl + " should be an instance of EntryListener");
             } else if (listenerConfig.getClassName() != null) {
                 try {
                     listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
@@ -229,14 +233,14 @@ public class ObjectMultiMapProxy<K, V>
     @Override
     public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        return getService().addListener(name, listener, null, false, true);
+        return getService().addLocalListener(name, listener, null, false);
     }
 
     @Nonnull
     @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
-        return getService().addListener(name, listener, null, includeValue, false);
+        return getService().addListener(name, listener, null, includeValue);
     }
 
     @Override
@@ -252,7 +256,7 @@ public class ObjectMultiMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        return getService().addListener(name, listener, dataKey, includeValue, false);
+        return getService().addListener(name, listener, dataKey, includeValue);
     }
 
     @Override

@@ -827,3 +827,36 @@ hazelcast-client:
       - file://User/test/sample.jar
     classNames:
       - test.sampleClassName
+
+  #
+  # ===== HAZELCAST METRICS CONFIGURATION =====
+  #
+  # Configuration element's name is "metrics".
+  #
+  # It has the following sub-elements:
+  #     * "enabled":
+  #         The master-switch for the metrics collection. If this is set
+  #         to false no metrics collection is done, regardless of the other
+  #         settings. Its default value is true.
+  #
+  # It has the following sub-elements:
+  # * "jmx":
+  #     Defines the JMX related metrics configuration.
+  #
+  #       It has the following attributes:
+  #     * "enabled":
+  #         Controls whether the metrics collected are exposed to
+  #         through JMX. It is enabled by default.
+  #         In order to expose the metrics, the metrics system need
+  #         to be enabled via the enabled master-switch attribute.
+  #
+  # * "collection-frequency-seconds":
+  #     Sets the metrics collection frequency in seconds.
+  #     By default, metrics are collected every 5 seconds.
+  #
+  #
+  metrics:
+    enabled: false
+    jmx:
+      enabled: false
+    collection-frequency-seconds: 42

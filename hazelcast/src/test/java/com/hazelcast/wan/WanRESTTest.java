@@ -18,11 +18,12 @@ package com.hazelcast.wan;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.RestApiConfig;
+import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -58,28 +59,29 @@ public class WanRESTTest extends HazelcastTestSupport {
     public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");
 
     @Before
-    public void initInstance() {
+    public void setupFactoryAndMock() {
         wanServiceMock = mock(WanReplicationService.class);
         factory = new CustomNodeExtensionTestInstanceFactory(
                 node -> new WanServiceMockingDefaultNodeExtension(node, wanServiceMock));
-        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        communicator = new HTTPCommunicator(instance);
     }
 
     @Test
     public void pauseSuccess() throws Exception {
+        startInstance();
         assertSuccess(communicator.wanPausePublisher("atob", "B"));
         verify(wanServiceMock, times(1)).pause("atob", "B");
     }
 
     @Test
     public void stopSuccess() throws Exception {
+        startInstance();
         assertSuccess(communicator.wanStopPublisher("atob", "B"));
         verify(wanServiceMock, times(1)).stop("atob", "B");
     }
 
     @Test
     public void resumeSuccess() throws Exception {
+        startInstance();
         assertSuccess(communicator.wanResumePublisher("atob", "B"));
         verify(wanServiceMock, times(1)).resume("atob", "B");
     }
@@ -89,6 +91,8 @@ public class WanRESTTest extends HazelcastTestSupport {
         UUID expectedUuid = UUID.randomUUID();
         when(wanServiceMock.consistencyCheck("atob", "B", "mapName"))
                 .thenReturn(expectedUuid);
+        startInstance();
+
         String result = communicator.wanMapConsistencyCheck("atob", "B", "mapName");
         assertSuccess(result);
         assertUuid(result, expectedUuid);
@@ -98,8 +102,9 @@ public class WanRESTTest extends HazelcastTestSupport {
     @Test
     public void syncSuccess() throws Exception {
         UUID expectedUuid = UUID.randomUUID();
-        when(wanServiceMock.syncMap("atob", "B", "mapName"))
-                .thenReturn(expectedUuid);
+        when(wanServiceMock.syncMap("atob", "B", "mapName")).thenReturn(expectedUuid);
+        startInstance();
+
         String result = communicator.syncMapOverWAN("atob", "B", "mapName");
         assertSuccess(result);
         assertUuid(result, expectedUuid);
@@ -109,8 +114,9 @@ public class WanRESTTest extends HazelcastTestSupport {
     @Test
     public void syncAllSuccess() throws Exception {
         UUID expectedUuid = UUID.randomUUID();
-        when(wanServiceMock.syncAllMaps("atob", "B"))
-                .thenReturn(expectedUuid);
+        when(wanServiceMock.syncAllMaps("atob", "B")).thenReturn(expectedUuid);
+        startInstance();
+
         String result = communicator.syncMapsOverWAN("atob", "B");
         assertSuccess(result);
         assertUuid(result, expectedUuid);
@@ -122,6 +128,8 @@ public class WanRESTTest extends HazelcastTestSupport {
         doThrow(new RuntimeException("Error occurred"))
                 .when(wanServiceMock)
                 .pause("atob", "B");
+        startInstance();
+
         assertFail(communicator.wanPausePublisher("atob", "B"));
         verify(wanServiceMock, times(1)).pause("atob", "B");
     }
@@ -131,6 +139,8 @@ public class WanRESTTest extends HazelcastTestSupport {
         doThrow(new RuntimeException("Error occurred"))
                 .when(wanServiceMock)
                 .stop("atob", "B");
+        startInstance();
+
         assertFail(communicator.wanStopPublisher("atob", "B"));
         verify(wanServiceMock, times(1)).stop("atob", "B");
     }
@@ -140,6 +150,8 @@ public class WanRESTTest extends HazelcastTestSupport {
         doThrow(new RuntimeException("Error occurred"))
                 .when(wanServiceMock)
                 .resume("atob", "B");
+        startInstance();
+
         assertFail(communicator.wanResumePublisher("atob", "B"));
         verify(wanServiceMock, times(1)).resume("atob", "B");
     }
@@ -149,6 +161,8 @@ public class WanRESTTest extends HazelcastTestSupport {
         doThrow(new RuntimeException("Error occurred"))
                 .when(wanServiceMock)
                 .consistencyCheck("atob", "B", "mapName");
+        startInstance();
+
         assertFail(communicator.wanMapConsistencyCheck("atob", "B", "mapName"));
         verify(wanServiceMock, times(1)).consistencyCheck("atob", "B", "mapName");
     }
@@ -158,8 +172,15 @@ public class WanRESTTest extends HazelcastTestSupport {
         doThrow(new RuntimeException("Error occurred"))
                 .when(wanServiceMock)
                 .syncMap("atob", "B", "mapName");
+        startInstance();
+
         assertFail(communicator.syncMapOverWAN("atob", "B", "mapName"));
         verify(wanServiceMock, times(1)).syncMap("atob", "B", "mapName");
+    }
+
+    private void startInstance() {
+        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
+        communicator = new HTTPCommunicator(instance);
     }
 
     @Test
@@ -167,14 +188,18 @@ public class WanRESTTest extends HazelcastTestSupport {
         doThrow(new RuntimeException("Error occurred"))
                 .when(wanServiceMock)
                 .syncAllMaps("atob", "B");
+        startInstance();
+
         assertFail(communicator.syncMapsOverWAN("atob", "B"));
         verify(wanServiceMock, times(1)).syncAllMaps("atob", "B");
     }
 
     @Override
     protected Config getConfig() {
-        Config config = smallInstanceConfig()
-                .setProperty(GroupProperty.REST_ENABLED.getName(), "true");
+        Config config = smallInstanceConfig();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
+        restApiConfig.setEnabled(true);
+        restApiConfig.enableGroups(RestEndpointGroup.WAN);
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig()
                   .setEnabled(false);

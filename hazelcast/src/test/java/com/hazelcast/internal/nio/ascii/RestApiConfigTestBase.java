@@ -126,13 +126,11 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
      * Asserts that a text protocol client call to given {@link TestUrl} returns an expected response.
      */
     protected void assertTextProtocolResponse(HazelcastInstance hz, TestUrl testUrl) throws UnknownHostException, IOException {
-        final TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
-        try {
+        try (TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress())) {
             client.connect();
             client.sendData(testUrl.method + " " + testUrl.requestUri + " HTTP/1.0" + CRLF + CRLF);
-            assertTrueEventually(createResponseAssertTask(testUrl.toString(), client, testUrl.expectedSubstring), 10);
-        } finally {
-            client.close();
+            assertTrueEventually(
+                createResponseAssertTask(testUrl.toString(), client, testUrl.expectedSubstring), 10);
         }
     }
 

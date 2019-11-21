@@ -190,7 +190,7 @@ class TestClientRegistry {
         private final Address localAddress;
         private final TwoWayBlockableExecutor executor;
         private final MockedNodeConnection serverSideConnection;
-        private final ConnectionType connectionType;
+        private final String connectionType;
 
         private volatile long lastReadTime;
         private volatile long lastWriteTime;
@@ -335,7 +335,7 @@ class TestClientRegistry {
         }
 
         @Override
-        public ConnectionType getType() {
+        public String getConnectionType() {
             return connectionType;
         }
 
@@ -450,8 +450,8 @@ class TestClientRegistry {
         }
 
         @Override
-        public ConnectionType getType() {
-            return responseConnection.getType();
+        public String getConnectionType() {
+            return responseConnection.getConnectionType();
         }
 
         @Override

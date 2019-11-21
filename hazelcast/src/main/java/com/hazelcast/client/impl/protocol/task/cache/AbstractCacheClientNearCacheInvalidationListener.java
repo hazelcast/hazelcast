@@ -22,8 +22,8 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.internal.nearcache.impl.invalidation.AbstractBaseNearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.internal.services.NotifiableEventListener;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
 
 import java.util.UUID;
 

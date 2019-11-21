@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * Client request which unregisters the invalidation listener on behalf of the client.
@@ -39,9 +40,9 @@ public class CacheRemoveInvalidationListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         CacheService service = getService(CacheService.SERVICE_NAME);
-        return service.deregisterListener(parameters.name, parameters.registrationId);
+        return service.deregisterListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

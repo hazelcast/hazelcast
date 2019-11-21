@@ -286,7 +286,13 @@ hazelcast-client:
     enabled: true
     jarPaths:
       - /User/test/sample.jar
-      - https://hazelcast.com
+      - https://hazelcast.com/
       - file://User/test/sample.jar
     classNames:
       - test.sampleClassName
+
+  metrics:
+    enabled: false
+    jmx:
+      enabled: false
+    collection-frequency-seconds: 42

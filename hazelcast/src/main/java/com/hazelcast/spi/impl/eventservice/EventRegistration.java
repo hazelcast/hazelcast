@@ -53,4 +53,5 @@ public interface EventRegistration extends IdentifiedDataSerializable {
      * @return true if this registration is for locally fired events only, false otherwise.
      */
     boolean isLocalOnly();
+
 }

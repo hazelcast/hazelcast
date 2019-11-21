@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("a5a4dd6e3e8b400b986d91a6934147ba")
+@Generated("b9ebebdc36cf4de3676105aac75b4d88")
 public final class CacheRemoveInvalidationListenerCodec {
-    //hex: 0x131600
-    public static final int REQUEST_MESSAGE_TYPE = 1250816;
-    //hex: 0x131601
-    public static final int RESPONSE_MESSAGE_TYPE = 1250817;
+    //hex: 0x131500
+    public static final int REQUEST_MESSAGE_TYPE = 1250560;
+    //hex: 0x131501
+    public static final int RESPONSE_MESSAGE_TYPE = 1250561;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;

@@ -65,9 +65,9 @@ public class NetworkConfig {
 
     private IcmpFailureDetectorConfig icmpFailureDetectorConfig;
 
-    private RestApiConfig restApiConfig;
+    private RestApiConfig restApiConfig = new RestApiConfig();
 
-    private MemcacheProtocolConfig memcacheProtocolConfig;
+    private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));

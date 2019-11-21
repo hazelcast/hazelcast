@@ -48,10 +48,12 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 
 /**
@@ -130,7 +132,7 @@ public class ReplicatedMapEventPublishingService
     }
 
     public @Nonnull
-    UUID addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
+    UUID addLocalEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
@@ -140,13 +142,19 @@ public class ReplicatedMapEventPublishingService
     }
 
     public boolean removeEventListener(@Nonnull String mapName, @Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId cannot be null");
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
-        if (registrationId == null) {
-            throw new IllegalArgumentException("registrationId cannot be null");
-        }
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
+    }
+
+    public Future<Boolean> removeEventListenerAsync(@Nonnull String mapName, @Nonnull UUID registrationId) {
+        checkNotNull(registrationId, "registrationId cannot be null");
+        if (nodeEngine.getLocalMember().isLiteMember()) {
+            throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
+        }
+        return eventService.deregisterListenerAsync(SERVICE_NAME, mapName, registrationId);
     }
 
     public void fireMapClearedEvent(int deletedEntrySize, String name) {

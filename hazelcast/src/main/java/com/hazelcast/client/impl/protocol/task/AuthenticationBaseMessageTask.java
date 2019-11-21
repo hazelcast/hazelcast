@@ -16,13 +16,11 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.SecurityContext;
@@ -194,27 +192,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private void setConnectionType() {
-        String type = getClientType();
-        if (ClientTypes.JAVA.equals(type)) {
-            connection.setType(ConnectionType.JAVA_CLIENT);
-        } else if (ClientTypes.CSHARP.equals(type)) {
-            connection.setType(ConnectionType.CSHARP_CLIENT);
-        } else if (ClientTypes.CPP.equals(type)) {
-            connection.setType(ConnectionType.CPP_CLIENT);
-        } else if (ClientTypes.PYTHON.equals(type)) {
-            connection.setType(ConnectionType.PYTHON_CLIENT);
-        } else if (ClientTypes.RUBY.equals(type)) {
-            connection.setType(ConnectionType.RUBY_CLIENT);
-        } else if (ClientTypes.NODEJS.equals(type)) {
-            connection.setType(ConnectionType.NODEJS_CLIENT);
-        } else if (ClientTypes.GO.equals(type)) {
-            connection.setType(ConnectionType.GO_CLIENT);
-        } else if (ClientTypes.MC_JAVA.equals(type)) {
-            connection.setType(ConnectionType.MC_JAVA_CLIENT);
-        } else {
-            logger.info("Unknown client type: " + type);
-            connection.setType(ConnectionType.BINARY_CLIENT);
-        }
+        connection.setConnectionType(getClientType());
     }
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,

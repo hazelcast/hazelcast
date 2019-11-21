@@ -33,6 +33,7 @@ import com.hazelcast.internal.services.RemoteService;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ICacheService
@@ -104,11 +105,22 @@ public interface ICacheService
 
     NodeEngine getNodeEngine();
 
-    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, boolean isLocal);
+    UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener);
 
-    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
+    UUID registerLocalListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter);
+
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener);
+
+    UUID registerListener(String cacheNameWithPrefix, CacheEventListener listener, EventFilter eventFilter);
+
+    CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener);
+
+    CompletableFuture<UUID> registerListenerAsync(String cacheNameWithPrefix, CacheEventListener listener,
+                                                  EventFilter eventFilter);
 
     boolean deregisterListener(String cacheNameWithPrefix, UUID registrationId);
+
+    CompletableFuture<Boolean> deregisterListenerAsync(String cacheNameWithPrefix, UUID registrationId);
 
     void deregisterAllListener(String cacheNameWithPrefix);
 
@@ -118,8 +130,6 @@ public interface ICacheService
      * Creates cache operations according to the storage-type of the cache
      */
     CacheOperationProvider getCacheOperationProvider(String cacheNameWithPrefix, InMemoryFormat storageType);
-
-    UUID addInvalidationListener(String cacheNameWithPrefix, CacheEventListener listener, boolean localOnly);
 
     void sendInvalidationEvent(String cacheNameWithPrefix, Data key, UUID sourceUuid);
 

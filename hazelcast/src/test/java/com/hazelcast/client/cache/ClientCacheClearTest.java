@@ -23,16 +23,16 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
@@ -133,7 +133,7 @@ public class ClientCacheClearTest extends CacheClearTest {
                     throws Exception {
                 assertEquals(1, counter.get());
             }
-        }, 2);
+        });
 
         // Make sure that the callback is not called for a while
         assertTrueAllTheTime(new AssertTask() {
@@ -193,7 +193,7 @@ public class ClientCacheClearTest extends CacheClearTest {
                     throws Exception {
                 assertEquals(1, counter.get());
             }
-        }, 2);
+        });
 
         // Make sure that the callback is not called for a while
         assertTrueAllTheTime(new AssertTask() {
@@ -231,12 +231,12 @@ public class ClientCacheClearTest extends CacheClearTest {
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                return CacheAddInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
+                return CacheAddNearCacheInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
             }
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return CacheAddInvalidationListenerCodec.decodeResponse(clientMessage).response;
+                return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override

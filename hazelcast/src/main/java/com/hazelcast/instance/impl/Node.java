@@ -197,7 +197,7 @@ public class Node {
     @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:methodlength"})
     public Node(HazelcastInstanceImpl hazelcastInstance, Config staticConfig, NodeContext nodeContext) {
         this.properties = new HazelcastProperties(staticConfig);
-        MetricsConfigHelper.overrideMetricsConfig(staticConfig);
+        MetricsConfigHelper.overrideMemberMetricsConfig(staticConfig);
         DynamicConfigurationAwareConfig config = new DynamicConfigurationAwareConfig(staticConfig, this.properties);
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;

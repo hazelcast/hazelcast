@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -91,4 +92,13 @@ public class NetworkConfigTest {
         assertEquals(publicAddress, networkConfig.getPublicAddress());
     }
 
+    @Test
+    public void testRestApiConfig_isNotNullByDefault() {
+        assertNotNull(networkConfig.getRestApiConfig());
+    }
+
+    @Test
+    public void testMemcacheProtocolConfig_isNotNullByDefault() {
+        assertNotNull(networkConfig.getMemcacheProtocolConfig());
+    }
 }

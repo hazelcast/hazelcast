@@ -27,11 +27,12 @@ import com.hazelcast.security.permission.CachePermission;
 
 import java.security.Permission;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * Client request which unregisters the event listener on behalf of the client.
  *
- * @see com.hazelcast.cache.impl.CacheService#deregisterListener(String, String)
+ * @see com.hazelcast.cache.impl.CacheService#deregisterListener(String, UUID)
  */
 public class CacheRemoveEntryListenerMessageTask
         extends AbstractRemoveListenerMessageTask<CacheRemoveEntryListenerCodec.RequestParameters> {
@@ -46,9 +47,9 @@ public class CacheRemoveEntryListenerMessageTask
     }
 
     @Override
-    protected boolean deRegisterListener() {
+    protected Future<Boolean> deRegisterListener() {
         CacheService service = getService(CacheService.SERVICE_NAME);
-        return service.deregisterListener(parameters.name, parameters.registrationId);
+        return service.deregisterListenerAsync(parameters.name, parameters.registrationId);
     }
 
     @Override

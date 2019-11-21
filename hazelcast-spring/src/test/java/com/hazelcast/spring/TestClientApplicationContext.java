@@ -24,6 +24,7 @@ import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
+import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
@@ -31,6 +32,9 @@ import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -48,15 +52,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
-import com.hazelcast.collection.IList;
-import com.hazelcast.map.IMap;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.collection.ISet;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -134,6 +135,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client17-backupAckToClient")
     private HazelcastClientProxy backupAckToClient;
+
+    @Resource(name = "client18-metrics")
+    private HazelcastClientProxy metricsClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -487,5 +491,14 @@ public class TestClientApplicationContext {
     @Test
     public void testBackupAckToClient() {
         assertFalse(backupAckToClient.getClientConfig().isBackupAckToClientEnabled());
+    }
+
+    @Test
+    public void testMetrics() {
+        ClientMetricsConfig metricsConfig = metricsClient.getClientConfig().getMetricsConfig();
+
+        assertFalse(metricsConfig.isEnabled());
+        assertFalse(metricsConfig.getJmxConfig().isEnabled());
+        assertEquals(42, metricsConfig.getCollectionFrequencySeconds());
     }
 }

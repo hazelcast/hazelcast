@@ -306,4 +306,9 @@
         </classNames>
     </user-code-deployment>
 
+    <metrics enabled="false">
+        <jmx enabled="false"/>
+        <collection-frequency-seconds>42</collection-frequency-seconds>
+    </metrics>
+
 </hazelcast-client>

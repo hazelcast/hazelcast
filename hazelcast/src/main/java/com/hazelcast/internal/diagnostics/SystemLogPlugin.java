@@ -255,7 +255,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         Connection connection = event.connection;
         writer.writeEntry(connection.toString());
 
-        writer.writeKeyValueEntry("type", connection.getType().name());
+        writer.writeKeyValueEntry("type", connection.getConnectionType());
         writer.writeKeyValueEntry("isAlive", connection.isAlive());
 
         if (!event.added) {

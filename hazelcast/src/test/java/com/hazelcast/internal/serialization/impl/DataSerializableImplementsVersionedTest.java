@@ -24,6 +24,7 @@ import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,10 +41,12 @@ import java.util.Set;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 /**
  * Iterates over all {@link DataSerializable} and {@link IdentifiedDataSerializable} classes
@@ -172,8 +175,10 @@ public class DataSerializableImplementsVersionedTest {
 
     // overridden in EE
     protected ObjectDataOutput getObjectDataOutput() {
-        ObjectDataOutput output = spy(ObjectDataOutput.class);
-        when(output.getSerializationService()).thenReturn(serializationService);
+        ObjectDataOutput output = mock(ObjectDataOutput.class,
+                withSettings().extraInterfaces(SerializationServiceSupport.class));
+        when(((SerializationServiceSupport) output).getSerializationService())
+                .thenReturn(serializationService);
         return output;
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.client.ClientType;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -26,6 +25,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.GroupProperty;
 
@@ -93,8 +93,8 @@ public class PhoneHome {
         }
         try {
             phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
-                                                      .scheduleWithRepetition("PhoneHome",
-                                                              () -> phoneHome(hazelcastNode, false), 0, 1, TimeUnit.DAYS);
+                    .scheduleWithRepetition("PhoneHome",
+                            () -> phoneHome(hazelcastNode, false), 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
             logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
@@ -234,14 +234,14 @@ public class PhoneHome {
     }
 
     private void addClientInfo(Node hazelcastNode, PhoneHomeParameterCreator parameterCreator) {
-        Map<ClientType, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
+        Map<String, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
         parameterCreator
-                .addParam("ccpp", Integer.toString(clusterClientStats.get(ClientType.CPP)))
-                .addParam("cdn", Integer.toString(clusterClientStats.get(ClientType.CSHARP)))
-                .addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)))
-                .addParam("cnjs", Integer.toString(clusterClientStats.get(ClientType.NODEJS)))
-                .addParam("cpy", Integer.toString(clusterClientStats.get(ClientType.PYTHON)))
-                .addParam("cgo", Integer.toString(clusterClientStats.get(ClientType.GO)));
+                .addParam("ccpp", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.CPP_CLIENT, 0)))
+                .addParam("cdn", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.CSHARP_CLIENT, 0)))
+                .addParam("cjv", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.JAVA_CLIENT, 0)))
+                .addParam("cnjs", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.NODEJS_CLIENT, 0)))
+                .addParam("cpy", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.PYTHON_CLIENT, 0)))
+                .addParam("cgo", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.GO_CLIENT, 0)));
     }
 
     private void addManCenterInfo(Node hazelcastNode, int clusterSize, PhoneHomeParameterCreator parameterCreator) {

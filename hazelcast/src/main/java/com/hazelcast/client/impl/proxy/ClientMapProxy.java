@@ -138,7 +138,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
@@ -1842,7 +1842,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<>(fut, ss, message -> {
             MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
-            PortableReadResultSet<?> resultSet = new PortableReadResultSet<>(
+            ReadResultSetImpl resultSet = new ReadResultSetImpl<>(
                     params.readCount, params.items, params.itemSeqs, params.nextSeq);
             resultSet.setSerializationService(getSerializationService());
             return resultSet;

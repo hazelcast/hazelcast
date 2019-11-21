@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * called by this method. If you do want to deleteAll to be called use the clear method. The EVICT_ALL event is
  * fired for any registered listeners.
  */
-@Generated("418329797b639a33ad329ea078408f8c")
+@Generated("13434b07f4124c8ff62db59576f3a4dc")
 public final class MapEvictAllCodec {
-    //hex: 0x012000
-    public static final int REQUEST_MESSAGE_TYPE = 73728;
-    //hex: 0x012001
-    public static final int RESPONSE_MESSAGE_TYPE = 73729;
+    //hex: 0x011F00
+    public static final int REQUEST_MESSAGE_TYPE = 73472;
+    //hex: 0x011F01
+    public static final int RESPONSE_MESSAGE_TYPE = 73473;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

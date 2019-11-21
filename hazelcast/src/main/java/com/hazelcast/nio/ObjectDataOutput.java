@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -109,9 +108,4 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
-
-    /**
-     * @return serialization service for this object
-     */
-    SerializationService getSerializationService();
 }

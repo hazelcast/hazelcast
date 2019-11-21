@@ -76,16 +76,12 @@ import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
-import static com.hazelcast.instance.ProtocolType.REST;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergeTypeProviderHasRequiredTypes;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.spi.properties.GroupProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
-import static com.hazelcast.spi.properties.GroupProperty.HTTP_HEALTHCHECK_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.REST_ENABLED;
 import static java.lang.String.format;
 
 /**
@@ -292,21 +288,6 @@ public final class ConfigValidator {
         if (serverSocketsPerProtocolType.get(MEMBER).value != 1) {
             throw new InvalidConfigurationException("A member-server-socket-endpoint"
                     + " configuration is required for the cluster to form.");
-        }
-
-        HazelcastProperties props = new HazelcastProperties(config);
-        if (props.getBoolean(REST_ENABLED) || props.getBoolean(HTTP_HEALTHCHECK_ENABLED)) {
-            if (serverSocketsPerProtocolType.get(REST).value != 1) {
-                throw new InvalidConfigurationException("`hazelcast.rest.enabled` and/or "
-                        + "`hazelcast.http.healthcheck.enabled` properties are enabled, without a rest-server-socket-endpoint");
-            }
-        }
-
-        if (props.getBoolean(MEMCACHE_ENABLED)) {
-            if (serverSocketsPerProtocolType.get(REST).value != 1) {
-                throw new InvalidConfigurationException("`hazelcast.memcache.enabled` property is enabled, without "
-                        + "a memcache-server-socket-endpoint");
-            }
         }
 
         // endpoint qualifiers referenced by WAN publishers must exist
