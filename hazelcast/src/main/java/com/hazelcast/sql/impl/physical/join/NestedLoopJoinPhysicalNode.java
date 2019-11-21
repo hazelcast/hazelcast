@@ -29,6 +29,12 @@ import java.util.Objects;
  * Nested loop join node.
  */
 public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
+    /** Outer join flag. */
+    private boolean outer;
+
+    /** Number of columns in the right row. */
+    private int rightRowColumnCount;
+
     public NestedLoopJoinPhysicalNode() {
         // No-op.
     }
@@ -36,9 +42,22 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
     public NestedLoopJoinPhysicalNode(
         PhysicalNode left,
         PhysicalNode right,
-        Expression<Boolean> condition
+        Expression<Boolean> condition,
+        boolean outer,
+        int rightRowColumnCount
     ) {
         super(left, right, condition);
+
+        this.outer = outer;
+        this.rightRowColumnCount = rightRowColumnCount;
+    }
+
+    public boolean isOuter() {
+        return outer;
+    }
+
+    public int getRightRowColumnCount() {
+        return rightRowColumnCount;
     }
 
     @Override
@@ -54,6 +73,8 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
         out.writeObject(left);
         out.writeObject(right);
         out.writeObject(condition);
+        out.writeBoolean(outer);
+        out.writeInt(rightRowColumnCount);
     }
 
     @Override
@@ -61,11 +82,13 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
         left = in.readObject();
         right = in.readObject();
         condition = in.readObject();
+        outer = in.readBoolean();
+        rightRowColumnCount = in.readInt();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(left, right, condition);
+        return Objects.hash(left, right, condition, outer, rightRowColumnCount);
     }
 
     @Override
@@ -80,11 +103,13 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
 
         NestedLoopJoinPhysicalNode that = (NestedLoopJoinPhysicalNode) o;
 
-        return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition);
+        return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition)
+            && outer == that.outer && rightRowColumnCount == that.rightRowColumnCount;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{condition=" + condition + ", left=" + left + ", right=" + right + '}';
+        return getClass().getSimpleName() + "{condition=" + condition + ", outer=" + outer
+            + ", rightRowColumnCount=" + rightRowColumnCount + ", left=" + left + ", right=" + right + '}';
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.UpstreamState;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -30,7 +31,6 @@ import com.hazelcast.sql.impl.row.RowBatch;
 /**
  * Executor for local join.
  */
-// TODO: Outer join support
 // TODO: Semi join support
 public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
     /** Right input. */
@@ -39,18 +39,36 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
     /** Filter. */
     private final Expression<Boolean> filter;
 
+    /** Whether this is the outer join. */
+    private final boolean outer;
+
+    /** Empty right row. */
+    private final Row rightEmptyRow;
+
     /** Current left row. */
     private Row leftRow;
+
+    /** Whether at least one match from the right was found for the current left row. */
+    private boolean rightMatchFound;
 
     /** Current row. */
     private RowBatch curRow;
 
-    public NestedLoopJoinExec(Exec left, Exec right, Expression<Boolean> filter) {
+    public NestedLoopJoinExec(
+        Exec left,
+        Exec right,
+        Expression<Boolean> filter,
+        boolean outer,
+        int rightRowColumnCount
+    ) {
         super(left);
 
         rightState = new UpstreamState(right);
 
         this.filter = filter;
+
+        this.outer = outer;
+        rightEmptyRow = outer ? new HeapRow(rightRowColumnCount) : null;
     }
 
     @Override
@@ -64,6 +82,8 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
         while (true) {
             // Get the left row.
             if (leftRow == null) {
+                assert !rightMatchFound;
+
                 while (true) {
                     if (!state.advance()) {
                         return IterationResult.WAIT;
@@ -96,20 +116,34 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
                     if (filter.eval(ctx, row)) {
                         curRow = row;
 
+                        rightMatchFound = true;
+
                         if (state.isDone() && rightState.isDone()) {
                             leftRow = null;
+                            rightMatchFound = false;
 
                             return IterationResult.FETCHED_DONE;
+                        } else {
+                            return IterationResult.FETCHED;
                         }
-
-                        return IterationResult.FETCHED;
                     }
                 }
 
             } while (!rightState.isDone());
 
-            // Nullify left row.
-            leftRow = null;
+            if (outer && !rightMatchFound) {
+                // If no match were found, then create a [left, null] row for the outer join, and then clear the state.
+                curRow = new JoinRow(leftRow, rightEmptyRow);
+
+                leftRow = null;
+                rightMatchFound = false;
+
+                return IterationResult.FETCHED;
+            } else {
+                // Just clear the state.
+                leftRow = null;
+                rightMatchFound = false;
+            }
         }
     }
 

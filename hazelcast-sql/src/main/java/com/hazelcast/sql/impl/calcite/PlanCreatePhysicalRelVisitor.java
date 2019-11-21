@@ -71,7 +71,6 @@ import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlAggFunction;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -365,7 +364,13 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
          RexNode condition = rel.getCondition();
          Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
 
-         NestedLoopJoinPhysicalNode joinNode = new NestedLoopJoinPhysicalNode(leftInput, rightInput, convertedCondition);
+         NestedLoopJoinPhysicalNode joinNode = new NestedLoopJoinPhysicalNode(
+             leftInput,
+             rightInput,
+             convertedCondition,
+             rel.getJoinType() == JoinRelType.LEFT,
+             rel.getRight().getRowType().getFieldCount()
+         );
 
          pushUpstream(joinNode);
      }

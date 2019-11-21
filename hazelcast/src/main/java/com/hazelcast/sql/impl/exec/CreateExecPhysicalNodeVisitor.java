@@ -324,7 +324,9 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
         Exec res = new NestedLoopJoinExec(
             pop(),
             pop(),
-            node.getCondition()
+            node.getCondition(),
+            node.isOuter(),
+            node.getRightRowColumnCount()
         );
 
         push(res);

@@ -90,8 +90,8 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
         this.filter = filter;
         this.leftHashKeys = leftHashKeys;
         this.rightHashKeys = rightHashKeys;
-        this.outer = outer;
 
+        this.outer = outer;
         rightEmptyRow = outer ? new HeapRow(rightRowColumnCount) : null;
     }
 
