@@ -68,6 +68,7 @@ import com.hazelcast.sql.impl.physical.join.HashJoinPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -383,7 +384,9 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
              rightInput,
              convertedCondition,
              rel.getLeftHashKeys(),
-             rel.getRightHashKeys()
+             rel.getRightHashKeys(),
+             rel.getJoinType() == JoinRelType.LEFT,
+             rel.getRight().getRowType().getFieldCount()
          );
 
          pushUpstream(joinNode);

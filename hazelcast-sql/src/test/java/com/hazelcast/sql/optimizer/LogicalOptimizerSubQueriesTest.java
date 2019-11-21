@@ -189,6 +189,8 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
         System.out.println(RelOptUtil.toString(rel));
     }
 
+    // TODO: Make sure that the right stops as soon as the very first entry is found. It should be possible at least for
+    //  non-correlated subqueries. No need to aggregate the whole set.
     @Test
     public void testNotExistsCorrelated() {
         RelNode rel = optimizeLogical(

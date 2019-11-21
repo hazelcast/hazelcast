@@ -30,6 +30,8 @@ import com.hazelcast.sql.impl.row.RowBatch;
 /**
  * Executor for local join.
  */
+// TODO: Outer join support
+// TODO: Semi join support
 public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
     /** Right input. */
     private final UpstreamState rightState;

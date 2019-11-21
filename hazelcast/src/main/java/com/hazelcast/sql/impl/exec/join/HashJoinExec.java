@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.UpstreamState;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -37,6 +38,7 @@ import java.util.Objects;
 /**
  * Hash join implementation: build hash table from the right input, do lookups for the left one.
  */
+// TODO: Semi join support
 public class HashJoinExec extends AbstractUpstreamAwareExec {
     /** Right input. */
     private final UpstreamState rightState;
@@ -50,6 +52,12 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
 
     /** Right hash keys. */
     private final List<Integer> rightHashKeys;
+
+    /** Whether this is the outer join. */
+    private final boolean outer;
+
+    /** Empty right row. */
+    private final Row rightEmptyRow;
 
     /** Current left row. */
     private Row leftRow;
@@ -71,7 +79,9 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
         Exec right,
         Expression<Boolean> filter,
         List<Integer> leftHashKeys,
-        List<Integer> rightHashKeys
+        List<Integer> rightHashKeys,
+        boolean outer,
+        int rightRowColumnCount
     ) {
         super(left);
 
@@ -80,6 +90,9 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
         this.filter = filter;
         this.leftHashKeys = leftHashKeys;
         this.rightHashKeys = rightHashKeys;
+        this.outer = outer;
+
+        rightEmptyRow = outer ? new HeapRow(rightRowColumnCount) : null;
     }
 
     @Override
@@ -101,8 +114,8 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
             }
         }
 
-        // Special case: right input produced no results.
-        if (table.isEmpty()) {
+        // Special case: right input produced no results. Should not be triggered for the outer join.
+        if (table.isEmpty() && !outer) {
             curRow = EmptyRowBatch.INSTANCE;
 
             return IterationResult.FETCHED_DONE;
@@ -124,11 +137,15 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
                     return IterationResult.WAIT;
                 }
 
-                // Match the next row.
+                // For every left row ...
                 for (Row leftRow0 : state) {
+                    // ... get matching right rows.
                     List<Row> rightRows0 = get(leftRow0);
 
-                    if (!rightRows0.isEmpty()) {
+                    // If there are matching right rows, then stop move to the next step where we actually produce the join rows.
+                    // We also switch to the next step for outer join, to produce [left, null] row.
+                    // Otherwise, switch to the next left row.
+                    if (!rightRows0.isEmpty() || outer) {
                         leftRow = leftRow0;
                         rightRows = rightRows0;
                         rightRowPos = 0;
@@ -159,6 +176,13 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
 
             // Reset the left row if there is no match of we reached the end of the matching right input.
             if (!found || rightRowPos == rightRows.size()) {
+                if (outer && rightRows.isEmpty()) {
+                    // But do not forget to emit the [left, null] pair for the outer join if there we no match.
+                    curRow = new JoinRow(leftRow, rightEmptyRow);
+
+                    found = true;
+                }
+
                 leftRow = null;
             }
 
@@ -199,10 +223,10 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
     }
 
     /**
-     * Get matching values for the left row.
+     * Get matching values from the right input for the left row.
      *
      * @param leftRow Left row.
-     * @return Matching rows.
+     * @return Matching right rows.
      */
     private List<Row> get(Row leftRow) {
         Object key = prepareKey(leftRow, leftHashKeys);

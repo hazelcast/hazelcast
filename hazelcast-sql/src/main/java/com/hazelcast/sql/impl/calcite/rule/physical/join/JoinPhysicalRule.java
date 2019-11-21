@@ -197,6 +197,10 @@ public final class JoinPhysicalRule extends RelOptRule {
             collation
         );
 
+        // Since this is not an equi-join, there should be no left or right keys.
+        assert logicalJoin.getLeftKeys().isEmpty();
+        assert logicalJoin.getRightKeys().isEmpty();
+
         return new NestedLoopJoinPhysicalRel(
             cluster,
             traitSet,

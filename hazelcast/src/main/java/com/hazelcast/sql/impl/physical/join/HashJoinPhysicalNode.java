@@ -37,6 +37,12 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
     /** Right hash keys. */
     private List<Integer> rightHashKeys;
 
+    /** Outer join flag. */
+    private boolean outer;
+
+    /** Number of columns in the right row. */
+    private int rightRowColumnCount;
+
     public HashJoinPhysicalNode() {
         // No-op.
     }
@@ -46,12 +52,16 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
         PhysicalNode right,
         Expression<Boolean> condition,
         List<Integer> leftHashKeys,
-        List<Integer> rightHashKeys
+        List<Integer> rightHashKeys,
+        boolean outer,
+        int rightRowColumnCount
     ) {
         super(left, right, condition);
 
         this.leftHashKeys = leftHashKeys;
         this.rightHashKeys = rightHashKeys;
+        this.outer = outer;
+        this.rightRowColumnCount = rightRowColumnCount;
     }
 
     public List<Integer> getLeftHashKeys() {
@@ -60,6 +70,14 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
 
     public List<Integer> getRightHashKeys() {
         return rightHashKeys;
+    }
+
+    public boolean isOuter() {
+        return outer;
+    }
+
+    public int getRightRowColumnCount() {
+        return rightRowColumnCount;
     }
 
     @Override
@@ -77,6 +95,8 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
         out.writeObject(condition);
         SerializationUtil.writeList(leftHashKeys, out);
         SerializationUtil.writeList(rightHashKeys, out);
+        out.writeBoolean(outer);
+        out.writeInt(rightRowColumnCount);
     }
 
     @Override
@@ -86,11 +106,13 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
         condition = in.readObject();
         leftHashKeys = SerializationUtil.readList(in);
         rightHashKeys = SerializationUtil.readList(in);
+        outer = in.readBoolean();
+        rightRowColumnCount = in.readInt();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(left, right, condition);
+        return Objects.hash(left, right, condition, leftHashKeys, rightHashKeys, outer, rightRowColumnCount);
     }
 
     @Override
@@ -106,12 +128,14 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
         HashJoinPhysicalNode that = (HashJoinPhysicalNode) o;
 
         return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition)
-            && leftHashKeys.equals(that.leftHashKeys) && rightHashKeys.equals(that.rightHashKeys);
+            && leftHashKeys.equals(that.leftHashKeys) && rightHashKeys.equals(that.rightHashKeys) && outer == that.outer
+            && rightRowColumnCount == that.rightRowColumnCount;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{condition=" + condition + ", leftHashKeys=" + leftHashKeys
-            + ", rightHashKeys=" + rightHashKeys + ", left=" + left + ", right=" + right + '}';
+            + ", rightHashKeys=" + rightHashKeys + ", outer=" + outer + ", rightRowColumnCount=" + rightRowColumnCount
+            + ", left=" + left + ", right=" + right + '}';
     }
 }
