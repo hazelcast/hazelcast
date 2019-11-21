@@ -44,14 +44,13 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -656,35 +655,5 @@ public final class ConfigValidator {
         if (!isClient && nearCacheConfig.getPreloaderConfig().isEnabled()) {
             throw new InvalidConfigurationException("The Near Cache pre-loader is just available on Hazelcast clients!");
         }
-    }
-
-    /**
-     * Throws {@link InvalidConfigurationException} if given group property is defined within Hazelcast properties.
-     *
-     * @param properties        Group properties
-     * @param hazelcastProperty property to be checked
-     * @throws InvalidConfigurationException
-     */
-    public static void ensurePropertyNotConfigured(HazelcastProperties properties, HazelcastProperty hazelcastProperty)
-            throws InvalidConfigurationException {
-        if (properties.containsKey(hazelcastProperty)) {
-            throw new InvalidConfigurationException("Service start failed. The legacy property " + hazelcastProperty.getName()
-                    + " is provided together with new Config object. "
-                    + "Remove the property from your configuration to fix this issue.");
-        }
-    }
-
-    /**
-     * Checks if given group property is defined within given Hazelcast properties. Logs a warning when the property is defied.
-     *
-     * @return {@code true} when the property is defined
-     */
-    public static boolean checkAndLogPropertyDeprecated(HazelcastProperties properties, HazelcastProperty hazelcastProperty) {
-        if (properties.containsKey(hazelcastProperty)) {
-            LOGGER.warning(
-                    "Property " + hazelcastProperty.getName() + " is deprecated. Use configuration object/element instead.");
-            return properties.getBoolean(hazelcastProperty);
-        }
-        return false;
     }
 }

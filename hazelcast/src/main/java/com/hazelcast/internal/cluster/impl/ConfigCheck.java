@@ -80,12 +80,12 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
      * Checks if two Hazelcast configurations are compatible.
      *
      * @param found the {@link ConfigCheck} to compare this to
-     * @return true if compatible. False if part of another group.
+     * @return true if compatible. False if part of another cluster.
      * @throws ConfigMismatchException if the configuration is not compatible.
      *                                 An exception is thrown so we can pass a nice message.
      */
     public boolean isCompatible(ConfigCheck found) {
-        // check group-properties.
+        // check cluster properties.
         if (!equals(clusterName, found.clusterName)) {
             return false;
         }

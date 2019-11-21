@@ -194,7 +194,7 @@ public class ClusterJoinManager {
                 return true;
             }
 
-            logger.warning(format("Received an invalid join request from %s, cause: clusters part of different cluster-groups",
+            logger.warning(format("Received an invalid join request from %s, cause: members part of different cluster",
                     address));
             nodeEngine.getOperationService().send(new ClusterMismatchOp(), address);
         } catch (ConfigMismatchException e) {
