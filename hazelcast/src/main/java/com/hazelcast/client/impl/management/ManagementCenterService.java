@@ -39,6 +39,7 @@ import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -51,13 +52,14 @@ import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 
-import javax.annotation.Nonnull;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -534,6 +536,8 @@ public class ManagementCenterService {
      * Add a new WAN replication configuration.
      *
      * @param config the new WAN replication configuration
+     * @return a {@link CompletableFuture} that holds the IDs for the WAN publishers which were
+     * added to the configuration, and the ones that are ignored/not added to the configuration
      */
     @Nonnull
     public CompletableFuture<AddWanConfigResult> addWanReplicationConfig(MCWanReplicationConfig config) {
@@ -564,6 +568,40 @@ public class ManagementCenterService {
                             MCAddWanReplicationConfigCodec.decodeResponse(clientMessage);
                     return new AddWanConfigResult(response.addedPublisherIds, response.ignoredPublisherIds);
                 }
+        );
+    }
+
+    /**
+     * Initiate WAN sync for a specific map or all maps.
+     *
+     * @param wanReplicationName name of the WAN replication to initiate WAN sync for
+     * @param wanPublisherId     ID of the WAN publisher to initiate WAN sync for
+     * @param wanSyncType        whether all maps are going to be synced or only a single one
+     * @param mapName            name of the map to trigger WAN sync on, {@code null} if all maps
+     *                           are to be synced
+     * @return a {@link CompletableFuture} that holds the UUID of the synchronization
+     */
+    @Nonnull
+    public CompletableFuture<UUID> wanSyncMap(String wanReplicationName,
+                                              String wanPublisherId,
+                                              int wanSyncType,
+                                              String mapName) {
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+        if (wanSyncType == 1) {
+            checkNotNull(mapName);
+        }
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCWanSyncMapCodec.encodeRequest(wanReplicationName, wanPublisherId, wanSyncType, mapName),
+                null
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCWanSyncMapCodec.decodeResponse(clientMessage).uuid
         );
     }
 }
