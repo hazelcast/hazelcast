@@ -30,6 +30,7 @@ import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
@@ -51,10 +53,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_MAX_MICROSECONDS;
 import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_MIN_MICROSECONDS;
 import static com.hazelcast.jet.core.JetProperties.JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS;
 import static com.hazelcast.jet.core.JetProperties.JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
@@ -69,7 +73,10 @@ import static java.util.stream.Collectors.toList;
 
 public class TaskletExecutionService {
 
+    static final String TASKLET_INIT_EXECUTOR_NAME = "jet:tasklet_init";
+
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
+    private final ExecutionService hzExecutionService;
     private final CooperativeWorker[] cooperativeWorkers;
     private final Thread[] cooperativeThreadPool;
     private final String hzInstanceName;
@@ -83,6 +90,9 @@ public class TaskletExecutionService {
     private volatile IdleStrategy idlerNonCooperative;
 
     public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, HazelcastProperties properties) {
+        hzExecutionService = nodeEngine.getExecutionService();
+        hzExecutionService.register(TASKLET_INIT_EXECUTOR_NAME,
+                Runtime.getRuntime().availableProcessors(), Integer.MAX_VALUE, CACHED);
         this.hzInstanceName = nodeEngine.getHazelcastInstance().getName();
         this.cooperativeWorkers = new CooperativeWorker[threadCount];
         this.cooperativeThreadPool = new Thread[threadCount];
@@ -146,6 +156,7 @@ public class TaskletExecutionService {
     public void shutdown() {
         isShutdown = true;
         blockingTaskletExecutor.shutdownNow();
+        hzExecutionService.shutdownExecutor(TASKLET_INIT_EXECUTOR_NAME);
     }
 
     private void submitBlockingTasklets(ExecutionTracker executionTracker, ClassLoader jobClassLoader,
@@ -170,8 +181,12 @@ public class TaskletExecutionService {
         @SuppressWarnings("unchecked")
         final List<TaskletTracker>[] trackersByThread = new List[cooperativeWorkers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
-        Util.doWithClassLoader(jobClassLoader, () ->
-                tasklets.forEach(Tasklet::init));
+        List<? extends Future<?>> futures = tasklets
+                .stream()
+                .map(tasklet -> hzExecutionService.submit(TASKLET_INIT_EXECUTOR_NAME, () ->
+                        Util.doWithClassLoader(jobClassLoader, tasklet::init)))
+                .collect(toList());
+        awaitAll(futures);
 
         // We synchronize so that no two jobs submit their tasklets in
         // parallel. If two jobs submit in parallel, the tasklets of one of
@@ -187,6 +202,28 @@ public class TaskletExecutionService {
             cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
         }
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
+    }
+
+    private void awaitAll(List<? extends Future<?>> futures) {
+        Throwable firstFailure = null;
+        int failureCount = 0;
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                Throwable peeled = peel(e);
+                logger.severe("Tasklet initialization failed", peeled);
+                firstFailure = firstFailure != null ? firstFailure : peeled;
+                failureCount++;
+            }
+        }
+        if (firstFailure != null) {
+            throw new JetException(String.format(
+                    "%,d of %,d tasklets failed to initialize." +
+                            " One of the failures is attached as the cause and its summary is %s",
+                    failureCount, futures.size(), firstFailure
+            ), firstFailure);
+        }
     }
 
     /**
