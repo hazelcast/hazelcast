@@ -18,6 +18,7 @@ package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -50,7 +51,7 @@ public class QueueEvent implements IdentifiedDataSerializable {
         out.writeUTF(name);
         out.writeInt(eventType.getType());
         caller.writeData(out);
-        out.writeData(data);
+        IOUtil.writeData(out, data);
     }
 
     @Override
@@ -59,7 +60,7 @@ public class QueueEvent implements IdentifiedDataSerializable {
         eventType = ItemEventType.getByType(in.readInt());
         caller = new Address();
         caller.readData(in);
-        data = in.readData();
+        data = IOUtil.readData(in);
     }
 
     @Override

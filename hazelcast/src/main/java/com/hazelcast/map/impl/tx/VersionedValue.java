@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -46,7 +47,7 @@ public class VersionedValue implements IdentifiedDataSerializable {
         boolean isNull = value == null;
         out.writeBoolean(isNull);
         if (!isNull) {
-            out.writeData(value);
+            IOUtil.writeData(out, value);
         }
     }
 
@@ -55,7 +56,7 @@ public class VersionedValue implements IdentifiedDataSerializable {
         version = in.readLong();
         boolean isNull = in.readBoolean();
         if (!isNull) {
-            value = in.readData();
+            value = IOUtil.readData(in);
         }
     }
 

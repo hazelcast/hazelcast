@@ -26,6 +26,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.DataReader;
+import com.hazelcast.internal.nio.DataWriter;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -56,6 +58,7 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -181,7 +184,8 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
     @Test
     public void test_cachePartitionEventData_serialization() throws IOException {
         CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("cacheName", 1, null);
-        ObjectDataOutput output = mock(ObjectDataOutput.class);
+        ObjectDataOutput output = mock(ObjectDataOutput.class,
+                withSettings().extraInterfaces(DataWriter.class));
         cachePartitionEventData.writeData(output);
 
         verify(output).writeUTF("cacheName");
@@ -192,7 +196,8 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
     public void test_cachePartitionEventData_deserialization() throws IOException {
         CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("", 0, null);
 
-        ObjectDataInput input = mock(ObjectDataInput.class);
+        ObjectDataInput input = mock(ObjectDataInput.class,
+                withSettings().extraInterfaces(DataReader.class));
         when(input.readUTF()).thenReturn("cacheName");
         when(input.readInt()).thenReturn(1);
 

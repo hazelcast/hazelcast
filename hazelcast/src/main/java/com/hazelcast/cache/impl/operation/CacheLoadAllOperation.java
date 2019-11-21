@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -167,7 +168,7 @@ public class CacheLoadAllOperation
         if (keys != null) {
             out.writeInt(keys.size());
             for (Data key : keys) {
-                out.writeData(key);
+                IOUtil.writeData(out, key);
             }
         }
     }
@@ -180,7 +181,7 @@ public class CacheLoadAllOperation
             int size = in.readInt();
             keys = createHashSet(size);
             for (int i = 0; i < size; i++) {
-                keys.add(in.readData());
+                keys.add(IOUtil.readData(in));
             }
         }
     }

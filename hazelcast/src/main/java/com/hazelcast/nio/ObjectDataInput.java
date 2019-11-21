@@ -16,10 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
-
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -91,32 +87,12 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
     <T> T readObject() throws IOException;
 
     /**
-     * Reads to stored Data as an object instead of a Data instance.
-     * <p>
-     * The reason this method exists is that in some cases {@link Data} is stored on serialization, but on deserialization
-     * the actual object instance is needed. Getting access to the {@link Data} is easy by calling the {@link #readData()}
-     * method. But de-serializing the {@link Data} to an object instance is impossible because there is no reference to the
-     * {@link SerializationService}.
-     *
-     * @param <T> type of the object to be read
-     * @return the read Object
-     * @throws IOException if it reaches end of file before finish reading
-     */
-    <T> T readDataAsObject() throws IOException;
-
-    /**
      * @param <T>    type of the object to be read
      * @param aClass the type of the class to use when reading
      * @return object array read
      * @throws IOException if it reaches end of file before finish reading
      */
     <T> T readObject(Class aClass) throws IOException;
-
-    /**
-     * @return data read
-     * @throws IOException if it reaches end of file before finish reading
-     */
-    Data readData() throws IOException;
 
     /**
      * Returns class loader that internally used for objects.
@@ -129,9 +105,4 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
-
-    /**
-     * @return serialization service for this object
-     */
-    InternalSerializationService getSerializationService();
 }

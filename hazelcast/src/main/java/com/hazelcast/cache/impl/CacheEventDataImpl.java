@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -88,9 +89,9 @@ public class CacheEventDataImpl
             throws IOException {
         out.writeUTF(name);
         out.writeInt(eventType.getType());
-        out.writeData(dataKey);
-        out.writeData(dataNewValue);
-        out.writeData(dataOldValue);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataNewValue);
+        IOUtil.writeData(out, dataOldValue);
         out.writeBoolean(isOldValueAvailable);
     }
 
@@ -99,9 +100,9 @@ public class CacheEventDataImpl
             throws IOException {
         name = in.readUTF();
         eventType = CacheEventType.getByType(in.readInt());
-        dataKey = in.readData();
-        dataNewValue = in.readData();
-        dataOldValue = in.readData();
+        dataKey = IOUtil.readData(in);
+        dataNewValue = IOUtil.readData(in);
+        dataOldValue = IOUtil.readData(in);
         isOldValueAvailable = in.readBoolean();
     }
 

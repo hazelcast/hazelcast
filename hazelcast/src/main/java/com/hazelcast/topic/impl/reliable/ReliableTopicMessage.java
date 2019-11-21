@@ -17,6 +17,7 @@
 package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
@@ -73,13 +74,13 @@ public class ReliableTopicMessage implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(publishTime);
         out.writeObject(publisherAddress);
-        out.writeData(payload);
+        IOUtil.writeData(out, payload);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         publishTime = in.readLong();
         publisherAddress = in.readObject();
-        payload = in.readData();
+        payload = IOUtil.readData(in);
     }
 }

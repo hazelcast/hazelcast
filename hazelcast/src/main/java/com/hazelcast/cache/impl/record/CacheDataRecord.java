@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -63,15 +64,15 @@ public class CacheDataRecord extends AbstractCacheRecord<Data, Data> {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeData(value);
-        out.writeData(expiryPolicy);
+        IOUtil.writeData(out, value);
+        IOUtil.writeData(out, expiryPolicy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        value = in.readData();
-        expiryPolicy = in.readData();
+        value = IOUtil.readData(in);
+        expiryPolicy = IOUtil.readData(in);
     }
 
     @Override

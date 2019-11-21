@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -89,7 +90,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         boolean isNullKey = key == null;
         out.writeBoolean(isNullKey);
         if (!isNullKey) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
         out.writeLong(threadId);
         UUIDSerializationUtil.writeUUID(out, ownerUuid);
@@ -103,7 +104,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         partitionId = in.readInt();
         boolean isNullKey = in.readBoolean();
         if (!isNullKey) {
-            key = in.readData();
+            key = IOUtil.readData(in);
         }
         threadId = in.readLong();
         ownerUuid = UUIDSerializationUtil.readUUID(in);

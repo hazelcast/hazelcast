@@ -16,6 +16,7 @@
 
 package com.hazelcast.transaction.impl.xa.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -73,12 +74,12 @@ public class ClearRemoteTransactionOperation extends AbstractXAOperation impleme
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeData(xidData);
+        IOUtil.writeData(out, xidData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        xidData = in.readData();
+        xidData = IOUtil.readData(in);
     }
 
     @Override

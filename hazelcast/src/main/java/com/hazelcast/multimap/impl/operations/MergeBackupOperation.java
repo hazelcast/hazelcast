@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -75,7 +76,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
         super.writeInternal(out);
         out.writeInt(backupEntries.size());
         for (Map.Entry<Data, Collection<MultiMapRecord>> entry : backupEntries.entrySet()) {
-            out.writeData(entry.getKey());
+            IOUtil.writeData(out, entry.getKey());
             Collection<MultiMapRecord> collection = entry.getValue();
             out.writeInt(collection.size());
             for (MultiMapRecord record : collection) {
@@ -90,7 +91,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
         int size = in.readInt();
         backupEntries = createHashMap(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
+            Data key = IOUtil.readData(in);
             int collectionSize = in.readInt();
             Collection<MultiMapRecord> collection = new ArrayList<MultiMapRecord>(collectionSize);
             for (int j = 0; j < collectionSize; j++) {

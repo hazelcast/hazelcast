@@ -19,6 +19,7 @@ package com.hazelcast.collection.impl.list.operations;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.collection.impl.list.ListContainer;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -58,7 +59,7 @@ public class ListSetBackupOperation extends CollectionOperation implements Backu
         super.writeInternal(out);
         out.writeLong(oldItemId);
         out.writeLong(itemId);
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
@@ -66,6 +67,6 @@ public class ListSetBackupOperation extends CollectionOperation implements Backu
         super.readInternal(in);
         oldItemId = in.readLong();
         itemId = in.readLong();
-        value = in.readData();
+        value = IOUtil.readData(in);
     }
 }

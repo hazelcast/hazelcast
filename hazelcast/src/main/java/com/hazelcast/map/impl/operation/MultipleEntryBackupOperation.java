@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -56,7 +57,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
         int size = in.readInt();
         keys = createLinkedHashSet(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
+            Data key = IOUtil.readData(in);
             keys.add(key);
         }
     }
@@ -67,7 +68,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
         out.writeObject(backupProcessor);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
     }
 
