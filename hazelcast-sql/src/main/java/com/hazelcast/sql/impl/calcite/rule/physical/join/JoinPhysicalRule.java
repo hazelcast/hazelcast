@@ -37,7 +37,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 
@@ -120,290 +119,6 @@ public final class JoinPhysicalRule extends RelOptRule {
             assert conditionType == JoinConditionType.EQUI;
 
             return createTransformsEquiJoin(type, logicalJoin, left, right);
-        }
-    }
-
-    /**
-     * Create transformations for equi join.
-     *
-     * @param type Join type.
-     * @param logicalJoin Logical join.
-     * @param left Left input.
-     * @param right Right input.
-     * @return Transformations.
-     */
-    @SuppressWarnings("checkstyle:MethodLength")
-    private List<RelNode> createTransformsEquiJoin(
-        JoinType type,
-        JoinLogicalRel logicalJoin,
-        RelNode left,
-        RelNode right
-    ) {
-        DistributionTrait leftDist = RuleUtils.getDistribution(left);
-        DistributionTrait rightDist = RuleUtils.getDistribution(right);
-
-        InputDistribution leftInputDist = prepareInputDistribution(leftDist, logicalJoin.getLeftKeys());
-        InputDistribution rightInputDist = prepareInputDistribution(rightDist, logicalJoin.getRightKeys());
-
-        boolean partitionedCollocated = leftInputDist.isPartitioned() && rightInputDist.isPartitioned()
-            && leftInputDist.isCollocated(rightInputDist.getDistributionFields());
-
-        List<RelNode> res = new ArrayList<>(1);
-
-        if (partitionedCollocated) {
-            // Both inputs are collocated.
-            // E.g. aDist={a1, a2}, bDist={b1, b2}, cond={a1=b1, a2=b2}.
-            List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
-                type,
-                JoinConditionType.EQUI,
-                JoinDistribution.PARTITIONED,
-                JoinDistribution.PARTITIONED
-            );
-
-            for (JoinCollocationStrategy strategy : strategies) {
-                RelNode node = createTransformEquiJoin(
-                    type,
-                    logicalJoin,
-                    left,
-                    right,
-                    strategy,
-                    leftInputDist.getDistributionFields()
-                );
-
-                res.add(node);
-            }
-        } else if (leftInputDist.isPartitioned() || rightInputDist.isPartitioned()) {
-            // At least one input is partitioned, but together they are not collocated. In this case we explore up to two
-            // join strategies:
-            // 1) Leave left input where it is and move the right one to it
-            // 2) The opposite: leave right input where it is and move the left one to it
-            if (leftInputDist.isPartitioned()) {
-                List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
-                    type,
-                    JoinConditionType.EQUI,
-                    JoinDistribution.PARTITIONED,
-                    rightInputDist.getDistributionPartitionedAsRandom()
-                );
-
-                for (JoinCollocationStrategy strategy : strategies) {
-                    RelNode node = createTransformEquiJoin(
-                        type,
-                        logicalJoin,
-                        left,
-                        right,
-                        strategy,
-                        leftInputDist.getDistributionFields()
-                    );
-
-                    res.add(node);
-                }
-            }
-
-            if (rightInputDist.isPartitioned()) {
-                List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
-                    type,
-                    JoinConditionType.EQUI,
-                    leftInputDist.getDistributionPartitionedAsRandom(),
-                    JoinDistribution.PARTITIONED
-                );
-
-                for (JoinCollocationStrategy strategy : strategies) {
-                    RelNode node = createTransformEquiJoin(
-                        type,
-                        logicalJoin,
-                        left,
-                        right,
-                        strategy,
-                        rightInputDist.getDistributionFields()
-                    );
-
-                    res.add(node);
-                }
-            }
-        } else {
-            // Neither inputs are PARTITIONED with known distribution fields.
-            List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
-                type,
-                JoinConditionType.EQUI,
-                leftInputDist.getDistribution(),
-                rightInputDist.getDistribution()
-            );
-
-            // We will do hashing on all equi-join fields, since there is no better option.
-            int joinKeyCount = logicalJoin.getLeftKeys().size();
-            BitSet hashFields = new BitSet(joinKeyCount);
-            hashFields.set(0, joinKeyCount);
-
-            for (JoinCollocationStrategy strategy : strategies) {
-                RelNode node = createTransformEquiJoin(
-                    type,
-                    logicalJoin,
-                    left,
-                    right,
-                    strategy,
-                    hashFields
-                );
-
-                res.add(node);
-            }
-        }
-
-        return res;
-    }
-
-    private RelNode createTransformEquiJoin(
-        JoinType type,
-        JoinLogicalRel logicalJoin,
-        RelNode left,
-        RelNode right,
-        JoinCollocationStrategy strategy,
-        BitSet hashFields
-    ) {
-        // Step 1: Force collocation on inputs.
-        List<Integer> leftHashKeys = convertHashKeys(logicalJoin.getLeftKeys(), hashFields);
-        List<Integer> rightHashKeys = convertHashKeys(logicalJoin.getRightKeys(), hashFields);
-
-        RelNode leftCollocated = createCollocatedInputEquiJoin(left, strategy.getLeftAction(), leftHashKeys);
-        RelNode rightCollocated = createCollocatedInputEquiJoin(right, strategy.getRightAction(), rightHashKeys);
-
-        // Step 2: Create the join.
-        RelOptCluster cluster = left.getCluster();
-
-        DistributionTrait distribution = prepareDistributionEquiJoin(
-            strategy.getResultDistribution(),
-            leftHashKeys,
-            rightHashKeys,
-            leftCollocated.getRowType().getFieldCount()
-        );
-
-        RelCollation collation = RuleUtils.getCollation(leftCollocated);
-
-        RelTraitSet traitSet = RuleUtils.toPhysicalConvention(
-            cluster.getPlanner().emptyTraitSet(),
-            distribution,
-            collation
-        );
-
-        return new HashJoinPhysicalRel(
-            cluster,
-            traitSet,
-            leftCollocated,
-            rightCollocated,
-            logicalJoin.getCondition(),
-            logicalJoin.getJoinType(),
-            logicalJoin.getLeftKeys(),
-            logicalJoin.getRightKeys(),
-            leftHashKeys,
-            rightHashKeys
-        );
-    }
-
-    private static DistributionTrait prepareDistributionEquiJoin(
-        JoinDistribution joinDistribution,
-        List<Integer> leftJoinKeys,
-        List<Integer> rightJoinKeys,
-        int leftFieldCount
-    ) {
-        switch (joinDistribution) {
-            case REPLICATED:
-                return REPLICATED_DIST;
-
-            case RANDOM:
-                return DISTRIBUTED_DIST;
-
-            default:
-                assert joinDistribution == JoinDistribution.PARTITIONED;
-
-                List<DistributionField> leftDistFields = toDistributionFields(leftJoinKeys, 0);
-                List<DistributionField> rightDistFields = toDistributionFields(rightJoinKeys, leftFieldCount);
-
-                return DistributionTrait.Builder.ofType(DistributionType.DISTRIBUTED)
-                    .addFieldGroup(leftDistFields)
-                    .addFieldGroup(rightDistFields)
-                    .build();
-        }
-    }
-
-    private static List<DistributionField> toDistributionFields(List<Integer> fields, int offset) {
-        List<DistributionField> res = new ArrayList<>(fields.size());
-
-        fields.forEach((fieldIndex) -> {
-            res.add(new DistributionField(fieldIndex + offset));
-        });
-
-        return res;
-    }
-
-    private static List<Integer> convertHashKeys(List<Integer> joinKeys, BitSet mask) {
-        List<Integer> res = new ArrayList<>(mask.cardinality());
-
-        mask.stream().forEach((idx) -> {
-            res.add(joinKeys.get(idx));
-        });
-
-        return res;
-    }
-
-    private RelNode createCollocatedInputEquiJoin(
-        RelNode input,
-        JoinCollocationAction action,
-        List<Integer> hashFields
-    ) {
-        if (action == JoinCollocationAction.NONE) {
-            // No transformation for input is needed.
-            return input;
-        }
-
-        RelOptCluster cluster = input.getCluster();
-
-        DistributionTrait partitionedDistribution = DistributionTrait.Builder.ofType(DistributionType.DISTRIBUTED)
-            .addFieldGroup(toDistributionFields(hashFields, 0))
-            .build();
-
-        if (action == JoinCollocationAction.REPLICATED_HASH) {
-            // Hash replicated input to convert it to partitioned form.
-            // Distribution is changed to PARTITIONED on hash columns. Collation is lost.
-            assert RuleUtils.getDistribution(input).getType() == DistributionType.REPLICATED;
-
-            RelTraitSet replicatedToPartitionedTraitSet = RuleUtils.toPhysicalConvention(
-                cluster.getPlanner().emptyTraitSet(),
-                partitionedDistribution,
-                RuleUtils.getCollation(input)
-            );
-
-            return new ReplicatedToDistributedPhysicalRel(
-                cluster,
-                replicatedToPartitionedTraitSet,
-                input,
-                hashFields
-            );
-        } else if (action == JoinCollocationAction.BROADCAST) {
-            // Do broadcast. Distribution is changed to REPLICATED. Collation is lost.
-            RelTraitSet broadcastTraitSet = RuleUtils.toPhysicalConvention(
-                cluster.getPlanner().emptyTraitSet(),
-                REPLICATED_DIST
-            );
-
-            return new BroadcastExchangePhysicalRel(
-                cluster,
-                broadcastTraitSet,
-                input
-            );
-        } else {
-            // Do unicast. Distribution is changed to PARTITIONED on hash columns. Collation is lost.
-            assert action == JoinCollocationAction.UNICAST;
-
-            RelTraitSet unicastTraitSet = RuleUtils.toPhysicalConvention(
-                cluster.getPlanner().emptyTraitSet(),
-                partitionedDistribution
-            );
-
-            return new UnicastExchangePhysicalRel(
-                cluster,
-                unicastTraitSet,
-                input,
-                hashFields
-            );
         }
     }
 
@@ -510,7 +225,7 @@ public final class JoinPhysicalRule extends RelOptRule {
             // Step 1: Broadcast data.
             BroadcastExchangePhysicalRel exchange = new BroadcastExchangePhysicalRel(cluster, traitSet, input);
 
-            // Step 2: Accumulated data in an in-memory table for further nested loop join.
+            // Step 2: Accumulate data in an in-memory table for further nested loop join.
             return new MaterializedInputPhysicalRel(cluster, traitSet, exchange);
         }
     }
@@ -528,6 +243,330 @@ public final class JoinPhysicalRule extends RelOptRule {
         return inputDist.getType() == DistributionType.REPLICATED ? JoinDistribution.REPLICATED : JoinDistribution.RANDOM;
     }
 
+    /**
+     * Create transformations for equi join.
+     *
+     * @param type Join type.
+     * @param logicalJoin Logical join.
+     * @param left Left input.
+     * @param right Right input.
+     * @return Transformations.
+     */
+    @SuppressWarnings("checkstyle:MethodLength")
+    private List<RelNode> createTransformsEquiJoin(
+        JoinType type,
+        JoinLogicalRel logicalJoin,
+        RelNode left,
+        RelNode right
+    ) {
+        DistributionTrait leftDist = RuleUtils.getDistribution(left);
+        DistributionTrait rightDist = RuleUtils.getDistribution(right);
+
+        InputDistribution leftInputDist = prepareInputDistribution(leftDist, logicalJoin.getLeftKeys());
+        InputDistribution rightInputDist = prepareInputDistribution(rightDist, logicalJoin.getRightKeys());
+
+        boolean partitionedCollocated = leftInputDist.isPartitioned() && rightInputDist.isPartitioned()
+            && leftInputDist.isPartitionedCollocated(rightInputDist.getDistributionJoinKeyPositions());
+
+        List<RelNode> res = new ArrayList<>(1);
+
+        if (partitionedCollocated) {
+            // Both inputs are collocated.
+            // E.g. aDist={a1, a2}, bDist={b1, b2}, cond={a1=b1, a2=b2}.
+            List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+                type,
+                JoinConditionType.EQUI,
+                JoinDistribution.PARTITIONED,
+                JoinDistribution.PARTITIONED
+            );
+
+            for (JoinCollocationStrategy strategy : strategies) {
+                RelNode node = createTransformEquiJoin(
+                    type,
+                    logicalJoin,
+                    left,
+                    right,
+                    strategy,
+                    leftInputDist.getDistributionJoinKeyPositions()
+                );
+
+                res.add(node);
+            }
+        } else if (leftInputDist.isPartitioned() || rightInputDist.isPartitioned()) {
+            // At least one input is partitioned, but together they are not collocated. In this case we explore up to two
+            // join strategies:
+            // 1) Leave left input where it is and move the right one to it
+            // 2) The opposite: leave right input where it is and move the left one to it
+            if (leftInputDist.isPartitioned()) {
+                List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+                    type,
+                    JoinConditionType.EQUI,
+                    JoinDistribution.PARTITIONED,
+                    rightInputDist.getDistributionPartitionedAsRandom()
+                );
+
+                for (JoinCollocationStrategy strategy : strategies) {
+                    RelNode node = createTransformEquiJoin(
+                        type,
+                        logicalJoin,
+                        left,
+                        right,
+                        strategy,
+                        leftInputDist.getDistributionJoinKeyPositions()
+                    );
+
+                    res.add(node);
+                }
+            }
+
+            if (rightInputDist.isPartitioned()) {
+                List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+                    type,
+                    JoinConditionType.EQUI,
+                    leftInputDist.getDistributionPartitionedAsRandom(),
+                    JoinDistribution.PARTITIONED
+                );
+
+                for (JoinCollocationStrategy strategy : strategies) {
+                    RelNode node = createTransformEquiJoin(
+                        type,
+                        logicalJoin,
+                        left,
+                        right,
+                        strategy,
+                        rightInputDist.getDistributionJoinKeyPositions()
+                    );
+
+                    res.add(node);
+                }
+            }
+        } else {
+            // Neither inputs are PARTITIONED with known distribution fields.
+            List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+                type,
+                JoinConditionType.EQUI,
+                leftInputDist.getDistribution(),
+                rightInputDist.getDistribution()
+            );
+
+            // We will do hashing on all equi-join fields, since there is no better option.
+            List<Integer> distributionJoinKeyPositions = new ArrayList<>();
+
+            for (int i = 0; i < logicalJoin.getLeftKeys().size(); i++) {
+                distributionJoinKeyPositions.add(i);
+            }
+
+            for (JoinCollocationStrategy strategy : strategies) {
+                RelNode node = createTransformEquiJoin(
+                    type,
+                    logicalJoin,
+                    left,
+                    right,
+                    strategy,
+                    distributionJoinKeyPositions
+                );
+
+                res.add(node);
+            }
+        }
+
+        return res;
+    }
+
+    private RelNode createTransformEquiJoin(
+        JoinType type,
+        JoinLogicalRel logicalJoin,
+        RelNode left,
+        RelNode right,
+        JoinCollocationStrategy strategy,
+        List<Integer> hashFields
+    ) {
+        // Step 1: Force collocation on inputs.
+        List<Integer> leftHashKeys = distributionJoinKeys(logicalJoin.getLeftKeys(), hashFields);
+        List<Integer> rightHashKeys = distributionJoinKeys(logicalJoin.getRightKeys(), hashFields);
+
+        RelNode leftCollocated = createCollocatedInputEquiJoin(left, strategy.getLeftAction(), leftHashKeys);
+        RelNode rightCollocated = createCollocatedInputEquiJoin(right, strategy.getRightAction(), rightHashKeys);
+
+        // Step 2: Create the join.
+        RelOptCluster cluster = left.getCluster();
+
+        DistributionTrait distribution = prepareDistributionEquiJoin(
+            strategy.getResultDistribution(),
+            leftHashKeys,
+            rightHashKeys,
+            leftCollocated.getRowType().getFieldCount()
+        );
+
+        RelCollation collation = RuleUtils.getCollation(leftCollocated);
+
+        RelTraitSet traitSet = RuleUtils.toPhysicalConvention(
+            cluster.getPlanner().emptyTraitSet(),
+            distribution,
+            collation
+        );
+
+        return new HashJoinPhysicalRel(
+            cluster,
+            traitSet,
+            leftCollocated,
+            rightCollocated,
+            logicalJoin.getCondition(),
+            logicalJoin.getJoinType(),
+            logicalJoin.getLeftKeys(),
+            logicalJoin.getRightKeys(),
+            leftHashKeys,
+            rightHashKeys
+        );
+    }
+
+    /**
+     * Get positions of join keys which should be used for hashing.
+     *
+     * @param allJoinKeys All join keys.
+     * @param distributionJoinKeyPositions Positions of join keys which are used for distribution.
+     * @return Hash keys.
+     */
+    private static List<Integer> distributionJoinKeys(List<Integer> allJoinKeys, List<Integer> distributionJoinKeyPositions) {
+        List<Integer> res = new ArrayList<>(distributionJoinKeyPositions.size());
+
+        for (Integer distributionJoinKeyPosition : distributionJoinKeyPositions) {
+            res.add(allJoinKeys.get(distributionJoinKeyPosition));
+        }
+
+        return res;
+    }
+
+    /**
+     * Prepare distribution trait for the equi-join relation. Since the resulting relation is collocated on both left join keys
+     * and right join keys, we create composite distribution trait, which takes in count both.
+     *
+     * @param joinDistribution Join distribution.
+     * @param leftJoinKeys Left join keys.
+     * @param rightJoinKeys Right join keys.
+     * @param leftFieldCount Number of fields of the left input.
+     * @return Distribution trait.
+     */
+    private static DistributionTrait prepareDistributionEquiJoin(
+        JoinDistribution joinDistribution,
+        List<Integer> leftJoinKeys,
+        List<Integer> rightJoinKeys,
+        int leftFieldCount
+    ) {
+        switch (joinDistribution) {
+            case REPLICATED:
+                return REPLICATED_DIST;
+
+            case RANDOM:
+                return DISTRIBUTED_DIST;
+
+            default:
+                assert joinDistribution == JoinDistribution.PARTITIONED;
+
+                List<DistributionField> leftDistFields = prepareDistributionFieldsEquiJoin(leftJoinKeys, 0);
+                List<DistributionField> rightDistFields = prepareDistributionFieldsEquiJoin(rightJoinKeys, leftFieldCount);
+
+                return DistributionTrait.Builder.ofType(DistributionType.DISTRIBUTED)
+                    .addFieldGroup(leftDistFields)
+                    .addFieldGroup(rightDistFields)
+                    .build();
+        }
+    }
+
+    /**
+     * Convert join keys to distribution fields.
+     *
+     * @param joinKeys Join keys.
+     * @param offset Offset. Zero for the left input, [num of fields on the left input] for the right input.
+     * @return Distribution fields.
+     */
+    private static List<DistributionField> prepareDistributionFieldsEquiJoin(List<Integer> joinKeys, int offset) {
+        List<DistributionField> res = new ArrayList<>(joinKeys.size());
+
+        joinKeys.forEach((fieldIndex) -> res.add(new DistributionField(fieldIndex + offset)));
+
+        return res;
+    }
+
+    private RelNode createCollocatedInputEquiJoin(
+        RelNode input,
+        JoinCollocationAction action,
+        List<Integer> hashFields
+    ) {
+        if (action == JoinCollocationAction.NONE) {
+            // No transformation for input is needed.
+            return input;
+        }
+
+        RelOptCluster cluster = input.getCluster();
+
+        DistributionTrait partitionedDistribution = DistributionTrait.Builder.ofType(DistributionType.DISTRIBUTED)
+            .addFieldGroup(prepareDistributionFieldsEquiJoin(hashFields, 0))
+            .build();
+
+        if (action == JoinCollocationAction.REPLICATED_HASH) {
+            // Hash replicated input to convert it to partitioned form.
+            // Distribution is changed to PARTITIONED on hash columns. Collation is lost.
+            assert RuleUtils.getDistribution(input).getType() == DistributionType.REPLICATED;
+
+            RelTraitSet replicatedToPartitionedTraitSet = RuleUtils.toPhysicalConvention(
+                cluster.getPlanner().emptyTraitSet(),
+                partitionedDistribution,
+                RuleUtils.getCollation(input)
+            );
+
+            return new ReplicatedToDistributedPhysicalRel(
+                cluster,
+                replicatedToPartitionedTraitSet,
+                input,
+                hashFields
+            );
+        } else if (action == JoinCollocationAction.BROADCAST) {
+            // Do broadcast. Distribution is changed to REPLICATED. Collation is lost.
+            RelTraitSet broadcastTraitSet = RuleUtils.toPhysicalConvention(
+                cluster.getPlanner().emptyTraitSet(),
+                REPLICATED_DIST
+            );
+
+            return new BroadcastExchangePhysicalRel(
+                cluster,
+                broadcastTraitSet,
+                input
+            );
+        } else {
+            // Do unicast. Distribution is changed to PARTITIONED on hash columns. Collation is lost.
+            assert action == JoinCollocationAction.UNICAST;
+
+            RelTraitSet unicastTraitSet = RuleUtils.toPhysicalConvention(
+                cluster.getPlanner().emptyTraitSet(),
+                partitionedDistribution
+            );
+
+            return new UnicastExchangePhysicalRel(
+                cluster,
+                unicastTraitSet,
+                input,
+                hashFields
+            );
+        }
+    }
+
+    /**
+     * Prepare distribution of a join side based on join condition. This function is a key to check whether two inputs are
+     * collocated.
+     * <p>
+     * Consider the join "A join B on A.a1 = B.b1 AND A.a2 = B.b2".
+     * 1) If A is distributed by [a1], then the result is PARTITIONED(a1)
+     * 2) If A is distributed by [a2], then the result is PARTITIONED(a2)
+     * 3) If A is distributed by [a1, a2], then the result is PARTITIONED(a1, a2)
+     * 4) If A is distributed by [a3], then the result is RANDOM
+     * 5) If A is distributed by [a2, a3], then the result is RANDOM
+     * 6) If A is a replicated map, then the result is REPLICATED
+     *
+     * @param dist Original rel distribution.
+     * @param joinKeys Join keys.
+     * @return Input distribution for join.
+     */
     private static InputDistribution prepareInputDistribution(DistributionTrait dist, List<Integer> joinKeys) {
         DistributionType type = dist.getType();
 
@@ -544,10 +583,10 @@ public final class JoinPhysicalRule extends RelOptRule {
         assert type == DistributionType.DISTRIBUTED;
 
         for (List<DistributionField> fields : dist.getFieldGroups()) {
-            BitSet bitSet = mapPartitionedDistributionKeys(joinKeys, fields);
+            List<Integer> mappedJoinKeys = mapPartitionedDistributionKeys(joinKeys, fields);
 
-            if (bitSet != null) {
-                return new InputDistribution(JoinDistribution.PARTITIONED, bitSet);
+            if (mappedJoinKeys != null) {
+                return new InputDistribution(JoinDistribution.PARTITIONED, mappedJoinKeys);
             }
         }
 
@@ -555,8 +594,22 @@ public final class JoinPhysicalRule extends RelOptRule {
         return new InputDistribution(JoinDistribution.RANDOM, null);
     }
 
-    private static BitSet mapPartitionedDistributionKeys(List<Integer> joinKeys, List<DistributionField> fields) {
-        BitSet res = new BitSet(joinKeys.size());
+    /**
+     * Create a BitSet of join keys which are part of the distribution fields. If at least one distribution field is not
+     * present among join keys, then return {@code null}, which means that the distribution is lost during join (i.e. we
+     * fallback to RANDOM distribution).
+     * <p>
+     * Consider the join "A join B on A.a1 = B.b1 AND A.a2 = B.b2 AND A.a3 = B.b3". If A is distributed by a2, then:
+     * 1) joinKeys = [0, 1, 2] / 0 stands for a1, 1 stands for a2, 2 stands for a3
+     * 2) fields = [1]
+     * 3) result: [1], which means that the field a2 is used for distribution.
+     *
+     * @param joinKeys Join keys.
+     * @param fields Distribution fields.
+     * @return Join keys BitSet.
+     */
+    private static List<Integer> mapPartitionedDistributionKeys(List<Integer> joinKeys, List<DistributionField> fields) {
+        List<Integer> res = new ArrayList<>(joinKeys.size());
 
         for (DistributionField field : fields) {
             assert field.getNestedField() == null;
@@ -567,7 +620,7 @@ public final class JoinPhysicalRule extends RelOptRule {
                 return null;
             }
 
-            res.set(joinKeyIndex);
+            res.add(joinKeyIndex);
         }
 
         return res;
@@ -584,6 +637,9 @@ public final class JoinPhysicalRule extends RelOptRule {
             case FULL:
                 return JoinType.FULL;
 
+            case SEMI:
+                return JoinType.SEMI;
+
             default:
                 // TODO: Handle right join through transposition: r RIGHT JOIN s == s LEFT JOIN r.
                 return null;
@@ -594,12 +650,15 @@ public final class JoinPhysicalRule extends RelOptRule {
      * Distribution of input for the given join.
      */
     private static final class InputDistribution {
+        /** Distribution which should be used for join strategy selection. */
         private final JoinDistribution distribution;
-        private final BitSet distributionFields;
 
-        private InputDistribution(JoinDistribution distribution, BitSet distributionFields) {
+        /** Positions of join keys which are used in distribution. */
+        private final List<Integer> distributionJoinKeyPositions;
+
+        private InputDistribution(JoinDistribution distribution, List<Integer> distributionJoinKeyPositions) {
             this.distribution = distribution;
-            this.distributionFields = distributionFields;
+            this.distributionJoinKeyPositions = distributionJoinKeyPositions;
         }
 
         public JoinDistribution getDistribution() {
@@ -613,16 +672,22 @@ public final class JoinPhysicalRule extends RelOptRule {
             return isPartitioned() ? JoinDistribution.RANDOM : distribution;
         }
 
-        public BitSet getDistributionFields() {
-            return distributionFields;
+        public List<Integer> getDistributionJoinKeyPositions() {
+            return distributionJoinKeyPositions;
         }
 
         public boolean isPartitioned() {
             return distribution == JoinDistribution.PARTITIONED;
         }
 
-        public boolean isCollocated(BitSet otherDistributionFields) {
-            return distributionFields.equals(otherDistributionFields);
+        /**
+         * Check if two partitioned inputs are collocated.
+         *
+         * @param otherDistributionJoinKeyPositions Positions of distribution join keys of the other relation.
+         * @return {@code True} if collocated.
+         */
+        public boolean isPartitionedCollocated(List<Integer> otherDistributionJoinKeyPositions) {
+            return distributionJoinKeyPositions.equals(otherDistributionJoinKeyPositions);
         }
     }
 }

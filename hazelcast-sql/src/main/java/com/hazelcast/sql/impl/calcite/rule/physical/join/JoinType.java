@@ -27,5 +27,10 @@ public enum JoinType {
     OUTER,
 
     /** Full outer join. */
-    FULL;
+    FULL,
+
+    // TODO: See Calcite's JoinRelType.ANTI - this is a semi anti join. Understand when and how it is involved, as it
+    //  may simplify plans for NOT EXISTS.
+    /** Semi-join. */
+    SEMI;
 }

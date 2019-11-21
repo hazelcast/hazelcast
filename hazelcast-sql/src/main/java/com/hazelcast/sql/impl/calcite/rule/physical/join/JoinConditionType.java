@@ -23,6 +23,7 @@ public enum JoinConditionType {
     /** Equi-join */
     EQUI,
 
+    // TODO: Do we need it at all? Perhaps we need another anum SEMI_ANTI in JoinType?
     /** Anti equi-join */
     ANTI_EQUI,
 
