@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
@@ -28,6 +27,9 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
 
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Set;
@@ -36,10 +38,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
@@ -138,37 +136,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public ClientType getClientType() {
-        ClientType type;
-        switch (connection.getType()) {
-            case JAVA_CLIENT:
-                type = ClientType.JAVA;
-                break;
-            case CSHARP_CLIENT:
-                type = ClientType.CSHARP;
-                break;
-            case CPP_CLIENT:
-                type = ClientType.CPP;
-                break;
-            case PYTHON_CLIENT:
-                type = ClientType.PYTHON;
-                break;
-            case RUBY_CLIENT:
-                type = ClientType.RUBY;
-                break;
-            case NODEJS_CLIENT:
-                type = ClientType.NODEJS;
-                break;
-            case GO_CLIENT:
-                type = ClientType.GO;
-                break;
-            case BINARY_CLIENT:
-                type = ClientType.OTHER;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid connection type: " + connection.getType());
-        }
-        return type;
+    public String getClientType() {
+        return connection.getConnectionType();
     }
 
     @Override

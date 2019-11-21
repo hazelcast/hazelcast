@@ -109,16 +109,14 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.invocation.backoff.timeout.millis", -1, MILLISECONDS);
 
     /**
-     * <p>Enables the Discovery SPI lookup over the old native implementations. This property is temporary and will
-     * eventually be removed when the experimental marker is removed.</p>
+     * <p>Enables the Discovery SPI/p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
     public static final HazelcastProperty DISCOVERY_SPI_ENABLED
             = new HazelcastProperty("hazelcast.discovery.enabled", false);
 
     /**
-     * <p>Enables the Discovery Joiner to use public ips from DiscoveredNode. This property is temporary and will
-     * eventually be removed when the experimental marker is removed.</p>
+     * <p>Enables the Discovery Joiner to use public IP from DiscoveredNode.</p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
     public static final HazelcastProperty DISCOVERY_SPI_PUBLIC_IP_ENABLED

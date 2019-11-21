@@ -110,7 +110,7 @@ public class SingleProtocolDecoder
     private void initConnection() {
         if (supportedProtocol == ProtocolType.MEMBER) {
             TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-            connection.setType(ConnectionType.MEMBER);
+            connection.setConnectionType(ConnectionType.MEMBER);
         }
     }
 

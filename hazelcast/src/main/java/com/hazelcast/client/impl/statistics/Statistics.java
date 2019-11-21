@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.statistics;
 
-import com.hazelcast.client.ClientType;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
@@ -29,6 +28,7 @@ import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
@@ -321,7 +321,7 @@ public class Statistics {
         void fillMetrics(long collectionTimestamp, final StringBuilder stats, final ClientConnection mainConnection) {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(collectionTimestamp);
             addStat(stats, "enterprise", enterprise);
-            addStat(stats, "clientType", ClientType.JAVA.toString());
+            addStat(stats, "clientType", ConnectionType.JAVA_CLIENT);
             addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
             addStat(stats, "clusterConnectionTimestamp", mainConnection.getStartTime());
 
