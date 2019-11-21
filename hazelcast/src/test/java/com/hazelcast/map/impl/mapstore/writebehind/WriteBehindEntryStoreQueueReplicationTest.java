@@ -154,9 +154,10 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         // expiration times and expired accordingly
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
-                assertNull(mapFromNewInstance.get(i));
+                assertNull(notExpiredRecordsToString(node3, mapName),
+                        mapFromNewInstance.get(i));
             }
-        });
+        }, 240);
     }
 
     private Config getConfigWithEntryStore(EntryStore entryStore,
