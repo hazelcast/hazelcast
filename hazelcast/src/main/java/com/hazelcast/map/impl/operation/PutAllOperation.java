@@ -96,7 +96,8 @@ public class PutAllOperation extends MapOperation
         }
     }
 
-    private void put(Data dataKey, Data dataValue) {
+    // protected for testing purposes
+    protected void put(Data dataKey, Data dataValue) {
         Object oldValue = putToRecordStore(dataKey, dataValue);
 
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
