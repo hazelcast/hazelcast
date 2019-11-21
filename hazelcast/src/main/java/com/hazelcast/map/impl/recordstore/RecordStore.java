@@ -264,6 +264,8 @@ public interface RecordStore<R extends Record> {
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
+    void forEach(BiConsumer<Data, Record> consumer, boolean backup, boolean includeExpiredRecords);
+
     /**
      * Iterates over record store entries but first waits map store to
      * load. If an operation needs to wait a data source load like query

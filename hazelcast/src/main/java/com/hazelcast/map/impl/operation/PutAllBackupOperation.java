@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -95,7 +96,7 @@ public class PutAllBackupOperation extends MapOperation
             Data dataValue = (Data) dataKeyDataValueRecord.get(i + 1);
             Record record = (Record) dataKeyDataValueRecord.get(i + 2);
 
-            out.writeData(dataKey);
+            IOUtil.writeData(out, dataKey);
             Records.writeRecord(out, record, dataValue);
         }
         out.writeBoolean(disableWanReplicationEvent);
@@ -108,7 +109,7 @@ public class PutAllBackupOperation extends MapOperation
         int size = in.readInt();
         List dataKeyRecord = new ArrayList<>(size * 2);
         for (int i = 0; i < size; i++) {
-            dataKeyRecord.add(in.readData());
+            dataKeyRecord.add(IOUtil.readData(in));
             dataKeyRecord.add(Records.readRecord(in));
         }
         this.dataKeyRecord = dataKeyRecord;

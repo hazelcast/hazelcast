@@ -213,13 +213,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void forEach(BiConsumer<Data, Record> consumer, boolean backup) {
+        forEach(consumer, backup, false);
+    }
+
+    @Override
+    public void forEach(BiConsumer<Data, Record> consumer,
+                        boolean backup, boolean includeExpiredRecords) {
+
         long now = Clock.currentTimeMillis();
         Iterator<Map.Entry<Data, Record>> entries = storage.entryIterator();
         while (entries.hasNext()) {
             Map.Entry<Data, Record> entry = entries.next();
+
             Data key = entry.getKey();
             Record record = entry.getValue();
-            if (!isExpired(record, now, backup)) {
+
+            if (includeExpiredRecords || !isExpired(record, now, backup)) {
                 consumer.accept(key, record);
             }
         }

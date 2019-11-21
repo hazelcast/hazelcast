@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -76,14 +77,16 @@ public class PutBackupOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(dataKey);
+
+        IOUtil.writeData(out, dataKey);
         Records.writeRecord(out, record, dataValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        dataKey = in.readData();
+
+        dataKey = IOUtil.readData(in);
         record = Records.readRecord(in);
     }
 }

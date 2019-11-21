@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -234,16 +235,15 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             SerializationService ss = getSerializationService(operation.getRecordStore(mapName).getMapContainer());
             RecordStore<Record> recordStore = entry.getValue();
             out.writeInt(recordStore.size());
-            // TODO this should be read-only iterator, no expiration
-            // should be done. Since we serialize size before
+            // No expiration should be done in forEach, since we have serialized size before.
             recordStore.forEach((dataKey, record) -> {
                 try {
-                    out.writeData(dataKey);
+                    IOUtil.writeData(out, dataKey);
                     Records.writeRecord(out, record, ss.toData(record.getValue()));
                 } catch (IOException e) {
                     throw ExceptionUtil.rethrow(e);
                 }
-            }, operation.getReplicaIndex() != 0);
+            }, operation.getReplicaIndex() != 0, true);
         }
 
         out.writeInt(loaded.size());
@@ -273,7 +273,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             int numOfRecords = in.readInt();
             List keyRecord = new ArrayList<>(numOfRecords * 2);
             for (int j = 0; j < numOfRecords; j++) {
-                Data dataKey = in.readData();
+                Data dataKey = IOUtil.readData(in);
                 Record record = Records.readRecord(in);
 
                 keyRecord.add(dataKey);
