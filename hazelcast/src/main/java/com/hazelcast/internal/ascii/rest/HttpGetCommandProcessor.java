@@ -18,7 +18,6 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
@@ -30,6 +29,7 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
@@ -42,14 +42,9 @@ import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200_WITH_NO_CONTENT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_503;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
@@ -140,10 +135,10 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             if (NodeState.SHUT_DOWN.equals(nodeState)) {
                 command.setResponse(RES_503);
             } else {
-                command.setResponse(null, stringToBytes(nodeState.toString()));
+                prepareResponse(command, Json.value(nodeState.toString()));
             }
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_CLUSTER_STATE)) {
-            command.setResponse(null, stringToBytes(clusterState.toString()));
+            prepareResponse(command, Json.value(clusterState.toString()));
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_CLUSTER_SAFE)) {
             if (clusterSafe) {
                 command.send200();
@@ -151,17 +146,17 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 command.setResponse(RES_503);
             }
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_MIGRATION_QUEUE_SIZE)) {
-            command.setResponse(null, stringToBytes(Long.toString(migrationQueueSize)));
+            prepareResponse(command, Json.value(migrationQueueSize));
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_CLUSTER_SIZE)) {
-            command.setResponse(null, stringToBytes(Integer.toString(clusterSize)));
+            prepareResponse(command, Json.value(clusterSize));
         } else if (healthParameter.isEmpty()) {
-            StringBuilder res = new StringBuilder();
-            res.append("Hazelcast::NodeState=").append(nodeState).append("\n");
-            res.append("Hazelcast::ClusterState=").append(clusterState).append("\n");
-            res.append("Hazelcast::ClusterSafe=").append(booleanToString(clusterSafe)).append("\n");
-            res.append("Hazelcast::MigrationQueueSize=").append(migrationQueueSize).append("\n");
-            res.append("Hazelcast::ClusterSize=").append(clusterSize).append("\n");
-            command.setResponse(MIME_TEXT_PLAIN, stringToBytes(res.toString()));
+            JsonObject response = new JsonObject()
+                    .add("nodeState", nodeState.toString())
+                    .add("clusterState", clusterState.toString())
+                    .add("clusterSafe", booleanToString(clusterSafe))
+                    .add("migrationQueueSize", migrationQueueSize)
+                    .add("clusterSize", clusterSize);
+            prepareResponse(command, response);
         } else {
             command.send400();
         }
@@ -172,12 +167,12 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleGetClusterVersion(HttpGetCommand command) {
-        String res = "{\"status\":\"${STATUS}\",\"version\":\"${VERSION}\"}";
         Node node = textCommandService.getNode();
         ClusterService clusterService = node.getClusterService();
-        res = res.replace("${STATUS}", "success");
-        res = res.replace("${VERSION}", clusterService.getClusterVersion().toString());
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+        JsonObject response = new JsonObject()
+                .add("status", "success")
+                .add("version", clusterService.getClusterVersion().toString());
+        prepareResponse(command, response);
     }
 
     private void handleCPGroupRequest(HttpGetCommand command) {
@@ -199,7 +194,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 for (CPGroupId groupId : groupIds) {
                     arr.add(toJson(groupId));
                 }
-                command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(arr.toString()));
+                prepareResponse(command, arr);
                 textCommandService.sendResponse(command);
             } else {
                 command.send500();
@@ -221,8 +216,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                                 for (CPSession session : sessions) {
                                     sessionsArr.add(toJson(session));
                                 }
-
-                                command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(sessionsArr.toString()));
+                                prepareResponse(command, sessionsArr);
                                 textCommandService.sendResponse(command);
                             } else {
                                 if (peel(t) instanceof IllegalArgumentException) {
@@ -253,8 +247,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                     }
 
                     json.add("members", membersArr);
-
-                    command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(json.toString()));
+                    prepareResponse(command, json);
                 } else {
                     command.send404();
                 }
@@ -275,8 +268,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 for (CPMember cpMember : cpMembers) {
                     arr.add(toJson(cpMember));
                 }
-
-                command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(arr.toString()));
+                prepareResponse(command, arr);
                 textCommandService.sendResponse(command);
             } else {
                 command.send500();
@@ -288,7 +280,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void handleGetLocalCPMember(final HttpGetCommand command) {
         CPMember localCPMember = getCpSubsystem().getLocalCPMember();
         if (localCPMember != null) {
-            command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(toJson(localCPMember).toString()));
+            prepareResponse(command, toJson(localCPMember));
         } else {
             command.send404();
         }
@@ -337,16 +329,26 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
      */
     private void handleCluster(HttpGetCommand command) {
         Node node = textCommandService.getNode();
-        StringBuilder res = new StringBuilder(node.getClusterService().getMemberListString());
-        res.append("\n");
         NetworkingService ns = node.getNetworkingService();
         EndpointManager cem = ns.getEndpointManager(CLIENT);
         AggregateEndpointManager aem = ns.getAggregateEndpointManager();
-        res.append("ConnectionCount: ").append(cem.getActiveConnections().size());
-        res.append("\n");
-        res.append("AllConnectionCount: ").append(aem.getActiveConnections().size());
-        res.append("\n");
-        command.setResponse(null, stringToBytes(res.toString()));
+        ClusterServiceImpl clusterService = node.getClusterService();
+        JsonArray membersArray = new JsonArray();
+        clusterService.getMembers()
+                      .stream()
+                      .map(m -> new JsonObject()
+                              .add("address", m.getAddress().toString())
+                              .add("liteMember", m.isLiteMember())
+                              .add("localMember", m.localMember())
+                              .add("uuid", m.getUuid().toString())
+                              .add("memberVersion", m.getVersion().toString()))
+                      .forEach(membersArray::add);
+        JsonObject response = new JsonObject()
+                .add("memberList", clusterService.getMemberListString())
+                .add("members", membersArray)
+                .add("connectionCount", cem.getActiveConnections().size())
+                .add("allConnectionCount", aem.getActiveConnections().size());
+        prepareResponse(command, response);
     }
 
     /**
@@ -358,8 +360,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
      * @param command the HTTP request
      */
     private void handleInstance(HttpGetCommand command) {
-        JsonObject jsonResponse = new JsonObject().add("name", textCommandService.getInstanceName());
-        command.setResponse(CONTENT_TYPE_JSON, stringToBytes(jsonResponse.toString()));
+        prepareResponse(command, new JsonObject().add("name", textCommandService.getInstanceName()));
     }
 
     private void handleQueue(HttpGetCommand command, String uri) {
@@ -388,23 +389,6 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     @Override
     public void handleRejection(HttpGetCommand command) {
         handle(command);
-    }
-
-    private void prepareResponse(HttpGetCommand command, Object value) {
-        if (value == null) {
-            command.send204();
-        } else if (value instanceof byte[]) {
-            command.setResponse(CONTENT_TYPE_BINARY, (byte[]) value);
-        } else if (value instanceof RestValue) {
-            RestValue restValue = (RestValue) value;
-            command.setResponse(restValue.getContentType(), restValue.getValue());
-        } else if (value instanceof HazelcastJsonValue) {
-            command.setResponse(CONTENT_TYPE_JSON, stringToBytes(value.toString()));
-        } else if (value instanceof String) {
-            command.setResponse(CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
-        } else {
-            command.setResponse(CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
-        }
     }
 
     /**
