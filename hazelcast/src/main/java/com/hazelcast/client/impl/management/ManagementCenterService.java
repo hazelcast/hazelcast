@@ -64,6 +64,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.wan.impl.WanSyncType.ALL_MAPS;
 import static com.hazelcast.wan.impl.WanSyncType.SINGLE_MAP;
 
 /**
@@ -575,30 +576,50 @@ public class ManagementCenterService {
     }
 
     /**
-     * Initiate WAN sync for a specific map or all maps.
+     * Initiate WAN sync for a specific map.
      *
      * @param wanReplicationName name of the WAN replication to initiate WAN sync for
      * @param wanPublisherId     ID of the WAN publisher to initiate WAN sync for
-     * @param wanSyncType        whether all maps are going to be synced or only a single one
-     * @param mapName            name of the map to trigger WAN sync on, {@code null} if all maps
-     *                           are to be synced
+     * @param mapName            name of the map to trigger WAN sync on
      * @return a {@link CompletableFuture} that holds the UUID of the synchronization
      */
     @Nonnull
     public CompletableFuture<UUID> wanSyncMap(String wanReplicationName,
                                               String wanPublisherId,
-                                              WanSyncType wanSyncType,
                                               String mapName) {
         checkNotNull(wanReplicationName);
         checkNotNull(wanPublisherId);
-        if (wanSyncType == SINGLE_MAP) {
-            checkNotNull(mapName);
-        }
+        checkNotNull(mapName);
+
+        return wanSyncMap(wanReplicationName, wanPublisherId, SINGLE_MAP, mapName);
+    }
+
+    /**
+     * Initiate WAN sync for all maps.
+     *
+     * @param wanReplicationName name of the WAN replication to initiate WAN sync for
+     * @param wanPublisherId     ID of the WAN publisher to initiate WAN sync for
+     * @return a {@link CompletableFuture} that holds the UUID of the synchronization
+     */
+    @Nonnull
+    public CompletableFuture<UUID> wanSyncAllMaps(String wanReplicationName,
+                                                  String wanPublisherId) {
+        checkNotNull(wanReplicationName);
+        checkNotNull(wanPublisherId);
+
+        return wanSyncMap(wanReplicationName, wanPublisherId, ALL_MAPS, null);
+    }
+
+
+    private CompletableFuture<UUID> wanSyncMap(String wanReplicationName,
+                                               String wanPublisherId,
+                                               WanSyncType syncType,
+                                               String map) {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCWanSyncMapCodec.encodeRequest(
-                        wanReplicationName, wanPublisherId, wanSyncType.getType(), mapName),
+                        wanReplicationName, wanPublisherId, syncType.getType(), map),
                 null
         );
 
