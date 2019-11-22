@@ -612,7 +612,7 @@ public class ManagementCenterService {
                 reader = new InputStreamReader(inputStream, UTF_8);
                 JsonObject response = Json.parse(reader).asObject();
                 lastConfigETag = connection.getHeaderField("ETag");
-                bwListConfigHandler.handleConfig(response);
+                bwListConfigHandler.handleNewConfig(response);
             } finally {
                 closeResource(reader);
                 closeResource(inputStream);

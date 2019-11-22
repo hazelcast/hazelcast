@@ -50,7 +50,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final Connection connection;
     private final ConcurrentMap<UUID, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<UUID, Callable>();
+    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
     private final SocketAddress socketAddress;
     private final long creationTime;
 
