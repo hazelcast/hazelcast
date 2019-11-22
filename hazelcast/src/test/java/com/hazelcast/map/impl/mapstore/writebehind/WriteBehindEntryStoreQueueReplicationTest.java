@@ -88,13 +88,13 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         // expiration times and expired accordingly
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
-                assertNull(notExpiredRecordsToString(instances[2], mapName),
+                assertNull(dumpNotExpiredRecordsToString(instances[2], mapName),
                         mapFromSurvivingInstance.get(i));
             }
         }, 240);
     }
 
-    private static String notExpiredRecordsToString(HazelcastInstance node, String mapName) {
+    private static String dumpNotExpiredRecordsToString(HazelcastInstance node, String mapName) {
         String msg = "";
         NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
@@ -154,7 +154,7 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
         // expiration times and expired accordingly
         assertTrueEventually(() -> {
             for (int i = 0; i < entryCount; i++) {
-                assertNull(notExpiredRecordsToString(node3, mapName),
+                assertNull(dumpNotExpiredRecordsToString(node3, mapName),
                         mapFromNewInstance.get(i));
             }
         }, 240);
