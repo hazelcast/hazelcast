@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -62,8 +62,8 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory();
         Config config = new Config()
                 // a long timeout is configured to verify that the fast timeout is kicking in
-                .setProperty(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS.getName(), "100000")
-                .setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+                .setProperty(ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS.getName(), "100000")
+                .setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "5");
 
         HazelcastInstance[] cluster = instanceFactory.newInstances(config, 2);
         local = cluster[0];

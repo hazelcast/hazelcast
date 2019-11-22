@@ -27,7 +27,7 @@ import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.lang.reflect.Field;
@@ -52,7 +52,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     HazelcastInstance getSingleNodeCluster(int slowOperationThresholdMillis) {
         Config config = new Config();
-        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(),
+        config.setProperty(ClusterProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(),
                 valueOf(slowOperationThresholdMillis));
 
         return createHazelcastInstance(config);

@@ -36,6 +36,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -326,7 +327,7 @@ public final class ConfigSearch {
      * @param cls class of the config we're looking for
      * @param <T> type of config class
      * @return {@link ConfigSupplier} config supplier for the given config type
-     * @see com.hazelcast.spi.properties.GroupProperty#SEARCH_DYNAMIC_CONFIG_FIRST
+     * @see ClusterProperty#SEARCH_DYNAMIC_CONFIG_FIRST
      */
     @Nullable
     public static <T extends IdentifiedDataSerializable> ConfigSupplier<T> supplierFor(@Nonnull Class<T> cls) {
@@ -342,7 +343,7 @@ public final class ConfigSearch {
      *                      <code>false</code> otherwise.
      * @param <T> type of config class
      * @return {@link Searcher} for the given config type and conditions
-     * @see com.hazelcast.spi.properties.GroupProperty#SEARCH_DYNAMIC_CONFIG_FIRST
+     * @see ClusterProperty#SEARCH_DYNAMIC_CONFIG_FIRST
      * @see ConfigSupplier
      */
     @Nonnull

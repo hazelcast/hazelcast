@@ -29,7 +29,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.internal.util.FutureUtil;
 
 import javax.annotation.Nonnull;
@@ -196,7 +196,7 @@ public class PartitionServiceProxy implements PartitionService {
     }
 
     private int getMaxWaitTime() {
-        return nodeEngine.getProperties().getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
+        return nodeEngine.getProperties().getSeconds(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
     }
 
     private class PartitionProxy implements Partition, Comparable {

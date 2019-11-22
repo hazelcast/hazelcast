@@ -132,7 +132,7 @@ public class ProxyManagerTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "1");
-        config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = factory.newHazelcastClient(config);
         instance.shutdown();
         client.getMap("test");

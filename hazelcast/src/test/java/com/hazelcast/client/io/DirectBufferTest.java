@@ -40,8 +40,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import static com.hazelcast.spi.properties.GroupProperty.SOCKET_BUFFER_DIRECT;
-import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_BUFFER_DIRECT;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static org.junit.Assert.assertArrayEquals;
 
 /**

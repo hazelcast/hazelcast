@@ -49,8 +49,8 @@ import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.M
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MIN_RECONCILIATION_INTERVAL_SECONDS;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
 import static com.hazelcast.map.impl.nearcache.invalidation.MemberMapReconciliationTest.assertStats;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static java.lang.Integer.MAX_VALUE;
 
 @RunWith(HazelcastParallelClassRunner.class)

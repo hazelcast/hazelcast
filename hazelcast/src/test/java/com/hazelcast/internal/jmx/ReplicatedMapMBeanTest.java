@@ -18,7 +18,7 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -48,7 +48,7 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Config config = new Config();
-        config.setProperty(GroupProperty.JMX_UPDATE_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(ClusterProperty.JMX_UPDATE_INTERVAL_SECONDS.getName(), "1");
         holder = new MBeanDataHolder(hazelcastInstanceFactory, config);
         replicatedMap = holder.getHz().getReplicatedMap("replicatedMap");
         objectName = replicatedMap.getName();

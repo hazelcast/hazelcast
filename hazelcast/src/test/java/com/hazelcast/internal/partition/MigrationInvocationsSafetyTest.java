@@ -23,7 +23,7 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -218,9 +218,9 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     @Test
     public void migrationCommit_shouldBeRetried_whenTargetNotResponds() throws Exception {
         Config config = getConfig(true, true)
-                .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
-                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         final HazelcastInstance master = factory.newHazelcastInstance(config);
         final HazelcastInstance slave1 = factory.newHazelcastInstance(config);
@@ -292,9 +292,9 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     @Test
     public void migrationCommit_shouldRollback_whenTargetCrashes() throws Exception {
         Config config = getConfig(true, true)
-                .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
-                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         final HazelcastInstance master = factory.newHazelcastInstance(config);
         final HazelcastInstance slave1 = factory.newHazelcastInstance(config);
@@ -344,9 +344,9 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     @Test
     public void promotionCommit_shouldBeRetried_whenTargetNotResponds() throws Exception {
         Config config = getConfig(true, true)
-                .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
-                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         final HazelcastInstance master = factory.newHazelcastInstance(config);
         final HazelcastInstance slave1 = factory.newHazelcastInstance(config);
@@ -395,9 +395,9 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     @Test
     public void promotionCommit_shouldRollback_whenTargetCrashes() throws Exception {
         Config config = getConfig(true, true)
-                .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
-                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         final HazelcastInstance master = factory.newHazelcastInstance(config);
         final HazelcastInstance slave1 = factory.newHazelcastInstance(config);

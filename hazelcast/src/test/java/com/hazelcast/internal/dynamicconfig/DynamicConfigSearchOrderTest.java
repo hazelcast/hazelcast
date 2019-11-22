@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
-import static com.hazelcast.spi.properties.GroupProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
+import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

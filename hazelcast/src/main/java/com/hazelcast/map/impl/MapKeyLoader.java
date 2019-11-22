@@ -38,7 +38,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -90,7 +90,7 @@ public class MapKeyLoader {
      * The maximum size of a batch of loaded keys sent to a
      * single partition for value loading
      *
-     * @see GroupProperty#MAP_LOAD_CHUNK_SIZE
+     * @see ClusterProperty#MAP_LOAD_CHUNK_SIZE
      */
     private int maxBatch;
     private int mapNamePartition;

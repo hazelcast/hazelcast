@@ -26,7 +26,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -743,7 +743,7 @@ public class CacheStatsTest extends CacheTestSupport {
                 );
 
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), Integer.toString(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), Integer.toString(partitionCount));
         config.addCacheConfig(cacheConfig);
 
         HazelcastInstance hz1 = getHazelcastInstance(config);

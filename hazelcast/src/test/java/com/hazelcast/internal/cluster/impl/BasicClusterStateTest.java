@@ -35,7 +35,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -168,7 +168,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     @Test
     public void changeClusterState_toNoMigration_shouldFail_whilePartitionsMigrating() {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
+        config.setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -182,7 +182,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     @Test
     public void changeClusterState_toFrozen_shouldFail_whilePartitionsMigrating() {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
+        config.setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -196,7 +196,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     @Test
     public void changeClusterState_toPassive_shouldFail_whilePartitionsMigrating() {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
+        config.setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -211,8 +211,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     @Test
     public void changeClusterState_toActive_isAllowed_whileReplicationInProgress() {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
-        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -234,8 +234,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     @Test
     public void changeClusterState_toPassive_isAllowed_whileReplicationInProgress() {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
-        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);

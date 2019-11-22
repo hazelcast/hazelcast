@@ -30,7 +30,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -61,7 +61,7 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
         String queryCacheName = randomString();
 
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
         queryCacheConfig.setBatchSize(1111);

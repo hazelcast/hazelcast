@@ -36,8 +36,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
+import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;

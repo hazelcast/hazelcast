@@ -30,7 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
@@ -74,7 +74,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         super(mapContainer, partitionId);
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
-        expiryDelayMillis = hazelcastProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
+        expiryDelayMillis = hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS);
         eventService = nodeEngine.getEventService();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
         thisAddress = nodeEngine.getThisAddress();

@@ -35,7 +35,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -127,7 +127,7 @@ public class NearCacheTest extends NearCacheTestSupport {
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(batchInvalidationEnabled));
+        config.setProperty(ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(batchInvalidationEnabled));
         config.setProperty(NearCache.PROP_EXPIRATION_TASK_INITIAL_DELAY_SECONDS, "0");
         config.setProperty(NearCache.PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
         return config;
@@ -728,7 +728,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         int size = 1000;
         final String mapName = randomMapName();
         Config config = createNearCachedMapConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -753,7 +753,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         int size = 1000;
         final String mapName = randomMapName();
         Config config = createNearCachedMapConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);

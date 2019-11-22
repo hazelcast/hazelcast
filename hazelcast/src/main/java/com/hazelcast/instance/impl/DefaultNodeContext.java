@@ -41,10 +41,10 @@ import java.util.List;
 import java.util.Properties;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.IO_WRITE_THROUGH_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.IO_WRITE_THROUGH_ENABLED;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 

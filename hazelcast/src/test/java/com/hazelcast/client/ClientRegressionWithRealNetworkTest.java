@@ -36,7 +36,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -102,7 +102,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
             @Override
             public void run() {
                 ClientConfig config = new ClientConfig();
-                config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+                config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
                 HazelcastClient.newHazelcastClient(config);
                 clientLatch.countDown();
             }
@@ -138,7 +138,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress(clientAddress);
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
@@ -200,13 +200,13 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         Config config = new Config();
         int heartBeatSeconds = 6;
         config.getNetworkConfig().setPublicAddress(memberAddress);
-        config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), Integer.toString(heartBeatSeconds));
+        config.setProperty(ClusterProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), Integer.toString(heartBeatSeconds));
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         networkConfig.addAddress(clientAddress);
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final IMap<Integer, Integer> map = client.getMap("test");
 
@@ -278,7 +278,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                 return address;
             }
         };
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(addressProvider, clientConfig);
 

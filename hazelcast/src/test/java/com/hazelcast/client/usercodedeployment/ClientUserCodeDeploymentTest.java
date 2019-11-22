@@ -98,7 +98,7 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         clientUserCodeDeploymentConfig.addClass("usercodedeployment.IncrementingEntryProcessor");
         config.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
-        config.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         return config;
     }
 

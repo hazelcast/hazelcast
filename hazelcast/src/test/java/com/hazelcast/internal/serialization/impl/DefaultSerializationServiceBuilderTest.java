@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -69,11 +69,11 @@ public class DefaultSerializationServiceBuilderTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void test_exceptionThrown_whenNegativeVersionOverriddenViaProperty() {
-        System.setProperty(GroupProperty.SERIALIZATION_VERSION.getName(), "127");
+        System.setProperty(ClusterProperty.SERIALIZATION_VERSION.getName(), "127");
         try {
             getSerializationServiceBuilder().setVersion(Byte.MIN_VALUE).build();
         } finally {
-            System.clearProperty(GroupProperty.SERIALIZATION_VERSION.getName());
+            System.clearProperty(ClusterProperty.SERIALIZATION_VERSION.getName());
         }
     }
 

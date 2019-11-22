@@ -38,7 +38,7 @@ import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -810,8 +810,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     private Config createChunkedMapLoaderConfig(String mapName, int chunkSize, ChunkedLoader chunkedLoader) {
         Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
-        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), String.valueOf(chunkSize));
+        cfg.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
+        cfg.setProperty(ClusterProperty.MAP_LOAD_CHUNK_SIZE.getName(), String.valueOf(chunkSize));
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);

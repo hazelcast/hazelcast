@@ -37,6 +37,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;
@@ -70,6 +71,28 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public MapOperation(String name) {
         this.name = name;
+    }
+
+    private int getRetryCount() {
+        HazelcastProperties properties = getNodeEngine().getProperties();
+        return properties.getInteger(WithForcedEviction.FORCED_EVICTION_RETRY_COUNT);
+    }
+
+    private void runEvictionStrategies() {
+        for (ForcedEviction eviction : WithForcedEviction.EVICTIONS) {
+            if (eviction.execute(getRetryCount(), this, logger())) {
+                return;
+            }
+        }
+    }
+
+    private void rerun() {
+        try {
+            runEvictionStrategies();
+        } catch (NativeOutOfMemoryError e) {
+            disposeDeferredBlocks();
+            throw e;
+        }
     }
 
     @Override
@@ -109,7 +132,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         try {
             runInternal();
         } catch (NativeOutOfMemoryError e) {
-            WithForcedEviction.rerun(this);
+            rerun();
         }
     }
 

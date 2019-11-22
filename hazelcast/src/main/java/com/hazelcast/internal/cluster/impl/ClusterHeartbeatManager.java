@@ -37,7 +37,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import com.hazelcast.internal.util.Clock;
@@ -114,7 +114,7 @@ public class ClusterHeartbeatManager {
         clusterServiceLock = lock;
 
         HazelcastProperties hazelcastProperties = node.getProperties();
-        maxNoHeartbeatMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
+        maxNoHeartbeatMillis = hazelcastProperties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
 
         heartbeatIntervalMillis = getHeartbeatInterval(hazelcastProperties);
         legacyIcmpCheckThresholdMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
@@ -168,16 +168,16 @@ public class ClusterHeartbeatManager {
     }
 
     private ClusterFailureDetector createHeartbeatFailureDetector(HazelcastProperties properties) {
-        String type = properties.getString(GroupProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE);
+        String type = properties.getString(ClusterProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE);
         ClusterFailureDetectorType fdType = ClusterFailureDetectorType.of(type);
         switch (fdType) {
             case DEADLINE:
                 return new DeadlineClusterFailureDetector(maxNoHeartbeatMillis);
             case PHI_ACCRUAL:
-                int defaultValue = Integer.parseInt(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getDefaultValue());
+                int defaultValue = Integer.parseInt(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getDefaultValue());
                 if (maxNoHeartbeatMillis == TimeUnit.SECONDS.toMillis(defaultValue)) {
                     logger.warning("When using Phi-Accrual Failure Detector, please consider using a lower '"
-                            + GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName() + "' value. Current is: "
+                            + ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName() + "' value. Current is: "
                             + defaultValue + " seconds.");
                 }
                 return new PhiAccrualClusterFailureDetector(maxNoHeartbeatMillis, heartbeatIntervalMillis, properties);
@@ -195,7 +195,7 @@ public class ClusterHeartbeatManager {
     }
 
     private static long getHeartbeatInterval(HazelcastProperties hazelcastProperties) {
-        long heartbeatInterval = hazelcastProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+        long heartbeatInterval = hazelcastProperties.getMillis(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
     }
 
@@ -363,7 +363,7 @@ public class ClusterHeartbeatManager {
     /**
      * Accepts the heartbeat message from {@code member} created at {@code timestamp}. The timestamp must be
      * related to the cluster clock, not the local clock. The heartbeat is ignored if the duration between
-     * {@code timestamp} and the current cluster time is more than {@link GroupProperty#MAX_NO_HEARTBEAT_SECONDS}/2.
+     * {@code timestamp} and the current cluster time is more than {@link ClusterProperty#MAX_NO_HEARTBEAT_SECONDS}/2.
      * If the sending node is the master, this node will also calculate and set the cluster clock diff.
      *
      * @param member    the member sending the heartbeat
@@ -426,7 +426,7 @@ public class ClusterHeartbeatManager {
      * </li>
      * <li>
      * Reset the heartbeat timestamps if the absolute diff is greater or equal to
-     * {@link GroupProperty#MAX_NO_HEARTBEAT_SECONDS}/2
+     * {@link ClusterProperty#MAX_NO_HEARTBEAT_SECONDS}/2
      * </li>
      * </ul>
      *
@@ -493,7 +493,7 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Removes the {@code member} if it has not sent any heartbeats in {@link GroupProperty#MAX_NO_HEARTBEAT_SECONDS}.
+     * Removes the {@code member} if it has not sent any heartbeats in {@link ClusterProperty#MAX_NO_HEARTBEAT_SECONDS}.
      * If it has not sent any heartbeats in {@link #HEART_BEAT_INTERVAL_FACTOR} heartbeat intervals, it will log a warning.
      *
      * @param now    the current cluster clock time

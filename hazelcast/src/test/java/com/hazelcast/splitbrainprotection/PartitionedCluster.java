@@ -21,7 +21,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
@@ -53,10 +53,10 @@ public class PartitionedCluster {
     }
 
     public static Config createClusterConfig(Config config) {
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "9999");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "9999");
-        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
-        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "9999");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "9999");
+        config.setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        config.setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
         config.setClusterName(generateRandomString(10));
         config.addSplitBrainProtectionConfig(createSuccessfulTestSplitBrainProtection());
         return config;

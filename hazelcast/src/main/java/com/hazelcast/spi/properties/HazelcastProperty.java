@@ -68,8 +68,8 @@ public final class HazelcastProperty {
         this(name, Long.toString(defaultValue), timeUnit);
     }
 
-    public HazelcastProperty(String name, HazelcastProperty groupProperty) {
-        this(name, groupProperty.getDefaultValue(), groupProperty.timeUnit, groupProperty);
+    public HazelcastProperty(String name, HazelcastProperty property) {
+        this(name, property.getDefaultValue(), property.timeUnit, property);
     }
 
     public HazelcastProperty(String name, String defaultValue) {
@@ -141,16 +141,16 @@ public final class HazelcastProperty {
      */
     public TimeUnit getTimeUnit() {
         if (timeUnit == null) {
-            throw new IllegalArgumentException(format("groupProperty %s has no TimeUnit defined!", this));
+            throw new IllegalArgumentException(format("Cluster property %s has no TimeUnit defined!", this));
         }
 
         return timeUnit;
     }
 
     /**
-     * Returns the parent {@link GroupProperty} of the property.
+     * Returns the parent {@link ClusterProperty} of the property.
      *
-     * @return the parent {@link GroupProperty} or <code>null</code> if none is defined
+     * @return the parent {@link ClusterProperty} or <code>null</code> if none is defined
      */
     public HazelcastProperty getParent() {
         return parent;

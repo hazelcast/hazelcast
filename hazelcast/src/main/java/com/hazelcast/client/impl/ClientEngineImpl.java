@@ -37,6 +37,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.CoreService;
@@ -59,7 +60,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
@@ -148,7 +149,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = RuntimeAvailableProcessors.get();
 
-        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
+        int threadCount = node.getProperties().getInteger(ClusterProperty.CLIENT_ENGINE_THREAD_COUNT);
         if (threadCount <= 0) {
             threadCount = coreSize * threadsPerCore;
         }
@@ -176,7 +177,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = RuntimeAvailableProcessors.get();
 
-        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_QUERY_THREAD_COUNT);
+        int threadCount = node.getProperties().getInteger(ClusterProperty.CLIENT_ENGINE_QUERY_THREAD_COUNT);
         if (threadCount <= 0) {
             threadCount = coreSize * QUERY_THREADS_PER_CORE;
         }
@@ -191,7 +192,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = Runtime.getRuntime().availableProcessors();
 
-        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_BLOCKING_THREAD_COUNT);
+        int threadCount = node.getProperties().getInteger(ClusterProperty.CLIENT_ENGINE_BLOCKING_THREAD_COUNT);
         if (threadCount <= 0) {
             threadCount = coreSize * BLOCKING_THREADS_PER_CORE;
         }
@@ -290,7 +291,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean bind(final ClientEndpoint endpoint) {
-        if (!clientSelector.select(endpoint)) {
+        if (!isClientAllowed(endpoint)) {
             return false;
         }
 
@@ -310,7 +311,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
 
         // Second check to catch concurrent change done via applySelector
-        if (!clientSelector.select(endpoint)) {
+        if (!isClientAllowed(endpoint)) {
             endpointManager.removeEndpoint(endpoint);
             return false;
         }
@@ -324,7 +325,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         clientSelector = newSelector;
 
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            if (!clientSelector.select(endpoint)) {
+            if (!isClientAllowed(endpoint)) {
                 endpoint.getConnection().close("Client disconnected from cluster via Management Center", null);
             }
         }
@@ -431,7 +432,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean isClientAllowed(Client client) {
-        return clientSelector.select(client);
+        return ConnectionType.MC_JAVA_CLIENT.equals(client.getClientType()) || clientSelector.select(client);
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {

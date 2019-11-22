@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 
@@ -53,7 +53,7 @@ public abstract class BaseMetricsConfig<T extends BaseMetricsConfig> {
      * enabled, Hazelcast Management Center will be able to connect to this
      * member. It's enabled by default.
      * <p/>
-     * May be overridden by {@link GroupProperty#METRICS_ENABLED}
+     * May be overridden by {@link ClusterProperty#METRICS_ENABLED}
      * system property.
      */
     @Nonnull
@@ -85,7 +85,7 @@ public abstract class BaseMetricsConfig<T extends BaseMetricsConfig> {
      * used for collection for Management Center and for JMX publisher. By default,
      * metrics are collected every 5 seconds.
      * <p/>
-     * May be overridden by {@link GroupProperty#METRICS_COLLECTION_FREQUENCY}
+     * May be overridden by {@link ClusterProperty#METRICS_COLLECTION_FREQUENCY}
      * system property.
      */
     @Nonnull

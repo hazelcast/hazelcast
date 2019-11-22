@@ -22,7 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -69,9 +69,9 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
     public void testSplitBrainMessagesNotAccumulated_whenClusterIsStableOrNodeIsNotMaster() throws Exception {
         final int clusterSize = 3;
         Config config = new Config();
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "15");
+        config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "15");
 
         final HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
         final MulticastJoiner[] joiners = new MulticastJoiner[clusterSize];
@@ -146,8 +146,8 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
 
     private Config newConfig(String trustedInterface) {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.getNetworkConfig().getJoin().getMulticastConfig().addTrustedInterface(trustedInterface);
         return config;
     }

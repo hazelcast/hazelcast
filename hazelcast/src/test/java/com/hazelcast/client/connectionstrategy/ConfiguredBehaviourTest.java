@@ -123,7 +123,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
@@ -151,7 +151,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
@@ -181,7 +181,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
@@ -229,7 +229,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         IMap<Object, Object> map = client.getMap(randomMapName());
@@ -257,7 +257,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {

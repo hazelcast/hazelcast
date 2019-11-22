@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -60,7 +60,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         final String value = "value2";
         Config config = getConfig();
         config.getSerializationConfig().addDataSerializableFactory(100, new Factory());
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "5");
+        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "5");
         config.getMapConfig(mapName).setReadBackupData(true);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);

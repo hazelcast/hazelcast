@@ -73,7 +73,7 @@ public class ClientTxnMapTest {
     public void setup() {
         hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 

@@ -29,10 +29,10 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)

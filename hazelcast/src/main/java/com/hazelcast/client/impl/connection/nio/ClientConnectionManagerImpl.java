@@ -33,6 +33,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -48,7 +49,6 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
@@ -77,6 +77,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
@@ -101,18 +102,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final ClientExecutionService executionService;
     private final InetSocketAddressCache inetSocketAddressCache = new InetSocketAddressCache();
-    private final ConcurrentMap<InetSocketAddress, ClientConnection> activeConnections
-            = new ConcurrentHashMap<InetSocketAddress, ClientConnection>();
-    private final ConcurrentMap<InetSocketAddress, AuthenticationFuture> connectionsInProgress =
-            new ConcurrentHashMap<InetSocketAddress, AuthenticationFuture>();
-    private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<ConnectionListener>();
+    private final ConcurrentMap<InetSocketAddress, ClientConnection> activeConnections = new ConcurrentHashMap<>();
+    private final ConcurrentMap<InetSocketAddress, AuthenticationFuture> connectionsInProgress = new ConcurrentHashMap<>();
+    private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
     private final NioNetworking networking;
     private final HeartbeatManager heartbeat;
     private final long authenticationTimeout;
     private final ClientConnectionStrategy connectionStrategy;
     private final UUID clientUuid;
+    private final String connectionType;
     // accessed only in synchronized block
-    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
+    private final LinkedList<Integer> outboundPorts = new LinkedList<>();
     private final Set<String> labels;
     private final int outboundPortCount;
     private final boolean failoverConfigProvided;
@@ -127,6 +127,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         this.clientUuid = UuidUtil.newUnsecureUUID();
+        this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
+                ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
         final int connTimeout = networkConfig.getConnectionTimeout();
         this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
         this.executionService = client.getClientExecutionService();
@@ -543,7 +545,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (credentials instanceof PasswordCredentials) {
                 PasswordCredentials cr = (PasswordCredentials) credentials;
                 return ClientAuthenticationCodec.encodeRequest(clusterName, cr.getName(), cr.getPassword(), clientUuid,
-                        ConnectionType.JAVA_CLIENT, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
+                        connectionType, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
                         client.getName(), labels, clusterPartitionCount,
                         resolvedClusterId);
             } else {
@@ -554,7 +556,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     data = ss.toData(credentials);
                 }
                 return ClientAuthenticationCustomCodec.encodeRequest(clusterName, data, clientUuid,
-                        ConnectionType.JAVA_CLIENT, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
+                        connectionType, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(),
                         client.getName(), labels, clusterPartitionCount, resolvedClusterId);
             }
         }
@@ -729,7 +731,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private static class InetSocketAddressCache {
 
-        private final ConcurrentMap<Address, InetSocketAddress> cache = new ConcurrentHashMap<Address, InetSocketAddress>();
+        private final ConcurrentMap<Address, InetSocketAddress> cache = new ConcurrentHashMap<>();
 
         private InetSocketAddress get(Address target) {
             try {

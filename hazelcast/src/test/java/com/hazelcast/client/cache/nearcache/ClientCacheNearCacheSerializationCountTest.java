@@ -65,10 +65,10 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET_ALL;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
-import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Arrays.asList;
 
 /**

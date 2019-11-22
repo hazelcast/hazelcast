@@ -445,7 +445,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                         .setInitialBackoffMillis(1000)
                         .setMaxBackoffMillis(30000)
                         .setMultiplier(2.0)
-                        .setFailOnMaxBackoff(true)
+                        .setClusterConnectTimeoutMillis(5)
                         .setJitter(0.2));
         clientConfig.setConnectionStrategyConfig(expected);
 

@@ -29,7 +29,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -59,8 +59,8 @@ public class ClientSplitBrainTest extends ClientTestSupport {
     @Test
     public void testClientListeners_InSplitBrain() throws Throwable {
         Config config = new Config()
-                .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
-                .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+                .setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
+                .setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
@@ -160,10 +160,10 @@ public class ClientSplitBrainTest extends ClientTestSupport {
     @Test
     public void testClientEngineCleanup_AfterMergeFromSplitBrain() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "10");
-        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
 
         TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
         final HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);

@@ -18,7 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.instance.TestNodeContext;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -221,7 +221,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
     @Test
     public void mobyNameGeneratedIfPropertyEnabled() {
         Config config = new Config();
-        config.getProperties().put(GroupProperty.MOBY_NAMING_ENABLED.getName(), "true");
+        config.getProperties().put(ClusterProperty.MOBY_NAMING_ENABLED.getName(), "true");
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
         String name = hazelcastInstance.getName();
@@ -232,7 +232,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
     @Test
     public void fixedNameGeneratedIfPropertyDisabled() {
         Config config = new Config();
-        config.getProperties().put(GroupProperty.MOBY_NAMING_ENABLED.getName(), "false");
+        config.getProperties().put(ClusterProperty.MOBY_NAMING_ENABLED.getName(), "false");
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
         String name = hazelcastInstance.getName();
@@ -253,7 +253,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
     @Test
     public void mobyNameGeneratedIfSystemPropertyEnabled() {
         Config config = new Config();
-        GroupProperty.MOBY_NAMING_ENABLED.setSystemProperty("true");
+        ClusterProperty.MOBY_NAMING_ENABLED.setSystemProperty("true");
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
         String name = hazelcastInstance.getName();

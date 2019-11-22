@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipAdapter;
 import com.hazelcast.cluster.MembershipEvent;
@@ -25,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -59,7 +59,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testClientReconnectOnClusterDown() throws Exception {
         final HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final CountDownLatch connectedLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
@@ -81,7 +81,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         Address localAddress = instance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final CountDownLatch memberRemovedLatch = new CountDownLatch(1);
@@ -193,7 +193,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testShutdownClient_whenThereIsNoCluster() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         client.shutdown();
     }

@@ -282,7 +282,7 @@ public class TestClientApplicationContext {
         assertNotNull(client5);
 
         ClientConfig config = client5.getClientConfig();
-        assertFalse(config.getConnectionStrategyConfig().getConnectionRetryConfig().isFailOnMaxBackoff());
+        assertEquals(1000, config.getConnectionStrategyConfig().getConnectionRetryConfig().getClusterConnectTimeoutMillis());
     }
 
     @Test
@@ -449,7 +449,7 @@ public class TestClientApplicationContext {
     public void testConnectionRetry() {
         ConnectionRetryConfig connectionRetryConfig = connectionRetryClient
                 .getClientConfig().getConnectionStrategyConfig().getConnectionRetryConfig();
-        assertTrue(connectionRetryConfig.isFailOnMaxBackoff());
+        assertEquals(5000, connectionRetryConfig.getClusterConnectTimeoutMillis());
         assertEquals(0.5, connectionRetryConfig.getJitter(), 0);
         assertEquals(2000, connectionRetryConfig.getInitialBackoffMillis());
         assertEquals(60000, connectionRetryConfig.getMaxBackoffMillis());

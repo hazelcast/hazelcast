@@ -174,7 +174,7 @@ public class ClusterStateManager {
         try {
             state = ClusterState.ACTIVE;
             // not notifying cluster version listeners about change to UNKNOWN. consider for example the following scenario:
-            // - node starts with codebase version 3.9, overrides init cluster version via group property to 3.8
+            // - node starts with codebase version 3.9, overrides init cluster version via cluster property to 3.8
             // - node joins an existing 3.8 cluster which is undergoing rolling-upgrade to 3.9
             // - once all cluster members are on 3.9, cluster version is upgraded to 3.9.0
             // - clusterVersion is reset to UNKNOWN

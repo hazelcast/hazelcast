@@ -28,7 +28,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -99,7 +99,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     @Test
     public void testNoStuckInvocationsWhenRetriedMultipleTimes() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);

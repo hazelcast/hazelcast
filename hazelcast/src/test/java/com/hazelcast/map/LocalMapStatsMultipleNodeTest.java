@@ -29,7 +29,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -120,7 +120,7 @@ public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
     public void testLocalMapStats_preservedAfterEviction() {
         String mapName = randomMapName();
         Config config = new Config();
-        config.getProperties().setProperty(GroupProperty.PARTITION_COUNT.getName(), "5");
+        config.getProperties().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "5");
         MapConfig mapConfig = config.getMapConfig(mapName);
 
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();

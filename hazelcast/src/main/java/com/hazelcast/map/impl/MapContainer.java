@@ -68,7 +68,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyComparator;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_EVICTION_BATCH_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.MAP_EVICTION_BATCH_SIZE;
 import static java.lang.System.getProperty;
 
 /**
@@ -131,7 +131,7 @@ public class MapContainer {
                 .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
                 serializationService, extractors);
-        this.globalIndexes = shouldUseGlobalIndex(mapConfig) ? createIndexes(true) : null;
+        this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true) : null;
         this.mapStoreContext = createMapStoreContext(this);
         initWanReplication(mapServiceContext.getNodeEngine());
     }
@@ -174,7 +174,7 @@ public class MapContainer {
         return new EvictorImpl(evictionPolicyComparator, evictionChecker, evictionBatchSize, partitionService);
     }
 
-    protected boolean shouldUseGlobalIndex(MapConfig mapConfig) {
+    public boolean shouldUseGlobalIndex() {
         // for non-native memory populate a single global index
         return !mapConfig.getInMemoryFormat().equals(NATIVE);
     }
