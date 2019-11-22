@@ -1,0 +1,11 @@
+{
+"namespace": "com.hazelcast.jet.examples.hadoop.generated",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "password", "type": "string"},
+    {"name": "age",  "type": "int"},
+    {"name": "status",  "type": "boolean"}
+  ]
+}

@@ -21,8 +21,8 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.examples.wordcount.WordCount;
-import com.hazelcast.jet.hadoop.HdfsSinks;
-import com.hazelcast.jet.hadoop.HdfsSources;
+import com.hazelcast.jet.hadoop.HadoopSinks;
+import com.hazelcast.jet.hadoop.HadoopSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -40,18 +40,18 @@ import static java.lang.System.nanoTime;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * Word count example adapted to read from and write to HDFS instead of Jet
+ * Word count example adapted to read from and write to Hadoop instead of Jet
  * in-memory maps.
  * <p>
  * For more details about the word count pipeline itself, please see the JavaDoc
  * for the {@code WordCount} class in {@code wordcount} sample.
  * <p>
- * {@link HdfsSources#hdfs(JobConf, BiFunctionEx)} is a source
+ * {@link HadoopSources#inputFormat(Configuration, BiFunctionEx)} is a source
  * that can be used for reading from HDFS given a {@code JobConf}
  * with input paths and input formats. The files in the input folder
  * will be split among Jet processors, using {@code InputSplit}s.
  * <p>
- * {@link HdfsSinks#hdfs(JobConf, FunctionEx, FunctionEx)}
+ * {@link HadoopSinks#outputFormat(Configuration, FunctionEx, FunctionEx)}
  * writes the output to the given output path, with each
  * processor writing to a single file within the path. The files are
  * identified by the member ID and the local ID of the writing processor.
@@ -74,11 +74,11 @@ public class HadoopWordCount {
 
         final Pattern regex = Pattern.compile("\\W+");
         Pipeline p = Pipeline.create();
-        p.readFrom(HdfsSources.hdfs(jobConfig, (k, v) -> v.toString()))
+        p.readFrom(HadoopSources.inputFormat(jobConfig, (k, v) -> v.toString()))
          .flatMap(line -> traverseArray(regex.split(line.toLowerCase())).filter(w -> !w.isEmpty()))
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .writeTo(HdfsSinks.hdfs(jobConfig));
+         .writeTo(HadoopSinks.outputFormat(jobConfig));
         return p;
     }
 

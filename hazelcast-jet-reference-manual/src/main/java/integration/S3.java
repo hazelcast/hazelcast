@@ -17,8 +17,8 @@
 package integration;
 
 import com.hazelcast.jet.Util;
-import com.hazelcast.jet.hadoop.HdfsSinks;
-import com.hazelcast.jet.hadoop.HdfsSources;
+import com.hazelcast.jet.hadoop.HadoopSinks;
+import com.hazelcast.jet.hadoop.HadoopSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -81,9 +81,9 @@ public class S3 {
 
 
         Pipeline p = Pipeline.create();
-        p.readFrom(HdfsSources.<String, String>hdfs(jobConfig))
+        p.readFrom(HadoopSources.<String, String>inputFormat(jobConfig))
          .map(e -> Util.entry(e.getKey(), e.getValue().toUpperCase()))
-         .writeTo(HdfsSinks.hdfs(jobConfig));
+         .writeTo(HadoopSinks.outputFormat(jobConfig));
         //end::s3[]
     }
 }

@@ -70,10 +70,10 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.ImdgUtil.maybeUnwrapImdgFunction;
 import static com.hazelcast.jet.impl.util.ImdgUtil.maybeUnwrapImdgPredicate;
+import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -472,7 +472,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Override
         @Nonnull
         public List<Processor> get(int count) {
-            return processorToPartitions(count, ownedPartitions)
+            return distributeObjects(count, ownedPartitions)
                     .values().stream()
                     .map(this::processorForPartitions)
                     .collect(toList());

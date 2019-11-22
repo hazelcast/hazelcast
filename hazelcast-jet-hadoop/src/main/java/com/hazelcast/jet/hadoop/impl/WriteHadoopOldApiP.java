@@ -24,7 +24,8 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.hadoop.HdfsProcessors;
+import com.hazelcast.jet.hadoop.HadoopSinks;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContextImpl;
 import org.apache.hadoop.mapred.JobID;
@@ -39,16 +40,14 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 
-import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;
 
 /**
- * See {@link HdfsProcessors#writeHdfsP(
- * org.apache.hadoop.mapred.JobConf, FunctionEx, FunctionEx)}.
+ * See {@link HadoopSinks#outputFormat}.
  */
-public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
+public final class WriteHadoopOldApiP<T, K, V> extends AbstractProcessor {
 
     private final RecordWriter<K, V> recordWriter;
     private final TaskAttemptContextImpl taskAttemptContext;
@@ -56,11 +55,11 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
     private final FunctionEx<? super T, K> extractKeyFn;
     private final FunctionEx<? super T, V> extractValueFn;
 
-    private WriteHdfsP(RecordWriter<K, V> recordWriter,
-                       TaskAttemptContextImpl taskAttemptContext,
-                       OutputCommitter outputCommitter,
-                       FunctionEx<? super T, K> extractKeyFn,
-                       FunctionEx<? super T, V> extractValueFn
+    private WriteHadoopOldApiP(RecordWriter<K, V> recordWriter,
+                               TaskAttemptContextImpl taskAttemptContext,
+                               OutputCommitter outputCommitter,
+                               FunctionEx<? super T, K> extractKeyFn,
+                               FunctionEx<? super T, V> extractValueFn
     ) {
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
@@ -94,14 +93,15 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final SerializableJobConf jobConf;
+        @SuppressFBWarnings("SE_BAD_FIELD")
+        private final JobConf jobConf;
         private final FunctionEx<? super T, K> extractKeyFn;
         private final FunctionEx<? super T, V> extractValueFn;
 
         private transient OutputCommitter outputCommitter;
         private transient JobContextImpl jobContext;
 
-        public MetaSupplier(SerializableJobConf jobConf,
+        public MetaSupplier(JobConf jobConf,
                             FunctionEx<? super T, K> extractKeyFn,
                             FunctionEx<? super T, V> extractValueFn
         ) {
@@ -139,7 +139,8 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final SerializableJobConf jobConf;
+        @SuppressFBWarnings("SE_BAD_FIELD")
+        private final JobConf jobConf;
         private final FunctionEx<? super T, K> extractKeyFn;
         private final FunctionEx<? super T, V> extractValueFn;
 
@@ -147,7 +148,7 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         private transient OutputCommitter outputCommitter;
         private transient JobContextImpl jobContext;
 
-        Supplier(SerializableJobConf jobConf,
+        Supplier(JobConf jobConf,
                  FunctionEx<? super T, K> extractKeyFn,
                  FunctionEx<? super T, V> extractValueFn
         ) {
@@ -180,8 +181,8 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
                     @SuppressWarnings("unchecked")
                     OutputFormat<K, V> outFormat = copiedConfig.getOutputFormat();
                     RecordWriter<K, V> recordWriter = outFormat.getRecordWriter(
-                            null, copiedConfig, uuid + '-' + valueOf(i), Reporter.NULL);
-                    return new WriteHdfsP<>(
+                            null, copiedConfig, uuid + '-' + i, Reporter.NULL);
+                    return new WriteHadoopOldApiP<>(
                             recordWriter, taskAttemptContext, outputCommitter, extractKeyFn, extractValueFn);
                 } catch (IOException e) {
                     throw new JetException(e);

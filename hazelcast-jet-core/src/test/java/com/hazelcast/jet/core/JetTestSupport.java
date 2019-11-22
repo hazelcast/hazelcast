@@ -243,6 +243,16 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     public void ditchJob(@Nonnull Job job, @Nonnull JetInstance... instancesToShutDown) {
         int numAttempts;
         for (numAttempts = 0; numAttempts < 10; numAttempts++) {
+            JobStatus status = null;
+            try {
+                status = job.getStatus();
+                if (status == JobStatus.FAILED || status == JobStatus.COMPLETED) {
+                    return;
+                }
+            } catch (Exception e) {
+                logger.warning("Failure to read job status: " + e, e);
+            }
+
             Exception cancellationFailure;
             try {
                 job.cancel();
@@ -258,15 +268,6 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
             }
 
             sleepMillis(500);
-            JobStatus status = null;
-            try {
-                status = job.getStatus();
-                if (status == JobStatus.FAILED || status == JobStatus.COMPLETED) {
-                    return;
-                }
-            } catch (Exception e) {
-                logger.warning("Failure to read job status: " + e, e);
-            }
             logger.warning("Failed to cancel the job and it is " + status + ", retrying. Failure: " + cancellationFailure,
                     cancellationFailure);
         }

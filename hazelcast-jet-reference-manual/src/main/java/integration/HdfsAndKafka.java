@@ -16,8 +16,8 @@
 
 package integration;
 
-import com.hazelcast.jet.hadoop.HdfsSinks;
-import com.hazelcast.jet.hadoop.HdfsSources;
+import com.hazelcast.jet.hadoop.HadoopSinks;
+import com.hazelcast.jet.hadoop.HadoopSources;
 import com.hazelcast.jet.kafka.KafkaSinks;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -51,12 +51,12 @@ public class HdfsAndKafka {
         JobConf jobConfig = new JobConf();
         //tag::s2[]
         Pipeline p = Pipeline.create();
-        p.readFrom(HdfsSources.hdfs(jobConfig, (k, v) -> v.toString()))
+        p.readFrom(HadoopSources.inputFormat(jobConfig, (k, v) -> v.toString()))
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+"))
                                .filter(w -> !w.isEmpty()))
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .writeTo(HdfsSinks.hdfs(jobConfig));
+         .writeTo(HadoopSinks.outputFormat(jobConfig));
         //end::s2[]
     }
 

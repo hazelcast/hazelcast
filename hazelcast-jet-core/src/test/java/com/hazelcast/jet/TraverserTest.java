@@ -28,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TraverserTest {
 
@@ -123,6 +124,28 @@ public class TraverserTest {
                 );
         check(traverser().flatMap(i -> traverser().takeWhile(j -> j < i)),
                 0, 0, 1); // 0 -> {}, 1 -> {0}, 2 -> {0, 1} ==> {0, 0, 1}
+    }
+
+    @Test
+    public void when_flatMapAdded_then_upstreamItemNotTaken() {
+        Traverser<Object> trav = () -> {
+            // Then
+            throw new AssertionError("item must not be taken");
+        };
+
+        // When
+        // the item from the upstream must be taken when `next()` is called for
+        // the first time. Traverser pipelines are often constructed in initialization
+        // stages and iterated later. If we take the item now, some parts might
+        // not be initialized.
+        Traverser<Object> flatMapped = trav.flatMap(t -> Traversers.empty());
+
+        try {
+            flatMapped.next();
+            fail("should have failed");
+        } catch (AssertionError e) {
+            assertEquals("item must not be taken", e.getMessage());
+        }
     }
 
     @Test

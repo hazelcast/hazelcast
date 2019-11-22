@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.hadoop.impl;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 
 import java.io.DataInputStream;
@@ -26,15 +27,15 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * This class is used to make {@link JobConf} object serializable.
+ * This class is used to make {@link Configuration} object serializable.
  */
-public final class SerializableJobConf extends JobConf implements Serializable {
+public final class SerializableConfiguration extends Configuration implements Serializable {
 
-    SerializableJobConf() {
-        //For deserialization
+    @SuppressWarnings("unused") // for deserialization
+    SerializableConfiguration() {
     }
 
-    SerializableJobConf(JobConf jobConf) {
+    private SerializableConfiguration(Configuration jobConf) {
         super(jobConf);
     }
 
@@ -44,5 +45,17 @@ public final class SerializableJobConf extends JobConf implements Serializable {
 
     private void readObject(ObjectInputStream in) throws IOException {
         super.readFields(new DataInputStream(in));
+    }
+
+    public static Configuration asSerializable(Configuration conf) {
+        // prevent double wrapping
+        if (conf instanceof Serializable) {
+            return conf;
+        }
+        if (conf instanceof JobConf) {
+            return new SerializableJobConf((JobConf) conf);
+        } else {
+            return new SerializableConfiguration(conf);
+        }
     }
 }

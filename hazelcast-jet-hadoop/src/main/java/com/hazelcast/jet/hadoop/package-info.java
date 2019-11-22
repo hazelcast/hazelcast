@@ -15,7 +15,7 @@
  */
 
 /**
- * Apache Hadoop HDFS read/write support for Hazelcast Jet.
+ * Apache Hadoop read/write support for Hazelcast Jet.
  *
  * @since 3.0
  */

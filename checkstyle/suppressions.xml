@@ -32,6 +32,7 @@
 
     <!-- Suppress checking of copyright notice in a file derived from Apache Tez -->
     <suppress checks="Header" files="TopologicalSorter"/>
+    <suppress checks="Header" files="generated"/>
 
     <!-- Exclude these packages from JavaDoc checks -->
     <suppress checks="JavadocMethod" files="JetException\.java"/>

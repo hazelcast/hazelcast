@@ -204,23 +204,24 @@ public final class Util {
     }
 
     /**
-     * Distributes the owned partitions to processors in a round-robin fashion.
-     * If owned partition size is smaller than processor count, an empty list
-     * is put for the rest of the processors.
+     * Distributes the {@code objects} to {@code count} processors in a
+     * round-robin fashion. If the object count is smaller than processor
+     * count, an empty list is put for the rest of the processors.
      *
      * @param count count of processors
-     * @param ownedPartitions list of owned partitions
-     * @return a map of which has partition index as key and list of partition ids as value
+     * @param objects list of objects to distribute
+     * @return a map which has the processor index as the key and a list of objects as
+     *      the value
      */
-    public static Map<Integer, List<Integer>> processorToPartitions(int count, List<Integer> ownedPartitions) {
-        Map<Integer, List<Integer>> processorToPartitions = range(0, ownedPartitions.size())
-                .mapToObj(i -> entry(i, ownedPartitions.get(i)))
+    public static <T> Map<Integer, List<T>> distributeObjects(int count, List<T> objects) {
+        Map<Integer, List<T>> processorToObjects = range(0, objects.size())
+                .mapToObj(i -> entry(i, objects.get(i)))
                 .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
 
-        for (int processor = 0; processor < count; processor++) {
-            processorToPartitions.putIfAbsent(processor, emptyList());
+        for (int i = 0; i < count; i++) {
+            processorToObjects.putIfAbsent(i, emptyList());
         }
-        return processorToPartitions;
+        return processorToObjects;
     }
 
     /**

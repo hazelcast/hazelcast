@@ -84,7 +84,7 @@ import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
-import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
+import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -276,7 +276,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return processorToPartitions(count, memberPartitions).values().stream()
+            return distributeObjects(count, memberPartitions).values().stream()
                     .map(partitions -> partitions.stream().mapToInt(Integer::intValue).toArray())
                     .map(partitions -> new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance), partitions,
                             migrationWatcher))
