@@ -19,17 +19,17 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 public final class WithForcedEviction {
-    public static final ForcedEviction[] EVICTIONS = new ForcedEviction[]{
-        new RecordStoreForcedEviction(),
-        new PartitionRecordStoreForcedEviction(),
-        new AllEntriesForcedEviction(),
-        new PartitionAllEntriesForcedEviction()
-    };
-
     public static final int DEFAULT_FORCED_EVICTION_RETRY_COUNT = 5;
     public static final String PROP_FORCED_EVICTION_RETRY_COUNT
               = "hazelcast.internal.forced.eviction.retry.count";
-    public static final HazelcastProperty FORCED_EVICTION_RETRY_COUNT
+
+    static final ForcedEviction[] EVICTIONS = new ForcedEviction[]{
+            new RecordStoreForcedEviction(),
+            new PartitionRecordStoreForcedEviction(),
+            new AllEntriesForcedEviction(),
+            new PartitionAllEntriesForcedEviction()
+    };
+    static final HazelcastProperty FORCED_EVICTION_RETRY_COUNT
               = new HazelcastProperty(PROP_FORCED_EVICTION_RETRY_COUNT,
                                       DEFAULT_FORCED_EVICTION_RETRY_COUNT);
 
