@@ -41,6 +41,7 @@ public enum MetricTarget {
     JET_JOB;
 
     public static final List<MetricTarget> VALUES_LIST = unmodifiableList(asList(values()));
+    public static final Collection<MetricTarget> NONE_OF = EnumSet.noneOf(MetricTarget.class);
 
     static final Int2ObjectHashMap<Set<MetricTarget>> BITSET_TO_SET_CACHE = new Int2ObjectHashMap<>();
 
