@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the ScheduledFuture's delay in nanoseconds for the task in the scheduler.
  */
-@Generated("08bed216708fbbae73c920e7d6fddfd7")
+@Generated("3ef6fcfc7793fcc0722ef1aecc0653d6")
 public final class ScheduledExecutorGetDelayFromAddressCodec {
     //hex: 0x1A0800
     public static final int REQUEST_MESSAGE_TYPE = 1705984;
@@ -71,7 +71,6 @@ public final class ScheduledExecutorGetDelayFromAddressCodec {
     public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ScheduledExecutor.GetDelayFromAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

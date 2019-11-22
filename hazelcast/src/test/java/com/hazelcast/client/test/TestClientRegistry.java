@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.test.TwoWayBlockableExecutor.LockPair;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
@@ -103,7 +102,7 @@ class TestClientRegistry {
         }
 
         @Override
-        protected NioNetworking initNetworking(HazelcastClientInstanceImpl client) {
+        protected NioNetworking initNetworking() {
             return null;
         }
 
@@ -116,10 +115,8 @@ class TestClientRegistry {
         }
 
         @Override
-        protected ClientConnection createSocketConnection(Address address) throws IOException {
-            if (!alive) {
-                throw new HazelcastException("ConnectionManager is not active!!!");
-            }
+        protected ClientConnection createSocketConnection(Address address) {
+            checkClientActive();
             try {
                 HazelcastInstance instance = nodeRegistry.getInstance(address);
                 if (instance == null) {
@@ -133,7 +130,7 @@ class TestClientRegistry {
                 LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
                 return connection;
             } catch (Exception e) {
-                throw rethrow(e, IOException.class);
+                throw rethrow(e);
             }
         }
 

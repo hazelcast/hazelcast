@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("21e81359c7f9c21e050ec3386fa2dee1")
+@Generated("ac7165452f1626a92b1113d96948aba9")
 public final class ClientCreateProxyCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;
@@ -75,24 +75,17 @@ public final class ClientCreateProxyCodec {
          * "hz:impl:xaService"
          */
         public java.lang.String serviceName;
-
-        /**
-         * TODO DOC
-         */
-        public com.hazelcast.cluster.Address target;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String serviceName, com.hazelcast.cluster.Address target) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String serviceName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.CreateProxy");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         StringCodec.encode(clientMessage, serviceName);
-        AddressCodec.encode(clientMessage, target);
         return clientMessage;
     }
 
@@ -103,7 +96,6 @@ public final class ClientCreateProxyCodec {
         iterator.next();
         request.name = StringCodec.decode(iterator);
         request.serviceName = StringCodec.decode(iterator);
-        request.target = AddressCodec.decode(iterator);
         return request;
     }
 

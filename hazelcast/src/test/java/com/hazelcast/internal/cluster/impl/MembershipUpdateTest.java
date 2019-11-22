@@ -605,7 +605,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         MembershipManager membershipManager = clusterService.getMembershipManager();
 
         MemberInfo newMemberInfo = new MemberInfo(new Address("127.0.0.1", 6000), newUnsecureUUID(),
-                Collections.emptyMap(), node.getVersion());
+                Collections.emptyMap(), false, node.getVersion());
         MembersView membersView =
                 MembersView.cloneAdding(membershipManager.getMembersView(), singleton(newMemberInfo));
 
@@ -851,7 +851,9 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void connectionsToRemovedMember_shouldBeClosed() {
-        Config config = new Config();
+        Config config = new Config()
+                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10")
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);

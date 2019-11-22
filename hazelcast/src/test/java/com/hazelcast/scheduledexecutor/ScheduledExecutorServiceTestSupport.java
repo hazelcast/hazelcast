@@ -30,6 +30,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.sleep;
@@ -38,8 +39,6 @@ import static java.lang.Thread.sleep;
  * Common methods used in ScheduledExecutorService tests.
  */
 public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
-
-    static final int MAP_INCREMENT_TASK_MAX_ENTRIES = 10000;
 
     public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
         return instances[0].getScheduledExecutorService(name);
@@ -145,29 +144,34 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         final String startedLatch;
         final String finishedLatch;
+        final String waitAfterStartLatch;
         final String runEntryCounterName;
         final String mapName;
 
         transient HazelcastInstance instance;
 
         ICountdownLatchMapIncrementCallableTask(String mapName, String runEntryCounterName,
-                                                String startedLatch, String finishedLatch) {
+                                                String startedLatch, String finishedLatch, String waitAfterStartLatch) {
             this.mapName = mapName;
             this.runEntryCounterName = runEntryCounterName;
             this.startedLatch = startedLatch;
             this.finishedLatch = finishedLatch;
+            this.waitAfterStartLatch = waitAfterStartLatch;
         }
 
         @Override
         public void run() {
             instance.getCPSubsystem().getAtomicLong(runEntryCounterName).incrementAndGet();
             instance.getCPSubsystem().getCountDownLatch(startedLatch).countDown();
+            try {
+                instance.getCPSubsystem().getCountDownLatch(waitAfterStartLatch).await(1, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
             IMap<String, Integer> map = instance.getMap(mapName);
-            for (int i = 0; i < MAP_INCREMENT_TASK_MAX_ENTRIES; i++) {
-                if (map.get(String.valueOf(i)) == i) {
-                    map.put(String.valueOf(i), i + 1);
-                }
+            if (map.get("foo") == 1) {
+                map.put("foo", 2);
             }
 
             instance.getCPSubsystem().getCountDownLatch(finishedLatch).countDown();

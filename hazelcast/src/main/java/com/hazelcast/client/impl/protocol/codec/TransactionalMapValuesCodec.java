@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * so changes to the map are NOT reflected in the collection, and vice-versa. This method is always executed by a
  * distributed query, so it may throw a QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("699029c053f8feeac7be4f19b490d443")
+@Generated("b4f16b31a171b6cd66845bb406b21560")
 public final class TransactionalMapValuesCodec {
     //hex: 0x0E1000
     public static final int REQUEST_MESSAGE_TYPE = 921600;
@@ -74,7 +74,6 @@ public final class TransactionalMapValuesCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("TransactionalMap.Values");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

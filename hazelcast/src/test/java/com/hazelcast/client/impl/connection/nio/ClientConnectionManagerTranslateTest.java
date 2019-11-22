@@ -14,29 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.spi.impl;
+package com.hazelcast.client.impl.connection.nio;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
-import com.hazelcast.config.security.StaticCredentialsFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.security.ICredentialsFactory;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,17 +55,8 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         clientConnectionManager = new ClientConnectionManagerImpl(clientInstanceImpl);
-        ICredentialsFactory factory = new StaticCredentialsFactory(new UsernamePasswordCredentials(null, null));
         clientConnectionManager.start();
-        ChannelInitializerProvider channelInitializerProvider = new ChannelInitializerProvider() {
-
-            @Override
-            public ChannelInitializer provide(EndpointQualifier qualifier) {
-                return clientInstanceImpl.getClientExtension().createChannelInitializer();
-            }
-        };
-        clientConnectionManager.beforeClusterSwitch(new CandidateClusterContext("dev", provider, null,
-                factory, null, channelInitializerProvider));
+        clientConnectionManager.reset();
         clientConnectionManager.getOrConnect(new Address("127.0.0.1", 5701));
 
         provider.shouldTranslate = true;
@@ -116,19 +98,13 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
     }
 
     @Test
-    public void testTranslatorIsNotUsedGetActiveConnection() throws Exception {
-        Connection connection = clientConnectionManager.getActiveConnection(privateAddress);
+    public void testTranslatorIsNotUsedGetActiveConnection() {
+        Connection connection = clientConnectionManager.getConnection(privateAddress);
         assertNotNull(connection);
     }
 
     @Test
-    public void testTranslatorIsNotUsedOnTriggerConnect() throws Exception {
-        Connection connection = clientConnectionManager.getOrTriggerConnect(privateAddress);
-        assertNotNull(connection);
-    }
-
-    @Test
-    public void testTranslatorIsNotUsedOnGetConnection() throws Exception {
+    public void testTranslatorIsNotUsedOnGetConnection() {
         Connection connection = clientConnectionManager.getOrConnect(privateAddress);
         assertNotNull(connection);
     }

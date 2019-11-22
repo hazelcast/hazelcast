@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("805b76608bc1e243b96d649cdcf19614")
+@Generated("c51acf3fa99478a20b2148948b9ab68b")
 public final class ClientIsFailoverSupportedCodec {
-    //hex: 0x001200
-    public static final int REQUEST_MESSAGE_TYPE = 4608;
-    //hex: 0x001201
-    public static final int RESPONSE_MESSAGE_TYPE = 4609;
+    //hex: 0x001000
+    public static final int REQUEST_MESSAGE_TYPE = 4096;
+    //hex: 0x001001
+    public static final int RESPONSE_MESSAGE_TYPE = 4097;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -56,7 +56,6 @@ public final class ClientIsFailoverSupportedCodec {
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.IsFailoverSupported");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

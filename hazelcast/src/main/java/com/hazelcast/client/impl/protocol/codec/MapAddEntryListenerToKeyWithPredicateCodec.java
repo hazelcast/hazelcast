@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
  * sub-interface for that event.
  */
-@Generated("58b91c666119a0c33704517d17e1dc4e")
+@Generated("590040bccbfe05f7d951822b8f5bf07d")
 public final class MapAddEntryListenerToKeyWithPredicateCodec {
     //hex: 0x011600
     public static final int REQUEST_MESSAGE_TYPE = 71168;
@@ -98,7 +98,6 @@ public final class MapAddEntryListenerToKeyWithPredicateCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data predicate, boolean includeValue, int listenerFlags, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.AddEntryListenerToKeyWithPredicate");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

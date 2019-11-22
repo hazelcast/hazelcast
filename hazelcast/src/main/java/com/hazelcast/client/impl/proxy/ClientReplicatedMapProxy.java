@@ -45,6 +45,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
@@ -682,14 +683,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                     throw new IllegalArgumentException("Not a known event type: " + eventType);
             }
         }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
     }
 
     private class ReplicatedMapAddNearCacheEventHandler
@@ -697,14 +690,14 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             implements EventHandler<ClientMessage> {
 
         @Override
-        public void beforeListenerRegister() {
+        public void beforeListenerRegister(Connection connection) {
             if (nearCache != null) {
                 nearCache.clear();
             }
         }
 
         @Override
-        public void onListenerRegister() {
+        public void onListenerRegister(Connection connection) {
             if (nearCache != null) {
                 nearCache.clear();
             }

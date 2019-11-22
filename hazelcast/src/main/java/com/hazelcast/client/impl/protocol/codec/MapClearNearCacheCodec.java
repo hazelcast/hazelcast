@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("2dbfb8be23a47077c38387fa9f743453")
+@Generated("eb58a15bdc819f4928f0e55aa5655ba9")
 public final class MapClearNearCacheCodec {
     //hex: 0x013700
     public static final int REQUEST_MESSAGE_TYPE = 79616;
@@ -65,7 +65,6 @@ public final class MapClearNearCacheCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.cluster.Address target) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.ClearNearCache");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

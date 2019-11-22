@@ -48,6 +48,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
@@ -56,7 +57,6 @@ import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.util.ThreadUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,9 +68,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -540,14 +540,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                                                   Data mergingValueData, int eventType, Member member) {
             return new DataAwareEntryEvent<K, V>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
                     getSerializationService());
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
         }
     }
 }

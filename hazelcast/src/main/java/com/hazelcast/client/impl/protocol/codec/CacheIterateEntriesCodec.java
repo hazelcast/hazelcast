@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of entries from the specified partition starting from specified table index.
  */
-@Generated("a51da0d86a17eb1c668b065bc16a94cc")
+@Generated("1c1505415dfd6bbe7bc97f4bc6e4b12c")
 public final class CacheIterateEntriesCodec {
     //hex: 0x131C00
     public static final int REQUEST_MESSAGE_TYPE = 1252352;
@@ -73,7 +73,6 @@ public final class CacheIterateEntriesCodec {
     public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.IterateEntries");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("7092b5c8df27de9bdcd8993a2b47ecda")
+@Generated("ef10a6d1680b586e91cf324b352d2eb0")
 public final class ClientAddPartitionLostListenerCodec {
-    //hex: 0x000800
-    public static final int REQUEST_MESSAGE_TYPE = 2048;
-    //hex: 0x000801
-    public static final int RESPONSE_MESSAGE_TYPE = 2049;
+    //hex: 0x000700
+    public static final int REQUEST_MESSAGE_TYPE = 1792;
+    //hex: 0x000701
+    public static final int RESPONSE_MESSAGE_TYPE = 1793;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -50,8 +50,8 @@ public final class ClientAddPartitionLostListenerCodec {
     private static final int EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET = EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_PARTITION_LOST_INITIAL_FRAME_SIZE = EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x000802
-    private static final int EVENT_PARTITION_LOST_MESSAGE_TYPE = 2050;
+    //hex: 0x000702
+    private static final int EVENT_PARTITION_LOST_MESSAGE_TYPE = 1794;
 
     private ClientAddPartitionLostListenerCodec() {
     }
@@ -69,7 +69,6 @@ public final class ClientAddPartitionLostListenerCodec {
     public static ClientMessage encodeRequest(boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.AddPartitionLostListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

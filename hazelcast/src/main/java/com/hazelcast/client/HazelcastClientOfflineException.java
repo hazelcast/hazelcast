@@ -21,7 +21,7 @@ package com.hazelcast.client;
  */
 public class HazelcastClientOfflineException extends IllegalStateException {
 
-    public HazelcastClientOfflineException(String message) {
-        super(message);
+    public HazelcastClientOfflineException() {
+        super("No connection found to cluster");
     }
 }

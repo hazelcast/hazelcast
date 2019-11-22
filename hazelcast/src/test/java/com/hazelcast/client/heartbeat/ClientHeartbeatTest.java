@@ -276,7 +276,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
             }
 
             @Override
-            public void beforeListenerRegister() {
+            public void beforeListenerRegister(Connection connection) {
                 if (count.incrementAndGet() == 2) {
                     try {
                         blockIncoming.await();
@@ -287,7 +287,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
             }
 
             @Override
-            public void onListenerRegister() {
+            public void onListenerRegister(Connection connection) {
                 onListenerRegister.countDown();
             }
 

@@ -217,7 +217,7 @@ public class ClientMessageProtectionTest {
 
     private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String clientName) {
         return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), null, null, UUID.randomUUID(), "FOO",
-                (byte) 1, clientName, "xxx", emptyList(), -1, null);
+                (byte) 1, clientName, "xxx", emptyList());
     }
 
     private ClientMessage readResponse(InputStream is) throws IOException {
@@ -235,8 +235,7 @@ public class ClientMessageProtectionTest {
                 break;
             }
         }
-        ClientMessage respMessage = ClientMessage.createForDecode(clientMessage.getStartFrame());
-        return respMessage;
+        return clientMessage;
     }
 
     private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
