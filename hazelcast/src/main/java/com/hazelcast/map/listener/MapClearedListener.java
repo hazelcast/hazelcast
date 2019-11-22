@@ -24,6 +24,7 @@ import com.hazelcast.map.IMap;
  *
  * @since 3.5
  */
+@FunctionalInterface
 public interface MapClearedListener extends MapListener {
     /**
      * Invoked when all entries are removed by {@link IMap#clear()}.

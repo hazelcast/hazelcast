@@ -25,6 +25,7 @@ package com.hazelcast.core;
  * must have no internal state as they are expected to be used by
  * multiple threads and with shared instances.
  */
+@FunctionalInterface
 public interface TypeConverter {
 
     /**

@@ -24,6 +24,7 @@ import java.io.Serializable;
  * Credentials represents an identity to be authenticated.
  */
 @BinaryInterface
+@FunctionalInterface
 public interface Credentials extends Serializable {
 
     String getName();

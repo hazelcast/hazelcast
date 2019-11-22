@@ -21,6 +21,7 @@ import java.util.EventListener;
 /**
  * Listener to get notified when a split brain protection state is changed
  */
+@FunctionalInterface
 public interface SplitBrainProtectionListener extends EventListener {
 
     /**

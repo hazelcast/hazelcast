@@ -35,6 +35,7 @@ import java.util.Collection;
  * will be notified of membership events. All listener invocations are executed before the
  * {@code SplitBrainProtectionFunction}'s {@link #apply(Collection)} method is invoked.
  */
+@FunctionalInterface
 public interface SplitBrainProtectionFunction {
 
     /**

@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 /**
  * Base interface for local instance statistics.
  */
+@FunctionalInterface
 public interface LocalInstanceStats {
 
     /**

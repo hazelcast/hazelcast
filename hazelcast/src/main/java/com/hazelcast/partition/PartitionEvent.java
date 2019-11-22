@@ -22,6 +22,7 @@ package com.hazelcast.partition;
  * @see ReplicaMigrationEvent
  * @see PartitionLostEvent
  */
+@FunctionalInterface
 public interface PartitionEvent {
 
     /**

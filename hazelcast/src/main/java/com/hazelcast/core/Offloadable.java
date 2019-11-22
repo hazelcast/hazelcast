@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
  *     <li>{@link IMap#submitToKey(Object, EntryProcessor, ExecutionCallback)} </li>
  * </ul>
  */
+@FunctionalInterface
 public interface Offloadable {
 
     /**

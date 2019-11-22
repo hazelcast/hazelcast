@@ -16,6 +16,7 @@
 
 package com.hazelcast.logging;
 
+@FunctionalInterface
 public interface LoggerFactory {
 
     ILogger getLogger(String name);

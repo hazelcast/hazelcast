@@ -20,6 +20,7 @@ package com.hazelcast.scheduledexecutor;
  * The <code>NamedTask</code> interface should be implemented by any task that needs to have an identification and enhanced
  * atomicity upon scheduling the task.
  */
+@FunctionalInterface
 public interface NamedTask {
 
     /**

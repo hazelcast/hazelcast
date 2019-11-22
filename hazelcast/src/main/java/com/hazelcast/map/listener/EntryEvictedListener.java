@@ -35,6 +35,7 @@ import com.hazelcast.core.EntryEvent;
  *
  * @since 3.5
  */
+@FunctionalInterface
 public interface EntryEvictedListener<K, V> extends MapListener {
 
     /**

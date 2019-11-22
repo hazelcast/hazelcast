@@ -19,7 +19,7 @@ package com.hazelcast.config;
 /**
  * Interface for all config builders.
  */
-
+@FunctionalInterface
 public interface ConfigBuilder {
 
     /**

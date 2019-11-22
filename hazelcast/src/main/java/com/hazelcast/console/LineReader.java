@@ -19,6 +19,7 @@ package com.hazelcast.console;
 /**
  * Reads a line of input.
  */
+@FunctionalInterface
 public interface LineReader {
 
     String readLine() throws Exception;
