@@ -7295,7 +7295,7 @@ public class MemberCompatibilityTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
-    private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
+     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
         ClientMessage.ForwardFrameIterator binaryFrameIterator = binaryMessage.frameIterator();

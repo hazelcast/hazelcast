@@ -7273,7 +7273,7 @@ public class MemberCompatibilityNullTest_2_0 {
     @Test
     public void test_MCRunScriptCodec_encodeResponse() {
         int fileClientMessageIndex = 806;
-        ClientMessage encoded = MCRunScriptCodec.encodeResponse(aString);
+        ClientMessage encoded = MCRunScriptCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7295,7 +7295,7 @@ public class MemberCompatibilityNullTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
-    private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
+     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
         ClientMessage.ForwardFrameIterator binaryFrameIterator = binaryMessage.frameIterator();

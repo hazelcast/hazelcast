@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given script on the member it's called on.
  */
-@Generated("5628c36ebf0a70bea7fd5e17b39a4f6c")
+@Generated("2429549ee6a0e6d426ffa1ed40c22e3f")
 public final class MCRunScriptCodec {
     //hex: 0x201100
     public static final int REQUEST_MESSAGE_TYPE = 2101504;
@@ -91,16 +91,16 @@ public final class MCRunScriptCodec {
         /**
          * Execution result: script output.
          */
-        public java.lang.String result;
+        public @Nullable java.lang.String result;
     }
 
-    public static ClientMessage encodeResponse(java.lang.String result) {
+    public static ClientMessage encodeResponse(@Nullable java.lang.String result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        StringCodec.encode(clientMessage, result);
+        CodecUtil.encodeNullable(clientMessage, result, StringCodec::encode);
         return clientMessage;
     }
 
@@ -109,7 +109,7 @@ public final class MCRunScriptCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.result = StringCodec.decode(iterator);
+        response.result = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return response;
     }
 

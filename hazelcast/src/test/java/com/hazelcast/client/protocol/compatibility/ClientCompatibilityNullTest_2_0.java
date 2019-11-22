@@ -6796,7 +6796,7 @@ public class ClientCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 806;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCRunScriptCodec.ResponseParameters parameters = MCRunScriptCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aString, parameters.result));
+        assertTrue(isEqual(null, parameters.result));
     }
 
     @Test
