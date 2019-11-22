@@ -52,6 +52,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
     /** Calcite optimizer class name. */
     private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
+    /** EXPLAIN command. */
+    private static final String EXPLAIN = "explain ";
+
     /** Node engine. */
     private final NodeEngineImpl nodeEngine;
 
@@ -81,6 +84,24 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
     @Override
     public SqlCursor query(String sql, Object... args) {
+        if (sql == null || sql.isEmpty()) {
+            throw new HazelcastException("SQL cannot be null or empty.");
+        }
+
+        if (isExplain(sql)) {
+            String unwrappedSql = unwrapExplain(sql);
+
+            if (unwrappedSql.isEmpty()) {
+                throw new HazelcastException("SQL to be explained cannot be empty.");
+            }
+
+            QueryPlan plan = getPlan(unwrappedSql);
+
+            QueryExplain explain = QueryExplain.fromPlan(sql, plan);
+
+            return explain.asCursor();
+        }
+
         QueryPlan plan = getPlan(sql);
 
         List<Object> args0;
@@ -284,5 +305,17 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
         assert absoluteDeploymentOffset >= 0;
 
         return absoluteDeploymentOffset % workerPool.getThreadCount();
+    }
+
+    private static boolean isExplain(String sql) {
+        assert sql != null;
+
+        return sql.toLowerCase().startsWith(EXPLAIN);
+    }
+
+    private static String unwrapExplain(String sql) {
+        assert isExplain(sql);
+
+        return sql.substring(EXPLAIN.length()).trim();
     }
 }

@@ -26,10 +26,7 @@ import java.util.Objects;
 /**
  * Converts replicated input into partitioned.
  */
-public class ReplicatedToPartitionedPhysicalNode implements PhysicalNode {
-    /** Upstream node. */
-    private PhysicalNode upstream;
-
+public class ReplicatedToPartitionedPhysicalNode extends UniInputPhysicalNode {
     /** Function which should be used for hashing. */
     private HashFunction hashFunction;
 
@@ -38,12 +35,9 @@ public class ReplicatedToPartitionedPhysicalNode implements PhysicalNode {
     }
 
     public ReplicatedToPartitionedPhysicalNode(PhysicalNode upstream, HashFunction hashFunction) {
-        this.upstream = upstream;
-        this.hashFunction = hashFunction;
-    }
+        super(upstream);
 
-    public PhysicalNode getUpstream() {
-        return upstream;
+        this.hashFunction = hashFunction;
     }
 
     public HashFunction getHashFunction() {
@@ -58,14 +52,12 @@ public class ReplicatedToPartitionedPhysicalNode implements PhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(upstream);
+    public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeObject(hashFunction);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        upstream = in.readObject();
+    public void readData0(ObjectDataInput in) throws IOException {
         hashFunction = in.readObject();
     }
 

@@ -256,7 +256,7 @@ public final class JoinPhysicalRule extends RelOptRule {
      * @param right Right input.
      * @return Transformations.
      */
-    @SuppressWarnings("checkstyle:MethodLength")
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     private List<RelNode> createTransformsEquiJoin(
         JoinType type,
         JoinLogicalRel logicalJoin,

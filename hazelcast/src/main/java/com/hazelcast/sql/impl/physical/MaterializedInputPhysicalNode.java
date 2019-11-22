@@ -16,44 +16,23 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 import java.util.Objects;
 
 /**
  * In-memory table.
  */
-public class MaterializedInputPhysicalNode implements PhysicalNode {
-    /** Upstream node. */
-    private PhysicalNode upstream;
-
+public class MaterializedInputPhysicalNode extends UniInputPhysicalNode {
     public MaterializedInputPhysicalNode() {
         // No-op.
     }
 
     public MaterializedInputPhysicalNode(PhysicalNode upstream) {
-        this.upstream = upstream;
-    }
-
-    public PhysicalNode getUpstream() {
-        return upstream;
+        super(upstream);
     }
 
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         visitor.onMaterializedInputNode(this);
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(upstream);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        upstream = in.readObject();
     }
 
     @Override

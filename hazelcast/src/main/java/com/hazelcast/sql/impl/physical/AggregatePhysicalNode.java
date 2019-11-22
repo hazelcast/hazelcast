@@ -28,10 +28,7 @@ import java.util.Objects;
 /**
  * Collocated aggregation.
  */
-public class AggregatePhysicalNode implements PhysicalNode {
-    /** Upstream node. */
-    private PhysicalNode upstream;
-
+public class AggregatePhysicalNode extends UniInputPhysicalNode {
     /** Group key. */
     private List<Integer> groupKey;
 
@@ -51,7 +48,8 @@ public class AggregatePhysicalNode implements PhysicalNode {
         List<AggregateExpression> expressions,
         int sortedGroupKeySize
     ) {
-        this.upstream = upstream;
+        super(upstream);
+
         this.groupKey = groupKey;
         this.expressions = expressions;
         this.sortedGroupKeySize = sortedGroupKeySize;
@@ -81,16 +79,14 @@ public class AggregatePhysicalNode implements PhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(upstream);
+    public void writeData0(ObjectDataOutput out) throws IOException {
         SerializationUtil.writeList(groupKey, out);
         SerializationUtil.writeList(expressions, out);
         out.writeInt(sortedGroupKeySize);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        upstream = in.readObject();
+    public void readData0(ObjectDataInput in) throws IOException {
         groupKey = SerializationUtil.readList(in);
         expressions = SerializationUtil.readList(in);
         sortedGroupKeySize = in.readInt();

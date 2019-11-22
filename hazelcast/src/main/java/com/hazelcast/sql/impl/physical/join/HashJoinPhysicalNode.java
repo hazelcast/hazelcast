@@ -76,16 +76,16 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeData0(ObjectDataOutput out) throws IOException {
+        super.writeData0(out);
 
         SerializationUtil.writeList(leftHashKeys, out);
         SerializationUtil.writeList(rightHashKeys, out);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
+    public void readData0(ObjectDataInput in) throws IOException {
+        super.readData0(in);
 
         leftHashKeys = SerializationUtil.readList(in);
         rightHashKeys = SerializationUtil.readList(in);

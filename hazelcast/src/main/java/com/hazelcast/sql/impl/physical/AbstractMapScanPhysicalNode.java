@@ -28,7 +28,7 @@ import java.util.Objects;
 /**
  * Base class to scan a map.
  */
-public abstract class AbstractMapScanPhysicalNode implements PhysicalNode {
+public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode implements PhysicalNode {
     /** Map name. */
     protected String mapName;
 

@@ -16,24 +16,17 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
- * Physical node.
+ * A node without inputs.
  */
-public interface PhysicalNode extends DataSerializable {
-    /**
-     * Visit the node.
-     *
-     * @param visitor Visitor.
-     */
-    void visit(PhysicalNodeVisitor visitor);
+public abstract class ZeroInputPhysicalNode implements PhysicalNode {
+    @Override
+    public final int getInputCount() {
+        return 0;
+    }
 
-    int getInputCount();
-
-    PhysicalNode getInput(int i);
-
-    default PhysicalNode getInput() {
-        return getInput(0);
+    @Override
+    public final PhysicalNode getInput(int i) {
+        throw new IllegalArgumentException("The node has no inputs.");
     }
 }

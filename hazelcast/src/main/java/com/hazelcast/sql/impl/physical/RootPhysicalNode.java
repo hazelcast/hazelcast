@@ -16,29 +16,18 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 import java.util.Objects;
 
 /**
  * Root physical node. Performs final collection of results.
  */
-public class RootPhysicalNode implements PhysicalNode {
-    /** Upstream node. */
-    private PhysicalNode upstream;
-
+public class RootPhysicalNode extends UniInputPhysicalNode {
     public RootPhysicalNode() {
         // No-op.
     }
 
     public RootPhysicalNode(PhysicalNode upstream) {
-        this.upstream = upstream;
-    }
-
-    public PhysicalNode getUpstream() {
-        return upstream;
+        super(upstream);
     }
 
     @Override
@@ -46,16 +35,6 @@ public class RootPhysicalNode implements PhysicalNode {
         upstream.visit(visitor);
 
         visitor.onRootNode(this);
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(upstream);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        upstream = in.readObject();
     }
 
     @Override

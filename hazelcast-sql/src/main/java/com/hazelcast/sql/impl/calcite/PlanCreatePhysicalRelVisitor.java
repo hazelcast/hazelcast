@@ -222,8 +222,8 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         int edge = nextEdge();
 
         UnicastSendPhysicalNode sendNode = new UnicastSendPhysicalNode(
-            edge,
             upstreamNode,
+            edge,
             new FieldHashFunction(rel.getHashFields())
         );
 
@@ -244,8 +244,8 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         int edge = nextEdge();
 
         BroadcastSendPhysicalNode sendNode = new BroadcastSendPhysicalNode(
-            edge,
-            upstreamNode
+            upstreamNode,
+            edge
         );
 
         addFragment(sendNode,  QueryFragmentMapping.DATA_MEMBERS);
@@ -269,8 +269,8 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         int edge = nextEdge();
 
         UnicastSendPhysicalNode sendNode = new UnicastSendPhysicalNode(
-            edge,
             sortNode,
+            edge,
             AllFieldsHashFunction.INSTANCE
         );
 

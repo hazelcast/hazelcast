@@ -38,7 +38,7 @@ import java.util.List;
  * Rule for physical aggregate optimization.
  */
 // TODO: Handle distinct aggregates - how - accumulate all entries locally, and then redistribute?
-public class AggregatePhysicalRule extends RelOptRule {
+public final class AggregatePhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new AggregatePhysicalRule();
 
     private AggregatePhysicalRule() {

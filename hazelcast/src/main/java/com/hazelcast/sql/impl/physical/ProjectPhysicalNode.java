@@ -28,10 +28,7 @@ import java.util.Objects;
 /**
  * Projection.
  */
-public class ProjectPhysicalNode implements PhysicalNode {
-    /** Upstream node. */
-    private PhysicalNode upstream;
-
+public class ProjectPhysicalNode extends UniInputPhysicalNode {
     /** Projections. */
     private List<Expression> projects;
 
@@ -40,12 +37,9 @@ public class ProjectPhysicalNode implements PhysicalNode {
     }
 
     public ProjectPhysicalNode(PhysicalNode upstream, List<Expression> projects) {
-        this.upstream = upstream;
-        this.projects = projects;
-    }
+        super(upstream);
 
-    public PhysicalNode getUpstream() {
-        return upstream;
+        this.projects = projects;
     }
 
     public List<Expression> getProjects() {
@@ -60,14 +54,12 @@ public class ProjectPhysicalNode implements PhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(upstream);
+    public void writeData0(ObjectDataOutput out) throws IOException {
         SerializationUtil.writeList(projects, out);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        upstream = in.readObject();
+    public void readData0(ObjectDataInput in) throws IOException {
         projects = SerializationUtil.readList(in);
     }
 

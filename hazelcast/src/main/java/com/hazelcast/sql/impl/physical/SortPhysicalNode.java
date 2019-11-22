@@ -24,10 +24,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
-public class SortPhysicalNode implements PhysicalNode {
-    /** Upstream node. */
-    private PhysicalNode upstream;
-
+public class SortPhysicalNode extends UniInputPhysicalNode {
     /** Expressions. */
     private List<Expression> expressions;
 
@@ -39,13 +36,10 @@ public class SortPhysicalNode implements PhysicalNode {
     }
 
     public SortPhysicalNode(PhysicalNode upstream, List<Expression> expressions, List<Boolean> ascs) {
-        this.upstream = upstream;
+        super(upstream);
+
         this.expressions = expressions;
         this.ascs = ascs;
-    }
-
-    public PhysicalNode getUpstream() {
-        return upstream;
     }
 
     public List<Expression> getExpressions() {
@@ -64,15 +58,13 @@ public class SortPhysicalNode implements PhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(upstream);
+    public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeObject(expressions);
         out.writeObject(ascs);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        upstream = in.readObject();
+    public void readData0(ObjectDataInput in) throws IOException {
         expressions = in.readObject();
         ascs = in.readObject();
     }

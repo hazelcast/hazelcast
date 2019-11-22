@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.UniInputPhysicalNode;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -27,24 +28,18 @@ import java.util.Objects;
 /**
  * Broadcast send node.
  */
-public class BroadcastSendPhysicalNode implements EdgeAwarePhysicalNode {
+public class BroadcastSendPhysicalNode extends UniInputPhysicalNode implements EdgeAwarePhysicalNode {
     /** Edge ID. */
     private int edgeId;
-
-    /** Upstream node. */
-    private PhysicalNode upstream;
 
     public BroadcastSendPhysicalNode() {
         // No-op.
     }
 
-    public BroadcastSendPhysicalNode(int edgeId, PhysicalNode upstream) {
-        this.edgeId = edgeId;
-        this.upstream = upstream;
-    }
+    public BroadcastSendPhysicalNode(PhysicalNode upstream, int edgeId) {
+        super(upstream);
 
-    public PhysicalNode getUpstream() {
-        return upstream;
+        this.edgeId = edgeId;
     }
 
     @Override
@@ -65,15 +60,13 @@ public class BroadcastSendPhysicalNode implements EdgeAwarePhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
-        out.writeObject(upstream);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData0(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
-        upstream = in.readObject();
     }
 
     @Override

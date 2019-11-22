@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * Performs split of aggregate calls into local and distributed parts.
  */
-public class AggregateCallSplit {
+public final class AggregateCallSplit {
     /** Local aggregate functions. */
     private final List<AggregateCall> localCalls;
 
@@ -52,6 +52,7 @@ public class AggregateCallSplit {
      * @param calls Calls to be split.
      * @return Split calls.
      */
+    @SuppressWarnings("checkstyle:MethodLength")
     public static AggregateCallSplit of(RelOptCluster cluster, int groupCount, List<AggregateCall> calls) {
         List<AggregateCall> localCalls = new ArrayList<>();
         List<AggregateCall> distributedCalls = new ArrayList<>();

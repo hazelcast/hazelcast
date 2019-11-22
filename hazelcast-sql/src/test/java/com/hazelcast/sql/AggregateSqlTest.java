@@ -198,7 +198,7 @@ public class AggregateSqlTest extends SqlTestSupport {
         }
 
         public double getAvg() {
-            return cnt == 0 ? 0 : (double)sum/cnt;
+            return cnt == 0 ? 0 : (double) sum / cnt;
         }
     }
 }

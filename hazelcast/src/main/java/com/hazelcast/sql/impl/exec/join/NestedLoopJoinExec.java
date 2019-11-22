@@ -82,7 +82,7 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
         rightState.setup(ctx);
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
     public IterationResult advance() {
         while (true) {

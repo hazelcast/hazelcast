@@ -63,7 +63,7 @@ public final class MinMaxAggregateCollector extends AggregateCollector {
 
     private static Comparable asComparable(Object val) {
         if (val instanceof Comparable) {
-            return (Comparable)val;
+            return (Comparable) val;
         } else {
             throw new HazelcastSqlException(-1, "Value is not comparable: " + val);
         }

@@ -26,10 +26,7 @@ import java.util.Objects;
 /**
  * Filter node.
  */
-public class FilterPhysicalNode implements PhysicalNode {
-    /** Upstream node. */
-    private PhysicalNode upstream;
-
+public class FilterPhysicalNode extends UniInputPhysicalNode {
     /** Condition. */
     private Expression<Boolean> filter;
 
@@ -38,14 +35,11 @@ public class FilterPhysicalNode implements PhysicalNode {
     }
 
     public FilterPhysicalNode(PhysicalNode upstream, Expression<Boolean> filter) {
+        super(upstream);
+
         assert filter != null;
 
-        this.upstream = upstream;
         this.filter = filter;
-    }
-
-    public PhysicalNode getUpstream() {
-        return upstream;
     }
 
     public Expression<Boolean> getFilter() {
@@ -60,14 +54,12 @@ public class FilterPhysicalNode implements PhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(upstream);
+    public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeObject(filter);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        upstream = in.readObject();
+    public void readData0(ObjectDataInput in) throws IOException {
         filter = in.readObject();
     }
 

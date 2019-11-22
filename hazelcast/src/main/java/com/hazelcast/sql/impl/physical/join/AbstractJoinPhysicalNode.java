@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.physical.join;
 
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.physical.BiInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.io.IOException;
@@ -27,13 +27,7 @@ import java.io.IOException;
 /**
  * Abstract join node.
  */
-public abstract class AbstractJoinPhysicalNode implements PhysicalNode {
-    /** Left input. */
-    protected PhysicalNode left;
-
-    /** Right input. */
-    protected PhysicalNode right;
-
+public abstract class AbstractJoinPhysicalNode extends BiInputPhysicalNode {
     /** Join condition. */
     protected Expression<Boolean> condition;
 
@@ -58,20 +52,12 @@ public abstract class AbstractJoinPhysicalNode implements PhysicalNode {
         boolean semi,
         int rightRowColumnCount
     ) {
-        this.left = left;
-        this.right = right;
+        super(left, right);
+
         this.condition = condition;
         this.outer = outer;
         this.semi = semi;
         this.rightRowColumnCount = rightRowColumnCount;
-    }
-
-    public PhysicalNode getLeft() {
-        return left;
-    }
-
-    public PhysicalNode getRight() {
-        return right;
     }
 
     public Expression<Boolean> getCondition() {
@@ -91,18 +77,14 @@ public abstract class AbstractJoinPhysicalNode implements PhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(left);
-        out.writeObject(right);
+    public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeObject(condition);
         out.writeBoolean(outer);
         out.writeInt(rightRowColumnCount);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        left = in.readObject();
-        right = in.readObject();
+    public void readData0(ObjectDataInput in) throws IOException {
         condition = in.readObject();
         outer = in.readBoolean();
         rightRowColumnCount = in.readInt();

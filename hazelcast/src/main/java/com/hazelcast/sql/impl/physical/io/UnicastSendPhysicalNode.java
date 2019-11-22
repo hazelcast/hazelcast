@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.UniInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.hash.HashFunction;
 
 import java.io.IOException;
@@ -28,12 +29,9 @@ import java.util.Objects;
 /**
  * Node which unicasts data to remote stripes.
  */
-public class UnicastSendPhysicalNode implements EdgeAwarePhysicalNode {
+public class UnicastSendPhysicalNode extends UniInputPhysicalNode implements EdgeAwarePhysicalNode {
     /** Edge ID. */
     private int edgeId;
-
-    /** Upstream. */
-    private PhysicalNode upstream;
 
     /** Partition hasher (get partition hash from row). */
     private HashFunction hashFunction;
@@ -42,14 +40,11 @@ public class UnicastSendPhysicalNode implements EdgeAwarePhysicalNode {
         // No-op.
     }
 
-    public UnicastSendPhysicalNode(int edgeId, PhysicalNode upstream, HashFunction hashFunction) {
-        this.edgeId = edgeId;
-        this.upstream = upstream;
-        this.hashFunction = hashFunction;
-    }
+    public UnicastSendPhysicalNode(PhysicalNode upstream, int edgeId, HashFunction hashFunction) {
+        super(upstream);
 
-    public PhysicalNode getUpstream() {
-        return upstream;
+        this.edgeId = edgeId;
+        this.hashFunction = hashFunction;
     }
 
     public HashFunction getHashFunction() {
@@ -74,16 +69,14 @@ public class UnicastSendPhysicalNode implements EdgeAwarePhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
-        out.writeObject(upstream);
         out.writeObject(hashFunction);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData0(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
-        upstream = in.readObject();
         hashFunction = in.readObject();
     }
 

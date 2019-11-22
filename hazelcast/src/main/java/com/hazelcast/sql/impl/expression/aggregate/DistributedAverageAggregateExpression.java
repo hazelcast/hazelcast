@@ -65,7 +65,7 @@ public class DistributedAverageAggregateExpression<T> extends AggregateExpressio
             resType = AverageAggregateExpression.returnType(sumOperandType);
         }
 
-        ((AverageAggregateCollector)collector).collectMany(sumOperandValue, sumOperandType, resType, count);
+        ((AverageAggregateCollector) collector).collectMany(sumOperandValue, sumOperandType, resType, count);
     }
 
     @Override
