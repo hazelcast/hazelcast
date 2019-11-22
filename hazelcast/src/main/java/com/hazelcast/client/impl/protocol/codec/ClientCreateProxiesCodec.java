@@ -40,12 +40,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("18c92420c7b9a3b32001827af09c5b6d")
+@Generated("63cce226c00c8e505deb9e11ac68818b")
 public final class ClientCreateProxiesCodec {
-    //hex: 0x001100
-    public static final int REQUEST_MESSAGE_TYPE = 4352;
-    //hex: 0x001101
-    public static final int RESPONSE_MESSAGE_TYPE = 4353;
+    //hex: 0x000F00
+    public static final int REQUEST_MESSAGE_TYPE = 3840;
+    //hex: 0x000F01
+    public static final int RESPONSE_MESSAGE_TYPE = 3841;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -67,7 +67,6 @@ public final class ClientCreateProxiesCodec {
     public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.String>> proxies) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.CreateProxies");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

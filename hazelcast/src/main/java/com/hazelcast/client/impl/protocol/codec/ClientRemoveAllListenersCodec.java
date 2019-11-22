@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("b469765dee7bc92b0e0f048378777d42")
+@Generated("5cc38b712347f1b116ebbe12f48c314a")
 public final class ClientRemoveAllListenersCodec {
-    //hex: 0x000700
-    public static final int REQUEST_MESSAGE_TYPE = 1792;
-    //hex: 0x000701
-    public static final int RESPONSE_MESSAGE_TYPE = 1793;
+    //hex: 0x000600
+    public static final int REQUEST_MESSAGE_TYPE = 1536;
+    //hex: 0x000601
+    public static final int RESPONSE_MESSAGE_TYPE = 1537;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -55,7 +55,6 @@ public final class ClientRemoveAllListenersCodec {
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.RemoveAllListeners");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

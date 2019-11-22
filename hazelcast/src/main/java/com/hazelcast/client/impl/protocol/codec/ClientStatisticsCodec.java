@@ -192,12 +192,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * 
  * The metrics blob constructed this way is then gets ZLIB compressed.
  */
-@Generated("80eb369fd42a332e2113434c25fe2a0c")
+@Generated("141f31d812e32f9f4eafe1eaea039cea")
 public final class ClientStatisticsCodec {
-    //hex: 0x000E00
-    public static final int REQUEST_MESSAGE_TYPE = 3584;
-    //hex: 0x000E01
-    public static final int RESPONSE_MESSAGE_TYPE = 3585;
+    //hex: 0x000D00
+    public static final int REQUEST_MESSAGE_TYPE = 3328;
+    //hex: 0x000D01
+    public static final int RESPONSE_MESSAGE_TYPE = 3329;
     private static final int REQUEST_TIMESTAMP_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TIMESTAMP_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -227,7 +227,6 @@ public final class ClientStatisticsCodec {
     public static ClientMessage encodeRequest(long timestamp, java.lang.String clientAttributes, byte[] metricsBlob) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.Statistics");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

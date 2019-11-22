@@ -28,11 +28,11 @@ public interface InvokerWrapper {
 
     Future invokeOnPartitionOwner(Object request, int partitionId);
 
-    Object invokeOnAllPartitions(Object request) throws Exception;
+    Object invokeOnAllPartitions(Object request, boolean urgent) throws Exception;
 
     Future invokeOnTarget(Object operation, Address address);
 
-    Object invoke(Object operation);
+    Object invoke(Object operation, boolean urgent);
 
     void executeOperation(Operation op);
 }

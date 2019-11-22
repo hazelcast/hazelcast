@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("d1b722e59a280bcb04d603c09a0585ba")
+@Generated("282a83eaef417a5503b7012435390ee6")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -44,9 +44,7 @@ public final class ClientAuthenticationCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 257;
     private static final int REQUEST_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int REQUEST_PARTITION_COUNT_FIELD_OFFSET = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int REQUEST_CLUSTER_ID_FIELD_OFFSET = REQUEST_PARTITION_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLUSTER_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_STATUS_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_UUID_FIELD_OFFSET = RESPONSE_STATUS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_SERIALIZATION_VERSION_FIELD_OFFSET = RESPONSE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -106,31 +104,16 @@ public final class ClientAuthenticationCodec {
          * User defined labels of the client instance
          */
         public java.util.List<java.lang.String> labels;
-
-        /**
-         * the expected partition count of the cluster. Checked on the server side when provided.
-         * Authentication fails and 3:NOT_ALLOWED_IN_CLUSTER returned, in case of mismatch
-         */
-        public int partitionCount;
-
-        /**
-         * the expected id of the cluster. Checked on the server side when provided.
-         * Authentication fails and 3:NOT_ALLOWED_IN_CLUSTER returned, in case of mismatch
-         */
-        public @Nullable java.util.UUID clusterId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String clusterName, @Nullable java.lang.String username, @Nullable java.lang.String password, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels, int partitionCount, @Nullable java.util.UUID clusterId) {
+    public static ClientMessage encodeRequest(java.lang.String clusterName, @Nullable java.lang.String username, @Nullable java.lang.String password, @Nullable java.util.UUID uuid, java.lang.String clientType, byte serializationVersion, java.lang.String clientHazelcastVersion, java.lang.String clientName, java.util.Collection<java.lang.String> labels) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.Authentication");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         encodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
-        encodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET, partitionCount);
-        encodeUUID(initialFrame.content, REQUEST_CLUSTER_ID_FIELD_OFFSET, clusterId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, clusterName);
         CodecUtil.encodeNullable(clientMessage, username, StringCodec::encode);
@@ -148,8 +131,6 @@ public final class ClientAuthenticationCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.serializationVersion = decodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET);
-        request.partitionCount = decodeInt(initialFrame.content, REQUEST_PARTITION_COUNT_FIELD_OFFSET);
-        request.clusterId = decodeUUID(initialFrame.content, REQUEST_CLUSTER_ID_FIELD_OFFSET);
         request.clusterName = StringCodec.decode(iterator);
         request.username = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.password = CodecUtil.decodeNullable(iterator, StringCodec::decode);
@@ -189,14 +170,12 @@ public final class ClientAuthenticationCodec {
         public java.lang.String serverHazelcastVersion;
 
         /**
-         * the expected partition count of the cluster. Checked on the server side when provided.
-         * Authentication fails and 3:NOT_ALLOWED_IN_CLUSTER returned, in case of mismatch
+         * Partition count of the cluster.
          */
         public int partitionCount;
 
         /**
-         * the expected id of the cluster. Checked on the server side when provided.
-         * Authentication fails and 3:NOT_ALLOWED_IN_CLUSTER returned, in case of mismatch
+         * UUID of the cluster that the client authenticated.
          */
         public java.util.UUID clusterId;
     }

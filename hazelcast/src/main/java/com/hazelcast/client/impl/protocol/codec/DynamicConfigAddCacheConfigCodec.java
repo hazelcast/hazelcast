@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cache configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("57d8af89e7f22335e9be9911ea1534d9")
+@Generated("0ea93cc67c912d6a5a419a6c7daa671c")
 public final class DynamicConfigAddCacheConfigCodec {
     //hex: 0x1B0E00
     public static final int REQUEST_MESSAGE_TYPE = 1773056;
@@ -202,7 +202,6 @@ public final class DynamicConfigAddCacheConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.lang.String keyType, @Nullable java.lang.String valueType, boolean statisticsEnabled, boolean managementEnabled, boolean readThrough, boolean writeThrough, @Nullable java.lang.String cacheLoaderFactory, @Nullable java.lang.String cacheWriterFactory, @Nullable java.lang.String cacheLoader, @Nullable java.lang.String cacheWriter, int backupCount, int asyncBackupCount, java.lang.String inMemoryFormat, @Nullable java.lang.String splitBrainProtectionName, @Nullable java.lang.String mergePolicy, int mergeBatchSize, boolean disablePerEntryInvalidationEvents, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, @Nullable java.lang.String expiryPolicyFactoryClassName, @Nullable com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig, @Nullable java.util.Collection<com.hazelcast.config.CacheSimpleEntryListenerConfig> cacheEntryListeners, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("DynamicConfig.AddCacheConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

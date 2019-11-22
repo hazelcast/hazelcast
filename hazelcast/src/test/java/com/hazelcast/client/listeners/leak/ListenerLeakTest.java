@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
@@ -111,7 +111,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
 
     private Collection<ClientConnectionRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
         return listenerService.getActiveRegistrations(id).values();
     }
 
@@ -249,7 +249,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         hazelcast.shutdown();
 
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
         assertTrueEventually(() -> {
             assertEquals(0, listenerService.getEventHandlers().size());
         });

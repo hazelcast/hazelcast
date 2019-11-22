@@ -17,10 +17,10 @@
 package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.client.Client;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.cluster.Address;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -110,6 +110,4 @@ public interface ClientClusterService {
      * @return true if successfully removed, false otherwise.
      */
     boolean removeMembershipListener(@Nonnull UUID registrationId);
-
-    void reset();
 }

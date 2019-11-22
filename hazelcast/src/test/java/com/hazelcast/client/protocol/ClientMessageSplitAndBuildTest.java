@@ -70,7 +70,7 @@ public class ClientMessageSplitAndBuildTest {
         }
 
         return ClientAuthenticationCodec.encodeRequest(clusterName, username, password, uuid, clientType,
-                (byte) 1, clientSerializationVersion, clientName, labels, 1, clusterId);
+                (byte) 1, clientSerializationVersion, clientName, labels);
     }
 
     @Before

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.connection.nio;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -237,7 +237,7 @@ public class ClientConnection implements Connection {
         if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.BACKUP_EVENT_FLAG)) {
             responseHandler.accept(message);
         } else if (ClientMessage.isFlagSet(message.getHeaderFlags(), ClientMessage.IS_EVENT_FLAG)) {
-            AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
+            ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
             listenerService.handleEventMessage(message);
         } else {
             responseHandler.accept(message);

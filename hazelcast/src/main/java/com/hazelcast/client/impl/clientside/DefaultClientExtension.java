@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.nio.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
@@ -32,31 +32,29 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.memory.DefaultMemoryStats;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.internal.memory.DefaultMemoryStats;
-import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.serialization.SerializationService;
-
-import java.util.function.Supplier;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
-import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 
 @SuppressWarnings("WeakerAccess")
 public class DefaultClientExtension implements ClientExtension {
@@ -98,12 +96,7 @@ public class DefaultClientExtension implements ClientExtension {
                     .setManagedContext(new HazelcastClientManagedContext(client, config.getManagedContext()))
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
-                    .setNotActiveExceptionSupplier(new Supplier<RuntimeException>() {
-                        @Override
-                        public RuntimeException get() {
-                            return new HazelcastClientNotActiveException("Client is shutdown");
-                        }
-                    })
+                    .setNotActiveExceptionSupplier(HazelcastClientNotActiveException::new)
                     .build();
         } catch (Exception e) {
             throw rethrow(e);

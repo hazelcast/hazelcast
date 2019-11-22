@@ -2022,14 +2022,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
             return new DataAwareEntryEvent<>(member, eventType, name, keyData, valueData, oldValueData,
                     mergingValueData, getSerializationService());
         }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
     }
 
     private class ClientMapPartitionLostEventHandler
@@ -2040,14 +2032,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMapPartitionLostEventHandler(MapPartitionLostListener listener) {
             this.listener = listener;
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
         }
 
         @Override

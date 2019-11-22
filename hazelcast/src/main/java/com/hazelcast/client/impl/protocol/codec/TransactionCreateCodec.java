@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("1b740b1e2ce72571a6ee1bd7f0945c0b")
+@Generated("d1924db66b1df99e9a975683a900601d")
 public final class TransactionCreateCodec {
     //hex: 0x150200
     public static final int REQUEST_MESSAGE_TYPE = 1376768;
@@ -86,7 +86,6 @@ public final class TransactionCreateCodec {
     public static ClientMessage encodeRequest(long timeout, int durability, int transactionType, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(true);
         clientMessage.setOperationName("Transaction.Create");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

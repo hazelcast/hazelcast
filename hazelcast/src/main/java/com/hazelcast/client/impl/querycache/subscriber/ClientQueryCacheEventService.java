@@ -23,12 +23,17 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
-import com.hazelcast.map.IMapEvent;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.TimeoutRunnable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EventLostEvent;
+import com.hazelcast.map.IMapEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
@@ -43,11 +48,6 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.executor.StripedExecutor;
-import com.hazelcast.internal.util.executor.StripedRunnable;
-import com.hazelcast.internal.util.executor.TimeoutRunnable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -57,11 +57,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.createIMapEvent;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.createIMapEvent;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
 
 /**
  * Client side event service implementation for query cache.
@@ -87,7 +87,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     private final ConcurrentMap<String, QueryCacheToListenerMapper> registrations;
 
     public ClientQueryCacheEventService(HazelcastClientInstanceImpl client) {
-        AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.listenerService = listenerService;
         this.serializationService = client.getSerializationService();
         this.executor = listenerService.getEventExecutor();
@@ -249,16 +249,6 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
 
         private QueryCacheHandler(ListenerAdapter adapter) {
             this.adapter = adapter;
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-            // NOP
-        }
-
-        @Override
-        public void onListenerRegister() {
-            // NOP
         }
 
         @Override

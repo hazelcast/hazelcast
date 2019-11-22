@@ -17,9 +17,10 @@
 package com.hazelcast.client.map.impl.querycache;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerRegistration;
-import com.hazelcast.client.impl.spi.impl.listener.SmartClientListenerService;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PredicateConfig;
@@ -30,7 +31,6 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientQueryCacheDestroyResourcesTest extends HazelcastTestSupport {
+public class ClientQueryCacheDestroyResourcesTest extends ClientTestSupport {
 
     private static final String MAP_NAME_1 = "ClientQueryCacheClientContextTest-1";
     private static final String MAP_NAME_2 = "ClientQueryCacheClientContextTest-2";
@@ -90,7 +90,7 @@ public class ClientQueryCacheDestroyResourcesTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void destroy_deregisters_listeners() throws Exception {
+    public void destroy_deregisters_listeners() {
         QueryCache<String, String> queryCache1 = map1.getQueryCache(QUERY_CACHE_NAME_1);
         QueryCache<String, String> queryCache2 = map2.getQueryCache(QUERY_CACHE_NAME_2);
         QueryCache<String, String> queryCache3 = map3.getQueryCache(QUERY_CACHE_NAME_3);
@@ -99,14 +99,11 @@ public class ClientQueryCacheDestroyResourcesTest extends HazelcastTestSupport {
         queryCache2.destroy();
         queryCache3.destroy();
 
-        SmartClientListenerService smartListenerService = getSmartListenerService();
-        Map<UUID, ClientListenerRegistration> registrations = smartListenerService.getRegistrations();
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(clientInstance);
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+        Map<UUID, ClientListenerRegistration> registrations = listenerService.getRegistrations();
 
-        //we expect at least 1 for backup listener.
-        assertEquals(registrations.toString(), 1, registrations.size());
-    }
-
-    protected SmartClientListenerService getSmartListenerService() {
-        return (SmartClientListenerService) ((HazelcastClientProxy) clientInstance).client.getListenerService();
+        //we expect at least 2 for backup listener and cluster view listener
+        assertEquals(registrations.toString(), 2, registrations.size());
     }
 }

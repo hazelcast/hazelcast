@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given console command on the member it's called on.
  */
-@Generated("a1f1f91404cedec77cd0d331d8c9b7ac")
+@Generated("625e8e93cd7237750f4e8ec8bbf749cf")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x201200
     public static final int REQUEST_MESSAGE_TYPE = 2101760;
@@ -65,7 +65,6 @@ public final class MCRunConsoleCommandCodec {
     public static ClientMessage encodeRequest(@Nullable java.lang.String namespace, java.lang.String command) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MC.RunConsoleCommand");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

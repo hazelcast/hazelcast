@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("330dcace5742f0d9ede4a69c05f99bad")
+@Generated("a02b2f9b2f779e385b4aab4d6b7ee9a9")
 public final class ClientGetDistributedObjectsCodec {
-    //hex: 0x000A00
-    public static final int REQUEST_MESSAGE_TYPE = 2560;
-    //hex: 0x000A01
-    public static final int RESPONSE_MESSAGE_TYPE = 2561;
+    //hex: 0x000900
+    public static final int REQUEST_MESSAGE_TYPE = 2304;
+    //hex: 0x000901
+    public static final int RESPONSE_MESSAGE_TYPE = 2305;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -55,7 +55,6 @@ public final class ClientGetDistributedObjectsCodec {
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.GetDistributedObjects");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

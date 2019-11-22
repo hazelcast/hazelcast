@@ -166,25 +166,12 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         config.setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
 
         TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-        final HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
-        final CountDownLatch disconnected = new CountDownLatch(1);
-        final CountDownLatch connected = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED.equals(event.getState())) {
-                    connected.countDown();
-                } else if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED.equals(event.getState())) {
-                    disconnected.countDown();
-                }
-            }
-        });
-
-        final HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
-        final HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
 
@@ -215,10 +202,6 @@ public class ClientSplitBrainTest extends ClientTestSupport {
 
         // wait for cluster is merged back
         assertClusterSizeEventually(3, h1, h2, h3);
-
-        // wait for client is disconnected from h1 because of merge
-        assertOpenEventually(disconnected);
-        assertOpenEventually(connected);
 
         // wait for client to connect back to all nodes
         assertSizeEventually(3, clientInstanceImpl.getConnectionManager().getActiveConnections());

@@ -19,10 +19,9 @@ package com.hazelcast.client.impl.querycache.subscriber;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.Future;
@@ -57,10 +56,11 @@ public class ClientInvokerWrapper implements InvokerWrapper {
     }
 
     @Override
-    public Object invokeOnAllPartitions(Object request) {
+    public Object invokeOnAllPartitions(Object request, boolean urgent) {
         try {
             ClientMessage clientRequest = (ClientMessage) request;
-            final Future future = new ClientInvocation(client, clientRequest, null).invoke();
+            ClientInvocation invocation = new ClientInvocation(client, clientRequest, null);
+            Future future = urgent ? invocation.invokeUrgent() : invocation.invoke();
             Object result = future.get();
             return context.toObject(result);
         } catch (Exception e) {
@@ -79,11 +79,12 @@ public class ClientInvokerWrapper implements InvokerWrapper {
     }
 
     @Override
-    public Object invoke(Object request) {
+    public Object invoke(Object request, boolean urgent) {
         checkNotNull(request, "request cannot be null");
 
-        ClientInvocation invocation = new ClientInvocation(client, (ClientMessage) request, null);
-        ClientInvocationFuture future = invocation.invoke();
+        ClientMessage clientRequest = (ClientMessage) request;
+        ClientInvocation invocation = new ClientInvocation(client, clientRequest, null);
+        Future future = urgent ? invocation.invokeUrgent() : invocation.invoke();
         try {
             Object result = future.get();
             return context.toObject(result);
