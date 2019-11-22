@@ -19,20 +19,23 @@ package com.hazelcast.internal.crdt.pncounter;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.crdt.CRDTReplicationAwareService;
 import com.hazelcast.internal.crdt.CRDTReplicationContainer;
-import com.hazelcast.crdt.MutationDisallowedException;
-import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.internal.util.Memoizer;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.monitor.impl.LocalPNCounterStatsImpl;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,17 +45,15 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * Service responsible for {@link PNCounter} proxies and replication operation.
  */
-public class PNCounterService implements
-        ManagedService,
-        RemoteService,
-        CRDTReplicationAwareService<PNCounterImpl>,
-        SplitBrainProtectionAwareService,
-        StatisticsAwareService<LocalPNCounterStats> {
+public class PNCounterService implements ManagedService, RemoteService, CRDTReplicationAwareService<PNCounterImpl>,
+                                         SplitBrainProtectionAwareService, StatisticsAwareService<LocalPNCounterStats>,
+                                         DynamicMetricsProvider {
     /** The name under which this service is registered */
     public static final String SERVICE_NAME = "hz:impl:PNCounterService";
 
@@ -259,5 +260,10 @@ public class PNCounterService implements
     @SuppressWarnings("unchecked")
     public Map<String, LocalPNCounterStats> getStats() {
         return unmodifiableStatsMap;
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "pnCounter", getStats());
     }
 }

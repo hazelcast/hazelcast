@@ -34,6 +34,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
@@ -53,6 +55,7 @@ import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -95,8 +98,9 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, SplitBrainProtectionAwareService, SplitBrainHandlerService, ClusterStateListener {
+public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService, PartitionAwareService,
+                                                      SplitBrainProtectionAwareService, SplitBrainHandlerService,
+                                                      ClusterStateListener {
 
     public static final String TENANT_CONTROL_FACTORY = "com.hazelcast.spi.tenantcontrol.TenantControlFactory";
 
@@ -867,6 +871,37 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         ExpirationManager expManager = expirationManager;
         if (expManager != null) {
             expManager.onClusterStateChange(newState);
+        }
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        Map<String, LocalCacheStats> stats = getStats();
+
+        // cache
+        for (Map.Entry<String, LocalCacheStats> entry : stats.entrySet()) {
+            String cacheName = entry.getKey();
+            LocalCacheStats localInstanceStats = entry.getValue();
+
+            MetricDescriptor dsDescriptor = descriptor
+                .copy()
+                .withPrefix("cache")
+                .withDiscriminator("name", cacheName);
+            context.collect(dsDescriptor, localInstanceStats);
+        }
+
+        // near cache
+        for (Map.Entry<String, CacheStatisticsImpl> entry : statistics.entrySet()) {
+            String cacheName = entry.getKey();
+            CacheStatisticsImpl cacheStatsImpl = entry.getValue();
+            NearCacheStats nearCacheStats = cacheStatsImpl.getNearCacheStatistics();
+            if (nearCacheStats != null) {
+                MetricDescriptor nearCacheDescriptor = descriptor
+                    .copy()
+                    .withPrefix("cache.nearcache")
+                    .withDiscriminator("name", cacheName);
+                context.collect(nearCacheDescriptor, nearCacheStats);
+            }
         }
     }
 }

@@ -18,23 +18,27 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.internal.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class FlakeIdGeneratorService implements ManagedService, RemoteService,
-        StatisticsAwareService<LocalFlakeIdGeneratorStats> {
+                                                StatisticsAwareService<LocalFlakeIdGeneratorStats>, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
 
@@ -79,7 +83,7 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
 
     @Override
     public Map<String, LocalFlakeIdGeneratorStats> getStats() {
-        return new HashMap<String, LocalFlakeIdGeneratorStats>(statsMap);
+        return new HashMap<>(statsMap);
     }
 
     /**
@@ -95,5 +99,10 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
 
     private LocalFlakeIdGeneratorStatsImpl getLocalFlakeIdStats(String name) {
         return getOrPutIfAbsent(statsMap, name, localFlakeIdStatsConstructorFunction);
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "flakeIdGenerator", getStats());
     }
 }

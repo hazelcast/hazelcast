@@ -25,10 +25,13 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -64,6 +67,8 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     private static final String REPLICATED_MAP_NAME = "myReplicatedMap";
     private static final String TOPIC_NAME = "myTopic";
     private static final String NEAR_CACHE_MAP_NAME = "nearCacheMap";
+    private static final String PN_COUNTER_NAME = "myPNCounter";
+    private static final String FLAKE_ID_GENERATOR_NAME = "myFlakeIdGenerator";
     private HazelcastInstance hz;
 
     @Before
@@ -99,6 +104,20 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
 
         assertHasStatsEventually(MAP_NAME, "map.");
+    }
+
+    @Test
+    public void testMultiMap() {
+        final MultiMap<Integer, Integer> map = hz.getMultiMap(MAP_NAME);
+
+        Random random = new Random();
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            int key = random.nextInt(Integer.MAX_VALUE);
+            map.put(key, 23);
+            map.remove(key);
+        }
+
+        assertHasStatsEventually(MAP_NAME, "multiMap.");
     }
 
     @Test
@@ -174,6 +193,17 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testReliableTopic() {
+        final ITopic<Object> topic = hz.getReliableTopic(TOPIC_NAME);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            topic.publish(i);
+        }
+
+        assertHasStatsEventually(TOPIC_NAME, "reliableTopic.");
+    }
+
+    @Test
     public void testNearCache() {
         final IMap<Object, Object> map = hz.getMap(NEAR_CACHE_MAP_NAME);
 
@@ -183,6 +213,28 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         }
 
         assertHasStatsEventually(NEAR_CACHE_MAP_NAME, "map.nearcache");
+    }
+
+    @Test
+    public void testPnCounter() {
+        final PNCounter counter = hz.getPNCounter(PN_COUNTER_NAME);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            counter.addAndGet(i);
+        }
+
+        assertHasStatsEventually(PN_COUNTER_NAME, "pnCounter.");
+    }
+
+    @Test
+    public void testFlakeIdGenerator() {
+        final FlakeIdGenerator idGenerator = hz.getFlakeIdGenerator(FLAKE_ID_GENERATOR_NAME);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            idGenerator.newId();
+        }
+
+        assertHasStatsEventually(FLAKE_ID_GENERATOR_NAME, "flakeIdGenerator.");
     }
 
     private void assertHasStatsEventually(final String dsName, final String metricPrefix) {

@@ -16,9 +16,11 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.operations.QueueMergeOperation;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
@@ -26,19 +28,31 @@ import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.collection.LocalQueueStats;
-import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -49,18 +63,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.internal.partition.MigrationAwareService;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.internal.util.ConcurrencyUtil;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -76,10 +79,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
-import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
 /**
  * Provides important services via methods for the the Queue
@@ -87,26 +91,19 @@ import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
-        EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>,
-        SplitBrainProtectionAwareService, SplitBrainHandlerService {
+                                     EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>,
+                                     SplitBrainProtectionAwareService, SplitBrainHandlerService, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 
     private static final Object NULL_OBJECT = new Object();
 
-    private final ConcurrentMap<String, QueueContainer> containerMap
-            = new ConcurrentHashMap<String, QueueContainer>();
-    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap
-            = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
-    private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction
-            = new ConstructorFunction<String, LocalQueueStatsImpl>() {
-        @Override
-        public LocalQueueStatsImpl createNew(String key) {
-            return new LocalQueueStatsImpl();
-        }
-    };
+    private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
+    private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction =
+        key -> new LocalQueueStatsImpl();
 
-    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
             new ConstructorFunction<String, Object>() {
@@ -188,7 +185,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
+        Map<String, QueueContainer> migrationData = new HashMap<>();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -403,6 +400,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private int getPartitionId(String name) {
         Data keyData = serializationService.toData(name, StringPartitioningStrategy.INSTANCE);
         return partitionService.getPartitionId(keyData);
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "queue", getStats());
     }
 
     private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes> {

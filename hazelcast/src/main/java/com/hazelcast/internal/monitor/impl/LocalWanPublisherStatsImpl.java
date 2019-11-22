@@ -17,16 +17,18 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.wan.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
-import com.hazelcast.wan.impl.WanSyncStats;
+import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.ConsistencyCheckResult;
+import com.hazelcast.wan.impl.WanSyncStats;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
@@ -42,8 +44,11 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     private volatile boolean connected;
     private volatile WanPublisherState state;
+    @Probe
     private volatile int outboundQueueSize;
+    @Probe(unit = MS)
     private volatile long totalPublishLatency;
+    @Probe(unit = MS)
     private volatile long totalPublishedEventCount;
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;

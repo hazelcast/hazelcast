@@ -17,22 +17,25 @@
 package com.hazelcast.executor.impl;
 
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.executor.LocalExecutorStats;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.executor.LocalExecutorStats;
-import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -48,10 +51,12 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class DistributedExecutorService implements ManagedService, RemoteService,
-        StatisticsAwareService<LocalExecutorStats>, SplitBrainProtectionAwareService {
+                                                   StatisticsAwareService<LocalExecutorStats>, SplitBrainProtectionAwareService,
+                                                   DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -239,6 +244,11 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
                 splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
         return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "executor", getStats());
     }
 
     private final class Processor extends FutureTask implements Runnable {
