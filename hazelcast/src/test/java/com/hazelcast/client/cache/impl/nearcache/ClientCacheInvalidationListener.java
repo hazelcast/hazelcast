@@ -47,14 +47,6 @@ class ClientCacheInvalidationListener
         invalidationCount.set(0);
     }
 
-    @Override
-    public void beforeListenerRegister() {
-    }
-
-    @Override
-    public void onListenerRegister() {
-    }
-
     static ClientCacheInvalidationListener createInvalidationEventHandler(ICache clientCache) {
         ClientCacheInvalidationListener invalidationListener = new ClientCacheInvalidationListener();
         ((NearCachedClientCacheProxy) clientCache).addNearCacheInvalidationListener(invalidationListener);

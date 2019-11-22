@@ -107,7 +107,7 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public ClientPartitionListenerService getPartitionListenerService() {
+    public ClientClusterListenerService getClientClusterListenerService() {
         return null;
     }
 

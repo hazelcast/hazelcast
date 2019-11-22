@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically adds the given value to the current value.
  */
-@Generated("35b295ffbf7e4b8a8046b86fb6294d5a")
+@Generated("7175a4aa99d187230609a214e787c944")
 public final class AtomicLongAddAndGetCodec {
     //hex: 0x090300
     public static final int REQUEST_MESSAGE_TYPE = 590592;
@@ -72,7 +72,6 @@ public final class AtomicLongAddAndGetCodec {
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, long delta) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("AtomicLong.AddAndGet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

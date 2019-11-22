@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the result of the task ({@link java.util.concurrent.Callable})
  * The call will blocking until the result is ready.
  */
-@Generated("24ed9280d4f3264cce3e1bbec6333aed")
+@Generated("a772e0516292e547f3030253b1712bd2")
 public final class ScheduledExecutorGetResultFromAddressCodec {
     //hex: 0x1A1000
     public static final int REQUEST_MESSAGE_TYPE = 1708032;
@@ -71,7 +71,6 @@ public final class ScheduledExecutorGetResultFromAddressCodec {
     public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ScheduledExecutor.GetResultFromAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

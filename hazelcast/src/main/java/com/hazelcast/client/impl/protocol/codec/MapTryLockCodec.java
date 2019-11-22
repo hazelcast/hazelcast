@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
  * the specified waiting time elapses.
  */
-@Generated("d15562fa7e6f8342b66bd7b797932aae")
+@Generated("3d19ad0d4ab517fa43e79948569155f7")
 public final class MapTryLockCodec {
     //hex: 0x011100
     public static final int REQUEST_MESSAGE_TYPE = 69888;
@@ -93,7 +93,6 @@ public final class MapTryLockCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, long threadId, long lease, long timeout, long referenceId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(true);
         clientMessage.setOperationName("Map.TryLock");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

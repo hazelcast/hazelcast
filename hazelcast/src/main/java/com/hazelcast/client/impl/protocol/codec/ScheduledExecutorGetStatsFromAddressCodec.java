@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("49becd20767afc3a2deef8f84e65bc21")
+@Generated("7f8789400e1088fa55ba8dd2d838e1c5")
 public final class ScheduledExecutorGetStatsFromAddressCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
@@ -75,7 +75,6 @@ public final class ScheduledExecutorGetStatsFromAddressCodec {
     public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ScheduledExecutor.GetStatsFromAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

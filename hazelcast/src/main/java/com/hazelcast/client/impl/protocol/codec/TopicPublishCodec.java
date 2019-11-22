@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Publishes the message to all subscribers of this topic
  */
-@Generated("37c5f6c34f436244b6983c6243ffa29c")
+@Generated("75b5a4c6ad897a83d1dbeb460fb55561")
 public final class TopicPublishCodec {
     //hex: 0x040100
     public static final int REQUEST_MESSAGE_TYPE = 262400;
@@ -65,7 +65,6 @@ public final class TopicPublishCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data message) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Topic.Publish");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

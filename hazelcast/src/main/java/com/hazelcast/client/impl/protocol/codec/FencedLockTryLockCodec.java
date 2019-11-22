@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * duration passes. If the session is closed between reentrant acquires,
  * the call fails with {@code LockOwnershipLostException}.
  */
-@Generated("38d0408cae693c4073d11c86de61e321")
+@Generated("62a117fb9016b740bf5efe2d7a7eb275")
 public final class FencedLockTryLockCodec {
     //hex: 0x070200
     public static final int REQUEST_MESSAGE_TYPE = 459264;
@@ -97,7 +97,6 @@ public final class FencedLockTryLockCodec {
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, long sessionId, long threadId, java.util.UUID invocationUid, long timeoutMs) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("FencedLock.TryLock");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

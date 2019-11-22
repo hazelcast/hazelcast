@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the size of the set.
  */
-@Generated("da2db0cbe86049fd2e52c9361fa4078c")
+@Generated("ba5460aae0fbb53c58a8ec1d69b20b56")
 public final class TransactionalSetSizeCodec {
     //hex: 0x100300
     public static final int REQUEST_MESSAGE_TYPE = 1049344;
@@ -73,7 +73,6 @@ public final class TransactionalSetSizeCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("TransactionalSet.Size");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -43,10 +43,11 @@ public interface QueryCacheEndToEndConstructor extends ConstructorFunction<Strin
      * This accumulator will be used to feed the {@link SubscriberAccumulator}.
      *
      * @param info {@link AccumulatorInfo} for the publisher-accumulator
+     * @param urgent if create task is urgent(can be send even when client disconnected state)
      * @throws Exception in case of any exceptional case.
      * @see com.hazelcast.map.impl.querycache.publisher.NonStopPublisherAccumulator
      * @see com.hazelcast.map.impl.querycache.publisher.BatchPublisherAccumulator
      * @see com.hazelcast.map.impl.querycache.publisher.CoalescingPublisherAccumulator
      */
-    void createPublisherAccumulator(AccumulatorInfo info) throws Exception;
+    void createPublisherAccumulator(AccumulatorInfo info, boolean urgent) throws Exception;
 }

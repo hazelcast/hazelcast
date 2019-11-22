@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("54232f085796a1d1d668d49f0edea0dd")
+@Generated("87a3f4cb910099d39972887709eab43b")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;
@@ -72,7 +72,6 @@ public final class CacheLoadAllCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, boolean replaceExistingValues) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.LoadAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

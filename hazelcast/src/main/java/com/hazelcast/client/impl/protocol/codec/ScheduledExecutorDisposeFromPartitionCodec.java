@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Dispose the task from the scheduler
  */
-@Generated("ff9e8430ff7a4853e8fb120c200cd28b")
+@Generated("99685d928804b5898ad9f4dec437e24d")
 public final class ScheduledExecutorDisposeFromPartitionCodec {
     //hex: 0x1A1100
     public static final int REQUEST_MESSAGE_TYPE = 1708288;
@@ -65,7 +65,6 @@ public final class ScheduledExecutorDisposeFromPartitionCodec {
     public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ScheduledExecutor.DisposeFromPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

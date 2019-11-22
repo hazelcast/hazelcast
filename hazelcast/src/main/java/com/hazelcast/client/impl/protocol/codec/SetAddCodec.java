@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * element, including null, and throw an exception, as described in the specification for Collection
  * Individual set implementations should clearly document any restrictions on the elements that they may contain.
  */
-@Generated("59a39cb1180b4e317d42eaac48bbb854")
+@Generated("3289e6273cd142ffd020b0cfa5aa2852")
 public final class SetAddCodec {
     //hex: 0x060400
     public static final int REQUEST_MESSAGE_TYPE = 394240;
@@ -71,7 +71,6 @@ public final class SetAddCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Set.Add");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

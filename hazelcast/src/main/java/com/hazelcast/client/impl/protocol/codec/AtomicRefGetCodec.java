@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current value.
  */
-@Generated("69b9275235227db7867500db05c1aaee")
+@Generated("b8bdb31783d49e25552b4824f71e769f")
 public final class AtomicRefGetCodec {
     //hex: 0x0A0400
     public static final int REQUEST_MESSAGE_TYPE = 656384;
@@ -65,7 +65,6 @@ public final class AtomicRefGetCodec {
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("AtomicRef.Get");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

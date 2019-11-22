@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("982a6943b5263e9137c120be7a9ec2c5")
+@Generated("93bf7910cf2bd35787b7af1e951fe081")
 public final class ExecutorServiceCancelOnAddressCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;
@@ -73,7 +73,6 @@ public final class ExecutorServiceCancelOnAddressCodec {
     public static ClientMessage encodeRequest(java.util.UUID uuid, com.hazelcast.cluster.Address address, boolean interrupt) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ExecutorService.CancelOnAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

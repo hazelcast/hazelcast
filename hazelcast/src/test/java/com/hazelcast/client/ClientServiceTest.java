@@ -521,9 +521,11 @@ public class ClientServiceTest extends ClientTestSupport {
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
         ClientConnectionManager connectionManager = client.getConnectionManager();
         IMap<Object, Object> map = client.getMap("test");
-        map.addEntryListener(mock(EntryListener.class), false);
+        UUID uuid = map.addEntryListener(mock(EntryListener.class), false);
 
         assertEquals(memberCount, connectionManager.getActiveConnections().size());
+
+        map.removeEntryListener(uuid);
 
     }
 }

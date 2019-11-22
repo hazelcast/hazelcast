@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * The element previously at the specified position
  */
-@Generated("ff37cf843f248ed8eff9dc6e23848213")
+@Generated("1c67eae7a42f32ff5b92673e3ebbb142")
 public final class ListSetCodec {
     //hex: 0x051000
     public static final int REQUEST_MESSAGE_TYPE = 331776;
@@ -71,7 +71,6 @@ public final class ListSetCodec {
     public static ClientMessage encodeRequest(java.lang.String name, int index, com.hazelcast.nio.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("List.Set");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

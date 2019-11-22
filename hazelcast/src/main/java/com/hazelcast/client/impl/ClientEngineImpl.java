@@ -114,7 +114,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     private final MessageTaskFactory messageTaskFactory;
     private final ClientExceptions clientExceptions;
-    private final ClientPartitionListenerService partitionListenerService;
+    private final ClientClusterListenerService clusterListenerService;
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
@@ -129,7 +129,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.blockingExecutor = newBlockingExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
         this.clientExceptions = initClientExceptionFactory();
-        this.partitionListenerService = new ClientPartitionListenerService(nodeEngine);
+        this.clusterListenerService = new ClientClusterListenerService(nodeEngine);
         this.advancedNetworkConfigEnabled = node.getConfig().getAdvancedNetworkConfig().isEnabled();
         this.lifecycleMonitor = new ClientLifecycleMonitor(endpointManager, this, logger, nodeEngine,
                 nodeEngine.getExecutionService(), node.getProperties());
@@ -295,10 +295,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             return false;
         }
 
-        if (!endpointManager.registerEndpoint(endpoint)) {
-            // connection exists just reauthenticated to promote to become an owner connection
-            return true;
-        }
+        endpointManager.registerEndpoint(endpoint);
 
         Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
@@ -426,8 +423,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public ClientPartitionListenerService getPartitionListenerService() {
-        return partitionListenerService;
+    public ClientClusterListenerService getClientClusterListenerService() {
+        return clusterListenerService;
     }
 
     @Override

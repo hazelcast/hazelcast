@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of key-value mappings in this map. If the map contains more than Integer.MAX_VALUE elements,
  * returns Integer.MAX_VALUE.
  */
-@Generated("77dc644424e124611a2758655d05ac7e")
+@Generated("f26275792f52ec4287b89c9bea23b3ce")
 public final class ReplicatedMapSizeCodec {
     //hex: 0x0D0200
     public static final int REQUEST_MESSAGE_TYPE = 852480;
@@ -62,7 +62,6 @@ public final class ReplicatedMapSizeCodec {
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ReplicatedMap.Size");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

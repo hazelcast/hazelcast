@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns whether the multimap contains an entry with the value.
  */
-@Generated("3cf3358c26b24992f72e2d2c91787b0b")
+@Generated("e388fcb647ce1c73af19d4383a76d254")
 public final class MultiMapContainsValueCodec {
     //hex: 0x020800
     public static final int REQUEST_MESSAGE_TYPE = 133120;
@@ -66,7 +66,6 @@ public final class MultiMapContainsValueCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MultiMap.ContainsValue");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

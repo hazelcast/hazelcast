@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("29447e0abeb3750a2ef6a473a8f46ac7")
+@Generated("2771649651d14c4dfa85aea0b059927e")
 public final class CacheEventJournalReadCodec {
     //hex: 0x132100
     public static final int REQUEST_MESSAGE_TYPE = 1253632;
@@ -97,7 +97,6 @@ public final class CacheEventJournalReadCodec {
     public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minSize, int maxSize, @Nullable com.hazelcast.nio.serialization.Data predicate, @Nullable com.hazelcast.nio.serialization.Data projection) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.EventJournalRead");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

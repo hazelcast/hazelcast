@@ -127,14 +127,6 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
                 listener.itemRemoved(itemEvent);
             }
         }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
     }
 
     @Override

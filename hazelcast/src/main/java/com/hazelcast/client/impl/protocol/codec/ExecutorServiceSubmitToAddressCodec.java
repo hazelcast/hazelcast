@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("7f5e3083bf1ad269da72c0b061168b57")
+@Generated("f334f2bfd1c3fc584359ab22b6b04ac4")
 public final class ExecutorServiceSubmitToAddressCodec {
     //hex: 0x080600
     public static final int REQUEST_MESSAGE_TYPE = 525824;
@@ -76,7 +76,6 @@ public final class ExecutorServiceSubmitToAddressCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.nio.serialization.Data callable, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ExecutorService.SubmitToAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

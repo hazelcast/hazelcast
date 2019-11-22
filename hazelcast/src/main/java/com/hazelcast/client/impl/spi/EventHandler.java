@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.internal.nio.Connection;
+
 /**
  * Base interface for all client {@link EventHandler}s.
  *
@@ -26,18 +28,25 @@ public interface EventHandler<E> {
     void handle(E event);
 
     /**
-     *  This method is called before registration request is sent to node.
+     * This method is called before registration request is sent to node.
      *
-     *  Note that this method will also be called while first registered node is dead
-     *  and re-registering to a second node.
+     * Note that this method will also be called while first registered node is dead
+     * and re-registering to a second node.
+     *
+     * @param connection
      */
-    void beforeListenerRegister();
+    default void beforeListenerRegister(Connection connection) {
+    }
 
     /**
-     *  This method is called when registration request response is successfully returned from node.
+     * This method is called when registration request response is successfully returned from node.
      *
-     *  Note that this method will also be called while first registered node is dead
-     *  and re-registering to a second node.
+     * Note that this method will also be called while first registered node is dead
+     * and re-registering to a second node.
+     *
+     * @param connection
      */
-    void onListenerRegister();
+    default void onListenerRegister(Connection connection) {
+    }
+
 }

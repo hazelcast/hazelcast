@@ -45,7 +45,7 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.protocol.task.AddBackupListenerMessageTask;
-import com.hazelcast.client.impl.protocol.task.AddPartitionListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.AddClusterViewListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxiesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.IsFailoverSupportedMessageTask;
@@ -1562,9 +1562,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.PingMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
+        factories.put(com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.AddMembershipListenerMessageTask(clientMessage, node, connection);
+                return new AddClusterViewListenerMessageTask(clientMessage, node, connection);
             }
         });
         factories.put(com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
@@ -1582,11 +1582,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask(clientMessage, node, connection);
             }
         });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.GetPartitionsMessageTask(clientMessage, node, connection);
-            }
-        });
         factories.put(com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask(clientMessage, node, connection);
@@ -1600,11 +1595,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new DeployClassesMessageTask(clientMessage, node, connection);
-            }
-        });
-        factories.put(com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new AddPartitionListenerMessageTask(clientMessage, node, connection);
             }
         });
         factories.put(com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec.REQUEST_MESSAGE_TYPE, new MessageTaskFactory() {

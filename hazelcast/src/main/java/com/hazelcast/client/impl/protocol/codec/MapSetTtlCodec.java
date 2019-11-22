@@ -48,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * <p>
  * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
  */
-@Generated("06b7dccec41e22b3c08d83e66933b600")
+@Generated("d960d973d10979d22674baa8278ebbe8")
 public final class MapSetTtlCodec {
     //hex: 0x014500
     public static final int REQUEST_MESSAGE_TYPE = 83200;
@@ -84,7 +84,6 @@ public final class MapSetTtlCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, long ttl) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.SetTtl");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

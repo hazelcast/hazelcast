@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("89efd940fe8c1f4ca7a8f25b23ebe555")
+@Generated("c0b5d89b50ad152942e61ece3ed5b25c")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x160400
     public static final int REQUEST_MESSAGE_TYPE = 1442816;
@@ -75,7 +75,6 @@ public final class ContinuousQueryAddListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String listenerName, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ContinuousQuery.AddListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

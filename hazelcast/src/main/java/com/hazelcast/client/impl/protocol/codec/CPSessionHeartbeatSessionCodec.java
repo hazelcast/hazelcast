@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Commits a heartbeat for the given session on the given cP group and
  * extends its session expiration time.
  */
-@Generated("f74ae1c2b9b30a41c56a241265f3d66d")
+@Generated("9140f9423d17603a77d8ac17e9b0151b")
 public final class CPSessionHeartbeatSessionCodec {
     //hex: 0x1F0300
     public static final int REQUEST_MESSAGE_TYPE = 2032384;
@@ -67,7 +67,6 @@ public final class CPSessionHeartbeatSessionCodec {
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, long sessionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("CPSession.HeartbeatSession");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

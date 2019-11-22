@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it means that the caller thread could not acquire the lock for the key within the timeout duration,
  * thus the put operation is not successful.
  */
-@Generated("815bcd8c1702f3b5d4b1104288bb7264")
+@Generated("3cf6e734acb38b1f7488a652f8fa3acd")
 public final class MapTryPutCodec {
     //hex: 0x010C00
     public static final int REQUEST_MESSAGE_TYPE = 68608;
@@ -85,7 +85,6 @@ public final class MapTryPutCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, long threadId, long timeout) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.TryPut");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

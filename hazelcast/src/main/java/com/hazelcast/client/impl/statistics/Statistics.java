@@ -99,7 +99,7 @@ public class Statistics {
      * @return the cluster listening connection to the server
      */
     private ClientConnection getConnection() {
-        return client.getClusterConnectorService().getClusterConnection();
+        return (ClientConnection) client.getConnectionManager().getRandomConnection();
     }
 
     /**
@@ -111,19 +111,19 @@ public class Statistics {
             public void run() {
                 long collectionTimestamp = System.currentTimeMillis();
 
-                ClientConnection mainConnection = getConnection();
-                if (mainConnection == null) {
-                    logger.finest("Cannot send client statistics to the server. No owner connection.");
+                ClientConnection connection = getConnection();
+                if (connection == null) {
+                    logger.finest("Cannot send client statistics to the server. No connection found.");
                     return;
                 }
 
                 final StringBuilder stats = new StringBuilder();
 
-                periodicStats.fillMetrics(collectionTimestamp, stats, mainConnection);
+                periodicStats.fillMetrics(collectionTimestamp, stats, connection);
 
                 addNearCacheStats(stats);
 
-                sendStats(collectionTimestamp, stats.toString(), mainConnection);
+                sendStats(collectionTimestamp, stats.toString(), connection);
             }
         }, 0, periodSeconds, SECONDS);
     }
@@ -331,7 +331,7 @@ public class Statistics {
             addStat(stats, "clientName", client.getName());
 
             ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
-            Credentials credentials = connectionManager.getLastCredentials();
+            Credentials credentials = connectionManager.getCurrentCredentials();
             if (credentials != null) {
                 addStat(stats, "credentials.principal", credentials.getName());
             }

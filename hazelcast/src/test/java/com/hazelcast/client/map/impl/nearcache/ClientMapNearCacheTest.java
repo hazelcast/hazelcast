@@ -1344,14 +1344,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         }
 
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
-
         int getClearEventCount() {
             return clearEventCount.get();
         }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
-@Generated("cac0187a7ab723804cae2f176e1fdc3b")
+@Generated("9846304f3f92cfdf8ce734b3bb50b1b3")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;
@@ -88,7 +88,6 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
     public static ClientMessage encodeRequest(java.lang.String schedulerName, byte type, java.lang.String taskName, com.hazelcast.nio.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ScheduledExecutor.SubmitToPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

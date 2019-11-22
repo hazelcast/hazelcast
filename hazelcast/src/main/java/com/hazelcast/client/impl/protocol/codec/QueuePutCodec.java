@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Inserts the specified element into this queue, waiting if necessary for space to become available.
  */
-@Generated("c3d679aec3e1619c0d3e2e2ff73ac6f8")
+@Generated("b15e66260013a9b63ef9cb6ef2f697e6")
 public final class QueuePutCodec {
     //hex: 0x030200
     public static final int REQUEST_MESSAGE_TYPE = 197120;
@@ -65,7 +65,6 @@ public final class QueuePutCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data value) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Queue.Put");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
  */
-@Generated("b355dcad5ea7f3cef8aa077a49484d2e")
+@Generated("3172b74c276cc5a2f13386791a64c6da")
 public final class TransactionalQueuePeekCodec {
     //hex: 0x120400
     public static final int REQUEST_MESSAGE_TYPE = 1180672;
@@ -78,7 +78,6 @@ public final class TransactionalQueuePeekCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, long timeout) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("TransactionalQueue.Peek");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

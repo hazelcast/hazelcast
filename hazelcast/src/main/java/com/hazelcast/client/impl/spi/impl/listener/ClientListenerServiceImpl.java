@@ -16,26 +16,23 @@
 
 package com.hazelcast.client.impl.spi.impl.listener;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -43,6 +40,8 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.internal.util.executor.StripedRunnable;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,36 +52,34 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public abstract class AbstractClientListenerService implements ClientListenerService, StaticMetricsProvider, ConnectionListener {
+public class ClientListenerServiceImpl implements ClientListenerService, StaticMetricsProvider, ConnectionListener {
 
     protected final HazelcastClientInstanceImpl client;
     protected final SerializationService serializationService;
-    protected final long invocationTimeoutMillis;
-    protected final long invocationRetryPauseMillis;
     protected final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
-
-    final ScheduledExecutorService registrationExecutor;
-    final ClientConnectionManager clientConnectionManager;
-
+    private final ClientConnectionManager clientConnectionManager;
     private final ILogger logger;
+    private final ExecutorService registrationExecutor;
 
     @Probe(name = "eventHandlerCount", level = MANDATORY)
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap
             = new ConcurrentHashMap<Long, EventHandler>();
 
     private final StripedExecutor eventExecutor;
+    private final boolean isSmart;
 
-    AbstractClientListenerService(HazelcastClientInstanceImpl client) {
+    public ClientListenerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
+        this.isSmart = client.getClientConfig().getNetworkConfig().isSmartRouting();
         this.serializationService = client.getSerializationService();
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
@@ -92,11 +89,8 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         this.eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity, true);
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
-        this.registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        this.registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
         this.clientConnectionManager = client.getConnectionManager();
-        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
-        this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        this.invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
     }
 
     @Nonnull
@@ -204,7 +198,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         ListenerMessageCodec codec = listenerRegistration.getCodec();
         ClientMessage request = codec.encodeAddRequest(registersLocalOnly());
         EventHandler handler = listenerRegistration.getHandler();
-        handler.beforeListenerRegister();
+        handler.beforeListenerRegister(connection);
 
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
         invocation.setEventHandler(handler);
@@ -218,7 +212,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         }
 
         UUID serverRegistrationId = codec.decodeAddResponse(clientMessage);
-        handler.onListenerRegister();
+        handler.onListenerRegister(connection);
         long correlationId = request.getCorrelationId();
         ClientConnectionRegistration registration
                 = new ClientConnectionRegistration(serverRegistrationId, correlationId);
@@ -308,9 +302,11 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         }
     }
 
-    abstract boolean registersLocalOnly();
+    private boolean registersLocalOnly() {
+        return isSmart;
+    }
 
-    public void removeEventHandler(long callId) {
+    private void removeEventHandler(long callId) {
         eventHandlerMap.remove(callId);
     }
 
@@ -334,7 +330,9 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
                 ListenerMessageCodec listenerMessageCodec = listenerRegistration.getCodec();
                 UUID serverRegistrationId = registration.getServerRegistrationId();
                 ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                new ClientInvocation(client, request, null, subscriber).invoke().get();
+                if (request != null) {
+                    new ClientInvocation(client, request, null, subscriber).invoke().get();
+                }
                 removeEventHandler(registration.getCallId());
                 iterator.remove();
             } catch (Exception e) {

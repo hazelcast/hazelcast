@@ -747,7 +747,8 @@ public class MigrationManager {
             if (!partitionIds.isEmpty()) {
                 PartitionReplica[][] state = partitionStateManager.repartition(shutdownRequestedMembers, partitionIds);
                 if (state != null) {
-                    logger.warning("Assigning new owners for " + partitionIds.size() + " LOST partitions!");
+                    logger.warning("Assigning new owners for " + partitionIds.size()
+                            + " LOST partitions, when migration is not allowed!");
 
                     int replicaUpdateCount = (int) partitionIds.stream()
                             .flatMap(partitionId -> Arrays.stream(state[partitionId]).filter(Objects::nonNull)).count();
@@ -771,6 +772,7 @@ public class MigrationManager {
                                 });
                     });
                     partitionEventManager.sendMigrationProcessCompletedEvent(states[0]);
+                    node.getNodeExtension().onPartitionStateChange();
                 } else {
                     logger.warning("Unable to assign LOST partitions");
                 }
@@ -815,6 +817,7 @@ public class MigrationManager {
                     InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
                     assignLostPartitionOwner(partition, destination);
                 });
+                node.getNodeExtension().onPartitionStateChange();
             }
 
             partitionService.publishPartitionRuntimeState();

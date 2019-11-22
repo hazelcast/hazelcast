@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this list contains no elements
  */
-@Generated("c1885436408f5e2ffdda0c41feba0936")
+@Generated("ecf0d7f0b2335bcf555eae43c98c24aa")
 public final class ListIsEmptyCodec {
     //hex: 0x050D00
     public static final int REQUEST_MESSAGE_TYPE = 331008;
@@ -61,7 +61,6 @@ public final class ListIsEmptyCodec {
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("List.IsEmpty");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

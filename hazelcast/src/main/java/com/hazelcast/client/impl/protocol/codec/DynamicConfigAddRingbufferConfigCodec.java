@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a ringbuffer configuration with the given {@code name} already exists, then
  * the new ringbuffer config is ignored and the existing one is preserved.
  */
-@Generated("fcc3c558cf0b61f26ee83415a8c0ecfc")
+@Generated("d021aa09a4475c18e7ba1ec57dac0cea")
 public final class DynamicConfigAddRingbufferConfigCodec {
     //hex: 0x1B0200
     public static final int REQUEST_MESSAGE_TYPE = 1769984;
@@ -115,7 +115,6 @@ public final class DynamicConfigAddRingbufferConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, int capacity, int backupCount, int asyncBackupCount, int timeToLiveSeconds, java.lang.String inMemoryFormat, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder ringbufferStoreConfig, @Nullable java.lang.String splitBrainProtectionName, java.lang.String mergePolicy, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("DynamicConfig.AddRingbufferConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

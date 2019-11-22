@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-@Generated("5f80e3bcc7334f8e7deef3d0b31b3a44")
+@Generated("20eaed5f6237a614d6bbfacd88ade3cc")
 public final class ReplicatedMapPutAllCodec {
     //hex: 0x0D0800
     public static final int REQUEST_MESSAGE_TYPE = 854016;
@@ -68,7 +68,6 @@ public final class ReplicatedMapPutAllCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data>> entries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ReplicatedMap.PutAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

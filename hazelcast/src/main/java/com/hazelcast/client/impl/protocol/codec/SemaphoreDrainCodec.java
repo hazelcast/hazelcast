@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Acquires all available permits at once and returns immediately.
  */
-@Generated("e81beaa8d4ebc5035783262c139177e6")
+@Generated("fffa9daeeee274e15ff82c87282fca52")
 public final class SemaphoreDrainCodec {
     //hex: 0x0C0400
     public static final int REQUEST_MESSAGE_TYPE = 787456;
@@ -84,7 +84,6 @@ public final class SemaphoreDrainCodec {
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String name, long sessionId, long threadId, java.util.UUID invocationUid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Semaphore.Drain");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

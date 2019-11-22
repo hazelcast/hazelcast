@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("fe3a85afc631ab729dc355dd486398d2")
+@Generated("8c51ad9e8db302160085f1756a23aae1")
 public final class ClientRemoveDistributedObjectListenerCodec {
-    //hex: 0x000C00
-    public static final int REQUEST_MESSAGE_TYPE = 3072;
-    //hex: 0x000C01
-    public static final int RESPONSE_MESSAGE_TYPE = 3073;
+    //hex: 0x000B00
+    public static final int REQUEST_MESSAGE_TYPE = 2816;
+    //hex: 0x000B01
+    public static final int RESPONSE_MESSAGE_TYPE = 2817;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -62,7 +62,6 @@ public final class ClientRemoveDistributedObjectListenerCodec {
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.RemoveDistributedObjectListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

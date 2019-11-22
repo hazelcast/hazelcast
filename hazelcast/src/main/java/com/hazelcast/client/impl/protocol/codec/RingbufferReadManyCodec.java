@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-@Generated("aa4d44b7f013a1c77c4b04fa473fc72d")
+@Generated("2d82ba0073d366593d049ba78c5015db")
 public final class RingbufferReadManyCodec {
     //hex: 0x170900
     public static final int REQUEST_MESSAGE_TYPE = 1509632;
@@ -91,7 +91,6 @@ public final class RingbufferReadManyCodec {
     public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minCount, int maxCount, @Nullable com.hazelcast.nio.serialization.Data filter) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Ringbuffer.ReadMany");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an entry listener for this map. The listener will be notified for all map add/remove/update/evict events.
  */
-@Generated("070c915a0c35942e64ba5d018e2a18c2")
+@Generated("f36d403b8aa027fb803fd9bdba1d1ec2")
 public final class ReplicatedMapAddEntryListenerCodec {
     //hex: 0x0D0D00
     public static final int REQUEST_MESSAGE_TYPE = 855296;
@@ -74,7 +74,6 @@ public final class ReplicatedMapAddEntryListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ReplicatedMap.AddEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

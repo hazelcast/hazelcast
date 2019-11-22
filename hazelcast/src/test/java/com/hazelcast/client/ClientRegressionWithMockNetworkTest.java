@@ -523,36 +523,42 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     public void testDeadlock_WhenDoingOperationFromLifecycleListener() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
 
-        hazelcastFactory.newHazelcastInstance();
-        final CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        CountDownLatch finishedLatch = new CountDownLatch(1);
         final IMap<Object, Object> map = client.getMap(randomMapName());
 
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
-                    map.get(1);
-                    latch.countDown();
+                    disconnectedLatch.countDown();
+                    for (int i = 0; i < 1000; i++) {
+                        map.get(i);
+                    }
+                    finishedLatch.countDown();
                 }
             }
         });
 
         instance.shutdown();
-        assertOpenEventually(latch);
+        assertOpenEventually(disconnectedLatch);
+        hazelcastFactory.newHazelcastInstance();
+        assertOpenEventually(finishedLatch);
     }
 
     @Test
     public void testDeadlock_WhenDoingOperationFromLifecycleListenerWithInitialPartitionTable() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
 
-        hazelcastFactory.newHazelcastInstance();
-
-        final CountDownLatch latch = new CountDownLatch(1);
-        final IMap<Object, Object> map = client.getMap(randomMapName());
+        CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        CountDownLatch finishedLatch = new CountDownLatch(1);
+        IMap<Object, Object> map = client.getMap(randomMapName());
 
         // Let the partition table retrieved the first time
         map.get(1);
@@ -561,16 +567,19 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+                    disconnectedLatch.countDown();
                     for (int i = 0; i < 1000; i++) {
                         map.get(i);
                     }
-                    latch.countDown();
+                    finishedLatch.countDown();
                 }
             }
         });
 
         instance.shutdown();
-        assertOpenEventually(latch);
+        assertOpenEventually(disconnectedLatch);
+        hazelcastFactory.newHazelcastInstance();
+        assertOpenEventually(finishedLatch);
     }
 
     @Test
@@ -589,26 +598,30 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 .addNearCacheConfig(nearCacheConfig)
                 .setExecutorPoolSize(1);
 
+        CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        CountDownLatch finishedLatch = new CountDownLatch(1);
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        hazelcastFactory.newHazelcastInstance();
 
-        final CountDownLatch latch = new CountDownLatch(1);
         final IMap<Object, Object> map = client.getMap(mapName);
 
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+                    disconnectedLatch.countDown();
                     map.get(1);
                     map.get(2);
-                    latch.countDown();
+                    finishedLatch.countDown();
                 }
             }
         });
 
         instance.shutdown();
-        assertOpenEventually(latch);
+        assertOpenEventually(disconnectedLatch);
+        hazelcastFactory.newHazelcastInstance();
+        assertOpenEventually(finishedLatch);
     }
 
     @Test(expected = ExecutionException.class, timeout = 120000)

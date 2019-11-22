@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("56559d157f77a43fda59428aa3307161")
+@Generated("6968b1e48000498aacb24ce78347ca19")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -57,7 +57,6 @@ public final class MCGetClusterMetadataCodec {
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MC.GetClusterMetadata");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

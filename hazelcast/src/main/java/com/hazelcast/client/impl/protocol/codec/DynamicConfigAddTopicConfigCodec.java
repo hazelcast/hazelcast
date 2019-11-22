@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("99dd88e39f3856cc5c0ac4bbdd9ae580")
+@Generated("69d9dd34cf90b81e4bd010eff4b0dc4a")
 public final class DynamicConfigAddTopicConfigCodec {
     //hex: 0x1B0700
     public static final int REQUEST_MESSAGE_TYPE = 1771264;
@@ -87,7 +87,6 @@ public final class DynamicConfigAddTopicConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, boolean globalOrderingEnabled, boolean statisticsEnabled, boolean multiThreadingEnabled, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("DynamicConfig.AddTopicConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

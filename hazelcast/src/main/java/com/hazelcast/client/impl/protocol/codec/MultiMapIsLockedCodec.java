@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks the lock for the specified key. If the lock is acquired, this method returns true, else it returns false.
  */
-@Generated("d31aa7c73c03960d9a6d465f6d67acba")
+@Generated("55bf7d5471c042b23f84d352ae0a1732")
 public final class MultiMapIsLockedCodec {
     //hex: 0x021200
     public static final int REQUEST_MESSAGE_TYPE = 135680;
@@ -66,7 +66,6 @@ public final class MultiMapIsLockedCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MultiMap.IsLocked");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

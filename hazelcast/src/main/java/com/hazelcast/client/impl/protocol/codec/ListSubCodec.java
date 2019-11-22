@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * structurally modified in any way other than via the returned list.(Structural modifications are those that change
  * the size of this list, or otherwise perturb it in such a fashion that iterations in progress may yield incorrect results.)
  */
-@Generated("770a7897f06fed8bb4a60986fc2617e6")
+@Generated("48447bdf43689770f84d5acc54d72ecf")
 public final class ListSubCodec {
     //hex: 0x051500
     public static final int REQUEST_MESSAGE_TYPE = 333056;
@@ -82,7 +82,6 @@ public final class ListSubCodec {
     public static ClientMessage encodeRequest(java.lang.String name, int from, int to) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("List.Sub");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

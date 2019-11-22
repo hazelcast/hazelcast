@@ -91,7 +91,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
             if (publisherListenerId == null) {
                 createSubscriberAccumulator(info);
             }
-            createPublisherAccumulator(info);
+            createPublisherAccumulator(info, request.isUrgent());
 
         } catch (Throwable throwable) {
             removeQueryCacheConfig(mapName, request.getCacheName());

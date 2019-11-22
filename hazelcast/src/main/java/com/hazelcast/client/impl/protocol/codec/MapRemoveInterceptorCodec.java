@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the given interceptor for this map so it will not intercept operations anymore.
  */
-@Generated("a7a9fea0e3eca646b75fed4512e3d150")
+@Generated("5d185e83a2d78e6d1ad3dc55ed427b6c")
 public final class MapRemoveInterceptorCodec {
     //hex: 0x011500
     public static final int REQUEST_MESSAGE_TYPE = 70912;
@@ -66,7 +66,6 @@ public final class MapRemoveInterceptorCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.lang.String id) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.RemoveInterceptor");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

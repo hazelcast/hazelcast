@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies given MC config (client filter list).
  */
-@Generated("bb9c2ffdbfa25922d043e92250c24962")
+@Generated("227735a254c41ff2917773d241228fe3")
 public final class MCApplyMCConfigCodec {
     //hex: 0x200D00
     public static final int REQUEST_MESSAGE_TYPE = 2100480;
@@ -74,7 +74,6 @@ public final class MCApplyMCConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, @Nullable java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MC.ApplyMCConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

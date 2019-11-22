@@ -52,7 +52,7 @@ public class NodeInvokerWrapper implements InvokerWrapper {
     }
 
     @Override
-    public Map<Integer, Object> invokeOnAllPartitions(Object request) throws Exception {
+    public Map<Integer, Object> invokeOnAllPartitions(Object request, boolean urgent) throws Exception {
         checkInstanceOf(OperationFactory.class, request, "request");
 
         OperationFactory factory = (OperationFactory) request;
@@ -69,7 +69,7 @@ public class NodeInvokerWrapper implements InvokerWrapper {
     }
 
     @Override
-    public Object invoke(Object operation) {
+    public Object invoke(Object operation, boolean urgent) {
         throw new UnsupportedOperationException();
     }
 

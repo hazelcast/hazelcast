@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all of this collection's elements that are also contained in the specified collection (optional operation).
  * After this call returns, this collection will contain no elements in common with the specified collection.
  */
-@Generated("bc689cd619865fca9b58f5755322ddee")
+@Generated("80f6a2acf48d55b2b595b15dcce2b5b6")
 public final class QueueCompareAndRemoveAllCodec {
     //hex: 0x030D00
     public static final int REQUEST_MESSAGE_TYPE = 199936;
@@ -67,7 +67,6 @@ public final class QueueCompareAndRemoveAllCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> dataList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Queue.CompareAndRemoveAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

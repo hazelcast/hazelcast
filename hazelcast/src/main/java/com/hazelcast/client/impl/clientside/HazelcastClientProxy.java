@@ -299,7 +299,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     protected HazelcastClientInstanceImpl getClient() {
         final HazelcastClientInstanceImpl c = client;
         if (c == null || !c.getLifecycleService().isRunning()) {
-            throw new HazelcastClientNotActiveException("Client is not active.");
+            throw new HazelcastClientNotActiveException();
         }
         return c;
     }
