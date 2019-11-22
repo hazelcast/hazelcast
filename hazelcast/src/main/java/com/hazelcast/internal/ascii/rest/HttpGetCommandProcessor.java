@@ -153,7 +153,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             JsonObject response = new JsonObject()
                     .add("nodeState", nodeState.toString())
                     .add("clusterState", clusterState.toString())
-                    .add("clusterSafe", booleanToString(clusterSafe))
+                    .add("clusterSafe", clusterSafe)
                     .add("migrationQueueSize", migrationQueueSize)
                     .add("clusterSize", clusterSize);
             prepareResponse(command, response);
