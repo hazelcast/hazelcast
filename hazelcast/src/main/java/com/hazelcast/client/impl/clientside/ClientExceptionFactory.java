@@ -47,6 +47,7 @@ import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
+import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -108,6 +109,7 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOCK_O
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.SESSION_EXPIRED_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.VERSION_MISMATCH_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WAIT_KEY_CANCELLED_EXCEPTION;
 
 /**
@@ -679,6 +681,8 @@ public class ClientExceptionFactory {
             }
         });
         register(NOT_LEADER_EXCEPTION, NotLeaderException.class, (message, cause) -> new NotLeaderException(null, null, null));
+        register(VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class,
+                ((message, cause) -> new VersionMismatchException(message)));
     }
 
     public Throwable createException(ClientMessage clientMessage) {

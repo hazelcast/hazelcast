@@ -17,6 +17,7 @@
 package com.hazelcast.client.management;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.management.MCMapConfig;
 import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.impl.management.UpdateMapConfigParameters;
@@ -27,17 +28,20 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
+import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -51,6 +55,7 @@ import static com.hazelcast.config.MapConfig.DEFAULT_MAX_SIZE;
 import static com.hazelcast.config.MapConfig.DEFAULT_TTL_SECONDS;
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -81,7 +86,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         config.getManagementCenterConfig().setEnabled(true).setUrl("a");
         hazelcastInstances[2] = factory.newHazelcastInstance(config);
 
-        members = Arrays.stream(hazelcastInstances)
+        members = stream(hazelcastInstances)
                 .map(instance -> instance.getCluster().getLocalMember())
                 .toArray(Member[]::new);
 
@@ -225,6 +230,51 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         Optional<String> timedMemberStateJson = managementCenterService.getTimedMemberState(members[0])
                 .get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
         assertFalse(timedMemberStateJson.isPresent());
+    }
+
+    @Test
+    public void testGetClusterMetadata() throws Exception {
+        MCClusterMetadata metadata = resolve(managementCenterService.getClusterMetadata(members[0]));
+        assertEquals(ACTIVE, metadata.getCurrentState());
+        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), metadata.getMemberVersion());
+        assertNull(metadata.getJetVersion());
+        assertTrue(metadata.getClusterTime() > 0);
+
+        hazelcastInstances[0].getCluster().changeClusterState(PASSIVE);
+
+        assertTrueEventually(
+                () -> {
+                    MCClusterMetadata clusterMetadata = resolve(
+                            managementCenterService.getClusterMetadata(members[0]));
+                    assertEquals(PASSIVE, clusterMetadata.getCurrentState());
+                }
+        );
+    }
+
+    @Test
+    public void testShutdownCluster() {
+        managementCenterService.shutdownCluster();
+
+        assertTrueEventually(() -> assertTrue(
+                stream(hazelcastInstances).noneMatch(hz -> hz.getLifecycleService().isRunning())));
+    }
+
+    @Test
+    public void changeClusterVersion() throws Exception {
+        resolve(managementCenterService.changeClusterVersion(
+                Version.of(BuildInfoProvider.getBuildInfo().getVersion())));
+    }
+
+    @Test
+    public void changeClusterVersion_versionMismatch() {
+        assertThrows(VersionMismatchException.class, () -> {
+            try {
+                resolve(managementCenterService.changeClusterVersion(Version.of(5, 0)));
+            } catch (Exception e) {
+                //noinspection ThrowableNotThrown
+                rethrow(e);
+            }
+        });
     }
 
     private <T> T resolve(CompletableFuture<T> future) throws Exception {

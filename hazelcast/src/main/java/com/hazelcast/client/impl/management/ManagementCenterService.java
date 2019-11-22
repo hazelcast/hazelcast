@@ -22,6 +22,8 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
@@ -31,6 +33,7 @@ import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
+import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -43,6 +46,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -296,7 +300,7 @@ public class ManagementCenterService {
     /**
      * Gets system properties of a given member.
      *
-     * @param member {@link Member} to get system properties of.
+     * @param member {@link Member} to get system properties of
      */
     @Nonnull
     public CompletableFuture<Map<String, String>> getSystemProperties(Member member) {
@@ -327,6 +331,8 @@ public class ManagementCenterService {
 
     /**
      * Gets the latest {@link TimedMemberState} of the member it's called on.
+     *
+     * @param member {@link Member} to get {@link TimedMemberState} of
      */
     @Nonnull
     public CompletableFuture<Optional<String>> getTimedMemberState(Member member) {
@@ -398,6 +404,64 @@ public class ManagementCenterService {
                 null,
                 member.getAddress()
         );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> null
+        );
+    }
+
+    /**
+     * Gets the current metadata of the cluster.
+     *
+     * @param member {@link Member} to get current cluster metadata of
+     */
+    @Nonnull
+    public CompletableFuture<MCClusterMetadata> getClusterMetadata(Member member) {
+        checkNotNull(member);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCGetClusterMetadataCodec.encodeRequest(),
+                null,
+                member.getAddress());
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> {
+                    MCGetClusterMetadataCodec.ResponseParameters response =
+                            MCGetClusterMetadataCodec.decodeResponse(clientMessage);
+                    return MCClusterMetadata.fromResponse(response);
+                }
+        );
+    }
+
+    /**
+     * Shuts down the cluster.
+     */
+    public void shutdownCluster() {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCShutdownClusterCodec.encodeRequest(),
+                null
+        );
+        invocation.invoke();
+    }
+
+    /**
+     * Changes the cluster version
+     *
+     * @param version new cluster version
+     */
+    @Nonnull
+    public CompletableFuture<Void> changeClusterVersion(Version version) {
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCChangeClusterVersionCodec.encodeRequest(version.getMajor(), version.getMinor()),
+                null
+        );
+
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 serializationService,
