@@ -77,6 +77,11 @@ public final class ConnectionType {
      */
     public static final String MEMCACHE_CLIENT = "MEMCACHE";
 
+    /**
+     * Management Center Java client Connection Type
+     */
+    public static final String MC_JAVA_CLIENT = "MCJVM";
+
     private static final Map<String, Integer> ID_MAP = new HashMap<>();
 
     static {
@@ -89,6 +94,7 @@ public final class ConnectionType {
         ID_MAP.put(GO_CLIENT, 6);
         ID_MAP.put(REST_CLIENT, 7);
         ID_MAP.put(MEMCACHE_CLIENT, 8);
+        ID_MAP.put(MC_JAVA_CLIENT, 9);
     }
 
     private ConnectionType() {

@@ -37,6 +37,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.CoreService;
@@ -290,7 +291,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean bind(final ClientEndpoint endpoint) {
-        if (!clientSelector.select(endpoint)) {
+        if (!isClientAllowed(endpoint)) {
             return false;
         }
 
@@ -310,7 +311,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
 
         // Second check to catch concurrent change done via applySelector
-        if (!clientSelector.select(endpoint)) {
+        if (!isClientAllowed(endpoint)) {
             endpointManager.removeEndpoint(endpoint);
             return false;
         }
@@ -324,7 +325,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         clientSelector = newSelector;
 
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            if (!clientSelector.select(endpoint)) {
+            if (!isClientAllowed(endpoint)) {
                 endpoint.getConnection().close("Client disconnected from cluster via Management Center", null);
             }
         }
@@ -431,7 +432,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public boolean isClientAllowed(Client client) {
-        return clientSelector.select(client);
+        return ConnectionType.MC_JAVA_CLIENT.equals(client.getClientType()) || clientSelector.select(client);
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {

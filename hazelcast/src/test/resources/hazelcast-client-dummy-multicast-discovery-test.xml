@@ -30,7 +30,7 @@
             <max-backoff-millis>2000</max-backoff-millis>
             <initial-backoff-millis>1000</initial-backoff-millis>
             <jitter>0</jitter>
-            <fail-on-max-backoff>true</fail-on-max-backoff>
+            <cluster-connect-timeout-millis>2000</cluster-connect-timeout-millis>
         </connection-retry>
     </connection-strategy>
     <network>

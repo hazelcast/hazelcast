@@ -131,7 +131,7 @@ public class MapContainer {
                 .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
                 serializationService, extractors);
-        this.globalIndexes = shouldUseGlobalIndex(mapConfig) ? createIndexes(true) : null;
+        this.globalIndexes = shouldUseGlobalIndex() ? createIndexes(true) : null;
         this.mapStoreContext = createMapStoreContext(this);
         initWanReplication(mapServiceContext.getNodeEngine());
     }
@@ -174,7 +174,7 @@ public class MapContainer {
         return new EvictorImpl(evictionPolicyComparator, evictionChecker, evictionBatchSize, partitionService);
     }
 
-    protected boolean shouldUseGlobalIndex(MapConfig mapConfig) {
+    public boolean shouldUseGlobalIndex() {
         // for non-native memory populate a single global index
         return !mapConfig.getInMemoryFormat().equals(NATIVE);
     }

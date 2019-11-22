@@ -86,6 +86,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 @SuppressWarnings({
@@ -208,6 +209,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         String maxBackoffMillis = "max-backoff-millis";
         String multiplier = "multiplier";
         String jitter = "jitter";
+        String timeoutMillis = "cluster-connect-timeout-millis";
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
@@ -217,8 +219,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 connectionRetryConfig.setMaxBackoffMillis(getIntegerValue(maxBackoffMillis, value));
             } else if (multiplier.equals(nodeName)) {
                 connectionRetryConfig.setMultiplier(getDoubleValue(multiplier, value));
-            } else if ("fail-on-max-backoff".equals(nodeName)) {
-                connectionRetryConfig.setFailOnMaxBackoff(getBooleanValue(value));
+            } else if (timeoutMillis.equals(nodeName)) {
+                connectionRetryConfig.setClusterConnectTimeoutMillis(getLongValue(timeoutMillis, value));
             } else if (jitter.equals(nodeName)) {
                 connectionRetryConfig.setJitter(getDoubleValue(jitter, value));
             }

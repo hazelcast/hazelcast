@@ -106,7 +106,7 @@ public class ClientQueryCacheCreateDestroyTest extends HazelcastTestSupport {
 
     private static ClientConfig newClientConfigWithQueryCache(String mapName, String queryCacheName) {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
         queryCacheConfig.getPredicateConfig().setImplementation(Predicates.alwaysTrue());

@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.JsonUtil.getObject;
  * This class is thread-safe.
  * <p>
  * Note: Once MC migrates to client comms, this class may be converted into a {@link AbstractLocalOperation}.
- * The {@link #handleLostConnection} and {@link #handleConfig} methods won't be required when the migration happens.
+ * The {@link #handleLostConnection} and {@link #handleNewConfig} methods won't be required when the migration happens.
  *
  * @see ManagementCenterService ManagementCenterService for more details on usage.
  */
@@ -68,7 +68,7 @@ public class ClientBwListConfigHandler {
      *
      * @param configJson configuration JSON object
      */
-    public void handleConfig(JsonObject configJson) {
+    public void handleNewConfig(JsonObject configJson) {
         try {
             JsonObject bwListConfigJson = getObject(configJson, "clientBwList");
             ClientBwListDTO configDTO = new ClientBwListDTO();

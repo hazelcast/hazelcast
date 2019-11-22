@@ -280,7 +280,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         final HazelcastInstance ownerMember = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ASYNC);
         String topicName = "topic";
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);

@@ -47,8 +47,10 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
@@ -71,6 +73,12 @@ import static com.hazelcast.wan.impl.WanSyncType.SINGLE_MAP;
  * Only works for smart clients, i.e. doesn't work for unisocket clients.
  */
 public class ManagementCenterService {
+
+    /**
+     * Internal property for enabling MC client mode ({@link ConnectionType#MC_JAVA_CLIENT}).
+     */
+    public static final HazelcastProperty MC_CLIENT_MODE_PROP
+            = new HazelcastProperty("hazelcast.client.internal.mc.mode", false);
 
     private final HazelcastClientInstanceImpl client;
     private final InternalSerializationService serializationService;

@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
@@ -570,4 +571,6 @@ public interface RecordStore<R extends Record> {
     void destroy();
 
     InMemoryFormat getInMemoryFormat();
+
+    EvictionPolicy getEvictionPolicy();
 }

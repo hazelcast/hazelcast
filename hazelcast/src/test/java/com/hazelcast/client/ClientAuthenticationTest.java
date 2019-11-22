@@ -33,6 +33,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientAuthenticationTest extends HazelcastTestSupport {
@@ -52,7 +54,6 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
         hazelcastFactory.newHazelcastClient(clientConfig);
-
     }
 
     @Test
@@ -72,18 +73,27 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
-    private class CustomCredentialsIdentifiedFactory implements DataSerializableFactory {
+    @Test
+    public void testAuthentication_with_mcModeEnabled() {
+        hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(MC_CLIENT_MODE_PROP.getName(), "true");
+        // if the client is able to connect, it's a pass
+        hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+    private static class CustomCredentialsIdentifiedFactory implements DataSerializableFactory {
         @Override
         public IdentifiedDataSerializable create(int classId) {
             return new CustomCredentials();
         }
     }
 
-    private class CustomCredentials extends SimpleTokenCredentials {
+    private static class CustomCredentials extends SimpleTokenCredentials {
         @Override
         public byte[] getToken() {
             return new byte[10];
         }
-
     }
 }

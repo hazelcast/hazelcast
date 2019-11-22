@@ -61,7 +61,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
     public void testTransactionBeginShouldFail_onDisconnectedState() {
         Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
@@ -87,7 +87,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
     public void testNewTransactionContextShouldFail_onDisconnectedState() {
         Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
@@ -112,7 +112,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
     public void testXAShouldFail_onDisconnectedState() throws Throwable {
         Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setFailOnMaxBackoff(false);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
