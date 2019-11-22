@@ -19,7 +19,6 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -29,7 +28,7 @@ public class CompositeMetricsCollector implements MetricsCollector {
     private final List<MetricsCollector> collectors;
 
     public CompositeMetricsCollector(MetricsCollector... collectors) {
-        this.collectors = new ArrayList<>(asList(collectors));
+        this.collectors = asList(collectors);
     }
 
     @Override

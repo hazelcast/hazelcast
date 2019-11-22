@@ -74,7 +74,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        ClientMetricsConfig metricsConfigUsed = client.client.getStatistics().getMetricsConfig();
+        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
         assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
@@ -98,7 +98,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        ClientMetricsConfig metricsConfigUsed = client.client.getStatistics().getMetricsConfig();
+        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
         assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
@@ -115,7 +115,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(24, originalMetricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        ClientMetricsConfig metricsConfigUsed = client.client.getStatistics().getMetricsConfig();
+        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
         assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
@@ -137,7 +137,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), originalMetricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        ClientMetricsConfig metricsConfigUsed = client.client.getStatistics().getMetricsConfig();
+        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
         assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 

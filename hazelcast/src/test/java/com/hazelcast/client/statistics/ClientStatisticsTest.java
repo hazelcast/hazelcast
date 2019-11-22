@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
-import com.hazelcast.client.impl.statistics.Statistics;
+import com.hazelcast.client.impl.statistics.ClientStatisticsService;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -53,8 +53,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static com.hazelcast.client.impl.statistics.Statistics.split;
-import static com.hazelcast.client.impl.statistics.Statistics.unescapeSpecialCharacters;
+import static com.hazelcast.client.impl.statistics.ClientStatisticsService.split;
+import static com.hazelcast.client.impl.statistics.ClientStatisticsService.unescapeSpecialCharacters;
 import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -245,7 +245,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         String originalString = "stat1=value1.lastName,stat2=value2\\hello==";
         String escapedString = "stat1\\=value1\\.lastName\\,stat2\\=value2\\\\hello\\=\\=";
         StringBuilder buffer = new StringBuilder(originalString);
-        Statistics.escapeSpecialCharacters(buffer);
+        ClientStatisticsService.escapeSpecialCharacters(buffer);
         assertEquals(escapedString, buffer.toString());
         assertEquals(originalString, unescapeSpecialCharacters(escapedString));
     }

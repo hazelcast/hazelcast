@@ -49,7 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * statistics to the cluster. If the client statistics feature is enabled,
  * it will be scheduled for periodic statistics collection and sent.
  */
-public class Statistics {
+public class ClientStatisticsService {
     private static final String NEAR_CACHE_CATEGORY_PREFIX = "nc.";
     private static final char STAT_SEPARATOR = ',';
     private static final char KEY_VALUE_SEPARATOR = '=';
@@ -66,7 +66,7 @@ public class Statistics {
 
     private PeriodicStatistics periodicStats;
 
-    public Statistics(final HazelcastClientInstanceImpl clientInstance) {
+    public ClientStatisticsService(final HazelcastClientInstanceImpl clientInstance) {
         this.metricsConfig = clientInstance.getClientConfig().getMetricsConfig();
         this.enabled = metricsConfig.isEnabled();
         this.client = clientInstance;
@@ -127,18 +127,18 @@ public class Statistics {
             metricsRegistry.collect(compositeMetricsCollector);
             publisherMetricsCollector.publishCollectedMetrics();
 
-            ClientConnection mainConnection = getConnection();
-            if (mainConnection == null) {
-                logger.finest("Cannot send client statistics to the server. No owner connection.");
+            ClientConnection connection = getConnection();
+            if (connection == null) {
+                logger.finest("Cannot send client statistics to the server. No connection found.");
                 return;
             }
 
             final StringBuilder clientAttributes = new StringBuilder();
-            periodicStats.fillMetrics(collectionTimestamp, clientAttributes, mainConnection);
+            periodicStats.fillMetrics(collectionTimestamp, clientAttributes, connection);
             addNearCacheStats(clientAttributes);
 
             byte[] metricsBlob = clientMetricCollector.getBlob();
-            sendStats(collectionTimestamp, clientAttributes.toString(), metricsBlob, mainConnection);
+            sendStats(collectionTimestamp, clientAttributes.toString(), metricsBlob, connection);
         }, 0, periodSeconds, SECONDS);
     }
 

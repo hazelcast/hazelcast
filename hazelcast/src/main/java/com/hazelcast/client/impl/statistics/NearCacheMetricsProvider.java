@@ -33,7 +33,7 @@ class NearCacheMetricsProvider implements DynamicMetricsProvider {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
 
-        descriptor.withPrefix("nearCache");
+        descriptor.withPrefix("nearcache");
         for (NearCache nearCache : nearCacheManager.listAllNearCaches()) {
             String nearCacheName = nearCache.getName();
 
