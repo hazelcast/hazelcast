@@ -24,10 +24,10 @@ import com.hazelcast.client.impl.protocol.codec.MCAddWanReplicationConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec;
 import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
@@ -52,6 +52,7 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
+import com.hazelcast.wan.impl.WanSyncType;
 
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.wan.impl.WanSyncType.SINGLE_MAP;
 
 /**
  * Only works for smart clients, i.e. doesn't work for unisocket clients.
@@ -585,17 +587,18 @@ public class ManagementCenterService {
     @Nonnull
     public CompletableFuture<UUID> wanSyncMap(String wanReplicationName,
                                               String wanPublisherId,
-                                              int wanSyncType,
+                                              WanSyncType wanSyncType,
                                               String mapName) {
         checkNotNull(wanReplicationName);
         checkNotNull(wanPublisherId);
-        if (wanSyncType == 1) {
+        if (wanSyncType == SINGLE_MAP) {
             checkNotNull(mapName);
         }
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCWanSyncMapCodec.encodeRequest(wanReplicationName, wanPublisherId, wanSyncType, mapName),
+                MCWanSyncMapCodec.encodeRequest(
+                        wanReplicationName, wanPublisherId, wanSyncType.getType(), mapName),
                 null
         );
 

@@ -23,9 +23,12 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.wan.impl.WanReplicationService;
+import com.hazelcast.wan.impl.WanSyncType;
 
 import java.security.Permission;
 import java.util.UUID;
+
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
@@ -35,16 +38,29 @@ public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestPa
 
     @Override
     protected Object call() throws Exception {
-        if (parameters.wanSyncType == 0) {
-            return nodeEngine.getWanReplicationService()
-                    .syncAllMaps(parameters.wanReplicationName, parameters.wanPublisherId);
-        } else if (parameters.wanSyncType == 1) {
-            return nodeEngine.getWanReplicationService()
-                    .syncMap(parameters.wanReplicationName, parameters.wanPublisherId, parameters.mapName);
-        } else {
+        WanSyncType wanSyncType = WanSyncType.getByType(parameters.wanSyncType);
+        if (wanSyncType == null) {
             throw new IllegalArgumentException(
-                    String.format("wanSyncType %s is not recognized.", parameters.wanSyncType));
+                    String.format("Invalid wanSyncType: %s", parameters.wanSyncType));
         }
+        switch (wanSyncType) {
+            case ALL_MAPS:
+                return syncAllMaps();
+            case SINGLE_MAP:
+                return syncSingleMap();
+            default:
+                return isNullOrEmptyAfterTrim(parameters.mapName) ? syncAllMaps() : syncSingleMap();
+        }
+    }
+
+    private UUID syncSingleMap() {
+        return nodeEngine.getWanReplicationService()
+                .syncMap(parameters.wanReplicationName, parameters.wanPublisherId, parameters.mapName);
+    }
+
+    private UUID syncAllMaps() {
+        return nodeEngine.getWanReplicationService()
+                .syncAllMaps(parameters.wanReplicationName, parameters.wanPublisherId);
     }
 
     @Override
