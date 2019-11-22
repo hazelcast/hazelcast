@@ -19,9 +19,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractMultiPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
@@ -33,48 +34,50 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.security.Permission;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public class MapExecuteWithPredicateMessageTask
-        extends AbstractCallableMessageTask<MapExecuteWithPredicateCodec.RequestParameters> implements BlockingMessageTask {
+        extends AbstractMultiPartitionMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
+    private Predicate predicate;
 
     public MapExecuteWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        OperationServiceImpl operationService = nodeEngine.getOperationService();
-
-        Predicate predicate = serializationService.toObject(parameters.predicate);
-
-        if (predicate instanceof PartitionPredicate) {
-            return invokeOnPartition((PartitionPredicate) predicate, operationService);
-        }
-        OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(predicate), endpoint.getUuid());
-        Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
-        return reduce(map);
+    protected void beforeProcess() {
+        predicate = serializationService.toObject(parameters.predicate);
     }
 
-    private Object invokeOnPartition(PartitionPredicate partitionPredicate,
-                                     OperationServiceImpl operationService) {
-        int partitionId = clientMessage.getPartitionId();
-        Predicate predicate = partitionPredicate.getTarget();
-        OperationFactory factory = createOperationFactory(predicate);
-        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(getServiceName(),
-                factory.createOperation(), partitionId);
-        Object result = invocationBuilder.invoke().joinInternal();
-        return reduce(Collections.singletonMap(partitionId, result));
+    @Override
+    public PartitionIdSet getPartitions() {
+        if (predicate instanceof PartitionPredicate) {
+            int partitionId = clientMessage.getPartitionId();
+            return new PartitionIdSet(1, Arrays.asList(partitionId));
+        }
+
+        IPartition[] partitions = clientEngine.getPartitionService().getPartitions();
+        ArrayList<Integer> partitionsList = new ArrayList<>(partitions.length);
+        Arrays.stream(partitions).forEach(partition -> partitionsList.add(partition.getPartitionId()));
+        return new PartitionIdSet(partitions.length, partitionsList);
+    }
+
+    @Override
+    protected OperationFactory createOperationFactory() {
+        if (predicate instanceof PartitionPredicate) {
+            Predicate targetPredicate = ((PartitionPredicate) predicate).getTarget();
+            return new OperationFactoryWrapper(createOperationFactory(targetPredicate), endpoint.getUuid());
+        }
+
+        return new OperationFactoryWrapper(createOperationFactory(predicate), endpoint.getUuid());
     }
 
     private OperationFactory createOperationFactory(Predicate predicate) {

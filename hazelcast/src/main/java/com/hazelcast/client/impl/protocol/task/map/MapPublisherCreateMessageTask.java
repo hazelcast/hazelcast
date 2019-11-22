@@ -48,7 +48,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
  * Client Protocol Task for handling messages with type ID:
- * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_PUBLISHERCREATE}
+ * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateCodec#REQUEST_MESSAGE_TYPE}
  */
 public class MapPublisherCreateMessageTask
         extends AbstractCallableMessageTask<ContinuousQueryPublisherCreateCodec.RequestParameters>
