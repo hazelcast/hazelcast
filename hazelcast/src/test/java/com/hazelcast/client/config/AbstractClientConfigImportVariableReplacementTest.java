@@ -39,6 +39,15 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
     public abstract void readVariables();
 
     @Test
+    public abstract void testImportResourceWithConfigReplacers() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImports() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImportsAndProperties() throws IOException;
+
+    @Test
     public abstract void testImportConfigFromResourceVariables() throws IOException;
 
     @Test

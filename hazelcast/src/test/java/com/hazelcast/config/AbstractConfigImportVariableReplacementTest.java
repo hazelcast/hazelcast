@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.util.Properties;
 
 /**
@@ -42,6 +43,15 @@ public abstract class AbstractConfigImportVariableReplacementTest {
 
     @Test
     public abstract void readVariables();
+
+    @Test
+    public abstract void testImportResourceWithConfigReplacers() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImports() throws IOException;
+
+    @Test
+    public abstract void testImportResourceWithNestedImportsAndProperties() throws IOException;
 
     @Test
     public abstract void testImportConfigFromResourceVariables() throws Exception;
