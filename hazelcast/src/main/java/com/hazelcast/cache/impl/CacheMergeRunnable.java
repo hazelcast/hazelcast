@@ -35,7 +35,6 @@ import java.util.function.BiConsumer;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
-import static com.hazelcast.config.MergePolicyConfig.DEFAULT_BATCH_SIZE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordStore, CacheMergeTypes> {
@@ -49,7 +48,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
         super(CacheService.SERVICE_NAME, mergingStores, splitBrainHandlerService, nodeEngine);
 
         this.cacheService = nodeEngine.getService(SERVICE_NAME);
-        this.configs = new ConcurrentHashMap<String, CacheConfig>(cacheService.getConfigs());
+        this.configs = new ConcurrentHashMap<>(cacheService.getConfigs());
     }
 
     @Override
@@ -86,10 +85,8 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
 
     @Override
     protected int getBatchSize(String dataStructureName) {
-        // the batch size cannot be retrieved from the MergePolicyConfig,
-        // because there is no MergePolicyConfig in CacheConfig
-        // (adding it breaks backward compatibility)
-        return DEFAULT_BATCH_SIZE;
+        return cacheService.getConfigs().get(dataStructureName)
+                           .getMergePolicyConfig().getBatchSize();
     }
 
     @Override

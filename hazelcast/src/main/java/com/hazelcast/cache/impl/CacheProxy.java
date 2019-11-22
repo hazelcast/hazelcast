@@ -17,12 +17,12 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
 import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
-import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
@@ -374,7 +374,9 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
 
     @Override
     public CacheStatistics getLocalCacheStatistics() {
-        // TODO: throw UnsupportedOperationException if cache statistics are not enabled (but it breaks backward compatibility)
+        if (!cacheConfig.isStatisticsEnabled()) {
+            throw new UnsupportedOperationException("Cache statistics are not enabled for " + nameWithPrefix);
+        }
         return getService().createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
     }
 

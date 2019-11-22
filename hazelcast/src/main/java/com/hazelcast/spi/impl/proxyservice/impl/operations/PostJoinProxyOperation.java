@@ -21,10 +21,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
@@ -83,8 +83,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         if (len > 0) {
             for (ProxyInfo proxy : proxies) {
                 out.writeUTF(proxy.getServiceName());
-                out.writeObject(proxy.getObjectName());
-                // writing as object for backward-compatibility
+                out.writeUTF(proxy.getObjectName());
             }
         }
     }
@@ -94,9 +93,9 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         super.readInternal(in);
         int len = in.readInt();
         if (len > 0) {
-            proxies = new ArrayList<ProxyInfo>(len);
+            proxies = new ArrayList<>(len);
             for (int i = 0; i < len; i++) {
-                ProxyInfo proxy = new ProxyInfo(in.readUTF(), (String) in.readObject());
+                ProxyInfo proxy = new ProxyInfo(in.readUTF(), in.readUTF());
                 proxies.add(proxy);
             }
         }
