@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.internal.locksupport.LockStore;
@@ -121,6 +122,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     @Override
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
+    }
+
+    @Override
+    public EvictionPolicy getEvictionPolicy() {
+        return getMapContainer().getMapConfig().getEvictionConfig().getEvictionPolicy();
     }
 
     protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {

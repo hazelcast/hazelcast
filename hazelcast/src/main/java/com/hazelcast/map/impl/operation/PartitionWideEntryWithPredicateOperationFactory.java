@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -133,6 +134,10 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
 
         MapService mapService = nodeEngine.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        if (!mapContainer.shouldUseGlobalIndex()) {
+            return null;
+        }
 
         QueryRunner runner = mapServiceContext.getMapQueryRunner(name);
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.KEY).build();
