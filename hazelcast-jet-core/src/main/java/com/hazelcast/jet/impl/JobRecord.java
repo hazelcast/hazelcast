@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -92,7 +93,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(jobId);
         out.writeLong(creationTime);
-        out.writeData(dag);
+        IOUtil.writeData(out, dag);
         out.writeUTF(dagJson);
         out.writeObject(config);
     }
@@ -101,7 +102,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         jobId = in.readLong();
         creationTime = in.readLong();
-        dag = in.readData();
+        dag = IOUtil.readData(in);
         dagJson = in.readUTF();
         config = in.readObject();
     }

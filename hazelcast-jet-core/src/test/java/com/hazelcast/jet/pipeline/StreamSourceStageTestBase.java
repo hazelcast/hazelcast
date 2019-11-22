@@ -39,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 

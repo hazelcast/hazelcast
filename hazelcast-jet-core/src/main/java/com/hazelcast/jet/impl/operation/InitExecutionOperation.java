@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -93,7 +94,7 @@ public class InitExecutionOperation extends AbstractJobOperation {
         for (MemberInfo participant : participants) {
             out.writeObject(participant);
         }
-        out.writeData(serializedPlan);
+        IOUtil.writeData(out, serializedPlan);
     }
 
     @Override
@@ -107,7 +108,7 @@ public class InitExecutionOperation extends AbstractJobOperation {
         for (int i = 0; i < count; i++) {
             participants.add(in.readObject());
         }
-        serializedPlan = in.readData();
+        serializedPlan = IOUtil.readData(in);
     }
 
     private ExecutionPlan deserializePlan(Data planBlob) {

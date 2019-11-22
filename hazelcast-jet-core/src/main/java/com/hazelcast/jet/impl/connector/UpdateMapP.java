@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
@@ -292,17 +293,17 @@ public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(keysToUpdate.size());
             for (Entry<Data, Object> en : keysToUpdate.entrySet()) {
-                out.writeData(en.getKey());
+                IOUtil.writeData(out, en.getKey());
                 Object value = en.getValue();
                 if (value instanceof Data) {
                     out.writeInt(1);
-                    out.writeData((Data) value);
+                    IOUtil.writeData(out, (Data) value);
                 } else if (value instanceof List) {
                     @SuppressWarnings("unchecked")
                     List<Data> list = (List<Data>) value;
                     out.writeInt(list.size());
                     for (Data data : list) {
-                        out.writeData(data);
+                        IOUtil.writeData(out, data);
                     }
                 } else {
                     assert false : "Unknown value type: " + value.getClass();
@@ -316,15 +317,15 @@ public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
             int keysToUpdateSize = in.readInt();
             keysToUpdate = createHashMap(keysToUpdateSize);
             for (int i = 0; i < keysToUpdateSize; i++) {
-                Data key = in.readData();
+                Data key = IOUtil.readData(in);
                 int size = in.readInt();
                 Object value;
                 if (size == 1) {
-                    value = in.readData();
+                    value = IOUtil.readData(in);
                 } else {
                     List<Data> list = new ArrayList<>(size);
                     for (int j = 0; j < size; j++) {
-                        list.add(in.readData());
+                        list.add(IOUtil.readData(in));
                     }
                     value = list;
                 }

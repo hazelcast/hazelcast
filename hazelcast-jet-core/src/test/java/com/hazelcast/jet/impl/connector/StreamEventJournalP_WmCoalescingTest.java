@@ -45,7 +45,7 @@ import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

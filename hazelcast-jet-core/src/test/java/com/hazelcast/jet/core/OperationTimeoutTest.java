@@ -18,7 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
 import org.junit.Rule;
@@ -41,7 +41,7 @@ public class OperationTimeoutTest extends JetTestSupport {
     @Before
     public void setup() {
         config = new JetConfig();
-        config.getHazelcastConfig().getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+        config.getHazelcastConfig().getProperties().put(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 Integer.toString(TIMEOUT_MILLIS));
     }
 

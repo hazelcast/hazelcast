@@ -56,7 +56,7 @@ import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetClientConfig;
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
-import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_ENABLED;
 
 /**
  * Entry point to the Jet product.

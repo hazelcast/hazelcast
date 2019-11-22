@@ -29,7 +29,7 @@ import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.ImdgUtil;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -57,7 +57,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void beforeClass() {
         JetConfig config = new JetConfig();
-        config.getHazelcastConfig().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "1000");
+        config.getHazelcastConfig().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "1000");
 
         initialize(2, config);
     }

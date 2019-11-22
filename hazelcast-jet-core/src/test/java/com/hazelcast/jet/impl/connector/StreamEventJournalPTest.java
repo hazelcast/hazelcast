@@ -51,7 +51,7 @@ import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

@@ -28,7 +28,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -84,8 +84,8 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     private JetConfig createConfig() {
         final JetConfig jetConfig = new JetConfig();
         jetConfig.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
-        jetConfig.getHazelcastConfig().setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        jetConfig.getHazelcastConfig().setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+        jetConfig.getHazelcastConfig().setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        jetConfig.getHazelcastConfig().setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
         onJetConfigCreated(jetConfig);
         return jetConfig;
     }

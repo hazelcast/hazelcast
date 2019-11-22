@@ -52,7 +52,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.core.JetProperties.JET_SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
-import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
+import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_POLICY;
 import static java.lang.Boolean.parseBoolean;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
