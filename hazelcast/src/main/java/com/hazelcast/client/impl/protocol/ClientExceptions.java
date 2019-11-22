@@ -44,6 +44,7 @@ import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
+import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -207,6 +208,7 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class);
         register(ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class);
         register(ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION, NotLeaderException.class);
+        register(ClientProtocolErrorCodes.VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class);
     }
 
     public ClientMessage createExceptionMessage(Throwable throwable) {

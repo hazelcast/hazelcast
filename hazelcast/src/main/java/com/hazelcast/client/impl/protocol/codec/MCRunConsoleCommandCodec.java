@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given console command on the member it's called on.
  */
-@Generated("195860b717793180e282cf835ed634e0")
+@Generated("a1f1f91404cedec77cd0d331d8c9b7ac")
 public final class MCRunConsoleCommandCodec {
-    //hex: 0x200F00
-    public static final int REQUEST_MESSAGE_TYPE = 2100992;
-    //hex: 0x200F01
-    public static final int RESPONSE_MESSAGE_TYPE = 2100993;
+    //hex: 0x201200
+    public static final int REQUEST_MESSAGE_TYPE = 2101760;
+    //hex: 0x201201
+    public static final int RESPONSE_MESSAGE_TYPE = 2101761;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

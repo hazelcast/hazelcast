@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -57,7 +58,7 @@ public class MapLoadAllOperationFactory extends AbstractMapOperationFactory {
         final int size = keys.size();
         out.writeInt(size);
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
         out.writeBoolean(replaceExistingValues);
     }
@@ -70,7 +71,7 @@ public class MapLoadAllOperationFactory extends AbstractMapOperationFactory {
             keys = new ArrayList<>(size);
         }
         for (int i = 0; i < size; i++) {
-            Data data = in.readData();
+            Data data = IOUtil.readData(in);
             keys.add(data);
         }
         replaceExistingValues = in.readBoolean();

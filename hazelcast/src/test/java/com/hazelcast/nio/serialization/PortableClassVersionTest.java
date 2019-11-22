@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.nio.IOUtil.readData;
+import static com.hazelcast.internal.nio.IOUtil.writeData;
 import static com.hazelcast.nio.serialization.PortableTest.createNamedPortableClassDefinition;
 import static com.hazelcast.nio.serialization.PortableTest.createSerializationService;
 import static org.junit.Assert.assertEquals;
@@ -142,11 +144,11 @@ public class PortableClassVersionTest {
 
         // emulate socket write by writing data to stream
         BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
-        out.writeData(dataV1);
+        writeData(out, dataV1);
         byte[] bytes = out.toByteArray();
         // emulate socket read by reading data from stream
         BufferObjectDataInput in = serializationService2.createObjectDataInput(bytes);
-        dataV1 = in.readData();
+        dataV1 = readData(in);
 
         // serialize new portable version
         NamedPortableV2 portableV2 = new NamedPortableV2("portable-v2", 123, 500);

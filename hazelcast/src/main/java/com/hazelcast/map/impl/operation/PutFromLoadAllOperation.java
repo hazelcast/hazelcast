@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
@@ -163,7 +164,7 @@ public class PutFromLoadAllOperation extends MapOperation
         final int size = keyValueSequence.size();
         out.writeInt(size);
         for (Data data : keyValueSequence) {
-            out.writeData(data);
+            IOUtil.writeData(out, data);
         }
     }
 
@@ -177,7 +178,7 @@ public class PutFromLoadAllOperation extends MapOperation
         } else {
             final List<Data> tmpKeyValueSequence = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
-                final Data data = in.readData();
+                final Data data = IOUtil.readData(in);
                 tmpKeyValueSequence.add(data);
             }
             loadingSequence = tmpKeyValueSequence;

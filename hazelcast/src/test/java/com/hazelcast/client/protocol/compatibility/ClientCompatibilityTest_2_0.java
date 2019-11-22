@@ -6735,8 +6735,57 @@ public class ClientCompatibilityTest_2_0 {
     }
 
     @Test
-    public void test_MCRunScriptCodec_encodeRequest() {
+    public void test_MCGetClusterMetadataCodec_encodeRequest() {
         int fileClientMessageIndex = 799;
+        ClientMessage encoded = MCGetClusterMetadataCodec.encodeRequest();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCGetClusterMetadataCodec_decodeResponse() {
+        int fileClientMessageIndex = 800;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCGetClusterMetadataCodec.ResponseParameters parameters = MCGetClusterMetadataCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aByte, parameters.currentState));
+        assertTrue(isEqual(aString, parameters.memberVersion));
+        assertTrue(isEqual(aString, parameters.jetVersion));
+        assertTrue(isEqual(aLong, parameters.clusterTime));
+    }
+
+    @Test
+    public void test_MCShutdownClusterCodec_encodeRequest() {
+        int fileClientMessageIndex = 801;
+        ClientMessage encoded = MCShutdownClusterCodec.encodeRequest();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCShutdownClusterCodec_decodeResponse() {
+        int fileClientMessageIndex = 802;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCShutdownClusterCodec.ResponseParameters parameters = MCShutdownClusterCodec.decodeResponse(fromFile);
+    }
+
+    @Test
+    public void test_MCChangeClusterVersionCodec_encodeRequest() {
+        int fileClientMessageIndex = 803;
+        ClientMessage encoded = MCChangeClusterVersionCodec.encodeRequest(aByte, aByte);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCChangeClusterVersionCodec_decodeResponse() {
+        int fileClientMessageIndex = 804;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCChangeClusterVersionCodec.ResponseParameters parameters = MCChangeClusterVersionCodec.decodeResponse(fromFile);
+    }
+
+    @Test
+    public void test_MCRunScriptCodec_encodeRequest() {
+        int fileClientMessageIndex = 805;
         ClientMessage encoded = MCRunScriptCodec.encodeRequest(aString, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6744,7 +6793,7 @@ public class ClientCompatibilityTest_2_0 {
 
     @Test
     public void test_MCRunScriptCodec_decodeResponse() {
-        int fileClientMessageIndex = 800;
+        int fileClientMessageIndex = 806;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCRunScriptCodec.ResponseParameters parameters = MCRunScriptCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aString, parameters.result));
@@ -6752,7 +6801,7 @@ public class ClientCompatibilityTest_2_0 {
 
     @Test
     public void test_MCRunConsoleCommandCodec_encodeRequest() {
-        int fileClientMessageIndex = 801;
+        int fileClientMessageIndex = 807;
         ClientMessage encoded = MCRunConsoleCommandCodec.encodeRequest(aString, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6760,7 +6809,7 @@ public class ClientCompatibilityTest_2_0 {
 
     @Test
     public void test_MCRunConsoleCommandCodec_decodeResponse() {
-        int fileClientMessageIndex = 802;
+        int fileClientMessageIndex = 808;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCRunConsoleCommandCodec.ResponseParameters parameters = MCRunConsoleCommandCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aString, parameters.result));

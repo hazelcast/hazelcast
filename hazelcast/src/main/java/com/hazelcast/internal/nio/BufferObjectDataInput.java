@@ -17,12 +17,13 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
+public interface BufferObjectDataInput extends ObjectDataInput, Closeable, DataReader, SerializationServiceSupport {
 
     int UTF_BUFFER_SIZE = 1024;
 

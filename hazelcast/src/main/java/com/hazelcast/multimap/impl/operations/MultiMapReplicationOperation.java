@@ -17,6 +17,7 @@
 package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -64,7 +65,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
             out.writeInt(collections.size());
             for (Map.Entry<Data, MultiMapValue> collectionEntry : collections.entrySet()) {
                 Data key = collectionEntry.getKey();
-                out.writeData(key);
+                IOUtil.writeData(out, key);
                 MultiMapValue multiMapValue = collectionEntry.getValue();
                 Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
                 out.writeInt(coll.size());
@@ -89,7 +90,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
             int collectionSize = in.readInt();
             Map<Data, MultiMapValue> collections = createHashMap(collectionSize);
             for (int j = 0; j < collectionSize; j++) {
-                Data key = in.readData();
+                Data key = IOUtil.readData(in);
                 int collSize = in.readInt();
                 String collectionType = in.readUTF();
                 Collection<MultiMapRecord> coll;

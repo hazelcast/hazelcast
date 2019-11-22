@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -569,7 +570,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         // we only write the actual content of the ringbuffer. So we don't write empty slots.
         for (long seq = ringbuffer.headSequence(); seq <= ringbuffer.tailSequence(); seq++) {
             if (inMemoryFormat == BINARY) {
-                out.writeData((Data) ringbuffer.read(seq));
+                IOUtil.writeData(out, (Data) ringbuffer.read(seq));
             } else {
                 out.writeObject(ringbuffer.read(seq));
             }
@@ -607,7 +608,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         long now = System.currentTimeMillis();
         for (long seq = headSequence; seq <= tailSequence; seq++) {
             if (inMemoryFormat == BINARY) {
-                ringbuffer.set(seq, (E) in.readData());
+                ringbuffer.set(seq, (E) IOUtil.readData(in));
             } else {
                 ringbuffer.set(seq, (E) in.readObject());
             }

@@ -18,11 +18,12 @@ package com.hazelcast.spi.impl.operationservice.impl.responses;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.IOUtil.readObject;
+import static com.hazelcast.internal.nio.IOUtil.writeObject;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 
 /**
@@ -90,13 +91,7 @@ public class NormalResponse extends Response {
         // acks fit in a byte.
         out.writeByte(backupAcks);
 
-        final boolean isData = value instanceof Data;
-        out.writeBoolean(isData);
-        if (isData) {
-            out.writeData((Data) value);
-        } else {
-            out.writeObject(value);
-        }
+        writeObject(out, value);
     }
 
     @Override
@@ -104,12 +99,7 @@ public class NormalResponse extends Response {
         super.readData(in);
         backupAcks = in.readByte();
 
-        final boolean isData = in.readBoolean();
-        if (isData) {
-            value = in.readData();
-        } else {
-            value = in.readObject();
-        }
+        value = readObject(in);
     }
 
     @Override

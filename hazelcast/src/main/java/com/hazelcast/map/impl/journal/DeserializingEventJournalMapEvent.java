@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -84,9 +85,9 @@ public class DeserializingEventJournalMapEvent<K, V>
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(eventType);
-        out.writeData(toData(dataKey, objectKey));
-        out.writeData(toData(dataNewValue, objectNewValue));
-        out.writeData(toData(dataOldValue, objectOldValue));
+        IOUtil.writeData(out, toData(dataKey, objectKey));
+        IOUtil.writeData(out, toData(dataNewValue, objectNewValue));
+        IOUtil.writeData(out, toData(dataOldValue, objectOldValue));
     }
 
     private Data toData(Data data, Object o) {

@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -133,13 +134,13 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
         @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
-            out.writeData(response);
+            IOUtil.writeData(out, response);
         }
 
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
-            response = in.readData();
+            response = IOUtil.readData(in);
         }
     }
 }

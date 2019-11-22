@@ -18,6 +18,7 @@ package com.hazelcast.collection.impl.queue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -62,7 +63,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
             long itemId = entry.getKey();
             Data value = entry.getValue();
             out.writeLong(itemId);
-            out.writeData(value);
+            IOUtil.writeData(out, value);
         }
     }
 
@@ -73,7 +74,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
         dataMap = createHashMap(size);
         for (int i = 0; i < size; i++) {
             long itemId = in.readLong();
-            Data value = in.readData();
+            Data value = IOUtil.readData(in);
             dataMap.put(itemId, value);
         }
     }
