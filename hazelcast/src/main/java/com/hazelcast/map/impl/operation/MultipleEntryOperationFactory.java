@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,7 +54,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
         out.writeUTF(name);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            out.writeData(key);
+            IOUtil.writeData(out, key);
         }
         out.writeObject(entryProcessor);
     }
@@ -64,7 +65,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
         int size = in.readInt();
         this.keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
+            Data key = IOUtil.readData(in);
             keys.add(key);
         }
         this.entryProcessor = in.readObject();

@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -95,8 +96,8 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         response.writeData(out);
         out.writeUTF(name);
-        out.writeData(dataKey);
-        out.writeData(dataValue);
+        IOUtil.writeData(out, dataKey);
+        IOUtil.writeData(out, dataValue);
         out.writeLong(ttl);
         out.writeBoolean(isRemove);
         out.writeObject(origin);
@@ -107,8 +108,8 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
         response = new VersionResponsePair();
         response.readData(in);
         name = in.readUTF();
-        dataKey = in.readData();
-        dataValue = in.readData();
+        dataKey = IOUtil.readData(in);
+        dataValue = IOUtil.readData(in);
         ttl = in.readLong();
         isRemove = in.readBoolean();
         origin = in.readObject();

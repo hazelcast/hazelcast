@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -60,15 +62,14 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         }
 
         Node node = getNode(h1);
-        Map<ClientType, Integer> clientStats = node.clientEngine.getConnectedClientStats();
+        Map<String, Integer> clientStats = node.clientEngine.getConnectedClientStats();
 
-        assertEquals(numberOfClients, clientStats.get(ClientType.JAVA).intValue());
-        assertEquals(0, clientStats.get(ClientType.CPP).intValue());
-        assertEquals(0, clientStats.get(ClientType.CSHARP).intValue());
-        assertEquals(0, clientStats.get(ClientType.NODEJS).intValue());
-        assertEquals(0, clientStats.get(ClientType.PYTHON).intValue());
-        assertEquals(0, clientStats.get(ClientType.GO).intValue());
-        assertEquals(0, clientStats.get(ClientType.OTHER).intValue());
+        assertEquals(numberOfClients, clientStats.get(ConnectionType.JAVA_CLIENT).intValue());
+        assertNull(clientStats.get(ConnectionType.CPP_CLIENT));
+        assertNull(clientStats.get(ConnectionType.CSHARP_CLIENT));
+        assertNull(clientStats.get(ConnectionType.NODEJS_CLIENT));
+        assertNull(clientStats.get(ConnectionType.PYTHON_CLIENT));
+        assertNull(clientStats.get(ConnectionType.GO_CLIENT));
     }
 
     @Test
@@ -78,9 +79,9 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
 
         Operation operation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();
-        Future<Map<String, ClientType>> future =
+        Future<Map<String, String>> future =
                 operationService.invokeOnTarget(ClientEngineImpl.SERVICE_NAME, operation, node.address);
-        Map<String, ClientType> clients = future.get();
+        Map<String, String> clients = future.get();
         assertEquals(0, clients.size());
     }
 
@@ -94,9 +95,9 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         Node node = getNode(instance);
         Operation operation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();
-        Future<Map<String, ClientType>> future =
+        Future<Map<String, String>> future =
                 operationService.invokeOnTarget(ClientEngineImpl.SERVICE_NAME, operation, node.address);
-        Map<String, ClientType> clients = future.get();
+        Map<String, String> clients = future.get();
         assertEquals(2, clients.size());
     }
 }

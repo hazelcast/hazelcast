@@ -21,8 +21,8 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -404,11 +405,32 @@ public class TcpIpEndpointManager
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        MetricDescriptor rootDescriptor = descriptor.withPrefix("tcp.connection");
         if (endpointQualifier == null) {
-            context.collect(descriptor.withPrefix("tcp.connection"), this);
+            context.collect(rootDescriptor.copy(), this);
         } else {
-            context.collect(descriptor.withPrefix("tcp.connection")
-                                      .withDiscriminator("endpoint", endpointQualifier.toMetricsPrefixString()), this);
+            context.collect(rootDescriptor
+                    .copy()
+                    .withDiscriminator("endpoint", endpointQualifier.toMetricsPrefixString()), this);
+        }
+
+        for (TcpIpConnection connection : activeConnections) {
+            if (connection.getEndPoint() != null) {
+                context.collect(rootDescriptor
+                        .copy()
+                        .withDiscriminator("endpoint", connection.getEndPoint().toString()), connection);
+            }
+        }
+
+        for (Map.Entry<Address, TcpIpConnection> entry : connectionsMap.entrySet()) {
+            Address bindAddress = entry.getKey();
+            TcpIpConnection connection = entry.getValue();
+            if (connection.getEndPoint() != null) {
+                context.collect(rootDescriptor
+                        .copy()
+                        .withDiscriminator("bindAddress", bindAddress.toString())
+                        .withTag("endpoint", connection.getEndPoint().toString()), connection);
+            }
         }
     }
 

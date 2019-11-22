@@ -19,7 +19,6 @@ package com.hazelcast.client.impl;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientListener;
-import com.hazelcast.client.ClientType;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -67,7 +66,6 @@ import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -461,72 +459,34 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public Map<ClientType, Integer> getConnectedClientStats() {
-        int numberOfCppClients = 0;
-        int numberOfDotNetClients = 0;
-        int numberOfJavaClients = 0;
-        int numberOfNodeJSClients = 0;
-        int numberOfPythonClients = 0;
-        int numberOfGoClients = 0;
-        int numberOfOtherClients = 0;
+    public Map<String, Integer> getConnectedClientStats() {
+        Map<UUID, String> clientsMap = getClientsInCluster();
 
-        Map<UUID, ClientType> clientsMap = getClientsInCluster();
+        final Map<String, Integer> resultMap = new HashMap<>();
 
-        //Now we are regrouping according to the client type
-        for (ClientType clientType : clientsMap.values()) {
-            switch (clientType) {
-                case JAVA:
-                    numberOfJavaClients++;
-                    break;
-                case CSHARP:
-                    numberOfDotNetClients++;
-                    break;
-                case CPP:
-                    numberOfCppClients++;
-                    break;
-                case NODEJS:
-                    numberOfNodeJSClients++;
-                    break;
-                case PYTHON:
-                    numberOfPythonClients++;
-                    break;
-                case GO:
-                    numberOfGoClients++;
-                    break;
-                default:
-                    numberOfOtherClients++;
-            }
+        for (String clientType : clientsMap.values()) {
+            Integer count = resultMap.getOrDefault(clientType, 0);
+            resultMap.put(clientType, ++count);
         }
-
-        final Map<ClientType, Integer> resultMap = new EnumMap<ClientType, Integer>(ClientType.class);
-
-        resultMap.put(ClientType.CPP, numberOfCppClients);
-        resultMap.put(ClientType.CSHARP, numberOfDotNetClients);
-        resultMap.put(ClientType.JAVA, numberOfJavaClients);
-        resultMap.put(ClientType.NODEJS, numberOfNodeJSClients);
-        resultMap.put(ClientType.PYTHON, numberOfPythonClients);
-        resultMap.put(ClientType.GO, numberOfGoClients);
-        resultMap.put(ClientType.OTHER, numberOfOtherClients);
-
         return resultMap;
     }
 
-    Map<UUID, ClientType> getClientsInCluster() {
+    Map<UUID, String> getClientsInCluster() {
         OperationService operationService = node.nodeEngine.getOperationService();
-        Map<UUID, ClientType> clientsMap = new HashMap<UUID, ClientType>();
+        Map<UUID, String> clientsMap = new HashMap<>();
 
         for (Member member : node.getClusterService().getMembers()) {
             Address target = member.getAddress();
             Operation clientInfoOperation = new GetConnectedClientsOperation();
-            Future<Map<UUID, ClientType>> future
+            Future<Map<UUID, String>> future
                     = operationService.invokeOnTarget(SERVICE_NAME, clientInfoOperation, target);
             try {
-                Map<UUID, ClientType> endpoints = future.get();
+                Map<UUID, String> endpoints = future.get();
                 if (endpoints == null) {
                     continue;
                 }
                 //Merge connected clients according to their UUID
-                for (Map.Entry<UUID, ClientType> entry : endpoints.entrySet()) {
+                for (Map.Entry<UUID, String> entry : endpoints.entrySet()) {
                     clientsMap.put(entry.getKey(), entry.getValue());
                 }
             } catch (Exception e) {

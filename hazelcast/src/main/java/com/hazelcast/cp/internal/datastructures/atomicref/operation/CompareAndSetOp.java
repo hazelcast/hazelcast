@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.datastructures.atomicref.operation;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRef;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -63,15 +64,15 @@ public class CompareAndSetOp extends AbstractAtomicRefOp implements IdentifiedDa
     public void writeData(ObjectDataOutput out)
             throws IOException {
         super.writeData(out);
-        out.writeData(expectedValue);
-        out.writeData(newValue);
+        IOUtil.writeData(out, expectedValue);
+        IOUtil.writeData(out, newValue);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
         super.readData(in);
-        expectedValue = in.readData();
-        newValue = in.readData();
+        expectedValue = IOUtil.readData(in);
+        newValue = IOUtil.readData(in);
     }
 }

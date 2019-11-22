@@ -24,16 +24,16 @@ import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
+import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
-import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Function;
@@ -179,6 +179,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     protected boolean isRecordExpired(R record) {
+        if (!canUpdateStats(record)) {
+            // A record can only be checked for expiry if its record state is
+            // READ_PERMITTED. We can't check reserved records for expiry.
+            return false;
+        }
+
         long now = Clock.currentTimeMillis();
         if (record.isExpiredAt(now)) {
             return true;
@@ -351,7 +357,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
         return null;
     }
-
 
     protected boolean canUpdateStats(R record) {
         return record != null && record.getRecordState() == READ_PERMITTED;

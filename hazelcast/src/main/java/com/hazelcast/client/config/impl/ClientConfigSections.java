@@ -37,8 +37,12 @@ public enum ClientConfigSections {
     BACKUP_ACK_TO_CLIENT("backup-ack-to-client-enabled", false),
     INSTANCE_NAME("instance-name", false),
     CONNECTION_STRATEGY("connection-strategy", false),
-    USER_CODE_DEPLOYMENT("user-code-deployment", false), FLAKE_ID_GENERATOR("flake-id-generator", true), RELIABLE_TOPIC(
-            "reliable-topic", true), LABELS("client-labels", false);
+    USER_CODE_DEPLOYMENT("user-code-deployment", false),
+    FLAKE_ID_GENERATOR("flake-id-generator", true),
+    RELIABLE_TOPIC("reliable-topic", true),
+    LABELS("client-labels", false),
+    CLUSTER_NAME("cluster-name", false),
+    METRICS("metrics", false);
 
     final boolean multipleOccurrence;
     private final String name;

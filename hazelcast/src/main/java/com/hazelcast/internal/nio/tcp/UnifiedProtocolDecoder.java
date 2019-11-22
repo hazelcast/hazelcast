@@ -141,7 +141,7 @@ public class UnifiedProtocolDecoder
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE);
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-        connection.setType(ConnectionType.MEMBER);
+        connection.setConnectionType(ConnectionType.MEMBER);
         channel.inboundPipeline().replace(this, ioService.createInboundHandlers(EndpointQualifier.MEMBER, connection));
     }
 

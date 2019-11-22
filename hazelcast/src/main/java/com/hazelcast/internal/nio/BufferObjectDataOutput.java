@@ -23,7 +23,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable, SerializationServiceSupport {
+public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable,
+                                                SerializationServiceSupport, DataWriter {
 
     void write(int position, int b);
 

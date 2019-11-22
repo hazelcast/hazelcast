@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.nio.DataWriter;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -26,7 +27,7 @@ import java.nio.ByteOrder;
 
 @SuppressWarnings("checkstyle:methodcount")
 final class EmptyObjectDataOutput extends VersionedObjectDataOutput
-        implements ObjectDataOutput, SerializationServiceSupport {
+        implements ObjectDataOutput, SerializationServiceSupport, DataWriter {
 
     @Override
     public void writeObject(Object object) throws IOException {

@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.ClientType;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
@@ -92,9 +91,9 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      *
      * The returned map can be used to get information about connected clients to the cluster.
      *
-     * @return {@code Map&lt;ClientType, Integer&gt;}.
+     * @return {@code Map&lt;String, Integer&gt;}.
      */
-    Map<ClientType, Integer> getConnectedClientStats();
+    Map<String, Integer> getConnectedClientStats();
 
     /**
      * The statistics is a String that is composed of key=value pairs separated by ',' . The following characters are escaped in

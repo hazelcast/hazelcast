@@ -41,4 +41,17 @@ public class RandomEvictionPolicyComparator
     public String toString() {
         return "RandomEvictionPolicyComparator{" + super.toString() + "} ";
     }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        return getClass().equals(o.getClass());
+    }
+
+    @Override
+    public final int hashCode() {
+        return getClass().hashCode();
+    }
 }

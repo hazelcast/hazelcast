@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MetricsConfig;
@@ -29,6 +31,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
@@ -48,40 +51,71 @@ public final class MetricsConfigHelper {
      *
      * @param config The configuration
      */
-    public static void overrideMetricsConfig(Config config) {
+    public static void overrideMemberMetricsConfig(Config config) {
         MetricsConfig metricsConfig = config.getMetricsConfig();
         MetricsManagementCenterConfig managementCenterConfig = metricsConfig.getManagementCenterConfig();
         MetricsJmxConfig jmxConfig = metricsConfig.getJmxConfig();
 
         // MetricsConfig.enabled
-        tryOverride(config, GroupProperty.METRICS_ENABLED, prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
+        tryOverride(GroupProperty.METRICS_ENABLED, config::getProperty,
+                prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
                 () -> Boolean.toString(metricsConfig.isEnabled()), "MetricsConfig.enabled");
 
         // MetricsManagementCenterConfig.enabled
-        tryOverride(config, GroupProperty.METRICS_MC_ENABLED,
+        tryOverride(GroupProperty.METRICS_MC_ENABLED, config::getProperty,
                 prop -> managementCenterConfig.setEnabled(Boolean.parseBoolean(prop)),
                 () -> Boolean.toString(managementCenterConfig.isEnabled()), "MetricsManagementCenterConfig.enabled");
 
         // MetricsManagementCenterConfig.retentionSeconds
-        tryOverride(config, GroupProperty.METRICS_MC_RETENTION,
+        tryOverride(GroupProperty.METRICS_MC_RETENTION, config::getProperty,
                 prop -> managementCenterConfig.setRetentionSeconds(Integer.parseInt(prop)),
                 () -> Integer.toString(managementCenterConfig.getRetentionSeconds()),
                 "MetricsManagementCenterConfig.retentionSeconds");
 
         // MetricsJmxConfig.enabled
-        tryOverride(config, GroupProperty.METRICS_JMX_ENABLED, prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
+        tryOverride(GroupProperty.METRICS_JMX_ENABLED, config::getProperty,
+                prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
                 () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled");
 
         // MetricsConfig.collectionFrequencySeconds
-        tryOverride(config, GroupProperty.METRICS_COLLECTION_FREQUENCY,
+        tryOverride(GroupProperty.METRICS_COLLECTION_FREQUENCY, config::getProperty,
                 prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
                 () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
                 "MetricsConfig.collectionFrequencySeconds");
     }
 
-    private static void tryOverride(Config hzConfig, HazelcastProperty property, Consumer<String> setterFn,
-                                    Supplier<String> getterFn, String configOverridden) {
-        String propertyValue = hzConfig.getProperty(property.getName());
+    /**
+     * Overrides the {@link ClientMetricsConfig} in the provided {@link ClientConfig}
+     * with the metrics system properties if present.
+     * See the {@link ClientMetricsConfig} javadoc for the links between metrics
+     * configuration fields and the system properties.
+     *
+     * @param config The configuration
+     */
+    public static void overrideClientMetricsConfig(ClientConfig config) {
+        ClientMetricsConfig metricsConfig = config.getMetricsConfig();
+        MetricsJmxConfig jmxConfig = metricsConfig.getJmxConfig();
+
+        // MetricsConfig.enabled
+        tryOverride(ClientProperty.METRICS_ENABLED, config::getProperty,
+                prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
+                () -> Boolean.toString(metricsConfig.isEnabled()), "ClientMetricsConfig.enabled");
+
+        // MetricsJmxConfig.enabled
+        tryOverride(ClientProperty.METRICS_JMX_ENABLED, config::getProperty,
+                prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
+                () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled");
+
+        // MetricsConfig.collectionFrequencySeconds
+        tryOverride(ClientProperty.METRICS_COLLECTION_FREQUENCY, config::getProperty,
+                prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
+                () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
+                "ClientMetricsConfig.collectionFrequencySeconds");
+    }
+
+    private static void tryOverride(HazelcastProperty property, Function<String, String> getPropertyValueFn,
+                                    Consumer<String> setterFn, Supplier<String> getterFn, String configOverridden) {
+        String propertyValue = getPropertyValueFn.apply(property.getName());
         try {
             if (propertyValue != null) {
                 setterFn.accept(propertyValue);

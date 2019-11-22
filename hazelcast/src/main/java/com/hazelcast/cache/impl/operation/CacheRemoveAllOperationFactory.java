@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -68,7 +69,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
         out.writeInt(keys == null ? -1 : keys.size());
         if (keys != null) {
             for (Data key : keys) {
-                out.writeData(key);
+                IOUtil.writeData(out, key);
             }
         }
     }
@@ -83,7 +84,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
         }
         keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
-            keys.add(in.readData());
+            keys.add(IOUtil.readData(in));
         }
     }
 

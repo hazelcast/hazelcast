@@ -17,6 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.atomicref;
 
 import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueSnapshot;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -50,12 +51,12 @@ public class AtomicRefSnapshot extends RaftAtomicValueSnapshot<Data> implements 
 
     @Override
     protected void writeValue(ObjectDataOutput out, Data value) throws IOException {
-        out.writeData(value);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     protected Data readValue(ObjectDataInput in) throws IOException {
-        return in.readData();
+        return IOUtil.readData(in);
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfigAccessor;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -87,16 +88,16 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
     protected void writeFactories(ObjectDataOutput out) throws IOException {
         assert (out instanceof SerializationServiceSupport) : "out must implement SerializationServiceSupport";
         SerializationService serializationService = ((SerializationServiceSupport) out).getSerializationService();
-        out.writeData(cacheLoaderFactory.getSerializedValue(serializationService));
-        out.writeData(cacheWriterFactory.getSerializedValue(serializationService));
-        out.writeData(expiryPolicyFactory.getSerializedValue(serializationService));
+        IOUtil.writeData(out, cacheLoaderFactory.getSerializedValue(serializationService));
+        IOUtil.writeData(out, cacheWriterFactory.getSerializedValue(serializationService));
+        IOUtil.writeData(out, expiryPolicyFactory.getSerializedValue(serializationService));
     }
 
     @Override
     protected void readFactories(ObjectDataInput in) throws IOException {
-        cacheLoaderFactory = DeferredValue.withSerializedValue(in.readData());
-        cacheWriterFactory = DeferredValue.withSerializedValue(in.readData());
-        expiryPolicyFactory = DeferredValue.withSerializedValue(in.readData());
+        cacheLoaderFactory = DeferredValue.withSerializedValue(IOUtil.readData(in));
+        cacheWriterFactory = DeferredValue.withSerializedValue(IOUtil.readData(in));
+        expiryPolicyFactory = DeferredValue.withSerializedValue(IOUtil.readData(in));
     }
 
     @Override
@@ -104,7 +105,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
         assert (out instanceof SerializationServiceSupport) : "out must implement SerializationServiceSupport";
         out.writeInt(listenerConfigurations.size());
         for (DeferredValue<CacheEntryListenerConfiguration<K, V>> config : listenerConfigurations) {
-            out.writeData(config.getSerializedValue(((SerializationServiceSupport) out).getSerializationService()));
+            IOUtil.writeData(out, config.getSerializedValue(((SerializationServiceSupport) out).getSerializationService()));
         }
     }
 
@@ -114,7 +115,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> {
         listenerConfigurations = createConcurrentSet();
         for (int i = 0; i < size; i++) {
             DeferredValue<CacheEntryListenerConfiguration<K, V>> serializedConfig =
-                    DeferredValue.withSerializedValue(in.readData());
+                    DeferredValue.withSerializedValue(IOUtil.readData(in));
             listenerConfigurations.add(serializedConfig);
         }
     }

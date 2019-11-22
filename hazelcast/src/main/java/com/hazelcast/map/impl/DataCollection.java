@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -45,7 +46,7 @@ public class DataCollection implements IdentifiedDataSerializable {
         int size = values.size();
         out.writeInt(size);
         for (Data o : values) {
-            out.writeData(o);
+            IOUtil.writeData(out, o);
         }
     }
 
@@ -54,7 +55,7 @@ public class DataCollection implements IdentifiedDataSerializable {
         int size = in.readInt();
         values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            Data data = in.readData();
+            Data data = IOUtil.readData(in);
             values.add(data);
         }
     }

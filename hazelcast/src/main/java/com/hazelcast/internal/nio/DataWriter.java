@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.internal.nio;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.nio.serialization.Data;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientTypesTest extends HazelcastTestSupport {
+import java.io.DataOutput;
+import java.io.IOException;
 
-    @Test
-    public void testConstructor() {
-        assertUtilityConstructor(ClientTypes.class);
-    }
+/**
+ * Extends {@link DataOutput} with the ability to write {@link Data} to the output stream.
+ */
+public interface DataWriter extends DataOutput {
+    /**
+     * @param data data to be written
+     * @throws IOException
+     */
+    void writeData(Data data) throws IOException;
 }

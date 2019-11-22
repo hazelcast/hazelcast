@@ -124,12 +124,12 @@ public abstract class TcpIpEndpointManager_AbstractConnectMemberTest
 
         TcpIpConnection connAB = connect(networkingServiceA, addressB);
         assertTrue(connAB.isAlive());
-        assertEquals(ConnectionType.MEMBER, connAB.getType());
+        assertEquals(ConnectionType.MEMBER, connAB.getConnectionType());
         assertEquals(1, networkingServiceA.getEndpointManager(MEMBER).getActiveConnections().size());
 
         TcpIpConnection connBA = (TcpIpConnection) networkingServiceB.getEndpointManager(MEMBER).getConnection(addressA);
         assertTrue(connBA.isAlive());
-        assertEquals(ConnectionType.MEMBER, connBA.getType());
+        assertEquals(ConnectionType.MEMBER, connBA.getConnectionType());
         assertEquals(1, networkingServiceB.getEndpointManager(MEMBER).getActiveConnections().size());
 
         assertEquals(networkingServiceA.getIoService().getThisAddress(), connBA.getEndPoint());
