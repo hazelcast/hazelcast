@@ -83,8 +83,6 @@ import com.hazelcast.client.impl.protocol.task.management.ChangeWanReplicationSt
 import com.hazelcast.client.impl.protocol.task.management.CheckWanConsistencyMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ClearWanQueuesMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetClusterMetadataMessageTask;
-import com.hazelcast.client.impl.protocol.task.management.ChangeClusterVersionMessageTask;
-import com.hazelcast.client.impl.protocol.task.management.GetClusterMetadataMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetMemberConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetSystemPropertiesMessageTask;
@@ -2260,24 +2258,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 new MessageTaskFactory() {
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new ApplyMCConfigMessageTask(clientMessage, node, connection);
-                    }
-                });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec.REQUEST_MESSAGE_TYPE,
-                new MessageTaskFactory() {
-                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new GetClusterMetadataMessageTask(clientMessage, node, connection);
-                    }
-                });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec.REQUEST_MESSAGE_TYPE,
-                new MessageTaskFactory() {
-                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new ShutdownClusterMessageTask(clientMessage, node, connection);
-                    }
-                });
-        factories.put(com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec.REQUEST_MESSAGE_TYPE,
-                new MessageTaskFactory() {
-                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                        return new ChangeClusterVersionMessageTask(clientMessage, node, connection);
                     }
                 });
         factories.put(com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec.REQUEST_MESSAGE_TYPE,
