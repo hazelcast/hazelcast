@@ -47,6 +47,7 @@ import com.hazelcast.sql.impl.expression.string.ConcatFunction;
 import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.string.StringFunction;
+import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.time.CurrentDateFunction;
 import com.hazelcast.sql.impl.expression.time.DatePartFunction;
 import com.hazelcast.sql.impl.expression.time.DatePartUnit;
@@ -304,6 +305,9 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
 
             case CallOperator.REPLACE:
                 return new ReplaceFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
+
+            case CallOperator.SUBSTRING:
+                return new SubstringFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
 
             case CallOperator.COS:
             case CallOperator.SIN:
@@ -635,6 +639,8 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
                     return CallOperator.ASCII;
                 } else if (function == SqlStdOperatorTable.REPLACE) {
                     return CallOperator.REPLACE;
+                } else if (function == SqlStdOperatorTable.SUBSTRING) {
+                    return CallOperator.SUBSTRING;
                 } else if (function == SqlStdOperatorTable.CURRENT_DATE) {
                     return CallOperator.CURRENT_DATE;
                 } else if (function == SqlStdOperatorTable.CURRENT_TIMESTAMP) {

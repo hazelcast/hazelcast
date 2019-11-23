@@ -197,6 +197,9 @@ public final class CallOperator {
     /** OR operator. */
     public static final int NOT = 316;
 
+    /** SUBSTRING function. */
+    public static final int SUBSTRING = 317;
+
     /** Item operator. */
     public static final int ITEM = 401;
 
