@@ -14,60 +14,55 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression.aggregate;
+package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 
 /**
- * MIN/MAX expression.
+ * Helper expression for COUNT(*) aggregate, which returns current row.
  */
-public class MinMaxAggregateExpression extends AbstractSingleOperandAggregateExpression<Comparable> {
-    /** Whether this is MIN. */
-    private boolean min;
+public class CountRowExpression implements Expression<Row> {
+    /** Default instance. */
+    public static final CountRowExpression INSTANCE = new CountRowExpression();
 
-    public MinMaxAggregateExpression() {
-        // No-op.
-    }
-
-    public MinMaxAggregateExpression(boolean min, boolean distinct, Expression operand) {
-        super(distinct, operand);
-
-        this.min = min;
+    @Override
+    public Row eval(QueryContext ctx, Row row) {
+        return row;
     }
 
     @Override
-    public AggregateCollector newCollector(QueryContext ctx) {
-        return new MinMaxAggregateCollector(min);
-    }
-
-    @Override
-    protected DataType resolveReturnType(DataType operandType) {
-        return operandType;
+    public DataType getType() {
+        return DataType.OBJECT;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-
-        out.writeBoolean(min);
+        // No-op.
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
+        // No-op.
+    }
 
-        min = in.readBoolean();
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof CountRowExpression;
     }
 
     @Override
     public String toString() {
-        return getClass() + "{min=" + min + ", distinct=" + distinct + '}';
+        return getClass().getSimpleName();
     }
 }

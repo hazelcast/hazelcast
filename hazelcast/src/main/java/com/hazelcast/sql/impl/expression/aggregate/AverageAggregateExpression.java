@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.type.DataType;
 /**
  * Local average expression.
  */
-public class AverageAggregateExpression<T> extends SingleAggregateExpression<T> {
+public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregateExpression<T> {
     public AverageAggregateExpression() {
         // No-op.
     }

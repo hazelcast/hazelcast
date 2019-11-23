@@ -54,6 +54,26 @@ public class HeapRow implements Row, DataSerializable {
     }
 
     @Override
+    public int hashCode() {
+        return Arrays.hashCode(values);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        HeapRow heapRow = (HeapRow) o;
+
+        return Arrays.equals(values, heapRow.values);
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(values);
         // TODO: Serialize once up the stack.
@@ -67,6 +87,6 @@ public class HeapRow implements Row, DataSerializable {
 
     @Override
     public String toString() {
-        return "Row {" + Arrays.toString(values) + '}';
+        return getClass().getSimpleName() + "{" + Arrays.toString(values) + '}';
     }
 }

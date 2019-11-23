@@ -40,6 +40,7 @@ import com.hazelcast.sql.impl.calcite.rel.physical.exchange.UnicastExchangePhysi
 import com.hazelcast.sql.impl.calcite.rel.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.rel.physical.join.NestedLoopJoinPhysicalRel;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.CountRowExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.AverageAggregateExpression;
@@ -418,8 +419,17 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
                 return new SumAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
 
             case COUNT:
-                // TODO: COUNT(*) goes without aggregate! The whole row is the aggregate then!
-                return new CountAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+                Expression operand;
+
+                if (argList.isEmpty()) {
+                    operand = CountRowExpression.INSTANCE;
+                } else {
+                    assert argList.size() == 1;
+
+                    operand = new ColumnExpression(argList.get(0));
+                }
+
+                return new CountAggregateExpression(distinct, operand);
 
             case MIN:
                 return new MinMaxAggregateExpression(true, distinct, new ColumnExpression<>(argList.get(0)));

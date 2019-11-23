@@ -29,18 +29,18 @@ import java.io.IOException;
 /**
  * Aggregate accumulator which uses only a single input.
  */
-public abstract class SingleAggregateExpression<T> extends AggregateExpression<T> {
+public abstract class AbstractSingleOperandAggregateExpression<T> extends AggregateExpression<T> {
     /** Operand type. */
     protected transient DataType operandType;
 
     /** Operand. */
     private Expression operand;
 
-    public SingleAggregateExpression() {
+    public AbstractSingleOperandAggregateExpression() {
         // No-op.
     }
 
-    public SingleAggregateExpression(boolean distinct, Expression operand) {
+    public AbstractSingleOperandAggregateExpression(boolean distinct, Expression operand) {
         super(distinct);
 
         this.operand = operand;

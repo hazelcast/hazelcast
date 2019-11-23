@@ -86,7 +86,7 @@ public class IsPredicate extends UniCallExpression<Boolean> {
         if (operand0 == null) {
             res = false;
         } else {
-            if (operandChecked) {
+            if (!operandChecked) {
                 if (type != DataType.BIT) {
                     throw new HazelcastSqlException(-1, "Operand is not BIT.");
                 }

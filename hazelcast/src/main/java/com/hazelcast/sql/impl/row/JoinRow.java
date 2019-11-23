@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * A row which joins two other rows.
@@ -71,8 +72,28 @@ public class JoinRow implements Row, DataSerializable {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(left, right);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        JoinRow joinRow = (JoinRow) o;
+
+        return left.equals(joinRow.left) && right.equals(joinRow.right);
+    }
+
+    @Override
     public String toString() {
-        StringBuilder res = new StringBuilder("JoinRow{");
+        StringBuilder res = new StringBuilder(getClass().getSimpleName() + "{");
 
         for (int i = 0; i < getColumnCount(); i++) {
             if (i != 0) {

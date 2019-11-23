@@ -42,6 +42,7 @@ import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndOrPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsPredicate;
+import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
 import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
@@ -382,6 +383,9 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
             case CallOperator.OR:
                 return new AndOrPredicate(hzOperands.get(0), hzOperands.get(1), true);
 
+            case CallOperator.NOT:
+                return new NotPredicate(hzOperands.get(0));
+
             case CallOperator.EQUALS:
             case CallOperator.NOT_EQUALS:
             case CallOperator.GREATER_THAN:
@@ -519,6 +523,9 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
 
             case OR:
                 return CallOperator.OR;
+
+            case NOT:
+                return CallOperator.NOT;
 
             case EQUALS:
                 return CallOperator.EQUALS;

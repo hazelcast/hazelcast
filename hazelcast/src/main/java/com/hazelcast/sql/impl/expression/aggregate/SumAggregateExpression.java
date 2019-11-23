@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.type.DataType;
 /**
  * Summing accumulator.
  */
-public class SumAggregateExpression<T> extends SingleAggregateExpression<T> {
+public class SumAggregateExpression<T> extends AbstractSingleOperandAggregateExpression<T> {
     public SumAggregateExpression() {
         // No-op.
     }

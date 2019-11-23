@@ -194,6 +194,9 @@ public final class CallOperator {
     /** CASE ... WHEN expression. */
     public static final int CASE = 315;
 
+    /** OR operator. */
+    public static final int NOT = 316;
+
     /** Item operator. */
     public static final int ITEM = 401;
 

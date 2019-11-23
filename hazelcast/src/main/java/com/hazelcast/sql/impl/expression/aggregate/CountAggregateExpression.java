@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.type.DataType;
 /**
  * Counting accumulator.
  */
-public class CountAggregateExpression extends SingleAggregateExpression<Long> {
+public class CountAggregateExpression extends AbstractSingleOperandAggregateExpression<Long> {
     public CountAggregateExpression() {
         // No-op.
     }
