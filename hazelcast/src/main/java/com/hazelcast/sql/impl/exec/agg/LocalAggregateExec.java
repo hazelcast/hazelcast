@@ -293,7 +293,7 @@ public class LocalAggregateExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
+    public RowBatch currentBatch0() {
         return curRow;
     }
 

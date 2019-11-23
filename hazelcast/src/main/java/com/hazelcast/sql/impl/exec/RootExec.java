@@ -62,7 +62,7 @@ public class RootExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
+    public RowBatch currentBatch0() {
         throw new UnsupportedOperationException("Should not be called.");
     }
 

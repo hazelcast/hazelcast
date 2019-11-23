@@ -74,6 +74,8 @@ public class UpstreamState implements Iterable<Row> {
             case FETCHED_DONE:
             case FETCHED:
                 currentBatch = upstream.currentBatch();
+                assert currentBatch != null;
+
                 currentBatchPos = 0;
 
                 return true;

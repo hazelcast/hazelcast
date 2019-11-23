@@ -163,8 +163,8 @@ public class MapIndexScanExec extends AbstractMapScanExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
-        return currentRow != null ? currentRow : EmptyRowBatch.INSTANCE;
+    public RowBatch currentBatch0() {
+        return currentRow;
     }
 
     @Override

@@ -90,7 +90,7 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     protected abstract boolean pushRow(Row row);
 
     @Override
-    public RowBatch currentBatch() {
+    public RowBatch currentBatch0() {
         throw new UnsupportedOperationException("Should not be called.");
     }
 

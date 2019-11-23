@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
+import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
  * Abstract executor.
@@ -51,4 +53,13 @@ public abstract class AbstractExec implements Exec {
     protected void reset0() {
         // No-op.
     }
+
+    @Override
+    public final RowBatch currentBatch() {
+        RowBatch res = currentBatch0();
+
+        return res != null ? res : EmptyRowBatch.INSTANCE;
+    }
+
+    protected abstract RowBatch currentBatch0();
 }

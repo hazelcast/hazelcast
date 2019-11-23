@@ -22,7 +22,6 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -98,8 +97,8 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
-        return currentRow != null ? currentRow : EmptyRowBatch.INSTANCE;
+    public RowBatch currentBatch0() {
+        return currentRow;
     }
 
     @Override

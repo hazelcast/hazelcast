@@ -58,7 +58,7 @@ public abstract class AbstractFilterExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
+    public RowBatch currentBatch0() {
         return curRow;
     }
 

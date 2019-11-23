@@ -84,7 +84,7 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
+    public RowBatch currentBatch0() {
         return curRow;
     }
 

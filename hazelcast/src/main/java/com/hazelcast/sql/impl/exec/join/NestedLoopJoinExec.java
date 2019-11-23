@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.UpstreamState;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.Row;
@@ -102,7 +101,7 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
 
                         break;
                     } else if (state.isDone()) {
-                        curRow = EmptyRowBatch.INSTANCE;
+                        curRow = null;
 
                         return IterationResult.FETCHED_DONE;
                     }
@@ -161,8 +160,8 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
-        return curRow != null ? curRow : EmptyRowBatch.INSTANCE;
+    public RowBatch currentBatch0() {
+        return curRow;
     }
 
     @Override

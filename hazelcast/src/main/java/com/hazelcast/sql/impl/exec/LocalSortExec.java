@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -72,8 +71,8 @@ public class LocalSortExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
-        return res != null ? res : EmptyRowBatch.INSTANCE;
+    public RowBatch currentBatch0() {
+        return res;
     }
 
     /**

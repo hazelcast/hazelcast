@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 import com.hazelcast.sql.impl.mailbox.SingleInbox;
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -58,7 +57,7 @@ public class ReceiveExec extends AbstractExec {
 
         List<Row> rows = batch.getRows();
 
-        curBatch = rows.isEmpty() ? EmptyRowBatch.INSTANCE : new ListRowBatch(rows);
+        curBatch = rows.isEmpty() ? null : new ListRowBatch(rows);
 
         if (inbox.closed()) {
             inboxDone = true;
@@ -70,7 +69,7 @@ public class ReceiveExec extends AbstractExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
+    public RowBatch currentBatch0() {
         return curBatch;
     }
 

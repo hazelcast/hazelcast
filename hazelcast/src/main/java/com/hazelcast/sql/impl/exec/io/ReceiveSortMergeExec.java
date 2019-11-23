@@ -83,7 +83,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
     }
 
     @Override
-    public RowBatch currentBatch() {
+    public RowBatch currentBatch0() {
         return curBatch;
     }
 
