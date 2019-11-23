@@ -16,55 +16,36 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
 
 /**
- * Summing accumulator.
+ * Special aggregate expression with expects only a single value for a group. If more than one value appears, an exception is
+ * thrown.
  */
-public class SumAggregateExpression<T> extends AbstractSingleOperandAggregateExpression<T> {
-    public SumAggregateExpression() {
+public class SingleValueAggregateExpression<T> extends AbstractSingleOperandAggregateExpression<T> {
+    public SingleValueAggregateExpression() {
         // No-op.
     }
 
-    public SumAggregateExpression(boolean distinct, Expression operand) {
+    public SingleValueAggregateExpression(boolean distinct, Expression operand) {
         super(distinct, operand);
     }
 
     @Override
-    public AggregateCollector newCollector(QueryContext ctx) {
-        return new SumAggregateCollector(distinct);
-    }
-
-    @Override
     protected boolean isIgnoreNull() {
-        return true;
+        return false;
     }
 
     @Override
     protected DataType resolveReturnType(DataType operandType) {
-        switch (operandType.getType()) {
-            case BIT:
-            case TINYINT:
-            case SMALLINT:
-            case INT:
-                return DataType.INT;
+        return operandType;
+    }
 
-            case BIGINT:
-                return DataType.BIGINT;
-
-            case DECIMAL:
-                return DataType.DECIMAL;
-
-            case REAL:
-            case DOUBLE:
-                return DataType.DOUBLE;
-
-            default:
-                throw new HazelcastSqlException(-1, "Unsupported operand type: " + operandType);
-        }
+    @Override
+    public AggregateCollector newCollector(QueryContext ctx) {
+        return new SingleValueAggregateCollector(distinct);
     }
 }

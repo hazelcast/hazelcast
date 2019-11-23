@@ -34,7 +34,6 @@ public final class SumAggregateCollector extends AggregateCollector {
         super(distinct);
     }
 
-    // TODO: Null handling!!!
     @Override
     protected void collect0(Object operandValue, DataType operandType, DataType resType) {
         if (res == null) {

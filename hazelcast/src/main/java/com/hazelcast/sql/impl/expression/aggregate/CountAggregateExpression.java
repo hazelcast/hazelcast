@@ -38,6 +38,11 @@ public class CountAggregateExpression extends AbstractSingleOperandAggregateExpr
         return new CountAggregateCollector(distinct);
     }
 
+    @Override
+    protected boolean isIgnoreNull() {
+        return true;
+    }
+
     // TODO: Do we really need that kind of aggressive type expansion?
     @Override
     protected DataType resolveReturnType(DataType operandType) {

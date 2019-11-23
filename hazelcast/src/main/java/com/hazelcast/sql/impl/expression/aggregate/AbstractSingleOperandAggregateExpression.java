@@ -51,12 +51,12 @@ public abstract class AbstractSingleOperandAggregateExpression<T> extends Aggreg
         Object operandValue = operand.eval(ctx, row);
 
         // Null operands are not processed.
-        if (operandValue == null) {
+        if (isIgnoreNull() && operandValue == null) {
             return;
         }
 
         // Resolve types.
-        if (operandType == null) {
+        if (operandValue != null && operandType == null) {
             operandType = operand.getType();
 
             resType = resolveReturnType(operandType);
@@ -64,6 +64,11 @@ public abstract class AbstractSingleOperandAggregateExpression<T> extends Aggreg
 
         collector.collect(operandValue, operandType, resType);
     }
+
+    /**
+     * @return {@code True} if NULL values should be ignored and not passed to the collector, {@code false} otherwise.
+     */
+    protected abstract boolean isIgnoreNull();
 
     /**
      * Resolve return type for the accumulator.

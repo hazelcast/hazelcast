@@ -47,6 +47,7 @@ import com.hazelcast.sql.impl.expression.aggregate.AverageAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.DistributedAverageAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.MinMaxAggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.SingleValueAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
@@ -439,6 +440,13 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
 
             case AVG:
                 return new AverageAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+
+            case SINGLE_VALUE:
+                assert argList.size() == 1;
+
+                // TODO: Make sure to eliminate the whole aggregate whose goal is to deduplicate rows if we can prove
+                //  that the input is unique (e.g. __key is present, or unique index is used, etc.)
+                return new SingleValueAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
 
             case OTHER_FUNCTION:
                 assert aggFunc == HazelcastSqlOperatorTable.DISTRIBUTED_AVG;

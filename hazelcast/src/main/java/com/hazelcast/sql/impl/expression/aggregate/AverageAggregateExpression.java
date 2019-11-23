@@ -40,6 +40,11 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
     }
 
     @Override
+    protected boolean isIgnoreNull() {
+        return true;
+    }
+
+    @Override
     protected DataType resolveReturnType(DataType operandType) {
         return returnType(operandType);
     }

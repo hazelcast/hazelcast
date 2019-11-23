@@ -48,6 +48,11 @@ public class MinMaxAggregateExpression extends AbstractSingleOperandAggregateExp
     }
 
     @Override
+    protected boolean isIgnoreNull() {
+        return true;
+    }
+
+    @Override
     protected DataType resolveReturnType(DataType operandType) {
         return operandType;
     }
