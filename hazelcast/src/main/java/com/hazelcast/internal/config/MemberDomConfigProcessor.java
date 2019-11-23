@@ -133,6 +133,7 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
@@ -197,9 +198,7 @@ import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementsWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -1727,7 +1726,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("eviction".equals(nodeName)) {
-                mapConfig.setEvictionConfig(getEvictionConfig(node, false, true));
+                EvictionConfig evictionConfig = getEvictionConfig(node, false, true);
+                try {
+                    checkMapConfig(mapConfig, config.getNativeMemoryConfig(), null, new HazelcastProperties(config));
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidConfigurationException(e.getMessage());
+                }
+                mapConfig.setEvictionConfig(evictionConfig);
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value));
             } else if ("max-idle-seconds".equals(nodeName)) {
@@ -1990,30 +1995,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 evictionConfig.setComparatorClassName(className);
             }
         }
-
-        try {
-            doEvictionConfigChecks(evictionConfig, isIMap, isNearCache);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidConfigurationException(e.getMessage());
-        }
         return evictionConfig;
-    }
-
-    private static void doEvictionConfigChecks(EvictionConfig evictionConfig,
-                                               boolean isIMap,
-                                               boolean isNearCache) {
-        if (isIMap) {
-            checkMapEvictionConfig(evictionConfig);
-            return;
-        }
-
-        if (isNearCache) {
-            checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
-                    evictionConfig.getComparatorClassName(), evictionConfig.getComparator());
-            return;
-        }
-
-        checkCacheEvictionConfig(evictionConfig);
     }
 
     private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {

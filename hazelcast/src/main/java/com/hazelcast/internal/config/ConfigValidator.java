@@ -125,8 +125,6 @@ public final class ConfigValidator {
                                       SplitBrainMergePolicyProvider mergePolicyProvider,
                                       HazelcastProperties properties) {
 
-        checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
-
         if (getBuildInfo().isEnterprise()) {
             checkMapNativeConfig(mapConfig, nativeMemoryConfig);
             checkHotRestartSpecificConfig(mapConfig, properties);
@@ -134,7 +132,9 @@ public final class ConfigValidator {
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
         checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
-        checkMapMergePolicy(mapConfig, mergePolicyProvider);
+        if (mergePolicyProvider != null) {
+            checkMapMergePolicy(mapConfig, mergePolicyProvider);
+        }
     }
 
     static void checkMapMaxSizePolicyPerInMemoryFormat(MapConfig mapConfig) {
@@ -160,7 +160,7 @@ public final class ConfigValidator {
         throw new InvalidConfigurationException(String.format(msg, maxSizePolicy, inMemoryFormat, policies));
     }
 
-    public static void checkMapEvictionConfig(EvictionConfig evictionConfig) {
+    static void checkMapEvictionConfig(EvictionConfig evictionConfig) {
         EvictionPolicyComparator comparator = evictionConfig.getComparator();
         String comparatorClassName = evictionConfig.getComparatorClassName();
         EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
@@ -631,7 +631,7 @@ public final class ConfigValidator {
      *
      * @param inMemoryFormat supplied inMemoryFormat
      */
-    private static void checkNotNativeWhenOpenSource(InMemoryFormat inMemoryFormat) {
+    public static void checkNotNativeWhenOpenSource(InMemoryFormat inMemoryFormat) {
         if (inMemoryFormat == NATIVE && !getBuildInfo().isEnterprise()) {
             throw new InvalidConfigurationException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
