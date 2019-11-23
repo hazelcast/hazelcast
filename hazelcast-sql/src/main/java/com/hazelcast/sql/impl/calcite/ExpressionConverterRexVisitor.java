@@ -22,7 +22,6 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CallOperator;
-import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -40,6 +39,7 @@ import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
 import com.hazelcast.sql.impl.expression.math.SignFunction;
 import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndOrPredicate;
+import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsPredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
@@ -51,6 +51,7 @@ import com.hazelcast.sql.impl.expression.time.CurrentDateFunction;
 import com.hazelcast.sql.impl.expression.time.DatePartFunction;
 import com.hazelcast.sql.impl.expression.time.DatePartUnit;
 import com.hazelcast.sql.impl.expression.time.GetTimestampFunction;
+import com.hazelcast.sql.impl.type.accessor.CalendarConverter;
 import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
@@ -72,6 +73,7 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
@@ -146,6 +148,13 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
 
             case SYMBOL:
                 return convertSymbol(literal);
+
+            case DATE:
+                Calendar val = (Calendar) literal.getValue();
+
+                return CalendarConverter.INSTANCE.asDate(val);
+
+            // TODO: Time, Timestamp, etc.
 
             case INTERVAL_YEAR:
             case INTERVAL_MONTH:
@@ -550,12 +559,16 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
 
             case SELECT:
                 break;
+
             case JOIN:
                 break;
+
             case IDENTIFIER:
                 break;
+
             case LITERAL:
                 break;
+
             case OTHER_FUNCTION: {
                 if ("ITEM".equals(operator.getName())) {
                     return CallOperator.ITEM;
