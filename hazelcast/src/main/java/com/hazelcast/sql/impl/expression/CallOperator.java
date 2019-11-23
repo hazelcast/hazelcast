@@ -200,6 +200,9 @@ public final class CallOperator {
     /** SUBSTRING function. */
     public static final int SUBSTRING = 317;
 
+    /** LIKE function. */
+    public static final int LIKE = 318;
+
     /** Item operator. */
     public static final int ITEM = 401;
 

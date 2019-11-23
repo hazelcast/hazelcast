@@ -44,6 +44,7 @@ import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsPredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.string.StringFunction;
@@ -309,6 +310,13 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
             case CallOperator.SUBSTRING:
                 return new SubstringFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
 
+            case CallOperator.LIKE:
+                if (hzOperands.size() == 2) {
+                    return new LikeFunction(hzOperands.get(0), hzOperands.get(1), null);
+                } else {
+                    return new LikeFunction(hzOperands.get(0), hzOperands.get(1), hzOperands.get(2));
+                }
+
             case CallOperator.COS:
             case CallOperator.SIN:
             case CallOperator.TAN:
@@ -572,6 +580,9 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
 
             case LITERAL:
                 break;
+
+            case LIKE:
+                return CallOperator.LIKE;
 
             case OTHER_FUNCTION: {
                 if ("ITEM".equals(operator.getName())) {
