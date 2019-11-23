@@ -29,8 +29,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.junit.Assert.fail;
-
 /**
  * Tests of TPC-H benchmark queries.
  */
