@@ -75,6 +75,7 @@ import org.apache.calcite.sql.SqlAggFunction;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -103,6 +104,9 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
 
     /** ID of current edge. */
     private int nextEdgeGenerator;
+
+    /** Root physical rel. */
+    private RootPhysicalRel rootPhysicalRel;
 
     public PlanCreatePhysicalRelVisitor(
         Map<UUID, PartitionIdSet> partMap,
@@ -134,18 +138,23 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
             }
         }
 
+        assert rootPhysicalRel != null;
+
         return new QueryPlan(
             partMap,
             dataMemberIds,
             dataMemberAddresses,
             fragments,
             outboundEdgeMap,
-            inboundEdgeMap
+            inboundEdgeMap,
+            Collections.singleton(rootPhysicalRel)
         );
     }
 
     @Override
     public void onRoot(RootPhysicalRel root) {
+        rootPhysicalRel = root;
+
         PhysicalNode upstreamNode = pollSingleUpstream();
 
         RootPhysicalNode rootNode = new RootPhysicalNode(
@@ -229,7 +238,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
             new FieldHashFunction(rel.getHashFields())
         );
 
-        addFragment(sendNode,  QueryFragmentMapping.DATA_MEMBERS);
+        addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
 
         // Create receiver.
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(edge);
@@ -250,7 +259,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
             edge
         );
 
-        addFragment(sendNode,  QueryFragmentMapping.DATA_MEMBERS);
+        addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
 
         // Create receiver.
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(edge);

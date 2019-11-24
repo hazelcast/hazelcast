@@ -42,10 +42,7 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
     }
 
     @Override
-    public void visit(PhysicalNodeVisitor visitor) {
-        right.visit(visitor);
-        left.visit(visitor);
-
+    public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onNestedLoopJoinNode(this);
     }
 

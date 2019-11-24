@@ -53,9 +53,7 @@ public class BroadcastSendPhysicalNode extends UniInputPhysicalNode implements E
     }
 
     @Override
-    public void visit(PhysicalNodeVisitor visitor) {
-        upstream.visit(visitor);
-
+    public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onBroadcastSendNode(this);
     }
 

@@ -31,7 +31,7 @@ public class MaterializedInputPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public void visit(PhysicalNodeVisitor visitor) {
+    public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onMaterializedInputNode(this);
     }
 

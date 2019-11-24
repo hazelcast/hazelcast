@@ -22,11 +22,13 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.apache.calcite.plan.RelOptUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -119,8 +121,6 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
-    // TODO: NPE with outboxes
-    @Ignore("NPE with outboxes")
     @Test
     public void testQ2() {
         SqlCursor cursor = execute(
@@ -279,8 +279,6 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
-    // TODO: Visitor issue.
-    @Ignore("Problem with plan visitor")
     @Test
     public void testQ7() {
         SqlCursor cursor = execute(
@@ -324,8 +322,6 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
-    // TODO: NPE with outboxes
-    @Ignore("NPE with outboxes")
     @Test
     public void testQ8() {
         SqlCursor cursor = execute(
@@ -369,8 +365,6 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
-    // TODO: NPE with outboxes
-    @Ignore("NPE with outboxes")
     @Test
     public void testQ9() {
         SqlCursor cursor = execute(
@@ -560,8 +554,6 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
-    // TODO: Visitor issue.
-    @Ignore("Problem with plan visitor")
     @Test
     public void testQ16() {
         SqlCursor cursor = execute(
@@ -661,8 +653,6 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
-    // TODO: Visitor issue.
-    @Ignore("Problem with plan visitor")
     @Test
     public void testQ19() {
         SqlCursor cursor = execute(
@@ -837,20 +827,16 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
-    private static SqlCursor execute(String sql) {
-//        SqlCursor cursor = member.getSqlService().query("EXPLAIN " + sql);
-//
-//        for (SqlRow row : cursor) {
-//            System.out.println((String) row.getColumn(0));
-//        }
-//
-//        return cursor;
+    private static SqlCursorImpl execute(String sql) {
+        SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql);
 
-        SqlCursor res = member.getSqlService().query(sql);
-
+        // TODO: Do not execute eagerly, check result up the stack.
         for (SqlRow row : res) {
             // No-op.
         }
+
+        PhysicalRel physicalRel = res.getHandle().getPlan().getAttachment(PhysicalRel.class);
+        System.out.println(RelOptUtil.toString(physicalRel));
 
         return res;
     }

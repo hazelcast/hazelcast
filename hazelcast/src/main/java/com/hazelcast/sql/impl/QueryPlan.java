@@ -19,12 +19,13 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Prepared query plan.
+ * Query plan implementation.
  */
 public class QueryPlan {
     /** Partition mapping. */
@@ -45,13 +46,17 @@ public class QueryPlan {
     /** Inbound edge mapping (from edge ID to owning fragment position). */
     private final Map<Integer, Integer> inboundEdgeMap;
 
+    /** Optional attachments. */
+    private final Collection<Object> attachments;
+
     public QueryPlan(
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
         List<Address> dataMemberAddresses,
         List<QueryFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
-        Map<Integer, Integer> inboundEdgeMap
+        Map<Integer, Integer> inboundEdgeMap,
+        Collection<Object> attachments
     ) {
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
@@ -59,6 +64,7 @@ public class QueryPlan {
         this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
+        this.attachments = attachments;
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {
@@ -83,5 +89,18 @@ public class QueryPlan {
 
     public Map<Integer, Integer> getInboundEdgeMap() {
         return inboundEdgeMap;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getAttachment(Class<T> cls) {
+        if (attachments != null) {
+            for (Object attachment : attachments) {
+                if (attachment != null && cls.isAssignableFrom(attachment.getClass())) {
+                    return (T) attachment;
+                }
+            }
+        }
+
+        return null;
     }
 }

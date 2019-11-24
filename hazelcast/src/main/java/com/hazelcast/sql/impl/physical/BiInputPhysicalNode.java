@@ -65,6 +65,16 @@ public abstract class BiInputPhysicalNode implements PhysicalNode {
     }
 
     @Override
+    public final void visit(PhysicalNodeVisitor visitor) {
+        right.visit(visitor);
+        left.visit(visitor);
+
+        visit0(visitor);
+    }
+
+    protected abstract void visit0(PhysicalNodeVisitor visitor);
+
+    @Override
     public final void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(left);
         out.writeObject(right);

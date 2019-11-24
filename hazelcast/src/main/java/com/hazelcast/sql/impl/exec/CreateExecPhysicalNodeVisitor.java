@@ -376,7 +376,11 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     }
 
     private Exec pop() {
-        return stack.remove(stack.size() - 1);
+        try {
+            return stack.remove(stack.size() - 1);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw e;
+        }
     }
 
     private void push(Exec exec) {

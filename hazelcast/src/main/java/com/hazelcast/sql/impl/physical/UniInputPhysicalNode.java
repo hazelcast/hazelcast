@@ -55,6 +55,15 @@ public abstract class UniInputPhysicalNode implements PhysicalNode {
     }
 
     @Override
+    public final void visit(PhysicalNodeVisitor visitor) {
+        upstream.visit(visitor);
+
+        visit0(visitor);
+    }
+
+    protected abstract void visit0(PhysicalNodeVisitor visitor);
+
+    @Override
     public final void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(upstream);
 

@@ -47,9 +47,7 @@ public class FilterPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public void visit(PhysicalNodeVisitor visitor) {
-        upstream.visit(visitor);
-
+    public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onFilterNode(this);
     }
 
