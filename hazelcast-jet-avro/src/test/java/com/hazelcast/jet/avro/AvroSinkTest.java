@@ -18,14 +18,21 @@ package com.hazelcast.jet.avro;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.avro.model.SpecificUser;
+import com.hazelcast.jet.avro.generated.SpecificUser;
 import com.hazelcast.jet.avro.model.User;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,10 +51,9 @@ public class AvroSinkTest extends JetTestSupport {
 
     private static final int TOTAL_RECORD_COUNT = 20;
 
-
     private JetInstance jet;
     private File directory;
-    private IList<SpecificUser> list;
+    private IList<User> list;
 
     @Before
     public void setup() throws Exception {
@@ -55,7 +61,7 @@ public class AvroSinkTest extends JetTestSupport {
         directory = createTempDirectory();
         list = jet.getList("writer");
         IntStream.range(0, TOTAL_RECORD_COUNT)
-                 .mapToObj(i -> new SpecificUser("username-" + i, "password-" + i))
+                 .mapToObj(i -> new User("name-" + i, i))
                  .forEach(user -> list.add(user));
     }
 
@@ -73,45 +79,55 @@ public class AvroSinkTest extends JetTestSupport {
     @Test
     public void testReflectWriter() throws IOException {
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.<User>list(list.getName()))
-         .writeTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$, User.class));
+        p.readFrom(Sources.list(list))
+         .writeTo(AvroSinks.files(directory.getPath(), User::classSchema, User.class));
 
         jet.newJob(p).join();
 
-        checkFileContent();
+        checkFileContent(new ReflectDatumReader<>(User.class));
     }
 
     @Test
     public void testSpecificWriter() throws IOException {
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.<SpecificUser>list(list.getName()))
-         .writeTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$, SpecificUser.class));
+        p.readFrom(Sources.list(list))
+         .map(user -> new SpecificUser(user.getName(), user.getFavoriteNumber()))
+         .writeTo(AvroSinks.files(directory.getPath(), SpecificUser::getClassSchema, SpecificUser.class));
 
         jet.newJob(p).join();
 
-        checkFileContent();
+        checkFileContent(new SpecificDatumReader<>(SpecificUser.class));
     }
 
     @Test
     public void testGenericWriter() throws IOException {
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.<SpecificUser>list(list.getName()))
-         .writeTo(AvroSinks.files(directory.getPath(), () -> SpecificUser.SCHEMA$));
+        p.readFrom(Sources.list(list))
+         .map(AvroSinkTest::toRecord)
+         .writeTo(AvroSinks.files(directory.getPath(), User::classSchema));
 
         jet.newJob(p).join();
 
-        checkFileContent();
+        checkFileContent(new GenericDatumReader<>());
     }
 
-    private void checkFileContent() throws IOException {
+    private <R> void checkFileContent(DatumReader<R> datumReader) throws IOException {
         File[] files = directory.listFiles();
         assertNotNull(files);
         assertEquals(1, files.length);
         int[] count = {0};
-        try (DataFileReader<User> reader = new DataFileReader<>(files[0], new ReflectDatumReader<>(User.class))) {
-            reader.forEach(user -> count[0]++);
+        try (DataFileReader<R> reader = new DataFileReader<>(files[0], datumReader)) {
+            reader.forEach(datum -> count[0]++);
         }
         assertEquals(TOTAL_RECORD_COUNT, count[0]);
+    }
+
+    private static GenericRecord toRecord(User user) {
+        Schema schema = ReflectData.get().getSchema(User.class);
+        GenericRecord record = (GenericRecord) GenericData.get().newRecord(null, schema);
+        record.put("name", user.getName());
+        record.put("favoriteNumber", user.getFavoriteNumber());
+        return record;
     }
 
 }

@@ -19,23 +19,29 @@ package com.hazelcast.jet.avro;
 import com.hazelcast.collection.IList;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.avro.model.SpecificUser;
+import com.hazelcast.jet.avro.generated.SpecificUser;
 import com.hazelcast.jet.avro.model.User;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.reflect.ReflectData;
+import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,31 +50,28 @@ public class AvroSourceTest extends JetTestSupport {
 
     private static final int TOTAL_RECORD_COUNT = 20;
 
-    private static File directory;
+    private File directory;
 
     private JetInstance jet;
     private IList<? extends User> list;
 
-    @BeforeClass
-    public static void createDirectory() throws Exception {
-        directory = createTempDirectory();
-        createAvroFile(5);
-        createAvroFile(15);
-    }
-
-    @AfterClass
-    public static void cleanup() {
-        IOUtil.delete(directory);
-    }
-
     @Before
-    public void setup() {
+    public void createDirectory() throws Exception {
+        directory = createTempDirectory();
+
         jet = createJetMember();
         list = jet.getList("writer");
     }
 
+    @After
+    public void cleanup() {
+        IOUtil.delete(directory);
+    }
+
     @Test
-    public void testReflectReader() {
+    public void testReflectReader() throws IOException {
+        createAvroFiles(new ReflectDatumWriter<>(User.class), User.classSchema(), i -> new User("name-" + i, i));
+
         Pipeline p = Pipeline.create();
         p.readFrom(AvroSources.files(directory.getPath(), User.class))
          .writeTo(Sinks.list(list.getName()));
@@ -79,7 +82,10 @@ public class AvroSourceTest extends JetTestSupport {
     }
 
     @Test
-    public void testSpecificReader() {
+    public void testSpecificReader() throws IOException {
+        createAvroFiles(new SpecificDatumWriter<>(SpecificUser.class), SpecificUser.getClassSchema(),
+                i -> new SpecificUser("name-" + i, i));
+
         Pipeline p = Pipeline.create();
         p.readFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
          .writeTo(Sinks.list(list.getName()));
@@ -90,7 +96,9 @@ public class AvroSourceTest extends JetTestSupport {
     }
 
     @Test
-    public void testGenericReader() {
+    public void testGenericReader() throws IOException {
+        createAvroFiles(new GenericDatumWriter<>(), User.classSchema(), AvroSourceTest::record);
+
         Pipeline p = Pipeline.create();
         p.readFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
          .writeTo(Sinks.list(list.getName()));
@@ -100,16 +108,31 @@ public class AvroSourceTest extends JetTestSupport {
         assertEquals(TOTAL_RECORD_COUNT, list.size());
     }
 
-    private static void createAvroFile(int recordCount) throws IOException {
-        try (DataFileWriter<SpecificUser> writer = new DataFileWriter<>(new SpecificDatumWriter<>(SpecificUser.class))) {
-            writer.create(SpecificUser.SCHEMA$, new File(directory, randomString()));
+    private <R> void createAvroFiles(DatumWriter<R> datumWriter, Schema schema, Function<Integer, R> datumFn)
+            throws IOException {
+        createAvroFile(datumWriter, schema, datumFn, TOTAL_RECORD_COUNT / 2);
+        createAvroFile(datumWriter, schema, datumFn, TOTAL_RECORD_COUNT / 2);
+    }
+
+    private <R> void createAvroFile(DatumWriter<R> datumWriter, Schema schema,
+                                    Function<Integer, R> datumFn, int recordCount) throws IOException {
+        try (DataFileWriter<R> writer = new DataFileWriter<>(datumWriter)) {
+            writer.create(schema, new File(directory, randomString()));
             for (int i = 0; i < recordCount; i++) {
-                writer.append(new SpecificUser("username-" + i, "password-" + i));
+                writer.append(datumFn.apply(i));
             }
         }
     }
 
+    private static GenericRecord record(int i) {
+        Schema schema = ReflectData.get().getSchema(User.class);
+        GenericRecord record = (GenericRecord) GenericData.get().newRecord(null, schema);
+        record.put("name", "name" + i);
+        record.put("favoriteNumber", i);
+        return record;
+    }
+
     private static User toUser(GenericRecord record) {
-        return new User(record.get(0).toString(), record.get(1).toString());
+        return new User(record.get(0).toString(), Integer.parseInt(record.get(1).toString()));
     }
 }

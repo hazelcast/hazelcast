@@ -16,42 +16,53 @@
 
 package com.hazelcast.jet.avro.model;
 
+import org.apache.avro.Schema;
+import org.apache.avro.reflect.ReflectData;
+
 import java.io.Serializable;
 
 public class User implements Serializable {
 
-    private String username;
-    private String password;
+    public static final Schema SCHEMA = ReflectData.get().getSchema(User.class);
+
+    private String name;
+    private int favoriteNumber;
 
     public User() {
     }
 
-    public User(String username, String password) {
-        this.username = username;
-        this.password = password;
+    public User(String name, int favoriteNumber) {
+        this.name = name;
+        this.favoriteNumber = favoriteNumber;
     }
 
-    public String getUsername() {
-        return username;
+    public String getName() {
+        return name;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getPassword() {
-        return password;
+    public int getFavoriteNumber() {
+        return favoriteNumber;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setFavoriteNumber(int favoriteNumber) {
+        this.favoriteNumber = favoriteNumber;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "username='" + username + '\'' +
-                ", password='" + password + '\'' +
+        return "User{" +
+                "name='" + name + '\'' +
+                ", favoriteNumber=" + favoriteNumber +
                 '}';
     }
+
+    public static Schema classSchema() {
+        return SCHEMA;
+    }
+
+
 }
