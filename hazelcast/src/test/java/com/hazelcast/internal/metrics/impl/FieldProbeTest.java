@@ -49,8 +49,9 @@ public class FieldProbeTest extends HazelcastTestSupport {
         UnknownFieldType unknownFieldType = new UnknownFieldType();
         Field field = unknownFieldType.getClass().getDeclaredField("field");
         Probe probe = field.getAnnotation(Probe.class);
+        SourceMetadata ignoredSourceMetadata = new SourceMetadata(Object.class);
 
-        createFieldProbe(field, probe);
+        createFieldProbe(field, probe, ignoredSourceMetadata);
     }
 
     private class UnknownFieldType {
@@ -92,7 +93,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Field field = source.getClass().getDeclaredField(fieldName);
         Probe probe = field.getAnnotation(Probe.class);
-        FieldProbe fieldProbe = createFieldProbe(field, probe);
+        FieldProbe fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
 
         LongFieldProbe longFieldProbe = assertInstanceOf(LongFieldProbe.class, fieldProbe);
 
@@ -116,7 +117,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         Field field = source.getClass().getDeclaredField(fieldName);
         Probe probe = field.getAnnotation(Probe.class);
 
-        FieldProbe fieldProbe = createFieldProbe(field, probe);
+        FieldProbe fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
         assertInstanceOf(DoubleFieldProbe.class, fieldProbe);
 
         DoubleFieldProbe doubleFieldProbe = (DoubleFieldProbe) fieldProbe;
