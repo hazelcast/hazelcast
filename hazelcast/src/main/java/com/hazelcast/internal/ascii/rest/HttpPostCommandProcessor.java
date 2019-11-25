@@ -97,6 +97,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleListNodes(command);
             } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
                 handleShutdownNode(command);
+                return;
             } else if (uri.startsWith(URI_WAN_SYNC_MAP) || uri.startsWith(LEGACY_URI_WAN_SYNC_MAP)) {
                 handleWanSyncMap(command);
             } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS) || uri.startsWith(LEGACY_URI_WAN_SYNC_ALL_MAPS)) {
@@ -220,14 +221,21 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 })).handle(cmd);
     }
 
-    private void handleClusterShutdown(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while shutting down cluster",
-                withAuthentication(command -> {
-                    Node node = textCommandService.getNode();
-                    ClusterService clusterService = node.getClusterService();
-                    sendResponse(command, response(SUCCESS));
-                    clusterService.shutdown();
-                })).handle(cmd);
+    private void handleClusterShutdown(HttpPostCommand command) {
+        try {
+            Node node = textCommandService.getNode();
+            ClusterService clusterService = node.getClusterService();
+            if (!checkCredentials(command)) {
+                command.send403();
+                textCommandService.sendResponse(command);
+            } else {
+                sendResponse(command, response(ResponseType.SUCCESS));
+                clusterService.shutdown();
+            }
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while shutting down cluster", throwable);
+            sendResponse(command, exceptionResponse(throwable));
+        }
     }
 
     private void handleListNodes(HttpPostCommand cmd) {
@@ -242,50 +250,54 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 })).handle(cmd);
     }
 
-    private void handleShutdownNode(HttpPostCommand cmd) {
-        withExceptionHandling("Error occurred while shutting down",
-                withAuthentication(command -> {
-                    Node node = textCommandService.getNode();
-                    sendResponse(command, response(SUCCESS));
-                    node.hazelcastInstance.shutdown();
-                })).handle(cmd);
+    private void handleShutdownNode(HttpPostCommand command) {
+        try {
+            Node node = textCommandService.getNode();
+            if (!checkCredentials(command)) {
+                command.send403();
+                textCommandService.sendResponse(command);
+            } else {
+                sendResponse(command, response(ResponseType.SUCCESS));
+                node.hazelcastInstance.shutdown();
+            }
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while shutting down", throwable);
+            sendResponse(command, exceptionResponse(throwable));
+        }
     }
 
-    private void handleQueue(HttpPostCommand cmd, String uri) {
-        withExceptionHandling("Error occurred while adding queue item",
-                command -> {
-                    String simpleValue = null;
-                    String suffix;
-                    if (uri.endsWith("/")) {
-                        suffix = uri.substring(URI_QUEUES.length(), uri.length() - 1);
-                    } else {
-                        suffix = uri.substring(URI_QUEUES.length());
-                    }
-                    int indexSlash = suffix.lastIndexOf('/');
+    private void handleQueue(HttpPostCommand command, String uri) {
+        String simpleValue = null;
+        String suffix;
+        if (uri.endsWith("/")) {
+            suffix = uri.substring(URI_QUEUES.length(), uri.length() - 1);
+        } else {
+            suffix = uri.substring(URI_QUEUES.length());
+        }
+        int indexSlash = suffix.lastIndexOf('/');
 
-                    String queueName;
-                    if (indexSlash == -1) {
-                        queueName = suffix;
-                    } else {
-                        queueName = suffix.substring(0, indexSlash);
-                        simpleValue = suffix.substring(indexSlash + 1);
-                    }
-                    byte[] data;
-                    byte[] contentType;
-                    if (simpleValue == null) {
-                        data = command.getData();
-                        contentType = command.getContentType();
-                    } else {
-                        data = stringToBytes(simpleValue);
-                        contentType = QUEUE_SIMPLE_VALUE_CONTENT_TYPE;
-                    }
-                    boolean offerResult = textCommandService.offer(queueName, new RestValue(data, contentType));
-                    if (offerResult) {
-                        command.send200();
-                    } else {
-                        command.setResponse(HttpCommand.RES_503);
-                    }
-                }).handle(cmd);
+        String queueName;
+        if (indexSlash == -1) {
+            queueName = suffix;
+        } else {
+            queueName = suffix.substring(0, indexSlash);
+            simpleValue = suffix.substring(indexSlash + 1);
+        }
+        byte[] data;
+        byte[] contentType;
+        if (simpleValue == null) {
+            data = command.getData();
+            contentType = command.getContentType();
+        } else {
+            data = stringToBytes(simpleValue);
+            contentType = QUEUE_SIMPLE_VALUE_CONTENT_TYPE;
+        }
+        boolean offerResult = textCommandService.offer(queueName, new RestValue(data, contentType));
+        if (offerResult) {
+            command.send200();
+        } else {
+            command.setResponse(HttpCommand.RES_503);
+        }
     }
 
     private void handleManagementCenterUrlChange(HttpPostCommand cmd) {
@@ -305,16 +317,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 })).handle(cmd);
     }
 
-    private void handleMap(HttpPostCommand cmd, String uri) {
-        withExceptionHandling("Error occurred while putting into map",
-                command -> {
-                    int indexEnd = uri.indexOf('/', URI_MAPS.length());
-                    String mapName = uri.substring(URI_MAPS.length(), indexEnd);
-                    String key = uri.substring(indexEnd + 1);
-                    byte[] data = command.getData();
-                    textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
-                    command.send200();
-                }).handle(cmd);
+    private void handleMap(HttpPostCommand command, String uri) {
+        int indexEnd = uri.indexOf('/', URI_MAPS.length());
+        String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+        String key = uri.substring(indexEnd + 1);
+        byte[] data = command.getData();
+        textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
+        command.send200();
     }
 
     /**
@@ -326,10 +335,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleWanSyncMap(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while syncing map",
                 withAuthentication(command -> {
-                    String[] params = decodeParams(command, 3);
-                    String wanRepName = params[0];
-                    String publisherId = params[1];
-                    String mapName = params[2];
+                    String[] params = decodeParams(command, 5);
+                    String wanRepName = params[2];
+                    String publisherId = params[3];
+                    String mapName = params[4];
                     UUID uuid = textCommandService.getNode().getNodeEngine().getWanReplicationService()
                                                   .syncMap(wanRepName, publisherId, mapName);
                     prepareResponse(command, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
@@ -346,9 +355,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleWanSyncAllMaps(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while syncing maps",
                 withAuthentication(command -> {
-                    final String[] params = decodeParams(command, 2);
-                    final String wanRepName = params[0];
-                    final String publisherId = params[1];
+                    final String[] params = decodeParams(command, 4);
+                    final String wanRepName = params[2];
+                    final String publisherId = params[3];
                     UUID uuid = textCommandService.getNode().getNodeEngine().getWanReplicationService()
                                                   .syncAllMaps(wanRepName, publisherId);
                     prepareResponse(command, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
@@ -364,10 +373,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleWanConsistencyCheck(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while syncing maps",
                 withAuthentication(command -> {
-                    String[] params = decodeParams(command, 3);
-                    String wanReplicationName = params[0];
-                    String publisherId = params[1];
-                    String mapName = params[2];
+                    String[] params = decodeParams(command, 5);
+                    String wanReplicationName = params[2];
+                    String publisherId = params[3];
+                    String mapName = params[4];
                     WanReplicationService service = textCommandService.getNode()
                                                                       .getNodeEngine().getWanReplicationService();
                     UUID uuid = service.consistencyCheck(wanReplicationName, publisherId, mapName);
@@ -385,9 +394,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleWanClearQueues(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while clearing queues",
                 withAuthentication(command -> {
-                    final String[] params = decodeParams(command, 2);
-                    final String wanRepName = params[0];
-                    final String publisherId = params[1];
+                    final String[] params = decodeParams(command, 4);
+                    final String wanRepName = params[2];
+                    final String publisherId = params[3];
                     textCommandService.getNode().getNodeEngine()
                                       .getWanReplicationService()
                                       .removeWanEvents(wanRepName, publisherId);
@@ -405,8 +414,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         withExceptionHandling("Error occurred while adding WAN config",
                 withAuthentication(command -> {
                     JsonObject res;
-                    String[] params = decodeParams(command, 1);
-                    String wanConfigJson = params[0];
+                    String[] params = decodeParams(command, 3);
+                    String wanConfigJson = params[2];
                     WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
                     dto.fromJson(Json.parse(wanConfigJson).asObject());
 
@@ -431,9 +440,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleWanPausePublisher(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while pausing WAN publisher",
                 withAuthentication(command -> {
-                    String[] params = decodeParams(command, 2);
-                    String wanReplicationName = params[0];
-                    String publisherId = params[1];
+                    String[] params = decodeParams(command, 4);
+                    String wanReplicationName = params[2];
+                    String publisherId = params[3];
                     WanReplicationService service = textCommandService.getNode().getNodeEngine()
                                                                       .getWanReplicationService();
                     service.pause(wanReplicationName, publisherId);
@@ -452,9 +461,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleWanStopPublisher(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while stopping WAN publisher",
                 withAuthentication(command -> {
-                    String[] params = decodeParams(command, 2);
-                    String wanReplicationName = params[0];
-                    String publisherId = params[1];
+                    String[] params = decodeParams(command, 4);
+                    String wanReplicationName = params[2];
+                    String publisherId = params[3];
                     WanReplicationService service = textCommandService.getNode().getNodeEngine()
                                                                       .getWanReplicationService();
                     service.stop(wanReplicationName, publisherId);
@@ -473,9 +482,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleWanResumePublisher(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while stopping WAN publisher",
                 withAuthentication(command -> {
-                    String[] params = decodeParams(command, 2);
-                    String wanReplicationName = params[0];
-                    String publisherId = params[1];
+                    String[] params = decodeParams(command, 4);
+                    String wanReplicationName = params[2];
+                    String publisherId = params[3];
                     WanReplicationService service = textCommandService.getNode().getNodeEngine()
                                                                       .getWanReplicationService();
                     service.resume(wanReplicationName, publisherId);
