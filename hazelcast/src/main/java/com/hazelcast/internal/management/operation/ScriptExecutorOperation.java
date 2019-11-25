@@ -22,7 +22,6 @@ import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -37,32 +36,22 @@ import java.security.AccessControlException;
  */
 public class ScriptExecutorOperation extends AbstractManagementOperation {
 
-    private final NodeEngine nodeEngine;
-
     private String engineName;
     private String script;
     private Object result;
 
     @SuppressWarnings("unused")
     public ScriptExecutorOperation() {
-        nodeEngine = getNodeEngine();
     }
 
     public ScriptExecutorOperation(String engineName, String script) {
-        this.nodeEngine = getNodeEngine();
-        this.engineName = engineName;
-        this.script = script;
-    }
-
-    ScriptExecutorOperation(NodeEngine nodeEngine, String engineName, String script) {
-        this.nodeEngine = nodeEngine;
         this.engineName = engineName;
         this.script = script;
     }
 
     @Override
     public void run() {
-        ManagementCenterConfig managementCenterConfig = nodeEngine.getConfig().getManagementCenterConfig();
+        ManagementCenterConfig managementCenterConfig = getNodeEngine().getConfig().getManagementCenterConfig();
         if (!managementCenterConfig.isScriptingEnabled()) {
             throw new AccessControlException("Using ScriptEngine is not allowed on this Hazelcast member.");
         }
@@ -71,7 +60,7 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
         if (engine == null) {
             throw new IllegalArgumentException("Could not find ScriptEngine named '" + engineName + "'.");
         }
-        engine.put("hazelcast", nodeEngine.getHazelcastInstance());
+        engine.put("hazelcast", getNodeEngine().getHazelcastInstance());
         try {
             this.result = engine.eval(script);
         } catch (ScriptException e) {

@@ -46,7 +46,8 @@ public class RunScriptOperation extends AbstractLocalOperation {
     public void run() {
         final ILogger logger = getNodeEngine().getLogger(getClass());
         final ExecutionService executionService = getNodeEngine().getExecutionService();
-        final ScriptExecutorOperation legacyOperation = new ScriptExecutorOperation(getNodeEngine(), engine, script);
+        final ScriptExecutorOperation legacyOperation = new ScriptExecutorOperation(engine, script);
+        legacyOperation.setNodeEngine(getNodeEngine());
 
         Future<Object> future = executionService.submit(
                 ExecutionService.MC_EXECUTOR,
