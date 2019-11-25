@@ -16,21 +16,69 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.map.impl.operation.WithForcedEviction.EVICTION_RETRY_COUNT;
 
+/**
+ * Forced eviction is done per record store basis. This interface is
+ * the main contract to implement various forced eviction strategies.
+ */
 interface ForcedEviction {
-    boolean execute(int retries, MapOperation mapOperation, ILogger logger);
 
-    default boolean nativeFormatWithEvictionPolicy(RecordStore recordStore) {
-        return recordStore.getInMemoryFormat() == NATIVE
-            && recordStore.getEvictionPolicy() != NONE;
+    /**
+     * First does forced eviction by deleting a percentage
+     * of entries then tries to run provided map operation.
+     *
+     * @param mapOperation       the map operation which got Native OOME during its run
+     * @param evictionPercentage percentage of the entries to evict from record store.
+     * @return {@code true} if run is succeeded after forced eviction,
+     * otherwise return {@code false}
+     * @throws com.hazelcast.memory.NativeOutOfMemoryError
+     */
+    boolean forceEvictAndRun(MapOperation mapOperation,
+                             double evictionPercentage);
+
+    /**
+     * @return {@code true} if supplied record store is valid
+     * to apply forced eviction, otherwise return {@code false}
+     */
+    default boolean isValid(RecordStore recordStore) {
+        return recordStore != null && recordStore.getInMemoryFormat() == NATIVE
+                && recordStore.getEvictionPolicy() != NONE && recordStore.size() > 0;
     }
 
-    default boolean doesNotHaveRecordStore(MapOperation mapOperation) {
-        return mapOperation.recordStore == null;
+    default int mod(MapOperation mapOperation, int threadCount) {
+        return mapOperation.getPartitionId() % threadCount;
+    }
+
+    default int threadCount(MapOperation mapOperation) {
+        NodeEngine nodeEngine = mapOperation.getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.getPartitionThreadCount();
+    }
+
+    default int numberOfPartitions(MapOperation mapOperation) {
+        NodeEngine nodeEngine = mapOperation.getNodeEngine();
+        return nodeEngine.getPartitionService().getPartitionCount();
+    }
+
+    default ConcurrentMap<String, RecordStore> partitionMaps(MapOperation mapOperation, int partitionId) {
+        return mapOperation.mapServiceContext.getPartitionContainer(partitionId).getMaps();
+    }
+
+    /**
+     * @return 1 if evictionPercentage is 1. 1 means we are evicting
+     * all data in record store and further retrying has no point, otherwise
+     * return {@link WithForcedEviction#EVICTION_RETRY_COUNT}
+     */
+    default int noRetryIfEvictingAll(double evictionPercentage) {
+        return evictionPercentage == 1D ? 1 : EVICTION_RETRY_COUNT;
     }
 }

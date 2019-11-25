@@ -37,7 +37,7 @@ public interface Evictor {
         }
 
         @Override
-        public void forceEvict(RecordStore recordStore) {
+        public void forceEvictByPercentage(RecordStore recordStore, double evictionPercentage) {
 
         }
 
@@ -68,13 +68,14 @@ public interface Evictor {
     void evict(RecordStore recordStore, Data excludedKey);
 
     /**
-     * Evicts provided record-store forcibly. This type
+     * Evicts provided record store forcibly. This type
      * of eviction is used when regular eviction is not
      * enough to provide free space for newly added entries.
      *
-     * @param recordStore the recordStore
+     * @param recordStore        the record store
+     * @param evictionPercentage percentage of the entries to evict from the record store
      */
-    void forceEvict(RecordStore recordStore);
+    void forceEvictByPercentage(RecordStore recordStore, double evictionPercentage);
 
     /**
      * Check whether the supplied record-store needs eviction.
