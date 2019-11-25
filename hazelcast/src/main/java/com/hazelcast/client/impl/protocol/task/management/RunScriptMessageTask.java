@@ -20,18 +20,16 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
+import com.hazelcast.internal.management.operation.RunScriptOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class RunScriptMessageTask
-        extends AbstractInvocationMessageTask<RequestParameters> implements BlockingMessageTask {
+public class RunScriptMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
     public RunScriptMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,7 +42,7 @@ public class RunScriptMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ScriptExecutorOperation(parameters.engine, parameters.script);
+        return new RunScriptOperation(parameters.engine, parameters.script);
     }
 
     @Override

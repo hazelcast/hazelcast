@@ -19,40 +19,30 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.management.ConsoleCommandHandler;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.management.operation.RunConsoleCommandOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-
-public class RunConsoleCommandMessageTask
-        extends AbstractCallableMessageTask<RequestParameters> implements BlockingMessageTask {
+public class RunConsoleCommandMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
     public RunConsoleCommandMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ManagementCenterService mcService = nodeEngine.getManagementCenterService();
-        ConsoleCommandHandler handler = mcService.getCommandHandler();
-        try {
-            final String ns = parameters.namespace;
-            String command = parameters.command;
-            if (!isNullOrEmpty(ns)) {
-                // set namespace as a part of the command
-                command = ns + "__" + command;
-            }
-            return handler.handleCommand(command);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw e;
-        }
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), op, nodeEngine.getThisAddress());
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return new RunConsoleCommandOperation(parameters.command, parameters.namespace);
     }
 
     @Override
