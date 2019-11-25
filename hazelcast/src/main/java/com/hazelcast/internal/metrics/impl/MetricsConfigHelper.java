@@ -55,29 +55,29 @@ public final class MetricsConfigHelper {
 
         // MetricsConfig.enabled
         tryOverride(ClusterProperty.METRICS_ENABLED, config::getProperty,
-                prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
+            prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
             () -> Boolean.toString(metricsConfig.isEnabled()), "MetricsConfig.enabled", logger);
 
         // MetricsManagementCenterConfig.enabled
         tryOverride(ClusterProperty.METRICS_MC_ENABLED, config::getProperty,
-                prop -> managementCenterConfig.setEnabled(Boolean.parseBoolean(prop)),
+            prop -> managementCenterConfig.setEnabled(Boolean.parseBoolean(prop)),
             () -> Boolean.toString(managementCenterConfig.isEnabled()), "MetricsManagementCenterConfig.enabled", logger);
 
         // MetricsManagementCenterConfig.retentionSeconds
         tryOverride(ClusterProperty.METRICS_MC_RETENTION, config::getProperty,
-                prop -> managementCenterConfig.setRetentionSeconds(Integer.parseInt(prop)),
-                () -> Integer.toString(managementCenterConfig.getRetentionSeconds()),
+            prop -> managementCenterConfig.setRetentionSeconds(Integer.parseInt(prop)),
+            () -> Integer.toString(managementCenterConfig.getRetentionSeconds()),
             "MetricsManagementCenterConfig.retentionSeconds", logger);
 
         // MetricsJmxConfig.enabled
         tryOverride(ClusterProperty.METRICS_JMX_ENABLED, config::getProperty,
-                prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
+            prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
             () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled", logger);
 
         // MetricsConfig.collectionFrequencySeconds
         tryOverride(ClusterProperty.METRICS_COLLECTION_FREQUENCY, config::getProperty,
-                prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
-                () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
+            prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
+            () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
             "MetricsConfig.collectionFrequencySeconds", logger);
     }
 
@@ -95,18 +95,18 @@ public final class MetricsConfigHelper {
 
         // MetricsConfig.enabled
         tryOverride(ClientProperty.METRICS_ENABLED, config::getProperty,
-                prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
+            prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
             () -> Boolean.toString(metricsConfig.isEnabled()), "ClientMetricsConfig.enabled", logger);
 
         // MetricsJmxConfig.enabled
         tryOverride(ClientProperty.METRICS_JMX_ENABLED, config::getProperty,
-                prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
+            prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
             () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled", logger);
 
         // MetricsConfig.collectionFrequencySeconds
         tryOverride(ClientProperty.METRICS_COLLECTION_FREQUENCY, config::getProperty,
-                prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
-                () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
+            prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
+            () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
             "ClientMetricsConfig.collectionFrequencySeconds", logger);
     }
 
