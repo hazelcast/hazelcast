@@ -21,9 +21,12 @@ import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Enum representing the target platforms of the metrics collection.
@@ -36,6 +39,8 @@ public enum MetricTarget {
     JMX,
     DIAGNOSTICS,
     JET_JOB;
+
+    public static final List<MetricTarget> VALUES_LIST = unmodifiableList(asList(values()));
 
     static final Int2ObjectHashMap<Set<MetricTarget>> BITSET_TO_SET_CACHE = new Int2ObjectHashMap<>();
 

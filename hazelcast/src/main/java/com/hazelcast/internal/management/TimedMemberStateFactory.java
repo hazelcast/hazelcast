@@ -18,8 +18,11 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.Client;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
@@ -27,6 +30,7 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -39,21 +43,10 @@ import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.monitor.LocalCacheStats;
-import com.hazelcast.internal.networking.NetworkStats;
-import com.hazelcast.internal.nio.AggregateEndpointManager;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.internal.monitor.LocalMemoryStats;
-import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.internal.monitor.LocalOperationStats;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
-import com.hazelcast.collection.LocalQueueStats;
-import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
-import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.internal.monitor.impl.HotRestartStateImpl;
@@ -62,10 +55,18 @@ import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.internal.monitor.impl.NodeStateImpl;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.multimap.LocalMultiMapStats;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -75,12 +76,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToLongFunction;
 
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
@@ -198,13 +201,25 @@ public class TimedMemberStateFactory {
         createClusterHotRestartStatus(memberState);
         createWanSyncState(memberState);
 
-        memberState.setClientStats(node.clientEngine.getClientStatistics());
+        memberState.setClientStats(getClientAttributes(node.getClientEngine().getClientStatistics()));
 
         AggregateEndpointManager aggregateEndpointManager = node.getNetworkingService().getAggregateEndpointManager();
         memberState.setInboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
                 NetworkStats::getBytesReceived));
         memberState.setOutboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
                 NetworkStats::getBytesSent));
+    }
+
+    private Map<UUID, String> getClientAttributes(Map<UUID, ClientStatistics> allClientStatistics) {
+        Map<UUID, String> statsMap = createHashMap(allClientStatistics.size());
+        for (Map.Entry<UUID, ClientStatistics> entry : allClientStatistics.entrySet()) {
+            UUID uuid = entry.getKey();
+            ClientStatistics statistics = entry.getValue();
+            if (statistics != null) {
+                statsMap.put(uuid, statistics.clientAttributes());
+            }
+        }
+        return statsMap;
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {

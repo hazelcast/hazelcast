@@ -19,14 +19,15 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
@@ -97,71 +98,11 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     Map<String, Integer> getConnectedClientStats();
 
     /**
-     * The statistics is a String that is composed of key=value pairs separated by ',' . The following characters are escaped in
-     * IMap and ICache names by the escape character '\' : '=' '.' ',' '\'
+     * Returns the latest client statistics mapped to the client UUIDs.
      *
-     * The statistics key identify the category and name of the statistics. It is formatted as:
-     * mainCategory.subCategory.statisticName
-     *
-     * An e.g. Operating system committedVirtualMemorySize path would be: os.committedVirtualMemorySize
-     *
-     * The statistics key names can be one of the following (Used IMap named {@code &lt;example.fastmap&gt;} and ICache Named
-     * {@code &lt;StatTestCacheName&gt;} and assuming that the Near Cache is configured):
-     * <pre>
-     * clientType
-     * clusterConnectionTimestamp
-     * credentials.principal
-     * clientAddress
-     * clusterName
-     * enterprise
-     * lastStatisticsCollectionTime
-     * nearcache.&lt;example\.fastmap&gt;.creationTime
-     * nearcache.&lt;example\.fastmap&gt;.evictions
-     * nearcache.&lt;example\.fastmap&gt;.expirations
-     * nearcache.&lt;example\.fastmap&gt;.hits
-     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceDuration
-     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceFailure
-     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceKeyCount
-     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceTime
-     * nearcache.&lt;example\.fastmap&gt;.lastPersistenceWrittenBytes
-     * nearcache.&lt;example\.fastmap&gt;.misses
-     * nearcache.&lt;example\.fastmap&gt;.ownedEntryCount
-     * nearcache.&lt;example\.fastmap&gt;.ownedEntryMemoryCost
-     * nearcache.hz/&lt;StatTestCacheName&gt;.creationTime
-     * nearcache.hz/&lt;StatTestCacheName&gt;.evictions
-     * nearcache.hz/&lt;StatTestCacheName&gt;.expirations
-     * nearcache.hz/&lt;StatTestCacheName&gt;.hits
-     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceDuration
-     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceFailure
-     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceKeyCount
-     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceTime
-     * nearcache.hz/&lt;StatTestCacheName&gt;.lastPersistenceWrittenBytes
-     * nearcache.hz/&lt;StatTestCacheName&gt;.misses
-     * nearcache.hz/&lt;StatTestCacheName&gt;.ownedEntryCount
-     * nearcache.hz/&lt;StatTestCacheName&gt;.ownedEntryMemoryCost
-     * os.committedVirtualMemorySize
-     * os.freePhysicalMemorySize
-     * os.freeSwapSpaceSize
-     * os.maxFileDescriptorCount
-     * os.openFileDescriptorCount
-     * os.processCpuTime
-     * os.systemLoadAverage
-     * os.totalPhysicalMemorySize
-     * os.totalSwapSpaceSize
-     * runtime.availableProcessors
-     * runtime.freeMemory
-     * runtime.maxMemory
-     * runtime.totalMemory
-     * runtime.uptime
-     * runtime.usedMemory
-     * userExecutor.queueSize
-     * </pre>
-     * Not: Please observe that the name for the ICache appears to be the hazelcast instance name "hz" followed by "/" and
-     * followed by the cache name provided which is StatTestCacheName.
-     *
-     * @return Map of [client UUID UUID, client statistics String]
+     * @return map of the client statistics
      */
-    Map<UUID, String> getClientStatistics();
+    Map<UUID, ClientStatistics> getClientStatistics();
 
     /**
      * @param client to check if allowed through current ClientSelector.

@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
-import com.hazelcast.client.impl.ClientStatistics;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 

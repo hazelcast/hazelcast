@@ -55,7 +55,7 @@ import com.hazelcast.client.impl.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.impl.spi.impl.NonSmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
-import com.hazelcast.client.impl.statistics.Statistics;
+import com.hazelcast.client.impl.statistics.ClientStatisticsService;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
@@ -174,7 +174,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExtension clientExtension;
     private final LoggingService loggingService;
     private final MetricsRegistryImpl metricsRegistry;
-    private final Statistics statistics;
+    private final ClientStatisticsService clientStatisticsService;
     private final Diagnostics diagnostics;
     private final InternalSerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
@@ -237,7 +237,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
         clientExceptionFactory = initClientExceptionFactory();
-        statistics = new Statistics(this);
+        clientStatisticsService = new ClientStatisticsService(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
@@ -377,7 +377,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clusterService.start();
             connectionManager.tryOpenConnectionToAllMembers();
             loadBalancer.init(getCluster(), config);
-            statistics.start();
+            clientStatisticsService.start();
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
             sendStateToCluster();
@@ -806,5 +806,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         userCodeDeploymentService.deploy(this);
         proxyManager.createDistributedObjectsOnCluster();
         queryCacheContext.recreateAllCaches();
+    }
+
+    // visible for testing
+    public ClientStatisticsService getClientStatisticsService() {
+        return clientStatisticsService;
     }
 }

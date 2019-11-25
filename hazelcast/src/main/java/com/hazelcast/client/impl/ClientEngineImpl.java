@@ -30,6 +30,7 @@ import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.TransactionalMessageTask;
 import com.hazelcast.client.impl.protocol.task.UrgentMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.AbstractMapQueryMessageTask;
+import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
@@ -79,6 +80,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 
@@ -495,11 +497,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public Map<UUID, String> getClientStatistics() {
+    public Map<UUID, ClientStatistics> getClientStatistics() {
         Collection<ClientEndpoint> clientEndpoints = endpointManager.getEndpoints();
-        Map<UUID, String> statsMap = new HashMap<>(clientEndpoints.size());
+        Map<UUID, ClientStatistics> statsMap = createHashMap(clientEndpoints.size());
         for (ClientEndpoint e : clientEndpoints) {
-            String statistics = e.getClientAttributes();
+            ClientStatistics statistics = e.getClientStatistics();
             if (null != statistics) {
                 statsMap.put(e.getUuid(), statistics);
             }

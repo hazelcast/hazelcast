@@ -52,4 +52,21 @@ public interface MetricsCollectionContext {
      */
     void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value);
 
+    /**
+     * Collects the given metric.
+     *
+     * @param descriptor The {@link MetricDescriptor} used to describe
+     *                   the metrics extracted from the {@code source} object
+     * @param value      The value of the collected metric
+     */
+    void collect(MetricDescriptor descriptor, long value);
+
+    /**
+     * Collects the given metric.
+     *
+     * @param descriptor The {@link MetricDescriptor} used to describe
+     *                   the metrics extracted from the {@code source} object
+     * @param value      The value of the collected metric
+     */
+    void collect(MetricDescriptor descriptor, double value);
 }
