@@ -128,6 +128,21 @@ public abstract class AbstractDeploymentTest extends JetTestSupport {
         executeAndPeel(getJetInstance().newJob(dag, jobConfig));
     }
 
+    @Test
+    public void testDeployment_whenZipAddedAsResource_thenClassesAvailableOnClassLoader() throws Throwable {
+        createCluster();
+
+        DAG dag = new DAG();
+        dag.newVertex("load class", () -> new LoadPersonIsolated(true));
+
+        JetInstance jetInstance = getJetInstance();
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(this.getClass().getResource("/zip-resources/person-jar.zip"));
+
+        executeAndPeel(jetInstance.newJob(dag, jobConfig));
+    }
+
+
     static class MyJobClassLoaderFactory implements JobClassLoaderFactory {
 
         @Nonnull

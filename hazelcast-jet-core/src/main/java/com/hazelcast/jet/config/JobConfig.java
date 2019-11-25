@@ -79,7 +79,6 @@ public class JobConfig implements IdentifiedDataSerializable {
      * The default value is {@code null}.
      *
      * @return {@code this} instance for fluent API
-     *
      * @since 3.0
      */
     @Nonnull
@@ -143,12 +142,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * +--------------------------+-----------------------+----------------+
      * </pre>
      *
+     * @return {@code this} instance for fluent API
      * @see InstanceConfig#setScaleUpDelayMillis
      *        Configuring the scale-up delay
      * @see #setProcessingGuarantee
      *        Enabling/disabling snapshots
-     *
-     * @return {@code this} instance for fluent API
      */
     public JobConfig setAutoScaling(boolean enabled) {
         this.autoScaling = enabled;
@@ -242,7 +240,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addJar(@Nonnull URL url) {
-        return add(url, null, true);
+        return add(url, null, ResourceType.JAR);
     }
 
     /**
@@ -279,6 +277,59 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Adds the ZIP file identified by the supplied URL to the list of archives
+     * that will be a part of the job's classpath while it's executing in the
+     * Jet cluster.
+     *
+     * Note: Only JAR files inside the ZIP file will be added to the
+     * job classpath.
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig addJarsInZip(@Nonnull URL url) {
+        return add(url, null, ResourceType.JARS_IN_ZIP);
+    }
+
+    /**
+     * Adds the supplied ZIP file to the list of archives that will be a part of
+     * the job's classpath while it's executing in the Jet cluster.
+     *
+     * Note: Only JAR files inside the ZIP file will be added to the
+     * job classpath.
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig addJarsInZip(@Nonnull File file) {
+        try {
+            return addJarsInZip(file.toURI().toURL());
+        } catch (MalformedURLException e) {
+            throw rethrow(e);
+        }
+    }
+
+    /**
+     * Adds the ZIP identified by the supplied pathname to the list of archives
+     * that will be a part of the job's classpath while it's executing in the
+     * Jet cluster.
+     *
+     * Note: Only JAR files inside the ZIP file will be added to the
+     * job classpath.
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig addJarsInZip(@Nonnull String path) {
+        try {
+            File file = new File(path);
+            return addJarsInZip(file.toURI().toURL());
+        } catch (MalformedURLException e) {
+            throw rethrow(e);
+        }
+    }
+
+    /**
      * Adds the resource identified by the supplied URL to the list of
      * resources that will be on the job's classpath while it's executing in
      * the Jet cluster. The resource's filename will be used as its ID.
@@ -299,7 +350,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig addResource(@Nonnull URL url, @Nonnull String id) {
-        return add(url, id, false);
+        return add(url, id, ResourceType.REGULAR_FILE);
     }
 
     /**
@@ -328,7 +379,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     public JobConfig addResource(@Nonnull File file, @Nonnull String id) {
         try {
-            return add(file.toURI().toURL(), id, false);
+            return add(file.toURI().toURL(), id, ResourceType.REGULAR_FILE);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -366,8 +417,8 @@ public class JobConfig implements IdentifiedDataSerializable {
         return resourceConfigs;
     }
 
-    private JobConfig add(URL url, String id, boolean isJar) {
-        resourceConfigs.add(new ResourceConfig(url, id, isJar));
+    private JobConfig add(URL url, String id, ResourceType resourceType) {
+        resourceConfigs.add(new ResourceConfig(url, id, resourceType));
         return this;
     }
 
@@ -413,12 +464,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * The job will use the state even if {@linkplain
      * #setProcessingGuarantee(ProcessingGuarantee) processing guarantee} is
-     * set to {@link ProcessingGuarantee#NONE NONE}.
+     * set to {@link ProcessingGuarantee#NONE}.
      *
      * @param initialSnapshotName the snapshot name given to {@link
-     *      Job#exportSnapshot(String)}
+     *       Job#exportSnapshot(String)}
      * @return {@code this} instance for fluent API
-     *
      * @since 3.0
      */
     @Nonnull
@@ -536,15 +586,15 @@ public class JobConfig implements IdentifiedDataSerializable {
         }
         JobConfig jobConfig = (JobConfig) o;
         return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis &&
-            autoScaling == jobConfig.autoScaling &&
-            splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled &&
-            enableMetrics == jobConfig.enableMetrics &&
-            storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion &&
-            Objects.equals(name, jobConfig.name) &&
-            processingGuarantee == jobConfig.processingGuarantee &&
-            Objects.equals(resourceConfigs, jobConfig.resourceConfigs) &&
-            Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory) &&
-            Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
+                autoScaling == jobConfig.autoScaling &&
+                splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled &&
+                enableMetrics == jobConfig.enableMetrics &&
+                storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion &&
+                Objects.equals(name, jobConfig.name) &&
+                processingGuarantee == jobConfig.processingGuarantee &&
+                Objects.equals(resourceConfigs, jobConfig.resourceConfigs) &&
+                Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory) &&
+                Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
     }
 
     @Override

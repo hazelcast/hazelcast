@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
+import com.hazelcast.jet.config.ResourceType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,9 +27,7 @@ import java.io.File;
 import java.net.URL;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class ResourceConfigTest {
@@ -40,7 +39,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(this.getClass().getName().replace('.', '/') + ".class", resourceConfig.getId());
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
     }
 
     @Test
@@ -51,7 +50,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertNull(resourceConfig.getId());
-        assertTrue(resourceConfig.isArchive());
+        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
         assertEquals(urlString, resourceConfig.getUrl().toString());
     }
 
@@ -63,7 +62,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertNull(resourceConfig.getId());
-        assertTrue(resourceConfig.isArchive());
+        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
         assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
     }
 
@@ -75,7 +74,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertNull(resourceConfig.getId());
-        assertTrue(resourceConfig.isArchive());
+        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
         assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
     }
 
@@ -87,7 +86,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("resourceFile", resourceConfig.getId());
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(urlString, resourceConfig.getUrl().toString());
     }
 
@@ -100,7 +99,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(resourceName, resourceConfig.getId());
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(urlString, resourceConfig.getUrl().toString());
     }
 
@@ -112,7 +111,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("resource", resourceConfig.getId());
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
     }
 
@@ -125,7 +124,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(resourceName, resourceConfig.getId());
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
     }
 
@@ -137,7 +136,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("resource", resourceConfig.getId());
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
     }
 
@@ -150,7 +149,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(resourceName, resourceConfig.getId());
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
     }
 

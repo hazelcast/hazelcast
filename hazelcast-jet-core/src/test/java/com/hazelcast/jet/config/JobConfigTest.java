@@ -30,7 +30,6 @@ import java.util.List;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -101,8 +100,8 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertFalse(resourceConfig.isArchive());
         String expectedId = clazz.getName().replace('.', '/') + ".class";
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(expectedId, resourceConfig.getId());
         assertEquals(clazz.getClassLoader().getResource(expectedId), resourceConfig.getUrl());
     }
@@ -117,7 +116,7 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertTrue(resourceConfig.isArchive());
+        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
         assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
         assertNull(resourceConfig.getId());
     }
@@ -131,7 +130,7 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertTrue(resourceConfig.isArchive());
+        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
         assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
         assertNull(resourceConfig.getId());
     }
@@ -145,7 +144,7 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertTrue(resourceConfig.isArchive());
+        assertEquals(ResourceType.JAR, resourceConfig.getResourceType());
         assertEquals(url, resourceConfig.getUrl());
         assertNull(resourceConfig.getId());
     }
@@ -160,7 +159,7 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
         assertEquals("my.txt", resourceConfig.getId());
     }
@@ -174,7 +173,7 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(new File(path).toURI().toURL(), resourceConfig.getUrl());
         assertEquals("customId", resourceConfig.getId());
     }
@@ -188,7 +187,7 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
         assertEquals("my.txt", resourceConfig.getId());
     }
@@ -202,7 +201,7 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
         assertEquals("customId", resourceConfig.getId());
     }
@@ -216,7 +215,7 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         ResourceConfig resourceConfig = assertAndGet(config);
-        assertFalse(resourceConfig.isArchive());
+        assertEquals(ResourceType.REGULAR_FILE, resourceConfig.getResourceType());
         assertEquals(url, resourceConfig.getUrl());
         assertEquals("my.txt", resourceConfig.getId());
     }

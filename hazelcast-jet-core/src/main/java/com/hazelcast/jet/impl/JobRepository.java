@@ -63,6 +63,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static com.hazelcast.jet.Util.idFromString;
 import static com.hazelcast.jet.Util.idToString;
@@ -124,8 +126,8 @@ public class JobRepository {
      * Prefix for internal IMaps which store snapshot data. Snapshot data for
      * one snapshot is stored in either of the following two maps:
      * <ul>
-     *     <li>{@code _jet.snapshot.<jobId>.0}
-     *     <li>{@code _jet.snapshot.<jobId>.1}
+     *      <li>{@code _jet.snapshot.<jobId>.0}
+     *      <li>{@code _jet.snapshot.<jobId>.1}
      * </ul>
      * Which one of these is determined in {@link JobExecutionRecord}.
      */
@@ -179,11 +181,22 @@ public class JobRepository {
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
             for (ResourceConfig rc : jobConfig.getResourceConfigs()) {
-                if (rc.isArchive()) {
-                    loadJar(tmpMap, rc.getUrl());
-                } else {
-                    InputStream in = rc.getUrl().openStream();
-                    readStreamAndPutCompressedToMap(rc.getId(), tmpMap, in);
+                switch (rc.getResourceType()) {
+                    case REGULAR_FILE:
+                        InputStream in = rc.getUrl().openStream();
+                        readStreamAndPutCompressedToMap(rc.getId(), tmpMap, in);
+                        in.close();
+                        break;
+                    case JAR:
+                        InputStream is = rc.getUrl().openStream();
+                        loadJarFromInputStream(tmpMap, is);
+                        is.close();
+                        break;
+                    case JARS_IN_ZIP:
+                        loadJarsInZip(tmpMap, rc.getUrl());
+                        break;
+                    default:
+                        throw new JetException("Unsupported resource type: " + rc.getResourceType());
                 }
             }
         } catch (Exception e) {
@@ -204,22 +217,38 @@ public class JobRepository {
     }
 
     private long newJobId() {
-       return idGenerator.newId();
+        return idGenerator.newId();
     }
 
     /**
-     * Unzips the Jar archive and processes individual entries using
-     * {@link #readStreamAndPutCompressedToMap(String, Map, InputStream)}.
+     * Unzips the ZIP archive and processes JAR files
      */
-    private void loadJar(Map<String, byte[]> map, URL url) throws IOException {
-        try (JarInputStream jis = new JarInputStream(new BufferedInputStream(url.openStream()))) {
-            JarEntry jarEntry;
-            while ((jarEntry = jis.getNextJarEntry()) != null) {
-                if (jarEntry.isDirectory()) {
+    private void loadJarsInZip(Map<String, byte[]> map, URL url) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(url.openStream()))) {
+            ZipEntry zipEntry;
+            while ((zipEntry = zis.getNextEntry()) != null) {
+                if (zipEntry.isDirectory()) {
                     continue;
                 }
-                readStreamAndPutCompressedToMap(jarEntry.getName(), map, jis);
+                if (zipEntry.getName().toLowerCase().endsWith(".jar")) {
+                    loadJarFromInputStream(map, zis);
+                }
             }
+        }
+    }
+
+    /**
+     * Unzips the JAR archive and processes individual entries using
+     * {@link #readStreamAndPutCompressedToMap(String, Map, InputStream)}.
+     */
+    private void loadJarFromInputStream(Map<String, byte[]> map, InputStream is) throws IOException {
+        JarInputStream jis = new JarInputStream(is);
+        JarEntry jarEntry;
+        while ((jarEntry = jis.getNextJarEntry()) != null) {
+            if (jarEntry.isDirectory()) {
+                continue;
+            }
+            readStreamAndPutCompressedToMap(jarEntry.getName(), map, jis);
         }
     }
 
@@ -277,7 +306,8 @@ public class JobRepository {
 
     /**
      * Puts a JobResult for the given job and deletes the JobRecord.
-     * @throws JobNotFoundException if the JobRecord is not found
+     *
+     * @throws JobNotFoundException  if the JobRecord is not found
      * @throws IllegalStateException if the JobResult is already present
      */
     void completeJob(
@@ -414,11 +444,11 @@ public class JobRepository {
     }
 
     public JobRecord getJobRecord(long jobId) {
-       return jobRecords.get(jobId);
+        return jobRecords.get(jobId);
     }
 
     public JobExecutionRecord getJobExecutionRecord(long jobId) {
-       return jobExecutionRecords.get(jobId);
+        return jobExecutionRecords.get(jobId);
     }
 
     /**
@@ -444,7 +474,7 @@ public class JobRepository {
 
     List<JobResult> getJobResults(String name) {
         return jobResults.values(new FilterJobResultByNamePredicate(name)).stream()
-                  .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
+                         .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
     }
 
     /**
@@ -493,8 +523,8 @@ public class JobRepository {
     }
 
     public static final class UpdateJobExecutionRecordEntryProcessor implements
-                    EntryProcessor<Long, JobExecutionRecord, Object>,
-                    IdentifiedDataSerializable {
+            EntryProcessor<Long, JobExecutionRecord, Object>,
+            IdentifiedDataSerializable {
 
         private long jobId;
         @SuppressFBWarnings(value = "SE_BAD_FIELD",
