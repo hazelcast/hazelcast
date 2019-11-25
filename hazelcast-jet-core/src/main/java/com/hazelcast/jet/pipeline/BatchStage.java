@@ -36,7 +36,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.function.Functions.wholeItem;
@@ -537,5 +536,5 @@ public interface BatchStage<T> extends GeneralStage<T> {
     BatchStage<T> setLocalParallelism(int localParallelism);
 
     @Nonnull @Override
-    BatchStage<T> setName(@Nullable String name);
+    BatchStage<T> setName(@Nonnull String name);
 }

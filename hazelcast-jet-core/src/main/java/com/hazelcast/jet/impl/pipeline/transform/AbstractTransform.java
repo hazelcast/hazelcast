@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.Vertex;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Collections.singletonList;
 
@@ -50,7 +51,7 @@ public abstract class AbstractTransform implements Transform {
 
     @Override
     public void setName(@Nonnull String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name");
     }
 
     @Nonnull @Override
