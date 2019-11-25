@@ -30,6 +30,7 @@ import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
@@ -183,7 +184,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
         return new MetricsRegistryImpl(getHazelcastInstance().getName(), node.getLogger(MetricsRegistry.class),
-                memberMetricsLevel(node.getProperties()));
+                memberMetricsLevel(node.getProperties(), getLogger(MetricsConfigHelper.class)));
     }
 
     private Diagnostics newDiagnostics() {

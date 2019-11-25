@@ -25,7 +25,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -52,7 +51,7 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
     private String discriminator;
     private String discriminatorValue;
     private ProbeUnit unit;
-    private Collection<MetricTarget> excludedTargets = EnumSet.noneOf(MetricTarget.class);
+    private Collection<MetricTarget> excludedTargets = MetricTarget.NONE_OF;
 
     public MetricDescriptorImpl(Supplier<MetricDescriptorImpl> supplier) {
         this.supplier = requireNonNull(supplier);

@@ -93,10 +93,16 @@ public class JmxPublisher implements MetricsPublisher {
             return;
         }
 
-        // we need to take a copy of originalDescriptor here to ensure
-        // we map with an instance that doesn't get recycled or mutated
-        MetricDescriptor descriptor = copy(originalDescriptor);
-        MetricData metricData = metricNameToMetricData.computeIfAbsent(descriptor, createMetricDataFunction);
+        final MetricData metricData;
+        if (!metricNameToMetricData.containsKey(originalDescriptor)) {
+            // we need to take a copy of originalDescriptor here to ensure
+            // we map with an instance that doesn't get recycled or mutated
+            MetricDescriptor descriptor = copy(originalDescriptor);
+            metricData = metricNameToMetricData.computeIfAbsent(descriptor, createMetricDataFunction);
+        } else {
+            metricData = metricNameToMetricData.get(originalDescriptor);
+        }
+
         assert !metricData.wasPresent : "metric '" + originalDescriptor.toString() + "' was rendered twice";
         metricData.wasPresent = true;
         MetricsMBean mBean = mBeans.computeIfAbsent(metricData.objectName, createMBeanFunction);

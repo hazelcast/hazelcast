@@ -112,10 +112,11 @@ public class ClientStatisticsService {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
-        PublisherMetricsCollector publisherMetricsCollector = new PublisherMetricsCollector();
-
+        PublisherMetricsCollector publisherMetricsCollector;
         if (metricsConfig.isEnabled() && metricsConfig.getJmxConfig().isEnabled()) {
-            publisherMetricsCollector.addPublisher(new JmxPublisher(client.getName(), "com.hazelcast"));
+            publisherMetricsCollector = new PublisherMetricsCollector(new JmxPublisher(client.getName(), "com.hazelcast"));
+        } else {
+            publisherMetricsCollector = new PublisherMetricsCollector();
         }
 
         ClientMetricCollector clientMetricCollector = new ClientMetricCollector();

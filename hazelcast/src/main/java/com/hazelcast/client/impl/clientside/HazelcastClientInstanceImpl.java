@@ -194,12 +194,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
         assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
         if (clientConfig != null) {
-            MetricsConfigHelper.overrideClientMetricsConfig(clientConfig);
             this.config = clientConfig;
         } else {
-            for (ClientConfig failoverClientConfig : clientFailoverConfig.getClientConfigs()) {
-                MetricsConfigHelper.overrideClientMetricsConfig(failoverClientConfig);
-            }
             this.config = clientFailoverConfig.getClientConfigs().get(0);
         }
         this.clientFailoverConfig = clientFailoverConfig;
@@ -210,8 +206,19 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
 
         String loggingType = config.getProperty(ClusterProperty.LOGGING_TYPE.getName());
-        loggingService = new ClientLoggingService(config.getClusterName(),
+        this.loggingService = new ClientLoggingService(config.getClusterName(),
                 loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
+
+        if (clientConfig != null) {
+            MetricsConfigHelper.overrideClientMetricsConfig(clientConfig,
+                getLoggingService().getLogger(MetricsConfigHelper.class));
+        } else {
+            for (ClientConfig failoverClientConfig : clientFailoverConfig.getClientConfigs()) {
+                MetricsConfigHelper.overrideClientMetricsConfig(failoverClientConfig,
+                    getLoggingService().getLogger(MetricsConfigHelper.class));
+            }
+        }
+
         ClassLoader classLoader = config.getClassLoader();
         properties = new HazelcastProperties(config.getProperties());
         concurrencyDetection = initConcurrencyDetection();
@@ -279,7 +286,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private MetricsRegistryImpl initMetricsRegistry() {
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
-        return new MetricsRegistryImpl(getName(), logger, clientMetricsLevel(properties));
+        return new MetricsRegistryImpl(getName(), logger, clientMetricsLevel(properties,
+            loggingService.getLogger(MetricsConfigHelper.class)));
     }
 
     private void startMetrics() {
