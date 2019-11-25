@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ConsoleCommandHandler;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -52,16 +51,8 @@ public class RunConsoleCommandMessageTask
             return handler.handleCommand(command);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw wrap(e);
-        } catch (Throwable e) {
-            throw wrap(e);
+            throw e;
         }
-    }
-
-    private static HazelcastException wrap(Throwable e) {
-        HazelcastException hazelcastException = new HazelcastException(e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
-        hazelcastException.setStackTrace(e.getStackTrace());
-        return hazelcastException;
     }
 
     @Override
