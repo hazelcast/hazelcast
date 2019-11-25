@@ -44,11 +44,11 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
     }
 
     @Override
-    public void createPublisherAccumulator(AccumulatorInfo info) throws Exception {
+    public void createPublisherAccumulator(AccumulatorInfo info, boolean urgent) throws Exception {
         ClientMessage publisherCreateMessage = newPublisherCreateMessage(info);
 
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
-        ClientMessage response = (ClientMessage) invokerWrapper.invoke(publisherCreateMessage);
+        ClientMessage response = (ClientMessage) invokerWrapper.invoke(publisherCreateMessage, urgent);
 
         if (info.isIncludeValue()) {
             Collection<Map.Entry<Data, Data>> result =
@@ -61,7 +61,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
 
 
         if (info.isPopulate()) {
-            madePublishable(info.getMapName(), info.getCacheId());
+            madePublishable(info.getMapName(), info.getCacheId(), urgent);
             info.setPublishable(true);
         }
     }
@@ -83,9 +83,9 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
                 info.isPopulate(), info.isCoalesce());
     }
 
-    private void madePublishable(String mapName, String cacheName) throws Exception {
+    private void madePublishable(String mapName, String cacheName, boolean urgent) throws Exception {
         ClientMessage request = ContinuousQueryMadePublishableCodec.encodeRequest(mapName, cacheName);
-        context.getInvokerWrapper().invokeOnAllPartitions(request);
+        context.getInvokerWrapper().invokeOnAllPartitions(request, urgent);
     }
 
     private static void prepopulate(InternalQueryCache queryCache, Collection<Map.Entry<Data, Data>> result) {

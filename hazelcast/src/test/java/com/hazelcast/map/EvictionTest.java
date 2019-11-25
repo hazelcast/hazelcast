@@ -39,7 +39,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.PredicateBuilderImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -491,7 +491,7 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setMaxSizePolicy(MaxSizePolicy.PER_PARTITION)
                 .setSize(size);
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1")
                 .addMapConfig(mapConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
@@ -523,7 +523,7 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
 
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1")
                 .addMapConfig(mapConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
@@ -602,7 +602,7 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(size);
 
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1")
                 .addMapConfig(mapConfig);
 
         HazelcastInstance node = createHazelcastInstance(config);
@@ -887,8 +887,8 @@ public class EvictionTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
-        config.setProperty(GroupProperty.MAP_EVICTION_BATCH_SIZE.getName(), "2");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.MAP_EVICTION_BATCH_SIZE.getName(), "2");
 
         MapConfig mapConfig = config.getMapConfig(mapName);
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
@@ -1054,7 +1054,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         Config config = newConfigWithTTL(mapName, ttlSeconds)
                 // use a long delay for testing purposes
-                .setProperty(GroupProperty.MAP_EXPIRY_DELAY_SECONDS.getName(), String.valueOf(TimeUnit.HOURS.toSeconds(1)));
+                .setProperty(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS.getName(), String.valueOf(TimeUnit.HOURS.toSeconds(1)));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -1194,7 +1194,7 @@ public class EvictionTest extends HazelcastTestSupport {
                 .setSize(1);
 
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1")
                 .addMapConfig(mapConfig);
 
         HazelcastInstance node = createHazelcastInstance(config);
@@ -1227,7 +1227,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         // don't use getConfig(), this test is OSS specific
         Config config = new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1")
                 .addMapConfig(mapConfig);
 
         HazelcastInstance node = createHazelcastInstance(config);

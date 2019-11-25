@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * necessarily indicate that the map contains no mapping for the key; it's also possible that the map
  * explicitly maps the key to null.  The #containsKey operation may be used to distinguish these two cases.
  */
-@Generated("de80fffb16dfe3ffd08af0caa7756a72")
+@Generated("2f822dd9fad1396c41f11a72726ab5c8")
 public final class ReplicatedMapGetCodec {
     //hex: 0x0D0600
     public static final int REQUEST_MESSAGE_TYPE = 853504;
@@ -68,7 +68,6 @@ public final class ReplicatedMapGetCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ReplicatedMap.Get");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

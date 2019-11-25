@@ -35,8 +35,8 @@ import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.ascii.TextEncoder.TEXT_ENCODER;
-import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE;
-import static com.hazelcast.spi.properties.GroupProperty.SOCKET_SEND_BUFFER_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SEND_BUFFER_SIZE;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**

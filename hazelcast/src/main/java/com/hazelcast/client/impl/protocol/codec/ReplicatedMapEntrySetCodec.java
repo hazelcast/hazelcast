@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("a8ca88a14958e8606f423a4a8cb5e366")
+@Generated("019dcfe5285ef4aef70ba5654c3efdc8")
 public final class ReplicatedMapEntrySetCodec {
     //hex: 0x0D1100
     public static final int REQUEST_MESSAGE_TYPE = 856320;
@@ -60,7 +60,6 @@ public final class ReplicatedMapEntrySetCodec {
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ReplicatedMap.EntrySet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

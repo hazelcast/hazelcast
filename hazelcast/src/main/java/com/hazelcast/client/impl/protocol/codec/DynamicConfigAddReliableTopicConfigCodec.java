@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a reliable topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("10f0567119cbd206f754883b23e4dc44")
+@Generated("2afaf4405963ce7bc2eb0de49aa3c75a")
 public final class DynamicConfigAddReliableTopicConfigCodec {
     //hex: 0x1B0D00
     public static final int REQUEST_MESSAGE_TYPE = 1772800;
@@ -91,7 +91,6 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int readBatchSize, boolean statisticsEnabled, java.lang.String topicOverloadPolicy, @Nullable com.hazelcast.nio.serialization.Data executor) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("DynamicConfig.AddReliableTopicConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

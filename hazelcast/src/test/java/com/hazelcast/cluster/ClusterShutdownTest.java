@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -85,10 +85,10 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     @Test
     public void clusterShutdown_shouldNotBeRejected_byBackpressure() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.toString(), "1");
-        config.setProperty(GroupProperty.BACKPRESSURE_ENABLED.toString(), "true");
-        config.setProperty(GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.toString(), "100");
-        config.setProperty(GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION.toString(), "3");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.toString(), "1");
+        config.setProperty(ClusterProperty.BACKPRESSURE_ENABLED.toString(), "true");
+        config.setProperty(ClusterProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.toString(), "100");
+        config.setProperty(ClusterProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION.toString(), "3");
 
         HazelcastInstance hz = createHazelcastInstance(config);
         final OperationServiceImpl operationService = getOperationService(hz);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("4188f49ecc6b184c942db9fd08c34763")
+@Generated("aecf23ed30df9d9bf9dcb545db875f3e")
 public final class MapKeySetWithPagingPredicateCodec {
     //hex: 0x013400
     public static final int REQUEST_MESSAGE_TYPE = 78848;
@@ -65,7 +65,6 @@ public final class MapKeySetWithPagingPredicateCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.KeySetWithPagingPredicate");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

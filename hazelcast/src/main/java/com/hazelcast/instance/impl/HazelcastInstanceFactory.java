@@ -27,7 +27,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.util.ModularJavaUtils;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Collections;
@@ -164,9 +164,9 @@ public final class HazelcastInstanceFactory {
     }
 
     public static String createInstanceName(Config config) {
-        String propertyValue = config.getProperty(GroupProperty.MOBY_NAMING_ENABLED.getName());
+        String propertyValue = config.getProperty(ClusterProperty.MOBY_NAMING_ENABLED.getName());
         if (propertyValue == null) {
-            propertyValue = GroupProperty.MOBY_NAMING_ENABLED.getDefaultValue();
+            propertyValue = ClusterProperty.MOBY_NAMING_ENABLED.getDefaultValue();
         }
         Boolean useMobyNaming = Boolean.valueOf(propertyValue);
         int instanceNum = FACTORY_ID_GEN.incrementAndGet();
@@ -246,7 +246,7 @@ public final class HazelcastInstanceFactory {
 
             Node node = hazelcastInstance.node;
             boolean firstMember = isFirstMember(node);
-            long initialWaitSeconds = node.getProperties().getSeconds(GroupProperty.INITIAL_WAIT_SECONDS);
+            long initialWaitSeconds = node.getProperties().getSeconds(ClusterProperty.INITIAL_WAIT_SECONDS);
             if (initialWaitSeconds > 0) {
                 hazelcastInstance.logger.info(format("Waiting %d seconds before completing HazelcastInstance startup...",
                         initialWaitSeconds));
@@ -280,7 +280,7 @@ public final class HazelcastInstanceFactory {
     private static void awaitMinimalClusterSize(HazelcastInstanceImpl hazelcastInstance, Node node, boolean firstMember)
             throws InterruptedException {
 
-        int initialMinClusterSize = node.getProperties().getInteger(GroupProperty.INITIAL_MIN_CLUSTER_SIZE);
+        int initialMinClusterSize = node.getProperties().getInteger(ClusterProperty.INITIAL_MIN_CLUSTER_SIZE);
         while (node.getClusterService().getSize() < initialMinClusterSize) {
             try {
                 hazelcastInstance.logger.info("HazelcastInstance waiting for cluster size of " + initialMinClusterSize);

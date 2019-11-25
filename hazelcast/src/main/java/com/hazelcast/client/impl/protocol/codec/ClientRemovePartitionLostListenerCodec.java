@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("6531b96830ce39c89dbb9c477eb96be3")
+@Generated("4e1b4e08c304a36c9445349eadd31649")
 public final class ClientRemovePartitionLostListenerCodec {
-    //hex: 0x000900
-    public static final int REQUEST_MESSAGE_TYPE = 2304;
-    //hex: 0x000901
-    public static final int RESPONSE_MESSAGE_TYPE = 2305;
+    //hex: 0x000800
+    public static final int REQUEST_MESSAGE_TYPE = 2048;
+    //hex: 0x000801
+    public static final int RESPONSE_MESSAGE_TYPE = 2049;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -62,7 +62,6 @@ public final class ClientRemovePartitionLostListenerCodec {
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.RemovePartitionLostListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

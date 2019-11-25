@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retains only the elements in this collection that are contained in the specified collection (optional operation).
  * In other words, removes from this collection all of its elements that are not contained in the specified collection.
  */
-@Generated("797eea4990c18b28220a60889f18e459")
+@Generated("aa98c80578fecfa1f674877c841f151d")
 public final class QueueCompareAndRetainAllCodec {
     //hex: 0x030E00
     public static final int REQUEST_MESSAGE_TYPE = 200192;
@@ -67,7 +67,6 @@ public final class QueueCompareAndRetainAllCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> dataList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Queue.CompareAndRetainAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
  * with a value. Entry will expire and get evicted after the ttl or maxIdle, whichever comes first.
  */
-@Generated("9d7ea519eb3df81be652296a8039b1e5")
+@Generated("eccd7e1d3f3bd838e656c3089f82584d")
 public final class MapPutIfAbsentWithMaxIdleCodec {
     //hex: 0x014800
     public static final int REQUEST_MESSAGE_TYPE = 83968;
@@ -90,7 +90,6 @@ public final class MapPutIfAbsentWithMaxIdleCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data value, long threadId, long ttl, long maxIdle) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.PutIfAbsentWithMaxIdle");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

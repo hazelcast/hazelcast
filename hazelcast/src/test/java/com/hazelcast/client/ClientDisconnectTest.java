@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -62,7 +62,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     @Test
     public void testClientOperationCancelled_whenDisconnected() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(ClusterProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
         final String queueName = "q";
 
@@ -115,7 +115,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     @Test
     public void testClientOperationCancelled_whenDisconnected_lock() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(ClusterProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
         final String name = "m";
 

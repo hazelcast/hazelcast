@@ -27,7 +27,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -206,7 +206,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
     private Config getConfig(String mapName, long maxWbqCapacity) {
         Config config = getConfig();
-        config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(),
+        config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(),
                 String.valueOf(maxWbqCapacity));
         config.getMapConfig(mapName)
                 .setBackupCount(1)

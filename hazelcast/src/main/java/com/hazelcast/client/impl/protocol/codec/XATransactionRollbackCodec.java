@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("4ecfe9786488e8ca5ce9ef995e7029ee")
+@Generated("cac4fb3b4cb173be9bce472547ceaa39")
 public final class XATransactionRollbackCodec {
     //hex: 0x140700
     public static final int REQUEST_MESSAGE_TYPE = 1312512;
@@ -61,7 +61,6 @@ public final class XATransactionRollbackCodec {
     public static ClientMessage encodeRequest(java.util.UUID transactionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("XATransaction.Rollback");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

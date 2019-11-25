@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.Clock;
 
@@ -51,7 +51,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private long getHeartbeatTimeout(HazelcastProperties hazelcastProperties) {
-        long configuredTimeout = hazelcastProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
+        long configuredTimeout = hazelcastProperties.getSeconds(ClusterProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
         if (configuredTimeout > 0) {
             return configuredTimeout;
         }

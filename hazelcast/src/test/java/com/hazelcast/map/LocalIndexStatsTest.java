@@ -26,7 +26,7 @@ import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -83,7 +83,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         noStatsMapName = mapName + "_no_stats";
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
         config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
         config.getMapConfig(noStatsMapName).setStatisticsEnabled(false);
 

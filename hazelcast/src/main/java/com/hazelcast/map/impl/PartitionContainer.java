@@ -28,7 +28,7 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -93,7 +93,7 @@ public class PartitionContainer {
 
         MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
                 execService, mapContainer.toData());
-        keyLoader.setMaxBatch(hazelcastProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
+        keyLoader.setMaxBatch(hazelcastProperties.getInteger(ClusterProperty.MAP_LOAD_CHUNK_SIZE));
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));

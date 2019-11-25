@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * For every entry in the key set, the following are called: any registered CacheEntryRemovedListeners if the cache
  * is a write-through cache, the CacheWriter. If the key set is empty, the CacheWriter is not called.
  */
-@Generated("b24fe3f9d4a950e409dc536304f507be")
+@Generated("a1138d76804e179b4ff72b487e3540a3")
 public final class CacheRemoveAllKeysCodec {
     //hex: 0x130300
     public static final int REQUEST_MESSAGE_TYPE = 1245952;
@@ -74,7 +74,6 @@ public final class CacheRemoveAllKeysCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.RemoveAllKeys");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

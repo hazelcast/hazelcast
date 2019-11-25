@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to cache. This listener will be used to listen near cache invalidation events.
  */
-@Generated("19b8721f7f54c9d2af1270dfd549588e")
+@Generated("7d6ad38140bf08ac3171386e3c553783")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x131D00
     public static final int REQUEST_MESSAGE_TYPE = 1252608;
@@ -77,7 +77,6 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.AddNearCacheInvalidationListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -114,15 +114,6 @@ public class ClientCacheClearTest extends CacheClearTest {
                 counter.getAndIncrement();
             }
 
-            @Override
-            public void beforeListenerRegister() {
-
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
         }, config.getNameWithPrefix());
 
         cache.clear();
@@ -167,22 +158,7 @@ public class ClientCacheClearTest extends CacheClearTest {
 
         CacheConfig config = cache.getConfiguration(CacheConfig.class);
 
-        registerInvalidationListener(new EventHandler() {
-            @Override
-            public void handle(Object event) {
-                counter.getAndIncrement();
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
-        }, config.getNameWithPrefix());
+        registerInvalidationListener(event -> counter.getAndIncrement(), config.getNameWithPrefix());
 
         ICache<Object, Object> serverCache = getHazelcastInstance().getCacheManager().getCache(config.getName());
         serverCache.clear();

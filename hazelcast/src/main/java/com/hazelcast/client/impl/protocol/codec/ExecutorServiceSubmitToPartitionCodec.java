@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("f7cba1644baab2f874d4e903d410e242")
+@Generated("e6fcdf0e388aacc274e21fe82a0a9f5d")
 public final class ExecutorServiceSubmitToPartitionCodec {
     //hex: 0x080500
     public static final int REQUEST_MESSAGE_TYPE = 525568;
@@ -71,7 +71,6 @@ public final class ExecutorServiceSubmitToPartitionCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.nio.serialization.Data callable) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ExecutorService.SubmitToPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

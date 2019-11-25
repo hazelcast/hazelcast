@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -50,7 +50,7 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
     public void testReadOperationFailsWhenStaleReadDisabledDuringMigration()
             throws ExecutionException, InterruptedException {
         final Config config = new Config();
-        config.setProperty(GroupProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION.getName(), "true");
+        config.setProperty(ClusterProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION.getName(), "true");
 
         final InternalCompletableFuture<Boolean> future = invokeOperation(config);
         try {

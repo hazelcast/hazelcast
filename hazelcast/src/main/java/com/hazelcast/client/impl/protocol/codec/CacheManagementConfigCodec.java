@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("3ead6fa897d0b4fc11103d6eca45e9fe")
+@Generated("fa9fbb740890e5196eea57692ee65321")
 public final class CacheManagementConfigCodec {
     //hex: 0x131100
     public static final int REQUEST_MESSAGE_TYPE = 1249536;
@@ -77,7 +77,6 @@ public final class CacheManagementConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, boolean isStat, boolean enabled, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.ManagementConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

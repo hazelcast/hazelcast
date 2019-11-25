@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
-@Generated("562d1c95948e1893e8d28aa13c4e6c8d")
+@Generated("ebe9d99bc867e55415f008dd926e946b")
 public final class MapFetchKeysCodec {
     //hex: 0x013800
     public static final int REQUEST_MESSAGE_TYPE = 79872;
@@ -73,7 +73,6 @@ public final class MapFetchKeysCodec {
     public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.FetchKeys");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

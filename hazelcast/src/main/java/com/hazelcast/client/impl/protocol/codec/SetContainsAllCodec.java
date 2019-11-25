@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this set contains all of the elements of the specified collection. If the specified collection is
  * also a set, this method returns true if it is a subset of this set.
  */
-@Generated("e376f37ea0a477b2c3e3d08e52a9e00e")
+@Generated("27a1177f60a8a6653aa052ae6919eb57")
 public final class SetContainsAllCodec {
     //hex: 0x060300
     public static final int REQUEST_MESSAGE_TYPE = 393984;
@@ -67,7 +67,6 @@ public final class SetContainsAllCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> items) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Set.ContainsAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

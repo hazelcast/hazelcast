@@ -38,12 +38,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-@Generated("e531e1548f92f856c665ff373cff57e4")
+@Generated("cca4b5eb7b36a6b411e3cb925c3a5406")
 public final class ClientDeployClassesCodec {
-    //hex: 0x000F00
-    public static final int REQUEST_MESSAGE_TYPE = 3840;
-    //hex: 0x000F01
-    public static final int RESPONSE_MESSAGE_TYPE = 3841;
+    //hex: 0x000E00
+    public static final int REQUEST_MESSAGE_TYPE = 3584;
+    //hex: 0x000E01
+    public static final int RESPONSE_MESSAGE_TYPE = 3585;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -62,7 +62,6 @@ public final class ClientDeployClassesCodec {
     public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.DeployClasses");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

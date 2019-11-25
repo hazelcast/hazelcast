@@ -80,10 +80,11 @@ final class ClientCacheHelper {
     /**
      * Creates a new cache configuration on Hazelcast members.
      *
-     * @param client             the client instance which will send the operation to server
-     * @param newCacheConfig     the cache configuration to be sent to server
-     * @param <K>                type of the key of the cache
-     * @param <V>                type of the value of the cache
+     * @param client         the client instance which will send the operation to server
+     * @param newCacheConfig the cache configuration to be sent to server
+     * @param <K>            type of the key of the cache
+     * @param <V>            type of the value of the cache
+     * @param urgent         whether creating the config is urgent or not(urgent messages can be send in DISCONNECTED state )
      * @return the created cache configuration
      * @see com.hazelcast.cache.impl.operation.AddCacheConfigOperation
      */

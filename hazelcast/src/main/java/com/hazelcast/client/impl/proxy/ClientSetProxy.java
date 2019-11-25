@@ -240,13 +240,5 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
                 listener.itemRemoved(itemEvent);
             }
         }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
     }
 }

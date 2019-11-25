@@ -27,7 +27,7 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.internal.util.SetUtil;
@@ -81,7 +81,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
     @Override
     protected Config getConfig() {
-        int defaultPartitionCount = Integer.parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        int defaultPartitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
         EventJournalConfig eventJournalConfig = new EventJournalConfig()
                 .setEnabled(true)
                 .setCapacity(500 * defaultPartitionCount);

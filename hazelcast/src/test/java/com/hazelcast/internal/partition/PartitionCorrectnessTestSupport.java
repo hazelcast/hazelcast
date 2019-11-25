@@ -32,7 +32,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -368,11 +368,11 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
             servicesConfig.addServiceConfig(TestFragmentedMigrationAwareService.createServiceConfig(backupCount));
         }
 
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), String.valueOf(BACKUP_SYNC_INTERVAL));
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), String.valueOf(BACKUP_SYNC_INTERVAL));
 
         int parallelReplications = antiEntropyEnabled ? PARALLEL_REPLICATIONS : 0;
-        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), String.valueOf(parallelReplications));
+        config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), String.valueOf(parallelReplications));
         return config;
     }
 

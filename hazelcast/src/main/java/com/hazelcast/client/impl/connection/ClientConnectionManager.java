@@ -16,12 +16,13 @@
 
 package com.hazelcast.client.impl.connection;
 
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
@@ -43,27 +44,29 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * @param address to be connected
      * @return connection if available, null otherwise
      */
-    Connection getActiveConnection(Address address);
+    Connection getConnection(@Nonnull Address address);
 
     /**
-     * @param address to be connected
-     * @return associated connection if available, creates new connection otherwise
-     * @throws IOException if connection is not established
+     * Check the connected state and user connection strategy configuration to see if an invocation is allowed at the moment
+     * returns without throwing exception only when is the client is Connected to cluster
+     *
+     * @throws IOException                     if client is disconnected and ReconnectMode is ON or
+     *                                         if client is starting and async start is false
+     * @throws HazelcastClientOfflineException if client is disconnected and ReconnectMode is ASYNC or
+     *                                         if client is starting and async start is true
      */
-    Connection getOrConnect(Address address) throws IOException;
-
-    /**
-     * @param address to be connected
-     * @return associated connection if available, returns null and triggers new connection creation otherwise
-     * @throws IOException if connection is not able to triggered
-     */
-    Connection getOrTriggerConnect(Address address) throws IOException;
+    void checkInvocationAllowed() throws IOException;
 
     Collection<ClientConnection> getActiveConnections();
 
     UUID getClientUuid();
 
-    void setCandidateClusterContext(CandidateClusterContext context);
+    /**
+     * For the smart client, Random connection is chosen via LoadBalancer
+     * For the unisocket client, only connection will be returned
+     *
+     * @return random connection if available, null otherwise
+     */
+    Connection getRandomConnection();
 
-    void beforeClusterSwitch(CandidateClusterContext context);
 }

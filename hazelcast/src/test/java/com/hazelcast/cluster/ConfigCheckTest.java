@@ -21,7 +21,7 @@ import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -82,10 +82,10 @@ public class ConfigCheckTest {
     @Test
     public void whenDifferentPartitionCount_thenConfigurationMismatchException() {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.PARTITION_COUNT.getName(), "100");
+        config1.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "100");
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.PARTITION_COUNT.getName(), "200");
+        config2.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "200");
 
         ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
         ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");

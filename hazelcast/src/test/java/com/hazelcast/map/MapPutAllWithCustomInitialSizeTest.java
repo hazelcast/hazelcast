@@ -18,7 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -46,8 +46,8 @@ public class MapPutAllWithCustomInitialSizeTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "2")
-                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000")
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2")
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000")
                 .setProperty("hazelcast.map.put.all.initial.size.factor", "10");
 
         config.getMapConfig("default")

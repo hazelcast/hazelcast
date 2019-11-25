@@ -34,6 +34,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
@@ -676,13 +677,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         private volatile RepairingHandler repairingHandler;
 
         @Override
-        public void beforeListenerRegister() {
+        public void beforeListenerRegister(Connection connection) {
             RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
             repairingHandler = repairingTask.registerAndGetHandler(name, nearCache);
-        }
-
-        @Override
-        public void onListenerRegister() {
         }
 
         @Override

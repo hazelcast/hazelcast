@@ -35,7 +35,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -67,7 +67,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.ClusterJoinManager.STALE_JOIN_PREVENTION_DURATION_PROP;
-import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
@@ -605,7 +605,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         MembershipManager membershipManager = clusterService.getMembershipManager();
 
         MemberInfo newMemberInfo = new MemberInfo(new Address("127.0.0.1", 6000), newUnsecureUUID(),
-                Collections.emptyMap(), node.getVersion());
+                Collections.emptyMap(), false, node.getVersion());
         MembersView membersView =
                 MembersView.cloneAdding(membershipManager.getMembersView(), singleton(newMemberInfo));
 
@@ -629,7 +629,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         ruleStaleJoinPreventionDuration.setOrClearProperty("5");
 
         Config configMaster = new Config();
-        configMaster.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        configMaster.setProperty(ClusterProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         final HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
 
         final HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -851,7 +851,9 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void connectionsToRemovedMember_shouldBeClosed() {
-        Config config = new Config();
+        Config config = new Config()
+                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10")
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);

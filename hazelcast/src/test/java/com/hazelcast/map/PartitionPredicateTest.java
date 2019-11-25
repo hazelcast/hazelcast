@@ -24,7 +24,7 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -66,7 +66,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "" + PARTITIONS);
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + PARTITIONS);
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 

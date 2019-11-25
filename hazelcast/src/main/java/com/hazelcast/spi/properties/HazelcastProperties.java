@@ -289,11 +289,11 @@ public class HazelcastProperties {
     }
 
     /**
-     * Returns the configured enum value of a {@link GroupProperty}.
+     * Returns the configured enum value of a {@link ClusterProperty}.
      * <p>
      * The case of the enum is ignored.
      *
-     * @param property the {@link GroupProperty} to get the value from
+     * @param property the {@link ClusterProperty} to get the value from
      * @return the enum
      * @throws IllegalArgumentException if the enum value can't be found
      */

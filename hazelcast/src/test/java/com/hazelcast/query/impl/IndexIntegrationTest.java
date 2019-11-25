@@ -37,7 +37,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -75,7 +75,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         long amount = 5L;
 
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
         MapConfig mapConfig = config.getMapConfig(name);
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
         evictionConfig.setEvictionPolicy(EvictionPolicy.LFU);

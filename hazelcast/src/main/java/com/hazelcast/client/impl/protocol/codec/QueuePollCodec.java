@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and removes the head of this queue, waiting up to the specified wait time if necessary for an element
  * to become available.
  */
-@Generated("6bd1ff0f4e604f7c86c1e151d6bde360")
+@Generated("56b6b6ad93a174a970ac2e4def098a1f")
 public final class QueuePollCodec {
     //hex: 0x030500
     public static final int REQUEST_MESSAGE_TYPE = 197888;
@@ -67,7 +67,6 @@ public final class QueuePollCodec {
     public static ClientMessage encodeRequest(java.lang.String name, long timeoutMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Queue.Poll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

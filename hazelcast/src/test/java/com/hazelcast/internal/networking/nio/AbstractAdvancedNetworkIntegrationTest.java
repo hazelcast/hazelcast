@@ -22,7 +22,7 @@ import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import org.junit.After;
 
 import java.util.Collections;
@@ -106,7 +106,7 @@ public abstract class AbstractAdvancedNetworkIntegrationTest {
         JoinConfig join = config.getAdvancedNetworkConfig().getJoin();
         join.getTcpIpConfig().addMember("127.0.0.1:" + port).setEnabled(true);
         join.getMulticastConfig().setEnabled(false);
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
+        config.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         return config;
     }
 

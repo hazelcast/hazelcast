@@ -33,7 +33,7 @@ import com.hazelcast.internal.services.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
@@ -90,8 +90,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         partitionStateManager = partitionService.getPartitionStateManager();
 
         HazelcastProperties properties = node.getProperties();
-        partitionMigrationTimeout = properties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
-        maxParallelReplications = properties.getInteger(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS);
+        partitionMigrationTimeout = properties.getMillis(ClusterProperty.PARTITION_MIGRATION_TIMEOUT);
+        maxParallelReplications = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_REPLICATIONS);
         replicaSyncSemaphore = new Semaphore(maxParallelReplications);
 
         replicaVersions = new PartitionReplicaVersions[partitionCount];
@@ -454,7 +454,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     void scheduleReplicaVersionSync(ExecutionService executionService) {
-        long definedBackupSyncCheckInterval = node.getProperties().getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
+        long definedBackupSyncCheckInterval = node.getProperties().getSeconds(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         long backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
 
         executionService.scheduleWithRepetition(new AntiEntropyTask(),

@@ -65,18 +65,18 @@ public class NodeQueryCacheContextTest extends HazelcastTestSupport {
     public void testInvokerWrapper_invokeOnAllPartitions() throws Exception {
         MadePublishableOperationFactory factory = new MadePublishableOperationFactory("mapName", "cacheId");
 
-        Map<Integer, Object> result = (Map<Integer, Object>) context.getInvokerWrapper().invokeOnAllPartitions(factory);
+        Map<Integer, Object> result = (Map<Integer, Object>) context.getInvokerWrapper().invokeOnAllPartitions(factory, false);
         assertEquals(partitionCount, result.size());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvokerWrapper_invokeOnAllPartitions_whenRequestOfWrongType_thenThrowException() throws Exception {
-        context.getInvokerWrapper().invokeOnAllPartitions(new Object());
+        context.getInvokerWrapper().invokeOnAllPartitions(new Object(), false);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokerWrapper_invoke() {
-        context.getInvokerWrapper().invoke(null);
+        context.getInvokerWrapper().invoke(null, false);
     }
 
     @Test

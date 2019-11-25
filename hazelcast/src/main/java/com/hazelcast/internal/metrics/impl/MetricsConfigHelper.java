@@ -26,7 +26,7 @@ import com.hazelcast.config.MetricsManagementCenterConfig;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -57,28 +57,28 @@ public final class MetricsConfigHelper {
         MetricsJmxConfig jmxConfig = metricsConfig.getJmxConfig();
 
         // MetricsConfig.enabled
-        tryOverride(GroupProperty.METRICS_ENABLED, config::getProperty,
+        tryOverride(ClusterProperty.METRICS_ENABLED, config::getProperty,
                 prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
                 () -> Boolean.toString(metricsConfig.isEnabled()), "MetricsConfig.enabled");
 
         // MetricsManagementCenterConfig.enabled
-        tryOverride(GroupProperty.METRICS_MC_ENABLED, config::getProperty,
+        tryOverride(ClusterProperty.METRICS_MC_ENABLED, config::getProperty,
                 prop -> managementCenterConfig.setEnabled(Boolean.parseBoolean(prop)),
                 () -> Boolean.toString(managementCenterConfig.isEnabled()), "MetricsManagementCenterConfig.enabled");
 
         // MetricsManagementCenterConfig.retentionSeconds
-        tryOverride(GroupProperty.METRICS_MC_RETENTION, config::getProperty,
+        tryOverride(ClusterProperty.METRICS_MC_RETENTION, config::getProperty,
                 prop -> managementCenterConfig.setRetentionSeconds(Integer.parseInt(prop)),
                 () -> Integer.toString(managementCenterConfig.getRetentionSeconds()),
                 "MetricsManagementCenterConfig.retentionSeconds");
 
         // MetricsJmxConfig.enabled
-        tryOverride(GroupProperty.METRICS_JMX_ENABLED, config::getProperty,
+        tryOverride(ClusterProperty.METRICS_JMX_ENABLED, config::getProperty,
                 prop -> jmxConfig.setEnabled(Boolean.parseBoolean(prop)),
                 () -> Boolean.toString(jmxConfig.isEnabled()), "MetricsJmxConfig.enabled");
 
         // MetricsConfig.collectionFrequencySeconds
-        tryOverride(GroupProperty.METRICS_COLLECTION_FREQUENCY, config::getProperty,
+        tryOverride(ClusterProperty.METRICS_COLLECTION_FREQUENCY, config::getProperty,
                 prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
                 () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
                 "MetricsConfig.collectionFrequencySeconds");
@@ -129,7 +129,7 @@ public final class MetricsConfigHelper {
     }
 
     public static ProbeLevel memberMetricsLevel(HazelcastProperties properties) {
-        boolean debugMetrics = properties.getBoolean(GroupProperty.METRICS_DEBUG);
+        boolean debugMetrics = properties.getBoolean(ClusterProperty.METRICS_DEBUG);
         ProbeLevel probeLevel = debugMetrics ? DEBUG : INFO;
 
         if (probeLevel == INFO) {

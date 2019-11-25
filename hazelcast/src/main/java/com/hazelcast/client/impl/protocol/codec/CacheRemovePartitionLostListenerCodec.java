@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified cache partition lost listener. Returns silently if there is no such listener added before
  */
-@Generated("ad48f3b3a58d69eb2bc6eff74f1ca6d5")
+@Generated("1b3d2e26225ec8fa0ec7054abe7d1f2a")
 public final class CacheRemovePartitionLostListenerCodec {
     //hex: 0x131A00
     public static final int REQUEST_MESSAGE_TYPE = 1251840;
@@ -67,7 +67,6 @@ public final class CacheRemovePartitionLostListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.RemovePartitionLostListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

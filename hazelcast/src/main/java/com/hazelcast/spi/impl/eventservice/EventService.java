@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.eventservice;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -34,7 +35,7 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
      * Returns the event thread count.
      *
      * @return the event thread count
-     * @see com.hazelcast.spi.properties.GroupProperty#EVENT_THREAD_COUNT
+     * @see ClusterProperty#EVENT_THREAD_COUNT
      */
     int getEventThreadCount();
 
@@ -42,7 +43,7 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService, Pos
      * Returns the queue capacity per event thread.
      *
      * @return the queue capacity per event thread
-     * @see com.hazelcast.spi.properties.GroupProperty#EVENT_QUEUE_CAPACITY
+     * @see ClusterProperty#EVENT_QUEUE_CAPACITY
      */
     int getEventQueueCapacity();
 

@@ -64,7 +64,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionAwareService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
@@ -144,7 +144,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     public InternalPartitionServiceImpl(Node node) {
         HazelcastProperties properties = node.getProperties();
-        this.partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
+        this.partitionCount = properties.getInteger(ClusterProperty.PARTITION_COUNT);
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
@@ -159,7 +159,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         masterTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(), TRIGGER_MASTER_DELAY_MILLIS,
                 2 * TRIGGER_MASTER_DELAY_MILLIS, this::resetMasterTriggeredFlag);
 
-        partitionMigrationTimeout = properties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
+        partitionMigrationTimeout = properties.getMillis(ClusterProperty.PARTITION_MIGRATION_TIMEOUT);
 
         proxy = new PartitionServiceProxy(nodeEngine, this);
 
@@ -172,7 +172,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        int partitionTableSendInterval = node.getProperties().getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
+        int partitionTableSendInterval = node.getProperties().getSeconds(ClusterProperty.PARTITION_TABLE_SEND_INTERVAL);
         if (partitionTableSendInterval <= 0) {
             partitionTableSendInterval = 1;
         }

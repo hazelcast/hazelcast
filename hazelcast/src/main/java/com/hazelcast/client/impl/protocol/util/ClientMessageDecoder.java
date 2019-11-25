@@ -26,7 +26,7 @@ import com.hazelcast.internal.networking.nio.InboundHandlerWithCounters;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.nio.ByteBuffer;
@@ -61,7 +61,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
             properties = new HazelcastProperties((Properties) null);
         }
         clientEndpointManager = dst instanceof ClientEngine ? ((ClientEngine) dst).getEndpointManager() : null;
-        maxMessageLength = properties.getInteger(GroupProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES);
+        maxMessageLength = properties.getInteger(ClusterProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES);
         activeReader = new ClientMessageReader(maxMessageLength);
         this.connection = connection;
     }

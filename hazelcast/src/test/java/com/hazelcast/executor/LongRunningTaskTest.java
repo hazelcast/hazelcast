@@ -18,7 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,7 +46,7 @@ public class LongRunningTaskTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + CALL_TIMEOUT);
+        Config config = new Config().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + CALL_TIMEOUT);
         hz = createHazelcastInstance(config);
     }
 

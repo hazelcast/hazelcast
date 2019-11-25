@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
-import com.hazelcast.internal.nio.Connection;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -161,13 +160,12 @@ public class ClientUserCodeDeploymentService {
         return null;
     }
 
-    public void deploy(HazelcastClientInstanceImpl client, Connection ownerConnection)
-            throws ExecutionException, InterruptedException {
+    public void deploy(HazelcastClientInstanceImpl client) throws ExecutionException, InterruptedException {
         if (!clientUserCodeDeploymentConfig.isEnabled()) {
             return;
         }
         ClientMessage request = ClientDeployClassesCodec.encodeRequest(classDefinitionList);
-        ClientInvocation invocation = new ClientInvocation(client, request, null, ownerConnection);
+        ClientInvocation invocation = new ClientInvocation(client, request, null);
         ClientInvocationFuture future = invocation.invokeUrgent();
         future.get();
     }

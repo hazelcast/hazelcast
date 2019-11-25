@@ -25,7 +25,7 @@ import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.AddressUtil;
 
@@ -135,7 +135,7 @@ class DefaultAddressPicker
     }
 
     private AddressDefinition getPublicAddressByPortSearch() throws IOException {
-        boolean bindAny = hazelcastProperties.getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
+        boolean bindAny = hazelcastProperties.getBoolean(ClusterProperty.SOCKET_SERVER_BIND_ANY);
         AddressDefinition bindAddressDef = pickAddressDef();
 
         EndpointConfig endpoint = config.getAdvancedNetworkConfig().isEnabled()
@@ -400,7 +400,7 @@ class DefaultAddressPicker
 
     private boolean preferIPv4Stack() {
         return Boolean.getBoolean(PREFER_IPV4_STACK)
-                || hazelcastProperties.getBoolean(GroupProperty.PREFER_IPv4_STACK);
+                || hazelcastProperties.getBoolean(ClusterProperty.PREFER_IPv4_STACK);
     }
 
     private boolean preferIPv6Addresses() {

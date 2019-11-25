@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * lock is only for the key in this map.Locks are re-entrant, so if the key is locked N times, then it should be
  * unlocked N times before another thread can acquire it.
  */
-@Generated("c94a463d36f9a8347044a06f56027a1a")
+@Generated("18d95648e373b049d6133be0374295ba")
 public final class MultiMapLockCodec {
     //hex: 0x021000
     public static final int REQUEST_MESSAGE_TYPE = 135168;
@@ -87,7 +87,6 @@ public final class MultiMapLockCodec {
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, long threadId, long ttl, long referenceId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(true);
         clientMessage.setOperationName("MultiMap.Lock");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

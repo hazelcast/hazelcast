@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks whether a task as identified from the given handler is already cancelled.
  */
-@Generated("8d85d0d018a5d1a998647b5678569648")
+@Generated("ca49baffbb49c42aceedb049086120ed")
 public final class ScheduledExecutorIsCancelledFromAddressCodec {
     //hex: 0x1A0C00
     public static final int REQUEST_MESSAGE_TYPE = 1707008;
@@ -71,7 +71,6 @@ public final class ScheduledExecutorIsCancelledFromAddressCodec {
     public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ScheduledExecutor.IsCancelledFromAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

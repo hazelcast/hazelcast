@@ -30,6 +30,6 @@ public class GroupPropertyTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor() {
-        assertUtilityConstructor(GroupProperty.class);
+        assertUtilityConstructor(ClusterProperty.class);
     }
 }

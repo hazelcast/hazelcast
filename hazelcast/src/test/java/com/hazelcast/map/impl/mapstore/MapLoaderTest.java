@@ -43,7 +43,7 @@ import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -666,7 +666,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
                 .setImplementation(new SimpleLoader(entriesCount));
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
 
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setMapStoreConfig(storeConfig);

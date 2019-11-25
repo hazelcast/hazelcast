@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("a3bfeddba05cdc3533f9903a15d615ad")
+@Generated("919d1e45f3f26808af4c5a5455c8a8df")
 public final class ClientPingCodec {
-    //hex: 0x000D00
-    public static final int REQUEST_MESSAGE_TYPE = 3328;
-    //hex: 0x000D01
-    public static final int RESPONSE_MESSAGE_TYPE = 3329;
+    //hex: 0x000C00
+    public static final int REQUEST_MESSAGE_TYPE = 3072;
+    //hex: 0x000C01
+    public static final int RESPONSE_MESSAGE_TYPE = 3073;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
@@ -55,7 +55,6 @@ public final class ClientPingCodec {
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Client.Ping");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

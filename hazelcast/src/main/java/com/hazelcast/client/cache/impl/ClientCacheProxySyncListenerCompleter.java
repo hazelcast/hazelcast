@@ -62,7 +62,7 @@ class ClientCacheProxySyncListenerCompleter extends AbstractCacheSyncListenerCom
                 }
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
                 if (!clientCacheProxy.getContext().isActive()) {
-                    throw new HazelcastClientNotActiveException("Client is not active.");
+                    throw new HazelcastClientNotActiveException();
                 } else if (clientCacheProxy.isClosed()) {
                     throw new IllegalStateException("Cache (" + clientCacheProxy.getPrefixedName() + ") is closed!");
                 } else if (clientCacheProxy.isDestroyed()) {

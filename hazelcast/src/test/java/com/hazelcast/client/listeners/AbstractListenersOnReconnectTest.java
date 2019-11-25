@@ -19,8 +19,8 @@ package com.hazelcast.client.listeners;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
+import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -28,20 +28,17 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -118,90 +115,6 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         factory.newHazelcastInstance();
 
         assertOpenEventually(memberAddedLatch);
-        validateRegistrationsAndListenerFunctionality();
-    }
-
-    //--------------------------------------------------------------------------------- //
-
-    @Test
-    public void testListenersWhenClientDisconnectedOperationRuns_whenOwnerMemberRemoved() {
-        Config config = new Config();
-        int endpointDelaySeconds = 2;
-        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(endpointDelaySeconds * 1000));
-        config.setProperty(GroupProperty.CLIENT_CLEANUP_PERIOD.getName(), String.valueOf(500));
-        HazelcastInstance ownerServer = factory.newHazelcastInstance(config);
-        client = factory.newHazelcastClient(getSmartClientConfig());
-        HazelcastInstance server2 = factory.newHazelcastInstance(config);
-
-        setupListener();
-
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
-                    disconnectedLatch.countDown();
-                }
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
-                }
-            }
-        });
-
-        blockMessagesToInstance(server2, client);
-
-        ownerServer.shutdown();
-
-        sleepAtLeastMillis(TimeUnit.SECONDS.toMillis(endpointDelaySeconds) * 2);
-
-        unblockMessagesToInstance(server2, client);
-
-        assertOpenEventually(disconnectedLatch);
-        assertOpenEventually(connectedLatch);
-
-        clusterSize = clusterSize - 1;
-        validateRegistrationsAndListenerFunctionality();
-    }
-
-    @Test
-    @Category(SlowTest.class)
-    public void testListenersWhenClientDisconnectedOperationRuns_whenOwnerConnectionRemoved() {
-        Config config = new Config();
-        int endpointDelaySeconds = 10;
-        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(endpointDelaySeconds * 1000));
-        config.setProperty(GroupProperty.CLIENT_CLEANUP_PERIOD.getName(), String.valueOf(1000));
-        config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), "20");
-        HazelcastInstance ownerServer = factory.newHazelcastInstance(config);
-        ClientConfig smartClientConfig = getSmartClientConfig();
-
-        client = factory.newHazelcastClient(smartClientConfig);
-        factory.newHazelcastInstance(config);
-        setupListener();
-
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
-                    disconnectedLatch.countDown();
-                }
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
-                }
-            }
-        });
-
-        blockMessagesToInstance(ownerServer, client);
-
-        assertOpenEventually(disconnectedLatch);
-        sleepAtLeastMillis(TimeUnit.SECONDS.toMillis(endpointDelaySeconds) * 2);
-
-        unblockMessagesToInstance(ownerServer, client);
-
-        assertOpenEventually(connectedLatch);
-
         validateRegistrationsAndListenerFunctionality();
     }
 
@@ -499,8 +412,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 int count = eventCount.get();
                 assertEquals("Received event count is " + count + " but it is expected to stay at " + EVENT_COUNT, EVENT_COUNT,
                         eventCount.get());
@@ -518,7 +430,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     private Map<Connection, ClientConnectionRegistration> getClientEventRegistrations(HazelcastInstance client, UUID id) {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
         return listenerService.getActiveRegistrations(id);
     }
 

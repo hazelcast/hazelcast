@@ -30,7 +30,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -291,7 +291,7 @@ public class ClientServiceTest extends ClientTestSupport {
     @Test
     public void testClientListenerDisconnected() throws InterruptedException {
         Config config = new Config();
-        config.setProperty(GroupProperty.IO_THREAD_COUNT.getName(), "1");
+        config.setProperty(ClusterProperty.IO_THREAD_COUNT.getName(), "1");
 
         final HazelcastInstance hz = hazelcastFactory.newHazelcastInstance(config);
         final HazelcastInstance hz2 = hazelcastFactory.newHazelcastInstance(config);
@@ -495,7 +495,7 @@ public class ClientServiceTest extends ClientTestSupport {
         //first member is owner connection
         hazelcastFactory.newHazelcastClient();
 
-        config.setProperty(GroupProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(ClusterProperty.CLIENT_CLEANUP_TIMEOUT.getName(), String.valueOf(Integer.MAX_VALUE));
         hazelcastFactory.newHazelcastInstance(config);
         //make sure connected to second one before proceeding
         assertOpenEventually(latch);
@@ -521,9 +521,11 @@ public class ClientServiceTest extends ClientTestSupport {
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
         ClientConnectionManager connectionManager = client.getConnectionManager();
         IMap<Object, Object> map = client.getMap("test");
-        map.addEntryListener(mock(EntryListener.class), false);
+        UUID uuid = map.addEntryListener(mock(EntryListener.class), false);
 
         assertEquals(memberCount, connectionManager.getActiveConnections().size());
+
+        map.removeEntryListener(uuid);
 
     }
 }

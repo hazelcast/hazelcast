@@ -18,17 +18,15 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
-import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -36,8 +34,6 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import javax.annotation.Nonnull;
 import javax.transaction.xa.Xid;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
@@ -47,11 +43,9 @@ import static com.hazelcast.internal.util.StringUtil.timeToString;
 public class ClientTransactionManagerServiceImpl implements ClientTransactionManagerService {
 
     private final HazelcastClientInstanceImpl client;
-    private final LoadBalancer loadBalancer;
 
-    public ClientTransactionManagerServiceImpl(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
+    public ClientTransactionManagerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        this.loadBalancer = loadBalancer;
     }
 
     public HazelcastClientInstanceImpl getClient() {
@@ -121,11 +115,11 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
 
         while (client.getLifecycleService().isRunning()) {
             try {
-                if (smartRouting) {
-                    return tryConnectSmart();
-                } else {
-                    return tryConnectUnisocket();
+                ClientConnection connection = (ClientConnection) client.getConnectionManager().getRandomConnection();
+                if (connection == null) {
+                    throw throwException(smartRouting);
                 }
+                return connection;
             } catch (Exception e) {
                 if (e instanceof HazelcastClientOfflineException) {
                     throw e;
@@ -136,7 +130,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
             }
             Thread.sleep(invocationService.getInvocationRetryPauseMillis());
         }
-        throw new HazelcastClientNotActiveException("Client is shutdown");
+        throw new HazelcastClientNotActiveException();
     }
 
     private Exception newOperationTimeoutException(Throwable e, long invocationTimeoutMillis, long startTimeMillis) {
@@ -150,20 +144,12 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         return new OperationTimeoutException(msg, e);
     }
 
-    private ClientConnection tryConnectUnisocket() {
-        Iterator<ClientConnection> iterator = client.getConnectionManager().getActiveConnections().iterator();
-        if (iterator.hasNext()) {
-            return iterator.next();
-        }
-        return throwException(false);
-    }
-
-    private ClientConnection throwException(boolean smartRouting) {
+    private RuntimeException throwException(boolean smartRouting) {
         ClientConfig clientConfig = client.getClientConfig();
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         ClientConnectionStrategyConfig.ReconnectMode reconnectMode = connectionStrategyConfig.getReconnectMode();
         if (reconnectMode.equals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)) {
-            throw new HazelcastClientOfflineException("Hazelcast client is offline");
+            throw new HazelcastClientOfflineException();
         }
         if (smartRouting) {
             Set<Member> members = client.getCluster().getMembers();
@@ -178,21 +164,4 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         }
         throw new IllegalStateException("No active connection is found");
     }
-
-    private ClientConnection tryConnectSmart() throws IOException {
-        Address address = getRandomAddress();
-        if (address == null) {
-            throwException(true);
-        }
-        return (ClientConnection) client.getConnectionManager().getOrConnect(address);
-    }
-
-    private Address getRandomAddress() {
-        Member member = loadBalancer.next();
-        if (member == null) {
-            return null;
-        }
-        return member.getAddress();
-    }
-
 }

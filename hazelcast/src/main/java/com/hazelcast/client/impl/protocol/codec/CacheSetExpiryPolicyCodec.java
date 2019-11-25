@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code expiryPolicy} takes precedence for these particular {@code keys} against any cache wide expiry policy.
  * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
  */
-@Generated("8efc760a21cc7719ecae51fa0ecd3255")
+@Generated("55755f94ee6aa58d60097c31fc34015b")
 public final class CacheSetExpiryPolicyCodec {
     //hex: 0x132200
     public static final int REQUEST_MESSAGE_TYPE = 1253888;
@@ -73,7 +73,6 @@ public final class CacheSetExpiryPolicyCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, com.hazelcast.nio.serialization.Data expiryPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.SetExpiryPolicy");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

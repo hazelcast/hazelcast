@@ -22,7 +22,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -125,7 +125,7 @@ public class DiscoveryJoinerTest {
         HazelcastProperties properties = mock(HazelcastProperties.class);
 
         when(node.getProperties()).thenReturn(properties);
-        when(properties.getInteger(GroupProperty.TCP_JOIN_PORT_TRY_COUNT)).thenReturn(0);
+        when(properties.getInteger(ClusterProperty.TCP_JOIN_PORT_TRY_COUNT)).thenReturn(0);
 
         new DiscoveryJoiner(node, service, false);
     }

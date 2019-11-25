@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Checks whether a task is done.
  * @see {@link java.util.concurrent.Future#cancel(boolean)}
  */
-@Generated("e34ed49cd6af1761fe941b7730a551e0")
+@Generated("9daa7b3a7d0badfda1860659391b05c7")
 public final class ScheduledExecutorIsDoneFromAddressCodec {
     //hex: 0x1A0E00
     public static final int REQUEST_MESSAGE_TYPE = 1707520;
@@ -72,7 +72,6 @@ public final class ScheduledExecutorIsDoneFromAddressCodec {
     public static ClientMessage encodeRequest(java.lang.String schedulerName, java.lang.String taskName, com.hazelcast.cluster.Address address) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("ScheduledExecutor.IsDoneFromAddress");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * TODO DOC
  */
-@Generated("03575ad30034d2a2a782cb61271b6d25")
+@Generated("2e9b2105da32f314a549d75d5fe9a429")
 public final class CacheRemoveEntryListenerCodec {
     //hex: 0x131400
     public static final int REQUEST_MESSAGE_TYPE = 1250304;
@@ -67,7 +67,6 @@ public final class CacheRemoveEntryListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Cache.RemoveEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

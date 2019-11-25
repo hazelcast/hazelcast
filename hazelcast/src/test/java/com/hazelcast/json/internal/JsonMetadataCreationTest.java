@@ -33,7 +33,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -278,7 +278,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
 
     protected Config getConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "" + getPartitionCount());
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + getPartitionCount());
         config.getMapConfig("default")
                 .setBackupCount(getNodeCount() - 1)
                 .setAsyncBackupCount(0)

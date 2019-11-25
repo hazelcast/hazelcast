@@ -96,14 +96,6 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
             Message message = new DataAwareMessage(name, item, publishTime, member, getSerializationService());
             listener.onMessage(message);
         }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
     }
 
     private class Codec implements ListenerMessageCodec {

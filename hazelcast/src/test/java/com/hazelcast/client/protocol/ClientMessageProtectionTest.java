@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.protocol.util.ClientMessageSplitter;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -141,7 +141,7 @@ public class ClientMessageProtectionTest {
     public void testExceededMessageSize() throws IOException {
         Config config = smallInstanceConfig();
         int limit = 800;
-        config.setProperty(GroupProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES.getName(), Integer.toString(limit));
+        config.setProperty(ClusterProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES.getName(), Integer.toString(limit));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         String str = createString(limit);
         ClientMessage clientMessage = createAuthenticationMessage(hz, str);
@@ -217,7 +217,7 @@ public class ClientMessageProtectionTest {
 
     private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String clientName) {
         return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), null, null, UUID.randomUUID(), "FOO",
-                (byte) 1, clientName, "xxx", emptyList(), -1, null);
+                (byte) 1, clientName, "xxx", emptyList());
     }
 
     private ClientMessage readResponse(InputStream is) throws IOException {
@@ -235,8 +235,7 @@ public class ClientMessageProtectionTest {
                 break;
             }
         }
-        ClientMessage respMessage = ClientMessage.createForDecode(clientMessage.getStartFrame());
-        return respMessage;
+        return clientMessage;
     }
 
     private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {

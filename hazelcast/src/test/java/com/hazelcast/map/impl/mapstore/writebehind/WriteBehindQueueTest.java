@@ -24,7 +24,7 @@ import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -233,7 +233,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     private static NodeWideUsedCapacityCounter createQueueCapacityController() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(), "1000");
+        config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(), "1000");
         HazelcastProperties properties = new HazelcastProperties(config);
         return new NodeWideUsedCapacityCounter(properties);
     }

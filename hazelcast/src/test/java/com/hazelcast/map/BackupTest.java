@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -126,7 +126,7 @@ public class BackupTest extends HazelcastTestSupport {
         final String name = mapName;
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
         config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
 
         List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(nodeCount);
@@ -204,7 +204,7 @@ public class BackupTest extends HazelcastTestSupport {
         final int nodeCount = 6;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
         final Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
+        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
         config.getMapConfig(mapName).setBackupCount(1).setStatisticsEnabled(true);
 
         final Random rand = new Random();
@@ -352,7 +352,7 @@ public class BackupTest extends HazelcastTestSupport {
     @Test
     public void testGracefulShutdown_Issue2804() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1111");
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1111");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 

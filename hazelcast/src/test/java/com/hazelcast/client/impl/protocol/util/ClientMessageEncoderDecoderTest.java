@@ -19,15 +19,15 @@ package com.hazelcast.client.impl.protocol.util;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessage.Frame;
-import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,10 +37,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -135,7 +137,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         UUID clusterId = UUID.randomUUID();
         ClientMessage message = ClientAuthenticationCodec.encodeRequest("cluster", "user", "pass",
                 uuid, "JAVA", (byte) 1,
-                "1.0", "name", labels, 271, clusterId);
+                "1.0", "name", labels);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -175,8 +177,6 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals("1.0", parameters.clientHazelcastVersion);
         assertEquals("name", parameters.clientName);
         assertArrayEquals(labels.toArray(), parameters.labels.toArray());
-        assertEquals(271, (int) parameters.partitionCount);
-        assertEquals(clusterId, parameters.clusterId);
     }
 
     @Test
@@ -231,33 +231,32 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(clusterId, parameters.clusterId);
     }
 
-    class EventHandler extends ClientAddMembershipListenerCodec.AbstractEventHandler {
+    class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {
 
-        Member member;
+        Data key;
+        Data value;
         int eventType;
+        UUID uuid;
+        int numberOfAffectedEntries;
 
         @Override
-        public void handleMemberEvent(Member member, int eventType) {
-            this.member = member;
+        public void handleEntryEvent(@Nullable Data key, @Nullable Data value, @Nullable Data oldValue,
+                                     @Nullable Data mergingValue, int eventType, UUID uuid, int numberOfAffectedEntries) {
+            this.key = key;
+            this.value = value;
             this.eventType = eventType;
-        }
-
-        @Override
-        public void handleMemberListEvent(Collection<Member> members) {
-        }
-
-        @Override
-        public void handleMemberAttributeChangeEvent(Member member, Collection<Member> members, String key,
-                                                     int operationType, String value) {
+            this.uuid = uuid;
+            this.numberOfAffectedEntries = numberOfAffectedEntries;
         }
     }
 
     @Test
-    public void testEvent() throws UnknownHostException {
-        Address address = new Address("127.0.0.1", 5703);
-        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.12"), UUID.randomUUID());
-
-        ClientMessage message = ClientAddMembershipListenerCodec.encodeMemberEvent(member, MembershipEvent.MEMBER_ADDED);
+    public void testEvent() {
+        HeapData keyData = randomData();
+        HeapData valueData = randomData();
+        UUID uuid = UUID.randomUUID();
+        ClientMessage message = MapAddEntryListenerCodec.encodeEntryEvent(keyData, valueData, null, null,
+                1, uuid, 1);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
         ClientMessageEncoder encoder = new ClientMessageEncoder();
@@ -288,7 +287,17 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         EventHandler eventHandler = new EventHandler();
         eventHandler.handle(resultingMessage.get());
 
-        assertEquals(MembershipEvent.MEMBER_ADDED, eventHandler.eventType);
-        assertEquals(member, eventHandler.member);
+        assertEquals(keyData, eventHandler.key);
+        assertEquals(valueData, eventHandler.value);
+        assertEquals(1, eventHandler.eventType);
+        assertEquals(uuid, eventHandler.uuid);
+        assertEquals(1, eventHandler.numberOfAffectedEntries);
+    }
+
+    private HeapData randomData() {
+        Random random = new Random();
+        byte[] key = new byte[100];
+        random.nextBytes(key);
+        return new HeapData(key);
     }
 }

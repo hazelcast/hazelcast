@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the specified entry listener. Returns silently if there is no such listener added before.
  */
-@Generated("3e19d778f95e96cd290997d49b62c216")
+@Generated("3197abf8424d8ed3e364a8c37fff1d03")
 public final class MapRemoveEntryListenerCodec {
     //hex: 0x011A00
     public static final int REQUEST_MESSAGE_TYPE = 72192;
@@ -67,7 +67,6 @@ public final class MapRemoveEntryListenerCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("Map.RemoveEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

@@ -22,7 +22,7 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -49,7 +49,7 @@ public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
     @Override
     HazelcastInstance newHazelcastInstance(Config config) {
-        config.setProperty(GroupProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE.getName(), failureDetectorType.toString());
+        config.setProperty(ClusterProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE.getName(), failureDetectorType.toString());
         initConfig(config);
         return HazelcastInstanceFactory.newHazelcastInstance(config, createInstanceName(config), new FirewallingNodeContext());
     }
@@ -60,7 +60,7 @@ public class MembershipFailureTest_withTCP extends MembershipFailureTest {
     }
 
     private static Config initConfig(Config config) {
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
+        config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
 
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);

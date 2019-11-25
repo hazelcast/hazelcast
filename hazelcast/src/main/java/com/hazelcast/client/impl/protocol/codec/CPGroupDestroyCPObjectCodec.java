@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the distributed object with the given name on the requested
  * CP group
  */
-@Generated("09ae8204d8fc34d21cd70e74a0bc87aa")
+@Generated("685be9a6ffec84313ff8cb4247235884")
 public final class CPGroupDestroyCPObjectCodec {
     //hex: 0x1E0200
     public static final int REQUEST_MESSAGE_TYPE = 1966592;
@@ -71,7 +71,6 @@ public final class CPGroupDestroyCPObjectCodec {
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId, java.lang.String serviceName, java.lang.String objectName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("CPGroup.DestroyCPObject");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

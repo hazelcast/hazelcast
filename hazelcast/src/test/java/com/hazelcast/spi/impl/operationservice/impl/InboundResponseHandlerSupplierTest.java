@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSuppli
 import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.AsyncSingleThreadedResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -102,7 +102,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
 
     private InboundResponseHandlerSupplier newSupplier(int threadCount) {
         Properties props = new Properties();
-        props.put(GroupProperty.RESPONSE_THREAD_COUNT.getName(), "" + threadCount);
+        props.put(ClusterProperty.RESPONSE_THREAD_COUNT.getName(), "" + threadCount);
         HazelcastProperties properties = new HazelcastProperties(props);
         when(nodeEngine.getProperties()).thenReturn(properties);
 
