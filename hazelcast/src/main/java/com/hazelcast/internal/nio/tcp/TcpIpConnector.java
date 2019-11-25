@@ -163,11 +163,13 @@ class TcpIpConnector {
             }
         }
 
+        @SuppressWarnings("unchecked")
         private void tryToConnect(InetSocketAddress socketAddress, int timeout) throws Exception {
             SocketChannel socketChannel = SocketChannel.open();
 
             TcpIpConnection connection = null;
             Channel channel = endpointManager.newChannel(socketChannel, true);
+            channel.attributeMap().put(Address.class, address);
             try {
                 if (ioService.isSocketBind()) {
                     bindSocket(socketChannel);

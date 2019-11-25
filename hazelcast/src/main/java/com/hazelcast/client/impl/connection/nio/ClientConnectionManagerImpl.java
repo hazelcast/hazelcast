@@ -592,6 +592,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected ClientConnection createSocketConnection(Address target) {
         CandidateClusterContext currentClusterContext = discoveryService.current();
         SocketChannel socketChannel = null;
@@ -603,6 +604,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             ChannelInitializerProvider channelInitializer = currentClusterContext.getChannelInitializerProvider();
             Channel channel = networking.register(null, channelInitializer, socketChannel, true);
+            channel.attributeMap().put(Address.class, target);
             channel.connect(resolveAddress(target), connectionTimeoutMillis);
 
             ClientConnection connection = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
