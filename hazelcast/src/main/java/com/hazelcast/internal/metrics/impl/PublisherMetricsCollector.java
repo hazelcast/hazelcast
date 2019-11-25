@@ -22,12 +22,6 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
-
 /**
  * {@link MetricsCollector} implementation delegating to the configured
  * publishers.
@@ -35,28 +29,14 @@ import static java.util.Collections.unmodifiableList;
 public class PublisherMetricsCollector implements MetricsCollector {
     private final ILogger logger = Logger.getLogger(PublisherMetricsCollector.class);
 
-    private final AtomicReference<PublisherContainer> internalCollectorRef = new AtomicReference<>(new PublisherContainer());
+    private final MetricsPublisher[] publishers;
 
-    public synchronized void addPublisher(MetricsPublisher publisher) {
-        PublisherContainer currentCollector = internalCollectorRef.get();
-        MetricsPublisher[] currentPublishers = currentCollector.publishers;
-        MetricsPublisher[] newPublishers = new MetricsPublisher[currentPublishers.length + 1];
-        System.arraycopy(currentPublishers, 0, newPublishers, 0, currentPublishers.length);
-        newPublishers[newPublishers.length - 1] = publisher;
-        PublisherContainer newCollector = new PublisherContainer(newPublishers);
-        internalCollectorRef.set(newCollector);
-    }
-
-    public boolean hasPublishers() {
-        return internalCollectorRef.get().publishers.length != 0;
-    }
-
-    public List<MetricsPublisher> getPublishers() {
-        return unmodifiableList(asList(internalCollectorRef.get().publishers));
+    public PublisherMetricsCollector(MetricsPublisher... publishers) {
+        this.publishers = publishers;
     }
 
     public void publishCollectedMetrics() {
-        for (MetricsPublisher publisher : publishers()) {
+        for (MetricsPublisher publisher : publishers) {
             try {
                 publisher.whenComplete();
             } catch (Exception e) {
@@ -66,7 +46,7 @@ public class PublisherMetricsCollector implements MetricsCollector {
     }
 
     public void shutdown() {
-        for (MetricsPublisher publisher : publishers()) {
+        for (MetricsPublisher publisher : publishers) {
             try {
                 publisher.shutdown();
             } catch (Exception e) {
@@ -77,7 +57,7 @@ public class PublisherMetricsCollector implements MetricsCollector {
 
     @Override
     public void collectLong(MetricDescriptor descriptor, long value) {
-        for (MetricsPublisher publisher : publishers()) {
+        for (MetricsPublisher publisher : publishers) {
             try {
                 publisher.publishLong(descriptor, value);
             } catch (Exception e) {
@@ -88,7 +68,7 @@ public class PublisherMetricsCollector implements MetricsCollector {
 
     @Override
     public void collectDouble(MetricDescriptor descriptor, double value) {
-        for (MetricsPublisher publisher : publishers()) {
+        for (MetricsPublisher publisher : publishers) {
             try {
                 publisher.publishDouble(descriptor, value);
             } catch (Exception e) {
@@ -107,24 +87,9 @@ public class PublisherMetricsCollector implements MetricsCollector {
         // noop
     }
 
-    private MetricsPublisher[] publishers() {
-        return internalCollectorRef.get().publishers;
-    }
-
     private void logError(MetricDescriptor descriptor, Object value, MetricsPublisher publisher, Exception e) {
         logger.fine("Error publishing metric to: " + publisher.name() + ", metric=" + descriptor.toString()
                 + ", value=" + value, e);
     }
 
-    private static final class PublisherContainer {
-        final MetricsPublisher[] publishers;
-
-        PublisherContainer() {
-            this.publishers = new MetricsPublisher[0];
-        }
-
-        PublisherContainer(MetricsPublisher[] publishers) {
-            this.publishers = publishers;
-        }
-    }
 }
