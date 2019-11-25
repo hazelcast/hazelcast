@@ -1,0 +1,14 @@
+hazelcast:
+  properties:
+    hazelcast.logging.type: log4j
+  group:
+    name: jet
+  network:
+    join:
+      multicast:
+        enabled: false
+      tcp-ip:
+        interface: 127.0.0.1
+        enabled: true
+        member-list:
+          - 127.0.0.1:5701

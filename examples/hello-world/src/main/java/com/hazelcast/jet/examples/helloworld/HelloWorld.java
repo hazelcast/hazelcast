@@ -31,7 +31,6 @@ import com.hazelcast.map.IMap;
 import org.apache.log4j.Logger;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Util.entry;
@@ -44,15 +43,19 @@ import static com.hazelcast.jet.Util.entry;
 public class HelloWorld {
 
     private static final String KEY = "top10";
+    private static final String MAP_NAME = "top10_results";
+
     private static Logger LOGGER = Logger.getLogger(HelloWorld.class);
 
-    private static Pipeline buildPipeline(String mapName) {
+    private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.itemStream(10, (ts, seq) -> nextRandomNumber()))
          .withIngestionTimestamps()
+         .setName("Item sources")
          .rollingAggregate(AggregateOperations.topN(10, ComparatorEx.comparingLong(l -> l)))
+         .setName("find top 10")
          .map(l -> entry(KEY, l))
-         .writeTo(Sinks.map(mapName))
+         .writeTo(Sinks.map(MAP_NAME))
          .setLocalParallelism(1);
         return p;
     }
@@ -69,18 +72,18 @@ public class HelloWorld {
         JetInstance jet = JetBootstrap.getInstance();
 //        JetInstance jet = Jet.newJetInstance();
 
-        String mapName = "top10_" + UUID.randomUUID().toString();
-        Pipeline p = buildPipeline(mapName);
+        Pipeline p = buildPipeline();
 
         JobConfig config = new JobConfig();
         config.setName("hello-world");
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        Job job = jet.newJob(p, config);
+        Job job = jet.newJobIfAbsent(p, config);
 
         LOGGER.info("Generating a stream of random numbers and calculating the top 10");
         LOGGER.info("The results will be written to a distributed map");
+
         while (true) {
-            IMap<String, List<Long>> top10Map = jet.getMap(mapName);
+            IMap<String, List<Long>> top10Map = jet.getMap(MAP_NAME);
 
             List<Long> top10numbers = top10Map.get(KEY);
             if (top10numbers != null) {
