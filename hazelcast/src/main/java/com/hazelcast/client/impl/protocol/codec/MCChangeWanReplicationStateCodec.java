@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stop, pause or resume WAN replication for the given WAN replication and publisher.
  */
-@Generated("874b7e50d28b86ae4278684b365ad0eb")
+@Generated("d09141f9a87e39c22e695eebb5d3e931")
 public final class MCChangeWanReplicationStateCodec {
     //hex: 0x201100
     public static final int REQUEST_MESSAGE_TYPE = 2101504;
@@ -74,7 +74,6 @@ public final class MCChangeWanReplicationStateCodec {
     public static ClientMessage encodeRequest(java.lang.String wanReplicationName, java.lang.String wanPublisherId, byte newState) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MC.ChangeWanReplicationState");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);

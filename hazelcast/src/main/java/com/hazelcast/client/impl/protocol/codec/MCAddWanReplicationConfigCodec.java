@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add a new WAN replication configuration
  */
-@Generated("6e5ed36e94d4ea1d3eb766bd653500ed")
+@Generated("c319fd39ba7676da5cdab2f4e2233fd5")
 public final class MCAddWanReplicationConfigCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;
@@ -121,7 +121,6 @@ public final class MCAddWanReplicationConfigCodec {
     public static ClientMessage encodeRequest(java.lang.String name, java.lang.String targetCluster, @Nullable java.lang.String publisherId, java.lang.String endpoints, int queueCapacity, int batchSize, int batchMaxDelayMillis, int responseTimeoutMillis, int ackType, int queueFullBehavior) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("MC.AddWanReplicationConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
