@@ -70,7 +70,7 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
     }
 
 
-    private final Set<String> currentlyImportedFiles = new HashSet<String>();
+    private final Set<String> currentlyImportedFiles = new HashSet<>();
     private final XPath xpath;
 
     public AbstractXmlConfigBuilder() {
@@ -104,7 +104,7 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
         // if no config-replacer is defined, use backward compatible default behavior for missing properties
         boolean failFast = false;
 
-        List<ConfigReplacer> replacers = new ArrayList<ConfigReplacer>();
+        List<ConfigReplacer> replacers = new ArrayList<>();
 
         // Always use the Property replacer first.
         PropertyReplacer propertyReplacer = new PropertyReplacer();
@@ -203,34 +203,6 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
 
     void fillProperties(Node node, Properties properties) {
         DomConfigHelper.fillProperties(node, properties, domLevel3);
-    }
-
-    private void traverseChildrenAndReplaceVariables(Node root) throws Exception {
-        // if no config-replacer is defined, use backward compatible default behavior for missing properties
-        boolean failFast = false;
-
-        List<ConfigReplacer> replacers = new ArrayList<ConfigReplacer>();
-
-        // Always use the Property replacer first.
-        PropertyReplacer propertyReplacer = new PropertyReplacer();
-        propertyReplacer.init(getProperties());
-        replacers.add(propertyReplacer);
-
-        // Add other replacers defined in the XML
-        Node node = (Node) xpath.evaluate(format("/hz:%s/hz:%s", getConfigType().name, CONFIG_REPLACERS.getName()),
-                root, XPathConstants.NODE);
-        if (node != null) {
-            String failFastAttr = getAttribute(node, "fail-if-value-missing");
-            failFast = isNullOrEmpty(failFastAttr) || Boolean.parseBoolean(failFastAttr);
-            for (Node n : childElements(node)) {
-                String value = cleanNodeName(n);
-                if ("replacer".equals(value)) {
-                    replacers.add(createReplacer(n));
-                }
-            }
-        }
-
-        ConfigReplacerHelper.traverseChildrenAndReplaceVariables(root, replacers, failFast, new XmlDomVariableReplacer());
     }
 
     private ConfigReplacer createReplacer(Node node) throws Exception {

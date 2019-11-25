@@ -92,7 +92,8 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     }
 
     @Test
-    public void testImportResourceWithConfigReplacers() throws Exception {
+    @Override
+    public void testImportResourceWithConfigReplacers() throws IOException {
         String configReplacer = HAZELCAST_CLIENT_START_TAG
             + "    <config-replacers>\n"
             + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
@@ -112,7 +113,8 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     }
 
     @Test
-    public void testImportResourceWithNestedImports() throws Exception {
+    @Override
+    public void testImportResourceWithNestedImports() throws IOException {
         String configReplacer = HAZELCAST_CLIENT_START_TAG
             + "    <config-replacers>\n"
             + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
@@ -138,7 +140,8 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
     }
 
     @Test
-    public void testImportResourceWithNestedImportsAndProperties() throws Exception {
+    @Override
+    public void testImportResourceWithNestedImportsAndProperties() throws IOException {
         ConfigReplacerBuilder testReplacer = new ConfigReplacerBuilder()
             .withClass(TestReplacer.class)
             .addProperty("p1", "${p1}")

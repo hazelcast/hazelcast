@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.Properties;
 
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
@@ -102,8 +103,9 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         return properties;
     }
 
+    @Override
     @Test
-    public void testImportResourceWithConfigReplacers() throws Exception {
+    public void testImportResourceWithConfigReplacers() throws IOException {
         String configReplacer = HAZELCAST_START_TAG
                 + "    <config-replacers>\n"
                 + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
@@ -122,8 +124,9 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
 
+    @Override
     @Test
-    public void testImportResourceWithNestedImports() throws Exception {
+    public void testImportResourceWithNestedImports() throws IOException {
         String configReplacer = HAZELCAST_START_TAG
             + "    <config-replacers>\n"
             + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
@@ -148,8 +151,9 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         assertEquals(System.getProperty("java.version") + " dev", groupConfig.getClusterName());
     }
 
+    @Override
     @Test
-    public void testImportResourceWithNestedImportsAndProperties() throws Exception {
+    public void testImportResourceWithNestedImportsAndProperties() throws IOException {
         ConfigReplacerBuilder testReplacer = new ConfigReplacerBuilder()
             .withClass(TestReplacer.class)
             .addProperty("p1", "${p1}")
@@ -260,6 +264,11 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     public void testImportEmptyResourceContent() throws Exception {
         String pathToEmptyFile = createEmptyFile();
         buildConfig(xmlContentWithImportResource(pathToEmptyFile), null);
+    }
+
+    @Override
+    String contentWithImportResource(String url) {
+        return xmlContentWithImportResource(url);
     }
 
     private String xmlContentWithImportResource(String importPath) {
