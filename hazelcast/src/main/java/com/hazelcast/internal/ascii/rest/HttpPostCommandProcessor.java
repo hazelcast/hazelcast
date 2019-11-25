@@ -298,8 +298,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                         String url = URLDecoder.decode(strList[2], "UTF-8");
                         command.setResponse(managementCenterService.clusterWideUpdateManagementCenterUrl(url));
                     } else {
-                        logger.warning("Unable to change URL of ManagementCenter as " +
-                                "the ManagementCenterService is not running on this member.");
+                        logger.warning("Unable to change URL of ManagementCenter as "
+                                + "the ManagementCenterService is not running on this member.");
                         command.send204();
                     }
                 })).handle(cmd);
