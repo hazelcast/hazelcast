@@ -148,16 +148,10 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
 
     // visible for testing
     void collectMetrics() {
-        PublisherMetricsCollector publisherCollector = new PublisherMetricsCollector(publisherArr());
+        MetricsPublisher[] publishersArr = publishers.toArray(new MetricsPublisher[publishers.size()]);
+        PublisherMetricsCollector publisherCollector = new PublisherMetricsCollector(publishersArr);
         collectMetrics(publisherCollector);
         publisherCollector.publishCollectedMetrics();
-    }
-
-    private MetricsPublisher[] publisherArr() {
-        Object[] objPublishers = publishers.toArray();
-        MetricsPublisher[] publishersArr = new MetricsPublisher[objPublishers.length];
-        System.arraycopy(objPublishers, 0, publishersArr, 0, objPublishers.length);
-        return publishersArr;
     }
 
     // visible for testing
