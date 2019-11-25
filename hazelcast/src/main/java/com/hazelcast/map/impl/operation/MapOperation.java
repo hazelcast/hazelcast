@@ -47,7 +47,7 @@ import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
-import static com.hazelcast.map.impl.operation.WithForcedEviction.runWithForcedEvictionStrategies;
+import static com.hazelcast.map.impl.operation.ForcedEviction.runWithForcedEvictionStrategies;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation

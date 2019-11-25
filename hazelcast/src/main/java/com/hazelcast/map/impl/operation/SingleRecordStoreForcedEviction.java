@@ -38,13 +38,13 @@ class SingleRecordStoreForcedEviction implements ForcedEviction {
         assert evictionPercentage > 0 && evictionPercentage <= 1;
 
         RecordStore recordStore = mapOperation.recordStore;
-        if (!isValid(recordStore)) {
+        if (!ForcedEviction.isValid(recordStore)) {
             return false;
         }
 
         ILogger logger = mapOperation.logger();
 
-        int retryCount = noRetryIfEvictingAll(evictionPercentage);
+        int retryCount = retryCount(evictionPercentage);
         for (int i = 0; i < retryCount; i++) {
             if (logger.isFineEnabled()) {
                 if (logger.isFineEnabled()) {

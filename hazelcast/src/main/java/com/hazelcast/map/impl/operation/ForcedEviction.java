@@ -24,13 +24,36 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.map.impl.operation.WithForcedEviction.EVICTION_RETRY_COUNT;
 
 /**
  * Forced eviction is done per record store basis. This interface is
  * the main contract to implement various forced eviction strategies.
+ *
+ * @see SingleRecordStoreForcedEviction
+ * @see MultipleRecordStoreForcedEviction
  */
 interface ForcedEviction {
+
+    int EVICTION_RETRY_COUNT = 5;
+
+    double TWENTY_PERCENT = 0.2D;
+
+    double HUNDRED_PERCENT = 1D;
+
+    double[] EVICTION_PERCENTAGES = {TWENTY_PERCENT, HUNDRED_PERCENT};
+
+    ForcedEviction[] EVICTION_STRATEGIES = {new SingleRecordStoreForcedEviction(),
+            new MultipleRecordStoreForcedEviction()};
+
+    static void runWithForcedEvictionStrategies(MapOperation operation) {
+        for (double evictionPercentage : EVICTION_PERCENTAGES) {
+            for (ForcedEviction evictionStrategy : EVICTION_STRATEGIES) {
+                if (evictionStrategy.forceEvictAndRun(operation, evictionPercentage)) {
+                    return;
+                }
+            }
+        }
+    }
 
     /**
      * First does forced eviction by deleting a percentage
@@ -49,7 +72,7 @@ interface ForcedEviction {
      * @return {@code true} if supplied record store is valid
      * to apply forced eviction, otherwise return {@code false}
      */
-    default boolean isValid(RecordStore recordStore) {
+    static boolean isValid(RecordStore recordStore) {
         return recordStore != null && recordStore.getInMemoryFormat() == NATIVE
                 && recordStore.getEvictionPolicy() != NONE && recordStore.size() > 0;
     }
@@ -76,9 +99,9 @@ interface ForcedEviction {
     /**
      * @return 1 if evictionPercentage is 1. 1 means we are evicting
      * all data in record store and further retrying has no point, otherwise
-     * return {@link WithForcedEviction#EVICTION_RETRY_COUNT}
+     * return {@link #EVICTION_RETRY_COUNT}
      */
-    default int noRetryIfEvictingAll(double evictionPercentage) {
+    default int retryCount(double evictionPercentage) {
         return evictionPercentage == 1D ? 1 : EVICTION_RETRY_COUNT;
     }
 }
