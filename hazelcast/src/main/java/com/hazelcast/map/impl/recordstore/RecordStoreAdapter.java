@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * Record store adapter.
@@ -31,8 +32,8 @@ public class RecordStoreAdapter implements StoreAdapter<Record> {
     }
 
     @Override
-    public boolean evictIfExpired(Record record, long now, boolean backup) {
-        record = recordStore.getOrNullIfExpired(record, now, backup);
+    public boolean evictIfExpired(Data key, Record record, long now, boolean backup) {
+        record = recordStore.getOrNullIfExpired(key, record, now, backup);
         if (record != null) {
             recordStore.accessRecord(record, now);
         }

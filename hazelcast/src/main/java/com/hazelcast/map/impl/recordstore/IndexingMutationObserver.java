@@ -27,22 +27,23 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import javax.annotation.Nonnull;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
 
 public class IndexingMutationObserver<R extends Record> implements MutationObserver<R> {
 
     private final int partitionId;
-    private final Storage<Data, R> storage;
     private final MapContainer mapContainer;
     private final StoreAdapter storeAdapter;
     private final SerializationService ss;
+    private final RecordStore recordStore;
 
-    public IndexingMutationObserver(SerializationService ss, RecordStore recordStore) {
+    public IndexingMutationObserver(RecordStore recordStore, SerializationService ss) {
         this.partitionId = recordStore.getPartitionId();
         this.mapContainer = recordStore.getMapContainer();
         this.storeAdapter = new RecordStoreAdapter(recordStore);
-        this.storage = recordStore.getStorage();
+        this.recordStore = recordStore;
         this.ss = ss;
     }
 
@@ -50,14 +51,14 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
     public void onPutRecord(@Nonnull Data key, @Nonnull R record,
                             Object oldValue, boolean backup) {
         if (!backup) {
-            saveIndex(record, oldValue, Index.OperationSource.USER);
+            saveIndex(key, record, oldValue, Index.OperationSource.USER);
         }
     }
 
     @Override
     public void onReplicationPutRecord(@Nonnull Data key, @Nonnull R record, boolean populateIndex) {
         if (populateIndex) {
-            saveIndex(record, null, Index.OperationSource.SYSTEM);
+            saveIndex(key, record, null, Index.OperationSource.SYSTEM);
         }
     }
 
@@ -65,24 +66,24 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
     public void onUpdateRecord(@Nonnull Data key, @Nonnull R record,
                                Object oldValue, Object newValue, boolean backup) {
         if (!backup) {
-            saveIndex(record, oldValue, Index.OperationSource.USER);
+            saveIndex(key, record, oldValue, Index.OperationSource.USER);
         }
     }
 
     @Override
     public void onRemoveRecord(@Nonnull Data key, R record) {
-        removeIndex(record, Index.OperationSource.USER);
+        removeIndex(key, record, Index.OperationSource.USER);
     }
 
     @Override
     public void onEvictRecord(@Nonnull Data key, @Nonnull R record) {
-        removeIndex(record, Index.OperationSource.USER);
+        removeIndex(key, record, Index.OperationSource.USER);
     }
 
     @Override
     public void onLoadRecord(@Nonnull Data key, @Nonnull R record, boolean backup) {
         if (!backup) {
-            saveIndex(record, null, Index.OperationSource.USER);
+            saveIndex(key, record, null, Index.OperationSource.USER);
         }
     }
 
@@ -143,22 +144,23 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      */
     private void fullScanLocalDataToClear(Indexes indexes) {
         InternalIndex[] indexesSnapshot = indexes.getIndexes();
-        for (Record record : storage.values()) {
-            Data key = record.getKey();
+
+        recordStore.forEach((BiConsumer<Data, Record>) (dataKey, record) -> {
             Object value = getValueOrCachedValue(record, ss);
-            indexes.removeEntry(key, value, Index.OperationSource.SYSTEM);
-        }
+            indexes.removeEntry(dataKey, value, Index.OperationSource.SYSTEM);
+        }, false);
+
         Indexes.markPartitionAsUnindexed(partitionId, indexesSnapshot);
     }
 
-    private void saveIndex(Record record, Object oldValue,
+    private void saveIndex(Data dataKey, Record record, Object oldValue,
                            Index.OperationSource operationSource) {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (!indexes.haveAtLeastOneIndex()) {
             return;
         }
 
-        QueryableEntry queryableEntry = mapContainer.newQueryEntry(record.getKey(),
+        QueryableEntry queryableEntry = mapContainer.newQueryEntry(toBackingKeyFormat(dataKey),
                 getValueOrCachedValue(record, ss));
         queryableEntry.setRecord(record);
         queryableEntry.setStoreAdapter(storeAdapter);
@@ -166,14 +168,17 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
         indexes.putEntry(queryableEntry, oldValue, operationSource);
     }
 
-    private void removeIndex(Record record,
+    private void removeIndex(Data dataKey, Record record,
                              Index.OperationSource operationSource) {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (!indexes.haveAtLeastOneIndex()) {
             return;
         }
 
-        indexes.removeEntry(record.getKey(),
-                getValueOrCachedValue(record, ss), operationSource);
+        indexes.removeEntry(toBackingKeyFormat(dataKey), getValueOrCachedValue(record, ss), operationSource);
+    }
+
+    private Data toBackingKeyFormat(Data key) {
+        return recordStore.getStorage().toBackingDataKeyFormat(key);
     }
 }

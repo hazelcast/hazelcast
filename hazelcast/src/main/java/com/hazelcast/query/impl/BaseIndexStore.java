@@ -140,10 +140,12 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     @Override
-    public final void insert(Object value, QueryableEntry record, IndexOperationStats operationStats) {
+    public final void insert(Object value,
+                             QueryableEntry queryableEntry,
+                             IndexOperationStats operationStats) {
         takeWriteLock();
         try {
-            unwrapAndInsertToIndex(value, record, operationStats);
+            unwrapAndInsertToIndex(value, queryableEntry, operationStats);
         } finally {
             releaseWriteLock();
         }
@@ -177,7 +179,9 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     @SuppressWarnings("unchecked")
-    private void unwrapAndInsertToIndex(Object newValue, QueryableEntry record, IndexOperationStats operationStats) {
+    private void unwrapAndInsertToIndex(Object newValue,
+                                        QueryableEntry queryableEntry,
+                                        IndexOperationStats operationStats) {
         if (newValue == NonTerminalJsonValue.INSTANCE) {
             return;
         }
@@ -186,12 +190,12 @@ public abstract class BaseIndexStore implements IndexStore {
             List<Object> results = ((MultiResult) newValue).getResults();
             for (Object o : results) {
                 Comparable sanitizedValue = sanitizeValue(o);
-                Object oldValue = insertInternal(sanitizedValue, record);
+                Object oldValue = insertInternal(sanitizedValue, queryableEntry);
                 operationStats.onEntryAdded(oldValue, newValue);
             }
         } else {
             Comparable sanitizedValue = sanitizeValue(newValue);
-            Object oldValue = insertInternal(sanitizedValue, record);
+            Object oldValue = insertInternal(sanitizedValue, queryableEntry);
             operationStats.onEntryAdded(oldValue, newValue);
         }
     }

@@ -48,18 +48,14 @@ public class DataRecordWithStatsTest {
         Data otherKey = mock(Data.class);
 
         record = new DataRecordWithStats(VALUE);
-        record.setKey(key);
 
         recordSameAttributes = new DataRecordWithStats();
-        recordSameAttributes.setKey(key);
         recordSameAttributes.setValue(VALUE);
 
         recordOtherKeyAndValue = new DataRecordWithStats();
-        recordOtherKeyAndValue.setKey(otherKey);
         recordOtherKeyAndValue.setValue(otherKey);
 
         objectRecord = new ObjectRecordWithStats();
-        objectRecord.setKey(key);
         objectRecord.setValue(new Object());
     }
 

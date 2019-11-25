@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.serialization.Data;
 
 
 /**
@@ -36,14 +37,16 @@ import com.hazelcast.map.impl.record.Record;
 public class LazyEvictableEntryView<R extends Record>
         extends SampleableConcurrentHashMap.SamplingEntry implements EntryView {
 
+    private Data dataKey;
     private Object key;
     private Object value;
     private R record;
 
     private SerializationService serializationService;
 
-    public LazyEvictableEntryView(R record, SerializationService serializationService) {
-        super(record.getKey(), record);
+    public LazyEvictableEntryView(Data dataKey, R record, SerializationService serializationService) {
+        super(dataKey, record);
+        this.dataKey = dataKey;
         this.record = record;
         this.serializationService = serializationService;
     }
@@ -51,9 +54,13 @@ public class LazyEvictableEntryView<R extends Record>
     @Override
     public Object getKey() {
         if (key == null) {
-            key = serializationService.toObject(record.getKey());
+            key = serializationService.toObject(dataKey);
         }
         return key;
+    }
+
+    public Data getDataKey() {
+        return dataKey;
     }
 
     @Override

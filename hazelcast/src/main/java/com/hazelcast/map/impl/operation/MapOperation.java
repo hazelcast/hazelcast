@@ -56,7 +56,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     private static final boolean ASSERTION_ENABLED = MapOperation.class.desiredAssertionStatus();
 
     protected transient MapService mapService;
-    protected transient RecordStore recordStore;
+    protected transient RecordStore<Record> recordStore;
     protected transient MapContainer mapContainer;
     protected transient MapServiceContext mapServiceContext;
     protected transient MapEventPublisher mapEventPublisher;
