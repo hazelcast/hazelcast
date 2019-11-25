@@ -16,23 +16,28 @@
 
 package com.hazelcast.client.impl.statistics;
 
+import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.Gauge;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.metrics.impl.CompositeMetricsCollector;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
+import com.hazelcast.internal.metrics.impl.PublisherMetricsCollector;
+import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * statistics to the cluster. If the client statistics feature is enabled,
  * it will be scheduled for periodic statistics collection and sent.
  */
-public class Statistics {
+public class ClientStatisticsService {
     private static final String NEAR_CACHE_CATEGORY_PREFIX = "nc.";
     private static final char STAT_SEPARATOR = ',';
     private static final char KEY_VALUE_SEPARATOR = '=';
@@ -52,18 +57,18 @@ public class Statistics {
 
     private final MetricsRegistry metricsRegistry;
     private final boolean enabled;
-    private final HazelcastProperties properties;
     private final ILogger logger = Logger.getLogger(this.getClass());
 
     private final HazelcastClientInstanceImpl client;
 
     private final boolean enterprise;
+    private final ClientMetricsConfig metricsConfig;
 
     private PeriodicStatistics periodicStats;
 
-    public Statistics(final HazelcastClientInstanceImpl clientInstance) {
-        this.properties = clientInstance.getProperties();
-        this.enabled = properties.getBoolean(ClientProperty.STATISTICS_ENABLED);
+    public ClientStatisticsService(final HazelcastClientInstanceImpl clientInstance) {
+        this.metricsConfig = clientInstance.getClientConfig().getMetricsConfig();
+        this.enabled = metricsConfig.isEnabled();
         this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
         this.metricsRegistry = clientInstance.getMetricsRegistry();
@@ -77,22 +82,23 @@ public class Statistics {
             return;
         }
 
-        long periodSeconds = properties.getSeconds(ClientProperty.STATISTICS_PERIOD_SECONDS);
-        if (periodSeconds <= 0) {
-            long defaultValue = Long.parseLong(ClientProperty.STATISTICS_PERIOD_SECONDS.getDefaultValue());
-            logger.warning("Provided client statistics " + ClientProperty.STATISTICS_PERIOD_SECONDS.getName()
-                    + " cannot be less than or equal to 0. You provided " + periodSeconds
-                    + " seconds as the configuration. Client will use the default value of " + defaultValue + " instead.");
-            periodSeconds = defaultValue;
-        }
+        metricsRegistry.registerDynamicMetricsProvider(new NearCacheMetricsProvider(client.getNearCacheManager()));
+        metricsRegistry.registerDynamicMetricsProvider(new ClusterConnectionMetricsProvider(client.getConnectionManager()));
+
+        long periodSeconds = metricsConfig.getCollectionFrequencySeconds();
 
         // Note that the OperatingSystemMetricSet and RuntimeMetricSet are already registered during client start,
         // hence we do not re-register
         periodicStats = new PeriodicStatistics();
 
-        schedulePeriodicStatisticsSendTask(periodSeconds);
+        schedulePeriodicStatisticsSendTask(metricsConfig.getCollectionFrequencySeconds());
 
         logger.info("Client statistics is enabled with period " + periodSeconds + " seconds.");
+    }
+
+    // visible for testing
+    public ClientMetricsConfig getMetricsConfig() {
+        return metricsConfig;
     }
 
     /**
@@ -106,25 +112,33 @@ public class Statistics {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
-        client.getClientExecutionService().scheduleWithRepetition(new Runnable() {
-            @Override
-            public void run() {
-                long collectionTimestamp = System.currentTimeMillis();
+        PublisherMetricsCollector publisherMetricsCollector = new PublisherMetricsCollector();
 
-                ClientConnection connection = getConnection();
-                if (connection == null) {
-                    logger.finest("Cannot send client statistics to the server. No connection found.");
-                    return;
-                }
+        if (metricsConfig.isEnabled() && metricsConfig.getJmxConfig().isEnabled()) {
+            publisherMetricsCollector.addPublisher(new JmxPublisher(client.getName(), "com.hazelcast"));
+        }
 
-                final StringBuilder stats = new StringBuilder();
+        ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
+        CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
+            publisherMetricsCollector);
 
-                periodicStats.fillMetrics(collectionTimestamp, stats, connection);
+        client.getClientExecutionService().scheduleWithRepetition(() -> {
+            long collectionTimestamp = System.currentTimeMillis();
+            metricsRegistry.collect(compositeMetricsCollector);
+            publisherMetricsCollector.publishCollectedMetrics();
 
-                addNearCacheStats(stats);
-
-                sendStats(collectionTimestamp, stats.toString(), connection);
+            ClientConnection connection = getConnection();
+            if (connection == null) {
+                logger.finest("Cannot send client statistics to the server. No connection found.");
+                return;
             }
+
+            final StringBuilder clientAttributes = new StringBuilder();
+            periodicStats.fillMetrics(collectionTimestamp, clientAttributes, connection);
+            addNearCacheStats(clientAttributes);
+
+            byte[] metricsBlob = clientMetricCollector.getBlob();
+            sendStats(collectionTimestamp, clientAttributes.toString(), metricsBlob, connection);
         }, 0, periodSeconds, SECONDS);
     }
 
@@ -261,7 +275,7 @@ public class Statistics {
             return null;
         }
 
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         int strStart = start;
         int index = start;
         // just initialize to a non-special character
@@ -286,8 +300,8 @@ public class Statistics {
         return result;
     }
 
-    private void sendStats(long collectionTimestamp, String newStats, ClientConnection ownerConnection) {
-        ClientMessage request = ClientStatisticsCodec.encodeRequest(collectionTimestamp, newStats, new byte[]{});
+    private void sendStats(long collectionTimestamp, String newStats, byte[] metricsBlob, ClientConnection ownerConnection) {
+        ClientMessage request = ClientStatisticsCodec.encodeRequest(collectionTimestamp, newStats, metricsBlob);
         try {
             new ClientInvocation(client, request, null, ownerConnection).invoke();
         } catch (Exception e) {
@@ -300,23 +314,23 @@ public class Statistics {
 
     class PeriodicStatistics {
         private final Gauge[] allGauges = {
-                metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
-                metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
-                metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
-                metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
-                metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
-                metricsRegistry.newLongGauge("os.processCpuTime"),
-                metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
-                metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
-                metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
-                metricsRegistry.newLongGauge("runtime.availableProcessors"),
-                metricsRegistry.newLongGauge("runtime.freeMemory"),
-                metricsRegistry.newLongGauge("runtime.maxMemory"),
-                metricsRegistry.newLongGauge("runtime.totalMemory"),
-                metricsRegistry.newLongGauge("runtime.uptime"),
-                metricsRegistry.newLongGauge("runtime.usedMemory"),
-                metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
-        };
+            metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
+            metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
+            metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
+            metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
+            metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
+            metricsRegistry.newLongGauge("os.processCpuTime"),
+            metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
+            metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
+            metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
+            metricsRegistry.newLongGauge("runtime.availableProcessors"),
+            metricsRegistry.newLongGauge("runtime.freeMemory"),
+            metricsRegistry.newLongGauge("runtime.maxMemory"),
+            metricsRegistry.newLongGauge("runtime.totalMemory"),
+            metricsRegistry.newLongGauge("runtime.uptime"),
+            metricsRegistry.newLongGauge("runtime.usedMemory"),
+            metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
+            };
 
         void fillMetrics(long collectionTimestamp, final StringBuilder stats, final ClientConnection mainConnection) {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(collectionTimestamp);
@@ -326,7 +340,7 @@ public class Statistics {
             addStat(stats, "clusterConnectionTimestamp", mainConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-                    .append(mainConnection.getLocalSocketAddress().getAddress().getHostAddress());
+                 .append(mainConnection.getLocalSocketAddress().getAddress().getHostAddress());
 
             addStat(stats, "clientName", client.getName());
 
@@ -340,6 +354,36 @@ public class Statistics {
                 stats.append(STAT_SEPARATOR).append(gauge.getName()).append(KEY_VALUE_SEPARATOR);
                 gauge.render(stats);
             }
+        }
+    }
+
+    private class ClientMetricCollector
+        implements MetricsCollector {
+
+        private final MetricsCompressor compressor = new MetricsCompressor();
+
+        @Override
+        public void collectLong(MetricDescriptor descriptor, long value) {
+            compressor.addLong(descriptor, value);
+        }
+
+        @Override
+        public void collectDouble(MetricDescriptor descriptor, double value) {
+            compressor.addDouble(descriptor, value);
+        }
+
+        @Override
+        public void collectException(MetricDescriptor descriptor, Exception e) {
+            logger.warning("Error when collecting '" + descriptor.toString() + '\'', e);
+        }
+
+        @Override
+        public void collectNoValue(MetricDescriptor descriptor) {
+            // nop
+        }
+
+        private byte[] getBlob() {
+            return compressor.getBlobAndReset();
         }
     }
 }

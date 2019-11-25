@@ -19,10 +19,10 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -203,7 +203,6 @@ class MetricsCollectionCycle {
             }
         }
 
-
         @Override
         public void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value) {
             if (level.isEnabled(minimumLevel)) {
@@ -215,6 +214,18 @@ class MetricsCollectionCycle {
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectDouble(descriptorCopy, value);
             }
+        }
+
+        @Override
+        public void collect(MetricDescriptor descriptor, long value) {
+            lookupMetricValueCatcher(descriptor).catchMetricValue(collectionId, value);
+            metricsCollector.collectLong(descriptor, value);
+        }
+
+        @Override
+        public void collect(MetricDescriptor descriptor, double value) {
+            lookupMetricValueCatcher(descriptor).catchMetricValue(collectionId, value);
+            metricsCollector.collectDouble(descriptor, value);
         }
     }
 

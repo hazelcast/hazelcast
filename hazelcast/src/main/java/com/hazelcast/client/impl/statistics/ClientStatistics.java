@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.client.impl.statistics;
 
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.task.ClientStatisticsMessageTask;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -39,15 +40,16 @@ public final class ClientStatistics {
         this.metricsBlob = metricsBlob;
     }
 
-    long timestamp() {
+    public long timestamp() {
         return timestamp;
     }
 
-    String clientAttributes() {
+    public String clientAttributes() {
         return clientAttributes;
     }
 
-    byte[] getMetricsBlob() {
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public byte[] metricsBlob() {
         return metricsBlob;
     }
 }

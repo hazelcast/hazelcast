@@ -36,14 +36,19 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
     private TestHazelcastFactory factory;
+    private ClientConfig clientConfig;
+    private ClientMetricsConfig originalMetricsConfig;
 
     @Before
     public void before() {
+        clientConfig = new ClientConfig();
+        originalMetricsConfig = clientConfig.getMetricsConfig();
         factory = new TestHazelcastFactory();
         factory.newHazelcastInstance(smallInstanceConfig());
     }
@@ -69,7 +74,8 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        // TODO verify in a subsequent change that the override is actually effective; see MetricsPropertiesTest
+        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
+        assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
     @Test
@@ -92,48 +98,47 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        // TODO verify in a subsequent change that the override is actually effective; see MetricsPropertiesTest
+        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
+        assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
     @Test
     public void testConfigPropertiesOverrideConfig() {
-        ClientConfig config = new ClientConfig();
         // setting non-defaults
-        config.setProperty(ClientProperty.METRICS_ENABLED.getName(), "false");
-        config.setProperty(ClientProperty.METRICS_JMX_ENABLED.getName(), "false");
-        config.setProperty(ClientProperty.METRICS_COLLECTION_FREQUENCY.getName(), "24");
-        factory.newHazelcastClient(config);
+        clientConfig.setProperty(ClientProperty.METRICS_ENABLED.getName(), "false");
+        clientConfig.setProperty(ClientProperty.METRICS_JMX_ENABLED.getName(), "false");
+        clientConfig.setProperty(ClientProperty.METRICS_COLLECTION_FREQUENCY.getName(), "24");
+        HazelcastClientProxy client = createClient();
 
-        ClientMetricsConfig metricsConfig = config.getMetricsConfig();
-        assertFalse(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.getJmxConfig().isEnabled());
-        assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
+        assertFalse(originalMetricsConfig.isEnabled());
+        assertFalse(originalMetricsConfig.getJmxConfig().isEnabled());
+        assertEquals(24, originalMetricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        // TODO verify in a subsequent change that the override is actually effective; see MetricsPropertiesTest
+        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
+        assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
     @Test
     public void testInvalidConfigPropertiesIgnored() {
-        ClientConfig config = new ClientConfig();
         // setting non-defaults
-        config.setProperty(ClientProperty.METRICS_ENABLED.getName(), "invalid");
-        config.setProperty(ClientProperty.METRICS_JMX_ENABLED.getName(), "invalid");
-        config.setProperty(ClientProperty.METRICS_COLLECTION_FREQUENCY.getName(), "invalid");
+        clientConfig.setProperty(ClientProperty.METRICS_ENABLED.getName(), "invalid");
+        clientConfig.setProperty(ClientProperty.METRICS_JMX_ENABLED.getName(), "invalid");
+        clientConfig.setProperty(ClientProperty.METRICS_COLLECTION_FREQUENCY.getName(), "invalid");
 
-        factory.newHazelcastClient(config);
+        HazelcastClientProxy client = createClient();
 
         MetricsConfig defaultConfig = new MetricsConfig();
 
         // booleans result in false values even though they're "invalid"
         // therefore, all boolean config fields are set to false
-        ClientMetricsConfig metricsConfig = config.getMetricsConfig();
-        assertFalse(metricsConfig.isEnabled());
-        assertFalse(metricsConfig.getJmxConfig().isEnabled());
-        assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
+        assertFalse(originalMetricsConfig.isEnabled());
+        assertFalse(originalMetricsConfig.getJmxConfig().isEnabled());
+        assertEquals(defaultConfig.getCollectionFrequencySeconds(), originalMetricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        // TODO verify in a subsequent change that the override is actually effective; see MetricsPropertiesTest
+        ClientMetricsConfig metricsConfigUsed = client.client.getClientStatisticsService().getMetricsConfig();
+        assertSame(originalMetricsConfig, metricsConfigUsed);
     }
 
     @Test
@@ -160,7 +165,7 @@ public class ClientMetricsPropertiesTest extends HazelcastTestSupport {
     }
 
     private HazelcastClientProxy createClient() {
-        return (HazelcastClientProxy) factory.newHazelcastClient();
+        return (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
     }
 
 }
