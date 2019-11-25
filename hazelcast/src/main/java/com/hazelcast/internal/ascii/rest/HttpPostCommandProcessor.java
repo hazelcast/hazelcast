@@ -332,6 +332,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      *
      * @param cmd the HTTP command
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanSyncMap(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while syncing map",
                 withAuthentication(command -> {
@@ -370,6 +371,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      *
      * @param cmd the HTTP command
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanConsistencyCheck(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while syncing maps",
                 withAuthentication(command -> {
@@ -437,6 +439,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @param cmd the HTTP command
      * @see WanPublisherState#PAUSED
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanPausePublisher(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while pausing WAN publisher",
                 withAuthentication(command -> {
@@ -458,6 +461,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @param cmd the HTTP command
      * @see WanPublisherState#STOPPED
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanStopPublisher(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while stopping WAN publisher",
                 withAuthentication(command -> {
@@ -479,6 +483,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * @param cmd the HTTP command
      * @see WanPublisherState#REPLICATING
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     private void handleWanResumePublisher(HttpPostCommand cmd) {
         withExceptionHandling("Error occurred while stopping WAN publisher",
                 withAuthentication(command -> {
