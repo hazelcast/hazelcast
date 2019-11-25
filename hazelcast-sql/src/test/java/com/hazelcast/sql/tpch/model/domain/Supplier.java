@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.sql.tpch.model.domain;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+
+/**
+ * TPC-H model: supplier.
+ */
+public class Supplier implements Serializable {
+    public long s_suppkey;
+    public String s_name;
+    public String s_address;
+    public long s_nationkey;
+    public String s_phone;
+    public BigDecimal s_acctbal;
+    public String s_comment;
+
+    public Supplier() {
+        // No-op.
+    }
+
+    public Supplier(
+        long s_suppkey,
+        String s_name,
+        String s_address,
+        long s_nationkey,
+        String s_phone,
+        BigDecimal s_acctbal,
+        String s_comment
+    ) {
+        this.s_suppkey = s_suppkey;
+        this.s_name = s_name;
+        this.s_address = s_address;
+        this.s_nationkey = s_nationkey;
+        this.s_phone = s_phone;
+        this.s_acctbal = s_acctbal;
+        this.s_comment = s_comment;
+    }
+}

@@ -106,17 +106,17 @@ public class LikeFunction extends TriCallExpression<Boolean> {
         pattern = patternType.getConverter().asVarchar(patternValue);
 
         // Get replacement operand.
-        Object escapeValue = operand3.eval(ctx, row);
+        Object escapeValue = operand3 != null ? operand3.eval(ctx, row) : null;
 
-        if (escapeValue == null) {
-            return null;
+        if (escapeValue != null) {
+            if (escapeType == null) {
+                escapeType = operand3.getType();
+            }
+
+            escape = escapeType.getConverter().asVarchar(escapeValue);
+        } else {
+            escape = null;
         }
-
-        if (escapeType == null) {
-            escapeType = operand3.getType();
-        }
-
-        escape = escapeType.getConverter().asVarchar(escapeValue);
 
         // Process.
         return like(source, pattern, escape);

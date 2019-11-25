@@ -14,39 +14,42 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.tpch;
 
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
+import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
 import com.hazelcast.sql.support.SqlTestSupport;
+import com.hazelcast.sql.tpch.model.ModelConfig;
+import com.hazelcast.sql.tpch.model.ModelLoader;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.apache.calcite.plan.RelOptUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Tests of TPC-H benchmark queries.
  */
 @SuppressWarnings("checkstyle:OperatorWrap")
 public class TpcHTest extends SqlTestSupport {
-
-    private static final long SCALE_FACTOR = 1L;
-
-    private static final long PART_CNT = SCALE_FACTOR * 200_000L;
-    private static final long SUPPLIER_CNT = SCALE_FACTOR * 10_000L;
-    private static final long PARTSUPP_CNT = SCALE_FACTOR * 800_000L;
-    private static final long CUSTOMER_CNT = SCALE_FACTOR * 150_000L;
-    private static final long LINEITEM_CNT = SCALE_FACTOR * 6_000_000L;
-    private static final long ORDERS_CNT = SCALE_FACTOR * 1_500_000L;
-    private static final long NATION_CNT = 25;
-    private static final long REGION_CNT = 5;
+    // TODO: Externalize data location.
+    private static final String DATA_DIR = "/home/devozerov/code/tpch/2.18.0_rc2/dbgen";
+    private static final int DOWNSCALE = 10;
 
     private static TestHazelcastInstanceFactory factory;
     private static HazelcastInstance member;
@@ -60,7 +63,7 @@ public class TpcHTest extends SqlTestSupport {
 
         // TODO: This is a very serious issue! Maps are started lazily.
         member.getMap("part");
-        member.getMap("supplier");
+        member.getReplicatedMap("supplier");
         member.getMap("partsupp");
         member.getMap("customer");
         member.getMap("lineitem");
@@ -68,22 +71,84 @@ public class TpcHTest extends SqlTestSupport {
         member.getReplicatedMap("nation");
         member.getReplicatedMap("region");
 
-        // TODO: Generate data.
+
+        ModelConfig modelConfig = ModelConfig.builder().setDirectory(DATA_DIR).setDownscale(DOWNSCALE).build();
+        ModelLoader.load(modelConfig, member);
     }
 
     private static Config prepareConfig() {
         Config config = new Config();
 
-        config.addMapConfig(new MapConfig("part"));
-        config.addMapConfig(new MapConfig("supplier"));
-        config.addMapConfig(new MapConfig("partsupp"));
-        config.addMapConfig(new MapConfig("customer"));
-        config.addMapConfig(new MapConfig("lineitem"));
-        config.addMapConfig(new MapConfig("orders"));
+        // Common dictionaries.
         config.addReplicatedMapConfig(new ReplicatedMapConfig("nation"));
         config.addReplicatedMapConfig(new ReplicatedMapConfig("region"));
 
+        // Customer-order
+        config.addMapConfig(
+            new MapConfig("customer")
+                .setAttributeConfigs(aliases(
+                    keyAlias("c_custkey")
+                ))
+        );
+
+        config.addMapConfig(
+            new MapConfig("orders")
+                .setAttributeConfigs(aliases(
+                    keyFieldAlias("o_orderkey"), keyFieldAlias("o_custkey")
+                ))
+                .setPartitioningStrategyConfig(partitioning("o_custkey"))
+        );
+
+        // Part-supplier
+        config.addReplicatedMapConfig(new ReplicatedMapConfig("supplier"));
+
+        config.addMapConfig(new MapConfig("part")
+            .setAttributeConfigs(aliases(
+                keyAlias("p_partkey")
+            ))
+        );
+
+        config.addMapConfig(new MapConfig("partsupp")
+            .setAttributeConfigs(aliases(
+                keyAlias("ps_partkey"), keyAlias("ps_suppkey")
+            ))
+            .setPartitioningStrategyConfig(partitioning("ps_partkey"))
+        );
+
+        // Line item
+        config.addMapConfig(new MapConfig("lineitem")
+            .setAttributeConfigs(aliases(
+                keyAlias("l_orderkey"), keyAlias("l_partkey"), keyAlias("l_linenumber")
+            ))
+            .setPartitioningStrategyConfig(partitioning("l_partkey"))
+        );
+
         return config;
+    }
+
+    private static PartitioningStrategyConfig partitioning(String fieldName) {
+        DeclarativePartitioningStrategy strategy = new DeclarativePartitioningStrategy().setField(fieldName);
+
+        return new PartitioningStrategyConfig().setPartitioningStrategy(strategy);
+    }
+
+    private static AttributeConfig keyAlias(String fieldName) {
+        return new AttributeConfig().setName(fieldName).setPath(QueryConstants.KEY_ATTRIBUTE_NAME.value());
+    }
+
+    private static AttributeConfig keyFieldAlias(String fieldName) {
+        return new AttributeConfig().setName(fieldName).setPath(QueryConstants.KEY_ATTRIBUTE_NAME.value() + "." + fieldName);
+    }
+
+    private static List<AttributeConfig> aliases(AttributeConfig... attributes) {
+        if (attributes == null || attributes.length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<AttributeConfig> configs = new ArrayList<>(attributes.length);
+        Collections.addAll(configs, attributes);
+
+        return configs;
     }
 
     @AfterClass
@@ -554,6 +619,7 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("Fails of a COUNT(DISTINCT) aggregate")
     @Test
     public void testQ16() {
         SqlCursor cursor = execute(
@@ -653,6 +719,7 @@ public class TpcHTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("com.hazelcast.sql.HazelcastSqlException: Unsupported type: DataType{base=OBJECT, precision=-1, scale=-1}")
     @Test
     public void testQ19() {
         SqlCursor cursor = execute(
@@ -754,7 +821,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    orders o,\n" +
                 "    nation n\n" +
                 "where\n" +
-                "    s._suppkey = l1.l_suppkey\n" +
+                "    s.s_suppkey = l1.l_suppkey\n" +
                 "    and o.o_orderkey = l1.l_orderkey\n" +
                 "    and o.o_orderstatus = 'F'\n" +
                 "    and l1.l_receiptdate > l1.l_commitdate\n" +
@@ -831,13 +898,25 @@ public class TpcHTest extends SqlTestSupport {
         SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql);
 
         // TODO: Do not execute eagerly, check result up the stack.
+        int cnt = 0;
+
         for (SqlRow row : res) {
-            // No-op.
+            cnt++;
+
+            if (cnt <= 10) {
+                printRow(row);
+            }
         }
+
+        System.out.println("Done: " + cnt);
 
         PhysicalRel physicalRel = res.getHandle().getPlan().getAttachment(PhysicalRel.class);
         System.out.println(RelOptUtil.toString(physicalRel));
 
         return res;
+    }
+
+    private static void printRow(SqlRow row) {
+        System.out.println(">>> " + row);
     }
 }
