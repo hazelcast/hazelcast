@@ -51,7 +51,7 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
     protected static final TestUrl[] TEST_URLS = new TestUrl[]{
             new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/mancenter/changeurl ", "HTTP/1.1 403 Forbidden"),
             new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/mancenter/security/permissions", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(CLUSTER_READ, GET, "/hazelcast/rest/cluster", "Members {size:1, ver:1} ["),
+            new TestUrl(CLUSTER_READ, GET, "/hazelcast/rest/cluster", "\"members\":[{\"address\":\""),
             new TestUrl(CLUSTER_READ, POST, "/hazelcast/rest/management/cluster/state", "HTTP/1.1 403 Forbidden"),
             new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/changeState", "HTTP/1.1 403 Forbidden"),
             new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/version", "HTTP/1.1 403 Forbidden"),
