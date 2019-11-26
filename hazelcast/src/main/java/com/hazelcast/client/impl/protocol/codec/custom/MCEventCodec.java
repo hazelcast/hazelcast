@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("eb8c9000361fea726c444c0e01280d51")
+@Generated("ee88616d1a4aab27b5973acbdd935edb")
 public final class MCEventCodec {
     private static final int TIMESTAMP_FIELD_OFFSET = 0;
     private static final int TYPE_FIELD_OFFSET = TIMESTAMP_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -41,7 +41,7 @@ public final class MCEventCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, mCEvent.getType());
         clientMessage.add(initialFrame);
 
-        MapCodec.encode(clientMessage, mCEvent.getData(), StringCodec::encode, StringCodec::encode);
+        StringCodec.encode(clientMessage, mCEvent.getDataJson());
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -54,10 +54,10 @@ public final class MCEventCodec {
         long timestamp = decodeLong(initialFrame.content, TIMESTAMP_FIELD_OFFSET);
         int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
 
-        java.util.Map<java.lang.String, java.lang.String> data = MapCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
+        java.lang.String dataJson = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.internal.management.dto.MCEventDTO(timestamp, type, data);
+        return new com.hazelcast.internal.management.dto.MCEventDTO(timestamp, type, dataJson);
     }
 }

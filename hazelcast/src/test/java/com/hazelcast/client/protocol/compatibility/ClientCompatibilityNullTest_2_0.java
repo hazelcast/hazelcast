@@ -6803,35 +6803,19 @@ public class ClientCompatibilityNullTest_2_0 {
     }
 
     @Test
-    public void test_MCAddMCEventListenerCodec_encodeRequest() {
+    public void test_MCPollMCEventsCodec_encodeRequest() {
         int fileClientMessageIndex = 809;
-        ClientMessage encoded = MCAddMCEventListenerCodec.encodeRequest();
+        ClientMessage encoded = MCPollMCEventsCodec.encodeRequest();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_MCAddMCEventListenerCodec_decodeResponse() {
+    public void test_MCPollMCEventsCodec_decodeResponse() {
         int fileClientMessageIndex = 810;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCAddMCEventListenerCodec.ResponseParameters parameters = MCAddMCEventListenerCodec.decodeResponse(fromFile);
-    }
-
-    private class MCAddMCEventListenerCodecHandler extends MCAddMCEventListenerCodec.AbstractEventHandler {
-        @Override
-        public void handleEventBatchEvent(java.lang.String cluster, java.lang.String address, java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
-            assertTrue(isEqual(aString, cluster));
-            assertTrue(isEqual(aString, address));
-            assertTrue(isEqual(aListOfMCEvents, events));
-        }
-    }
-
-    @Test
-    public void test_MCAddMCEventListenerCodec_handleEventBatchEvent() {
-        int fileClientMessageIndex = 811;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCAddMCEventListenerCodecHandler handler = new MCAddMCEventListenerCodecHandler();
-        handler.handle(fromFile);
+        MCPollMCEventsCodec.ResponseParameters parameters = MCPollMCEventsCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aListOfMCEvents, parameters.events));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

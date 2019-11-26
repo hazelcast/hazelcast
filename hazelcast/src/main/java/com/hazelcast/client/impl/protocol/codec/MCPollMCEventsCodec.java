@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
-import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nullable;
 
@@ -35,21 +34,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Registers listener for events pending on member. All registered members send their events.
+ * Polls events available on member. Once read, events are removed from member's internal queue.
  */
-@Generated("9edf9921a0eb205fa82d9e23cad1930e")
-public final class MCAddMCEventListenerCodec {
+@Generated("c734282ad0c8df17b06f850c087e0017")
+public final class MCPollMCEventsCodec {
     //hex: 0x201600
     public static final int REQUEST_MESSAGE_TYPE = 2102784;
     //hex: 0x201601
     public static final int RESPONSE_MESSAGE_TYPE = 2102785;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int EVENT_EVENT_BATCH_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x201602
-    private static final int EVENT_EVENT_BATCH_MESSAGE_TYPE = 2102786;
 
-    private MCAddMCEventListenerCodec() {
+    private MCPollMCEventsCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -58,15 +54,15 @@ public final class MCAddMCEventListenerCodec {
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.AddMCEventListener");
+        clientMessage.setRetryable(true);
+        clientMessage.setOperationName("MC.PollMCEvents");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static MCAddMCEventListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCPollMCEventsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -76,54 +72,30 @@ public final class MCAddMCEventListenerCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
+        /**
+         * List of events.
+         */
+        public java.util.List<com.hazelcast.internal.management.dto.MCEventDTO> events;
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        return clientMessage;
-    }
-
-    public static MCAddMCEventListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
-
-    public static ClientMessage encodeEventBatchEvent(java.lang.String cluster, java.lang.String address, java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
-        ClientMessage clientMessage = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_EVENT_BATCH_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
-        initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
-        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_EVENT_BATCH_MESSAGE_TYPE);
-        clientMessage.add(initialFrame);
-
-        StringCodec.encode(clientMessage, cluster);
-        StringCodec.encode(clientMessage, address);
         ListMultiFrameCodec.encode(clientMessage, events, MCEventCodec::encode);
         return clientMessage;
     }
 
-    public abstract static class AbstractEventHandler {
-
-        public void handle(ClientMessage clientMessage) {
-            int messageType = clientMessage.getMessageType();
-            ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-            if (messageType == EVENT_EVENT_BATCH_MESSAGE_TYPE) {
-                //empty initial frame
-                iterator.next();
-                java.lang.String cluster = StringCodec.decode(iterator);
-                java.lang.String address = StringCodec.decode(iterator);
-                java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events = ListMultiFrameCodec.decode(iterator, MCEventCodec::decode);
-                handleEventBatchEvent(cluster, address, events);
-                return;
-            }
-            Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
-        }
-        public abstract void handleEventBatchEvent(java.lang.String cluster, java.lang.String address, java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events);
+    public static MCPollMCEventsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+        ResponseParameters response = new ResponseParameters();
+        //empty initial frame
+        iterator.next();
+        response.events = ListMultiFrameCodec.decode(iterator, MCEventCodec::decode);
+        return response;
     }
+
 }

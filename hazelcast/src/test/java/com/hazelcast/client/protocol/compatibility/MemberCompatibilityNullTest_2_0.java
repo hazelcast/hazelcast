@@ -7308,25 +7308,17 @@ public class MemberCompatibilityNullTest_2_0 {
     }
 
     @Test
-    public void test_MCAddMCEventListenerCodec_decodeRequest() {
+    public void test_MCPollMCEventsCodec_decodeRequest() {
         int fileClientMessageIndex = 809;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCAddMCEventListenerCodec.RequestParameters parameters = MCAddMCEventListenerCodec.decodeRequest(fromFile);
+        MCPollMCEventsCodec.RequestParameters parameters = MCPollMCEventsCodec.decodeRequest(fromFile);
     }
 
     @Test
-    public void test_MCAddMCEventListenerCodec_encodeResponse() {
+    public void test_MCPollMCEventsCodec_encodeResponse() {
         int fileClientMessageIndex = 810;
-        ClientMessage encoded = MCAddMCEventListenerCodec.encodeResponse();
+        ClientMessage encoded = MCPollMCEventsCodec.encodeResponse(aListOfMCEvents);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_MCAddMCEventListenerCodec_encodeEventBatchEvent() {
-        int fileClientMessageIndex = 811;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientMessage encoded = MCAddMCEventListenerCodec.encodeEventBatchEvent(aString, aString, aListOfMCEvents);
         compareClientMessages(fromFile, encoded);
     }
 
