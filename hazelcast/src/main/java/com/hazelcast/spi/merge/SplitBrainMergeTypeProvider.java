@@ -29,7 +29,6 @@ package com.hazelcast.spi.merge;
  *            or a composition like {@code MergingEntry & MergingHits & MergingLastAccessTime}
  * @since 3.10
  */
-@FunctionalInterface
 public interface SplitBrainMergeTypeProvider<T extends MergingValue> {
 
     Class<T> getProvidedMergeTypes();

@@ -22,7 +22,6 @@ package com.hazelcast.core;
  * {@link HazelcastInstanceAware#setHazelcastInstance(HazelcastInstance)}  method with the reference to HazelcastInstance
  * that is executing. This way the implementer will have a chance to get the reference to HazelcastInstance.
  */
-@FunctionalInterface
 public interface HazelcastInstanceAware {
 
     /**

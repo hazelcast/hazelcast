@@ -31,7 +31,6 @@ import com.hazelcast.cache.ICache;
  *
  * @since 3.7
  */
-@FunctionalInterface
 public interface ICacheManager {
 
     /**

@@ -26,7 +26,6 @@ import java.util.Collection;
  *
  * @see PartitionGroupConfig#getGroupType()
  */
-@FunctionalInterface
 public interface MemberGroupFactory {
 
     Collection<MemberGroup> createMemberGroups(Collection<? extends Member> members);

@@ -19,7 +19,6 @@ package com.hazelcast.splitbrainprotection;
 /**
  * {@link SplitBrainProtection} provides access to the current status of a split brain protection.
  */
-@FunctionalInterface
 public interface SplitBrainProtection {
     /**
      * Returns true if the minimum cluster size is satisfied, otherwise false.

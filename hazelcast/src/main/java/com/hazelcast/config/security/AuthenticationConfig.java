@@ -22,7 +22,6 @@ import com.hazelcast.config.LoginModuleConfig;
  * This interface represents authentication configuration in a security realm. It provides a method to convert the configuration
  * into {@link LoginModuleConfig} form.
  */
-@FunctionalInterface
 public interface AuthenticationConfig {
 
     /**
