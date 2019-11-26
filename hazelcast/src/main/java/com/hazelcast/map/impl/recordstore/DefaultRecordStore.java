@@ -221,7 +221,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                         boolean backup, boolean includeExpiredRecords) {
 
         long now = Clock.currentTimeMillis();
-        Iterator<Map.Entry<Data, Record>> entries = storage.entryIterator();
+        Iterator<Map.Entry<Data, Record>> entries = storage.mutationTolerantIterator();
         while (entries.hasNext()) {
             Map.Entry<Data, Record> entry = entries.next();
 
@@ -276,7 +276,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (storage.isEmpty()) {
             return false;
         }
-
 
         // optimisation to skip serialisation/de-serialisation
         // in each call to RecordComparator.isEqual()

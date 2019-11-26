@@ -69,11 +69,6 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public Iterator<Map.Entry<Data, R>> entryIterator() {
-        return records.entrySet().iterator();
-    }
-
-    @Override
     public Iterator<Map.Entry<Data, R>> mutationTolerantIterator() {
         return records.cachedEntrySet().iterator();
     }
