@@ -92,7 +92,7 @@ import static java.util.Collections.emptyMap;
 public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         implements EventJournalReader<EventJournalCacheEvent<K, V>> {
 
-    private final CacheStatistics EMPTY_CACHE_STATS = new CacheStatisticsImpl(Clock.currentTimeMillis());
+    private static final CacheStatistics EMPTY_CACHE_STATS = new CacheStatisticsImpl(Clock.currentTimeMillis());
 
     CacheProxy(CacheConfig<K, V> cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
