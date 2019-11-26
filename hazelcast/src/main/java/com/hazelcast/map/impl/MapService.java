@@ -205,9 +205,9 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
         transactionalService.rollbackTransaction(transactionId);
     }
 
+    @Override
     public Map<String, LocalMapStats> getStats() {
-        LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        return localMapStatsProvider.createAllLocalMapStats();
+        return statisticsAwareService.getStats();
     }
 
     @Override
