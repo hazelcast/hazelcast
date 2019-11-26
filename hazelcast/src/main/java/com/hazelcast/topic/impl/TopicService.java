@@ -206,10 +206,10 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     public Map<String, LocalTopicStats> getStats() {
         Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
         Config config = nodeEngine.getConfig();
-        for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
-            String name = queueStat.getKey();
+        for (Map.Entry<String, LocalTopicStatsImpl> statEntry : statsMap.entrySet()) {
+            String name = statEntry.getKey();
             if (config.getTopicConfig(name).isStatisticsEnabled()) {
-                topicStats.put(name, queueStat.getValue());
+                topicStats.put(name, statEntry.getValue());
             }
         }
         return topicStats;

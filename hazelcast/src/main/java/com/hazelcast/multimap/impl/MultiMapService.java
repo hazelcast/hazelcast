@@ -17,7 +17,6 @@
 package com.hazelcast.multimap.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
@@ -481,11 +480,11 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     @Override
     public Map<String, LocalMultiMapStats> getStats() {
         Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
-        Config config = nodeEngine.getConfig();
         for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
             if (partitionContainer != null) {
                 for (String name : partitionContainer.containerMap.keySet()) {
-                    if (!multiMapStats.containsKey(name) && config.getMultiMapConfig(name).isStatisticsEnabled()) {
+                    if (!multiMapStats.containsKey(name)
+                        && partitionContainer.getMultiMapContainer(name, false).config.isStatisticsEnabled()) {
                         multiMapStats.put(name, createStats(name));
                     }
                 }

@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.Config;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
@@ -151,9 +150,8 @@ public class LocalMapStatsProvider {
     private void addStatsOfNoDataIncludedMaps(Map statsPerMap) {
         ProxyService proxyService = nodeEngine.getProxyService();
         Collection<String> mapNames = proxyService.getDistributedObjectNames(SERVICE_NAME);
-        Config config = nodeEngine.getConfig();
         for (String mapName : mapNames) {
-            if (!statsPerMap.containsKey(mapName) && config.getMapConfig(mapName).isStatisticsEnabled()) {
+            if (!statsPerMap.containsKey(mapName) && mapServiceContext.getMapContainer(mapName).mapConfig.isStatisticsEnabled()) {
                 statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
             }
         }
