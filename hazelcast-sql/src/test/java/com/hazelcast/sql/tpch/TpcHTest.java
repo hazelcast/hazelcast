@@ -24,7 +24,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.query.QueryConstants;
-import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
@@ -33,12 +32,14 @@ import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.sql.tpch.model.ModelConfig;
 import com.hazelcast.sql.tpch.model.ModelLoader;
+import com.hazelcast.sql.tpch.model.Substitution;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,11 +49,11 @@ import java.util.Map;
  * Tests of TPC-H benchmark queries.
  */
 @Ignore
-@SuppressWarnings("checkstyle:OperatorWrap")
+@SuppressWarnings({"checkstyle:OperatorWrap", "unused"})
 public class TpcHTest extends SqlTestSupport {
     // TODO: Externalize data location.
     private static final String DATA_DIR = "/home/devozerov/code/tpch/2.18.0_rc2/dbgen";
-    private static final int DOWNSCALE = 10;
+    private static final int DOWNSCALE = 100;
 
     private static TestHazelcastInstanceFactory factory;
     private static HazelcastInstance member;
@@ -162,7 +163,9 @@ public class TpcHTest extends SqlTestSupport {
 
     @Test
     public void testQ1() {
-        SqlCursor cursor = execute(
+        LocalDate date = Substitution.q1Date();
+
+        List<SqlRow> rows = execute(
         "select\n" +
             "    l_returnflag,\n" +
             "    l_linestatus,\n" +
@@ -177,20 +180,23 @@ public class TpcHTest extends SqlTestSupport {
             "from\n" +
             "    lineitem\n" +
             "where\n" +
-            "    l_shipdate <= date '1998-12-01'\n" +
-//            "    l_shipdate <= date '1998-12-01' - interval '[DELTA]' day (3)\n" + // TODO
+            "    l_shipdate <= ?\n" +
             "group by\n" +
             "    l_returnflag,\n" +
             "    l_linestatus\n" +
             "order by\n" +
             "    l_returnflag,\n" +
             "    l_linestatus"
-        );
+        , -1, date);
     }
 
     @Test
     public void testQ2() {
-        SqlCursor cursor = execute(
+        int size = Substitution.q2Size();
+        String type = Substitution.q2Type();
+        String region = Substitution.q2Region();
+
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    s.s_acctbal,\n" +
                 "    s.s_name,\n" +
@@ -209,12 +215,11 @@ public class TpcHTest extends SqlTestSupport {
                 "where\n" +
                 "    p.p_partkey = ps.ps_partkey\n" +
                 "    and s.s_suppkey = ps.ps_suppkey\n" +
-                "    and p.p_size = 10\n" +
-//                "    and p.p_size = [SIZE]\n" + // TODO
-                "    and p.p_type like '%[TYPE]'\n" +
+                "    and p.p_size = ?\n" +
+                "    and p.p_type like ?\n" +
                 "    and s.s_nationkey = n.n_nationkey\n" +
                 "    and n.n_regionkey = r.r_regionkey\n" +
-                "    and r.r_name = '[REGION]'\n" +
+                "    and r.r_name = ?\n" +
                 "    and ps.ps_supplycost = (        \n" +
                 "        select \n" +
                 "            min(ps2.ps_supplycost)\n" +
@@ -226,22 +231,25 @@ public class TpcHTest extends SqlTestSupport {
                 "            and s2.s_suppkey = ps2.ps_suppkey\n" +
                 "            and s2.s_nationkey = n2.n_nationkey\n" +
                 "            and n2.n_regionkey = r2.r_regionkey\n" +
-                "            and r2.r_name = '[REGION]'\n" +
+                "            and r2.r_name = ?\n" +
                 "    )\n" +
                 "order by\n" +
                 "    s.s_acctbal desc,\n" +
                 "    n.n_name,\n" +
                 "    s.s_name,\n" +
                 "    p.p_partkey"
-        );
+        , 100, size, type, region, region);
     }
 
     @Test
     public void testQ3() {
-        SqlCursor cursor = execute(
+        String segment = Substitution.q3Segment();
+        LocalDate date = Substitution.q3Date();
+
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    l.l_orderkey,\n" +
-                "    sum(l.l_extendedprice*(1-l.l_discount)) as revenue,\n" +
+                "    sum(l.l_extendedprice * (1 - l.l_discount)) as revenue,\n" +
                 "    o.o_orderdate,\n" +
                 "    o.o_shippriority\n" +
                 "from\n" +
@@ -249,13 +257,11 @@ public class TpcHTest extends SqlTestSupport {
                 "    orders o,\n" +
                 "    lineitem l\n" +
                 "where\n" +
-                "    c.c_mktsegment = '[SEGMENT]'\n" +
+                "    c.c_mktsegment = ?\n" +
                 "    and c.c_custkey = o.o_custkey\n" +
                 "    and l.l_orderkey = o.o_orderkey\n" +
-                "    and o.o_orderdate < date '1998-12-01'\n" +
-                "    and l.l_shipdate > date '1998-12-01'\n" +
-//                "    and o.o_orderdate < date '[DATE]'\n" + // TODO
-//                "    and l.l_shipdate > date '[DATE]'\n" +
+                "    and o.o_orderdate < ?\n" +
+                "    and l.l_shipdate > ?\n" +
                 "group by\n" +
                 "    l.l_orderkey,\n" +
                 "    o.o_orderdate,\n" +
@@ -263,12 +269,12 @@ public class TpcHTest extends SqlTestSupport {
                 "order by\n" +
                 "    revenue desc,\n" +
                 "    o.o_orderdate"
-        );
+        , -1, segment, date, date);
     }
 
     @Test
     public void testQ4() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    o.o_orderpriority,\n" +
                 "    count(*) as order_count\n" +
@@ -292,12 +298,12 @@ public class TpcHTest extends SqlTestSupport {
                 "    o.o_orderpriority\n" +
                 "order by\n" +
                 "    o.o_orderpriority"
-        );
+        , -1);
     }
 
     @Test
     public void testQ5() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    n.n_name,\n" +
                 "    sum(l.l_extendedprice * (1 - l.l_discount)) as revenue\n" +
@@ -324,12 +330,12 @@ public class TpcHTest extends SqlTestSupport {
                 "    n.n_name\n" +
                 "order by\n" +
                 "    revenue desc"
-        );
+        , -1);
     }
 
     @Test
     public void testQ6() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    sum(l.l_extendedprice*l.l_discount) as revenue\n" +
                 "from\n" +
@@ -343,12 +349,12 @@ public class TpcHTest extends SqlTestSupport {
 //                "    and l.l_shipdate < date '[DATE]' + interval '1' year\n" +
 //                "    and l.l_discount between [DISCOUNT] - 0.01 and [DISCOUNT] + 0.01\n" +
 //                "    and l.l_quantity < [QUANTITY]"
-        );
+        , -1);
     }
 
     @Test
     public void testQ7() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    supp_nation,\n" +
                 "    cust_nation,\n" +
@@ -386,12 +392,12 @@ public class TpcHTest extends SqlTestSupport {
                 "    supp_nation,\n" +
                 "    cust_nation,\n" +
                 "    l_year"
-        );
+        , -1);
     }
 
     @Test
     public void testQ8() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    o_year,\n" +
                 "    sum(case\n" +
@@ -429,12 +435,12 @@ public class TpcHTest extends SqlTestSupport {
                 "    o_year\n" +
                 "order by\n" +
                 "    o_year"
-        );
+        , -1);
     }
 
     @Test
     public void testQ9() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    nation,\n" +
                 "    o_year,\n" +
@@ -466,12 +472,12 @@ public class TpcHTest extends SqlTestSupport {
                 "order by\n" +
                 "    nation,\n" +
                 "    o_year desc"
-        );
+        , -1);
     }
 
     @Test
     public void testQ10() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    c.c_custkey,\n" +
                 "    c.c_name,\n" +
@@ -505,12 +511,12 @@ public class TpcHTest extends SqlTestSupport {
                 "    c.c_comment\n" +
                 "order by\n" +
                 "    revenue desc"
-        );
+        , -1);
     }
 
     @Test
     public void testQ11() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    ps.ps_partkey,\n" +
                 "    sum(ps.ps_supplycost * ps.ps_availqty) as val\n" +
@@ -539,12 +545,12 @@ public class TpcHTest extends SqlTestSupport {
                 "        )\n" +
                 "order by\n" +
                 "    val desc"
-        );
+        , -1);
     }
 
     @Test
     public void testQ12() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    l.l_shipmode,\n" +
                 "    sum(case\n" +
@@ -573,12 +579,12 @@ public class TpcHTest extends SqlTestSupport {
                 "    l.l_shipmode\n" +
                 "order by\n" +
                 "    l.l_shipmode"
-        );
+        , -1);
     }
 
     @Test
     public void testQ13() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    c_count, count(*) as custdist\n" +
                 "from (\n" +
@@ -597,12 +603,12 @@ public class TpcHTest extends SqlTestSupport {
                 "order by\n" +
                 "    custdist desc,\n" +
                 "    c_count desc"
-        );
+        , -1);
     }
 
     @Test
     public void testQ14() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    100.00 * sum(case\n" +
                 "        when p.p_type like 'PROMO%'\n" +
@@ -618,13 +624,13 @@ public class TpcHTest extends SqlTestSupport {
                 "    and l.l_shipdate < date '1999-01-01'"
 //                "    and l.l_shipdate >= date '[DATE]'\n" + // TODO
 //                "    and l.l_shipdate < date '[DATE]' + interval '1' month;"
-        );
+        , -1);
     }
 
     @Ignore("Fails of a COUNT(DISTINCT) aggregate")
     @Test
     public void testQ16() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    p.p_brand,\n" +
                 "    p.p_type,\n" +
@@ -656,12 +662,12 @@ public class TpcHTest extends SqlTestSupport {
                 "    p.p_brand,\n" +
                 "    p.p_type,\n" +
                 "    p.p_size"
-        );
+        , -1);
     }
 
     @Test
     public void testQ17() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    sum(l.l_extendedprice) / 7.0 as avg_yearly\n" +
                 "from\n" +
@@ -679,12 +685,12 @@ public class TpcHTest extends SqlTestSupport {
                 "        where\n" +
                 "            l2.l_partkey = p.p_partkey\n" +
                 ")"
-        );
+        , -1);
     }
 
     @Test
     public void testQ18() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    c.c_name,\n" +
                 "    c.c_custkey,\n" +
@@ -718,13 +724,13 @@ public class TpcHTest extends SqlTestSupport {
                 "order by\n" +
                 "    o.o_totalprice desc,\n" +
                 "    o.o_orderdate"
-        );
+        , -1);
     }
 
     @Ignore("com.hazelcast.sql.HazelcastSqlException: Unsupported type: DataType{base=OBJECT, precision=-1, scale=-1}")
     @Test
     public void testQ19() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    sum(l.l_extendedprice * (1 - l.l_discount) ) as revenue\n" +
                 "from\n" +
@@ -763,12 +769,12 @@ public class TpcHTest extends SqlTestSupport {
                 "        and l.l_shipmode in ('AIR', 'AIR REG')\n" +
                 "        and l.l_shipinstruct = 'DELIVER IN PERSON'\n" +
                 "    )"
-        );
+        , -1);
     }
 
     @Test
     public void testQ20() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    s.s_name,\n" +
                 "    s.s_address\n" +
@@ -808,12 +814,12 @@ public class TpcHTest extends SqlTestSupport {
                 "    and n.n_name = '[NATION]'\n" +
                 "order by\n" +
                 "    s.s_name"
-        );
+        , -1);
     }
 
     @Test
     public void testQ21() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    s.s_name,\n" +
                 "    count(*) as numwait\n" +
@@ -853,12 +859,12 @@ public class TpcHTest extends SqlTestSupport {
                 "order by\n" +
                 "    numwait desc,\n" +
                 "    s.s_name"
-        );
+        , -1);
     }
 
     @Test
     public void testQ22() {
-        SqlCursor cursor = execute(
+        List<SqlRow> rows = execute(
             "select\n" +
                 "    cntrycode,\n" +
                 "    count(*) as numcust,\n" +
@@ -893,23 +899,31 @@ public class TpcHTest extends SqlTestSupport {
                 "    cntrycode\n" +
                 "order by\n" +
                 "    cntrycode"
-        );
+        , -1);
     }
 
-    private static SqlCursorImpl execute(String sql) {
+    private static List<SqlRow> execute(String sql, int rowCount, Object... args) {
+        if (rowCount < 0) {
+            rowCount = 100;
+        }
+        
         OptimizerContext.setOptimizerConfig(OptimizerConfig.builder().setStatisticsEnabled(true).build());
 
-        SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql);
+        SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql, args);
         QueryPlan plan = res.getHandle().getPlan();
 
-        System.out.println(">>> First results: ");
+        List<SqlRow> rows = new ArrayList<>();
+        
+        System.out.println(">>> Results: ");
         int cnt = 0;
 
         for (SqlRow row : res) {
             cnt++;
 
-            if (cnt <= 10) {
+            if (cnt <= rowCount) {
                 System.out.println("\t" + row);
+
+                rows.add(row);
             }
         }
 
@@ -927,6 +941,6 @@ public class TpcHTest extends SqlTestSupport {
             System.out.println("\t" + entry.getKey() + " -> " + entry.getValue());
         }
 
-        return res;
+        return rows;
     }
 }

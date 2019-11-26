@@ -26,36 +26,33 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Column access expression.
+ * Dynamic parameter expression.
  */
-public class ColumnExpression<T> implements Expression<T> {
-    /** Index in the row. */
+public class ParameterExpression<T> implements Expression<T> {
+    /** Index. */
     private int index;
 
-    /** Type of the returned value. */
+    /** Type of the argument. */
     private transient DataType type;
 
-    public ColumnExpression() {
+    public ParameterExpression() {
         // No-op.
     }
 
-    public ColumnExpression(int index) {
+    public ParameterExpression(int index) {
         this.index = index;
     }
 
     @SuppressWarnings("unchecked")
-    @Override public T eval(QueryContext ctx, Row row) {
-        Object res = row.getColumn(index);
+    @Override
+    public T eval(QueryContext ctx, Row row) {
+        Object value = ctx.getArgument(index);
 
-        if (res != null) {
-            if (type == null) {
-                type = DataType.resolveType(res);
-            } else {
-                type.ensureSame(res);
-            }
+        if (value != null) {
+            type = DataType.resolveType(value);
         }
 
-        return (T) res;
+        return (T) value;
     }
 
     @Override
@@ -88,7 +85,7 @@ public class ColumnExpression<T> implements Expression<T> {
             return false;
         }
 
-        ColumnExpression<?> that = (ColumnExpression<?>) o;
+        ParameterExpression<?> that = (ParameterExpression<?>) o;
 
         return index == that.index;
     }

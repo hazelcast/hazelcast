@@ -27,6 +27,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
@@ -129,8 +130,11 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
      * @return Result.
      */
     private QueryHandle execute0(QueryPlan plan, List<Object> args) {
-        if (args == null) {
-            args = Collections.emptyList();
+        assert args != null;
+
+        if (plan.getParameterCount() > args.size()) {
+            throw new HazelcastSqlException(-1, "Not enough parameters [expected=" + plan.getParameterCount()
+                + ", actual=" + args.size() + ']');
         }
 
         QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());

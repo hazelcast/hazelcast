@@ -62,8 +62,8 @@ public class ReceiveSortMergeExec extends AbstractExec {
         this.inbox = inbox;
         this.expressions = expressions;
 
-        // If there is only one input edge, then normal ReceiveExec should be used instead.
-        assert inbox.getStripeCount() > 1;
+        // TODO: If there is only one input edge, then normal ReceiveExec should be used instead, since everything is already
+        //  sorted.
 
         stripes = new List[inbox.getStripeCount()];
         stripesDone = new boolean[inbox.getStripeCount()];

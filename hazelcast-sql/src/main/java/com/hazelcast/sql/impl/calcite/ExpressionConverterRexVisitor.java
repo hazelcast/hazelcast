@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExtractorExpression;
 import com.hazelcast.sql.impl.expression.ItemExpression;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideRemainderFunction;
 import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
@@ -84,11 +85,15 @@ import java.util.List;
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public final class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
-    /** Singleton. */
-    public static final ExpressionConverterRexVisitor INSTANCE = new ExpressionConverterRexVisitor();
+    /** Max observed parameter index. */
+    private int maxParameterIndex = -1;
 
-    private ExpressionConverterRexVisitor() {
+    public ExpressionConverterRexVisitor() {
         // No-op.
+    }
+
+    public int getParameterCount() {
+        return maxParameterIndex + 1;
     }
 
     @Override
@@ -438,7 +443,13 @@ public final class ExpressionConverterRexVisitor implements RexVisitor<Expressio
 
     @Override
     public Expression visitDynamicParam(RexDynamicParam dynamicParam) {
-        throw new UnsupportedOperationException();
+        int index = dynamicParam.getIndex();
+
+        if (index > maxParameterIndex) {
+            maxParameterIndex = index;
+        }
+
+        return new ParameterExpression(index);
     }
 
     @Override

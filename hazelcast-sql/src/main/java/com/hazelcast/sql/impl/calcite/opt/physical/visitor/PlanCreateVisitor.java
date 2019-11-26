@@ -119,6 +119,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Upstream nodes. Normally it is a one node, except of multi-source operations (e.g. joins, sets, subqueries). */
     private final Deque<PhysicalNode> upstreamNodes = new ArrayDeque<>();
 
+    /** Expression converter visitor. */
+    private final ExpressionConverterRexVisitor expressionConverter = new ExpressionConverterRexVisitor();
+
     /** ID of current edge. */
     private int nextEdgeGenerator;
 
@@ -174,6 +177,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             fragments,
             outboundEdgeMap,
             inboundEdgeMap,
+            expressionConverter.getParameterCount(),
             explain,
             stats,
             savePhysicalRel ? Collections.singleton(rootPhysicalRel) : null
@@ -372,7 +376,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<Expression> convertedProjects = new ArrayList<>(projects.size());
 
         for (RexNode project : projects) {
-            Expression convertedProject = project.accept(ExpressionConverterRexVisitor.INSTANCE);
+            Expression convertedProject = project.accept(expressionConverter);
 
             convertedProjects.add(convertedProject);
         }
@@ -436,7 +440,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
          PhysicalNode rightInput = pollSingleUpstream();
 
          RexNode condition = rel.getCondition();
-         Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
+         Expression convertedCondition = condition.accept(expressionConverter);
 
          NestedLoopJoinPhysicalNode joinNode = new NestedLoopJoinPhysicalNode(
              pollId(rel),
@@ -458,7 +462,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
          PhysicalNode rightInput = pollSingleUpstream();
 
          RexNode condition = rel.getCondition();
-         Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
+         Expression convertedCondition = condition.accept(expressionConverter);
 
          HashJoinPhysicalNode joinNode = new HashJoinPhysicalNode(
              pollId(rel),
@@ -595,12 +599,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     @SuppressWarnings("unchecked")
-    private static Expression<Boolean> convertFilter(RexNode expression) {
+    private Expression<Boolean> convertFilter(RexNode expression) {
         if (expression == null) {
             return null;
         }
 
-        Expression convertedExpression = expression.accept(ExpressionConverterRexVisitor.INSTANCE);
+        Expression convertedExpression = expression.accept(expressionConverter);
 
         return (Expression<Boolean>) convertedExpression;
     }

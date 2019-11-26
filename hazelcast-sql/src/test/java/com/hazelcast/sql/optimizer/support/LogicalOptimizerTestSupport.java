@@ -70,7 +70,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         List<Expression> projects = new ArrayList<>();
 
         for (RexNode projectExpr : project.getProjects()) {
-            projects.add(projectExpr.accept(ExpressionConverterRexVisitor.INSTANCE));
+            projects.add(projectExpr.accept(new ExpressionConverterRexVisitor()));
         }
 
         expProjects = expProjects != null ? new ArrayList<>(expProjects) : new ArrayList<>();
@@ -85,7 +85,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
 
         assertEquals(expType, join.getJoinType());
 
-        Expression filter = join.getCondition() != null ? join.getCondition().accept(ExpressionConverterRexVisitor.INSTANCE) : null;
+        Expression filter = join.getCondition() != null ? join.getCondition().accept(new ExpressionConverterRexVisitor()) : null;
         assertEquals(expFilter, filter);
 
         return join;
@@ -130,7 +130,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         assertFieldNames(expFields, scan.getTable().getRowType().getFieldNames());
         assertFieldIndexes(expProjects, scan.getProjects());
 
-        Expression filter = scan.getFilter() != null ? scan.getFilter().accept(ExpressionConverterRexVisitor.INSTANCE) : null;
+        Expression filter = scan.getFilter() != null ? scan.getFilter().accept(new ExpressionConverterRexVisitor()) : null;
 
         assertEquals(expFilter, filter);
     }

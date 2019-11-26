@@ -46,6 +46,9 @@ public class QueryPlan {
     /** Inbound edge mapping (from edge ID to owning fragment position). */
     private final Map<Integer, Integer> inboundEdgeMap;
 
+    /** Number of parameters. */
+    private final int parameterCount;
+
     /** Explain. */
     private final QueryExplain explain;
 
@@ -62,6 +65,7 @@ public class QueryPlan {
         List<QueryFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
+        int parameterCount,
         QueryExplain explain,
         OptimizerStatistics stats,
         Collection<Object> attachments
@@ -72,6 +76,7 @@ public class QueryPlan {
         this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
+        this.parameterCount = parameterCount;
         this.explain = explain;
         this.stats = stats;
         this.attachments = attachments;
@@ -99,6 +104,10 @@ public class QueryPlan {
 
     public Map<Integer, Integer> getInboundEdgeMap() {
         return inboundEdgeMap;
+    }
+
+    public int getParameterCount() {
+        return parameterCount;
     }
 
     public QueryExplain getExplain() {
