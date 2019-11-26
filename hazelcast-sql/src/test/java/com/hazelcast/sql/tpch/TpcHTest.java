@@ -27,12 +27,10 @@ import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlCursorImpl;
-import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.sql.tpch.model.ModelConfig;
 import com.hazelcast.sql.tpch.model.ModelLoader;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import org.apache.calcite.plan.RelOptUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -71,7 +69,6 @@ public class TpcHTest extends SqlTestSupport {
         member.getMap("orders");
         member.getReplicatedMap("nation");
         member.getReplicatedMap("region");
-
 
         ModelConfig modelConfig = ModelConfig.builder().setDirectory(DATA_DIR).setDownscale(DOWNSCALE).build();
         ModelLoader.load(modelConfig, member);
@@ -911,8 +908,9 @@ public class TpcHTest extends SqlTestSupport {
 
         System.out.println("Done: " + cnt);
 
-        PhysicalRel physicalRel = res.getHandle().getPlan().getAttachment(PhysicalRel.class);
-        System.out.println(RelOptUtil.toString(physicalRel));
+        for (SqlRow explainRow : res.getHandle().getPlan().getExplain().asCursor()) {
+            System.out.println((String) explainRow.getColumn(0));
+        }
 
         return res;
     }

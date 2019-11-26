@@ -97,9 +97,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, Consumer<Pack
 
             QueryPlan plan = getPlan(unwrappedSql);
 
-            QueryExplain explain = QueryExplain.fromPlan(sql, plan);
-
-            return explain.asCursor();
+            return plan.getExplain().asCursor();
         }
 
         QueryPlan plan = getPlan(sql);

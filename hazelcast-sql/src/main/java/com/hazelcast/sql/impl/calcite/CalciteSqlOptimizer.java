@@ -76,7 +76,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         PhysicalRel physicalRel = context.optimizePhysical(logicalRel);
 
         // 6. Create plan.
-        return doCreatePlan(physicalRel);
+        return doCreatePlan(sql, context, physicalRel);
     }
 
     /**
@@ -85,7 +85,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private QueryPlan doCreatePlan(PhysicalRel rel) {
+    private QueryPlan doCreatePlan(String sql, OptimizerContext context, PhysicalRel rel) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
@@ -125,7 +125,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             partMap,
             dataMemberIds,
             dataMemberAddresses,
-            relIdMap
+            relIdMap,
+            sql,
+            context.getConfig().isSavePhysicalRel()
         );
 
         rel.visit(visitor);

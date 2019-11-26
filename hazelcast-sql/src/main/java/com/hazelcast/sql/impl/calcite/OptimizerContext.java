@@ -28,11 +28,11 @@ import com.hazelcast.sql.impl.calcite.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
+import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRule;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRule;
@@ -99,6 +99,9 @@ public final class OptimizerContext {
     /** Converter: whether to trim unused fields. */
     private static final boolean CONVERTER_TRIM_UNUSED_FIELDS = true;
 
+    /** Optimizer config. */
+    private final OptimizerConfig config;
+
     /** Basic Calcite config. */
     private final VolcanoPlanner planner;
 
@@ -108,7 +111,13 @@ public final class OptimizerContext {
     /** SQL converter. */
     private final SqlToRelConverter sqlToRelConverter;
 
-    private OptimizerContext(SqlValidator validator, SqlToRelConverter sqlToRelConverter, VolcanoPlanner planner) {
+    private OptimizerContext(
+        OptimizerConfig config,
+        SqlValidator validator,
+        SqlToRelConverter sqlToRelConverter,
+        VolcanoPlanner planner
+    ) {
+        this.config = config;
         this.validator = validator;
         this.sqlToRelConverter = sqlToRelConverter;
         this.planner = planner;
@@ -125,7 +134,7 @@ public final class OptimizerContext {
 
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
-        return create(rootSchema, memberCount);
+        return create(rootSchema, memberCount, OptimizerConfig.builder().build());
     }
 
     /**
@@ -135,16 +144,16 @@ public final class OptimizerContext {
      * @param memberCount Member count.
      * @return Context.
      */
-    public static OptimizerContext create(HazelcastSchema rootSchema, int memberCount) {
+    public static OptimizerContext create(HazelcastSchema rootSchema, int memberCount, OptimizerConfig config) {
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
-        CalciteConnectionConfig config = createConnectionConfig();
-        Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, config, rootSchema);
+        CalciteConnectionConfig connectionConfig = createConnectionConfig();
+        Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, connectionConfig, rootSchema);
         SqlValidator validator = createValidator(typeFactory, catalogReader);
-        VolcanoPlanner planner = createPlanner(config);
+        VolcanoPlanner planner = createPlanner(connectionConfig);
         HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, memberCount);
         SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(catalogReader, validator, cluster);
 
-        return new OptimizerContext(validator, sqlToRelConverter, planner);
+        return new OptimizerContext(config, validator, sqlToRelConverter, planner);
     }
 
     /**
@@ -272,6 +281,10 @@ public final class OptimizerContext {
         );
 
         return (PhysicalRel) res;
+    }
+
+    public OptimizerConfig getConfig() {
+        return config;
     }
 
     private static CalciteConnectionConfig createConnectionConfig() {

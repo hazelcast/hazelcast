@@ -16,36 +16,72 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.physical.PhysicalNode;
-
 /**
- * A single element of a {@link QueryExplain}
+ * Query explain element.
  */
 public class QueryExplainElement {
-    /** Owning fragment. */
-    private final QueryFragment fragment;
+    /** ID of the node in the plan. */
+    private final int id;
 
-    /** Node. */
-    private final PhysicalNode node;
+    /** Node type. */
+    private final String type;
 
-    /** Nesting level. */
+    /** Explain of the node. */
+    private final String explain;
+
+    /** Estimated number of rows. */
+    private final double rows;
+
+    /** Estimated CPU usage. */
+    private final double cpu;
+
+    /** Estimated IO. */
+    private final double io;
+
+    /** Level of nesting. */
     private final int level;
 
-    public QueryExplainElement(QueryFragment fragment, PhysicalNode node, int level) {
-        this.fragment = fragment;
-        this.node = node;
+    public QueryExplainElement(int id, String type, String explain, double rows, double cpu, double io, int level) {
+        this.id = id;
+        this.type = type;
+        this.explain = explain;
+        this.rows = rows;
+        this.cpu = cpu;
+        this.io = io;
         this.level = level;
     }
 
-    public QueryFragment getFragment() {
-        return fragment;
+    public int getId() {
+        return id;
     }
 
-    public PhysicalNode getNode() {
-        return node;
+    public String getType() {
+        return type;
+    }
+
+    public String getExplain() {
+        return explain;
+    }
+
+    public double getRows() {
+        return rows;
+    }
+
+    public double getCpu() {
+        return cpu;
+    }
+
+    public double getIo() {
+        return io;
     }
 
     public int getLevel() {
         return level;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{id=" + id + ", type='" + type + ", explain='" + explain
+            + ", rows=" + rows + ", cpu=" + cpu + ", io=" + io + ", level=" + level + '}';
     }
 }

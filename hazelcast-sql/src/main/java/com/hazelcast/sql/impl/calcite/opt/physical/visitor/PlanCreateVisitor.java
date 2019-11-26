@@ -19,12 +19,14 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryExplain;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPhysicalNodeVisitor;
 import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
 import com.hazelcast.sql.impl.calcite.opt.physical.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
@@ -101,6 +103,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Rel ID map. */
     private final Map<PhysicalRel, List<Integer>> relIdMap;
 
+    /** Original SQL. */
+    private final String sql;
+
+    /** Whether physical rel should be saved in the plan. */
+    private final boolean savePhysicalRel;
+
     /** Prepared fragments. */
     private final List<QueryFragment> fragments = new ArrayList<>();
 
@@ -117,12 +125,16 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
         List<Address> dataMemberAddresses,
-        Map<PhysicalRel, List<Integer>> relIdMap
+        Map<PhysicalRel, List<Integer>> relIdMap,
+        String sql,
+        boolean savePhysicalRel
     ) {
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
         this.dataMemberAddresses = dataMemberAddresses;
         this.relIdMap = relIdMap;
+        this.sql = sql;
+        this.savePhysicalRel = savePhysicalRel;
     }
 
     public QueryPlan getPlan() {
@@ -147,6 +159,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         assert rootPhysicalRel != null;
 
+        QueryExplain explain = ExplainCreator.explain(sql, rootPhysicalRel);
+
         return new QueryPlan(
             partMap,
             dataMemberIds,
@@ -154,7 +168,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             fragments,
             outboundEdgeMap,
             inboundEdgeMap,
-            Collections.singleton(rootPhysicalRel)
+            explain,
+            savePhysicalRel ? Collections.singleton(rootPhysicalRel) : null
         );
     }
 

@@ -46,6 +46,9 @@ public class QueryPlan {
     /** Inbound edge mapping (from edge ID to owning fragment position). */
     private final Map<Integer, Integer> inboundEdgeMap;
 
+    /** Explain. */
+    private final QueryExplain explain;
+
     /** Optional attachments. */
     private final Collection<Object> attachments;
 
@@ -56,6 +59,7 @@ public class QueryPlan {
         List<QueryFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
+        QueryExplain explain,
         Collection<Object> attachments
     ) {
         this.partMap = partMap;
@@ -64,6 +68,7 @@ public class QueryPlan {
         this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
+        this.explain = explain;
         this.attachments = attachments;
     }
 
@@ -89,6 +94,10 @@ public class QueryPlan {
 
     public Map<Integer, Integer> getInboundEdgeMap() {
         return inboundEdgeMap;
+    }
+
+    public QueryExplain getExplain() {
+        return explain;
     }
 
     @SuppressWarnings("unchecked")

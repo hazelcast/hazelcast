@@ -18,15 +18,12 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.RootPhysicalNode;
-import com.hazelcast.sql.impl.physical.io.EdgeAwarePhysicalNode;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Query plan descriptor.
@@ -38,19 +35,9 @@ public final class QueryExplain {
     /** Elements.  */
     private final List<QueryExplainElement> elements;
 
-    private QueryExplain(String sql, List<QueryExplainElement> elements) {
+    public QueryExplain(String sql, List<QueryExplainElement> elements) {
         this.sql = sql;
         this.elements = elements;
-    }
-
-    public static QueryExplain fromPlan(String sql, QueryPlan plan) {
-        QueryFragment rootFragment = getRootFragment(plan.getFragments());
-
-        PlanCollector collector = new PlanCollector(plan.getFragments(), plan.getOutboundEdgeMap(), rootFragment);
-
-        List<QueryExplainElement> elements = collector.collect();
-
-        return new QueryExplain(sql, elements);
     }
 
     public SqlCursor asCursor() {
@@ -99,96 +86,9 @@ public final class QueryExplain {
             res.append("  ");
         }
 
-        // TODO: Use special "explain" method here to avoid printing trash.
-        res.append(element.getNode().toString());
+        res.append(element.getExplain());
 
         return res.toString();
-    }
-
-    /**
-     * Plan collector.
-     */
-    private static final class PlanCollector {
-        /** Participating fragments. */
-        private final List<QueryFragment> fragments;
-
-        /** Map from the edge ID to it's sending fragment index. */
-        private final Map<Integer, Integer> outboundEdgeMap;
-
-        /** Collected elements. */
-        private final List<QueryExplainElement> elements = new ArrayList<>(1);
-
-        /** Current fragment. */
-        private QueryFragment curFragment;
-
-        /** Current level. */
-        private int level;
-
-        private PlanCollector(List<QueryFragment> fragments, Map<Integer, Integer> outboundEdgeMap, QueryFragment curFragment) {
-            this.fragments = fragments;
-            this.outboundEdgeMap = outboundEdgeMap;
-            this.curFragment = curFragment;
-        }
-
-        private List<QueryExplainElement> collect() {
-            PhysicalNode node = curFragment.getNode();
-
-            processNode(node);
-
-            return elements;
-        }
-
-        private void processNode(PhysicalNode node) {
-            add(node);
-
-            if (node instanceof EdgeAwarePhysicalNode) {
-                EdgeAwarePhysicalNode node0 = (EdgeAwarePhysicalNode) node;
-
-                if (!node0.isSender()) {
-                    assert node0.getInputCount() == 0;
-
-                    QueryFragment childFragment = fragmentByEdge(node0.getEdgeId());
-
-                    processChildFragment(childFragment);
-                }
-            }
-
-            for (int i = 0; i < node.getInputCount(); i++) {
-                PhysicalNode child = node.getInput(i);
-
-                processChildNode(child);
-            }
-        }
-
-        private void add(PhysicalNode node) {
-            elements.add(new QueryExplainElement(curFragment, node, level));
-        }
-
-        private void processChildNode(PhysicalNode node) {
-            level++;
-
-            processNode(node);
-
-            level--;
-        }
-
-        private void processChildFragment(QueryFragment fragment) {
-            QueryFragment oldFragment = curFragment;
-
-            curFragment = fragment;
-
-            processChildNode(fragment.getNode());
-
-            curFragment = oldFragment;
-        }
-
-        private QueryFragment fragmentByEdge(int edgeId) {
-            int fragmentIndex = outboundEdgeMap.get(edgeId);
-
-            assert fragmentIndex < fragments.size();
-
-            return fragments.get(fragmentIndex);
-        }
     }
 
     /**
