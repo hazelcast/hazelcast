@@ -34,84 +34,97 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Applies given MC config (client filter list).
+ * Initiate WAN sync for a specific map or all maps
  */
-@Generated("b65e9fe40f3406a96061bc13a810d5a1")
-public final class MCApplyMCConfigCodec {
-    //hex: 0x200D00
-    public static final int REQUEST_MESSAGE_TYPE = 2100480;
-    //hex: 0x200D01
-    public static final int RESPONSE_MESSAGE_TYPE = 2100481;
-    private static final int REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("e19c0d59ab3cc6947abee2191e5128ef")
+public final class MCWanSyncMapCodec {
+    //hex: 0x201400
+    public static final int REQUEST_MESSAGE_TYPE = 2102272;
+    //hex: 0x201401
+    public static final int RESPONSE_MESSAGE_TYPE = 2102273;
+    private static final int REQUEST_WAN_SYNC_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_WAN_SYNC_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_UUID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
 
-    private MCApplyMCConfigCodec() {
+    private MCWanSyncMapCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * ETag value of the config.
+         * Name of the WAN replication to initiate WAN sync for
          */
-        public java.lang.String eTag;
+        public java.lang.String wanReplicationName;
 
         /**
-         * The mode for client filtering:
-         * 0 - DISABLED
-         * 1 - WHITELIST
-         * 2 - BLACKLIST
+         * ID of the WAN publisher to initiate WAN sync for
          */
-        public int clientBwListMode;
+        public java.lang.String wanPublisherId;
 
         /**
-         * Client filter list entries.
+         * Whether all maps are going to be synced or only a single one:
+         * 0 - ALL_MAPS
+         * 1 - SINGLE_MAP
          */
-        public java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries;
+        public int wanSyncType;
+
+        /**
+         * Name of the map to trigger WAN sync on, null if all maps are to be synced
+         */
+        public @Nullable java.lang.String mapName;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, java.util.Collection<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
+    public static ClientMessage encodeRequest(java.lang.String wanReplicationName, java.lang.String wanPublisherId, int wanSyncType, @Nullable java.lang.String mapName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.ApplyMCConfig");
+        clientMessage.setOperationName("MC.WanSyncMap");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET, clientBwListMode);
+        encodeInt(initialFrame.content, REQUEST_WAN_SYNC_TYPE_FIELD_OFFSET, wanSyncType);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, eTag);
-        ListMultiFrameCodec.encode(clientMessage, clientBwListEntries, ClientBwListEntryCodec::encode);
+        StringCodec.encode(clientMessage, wanReplicationName);
+        StringCodec.encode(clientMessage, wanPublisherId);
+        CodecUtil.encodeNullable(clientMessage, mapName, StringCodec::encode);
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCWanSyncMapCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.clientBwListMode = decodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET);
-        request.eTag = StringCodec.decode(iterator);
-        request.clientBwListEntries = ListMultiFrameCodec.decode(iterator, ClientBwListEntryCodec::decode);
+        request.wanSyncType = decodeInt(initialFrame.content, REQUEST_WAN_SYNC_TYPE_FIELD_OFFSET);
+        request.wanReplicationName = StringCodec.decode(iterator);
+        request.wanPublisherId = StringCodec.decode(iterator);
+        request.mapName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return request;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
+        /**
+         * UUID of the synchronization
+         */
+        public java.util.UUID uuid;
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeUUID(initialFrame.content, RESPONSE_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
 
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCWanSyncMapCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        response.uuid = decodeUUID(initialFrame.content, RESPONSE_UUID_FIELD_OFFSET);
         return response;
     }
 

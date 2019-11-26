@@ -34,63 +34,53 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Applies given MC config (client filter list).
+ * Clear WAN replication queues for the given wan replication and publisher
  */
-@Generated("b65e9fe40f3406a96061bc13a810d5a1")
-public final class MCApplyMCConfigCodec {
-    //hex: 0x200D00
-    public static final int REQUEST_MESSAGE_TYPE = 2100480;
-    //hex: 0x200D01
-    public static final int RESPONSE_MESSAGE_TYPE = 2100481;
-    private static final int REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("f9d310c32e43cf4f496a2277687e2737")
+public final class MCClearWanQueuesCodec {
+    //hex: 0x201200
+    public static final int REQUEST_MESSAGE_TYPE = 2101760;
+    //hex: 0x201201
+    public static final int RESPONSE_MESSAGE_TYPE = 2101761;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCApplyMCConfigCodec() {
+    private MCClearWanQueuesCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * ETag value of the config.
+         * Name of the WAN replication to clear WAN replication queues of.
          */
-        public java.lang.String eTag;
+        public java.lang.String wanReplicationName;
 
         /**
-         * The mode for client filtering:
-         * 0 - DISABLED
-         * 1 - WHITELIST
-         * 2 - BLACKLIST
+         * ID of the WAN publisher to clear WAN replication queues of.
          */
-        public int clientBwListMode;
-
-        /**
-         * Client filter list entries.
-         */
-        public java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries;
+        public java.lang.String wanPublisherId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, java.util.Collection<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
+    public static ClientMessage encodeRequest(java.lang.String wanReplicationName, java.lang.String wanPublisherId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.ApplyMCConfig");
+        clientMessage.setOperationName("MC.ClearWanQueues");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET, clientBwListMode);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, eTag);
-        ListMultiFrameCodec.encode(clientMessage, clientBwListEntries, ClientBwListEntryCodec::encode);
+        StringCodec.encode(clientMessage, wanReplicationName);
+        StringCodec.encode(clientMessage, wanPublisherId);
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCClearWanQueuesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        request.clientBwListMode = decodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET);
-        request.eTag = StringCodec.decode(iterator);
-        request.clientBwListEntries = ListMultiFrameCodec.decode(iterator, ClientBwListEntryCodec::decode);
+        //empty initial frame
+        iterator.next();
+        request.wanReplicationName = StringCodec.decode(iterator);
+        request.wanPublisherId = StringCodec.decode(iterator);
         return request;
     }
 
@@ -107,7 +97,7 @@ public final class MCApplyMCConfigCodec {
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCClearWanQueuesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame

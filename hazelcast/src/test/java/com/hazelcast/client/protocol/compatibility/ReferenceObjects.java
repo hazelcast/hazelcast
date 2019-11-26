@@ -46,6 +46,7 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
+import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
@@ -648,6 +649,8 @@ public class ReferenceObjects {
     public static DistributedObjectInfo aDistributedObjectInfo = new DistributedObjectInfo(aString, aString);
     public static Member aMember = new MemberImpl(anAddress, aUUID, aMapOfStringToString, aBoolean);
     public static DefaultQueryCacheEventData aQueryCacheEventData;
+    public static MCEventDTO aMCEvent = new MCEventDTO(aLong, anInt, aMapOfStringToString);
+    public static List<MCEventDTO> aListOfMCEvents = Collections.singletonList(aMCEvent);
 
     static {
         aQueryCacheEventData = new DefaultQueryCacheEventData();

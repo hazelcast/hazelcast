@@ -34,63 +34,63 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Applies given MC config (client filter list).
+ * Stop, pause or resume WAN replication for the given WAN replication and publisher.
  */
-@Generated("b65e9fe40f3406a96061bc13a810d5a1")
-public final class MCApplyMCConfigCodec {
-    //hex: 0x200D00
-    public static final int REQUEST_MESSAGE_TYPE = 2100480;
-    //hex: 0x200D01
-    public static final int RESPONSE_MESSAGE_TYPE = 2100481;
-    private static final int REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("d09141f9a87e39c22e695eebb5d3e931")
+public final class MCChangeWanReplicationStateCodec {
+    //hex: 0x201100
+    public static final int REQUEST_MESSAGE_TYPE = 2101504;
+    //hex: 0x201101
+    public static final int RESPONSE_MESSAGE_TYPE = 2101505;
+    private static final int REQUEST_NEW_STATE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_STATE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCApplyMCConfigCodec() {
+    private MCChangeWanReplicationStateCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * ETag value of the config.
+         * Name of the WAN replication to change state of.
          */
-        public java.lang.String eTag;
+        public java.lang.String wanReplicationName;
 
         /**
-         * The mode for client filtering:
-         * 0 - DISABLED
-         * 1 - WHITELIST
-         * 2 - BLACKLIST
+         * ID of the WAN publisher to change state of.
          */
-        public int clientBwListMode;
+        public java.lang.String wanPublisherId;
 
         /**
-         * Client filter list entries.
+         * New state for the WAN publisher:
+         * 0 - REPLICATING
+         * 1 - PAUSED
+         * 2 - STOPPED
          */
-        public java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries;
+        public byte newState;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, java.util.Collection<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
+    public static ClientMessage encodeRequest(java.lang.String wanReplicationName, java.lang.String wanPublisherId, byte newState) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.ApplyMCConfig");
+        clientMessage.setOperationName("MC.ChangeWanReplicationState");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET, clientBwListMode);
+        encodeByte(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET, newState);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, eTag);
-        ListMultiFrameCodec.encode(clientMessage, clientBwListEntries, ClientBwListEntryCodec::encode);
+        StringCodec.encode(clientMessage, wanReplicationName);
+        StringCodec.encode(clientMessage, wanPublisherId);
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCChangeWanReplicationStateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.clientBwListMode = decodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET);
-        request.eTag = StringCodec.decode(iterator);
-        request.clientBwListEntries = ListMultiFrameCodec.decode(iterator, ClientBwListEntryCodec::decode);
+        request.newState = decodeByte(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET);
+        request.wanReplicationName = StringCodec.decode(iterator);
+        request.wanPublisherId = StringCodec.decode(iterator);
         return request;
     }
 
@@ -107,7 +107,7 @@ public final class MCApplyMCConfigCodec {
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCChangeWanReplicationStateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame

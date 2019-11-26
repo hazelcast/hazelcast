@@ -6662,7 +6662,7 @@ public class ClientCompatibilityNullTest_2_0 {
     @Test
     public void test_MCApplyMCConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 791;
-        ClientMessage encoded = MCApplyMCConfigCodec.encodeRequest(aString, anInt, null);
+        ClientMessage encoded = MCApplyMCConfigCodec.encodeRequest(aString, anInt, aListOfClientBwListEntries);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6721,6 +6721,117 @@ public class ClientCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 798;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCChangeClusterVersionCodec.ResponseParameters parameters = MCChangeClusterVersionCodec.decodeResponse(fromFile);
+    }
+
+    @Test
+    public void test_MCChangeWanReplicationStateCodec_encodeRequest() {
+        int fileClientMessageIndex = 799;
+        ClientMessage encoded = MCChangeWanReplicationStateCodec.encodeRequest(aString, aString, aByte);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCChangeWanReplicationStateCodec_decodeResponse() {
+        int fileClientMessageIndex = 800;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCChangeWanReplicationStateCodec.ResponseParameters parameters = MCChangeWanReplicationStateCodec.decodeResponse(fromFile);
+    }
+
+    @Test
+    public void test_MCClearWanQueuesCodec_encodeRequest() {
+        int fileClientMessageIndex = 801;
+        ClientMessage encoded = MCClearWanQueuesCodec.encodeRequest(aString, aString);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCClearWanQueuesCodec_decodeResponse() {
+        int fileClientMessageIndex = 802;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCClearWanQueuesCodec.ResponseParameters parameters = MCClearWanQueuesCodec.decodeResponse(fromFile);
+    }
+
+    @Test
+    public void test_MCAddWanReplicationConfigCodec_encodeRequest() {
+        int fileClientMessageIndex = 803;
+        ClientMessage encoded = MCAddWanReplicationConfigCodec.encodeRequest(aString, aString, null, aString, anInt, anInt, anInt, anInt, anInt, anInt);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCAddWanReplicationConfigCodec_decodeResponse() {
+        int fileClientMessageIndex = 804;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCAddWanReplicationConfigCodec.ResponseParameters parameters = MCAddWanReplicationConfigCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aListOfStrings, parameters.addedPublisherIds));
+        assertTrue(isEqual(aListOfStrings, parameters.ignoredPublisherIds));
+    }
+
+    @Test
+    public void test_MCWanSyncMapCodec_encodeRequest() {
+        int fileClientMessageIndex = 805;
+        ClientMessage encoded = MCWanSyncMapCodec.encodeRequest(aString, aString, anInt, null);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCWanSyncMapCodec_decodeResponse() {
+        int fileClientMessageIndex = 806;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCWanSyncMapCodec.ResponseParameters parameters = MCWanSyncMapCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(aUUID, parameters.uuid));
+    }
+
+    @Test
+    public void test_MCCheckWanConsistencyCodec_encodeRequest() {
+        int fileClientMessageIndex = 807;
+        ClientMessage encoded = MCCheckWanConsistencyCodec.encodeRequest(aString, aString, null);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCCheckWanConsistencyCodec_decodeResponse() {
+        int fileClientMessageIndex = 808;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCCheckWanConsistencyCodec.ResponseParameters parameters = MCCheckWanConsistencyCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(null, parameters.uuid));
+    }
+
+    @Test
+    public void test_MCAddMCEventListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 809;
+        ClientMessage encoded = MCAddMCEventListenerCodec.encodeRequest();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_MCAddMCEventListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 810;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCAddMCEventListenerCodec.ResponseParameters parameters = MCAddMCEventListenerCodec.decodeResponse(fromFile);
+    }
+
+    private class MCAddMCEventListenerCodecHandler extends MCAddMCEventListenerCodec.AbstractEventHandler {
+        @Override
+        public void handleEventBatchEvent(java.lang.String cluster, java.lang.String address, java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
+            assertTrue(isEqual(aString, cluster));
+            assertTrue(isEqual(aString, address));
+            assertTrue(isEqual(aListOfMCEvents, events));
+        }
+    }
+
+    @Test
+    public void test_MCAddMCEventListenerCodec_handleEventBatchEvent() {
+        int fileClientMessageIndex = 811;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        MCAddMCEventListenerCodecHandler handler = new MCAddMCEventListenerCodecHandler();
+        handler.handle(fromFile);
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
