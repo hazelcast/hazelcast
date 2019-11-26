@@ -344,7 +344,6 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                               .add("memberVersion", m.getVersion().toString()))
                       .forEach(membersArray::add);
         JsonObject response = new JsonObject()
-                .add("memberList", clusterService.getMemberListString())
                 .add("members", membersArray)
                 .add("connectionCount", cem.getActiveConnections().size())
                 .add("allConnectionCount", aem.getActiveConnections().size());
