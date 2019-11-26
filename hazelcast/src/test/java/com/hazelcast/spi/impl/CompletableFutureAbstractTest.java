@@ -908,8 +908,26 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void thenRunAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.thenRunAsync(() -> ignore(), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
     public void thenApplyAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.thenApplyAsync(v -> null, REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void thenApplyAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
@@ -926,8 +944,26 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void thenAcceptAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.thenAcceptAsync(v -> ignore(), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
     public void handleAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.handleAsync((v, t) -> null, REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void handleAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
@@ -944,8 +980,26 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void whenCompleteAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.whenCompleteAsync((v, t) -> ignore(), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
     public void acceptEitherAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.acceptEitherAsync(newCompletedFuture(null), v -> ignore(), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void acceptEitherAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
@@ -962,8 +1016,26 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void applyToEitherAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.applyToEitherAsync(newCompletedFuture(null), v -> null, REJECTING_EXECUTOR).join();
+    }
+
+    @Test
     public void runAfterBothAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.runAfterBothAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void runAfterBothAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
@@ -980,8 +1052,26 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void runAfterEitherAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.runAfterEitherAsync(newCompletedFuture(null), () -> ignore(), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
     public void thenAcceptBothAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.thenAcceptBothAsync(newCompletedFuture(null), (v, u)  -> ignore(), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void thenAcceptBothAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
@@ -998,8 +1088,26 @@ public abstract class CompletableFutureAbstractTest {
     }
 
     @Test
+    public void thenCombineAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.thenCombineAsync(newCompletedFuture(null), (v, u)  -> null, REJECTING_EXECUTOR).join();
+    }
+
+    @Test
     public void thenComposeAsync_whenExecutionRejected() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
+
+        expectedException.expect(CompletionException.class);
+        expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));
+        future.thenComposeAsync(v -> newCompletedFuture(null), REJECTING_EXECUTOR).join();
+    }
+
+    @Test
+    public void thenComposeAsync_onIncompleteFuture_whenExecutionRejected() {
+        CompletableFuture<Object> future = newCompletableFuture(false, 1000L);
 
         expectedException.expect(CompletionException.class);
         expectedException.expectCause(new RootCauseMatcher(RejectedExecutionException.class));

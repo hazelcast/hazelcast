@@ -1185,21 +1185,16 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public Data executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public InternalCompletableFuture<Data> executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
         MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
         operation.setThreadId(getThreadId());
         validateEntryProcessorForSingleKeyProcessing(entryProcessor);
-        try {
-            Future future = operationService
-                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setResultDeserialized(false)
-                    .invoke();
-            return (Data) future.get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return operationService
+                .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                .setResultDeserialized(false)
+                .invoke();
     }
 
     private static void validateEntryProcessorForSingleKeyProcessing(EntryProcessor entryProcessor) {
@@ -1241,28 +1236,6 @@ abstract class MapProxySupport<K, V>
                     }
                 });
         return resultFuture;
-    }
-
-    public <R> InternalCompletableFuture<R> executeOnKeyInternal(Object key,
-                                                                 EntryProcessor<K, V, R> entryProcessor,
-                                                                 ExecutionCallback<? super R> callback) {
-        Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(key);
-        MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
-        operation.setThreadId(getThreadId());
-        try {
-            if (callback == null) {
-                return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            } else {
-                InvocationFuture<R> future = operationService
-                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .invoke();
-                future.whenCompleteAsync(new MapExecutionCallbackAdapter(callback));
-                return future;
-            }
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
     }
 
     /**

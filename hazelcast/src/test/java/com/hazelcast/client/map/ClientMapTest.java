@@ -25,15 +25,14 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -594,19 +593,11 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         final AtomicInteger result = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(1);
-        ExecutionCallback<Integer> executionCallback = new ExecutionCallback<Integer>() {
-            @Override
-            public void onResponse(Integer response) {
-                result.set(response);
-                latch.countDown();
-            }
 
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        };
-
-        map.submitToKey(1, new IncrementerEntryProcessor(), executionCallback);
+        map.submitToKey(1, new IncrementerEntryProcessor()).thenAcceptAsync(v -> {
+            result.set(v);
+            latch.countDown();
+        });
         assertOpenEventually(latch);
         assertEquals(2, result.get());
 

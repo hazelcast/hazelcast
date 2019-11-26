@@ -21,7 +21,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.listener.MapListener;
@@ -111,7 +110,6 @@ import java.util.concurrent.TimeUnit;
  * <ul>
  * <li>{@link IMap#executeOnKey(Object, EntryProcessor)}</li>
  * <li>{@link IMap#submitToKey(Object, EntryProcessor)}</li>
- * <li>{@link IMap#submitToKey(Object, EntryProcessor, ExecutionCallback)}</li>
  * </ul>
  * However, there are following methods that run the {@code EntryProcessor}
  * on more than one entry.
@@ -2540,91 +2538,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
                                 @Nonnull EntryProcessor<K, V, R> entryProcessor);
-
-    /**
-     * Applies the user defined {@code EntryProcessor} to the entry mapped by
-     * the {@code key} with specified {@link ExecutionCallback} to listen event
-     * status and returns immediately.
-     * <p>
-     * The {@code EntryProcessor} may implement the {@link Offloadable} and
-     * {@link ReadOnly} interfaces.
-     * <p>
-     * If the EntryProcessor implements the {@link Offloadable} interface the
-     * processing will be offloaded to the given ExecutorService allowing
-     * unblocking of the partition-thread, which means that other
-     * partition-operations may proceed. The key will be locked for the time-span
-     * of the processing in order to not generate a write-conflict.
-     * In this case the threading looks as follows:
-     * <ol>
-     * <li>partition-thread (fetch &amp; lock)</li>
-     * <li>execution-thread (process)</li>
-     * <li>partition-thread (set &amp; unlock, or just unlock if no changes)</li>
-     * </ol>
-     * If the EntryProcessor implements the Offloadable and ReadOnly interfaces
-     * the processing will be offloaded to the given ExecutorService allowing
-     * unblocking the partition-thread. Since the EntryProcessor is not supposed
-     * to do any changes to the Entry the key will NOT be locked for the time-span
-     * of the processing. In this case the threading looks as follows:
-     * <ol>
-     * <li>partition-thread (fetch &amp; lock)</li>
-     * <li>execution-thread (process)</li>
-     * </ol>
-     * In this case the {@link EntryProcessor#getBackupProcessor()} has to return
-     * {@code null}; otherwise an {@link IllegalArgumentException} exception is thrown.
-     * <p>
-     * If the EntryProcessor implements only {@link ReadOnly} without implementing
-     * {@link Offloadable} the processing unit will not be offloaded, however,
-     * the EntryProcessor will not wait for the lock to be acquired, since the EP
-     * will not do any modifications.
-     * <p>
-     * If the EntryProcessor implements ReadOnly and modifies the entry it is processing an UnsupportedOperationException
-     * will be thrown.
-     * <p>
-     * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
-     * <p>
-     * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
-     * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
-     * The input allows providing context to the entry backup processor - for example the "delta"
-     * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
-     * <p>
-     * See {@link #executeOnKey(Object, EntryProcessor)} for sync version of this method.
-     *
-     * <p><b>Interactions with the map store</b>
-     * <p>
-     * If value with {@code key} is not found in memory
-     * {@link MapLoader#load(Object)} is invoked to load the value from
-     * the map store backing the map.
-     * <p>
-     * If the entryProcessor updates the entry and write-through
-     * persistence mode is configured, before the value is stored
-     * in memory, {@link MapStore#store(Object, Object)} is called to
-     * write the value into the map store.
-     * <p>
-     * If the entryProcessor updates the entry's value to null value and
-     * write-through persistence mode is configured, before the value is
-     * removed from the memory, {@link MapStore#delete(Object)} is
-     * called to delete the value from the map store.
-     * <p>
-     * Any exception thrown by the map store fail the operation and are
-     * propagated to the provided callback via {@link
-     * ExecutionCallback#onFailure(Throwable)}.
-     * <p>
-     * If write-behind persistence mode is configured with
-     * write-coalescing turned off,
-     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
-     * if the write-behind queue has reached its per-node maximum
-     * capacity.
-     *
-     * @param key            key to be processed
-     * @param entryProcessor processor to process the key
-     * @param callback       to listen whether operation is finished or not
-     * @param <R>            return type for entry processor
-     * @see Offloadable
-     * @see ReadOnly
-     */
-    <R> void submitToKey(@Nonnull K key,
-                         @Nonnull EntryProcessor<K, V, R> entryProcessor,
-                         @Nullable ExecutionCallback<? super R> callback);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.

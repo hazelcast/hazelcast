@@ -607,7 +607,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         };
 
         int randomKey = random.nextInt(mapSize);
-        clientMap.submitToKey(randomKey, new IncrementEntryProcessor(), callback);
+        clientMap.submitToKey(randomKey, new IncrementEntryProcessor()).thenRunAsync(latch::countDown);
 
         assertOpenEventually(latch);
         assertTrueEventually(new AssertTask() {
