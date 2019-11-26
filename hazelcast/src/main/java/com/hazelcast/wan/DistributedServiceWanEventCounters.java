@@ -16,6 +16,7 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,9 +91,13 @@ public class DistributedServiceWanEventCounters {
      * Counters for WAN events for a single map or cache.
      */
     public static final class DistributedObjectWanEventCounters {
+        @Probe
         private final AtomicLong syncCount = new AtomicLong();
+        @Probe
         private final AtomicLong updateCount = new AtomicLong();
+        @Probe
         private final AtomicLong removeCount = new AtomicLong();
+        @Probe
         private final AtomicLong droppedCount = new AtomicLong();
 
         private DistributedObjectWanEventCounters() {
