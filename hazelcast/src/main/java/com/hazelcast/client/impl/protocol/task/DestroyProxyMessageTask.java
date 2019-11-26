@@ -37,15 +37,21 @@ import static com.hazelcast.security.permission.ActionConstants.getPermission;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
-public class DestroyProxyMessageTask extends AbstractMultiTargetMessageTask<ClientDestroyProxyCodec.RequestParameters> {
+public class DestroyProxyMessageTask extends AbstractMultiTargetMessageTask<ClientDestroyProxyCodec.RequestParameters>
+        implements Supplier<Operation> {
 
     public DestroyProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
+    public Operation get() {
+        return new DistributedObjectDestroyOperation(parameters.serviceName, parameters.name);
+    }
+
+    @Override
     protected Supplier<Operation> createOperationSupplier() {
-        return () -> new DistributedObjectDestroyOperation(parameters.serviceName, parameters.name);
+        return this;
     }
 
     @Override

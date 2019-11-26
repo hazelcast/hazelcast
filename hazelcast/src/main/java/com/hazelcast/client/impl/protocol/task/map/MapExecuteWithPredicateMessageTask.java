@@ -72,12 +72,12 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
+        Predicate targetPredicate = predicate;
         if (predicate instanceof PartitionPredicate) {
-            Predicate targetPredicate = ((PartitionPredicate) predicate).getTarget();
-            return new OperationFactoryWrapper(createOperationFactory(targetPredicate), endpoint.getUuid());
+            targetPredicate = ((PartitionPredicate) predicate).getTarget();
         }
 
-        return new OperationFactoryWrapper(createOperationFactory(predicate), endpoint.getUuid());
+        return createOperationFactory(targetPredicate);
     }
 
     private OperationFactory createOperationFactory(Predicate predicate) {
