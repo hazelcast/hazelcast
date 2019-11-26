@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -70,6 +71,21 @@ public class WanEventContainerReplicationOperation extends Operation implements 
             service.appendWanReplicationConfig(wanConfig);
         }
 
+        // first ensure all publishers have configuration
+        forAllReplicationContainers((publisher, o) -> {
+        });
+
+        // then ingest replication data
+        forAllReplicationContainers((publisher, eventContainer) -> {
+            if (publisher instanceof MigrationAwareWanReplicationPublisher) {
+                ((MigrationAwareWanReplicationPublisher) publisher)
+                        .processEventContainerReplicationData(partitionId, eventContainer);
+            }
+        });
+    }
+
+    private void forAllReplicationContainers(BiConsumer<WanReplicationPublisher, Object> publisherContainerConsumer) {
+        WanReplicationService service = getWanReplicationService();
         for (Entry<String, Map<String, Object>> wanReplicationSchemeEntry : eventContainers.entrySet()) {
             String wanReplicationScheme = wanReplicationSchemeEntry.getKey();
             Map<String, Object> eventContainersByPublisherId = wanReplicationSchemeEntry.getValue();
@@ -77,10 +93,7 @@ public class WanEventContainerReplicationOperation extends Operation implements 
                 String publisherId = publisherEventContainer.getKey();
                 Object eventContainer = publisherEventContainer.getValue();
                 WanReplicationPublisher publisher = service.getPublisherOrFail(wanReplicationScheme, publisherId);
-                if (publisher instanceof MigrationAwareWanReplicationPublisher) {
-                    ((MigrationAwareWanReplicationPublisher) publisher)
-                            .processEventContainerReplicationData(partitionId, eventContainer);
-                }
+                publisherContainerConsumer.accept(publisher, eventContainer);
             }
         }
     }

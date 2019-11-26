@@ -16,5 +16,17 @@
 
 package com.hazelcast.spring;
 
-public class DummyWanConsumer {
+import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.wan.WanReplicationConsumer;
+
+public class DummyWanConsumer implements WanReplicationConsumer {
+    @Override
+    public void init(String wanReplicationName, WanConsumerConfig config) {
+
+    }
+
+    @Override
+    public void shutdown() {
+
+    }
 }
