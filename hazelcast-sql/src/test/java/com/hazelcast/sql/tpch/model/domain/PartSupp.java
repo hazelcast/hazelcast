@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 /**
  * TPC-H model: partsupp.
  */
+@SuppressWarnings("checkstyle:ParameterName")
 public class PartSupp implements Serializable {
     public int ps_availqty;
     public BigDecimal ps_supplycost;

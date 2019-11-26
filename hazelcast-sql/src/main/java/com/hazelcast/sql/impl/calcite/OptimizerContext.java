@@ -26,17 +26,18 @@ import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
-import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.RootLogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
-import com.hazelcast.sql.impl.calcite.rule.logical.LogicalRules;
-import com.hazelcast.sql.impl.calcite.rule.physical.FilterPhysicalRule;
-import com.hazelcast.sql.impl.calcite.rule.physical.MapScanPhysicalRule;
-import com.hazelcast.sql.impl.calcite.rule.physical.ProjectPhysicalRule;
-import com.hazelcast.sql.impl.calcite.rule.physical.RootPhysicalRule;
-import com.hazelcast.sql.impl.calcite.rule.physical.SortPhysicalRule;
-import com.hazelcast.sql.impl.calcite.rule.physical.agg.AggregatePhysicalRule;
-import com.hazelcast.sql.impl.calcite.rule.physical.join.JoinPhysicalRule;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
+import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRule;
+import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRule;
+import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRule;
+import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRule;
+import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRule;
+import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRule;
+import com.hazelcast.sql.impl.calcite.opt.physical.join.JoinPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
@@ -233,7 +234,7 @@ public final class OptimizerContext {
         RelNode res = program.run(
             planner,
             rel,
-            RuleUtils.toLogicalConvention(rel.getTraitSet()),
+            OptUtils.toLogicalConvention(rel.getTraitSet()),
             ImmutableList.of(),
             ImmutableList.of()
         );
@@ -265,7 +266,7 @@ public final class OptimizerContext {
         RelNode res = program.run(
             planner,
             rel,
-            RuleUtils.toPhysicalConvention(rel.getTraitSet(), DistributionTrait.SINGLETON_DIST),
+            OptUtils.toPhysicalConvention(rel.getTraitSet(), DistributionTrait.SINGLETON_DIST),
             ImmutableList.of(),
             ImmutableList.of()
         );

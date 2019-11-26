@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.sql.impl.calcite.opt.physical.exchange;
+
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRelVisitor;
+import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.SingleRel;
+
+import java.util.List;
+
+/**
+ * Unicast exchange: tuple is set to exactly one member.
+ */
+public class UnicastExchangePhysicalRel extends SingleRel implements PhysicalRel {
+    /** Fields which should be used for hashing. */
+    private final List<Integer> hashFields;
+
+    public UnicastExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input, List<Integer> hashFields) {
+        super(cluster, traits, input);
+
+        this.hashFields = hashFields;
+    }
+
+    @Override
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new UnicastExchangePhysicalRel(getCluster(), traitSet, sole(inputs), hashFields);
+    }
+
+    public List<Integer> getHashFields() {
+        return hashFields;
+    }
+
+    @Override
+    public void visit(PhysicalRelVisitor visitor) {
+        ((PhysicalRel) input).visit(visitor);
+
+        visitor.onUnicastExchange(this);
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        super.explainTerms(pw);
+
+        return pw.item("hashFields", hashFields);
+    }
+}

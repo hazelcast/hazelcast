@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.optimizer;
 
-import com.hazelcast.sql.impl.calcite.rel.logical.AggregateLogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.JoinLogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.ProjectLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;

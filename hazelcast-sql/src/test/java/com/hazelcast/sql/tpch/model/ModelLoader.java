@@ -149,7 +149,7 @@ public final class ModelLoader {
     }
 
     private BiTuple<Object, Object> getKeyValue(String tableName, Object line) {
-         String[] elements = ((String)line).split("\\|");
+         String[] elements = ((String) line).split("\\|");
          Arguments args = new Arguments(elements);
 
          switch (tableName) {

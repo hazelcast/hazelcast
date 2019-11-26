@@ -17,10 +17,10 @@
 package com.hazelcast.sql.impl.calcite.distribution;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.RuleUtils;
-import com.hazelcast.sql.impl.calcite.rel.physical.ReplicatedToDistributedPhysicalRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.exchange.BroadcastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.exchange.UnicastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
 import org.apache.calcite.plan.RelTraitSet;
@@ -56,7 +56,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
         DistributionTrait targetTrait,
         boolean allowInfiniteCostConverters
     ) {
-        DistributionTrait currentTrait = RuleUtils.getDistribution(rel);
+        DistributionTrait currentTrait = OptUtils.getDistribution(rel);
 
         if (currentTrait.equals(targetTrait)) {
             // Input is already converted to the given distribution. Do nothing.
@@ -114,13 +114,13 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
         if (currentTrait.getType() == REPLICATED) {
             // Since REPLICATED data set is present on all nodes, we do not need to do an exchange. Instead, we partition
             // REPLICATED input by partition columns. Collation is preserved.
-            RelCollation collation = RuleUtils.getCollation(rel);
+            RelCollation collation = OptUtils.getCollation(rel);
 
-            RelTraitSet traitSet = RuleUtils.traitPlus(planner.emptyTraitSet(), targetTrait, collation);
+            RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), targetTrait, collation);
 
             return new ReplicatedToDistributedPhysicalRel(
                 rel.getCluster(),
-                RuleUtils.toPhysicalConvention(traitSet),
+                OptUtils.toPhysicalConvention(traitSet),
                 rel,
                 hashFields
             );
@@ -134,11 +134,11 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             assert !targetTrait.getFieldGroups().isEmpty();
 
             // Collation is destroyed.
-            RelTraitSet traitSet = RuleUtils.traitPlus(planner.emptyTraitSet(), targetTrait);
+            RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), targetTrait);
 
             return new UnicastExchangePhysicalRel(
                 rel.getCluster(),
-                RuleUtils.toPhysicalConvention(traitSet),
+                OptUtils.toPhysicalConvention(traitSet),
                 rel,
                 hashFields
             );
@@ -180,11 +180,11 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
     private static RelNode convertToReplicated(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
         assert currentTrait.getType() == DISTRIBUTED || currentTrait.getType() == SINGLETON;
 
-        RelTraitSet traitSet = RuleUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.REPLICATED_DIST);
+        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.REPLICATED_DIST);
 
         return new BroadcastExchangePhysicalRel(
             rel.getCluster(),
-            RuleUtils.toPhysicalConvention(traitSet),
+            OptUtils.toPhysicalConvention(traitSet),
             rel
         );
     }
@@ -202,7 +202,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
         // ANY already handler before, SINGLETON and REPLICATED do not require further conversions.
         assert currentTrait.getType() == DISTRIBUTED;
 
-        RelTraitSet traitSet = RuleUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.SINGLETON_DIST);
+        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.SINGLETON_DIST);
 
         int fieldCount = rel.getRowType().getFieldCount();
 
@@ -212,7 +212,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
 
         return new UnicastExchangePhysicalRel(
             rel.getCluster(),
-            RuleUtils.toPhysicalConvention(traitSet),
+            OptUtils.toPhysicalConvention(traitSet),
             rel,
             hashFields
         );

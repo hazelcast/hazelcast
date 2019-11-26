@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.optimizer;
 
-import com.hazelcast.sql.impl.calcite.rel.logical.ProjectLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;

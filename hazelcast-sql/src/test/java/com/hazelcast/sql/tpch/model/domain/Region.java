@@ -21,6 +21,7 @@ import java.io.Serializable;
 /**
  * TPC-H model: region.
  */
+@SuppressWarnings("checkstyle:ParameterName")
 public class Region implements Serializable {
     public long r_regionkey;
     public String r_name;

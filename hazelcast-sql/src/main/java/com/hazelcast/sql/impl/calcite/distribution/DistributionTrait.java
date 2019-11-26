@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.distribution;
 
-import com.hazelcast.sql.impl.calcite.rel.physical.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitDef;

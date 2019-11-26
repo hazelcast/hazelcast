@@ -17,13 +17,13 @@
 package com.hazelcast.sql.optimizer.support;
 
 import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
-import com.hazelcast.sql.impl.calcite.PlanCreatePhysicalRelVisitor;
-import com.hazelcast.sql.impl.calcite.rel.logical.AggregateLogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.JoinLogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.MapScanLogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.ProjectLogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.logical.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PlanCreatePhysicalRelVisitor;
+import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;

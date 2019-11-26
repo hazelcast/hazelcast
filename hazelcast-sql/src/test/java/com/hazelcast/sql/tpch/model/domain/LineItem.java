@@ -23,6 +23,7 @@ import java.time.LocalDate;
 /**
  * TPC-H model: lineitem.
  */
+@SuppressWarnings("checkstyle:ParameterName")
 public class LineItem implements Serializable {
     public long l_suppkey;
     public BigDecimal l_quantity;
@@ -42,6 +43,7 @@ public class LineItem implements Serializable {
         // No-op.
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public LineItem(
         long l_suppkey,
         BigDecimal l_quantity,

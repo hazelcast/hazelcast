@@ -23,6 +23,7 @@ import java.time.LocalDate;
 /**
  * TPC-H model: order.
  */
+@SuppressWarnings("checkstyle:ParameterName")
 public class Order implements Serializable {
     public String o_orderstatus;
     public BigDecimal o_totalprice;

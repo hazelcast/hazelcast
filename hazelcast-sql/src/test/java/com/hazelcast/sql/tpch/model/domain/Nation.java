@@ -21,6 +21,7 @@ import java.io.Serializable;
 /**
  * TPC-H model: nation.
  */
+@SuppressWarnings("checkstyle:ParameterName")
 public class Nation implements Serializable {
     public long n_nationkey;
     public String n_name;

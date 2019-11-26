@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 /**
  * TPC-H model: customer.
  */
+@SuppressWarnings("checkstyle:ParameterName")
 public class Customer implements Serializable {
     public String c_name;
     public String c_address;

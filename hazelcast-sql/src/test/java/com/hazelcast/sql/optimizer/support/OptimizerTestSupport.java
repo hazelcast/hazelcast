@@ -17,8 +17,8 @@
 package com.hazelcast.sql.optimizer.support;
 
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
-import com.hazelcast.sql.impl.calcite.rel.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.rel.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
