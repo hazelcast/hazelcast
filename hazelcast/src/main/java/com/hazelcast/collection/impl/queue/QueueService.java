@@ -26,6 +26,7 @@ import com.hazelcast.collection.impl.queue.operations.QueueMergeOperation;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
 import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
@@ -375,10 +376,13 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public Map<String, LocalQueueStats> getStats() {
         Map<String, LocalQueueStats> queueStats = createHashMap(containerMap.size());
+        Config config = nodeEngine.getConfig();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
-            LocalQueueStats queueStat = createLocalQueueStats(name);
-            queueStats.put(name, queueStat);
+            if (config.getQueueConfig(name).isStatisticsEnabled()) {
+                LocalQueueStats queueStat = createLocalQueueStats(name);
+                queueStats.put(name, queueStat);
+            }
         }
         return queueStats;
     }

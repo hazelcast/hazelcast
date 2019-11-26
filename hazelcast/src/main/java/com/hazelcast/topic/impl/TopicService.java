@@ -18,6 +18,7 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
@@ -204,8 +205,12 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     @Override
     public Map<String, LocalTopicStats> getStats() {
         Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
+        Config config = nodeEngine.getConfig();
         for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
-            topicStats.put(queueStat.getKey(), queueStat.getValue());
+            String name = queueStat.getKey();
+            if (config.getTopicConfig(name).isStatisticsEnabled()) {
+                topicStats.put(name, queueStat.getValue());
+            }
         }
         return topicStats;
     }

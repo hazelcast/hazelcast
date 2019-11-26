@@ -43,14 +43,9 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     public static final String SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
 
     private NodeEngine nodeEngine;
-    private final ConcurrentHashMap<String, LocalFlakeIdGeneratorStatsImpl> statsMap
-        = new ConcurrentHashMap<String, LocalFlakeIdGeneratorStatsImpl>();
+    private final ConcurrentHashMap<String, LocalFlakeIdGeneratorStatsImpl> statsMap = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, LocalFlakeIdGeneratorStatsImpl> localFlakeIdStatsConstructorFunction
-        = new ConstructorFunction<String, LocalFlakeIdGeneratorStatsImpl>() {
-        public LocalFlakeIdGeneratorStatsImpl createNew(String key) {
-            return new LocalFlakeIdGeneratorStatsImpl();
-        }
-    };
+        = key -> new LocalFlakeIdGeneratorStatsImpl();
 
     public FlakeIdGeneratorService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -94,10 +89,16 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
      * @param batchSize size of the batch created
      */
     public void updateStatsForBatch(String name, int batchSize) {
-        getLocalFlakeIdStats(name).update(batchSize);
+        LocalFlakeIdGeneratorStatsImpl stats = getLocalFlakeIdStats(name);
+        if (stats != null) {
+            stats.update(batchSize);
+        }
     }
 
     private LocalFlakeIdGeneratorStatsImpl getLocalFlakeIdStats(String name) {
+        if (!nodeEngine.getConfig().getFlakeIdGeneratorConfig(name).isStatisticsEnabled()) {
+            return null;
+        }
         return getOrPutIfAbsent(statsMap, name, localFlakeIdStatsConstructorFunction);
     }
 

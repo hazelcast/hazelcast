@@ -16,28 +16,29 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.OnDemandIndexStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -150,8 +151,9 @@ public class LocalMapStatsProvider {
     private void addStatsOfNoDataIncludedMaps(Map statsPerMap) {
         ProxyService proxyService = nodeEngine.getProxyService();
         Collection<String> mapNames = proxyService.getDistributedObjectNames(SERVICE_NAME);
+        Config config = nodeEngine.getConfig();
         for (String mapName : mapNames) {
-            if (!statsPerMap.containsKey(mapName)) {
+            if (!statsPerMap.containsKey(mapName) && config.getMapConfig(mapName).isStatisticsEnabled()) {
                 statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
             }
         }

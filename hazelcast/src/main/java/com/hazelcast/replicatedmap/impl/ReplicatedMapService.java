@@ -343,8 +343,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     @Override
     public Map<String, LocalReplicatedMapStats> getStats() {
         Collection<String> maps = getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME);
-        Map<String, LocalReplicatedMapStats> mapStats = new
-                HashMap<>(maps.size());
+        Map<String, LocalReplicatedMapStats> mapStats = new HashMap<>(maps.size());
         for (String map : maps) {
             mapStats.put(map, getLocalReplicatedMapStats(map));
         }

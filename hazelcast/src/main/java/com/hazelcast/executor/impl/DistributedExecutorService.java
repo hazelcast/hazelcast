@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
@@ -211,8 +212,12 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     @Override
     public Map<String, LocalExecutorStats> getStats() {
         Map<String, LocalExecutorStats> executorStats = MapUtil.createHashMap(statsMap.size());
-        for (Map.Entry<String, LocalExecutorStatsImpl> queueStat : statsMap.entrySet()) {
-            executorStats.put(queueStat.getKey(), queueStat.getValue());
+        Config config = nodeEngine.getConfig();
+        for (Map.Entry<String, LocalExecutorStatsImpl> executorStat : statsMap.entrySet()) {
+            String name = executorStat.getKey();
+            if (config.getExecutorConfig(name).isStatisticsEnabled()) {
+                executorStats.put(name, executorStat.getValue());
+            }
         }
         return executorStats;
     }

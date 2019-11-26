@@ -58,7 +58,7 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
     public static final String SERVICE_NAME = "hz:impl:PNCounterService";
 
     /** Map from counter name to counter implementations */
-    private final ConcurrentMap<String, PNCounterImpl> counters = new ConcurrentHashMap<String, PNCounterImpl>();
+    private final ConcurrentMap<String, PNCounterImpl> counters = new ConcurrentHashMap<>();
 
     /** Constructor function for counter implementations */
     private final ConstructorFunction<String, PNCounterImpl> counterConstructorFn =
@@ -74,29 +74,24 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
             };
 
     /** Cache for split brain protection config names */
-    private final Memoizer<String, Object> splitBrainProtectionConfigCache = new Memoizer<String, Object>(
-            new ConstructorFunction<String, Object>() {
-                @Override
-                public Object createNew(String name) {
-                    final PNCounterConfig counterConfig = nodeEngine.getConfig().findPNCounterConfig(name);
-                    final String splitBrainProtectionName = counterConfig.getSplitBrainProtectionName();
-                    return splitBrainProtectionName == null ? Memoizer.NULL_OBJECT : splitBrainProtectionName;
-                }
-            });
+    private final Memoizer<String, Object> splitBrainProtectionConfigCache = new Memoizer<>(
+        new ConstructorFunction<String, Object>() {
+            @Override
+            public Object createNew(String name) {
+                final PNCounterConfig counterConfig = nodeEngine.getConfig().findPNCounterConfig(name);
+                final String splitBrainProtectionName = counterConfig.getSplitBrainProtectionName();
+                return splitBrainProtectionName == null ? Memoizer.NULL_OBJECT : splitBrainProtectionName;
+            }
+        });
 
     /** Map from PN counter name to counter statistics */
-    private final ConcurrentMap<String, LocalPNCounterStatsImpl> statsMap
-            = new ConcurrentHashMap<String, LocalPNCounterStatsImpl>();
+    private final ConcurrentMap<String, LocalPNCounterStatsImpl> statsMap = new ConcurrentHashMap<>();
     /** Unmodifiable statistics map to return from {@link #getStats()} */
     private Map unmodifiableStatsMap = Collections.unmodifiableMap(statsMap);
 
     /** Constructor function for PN counter statistics */
     private final ConstructorFunction<String, LocalPNCounterStatsImpl> statsConstructorFunction =
-            new ConstructorFunction<String, LocalPNCounterStatsImpl>() {
-                public LocalPNCounterStatsImpl createNew(String name) {
-                    return new LocalPNCounterStatsImpl();
-                }
-            };
+        name -> new LocalPNCounterStatsImpl();
 
     /** Mutex for creating new PN counters and for marking the service as shutting down */
     private final Object newCounterCreationMutex = new Object();
@@ -130,6 +125,9 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
      * Returns the PN counter statistics for the counter with the given {@code name}
      */
     public LocalPNCounterStatsImpl getLocalPNCounterStats(String name) {
+        if (!nodeEngine.getConfig().getPNCounterConfig(name).isStatisticsEnabled()) {
+            return null;
+        }
         return getOrPutSynchronized(statsMap, name, statsMap, statsConstructorFunction);
     }
 
@@ -202,8 +200,8 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
 
     @Override
     public CRDTReplicationContainer prepareMigrationOperation(int maxConfiguredReplicaCount) {
-        final HashMap<String, VectorClock> currentVectorClocks = new HashMap<String, VectorClock>();
-        final HashMap<String, PNCounterImpl> counters = new HashMap<String, PNCounterImpl>();
+        final HashMap<String, VectorClock> currentVectorClocks = new HashMap<>();
+        final HashMap<String, PNCounterImpl> counters = new HashMap<>();
         final Config config = nodeEngine.getConfig();
 
         for (Entry<String, PNCounterImpl> counterEntry : this.counters.entrySet()) {
