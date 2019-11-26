@@ -17,8 +17,10 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.PriorityQueue;
 
 /**
@@ -32,10 +34,19 @@ public class PriorityQueueStreamSerializer<E> extends AbstractCollectionStreamSe
     }
 
     @Override
+    public void write(ObjectDataOutput out, PriorityQueue<E> collection) throws IOException {
+        out.writeObject(collection.comparator());
+
+        super.write(out, collection);
+    }
+
+    @Override
     public PriorityQueue<E> read(ObjectDataInput in) throws IOException {
+        Comparator<E> comparator = in.readObject();
+
         int size = in.readInt();
 
-        PriorityQueue<E> collection = new PriorityQueue<>(size);
+        PriorityQueue<E> collection = new PriorityQueue<>(size, comparator);
 
         return deserializeEntries(in, size, collection);
     }
