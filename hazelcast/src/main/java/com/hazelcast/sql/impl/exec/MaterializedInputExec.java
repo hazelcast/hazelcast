@@ -36,8 +36,8 @@ public class MaterializedInputExec extends AbstractUpstreamAwareExec {
     /** Current position. */
     private int curPos;
 
-    public MaterializedInputExec(Exec upstream) {
-        super(upstream);
+    public MaterializedInputExec(int id, Exec upstream) {
+        super(id, upstream);
     }
 
     @Override

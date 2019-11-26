@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 
 import java.util.List;
 import java.util.Objects;

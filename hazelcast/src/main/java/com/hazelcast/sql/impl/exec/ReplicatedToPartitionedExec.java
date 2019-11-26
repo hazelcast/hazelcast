@@ -32,8 +32,8 @@ public class ReplicatedToPartitionedExec extends AbstractFilterExec {
     /** Owning partitions. */
     private final PartitionIdSet parts;
 
-    public ReplicatedToPartitionedExec(Exec upstream, HashFunction hashFunction, PartitionIdSet parts) {
-        super(upstream);
+    public ReplicatedToPartitionedExec(int id, Exec upstream, HashFunction hashFunction, PartitionIdSet parts) {
+        super(id, upstream);
 
         this.hashFunction = hashFunction;
         this.parts = parts;

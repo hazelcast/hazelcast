@@ -28,8 +28,8 @@ public class RootExec extends AbstractUpstreamAwareExec {
     /** Consumer (user iterator, client listener, etc). */
     private QueryResultConsumer consumer;
 
-    public RootExec(Exec upstream) {
-        super(upstream);
+    public RootExec(int id, Exec upstream) {
+        super(id, upstream);
     }
 
     @Override

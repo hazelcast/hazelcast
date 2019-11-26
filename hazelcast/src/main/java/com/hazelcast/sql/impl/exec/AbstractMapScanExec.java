@@ -60,11 +60,14 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     private KeyValueRow keyValueRow;
 
     protected AbstractMapScanExec(
+        int id,
         String mapName,
         List<String> fieldNames,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
+        super(id);
+
         this.mapName = mapName;
         this.fieldNames = fieldNames;
         this.projects = projects;

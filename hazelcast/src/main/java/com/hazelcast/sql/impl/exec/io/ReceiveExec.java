@@ -39,7 +39,9 @@ public class ReceiveExec extends AbstractExec {
     /** Whether inbox is closed. */
     private boolean inboxDone;
 
-    public ReceiveExec(SingleInbox inbox) {
+    public ReceiveExec(int id, SingleInbox inbox) {
+        super(id);
+
         this.inbox = inbox;
     }
 

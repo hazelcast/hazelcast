@@ -24,6 +24,11 @@ import com.hazelcast.sql.impl.row.RowBatch;
  */
 public interface Exec {
     /**
+     * @return ID of the executor.
+     */
+    int getId();
+
+    /**
      * One-time setup of the executor.
      *
      * @param ctx Context.

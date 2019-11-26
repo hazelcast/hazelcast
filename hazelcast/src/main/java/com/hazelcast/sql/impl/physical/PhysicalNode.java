@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 
 /**
  * Physical node.

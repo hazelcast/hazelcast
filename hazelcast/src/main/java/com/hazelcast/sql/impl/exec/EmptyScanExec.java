@@ -16,24 +16,15 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
  * Scan over an empty result-set.
  */
-public final class EmptyScanExec implements Exec {
-    /** Singleton instance. */
-    public static final EmptyScanExec INSTANCE = new EmptyScanExec();
-
-    private EmptyScanExec() {
-        // No-op.
-    }
-
-    @Override
-    public void setup(QueryContext ctx) {
-        // No-op.
+public final class EmptyScanExec extends AbstractExec {
+    public EmptyScanExec(int id) {
+        super(id);
     }
 
     @Override
@@ -42,17 +33,12 @@ public final class EmptyScanExec implements Exec {
     }
 
     @Override
-    public RowBatch currentBatch() {
+    public RowBatch currentBatch0() {
         return EmptyRowBatch.INSTANCE;
     }
 
     @Override
     public boolean canReset() {
         return true;
-    }
-
-    @Override
-    public void reset() {
-        // No-op.
     }
 }

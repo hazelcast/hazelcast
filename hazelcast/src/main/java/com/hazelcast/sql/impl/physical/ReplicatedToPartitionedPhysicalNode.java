@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.physical;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.physical.hash.HashFunction;
+import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 
 import java.io.IOException;
 import java.util.Objects;

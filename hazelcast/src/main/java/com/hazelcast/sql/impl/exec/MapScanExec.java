@@ -55,13 +55,14 @@ public class MapScanExec extends AbstractMapScanExec {
     private Row currentRow;
 
     public MapScanExec(
+        int id,
         MapProxyImpl map,
         PartitionIdSet parts,
         List<String> fieldNames,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(map.getName(), fieldNames, projects, filter);
+        super(id, map.getName(), fieldNames, projects, filter);
 
         this.map = map;
         this.parts = parts;

@@ -27,6 +27,18 @@ public abstract class AbstractExec implements Exec {
     /** Global query context. */
     protected QueryContext ctx;
 
+    /** ID of the executor. */
+    private final int id;
+
+    protected AbstractExec(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public int getId() {
+        return id;
+    }
+
     @Override
     public final void setup(QueryContext ctx) {
         this.ctx = ctx;

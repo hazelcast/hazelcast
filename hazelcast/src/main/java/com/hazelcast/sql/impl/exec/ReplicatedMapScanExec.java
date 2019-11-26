@@ -45,12 +45,13 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
     private Row currentRow;
 
     public ReplicatedMapScanExec(
+        int id,
         String mapName,
         List<String> fieldNames,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(mapName, fieldNames, projects, filter);
+        super(id, mapName, fieldNames, projects, filter);
     }
 
     @Override

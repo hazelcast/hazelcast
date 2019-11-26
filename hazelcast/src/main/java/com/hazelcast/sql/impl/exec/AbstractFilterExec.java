@@ -28,8 +28,8 @@ public abstract class AbstractFilterExec extends AbstractUpstreamAwareExec {
     /** Current row. */
     private RowBatch curRow;
 
-    protected AbstractFilterExec(Exec upstream) {
-        super(upstream);
+    protected AbstractFilterExec(int id, Exec upstream) {
+        super(id, upstream);
     }
 
     @Override

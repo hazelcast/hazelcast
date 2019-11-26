@@ -34,8 +34,8 @@ public class ProjectExec extends AbstractUpstreamAwareExec {
     /** Current row. */
     private RowBatch curRow;
 
-    public ProjectExec(Exec upstream, List<Expression> projections) {
-        super(upstream);
+    public ProjectExec(int id, Exec upstream, List<Expression> projections) {
+        super(id, upstream);
 
         this.projections = projections;
     }

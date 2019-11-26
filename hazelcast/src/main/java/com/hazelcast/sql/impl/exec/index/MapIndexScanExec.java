@@ -66,6 +66,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
     private Row currentRow;
 
     public MapIndexScanExec(
+        int id,
         MapProxyImpl map,
         PartitionIdSet parts,
         List<String> fieldNames,
@@ -74,7 +75,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
         String indexName,
         IndexFilter indexFilter
     ) {
-        super(map.getName(), fieldNames, projects, filter);
+        super(id, map.getName(), fieldNames, projects, filter);
 
         this.map = map;
         this.parts = parts;

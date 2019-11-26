@@ -30,7 +30,9 @@ public abstract class AbstractUpstreamAwareExec extends AbstractExec {
      *
      * @param upstream Upstream stage.
      */
-    protected AbstractUpstreamAwareExec(Exec upstream) {
+    protected AbstractUpstreamAwareExec(int id, Exec upstream) {
+        super(id);
+
         state = new UpstreamState(upstream);
     }
 

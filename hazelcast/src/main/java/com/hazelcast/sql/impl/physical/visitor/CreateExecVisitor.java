@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryFragmentDescriptor;
-import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
+import com.hazelcast.sql.impl.exec.EmptyScanExec;
+import com.hazelcast.sql.impl.exec.Exec;
+import com.hazelcast.sql.impl.exec.FilterExec;
+import com.hazelcast.sql.impl.exec.MapScanExec;
+import com.hazelcast.sql.impl.exec.MaterializedInputExec;
+import com.hazelcast.sql.impl.exec.ProjectExec;
+import com.hazelcast.sql.impl.exec.ReplicatedMapScanExec;
+import com.hazelcast.sql.impl.exec.ReplicatedToPartitionedExec;
+import com.hazelcast.sql.impl.exec.RootExec;
+import com.hazelcast.sql.impl.exec.SortExec;
+import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveExec;
@@ -38,7 +48,6 @@ import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
@@ -62,7 +71,7 @@ import java.util.UUID;
  * Visitor which builds an executor for every observed physical node.
  */
  @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
-public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
+public class CreateExecVisitor implements PhysicalNodeVisitor {
     // TODO: Understand how to calculate it properly. It should not be hardcoded.
     private static final int OUTBOX_BATCH_SIZE = 1024;
 
@@ -93,7 +102,7 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     /** Inboxes. */
     private List<AbstractInbox> inboxes = new ArrayList<>(1);
 
-    public CreateExecPhysicalNodeVisitor(
+    public CreateExecVisitor(
         NodeEngine nodeEngine,
         QueryExecuteOperation operation,
         QueryFragmentDescriptor currentFragment,
@@ -113,7 +122,10 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     public void onRootNode(RootPhysicalNode node) {
         assert stack.size() == 1;
 
-        exec = new RootExec(pop());
+        exec = new RootExec(
+            node.getId(),
+            pop()
+        );
     }
 
     @Override
@@ -136,7 +148,10 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
         inboxes.add(inbox);
 
         // Instantiate executor and put it to stack.
-        ReceiveExec res = new ReceiveExec(inbox);
+        ReceiveExec res = new ReceiveExec(
+            node.getId(),
+            inbox
+        );
 
         push(res);
     }
@@ -160,6 +175,7 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
 
         // Instantiate executor and put it to stack.
         ReceiveSortMergeExec res = new ReceiveSortMergeExec(
+            node.getId(),
             inbox,
             node.getExpressions(),
             node.getAscs()
@@ -186,14 +202,24 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
             partitions.forEach((part) -> partitionOutboxIndexes[part] = outboxIndex0);
         }
 
-        exec = new UnicastSendExec(pop(), outboxes, node.getHashFunction(), partitionOutboxIndexes);
+        exec = new UnicastSendExec(
+            node.getId(),
+            pop(),
+            outboxes,
+            node.getHashFunction(),
+            partitionOutboxIndexes
+        );
     }
 
     @Override
     public void onBroadcastSendNode(BroadcastSendPhysicalNode node) {
         Outbox[] outboxes = prepareOutboxes(node.getEdgeId());
 
-        exec = new BroadcastSendExec(pop(), outboxes);
+        exec = new BroadcastSendExec(
+            node.getId(),
+            pop(),
+            outboxes
+        );
     }
 
      /**
@@ -236,13 +262,14 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
         Exec res;
 
         if (localParts == null) {
-            res = EmptyScanExec.INSTANCE;
+            res = new EmptyScanExec(node.getId());
         } else {
             String mapName = node.getMapName();
 
             MapProxyImpl map = (MapProxyImpl) nodeEngine.getHazelcastInstance().getMap(mapName);
 
             res = new MapScanExec(
+                node.getId(),
                 map,
                 localParts,
                 node.getFieldNames(),
@@ -259,13 +286,14 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
          Exec res;
 
          if (localParts == null) {
-             res = EmptyScanExec.INSTANCE;
+             res = new EmptyScanExec(node.getId());
          } else {
              String mapName = node.getMapName();
 
              MapProxyImpl map = (MapProxyImpl) nodeEngine.getHazelcastInstance().getMap(mapName);
 
              res = new MapIndexScanExec(
+                 node.getId(),
                  map,
                  localParts,
                  node.getFieldNames(),
@@ -282,6 +310,7 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
      @Override
     public void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node) {
         Exec res = new ReplicatedMapScanExec(
+            node.getId(),
             node.getMapName(),
             node.getFieldNames(),
             node.getProjects(),
@@ -293,28 +322,47 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
 
     @Override
     public void onSortNode(SortPhysicalNode node) {
-        Exec res = new LocalSortExec(pop(), node.getExpressions(), node.getAscs());
+        Exec res = new SortExec(
+            node.getId(),
+            pop(),
+            node.getExpressions(),
+            node.getAscs()
+        );
 
         push(res);
     }
 
     @Override
     public void onProjectNode(ProjectPhysicalNode node) {
-        Exec res = new ProjectExec(pop(), node.getProjects());
+        Exec res = new ProjectExec(
+            node.getId(),
+            pop(),
+            node.getProjects()
+        );
 
         push(res);
     }
 
     @Override
     public void onFilterNode(FilterPhysicalNode node) {
-        Exec res = new FilterExec(pop(), node.getFilter());
+        Exec res = new FilterExec(
+            node.getId(),
+            pop(),
+            node.getFilter()
+        );
 
         push(res);
     }
 
     @Override
     public void onAggregateNode(AggregatePhysicalNode node) {
-        Exec res = new LocalAggregateExec(pop(), node.getGroupKey(), node.getExpressions(), node.getSortedGroupKeySize());
+        Exec res = new AggregateExec(
+            node.getId(),
+            pop(),
+            node.getGroupKey(),
+            node.getExpressions(),
+            node.getSortedGroupKeySize()
+        );
 
         push(res);
     }
@@ -322,6 +370,7 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     @Override
     public void onNestedLoopJoinNode(NestedLoopJoinPhysicalNode node) {
         Exec res = new NestedLoopJoinExec(
+            node.getId(),
             pop(),
             pop(),
             node.getCondition(),
@@ -336,6 +385,7 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     @Override
     public void onHashJoinNode(HashJoinPhysicalNode node) {
         Exec res = new HashJoinExec(
+            node.getId(),
             pop(),
             pop(),
             node.getCondition(),
@@ -353,7 +403,10 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     public void onMaterializedInputNode(MaterializedInputPhysicalNode node) {
         Exec upstream = pop();
 
-        MaterializedInputExec res = new MaterializedInputExec(upstream);
+        MaterializedInputExec res = new MaterializedInputExec(
+            node.getId(),
+            upstream
+        );
 
         push(res);
     }
@@ -362,7 +415,12 @@ public class CreateExecPhysicalNodeVisitor implements PhysicalNodeVisitor {
     public void onReplicatedToPartitionedNode(ReplicatedToPartitionedPhysicalNode node) {
         Exec upstream = pop();
 
-        ReplicatedToPartitionedExec res = new ReplicatedToPartitionedExec(upstream, node.getHashFunction(), localParts);
+        ReplicatedToPartitionedExec res = new ReplicatedToPartitionedExec(
+            node.getId(),
+            upstream,
+            node.getHashFunction(),
+            localParts
+        );
 
         push(res);
     }

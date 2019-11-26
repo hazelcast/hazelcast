@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
-import com.hazelcast.sql.impl.exec.agg.LocalAggregateExec;
+import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
@@ -38,7 +38,7 @@ public abstract class AggregateExpression<T> implements DataSerializable {
     protected transient DataType resType;
 
     /** Parent executor. */
-    protected transient LocalAggregateExec parent;
+    protected transient AggregateExec parent;
 
     protected AggregateExpression() {
         // No-op.
@@ -48,7 +48,7 @@ public abstract class AggregateExpression<T> implements DataSerializable {
         this.distinct = distinct;
     }
 
-    public void setup(LocalAggregateExec parent) {
+    public void setup(AggregateExec parent) {
         this.parent = parent;
     }
 

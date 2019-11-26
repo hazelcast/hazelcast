@@ -30,7 +30,7 @@ import java.util.TreeMap;
 /**
  * Executor which sorts rows from the upstream operator.
  */
-public class LocalSortExec extends AbstractUpstreamAwareExec {
+public class SortExec extends AbstractUpstreamAwareExec {
     /** Expressions. */
     private final List<Expression> expressions;
 
@@ -43,8 +43,8 @@ public class LocalSortExec extends AbstractUpstreamAwareExec {
     /** Index for unique elements. */
     private long idx;
 
-    public LocalSortExec(Exec upstream, List<Expression> expressions, List<Boolean> ascs) {
-        super(upstream);
+    public SortExec(int id, Exec upstream, List<Expression> expressions, List<Boolean> ascs) {
+        super(id, upstream);
 
         this.expressions = expressions;
 

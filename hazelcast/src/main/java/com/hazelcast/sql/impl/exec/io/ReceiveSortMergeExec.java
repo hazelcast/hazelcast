@@ -56,7 +56,9 @@ public class ReceiveSortMergeExec extends AbstractExec {
     private boolean inputsAvailable;
 
     @SuppressWarnings("unchecked")
-    public ReceiveSortMergeExec(StripedInbox inbox, List<Expression> expressions, List<Boolean> ascs) {
+    public ReceiveSortMergeExec(int id, StripedInbox inbox, List<Expression> expressions, List<Boolean> ascs) {
+        super(id);
+
         this.inbox = inbox;
         this.expressions = expressions;
 

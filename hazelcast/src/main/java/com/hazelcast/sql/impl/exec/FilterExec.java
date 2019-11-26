@@ -27,8 +27,8 @@ public class FilterExec extends AbstractFilterExec {
     /** Filter. */
     private final Expression<Boolean> filter;
 
-    public FilterExec(Exec upstream, Expression<Boolean> filter) {
-        super(upstream);
+    public FilterExec(int id, Exec upstream, Expression<Boolean> filter) {
+        super(id, upstream);
 
         this.filter = filter;
     }

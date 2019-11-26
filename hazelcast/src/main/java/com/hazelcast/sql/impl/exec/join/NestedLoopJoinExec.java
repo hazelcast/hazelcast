@@ -57,6 +57,7 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
     private RowBatch curRow;
 
     public NestedLoopJoinExec(
+        int id,
         Exec left,
         Exec right,
         Expression<Boolean> filter,
@@ -64,7 +65,7 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
         boolean semi,
         int rightRowColumnCount
     ) {
-        super(left);
+        super(id, left);
 
         rightState = new UpstreamState(right);
 

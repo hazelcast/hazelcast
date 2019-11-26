@@ -36,8 +36,8 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     /** Done flag. */
     private boolean done;
 
-    public AbstractSendExec(Exec upstream, Outbox[] outboxes) {
-        super(upstream);
+    public AbstractSendExec(int id, Exec upstream, Outbox[] outboxes) {
+        super(id, upstream);
 
         this.outboxes = outboxes;
     }

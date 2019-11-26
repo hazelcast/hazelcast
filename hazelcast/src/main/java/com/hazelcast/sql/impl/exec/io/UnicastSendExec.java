@@ -33,12 +33,13 @@ public class UnicastSendExec extends AbstractSendExec {
     private final int[] partitionOutboxIndexes;
 
     public UnicastSendExec(
+        int id,
         Exec upstream,
         Outbox[] outboxes,
         HashFunction hashFunction,
         int[] partitionOutboxIndexes
     ) {
-        super(upstream, outboxes);
+        super(id, upstream, outboxes);
 
         this.hashFunction = hashFunction;
         this.partitionOutboxIndexes = partitionOutboxIndexes;

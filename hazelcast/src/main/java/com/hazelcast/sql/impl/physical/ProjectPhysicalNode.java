@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 
 import java.io.IOException;
 import java.util.List;

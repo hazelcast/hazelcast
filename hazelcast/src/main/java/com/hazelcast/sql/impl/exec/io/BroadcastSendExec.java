@@ -27,8 +27,8 @@ public class BroadcastSendExec extends AbstractSendExec {
     /** Index of the outbox where we must resume sending of pending row. */
     private int pendingRowOutboxIndex;
 
-    public BroadcastSendExec(Exec upstream, Outbox[] outboxes) {
-        super(upstream, outboxes);
+    public BroadcastSendExec(int id, Exec upstream, Outbox[] outboxes) {
+        super(id, upstream, outboxes);
     }
 
     @Override

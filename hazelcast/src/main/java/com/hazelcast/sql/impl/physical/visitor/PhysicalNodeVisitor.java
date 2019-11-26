@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.physical.visitor;
 
+import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
+import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
+import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
+import com.hazelcast.sql.impl.physical.RootPhysicalNode;
+import com.hazelcast.sql.impl.physical.SortPhysicalNode;
 import com.hazelcast.sql.impl.physical.io.BroadcastSendPhysicalNode;
 import com.hazelcast.sql.impl.physical.io.ReceivePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
