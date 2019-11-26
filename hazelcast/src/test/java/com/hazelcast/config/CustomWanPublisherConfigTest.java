@@ -17,9 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.ConfigCompatibilityChecker.WanCustomPublisherConfigChecker;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -50,7 +50,7 @@ public class CustomWanPublisherConfigTest {
                 .setPublisherId("myPublisherId")
                 .setClassName("className")
                 .setProperties(properties)
-                .setImplementation("implementation");
+                .setImplementation(new DummyWanPublisher());
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         Data serialized = serializationService.toData(config);

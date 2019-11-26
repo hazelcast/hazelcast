@@ -14,35 +14,49 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan.impl;
+package com.hazelcast.config;
 
-import com.hazelcast.config.AbstractWanPublisherConfig;
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationQueueFullException;
 
-public class FullQueueWanReplication implements WanReplicationPublisher {
+import java.io.Serializable;
 
+public class DummyWanPublisher implements WanReplicationPublisher, Serializable {
     @Override
-    public void init(WanReplicationConfig wanReplicationConfig,
-                     AbstractWanPublisherConfig wanPublisherConfig) {
+    public void init(WanReplicationConfig wanReplicationConfig, AbstractWanPublisherConfig publisherConfig) {
+
     }
 
     @Override
     public void shutdown() {
-    }
 
-    @Override
-    public void publishReplicationEvent(WanReplicationEvent event) {
-    }
-
-    @Override
-    public void publishReplicationEventBackup(WanReplicationEvent event) {
     }
 
     @Override
     public void doPrepublicationChecks() {
-        throw new WanReplicationQueueFullException("WAN event queue is full");
+
+    }
+
+    @Override
+    public void publishReplicationEvent(WanReplicationEvent eventObject) {
+
+    }
+
+    @Override
+    public void publishReplicationEventBackup(WanReplicationEvent eventObject) {
+
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        return o != null && getClass() == o.getClass();
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
     }
 }

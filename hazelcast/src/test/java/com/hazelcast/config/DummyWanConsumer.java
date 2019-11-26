@@ -14,33 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.config;
 
-import com.hazelcast.config.AbstractWanPublisherConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanReplicationConsumer;
 
-public class DummyWanReplication implements WanReplicationPublisher {
+import java.io.Serializable;
+
+public class DummyWanConsumer implements WanReplicationConsumer, Serializable {
 
     @Override
-    public void init(WanReplicationConfig wanReplicationConfig,
-                     AbstractWanPublisherConfig wanPublisherConfig) {
+    public void init(String wanReplicationName, WanConsumerConfig config) {
+
     }
 
     @Override
     public void shutdown() {
+
     }
 
     @Override
-    public void publishReplicationEvent(WanReplicationEvent eventObject) {
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        return o != null && getClass() == o.getClass();
     }
 
     @Override
-    public void doPrepublicationChecks() {
-    }
-
-    @Override
-    public void publishReplicationEventBackup(WanReplicationEvent eventObject) {
+    public int hashCode() {
+        return 0;
     }
 }

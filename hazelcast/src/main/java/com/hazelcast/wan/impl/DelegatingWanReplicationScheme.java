@@ -16,9 +16,10 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.wan.MigrationAwareWanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;
 
@@ -40,9 +41,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public final class DelegatingWanReplicationScheme {
     /** Non-null WAN replication name */
-    final String name;
+    private final String name;
     /** Non-null WAN publishers, grouped by publisher ID */
-    final ConcurrentMap<String, WanReplicationPublisher> publishers;
+    private final ConcurrentMap<String, WanReplicationPublisher> publishers;
 
     public DelegatingWanReplicationScheme(@Nonnull String name,
                                           @Nonnull ConcurrentMap<String, WanReplicationPublisher> publishers) {
@@ -66,6 +67,17 @@ public final class DelegatingWanReplicationScheme {
         return publishers.get(publisherId);
     }
 
+    /**
+     * Adds the WAN replication publisher under the provided ID, if not already
+     * present.
+     * If there is already a publisher with the same ID, the method throws a
+     * {@link IllegalStateException}, even if it's the same publisher as the
+     * provided one.
+     * NOTE: used only in Hazelcast Enterprise
+     *
+     * @param publisherId the WAN replication publisher ID
+     * @param publisher   the WAN replication publisher to add
+     */
     public void addPublisher(@Nonnull String publisherId,
                              @Nonnull WanReplicationPublisher publisher) {
         if (publishers.putIfAbsent(publisherId, publisher) != null) {
@@ -101,21 +113,32 @@ public final class DelegatingWanReplicationScheme {
     /**
      * Publishes a replication event to all publishers to which this publisher
      * delegates.
+     * Silently skips publishers not supporting republication.
+     * NOTE: used only in Hazelcast Enterprise
      */
     public void republishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
         for (WanReplicationPublisher publisher : publishers.values()) {
-            publisher.republishReplicationEvent(wanReplicationEvent);
+            if (publisher instanceof InternalWanReplicationPublisher) {
+                ((InternalWanReplicationPublisher) publisher).republishReplicationEvent(wanReplicationEvent);
+            }
         }
     }
 
+    /**
+     * Silently skips publishers not supporting statistics.
+     *
+     * @return publisher statistics, grouped by publisher ID
+     */
     public Map<String, LocalWanPublisherStats> getStats() {
         final Map<String, LocalWanPublisherStats> statsMap = createHashMap(publishers.size());
         for (Entry<String, WanReplicationPublisher> publisherEntry : publishers.entrySet()) {
-            String publisherId = publisherEntry.getKey();
             WanReplicationPublisher publisher = publisherEntry.getValue();
-            LocalWanPublisherStats stats = publisher.getStats();
-            if (stats != null) {
-                statsMap.put(publisherId, stats);
+            if (publisher instanceof InternalWanReplicationPublisher) {
+                String publisherId = publisherEntry.getKey();
+                LocalWanPublisherStats stats = ((InternalWanReplicationPublisher) publisher).getStats();
+                if (stats != null) {
+                    statsMap.put(publisherId, stats);
+                }
             }
         }
         return statsMap;
@@ -131,6 +154,7 @@ public final class DelegatingWanReplicationScheme {
      * Collect all replication data matching the replication event and collection
      * of namespaces being replicated.
      * Returns containers for WAN replication events grouped by WAN publisher ID.
+     * Silently skips publishers not supporting replication.
      *
      * @param event      the replication event
      * @param namespaces the object namespaces which are being replicated
@@ -140,11 +164,14 @@ public final class DelegatingWanReplicationScheme {
                                                                     Collection<ServiceNamespace> namespaces) {
         Map<String, Object> eventContainers = createHashMap(publishers.size());
         for (Entry<String, WanReplicationPublisher> publisherEntry : publishers.entrySet()) {
-            Object eventContainer = publisherEntry.getValue()
-                                                  .prepareEventContainerReplicationData(event, namespaces);
-            if (eventContainer != null) {
-                String publisherId = publisherEntry.getKey();
-                eventContainers.put(publisherId, eventContainer);
+            WanReplicationPublisher publisher = publisherEntry.getValue();
+            if (publisher instanceof MigrationAwareWanReplicationPublisher) {
+                Object eventContainer = ((MigrationAwareWanReplicationPublisher) publisher)
+                        .prepareEventContainerReplicationData(event, namespaces);
+                if (eventContainer != null) {
+                    String publisherId = publisherEntry.getKey();
+                    eventContainers.put(publisherId, eventContainer);
+                }
             }
         }
         return eventContainers;
@@ -153,6 +180,7 @@ public final class DelegatingWanReplicationScheme {
     /**
      * Collect the namespaces of all queues that should be replicated by the
      * replication event.
+     * Silently skips publishers not supporting replication.
      *
      * @param event      the replication event
      * @param namespaces the set in which namespaces should be added
@@ -160,12 +188,16 @@ public final class DelegatingWanReplicationScheme {
     public void collectAllServiceNamespaces(PartitionReplicationEvent event,
                                             Set<ServiceNamespace> namespaces) {
         for (WanReplicationPublisher publisher : publishers.values()) {
-            publisher.collectAllServiceNamespaces(event, namespaces);
+            if (publisher instanceof MigrationAwareWanReplicationPublisher) {
+                ((MigrationAwareWanReplicationPublisher) publisher)
+                        .collectAllServiceNamespaces(event, namespaces);
+            }
         }
     }
 
     /**
      * Releases all resources for the map with the given {@code mapName}.
+     * NOTE: used only in Hazelcast Enterprise
      *
      * @param mapName the map mapName
      */
