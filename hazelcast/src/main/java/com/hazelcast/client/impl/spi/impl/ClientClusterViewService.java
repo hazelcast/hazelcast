@@ -87,7 +87,7 @@ import static java.util.Collections.unmodifiableSet;
  */
 public class ClientClusterViewService implements ClientClusterService, ClientPartitionService {
 
-    private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
+    private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
     private static final ListenerMessageCodec CLUSTER_VIEW_LISTENER_CODEC = new ListenerMessageCodec() {
         @Override
         public ClientMessage encodeAddRequest(boolean localOnly) {
