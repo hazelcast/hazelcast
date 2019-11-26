@@ -226,7 +226,7 @@ public class NodeIOService implements IOService {
 
     @Override
     public void shouldConnectTo(Address address) {
-        if (node.getThisAddress().equals(address)) {
+        if (node.getThisAddress().equals(address) || address.isLocal()) {
             throw new RuntimeException("Connecting to self! " + address);
         }
     }

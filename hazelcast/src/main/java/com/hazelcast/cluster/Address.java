@@ -28,6 +28,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -184,5 +185,13 @@ public final class Address implements IdentifiedDataSerializable {
             throw new IllegalArgumentException("Can't resolve address: " + inetSocketAddress);
         }
         return address;
+    }
+
+    public boolean isLocal() {
+        try {
+            return getInetAddress().isLoopbackAddress();
+        } catch (UnknownHostException e) {
+            throw sneakyThrow(e);
+        }
     }
 }
