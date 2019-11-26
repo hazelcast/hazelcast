@@ -85,6 +85,7 @@ import com.hazelcast.client.impl.protocol.task.management.GetSystemPropertiesMes
 import com.hazelcast.client.impl.protocol.task.management.GetThreadDumpMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.GetTimedMemberStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.MatchMCConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.RunGcMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ShutdownClusterMessageTask;
@@ -2261,6 +2262,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 new MessageTaskFactory() {
                     public MessageTask create(ClientMessage clientMessage, Connection connection) {
                         return new ChangeClusterVersionMessageTask(clientMessage, node, connection);
+                    }
+                });
+        factories.put(com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec.REQUEST_MESSAGE_TYPE,
+                new MessageTaskFactory() {
+                    public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                        return new PollMCEventsMessageTask(clientMessage, node, connection);
                     }
                 });
     }

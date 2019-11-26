@@ -1,6 +1,6 @@
 package com.hazelcast.internal.management.dto;
 
-import java.util.Map;
+import com.hazelcast.internal.management.events.Event;
 
 /**
  * A DTO that describes event sent to Management Center.
@@ -11,12 +11,16 @@ public class MCEventDTO {
 
     private final long timestamp;
     private final int type;
-    private final Map<String, String> data;
+    private final String dataJson;
 
-    public MCEventDTO(long timestamp, int type, Map<String, String> data) {
+    public MCEventDTO(long timestamp, int type, String dataJson) {
         this.timestamp = timestamp;
         this.type = type;
-        this.data = data;
+        this.dataJson = dataJson;
+    }
+
+    public static MCEventDTO fromEvent(Event event) {
+        return new MCEventDTO(event.getTimestamp(), event.getType().getCode(), event.toJson().toString());
     }
 
     public long getTimestamp() {
@@ -27,8 +31,8 @@ public class MCEventDTO {
         return type;
     }
 
-    public Map<String, String> getData() {
-        return data;
+    public String getDataJson() {
+        return dataJson;
     }
 
 }

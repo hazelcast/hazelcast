@@ -64,6 +64,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -76,6 +77,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -109,6 +111,7 @@ public class ManagementCenterService {
     private static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
     private static final long DEFAULT_UPDATE_INTERVAL = 3000;
     private static final long EVENT_SEND_INTERVAL_MILLIS = 1000;
+    private static final int EVENT_QUEUE_CAPACITY = 1000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -125,6 +128,7 @@ public class ManagementCenterService {
     private final ManagementCenterConnectionFactory connectionFactory;
     private final AtomicReference<String> timedMemberStateJson = new AtomicReference<>();
     private final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Event> mcEvents = new LinkedBlockingQueue<>(EVENT_QUEUE_CAPACITY);
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
@@ -331,10 +335,23 @@ public class ManagementCenterService {
     public void log(Event event) {
         if (this.managementCenterConfig.isEnabled() && isRunning()) {
             events.add(event);
+            mcEvents.offer(event);
             if (eventListener != null) {
                 eventListener.onEventLogged(event);
             }
         }
+    }
+
+    /**
+     * Polls pending MC events.
+     *
+     * @return polled events
+     */
+    @Nonnull
+    public List<Event> pollMCEvents() {
+        List<Event> polled = new ArrayList<>();
+        mcEvents.drainTo(polled);
+        return polled;
     }
 
     /**

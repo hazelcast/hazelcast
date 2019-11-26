@@ -649,7 +649,7 @@ public class ReferenceObjects {
     public static DistributedObjectInfo aDistributedObjectInfo = new DistributedObjectInfo(aString, aString);
     public static Member aMember = new MemberImpl(anAddress, aUUID, aMapOfStringToString, aBoolean);
     public static DefaultQueryCacheEventData aQueryCacheEventData;
-    public static MCEventDTO aMCEvent = new MCEventDTO(aLong, anInt, aMapOfStringToString);
+    public static MCEventDTO aMCEvent = new MCEventDTO(aLong, anInt, aString);
     public static List<MCEventDTO> aListOfMCEvents = Collections.singletonList(aMCEvent);
 
     static {
