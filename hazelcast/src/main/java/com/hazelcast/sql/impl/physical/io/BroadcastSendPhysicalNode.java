@@ -36,8 +36,8 @@ public class BroadcastSendPhysicalNode extends UniInputPhysicalNode implements E
         // No-op.
     }
 
-    public BroadcastSendPhysicalNode(PhysicalNode upstream, int edgeId) {
-        super(upstream);
+    public BroadcastSendPhysicalNode(int id, PhysicalNode upstream, int edgeId) {
+        super(id, upstream);
 
         this.edgeId = edgeId;
     }
@@ -58,18 +58,18 @@ public class BroadcastSendPhysicalNode extends UniInputPhysicalNode implements E
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
+    public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
+    public void readData1(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(edgeId, upstream);
+        return Objects.hash(id, edgeId, upstream);
     }
 
     @Override
@@ -84,11 +84,11 @@ public class BroadcastSendPhysicalNode extends UniInputPhysicalNode implements E
 
         BroadcastSendPhysicalNode that = (BroadcastSendPhysicalNode) o;
 
-        return edgeId == that.edgeId && upstream.equals(that.upstream);
+        return id == that.id && edgeId == that.edgeId && upstream.equals(that.upstream);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{edgeId=" + edgeId + ", upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", upstream=" + upstream + '}';
     }
 }

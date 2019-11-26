@@ -36,8 +36,8 @@ public class ProjectPhysicalNode extends UniInputPhysicalNode {
         // No-op.
     }
 
-    public ProjectPhysicalNode(PhysicalNode upstream, List<Expression> projects) {
-        super(upstream);
+    public ProjectPhysicalNode(int id, PhysicalNode upstream, List<Expression> projects) {
+        super(id, upstream);
 
         this.projects = projects;
     }
@@ -52,18 +52,18 @@ public class ProjectPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
+    public void writeData1(ObjectDataOutput out) throws IOException {
         SerializationUtil.writeList(projects, out);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
+    public void readData1(ObjectDataInput in) throws IOException {
         projects = SerializationUtil.readList(in);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(upstream, projects);
+        return Objects.hash(id, upstream, projects);
     }
 
     @Override
@@ -78,11 +78,11 @@ public class ProjectPhysicalNode extends UniInputPhysicalNode {
 
         ProjectPhysicalNode that = (ProjectPhysicalNode) o;
 
-        return upstream.equals(that.upstream) && projects.equals(that.projects);
+        return id == that.id && upstream.equals(that.upstream) && projects.equals(that.projects);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{projects=" + projects + ", upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", projects=" + projects + ", upstream=" + upstream + '}';
     }
 }

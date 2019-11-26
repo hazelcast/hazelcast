@@ -19,7 +19,15 @@ package com.hazelcast.sql.impl.physical;
 /**
  * A node without inputs.
  */
-public abstract class ZeroInputPhysicalNode implements PhysicalNode {
+public abstract class ZeroInputPhysicalNode extends AbstractPhysicalNode {
+    protected ZeroInputPhysicalNode() {
+        // No-op.
+    }
+
+    protected ZeroInputPhysicalNode(int id) {
+        super(id);
+    }
+
     @Override
     public final int getInputCount() {
         return 0;

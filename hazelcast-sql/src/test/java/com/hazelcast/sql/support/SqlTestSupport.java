@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
-import com.hazelcast.sql.support.plan.PhysicalPlanChecker;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,10 +73,6 @@ public class SqlTestSupport {
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute query and get result set rows: " + sql, e);
         }
-    }
-
-    protected static void assertFragment(QueryFragment fragment, PhysicalPlanChecker checker) {
-        checker.checkPlan(fragment.getNode());
     }
 
     protected Expression keyValueExtractorExpression(String path) {

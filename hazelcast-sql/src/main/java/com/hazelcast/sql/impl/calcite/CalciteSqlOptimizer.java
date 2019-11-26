@@ -27,7 +27,8 @@ import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.PlanCreatePhysicalRelVisitor;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.statistics.DefaultStatisticProvider;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
 import org.apache.calcite.rel.RelNode;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -113,8 +115,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             dataMemberIds.add(member.getUuid());
         }
 
+        // Assign IDs to nodes.
+        NodeIdVisitor idVisitor = new NodeIdVisitor();
+        rel.visit(idVisitor);
+        Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
+
         // Create the plan.
-        PlanCreatePhysicalRelVisitor visitor = new PlanCreatePhysicalRelVisitor(partMap, dataMemberIds, dataMemberAddresses);
+        PlanCreateVisitor visitor = new PlanCreateVisitor(
+            partMap,
+            dataMemberIds,
+            dataMemberAddresses,
+            relIdMap
+        );
 
         rel.visit(visitor);
 

@@ -40,6 +40,7 @@ public class MapIndexScanPhysicalNode extends AbstractMapScanPhysicalNode {
     }
 
     public MapIndexScanPhysicalNode(
+        int id,
         String mapName,
         List<String> fieldNames,
         List<Integer> projects,
@@ -47,7 +48,7 @@ public class MapIndexScanPhysicalNode extends AbstractMapScanPhysicalNode {
         IndexFilter indexFilter,
         Expression<Boolean> remainderFilter
     ) {
-        super(mapName, fieldNames, projects, remainderFilter);
+        super(id, mapName, fieldNames, projects, remainderFilter);
 
         this.indexName = indexName;
         this.indexFilter = indexFilter;
@@ -67,7 +68,7 @@ public class MapIndexScanPhysicalNode extends AbstractMapScanPhysicalNode {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    protected void writeData0(ObjectDataOutput out) throws IOException {
         super.writeData(out);
 
         out.writeUTF(indexName);
@@ -75,7 +76,7 @@ public class MapIndexScanPhysicalNode extends AbstractMapScanPhysicalNode {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    protected void readData0(ObjectDataInput in) throws IOException {
         super.readData(in);
 
         indexName = in.readUTF();
@@ -86,7 +87,7 @@ public class MapIndexScanPhysicalNode extends AbstractMapScanPhysicalNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(mapName, fieldNames, projects, indexName, indexFilter, filter);
+        return Objects.hash(id, mapName, fieldNames, projects, indexName, indexFilter, filter);
     }
 
     @Override
@@ -101,17 +102,19 @@ public class MapIndexScanPhysicalNode extends AbstractMapScanPhysicalNode {
 
         MapIndexScanPhysicalNode that = (MapIndexScanPhysicalNode) o;
 
-        return mapName.equals(that.mapName)
-           && fieldNames.equals(that.fieldNames)
-           && projects.equals(that.projects)
-           && indexName.equals(that.indexName)
-           && indexFilter.equals(that.indexFilter)
-           && Objects.equals(filter, that.filter);
+        return id == that.id
+            && mapName.equals(that.mapName)
+            && fieldNames.equals(that.fieldNames)
+            && projects.equals(that.projects)
+            && indexName.equals(that.indexName)
+            && indexFilter.equals(that.indexFilter)
+            && Objects.equals(filter, that.filter);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldNames=" + fieldNames + ", projects=" + projects
-           + ", indexName=" + indexName + ", indexFilter=" + indexFilter + ", remainderFilter=" + filter + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldNames=" + fieldNames
+            + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
+            + ", remainderFilter=" + filter + '}';
     }
 }

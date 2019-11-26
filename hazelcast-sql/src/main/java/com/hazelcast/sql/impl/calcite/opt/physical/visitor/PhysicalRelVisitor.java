@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.physical;
+package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
+import com.hazelcast.sql.impl.calcite.opt.physical.AggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MaterializedInputPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedMapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SingletonSortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
@@ -26,7 +36,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRe
  * Visitor over physical relations.
  */
 public interface PhysicalRelVisitor {
-    void onRoot(RootPhysicalRel root);
+    void onRoot(RootPhysicalRel rel);
     void onMapScan(MapScanPhysicalRel rel);
     void onMapIndexScan(MapIndexScanPhysicalRel rel);
     void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel);

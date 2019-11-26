@@ -23,16 +23,20 @@ import com.hazelcast.nio.serialization.DataSerializable;
  */
 public interface PhysicalNode extends DataSerializable {
     /**
+     * @return ID of the node.
+     */
+    int getId();
+
+    /**
      * Visit the node.
      *
      * @param visitor Visitor.
      */
     void visit(PhysicalNodeVisitor visitor);
 
+    // TODO: Remove and use physical plan.
     int getInputCount();
-
     PhysicalNode getInput(int i);
-
     default PhysicalNode getInput() {
         return getInput(0);
     }

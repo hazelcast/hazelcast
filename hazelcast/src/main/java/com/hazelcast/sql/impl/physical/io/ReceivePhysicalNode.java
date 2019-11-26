@@ -35,7 +35,9 @@ public class ReceivePhysicalNode extends ZeroInputPhysicalNode implements EdgeAw
         // No-op.
     }
 
-    public ReceivePhysicalNode(int edgeId) {
+    public ReceivePhysicalNode(int id, int edgeId) {
+        super(id);
+
         this.edgeId = edgeId;
     }
 
@@ -55,18 +57,18 @@ public class ReceivePhysicalNode extends ZeroInputPhysicalNode implements EdgeAw
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData0(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(edgeId);
+        return Objects.hash(id, edgeId);
     }
 
     @Override
@@ -81,11 +83,11 @@ public class ReceivePhysicalNode extends ZeroInputPhysicalNode implements EdgeAw
 
         ReceivePhysicalNode that = (ReceivePhysicalNode) o;
 
-        return edgeId == that.edgeId;
+        return id == that.id && edgeId == that.edgeId;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{edgeId=" + edgeId + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + '}';
     }
 }

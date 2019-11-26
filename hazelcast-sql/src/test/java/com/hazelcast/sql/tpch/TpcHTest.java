@@ -45,6 +45,7 @@ import java.util.List;
 /**
  * Tests of TPC-H benchmark queries.
  */
+@Ignore
 @SuppressWarnings("checkstyle:OperatorWrap")
 public class TpcHTest extends SqlTestSupport {
     // TODO: Externalize data location.

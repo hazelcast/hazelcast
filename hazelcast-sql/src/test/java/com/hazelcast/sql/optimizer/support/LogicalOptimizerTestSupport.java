@@ -17,7 +17,7 @@
 package com.hazelcast.sql.optimizer.support;
 
 import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
-import com.hazelcast.sql.impl.calcite.opt.physical.PlanCreatePhysicalRelVisitor;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
@@ -98,7 +98,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
 
         List<AggregateExpression> aggExps = new ArrayList<>(agg.getAggCallList().size());
         for (AggregateCall aggCall : agg.getAggCallList()) {
-            aggExps.add(PlanCreatePhysicalRelVisitor.convertAggregateCall(aggCall));
+            aggExps.add(PlanCreateVisitor.convertAggregateCall(aggCall));
         }
         assertEquals(expAggExps, aggExps);
 

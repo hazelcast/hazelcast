@@ -26,13 +26,18 @@ public class MaterializedInputPhysicalNode extends UniInputPhysicalNode {
         // No-op.
     }
 
-    public MaterializedInputPhysicalNode(PhysicalNode upstream) {
-        super(upstream);
+    public MaterializedInputPhysicalNode(int id, PhysicalNode upstream) {
+        super(id, upstream);
     }
 
     @Override
     public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onMaterializedInputNode(this);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, upstream);
     }
 
     @Override
@@ -47,16 +52,11 @@ public class MaterializedInputPhysicalNode extends UniInputPhysicalNode {
 
         MaterializedInputPhysicalNode that = (MaterializedInputPhysicalNode) o;
 
-        return upstream.equals(that.upstream);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(upstream);
+        return id == that.id && upstream.equals(that.upstream);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", upstream=" + upstream + '}';
     }
 }

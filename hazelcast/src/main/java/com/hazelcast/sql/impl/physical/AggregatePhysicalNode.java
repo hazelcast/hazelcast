@@ -43,12 +43,13 @@ public class AggregatePhysicalNode extends UniInputPhysicalNode {
     }
 
     public AggregatePhysicalNode(
+        int id,
         PhysicalNode upstream,
         List<Integer> groupKey,
         List<AggregateExpression> expressions,
         int sortedGroupKeySize
     ) {
-        super(upstream);
+        super(id, upstream);
 
         this.groupKey = groupKey;
         this.expressions = expressions;
@@ -77,14 +78,14 @@ public class AggregatePhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
+    public void writeData1(ObjectDataOutput out) throws IOException {
         SerializationUtil.writeList(groupKey, out);
         SerializationUtil.writeList(expressions, out);
         out.writeInt(sortedGroupKeySize);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
+    public void readData1(ObjectDataInput in) throws IOException {
         groupKey = SerializationUtil.readList(in);
         expressions = SerializationUtil.readList(in);
         sortedGroupKeySize = in.readInt();
@@ -92,7 +93,7 @@ public class AggregatePhysicalNode extends UniInputPhysicalNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(upstream, groupKey, expressions, sortedGroupKeySize);
+        return Objects.hash(id, upstream, groupKey, expressions, sortedGroupKeySize);
     }
 
     @Override
@@ -107,13 +108,13 @@ public class AggregatePhysicalNode extends UniInputPhysicalNode {
 
         AggregatePhysicalNode that = (AggregatePhysicalNode) o;
 
-        return upstream.equals(that.upstream) && Objects.equals(groupKey, that.groupKey)
+        return id == that.id && upstream.equals(that.upstream) && Objects.equals(groupKey, that.groupKey)
             && expressions.equals(that.expressions) && sortedGroupKeySize == that.sortedGroupKeySize ;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{groupKey=" + groupKey + ", expressions=" + expressions
+        return getClass().getSimpleName() + "{id=" + id + ", groupKey=" + groupKey + ", expressions=" + expressions
             + ", sortedGroupKeySize=" + sortedGroupKeySize + ", upstream=" + upstream + '}';
     }
 }

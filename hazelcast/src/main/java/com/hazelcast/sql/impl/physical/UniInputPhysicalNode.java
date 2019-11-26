@@ -24,7 +24,7 @@ import java.io.IOException;
 /**
  * A node having only one input.
  */
-public abstract class UniInputPhysicalNode implements PhysicalNode {
+public abstract class UniInputPhysicalNode extends AbstractPhysicalNode {
     /** Upstream. */
     protected PhysicalNode upstream;
 
@@ -32,7 +32,9 @@ public abstract class UniInputPhysicalNode implements PhysicalNode {
         // No-op.
     }
 
-    protected UniInputPhysicalNode(PhysicalNode upstream) {
+    protected UniInputPhysicalNode(int id, PhysicalNode upstream) {
+        super(id);
+
         this.upstream = upstream;
     }
 
@@ -64,24 +66,24 @@ public abstract class UniInputPhysicalNode implements PhysicalNode {
     protected abstract void visit0(PhysicalNodeVisitor visitor);
 
     @Override
-    public final void writeData(ObjectDataOutput out) throws IOException {
+    protected final void writeData0(ObjectDataOutput out) throws IOException {
         out.writeObject(upstream);
 
-        writeData0(out);
+        writeData1(out);
     }
 
     @Override
-    public final void readData(ObjectDataInput in) throws IOException {
+    protected final void readData0(ObjectDataInput in) throws IOException {
         upstream = in.readObject();
 
-        readData0(in);
+        readData1(in);
     }
 
-    protected void writeData0(ObjectDataOutput out) throws IOException {
+    protected void writeData1(ObjectDataOutput out) throws IOException {
         // No-op.
     }
 
-    protected void readData0(ObjectDataInput in) throws IOException {
+    protected void readData1(ObjectDataInput in) throws IOException {
         // No-op.
     }
 }

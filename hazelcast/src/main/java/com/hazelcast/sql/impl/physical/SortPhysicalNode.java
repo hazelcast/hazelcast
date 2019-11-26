@@ -35,8 +35,8 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
         // No-op.
     }
 
-    public SortPhysicalNode(PhysicalNode upstream, List<Expression> expressions, List<Boolean> ascs) {
-        super(upstream);
+    public SortPhysicalNode(int id, PhysicalNode upstream, List<Expression> expressions, List<Boolean> ascs) {
+        super(id, upstream);
 
         this.expressions = expressions;
         this.ascs = ascs;
@@ -56,20 +56,20 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
+    public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeObject(expressions);
         out.writeObject(ascs);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
+    public void readData1(ObjectDataInput in) throws IOException {
         expressions = in.readObject();
         ascs = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(upstream, expressions, ascs);
+        return Objects.hash(id, upstream, expressions, ascs);
     }
 
     @Override
@@ -84,12 +84,12 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
 
         SortPhysicalNode that = (SortPhysicalNode) o;
 
-        return upstream.equals(that.upstream) && expressions.equals(that.expressions) && ascs.equals(that.ascs);
+        return id == that.id &&  upstream.equals(that.upstream) && expressions.equals(that.expressions) && ascs.equals(that.ascs);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{expressions=" + expressions + ", ascs=" + ascs
+        return getClass().getSimpleName() + "{id=" + id + ", expressions=" + expressions + ", ascs=" + ascs
             + ", upstream=" + upstream + '}';
     }
 }

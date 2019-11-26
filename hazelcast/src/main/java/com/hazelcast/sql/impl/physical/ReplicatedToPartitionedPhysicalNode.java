@@ -34,8 +34,8 @@ public class ReplicatedToPartitionedPhysicalNode extends UniInputPhysicalNode {
         // No-op.
     }
 
-    public ReplicatedToPartitionedPhysicalNode(PhysicalNode upstream, HashFunction hashFunction) {
-        super(upstream);
+    public ReplicatedToPartitionedPhysicalNode(int id, PhysicalNode upstream, HashFunction hashFunction) {
+        super(id, upstream);
 
         this.hashFunction = hashFunction;
     }
@@ -50,18 +50,18 @@ public class ReplicatedToPartitionedPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
+    public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeObject(hashFunction);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
+    public void readData1(ObjectDataInput in) throws IOException {
         hashFunction = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(upstream, hashFunction);
+        return Objects.hash(id, upstream, hashFunction);
     }
 
     @Override
@@ -76,11 +76,11 @@ public class ReplicatedToPartitionedPhysicalNode extends UniInputPhysicalNode {
 
         ReplicatedToPartitionedPhysicalNode that = (ReplicatedToPartitionedPhysicalNode) o;
 
-        return upstream.equals(that.upstream) && hashFunction.equals(that.hashFunction);
+        return id == that.id && upstream.equals(that.upstream) && hashFunction.equals(that.hashFunction);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{hashFunction=" + hashFunction + ", upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", hashFunction=" + hashFunction + ", upstream=" + upstream + '}';
     }
 }

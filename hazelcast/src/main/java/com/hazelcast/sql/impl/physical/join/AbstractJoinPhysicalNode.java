@@ -45,6 +45,7 @@ public abstract class AbstractJoinPhysicalNode extends BiInputPhysicalNode {
     }
 
     protected AbstractJoinPhysicalNode(
+        int id,
         PhysicalNode left,
         PhysicalNode right,
         Expression<Boolean> condition,
@@ -52,7 +53,7 @@ public abstract class AbstractJoinPhysicalNode extends BiInputPhysicalNode {
         boolean semi,
         int rightRowColumnCount
     ) {
-        super(left, right);
+        super(id, left, right);
 
         this.condition = condition;
         this.outer = outer;
@@ -77,14 +78,14 @@ public abstract class AbstractJoinPhysicalNode extends BiInputPhysicalNode {
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
+    public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeObject(condition);
         out.writeBoolean(outer);
         out.writeInt(rightRowColumnCount);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
+    public void readData1(ObjectDataInput in) throws IOException {
         condition = in.readObject();
         outer = in.readBoolean();
         rightRowColumnCount = in.readInt();

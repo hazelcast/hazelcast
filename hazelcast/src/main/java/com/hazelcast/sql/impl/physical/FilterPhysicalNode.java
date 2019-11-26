@@ -34,8 +34,8 @@ public class FilterPhysicalNode extends UniInputPhysicalNode {
         // No-op.
     }
 
-    public FilterPhysicalNode(PhysicalNode upstream, Expression<Boolean> filter) {
-        super(upstream);
+    public FilterPhysicalNode(int id, PhysicalNode upstream, Expression<Boolean> filter) {
+        super(id, upstream);
 
         assert filter != null;
 
@@ -52,18 +52,18 @@ public class FilterPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
+    public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeObject(filter);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
+    public void readData1(ObjectDataInput in) throws IOException {
         filter = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(upstream, filter);
+        return Objects.hash(id, upstream, filter);
     }
 
     @Override
@@ -78,11 +78,11 @@ public class FilterPhysicalNode extends UniInputPhysicalNode {
 
         FilterPhysicalNode that = (FilterPhysicalNode) o;
 
-        return upstream.equals(that.upstream) && filter.equals(that.filter);
+        return id == that.id && upstream.equals(that.upstream) && filter.equals(that.filter);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{filter=" + filter + ", upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", filter=" + filter + ", upstream=" + upstream + '}';
     }
 }

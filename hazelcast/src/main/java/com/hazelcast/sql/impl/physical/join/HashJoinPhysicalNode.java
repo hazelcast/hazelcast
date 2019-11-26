@@ -42,6 +42,7 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
     }
 
     public HashJoinPhysicalNode(
+        int id,
         PhysicalNode left,
         PhysicalNode right,
         Expression<Boolean> condition,
@@ -51,7 +52,7 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
         boolean semi,
         int rightRowColumnCount
     ) {
-        super(left, right, condition, outer, semi, rightRowColumnCount);
+        super(id, left, right, condition, outer, semi, rightRowColumnCount);
 
         this.leftHashKeys = leftHashKeys;
         this.rightHashKeys = rightHashKeys;
@@ -73,16 +74,16 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
-        super.writeData0(out);
+    public void writeData1(ObjectDataOutput out) throws IOException {
+        super.writeData1(out);
 
         SerializationUtil.writeList(leftHashKeys, out);
         SerializationUtil.writeList(rightHashKeys, out);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
-        super.readData0(in);
+    public void readData1(ObjectDataInput in) throws IOException {
+        super.readData1(in);
 
         leftHashKeys = SerializationUtil.readList(in);
         rightHashKeys = SerializationUtil.readList(in);
@@ -90,7 +91,7 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(left, right, condition, leftHashKeys, rightHashKeys, outer, semi, rightRowColumnCount);
+        return Objects.hash(id, left, right, condition, leftHashKeys, rightHashKeys, outer, semi, rightRowColumnCount);
     }
 
     @Override
@@ -105,14 +106,14 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
 
         HashJoinPhysicalNode that = (HashJoinPhysicalNode) o;
 
-        return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition)
+        return id == that.id && left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition)
             && leftHashKeys.equals(that.leftHashKeys) && rightHashKeys.equals(that.rightHashKeys) && outer == that.outer
             && semi == that.semi && rightRowColumnCount == that.rightRowColumnCount;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{condition=" + condition + ", leftHashKeys=" + leftHashKeys
+        return getClass().getSimpleName() + "{id=" + id + ", condition=" + condition + ", leftHashKeys=" + leftHashKeys
             + ", rightHashKeys=" + rightHashKeys + ", outer=" + outer + ", semi=" + semi
             + ", rightRowColumnCount=" + rightRowColumnCount + ", left=" + left + ", right=" + right + '}';
     }

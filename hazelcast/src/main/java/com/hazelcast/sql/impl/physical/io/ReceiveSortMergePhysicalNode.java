@@ -43,7 +43,9 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
         // No-op.
     }
 
-    public ReceiveSortMergePhysicalNode(int edgeId, List<Expression> expressions, List<Boolean> ascs) {
+    public ReceiveSortMergePhysicalNode(int id, int edgeId, List<Expression> expressions, List<Boolean> ascs) {
+        super(id);
+
         this.edgeId = edgeId;
         this.expressions = expressions;
         this.ascs = ascs;
@@ -73,14 +75,14 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
         out.writeObject(expressions);
         out.writeObject(ascs);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData0(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
         expressions = in.readObject();
         ascs = in.readObject();
@@ -88,7 +90,7 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
 
     @Override
     public int hashCode() {
-        return Objects.hash(edgeId, expressions, ascs);
+        return Objects.hash(id, edgeId, expressions, ascs);
     }
 
     @Override
@@ -103,12 +105,12 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
 
         ReceiveSortMergePhysicalNode that = (ReceiveSortMergePhysicalNode) o;
 
-        return edgeId == that.edgeId && expressions.equals(that.expressions) && ascs.equals(that.ascs);
+        return id == that.id && edgeId == that.edgeId && expressions.equals(that.expressions) && ascs.equals(that.ascs);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{edgeId=" + edgeId + ", expressions=" + expressions
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", expressions=" + expressions
             + ", ascs=" + ascs + '}';
     }
 }

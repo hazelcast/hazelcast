@@ -40,8 +40,8 @@ public class UnicastSendPhysicalNode extends UniInputPhysicalNode implements Edg
         // No-op.
     }
 
-    public UnicastSendPhysicalNode(PhysicalNode upstream, int edgeId, HashFunction hashFunction) {
-        super(upstream);
+    public UnicastSendPhysicalNode(int id, PhysicalNode upstream, int edgeId, HashFunction hashFunction) {
+        super(id, upstream);
 
         this.edgeId = edgeId;
         this.hashFunction = hashFunction;
@@ -67,20 +67,20 @@ public class UnicastSendPhysicalNode extends UniInputPhysicalNode implements Edg
     }
 
     @Override
-    public void writeData0(ObjectDataOutput out) throws IOException {
+    public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
         out.writeObject(hashFunction);
     }
 
     @Override
-    public void readData0(ObjectDataInput in) throws IOException {
+    public void readData1(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
         hashFunction = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(edgeId, upstream, hashFunction);
+        return Objects.hash(id, edgeId, upstream, hashFunction);
     }
 
     @Override
@@ -95,12 +95,12 @@ public class UnicastSendPhysicalNode extends UniInputPhysicalNode implements Edg
 
         UnicastSendPhysicalNode that = (UnicastSendPhysicalNode) o;
 
-        return edgeId == that.edgeId && upstream.equals(that.upstream) && hashFunction.equals(that.hashFunction);
+        return id == that.id && edgeId == that.edgeId && upstream.equals(that.upstream) && hashFunction.equals(that.hashFunction);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{edgeId=" + edgeId + ", hashFunction=" + hashFunction
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", hashFunction=" + hashFunction
             + ", upstream=" + upstream + '}';
     }
 }

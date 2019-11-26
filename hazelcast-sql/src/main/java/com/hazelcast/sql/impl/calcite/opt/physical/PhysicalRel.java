@@ -17,10 +17,16 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.HazelcastRelNode;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 
 /**
  * Marker interface for physical relations.
  */
 public interface PhysicalRel extends HazelcastRelNode {
+    /**
+     * Visit physical rel. A node with children should delegate to parent nodes first.
+     *
+     * @param visitor Visitor.
+     */
     void visit(PhysicalRelVisitor visitor);
 }

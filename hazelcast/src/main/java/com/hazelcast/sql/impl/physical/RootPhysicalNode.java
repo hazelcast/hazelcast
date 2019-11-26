@@ -26,8 +26,8 @@ public class RootPhysicalNode extends UniInputPhysicalNode {
         // No-op.
     }
 
-    public RootPhysicalNode(PhysicalNode upstream) {
-        super(upstream);
+    public RootPhysicalNode(int id, PhysicalNode upstream) {
+        super(id, upstream);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class RootPhysicalNode extends UniInputPhysicalNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(upstream);
+        return Objects.hash(id, upstream);
     }
 
     @Override
@@ -52,11 +52,11 @@ public class RootPhysicalNode extends UniInputPhysicalNode {
 
         RootPhysicalNode that = (RootPhysicalNode) o;
 
-        return upstream.equals(that.upstream);
+        return id == that.id && upstream.equals(that.upstream);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", upstream=" + upstream + '}';
     }
 }

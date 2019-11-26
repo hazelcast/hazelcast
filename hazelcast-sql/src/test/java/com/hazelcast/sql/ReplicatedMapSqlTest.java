@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.sql.support.model.person.City;
-import com.hazelcast.sql.support.plan.PhysicalPlanChecker;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -84,14 +83,6 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
 
             assertEquals(1, plan.getFragments().size());
 
-            assertFragment(
-                plan.getFragments().get(0),
-                PhysicalPlanChecker.newBuilder()
-                    .addReplicatedMapScan(ModelGenerator.CITY, asList("name"), asList(0), null)
-                    .addRoot()
-                    .build()
-            );
-
             List<SqlRow> rows = getQueryRows(cursor);
 
             assertEquals(expSize, rows.size());
@@ -120,14 +111,6 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             QueryPlan plan = cursor.getHandle().getPlan();
 
             assertEquals(1, plan.getFragments().size());
-
-            assertFragment(
-                plan.getFragments().get(0),
-                PhysicalPlanChecker.newBuilder()
-                    .addReplicatedMapScan(ModelGenerator.CITY, asList("name"), asList(0), null)
-                    .addRoot()
-                    .build()
-            );
 
             List<SqlRow> rows = getQueryRows(cursor);
 

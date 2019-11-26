@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.physical;
 import com.hazelcast.sql.impl.expression.Expression;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Node to scan a replicated map.
@@ -29,16 +30,47 @@ public class ReplicatedMapScanPhysicalNode extends AbstractMapScanPhysicalNode {
     }
 
     public ReplicatedMapScanPhysicalNode(
+        int id,
         String mapName,
         List<String> fieldNames,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(mapName, fieldNames, projects, filter);
+        super(id, mapName, fieldNames, projects, filter);
     }
 
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         visitor.onReplicatedMapScanNode(this);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, mapName, fieldNames, projects, filter);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AbstractMapScanPhysicalNode that = (AbstractMapScanPhysicalNode) o;
+
+        return id == that.id
+            && mapName.equals(that.mapName)
+            && fieldNames.equals(that.fieldNames)
+            && projects.equals(that.projects)
+            && Objects.equals(filter, that.filter);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldNames=" + fieldNames
+            + ", projects=" + projects + ", filter=" + filter + '}';
     }
 }

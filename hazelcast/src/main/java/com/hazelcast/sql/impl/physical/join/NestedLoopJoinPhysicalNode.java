@@ -31,6 +31,7 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
     }
 
     public NestedLoopJoinPhysicalNode(
+        int id,
         PhysicalNode left,
         PhysicalNode right,
         Expression<Boolean> condition,
@@ -38,7 +39,7 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
         boolean semi,
         int rightRowColumnCount
     ) {
-        super(left, right, condition, outer, semi, rightRowColumnCount);
+        super(id, left, right, condition, outer, semi, rightRowColumnCount);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(left, right, condition, outer, semi, rightRowColumnCount);
+        return Objects.hash(id, left, right, condition, outer, semi, rightRowColumnCount);
     }
 
     @Override
@@ -63,13 +64,13 @@ public class NestedLoopJoinPhysicalNode extends AbstractJoinPhysicalNode {
 
         NestedLoopJoinPhysicalNode that = (NestedLoopJoinPhysicalNode) o;
 
-        return left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition)
+        return id == that.id && left.equals(that.left) && right.equals(that.right) && Objects.equals(condition, that.condition)
             && outer == that.outer && semi == that.semi && rightRowColumnCount == that.rightRowColumnCount;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{condition=" + condition + ", outer=" + outer + ", semi=" + semi
+        return getClass().getSimpleName() + "{id=" + id + ", condition=" + condition + ", outer=" + outer + ", semi=" + semi
             + ", rightRowColumnCount=" + rightRowColumnCount + ", left=" + left + ", right=" + right + '}';
     }
 }

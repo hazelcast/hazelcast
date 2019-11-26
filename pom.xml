@@ -465,7 +465,7 @@
         <profile>
             <id>LOCAL</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx24G -XX:MaxPermSize=128M</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -539,7 +539,7 @@
         <profile>
             <id>test-coverage-Local</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx24G -XX:MaxPermSize=128M</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -1073,7 +1073,7 @@
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx24G -XX:MaxPermSize=128M</vmHeapSettings>
             </properties>
             <build>
                 <plugins>

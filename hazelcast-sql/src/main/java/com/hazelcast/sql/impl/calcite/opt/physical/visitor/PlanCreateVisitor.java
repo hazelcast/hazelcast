@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.physical;
+package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -25,6 +25,17 @@ import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPhysicalNodeVisitor;
 import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.calcite.opt.physical.AggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MaterializedInputPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedMapScanPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SingletonSortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
@@ -74,10 +85,10 @@ import java.util.Map;
 import java.util.UUID;
 
  /**
- * Visitor which produces query plan.
+ * Visitor which produces executable query plan.
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity"})
-public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
+public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
 
@@ -86,6 +97,9 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
 
     /** Data member addresses. */
     private final List<Address> dataMemberAddresses;
+
+    /** Rel ID map. */
+    private final Map<PhysicalRel, List<Integer>> relIdMap;
 
     /** Prepared fragments. */
     private final List<QueryFragment> fragments = new ArrayList<>();
@@ -99,14 +113,16 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     /** Root physical rel. */
     private RootPhysicalRel rootPhysicalRel;
 
-    public PlanCreatePhysicalRelVisitor(
+    public PlanCreateVisitor(
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
-        List<Address> dataMemberAddresses
+        List<Address> dataMemberAddresses,
+        Map<PhysicalRel, List<Integer>> relIdMap
     ) {
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
         this.dataMemberAddresses = dataMemberAddresses;
+        this.relIdMap = relIdMap;
     }
 
     public QueryPlan getPlan() {
@@ -143,12 +159,13 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     }
 
     @Override
-    public void onRoot(RootPhysicalRel root) {
-        rootPhysicalRel = root;
+    public void onRoot(RootPhysicalRel rel) {
+        rootPhysicalRel = rel;
 
         PhysicalNode upstreamNode = pollSingleUpstream();
 
         RootPhysicalNode rootNode = new RootPhysicalNode(
+            pollId(rel),
             upstreamNode
         );
 
@@ -158,6 +175,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
         MapScanPhysicalNode scanNode = new MapScanPhysicalNode(
+            pollId(rel),
             rel.getTableUnwrapped().getName(),
             rel.getTable().getRowType().getFieldNames(),
             rel.getProjects(),
@@ -170,6 +188,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
      @Override
      public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
          MapIndexScanPhysicalNode scanNode = new MapIndexScanPhysicalNode(
+             pollId(rel),
              rel.getTableUnwrapped().getName(),
              rel.getTable().getRowType().getFieldNames(),
              rel.getProjects(),
@@ -184,6 +203,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     @Override
     public void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel) {
         ReplicatedMapScanPhysicalNode scanNode = new ReplicatedMapScanPhysicalNode(
+            pollId(rel),
             rel.getTableUnwrapped().getName(),
             rel.getTable().getRowType().getFieldNames(),
             rel.getProjects(),
@@ -194,10 +214,10 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
     }
 
     @Override
-    public void onSort(SortPhysicalRel sort) {
+    public void onSort(SortPhysicalRel rel) {
         PhysicalNode upstreamNode = pollSingleUpstream();
 
-        List<RelFieldCollation> collations = sort.getCollation().getFieldCollations();
+        List<RelFieldCollation> collations = rel.getCollation().getFieldCollations();
 
         List<Expression> expressions = new ArrayList<>(collations.size());
         List<Boolean> ascs = new ArrayList<>(collations.size());
@@ -210,7 +230,12 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
             ascs.add(!direction.isDescending());
         }
 
-        SortPhysicalNode sortNode = new SortPhysicalNode(upstreamNode, expressions, ascs);
+        SortPhysicalNode sortNode = new SortPhysicalNode(
+            pollId(rel),
+            upstreamNode,
+            expressions,
+            ascs
+        );
 
         pushUpstream(sortNode);
     }
@@ -223,7 +248,10 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
+        int id = pollId(rel);
+
         UnicastSendPhysicalNode sendNode = new UnicastSendPhysicalNode(
+            id,
             upstreamNode,
             edge,
             new FieldHashFunction(rel.getHashFields())
@@ -232,7 +260,10 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
 
         // Create receiver.
-        ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(edge);
+        ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(
+            id,
+            edge
+        );
 
         pushUpstream(receiveNode);
     }
@@ -245,7 +276,10 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
+        int id = pollId(rel);
+
         BroadcastSendPhysicalNode sendNode = new BroadcastSendPhysicalNode(
+            id,
             upstreamNode,
             edge
         );
@@ -253,7 +287,10 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
 
         // Create receiver.
-        ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(edge);
+        ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(
+            id,
+            edge
+        );
 
         pushUpstream(receiveNode);
     }
@@ -270,7 +307,10 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         // Create sender and push it as a fragment.
         int edge = nextEdge();
 
+        int id = pollId(rel);
+
         UnicastSendPhysicalNode sendNode = new UnicastSendPhysicalNode(
+            id,
             sortNode,
             edge,
             AllFieldsHashFunction.INSTANCE
@@ -280,6 +320,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
 
         // Create a receiver and push it to stack.
         ReceiveSortMergePhysicalNode receiveNode = new ReceiveSortMergePhysicalNode(
+            id,
             edge,
             sortNode.getExpressions(),
             sortNode.getAscs()
@@ -293,6 +334,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
          PhysicalNode upstreamNode = pollSingleUpstream();
 
          ReplicatedToPartitionedPhysicalNode replicatedToPartitionedNode = new ReplicatedToPartitionedPhysicalNode(
+             pollId(rel),
              upstreamNode,
              new FieldHashFunction(rel.getHashFields())
          );
@@ -313,7 +355,11 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
             convertedProjects.add(convertedProject);
         }
 
-        ProjectPhysicalNode projectNode = new ProjectPhysicalNode(upstreamNode, convertedProjects);
+        ProjectPhysicalNode projectNode = new ProjectPhysicalNode(
+            pollId(rel),
+            upstreamNode,
+            convertedProjects
+        );
 
         pushUpstream(projectNode);
     }
@@ -324,7 +370,11 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
 
         Expression<Boolean> filter = convertFilter(rel.getCondition());
 
-        FilterPhysicalNode filterNode = new FilterPhysicalNode(upstreamNode, filter);
+        FilterPhysicalNode filterNode = new FilterPhysicalNode(
+            pollId(rel),
+            upstreamNode,
+            filter
+        );
 
         pushUpstream(filterNode);
     }
@@ -347,6 +397,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         }
 
         AggregatePhysicalNode aggNode = new AggregatePhysicalNode(
+            pollId(rel),
             upstreamNode,
             groupKey,
             aggAccumulators,
@@ -366,6 +417,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
          Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
 
          NestedLoopJoinPhysicalNode joinNode = new NestedLoopJoinPhysicalNode(
+             pollId(rel),
              leftInput,
              rightInput,
              convertedCondition,
@@ -387,6 +439,7 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
          Expression convertedCondition = condition.accept(ExpressionConverterRexVisitor.INSTANCE);
 
          HashJoinPhysicalNode joinNode = new HashJoinPhysicalNode(
+             pollId(rel),
              leftInput,
              rightInput,
              convertedCondition,
@@ -404,7 +457,10 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
      public void onMaterializedInput(MaterializedInputPhysicalRel rel) {
          PhysicalNode input = pollSingleUpstream();
 
-         MaterializedInputPhysicalNode node = new MaterializedInputPhysicalNode(input);
+         MaterializedInputPhysicalNode node = new MaterializedInputPhysicalNode(
+             pollId(rel),
+             input
+         );
 
          pushUpstream(node);
      }
@@ -507,14 +563,23 @@ public class PlanCreatePhysicalRelVisitor implements PhysicalRelVisitor {
         return nextEdgeGenerator++;
     }
 
+    private int pollId(PhysicalRel rel) {
+        List<Integer> ids = relIdMap.get(rel);
+
+        assert ids != null;
+        assert !ids.isEmpty();
+
+        return ids.remove(0);
+    }
+
     @SuppressWarnings("unchecked")
     private static Expression<Boolean> convertFilter(RexNode expression) {
         if (expression == null) {
             return null;
         }
 
-         Expression convertedExpression = expression.accept(ExpressionConverterRexVisitor.INSTANCE);
+        Expression convertedExpression = expression.accept(ExpressionConverterRexVisitor.INSTANCE);
 
-         return (Expression<Boolean>) convertedExpression;
-     }
+        return (Expression<Boolean>) convertedExpression;
+    }
 }
