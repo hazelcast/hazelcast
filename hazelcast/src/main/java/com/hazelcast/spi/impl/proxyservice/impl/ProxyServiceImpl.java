@@ -125,6 +125,12 @@ public class ProxyServiceImpl
         return count;
     }
 
+    public void initializeAndPublishProxies() {
+        for (ProxyRegistry registry : registries.values()) {
+            registry.initializeAndPublishProxies();
+        }
+    }
+
     @Override
     public void initializeDistributedObject(String serviceName, String name) {
         checkServiceNameNotNull(serviceName);
