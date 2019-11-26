@@ -38,12 +38,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -188,7 +193,16 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
         IPartitionLostEvent internalEvent = new IPartitionLostEvent();
 
         ObjectDataInput input = mock(ObjectDataInput.class);
-        when(input.readInt()).thenReturn(1, 2);
+        final byte[] host = "127.0.0.1".getBytes(US_ASCII);
+        when(input.readInt()).thenReturn(1, 2, 5702, host.length);
+        Mockito.doAnswer(new Answer<byte[]>() {
+            @Override
+            public byte[] answer(InvocationOnMock invocation) throws Throwable {
+                byte[] args = (byte[]) (invocation.getArguments()[0]);
+                System.arraycopy(host, 0, args, 0, host.length);
+                return args;
+            }
+        }).when(input).readFully(ArgumentMatchers.any(byte[].class));
 
         internalEvent.readData(input);
 
