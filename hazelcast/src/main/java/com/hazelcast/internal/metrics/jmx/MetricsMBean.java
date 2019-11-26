@@ -45,10 +45,12 @@ public class MetricsMBean implements DynamicMBean {
      * Adds a metric if necessary and sets its value.
      */
     void setMetricValue(String name, String unit, Number value) {
-        if (!metrics.containsKey(name)) {
-            metrics.computeIfAbsent(name, k -> of(unit, new AtomicReference<>()))
-                .element2.lazySet(value);
+        BiTuple<String, AtomicReference<Number>> metricTuple = metrics.get(name);
+        if (metricTuple == null) {
+            metricTuple = of(unit, new AtomicReference<>());
+            metrics.put(name, metricTuple);
         }
+        metricTuple.element2.lazySet(value);
     }
 
     void removeMetric(String name) {
