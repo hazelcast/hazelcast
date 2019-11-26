@@ -33,8 +33,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.metrics.impl.MetricsUtil.excludedTargets;
-import static com.hazelcast.internal.metrics.impl.MetricsUtil.getExcludedTargets;
+import static com.hazelcast.internal.metrics.impl.MetricsUtil.adjustExclusionsWithLevel;
+import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTargets;
 
 /**
  * Class representing a metrics collection cycle. It collects both static
@@ -112,7 +112,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(methodProbe.probe.unit())
                         .withMetric(methodProbe.getProbeOrMethodName())
-                        .withExcludedTargets(getExcludedTargets(methodProbe));
+                        .withExcludedTargets(extractExcludedTargets(methodProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, methodProbe);
                 collect(descriptorCopy, source, methodProbe);
@@ -125,7 +125,7 @@ class MetricsCollectionCycle {
                         .copy()
                         .withUnit(fieldProbe.probe.unit())
                         .withMetric(fieldProbe.getProbeOrFieldName())
-                        .withExcludedTargets(getExcludedTargets(fieldProbe));
+                        .withExcludedTargets(extractExcludedTargets(fieldProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, fieldProbe);
                 collect(descriptorCopy, source, fieldProbe);
@@ -184,10 +184,10 @@ class MetricsCollectionCycle {
         public void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, long value) {
             if (level.isEnabled(minimumLevel)) {
                 MetricDescriptor descriptorCopy = descriptor
-                    .copy()
-                    .withUnit(unit)
-                    .withMetric(name)
-                    .withExcludedTargets(excludedTargets(descriptor.excludedTargets(), level));
+                        .copy()
+                        .withUnit(unit)
+                        .withMetric(name);
+                adjustExclusionsWithLevel(descriptorCopy, level);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectLong(descriptorCopy, value);
@@ -198,10 +198,10 @@ class MetricsCollectionCycle {
         public void collect(MetricDescriptor descriptor, String name, ProbeLevel level, ProbeUnit unit, double value) {
             if (level.isEnabled(minimumLevel)) {
                 MetricDescriptor descriptorCopy = descriptor
-                    .copy()
-                    .withUnit(unit)
-                    .withMetric(name)
-                    .withExcludedTargets(excludedTargets(descriptor.excludedTargets(), level));
+                        .copy()
+                        .withUnit(unit)
+                        .withMetric(name);
+                adjustExclusionsWithLevel(descriptorCopy, level);
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, value);
                 metricsCollector.collectDouble(descriptorCopy, value);

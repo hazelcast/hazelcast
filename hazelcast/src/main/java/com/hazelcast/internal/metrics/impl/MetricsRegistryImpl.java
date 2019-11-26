@@ -40,7 +40,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.internal.metrics.impl.MetricsUtil.getExcludedTargets;
+import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTargets;
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS;
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.WEAK;
@@ -233,7 +233,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             return;
         }
 
-        descriptor.withExcludedTargets(getExcludedTargets(function));
+        descriptor.withExcludedTargets(extractExcludedTargets(function));
 
         MetricDescriptorImpl.LookupView descriptorLookupView = ((MetricDescriptorImpl) descriptor).lookupView();
         ProbeInstance probeInstance = probeInstances

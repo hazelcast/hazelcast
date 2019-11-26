@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
+import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 
 import java.util.Collection;
@@ -33,37 +35,58 @@ final class MetricsUtil {
     private MetricsUtil() {
     }
 
-    static Collection<MetricTarget> excludedTargets(Collection<MetricTarget> exclusions, ProbeLevel level) {
+    /**
+     * Adjusts the excluded targets on the given {@code descriptor} if
+     * the provided {@code level} is {@link ProbeLevel#DEBUG}.
+     *
+     * @param descriptor The descriptor to update
+     * @param level      The level of the metric to adjust with
+     */
+    static void adjustExclusionsWithLevel(MetricDescriptor descriptor, ProbeLevel level) {
         if (DEBUG != level) {
-            return exclusions;
-        } else if (exclusions.contains(DIAGNOSTICS)) {
-            return ALL_TARGETS;
+            return;
+        }
+
+        if (descriptor.excludedTargets().contains(DIAGNOSTICS)) {
+            descriptor.withExcludedTargets(ALL_TARGETS);
         } else {
-            return ALL_TARGETS_BUT_DIAGNOSTICS;
+            descriptor.withExcludedTargets(ALL_TARGETS_BUT_DIAGNOSTICS);
         }
     }
 
-    static Collection<MetricTarget> getExcludedTargets(Object object) {
-        if (object instanceof FieldProbe) {
-            FieldProbe fieldProbe = (FieldProbe) object;
-            return getMetricTargets(fieldProbe.probe, fieldProbe.sourceMetadata);
+    /**
+     * Extract the excluded targets from the given {@link ProbeFunction}.
+     *
+     * @param function The {@link ProbeFunction} the excluded targets to
+     *                 be excluded from
+     * @return the excluded targets
+     */
+    static Collection<MetricTarget> extractExcludedTargets(ProbeFunction function) {
+        if (function instanceof FieldProbe) {
+            FieldProbe fieldProbe = (FieldProbe) function;
+            return extractExcludedTargets(fieldProbe.probe, fieldProbe.sourceMetadata);
         }
 
-        if (object instanceof MethodProbe) {
-            MethodProbe methodProbe = (MethodProbe) object;
-            return getMetricTargets(methodProbe.probe, methodProbe.sourceMetadata);
+        if (function instanceof MethodProbe) {
+            MethodProbe methodProbe = (MethodProbe) function;
+            return extractExcludedTargets(methodProbe.probe, methodProbe.sourceMetadata);
         }
 
         return emptySet();
     }
 
-    private static Collection<MetricTarget> getMetricTargets(CachedProbe probe, SourceMetadata sourceMetadata) {
+    private static Collection<MetricTarget> extractExcludedTargets(CachedProbe probe, SourceMetadata sourceMetadata) {
         ProbeLevel level = probe.level();
         Collection<MetricTarget> excludedTargetsClass = sourceMetadata.excludedTargetsClass();
         Set<MetricTarget> excludedTargetsProbe = asSet(probe.excludedTargets());
         Set<MetricTarget> excludedTargetsUnion = MetricTarget.union(excludedTargetsClass, excludedTargetsProbe);
 
-        return excludedTargets(excludedTargetsUnion, level);
+        if (DEBUG != level) {
+            return excludedTargetsUnion;
+        } else if (excludedTargetsUnion.contains(DIAGNOSTICS)) {
+            return ALL_TARGETS;
+        } else {
+            return ALL_TARGETS_BUT_DIAGNOSTICS;
+        }
     }
-
 }
