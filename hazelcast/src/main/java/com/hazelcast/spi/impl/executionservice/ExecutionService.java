@@ -61,11 +61,6 @@ public interface ExecutionService {
     String CLIENT_QUERY_EXECUTOR = "hz:client-query";
 
     /**
-     * Name of the client management executor.
-     */
-    String CLIENT_MANAGEMENT_EXECUTOR = "hz:client-management";
-
-    /**
      * Name of the client transaction executor.
      */
     String CLIENT_BLOCKING_EXECUTOR = "hz:client-blocking-tasks";
