@@ -65,7 +65,7 @@ public class EvictorImpl implements Evictor {
     }
 
     @Override
-    public void forceEvict(RecordStore recordStore) {
+    public void forceEvictByPercentage(RecordStore recordStore, double evictionPercentage) {
         // NOP.
     }
 
