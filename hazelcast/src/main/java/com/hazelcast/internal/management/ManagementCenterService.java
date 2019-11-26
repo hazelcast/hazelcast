@@ -56,6 +56,7 @@ import com.hazelcast.internal.management.request.WanCheckConsistencyRequest;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.RetryableException;
@@ -63,6 +64,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -109,6 +111,7 @@ public class ManagementCenterService {
     private static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
     private static final long DEFAULT_UPDATE_INTERVAL = 3000;
     private static final long EVENT_SEND_INTERVAL_MILLIS = 1000;
+    private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -147,6 +150,7 @@ public class ManagementCenterService {
         this.eventSendThread = new EventSendThread();
         this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         this.connectionFactory = instance.node.getNodeExtension().getManagementCenterConnectionFactory();
+        registerExecutor();
 
         if (this.managementCenterConfig.isEnabled()) {
             this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());
@@ -215,6 +219,15 @@ public class ManagementCenterService {
         } catch (Throwable ignored) {
             ignore(ignored);
         }
+    }
+
+    private void registerExecutor() {
+        final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();
+        int threadCount = instance.node.getProperties().getInteger(ClusterProperty.MC_EXECUTOR_THREAD_COUNT);
+        logger.finest("Creating new executor for Management Center service tasks with threadCount=" + threadCount);
+        executionService.register(ExecutionService.MC_EXECUTOR,
+                threadCount, threadCount * EXECUTOR_QUEUE_CAPACITY_PER_THREAD,
+                ExecutorType.CACHED);
     }
 
     public Optional<String> getTimedMemberStateJson() {

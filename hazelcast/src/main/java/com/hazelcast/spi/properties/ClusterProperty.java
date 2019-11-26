@@ -578,6 +578,13 @@ public final class ClusterProperty {
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.slow.operations.count", 10);
 
+    /**
+     * The number of threads that the Management Center service has available for processing operations
+     * sent from connected Management Center instance.
+     */
+    public static final HazelcastProperty MC_EXECUTOR_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.mc.executor.thread.count", 2);
+
     public static final HazelcastProperty CONNECTION_MONITOR_INTERVAL
             = new HazelcastProperty("hazelcast.connection.monitor.interval", 100, MILLISECONDS);
     public static final HazelcastProperty CONNECTION_MONITOR_MAX_FAULTS

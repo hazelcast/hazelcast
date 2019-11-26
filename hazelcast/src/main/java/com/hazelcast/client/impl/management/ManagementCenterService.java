@@ -32,7 +32,9 @@ import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
@@ -376,7 +378,7 @@ public class ManagementCenterService {
                 clientMessage -> {
                     MCMatchMCConfigCodec.ResponseParameters response =
                             MCMatchMCConfigCodec.decodeResponse(clientMessage);
-                    return response.response;
+                    return response.result;
                 },
                 false
         );
@@ -466,6 +468,59 @@ public class ManagementCenterService {
                 invocation.invoke(),
                 serializationService,
                 clientMessage -> null
+        );
+    }
+
+    /**
+     * Runs the script on a given member.
+     *
+     * @param member    target member
+     * @param engine    the name of script engine which will be used for the execution
+     * @param script    the script to execute
+     * @return          operation future object with script execution output
+     */
+    @Nonnull
+    public CompletableFuture<String> runScript(Member member, String engine, String script) {
+        checkNotNull(member);
+        checkNotNull(script);
+        checkNotNull(engine);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCRunScriptCodec.encodeRequest(engine, script),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCRunScriptCodec.decodeResponse(clientMessage).result
+        );
+    }
+
+    /**
+     * Runs the console command on a given member.
+     *
+     * @param member        target member
+     * @param namespace     namespace to be set before the command is executed (optional)
+     * @param command       the command to execute
+     * @return              operation future object with command execution output
+     */
+    @Nonnull
+    public CompletableFuture<String> runConsoleCommand(Member member, String namespace, String command) {
+        checkNotNull(member);
+        checkNotNull(command);
+
+        ClientInvocation invocation = new ClientInvocation(
+                client,
+                MCRunConsoleCommandCodec.encodeRequest(namespace, command),
+                null,
+                member.getAddress()
+        );
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                serializationService,
+                clientMessage -> MCRunConsoleCommandCodec.decodeResponse(clientMessage).result
         );
     }
 }

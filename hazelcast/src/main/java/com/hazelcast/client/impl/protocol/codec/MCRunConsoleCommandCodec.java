@@ -34,47 +34,53 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Checks if local MC config (client filter list) has the same ETag as provided.
+ * Runs given console command on the member it's called on.
  */
-@Generated("23e195304957df92f76530eb9b79ad8e")
-public final class MCMatchMCConfigCodec {
-    //hex: 0x200C00
-    public static final int REQUEST_MESSAGE_TYPE = 2100224;
-    //hex: 0x200C01
-    public static final int RESPONSE_MESSAGE_TYPE = 2100225;
+@Generated("625e8e93cd7237750f4e8ec8bbf749cf")
+public final class MCRunConsoleCommandCodec {
+    //hex: 0x201200
+    public static final int REQUEST_MESSAGE_TYPE = 2101760;
+    //hex: 0x201201
+    public static final int RESPONSE_MESSAGE_TYPE = 2101761;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESULT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESULT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private MCMatchMCConfigCodec() {
+    private MCRunConsoleCommandCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * ETag value of current MC config.
+         * Optional namespace to be set before the command is executed.
          */
-        public java.lang.String eTag;
+        public @Nullable java.lang.String namespace;
+
+        /**
+         * The console command to be executed.
+         */
+        public java.lang.String command;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String eTag) {
+    public static ClientMessage encodeRequest(@Nullable java.lang.String namespace, java.lang.String command) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("MC.MatchMCConfig");
+        clientMessage.setOperationName("MC.RunConsoleCommand");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, eTag);
+        CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
+        StringCodec.encode(clientMessage, command);
         return clientMessage;
     }
 
-    public static MCMatchMCConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static MCRunConsoleCommandCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.eTag = StringCodec.decode(iterator);
+        request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.command = StringCodec.decode(iterator);
         return request;
     }
 
@@ -82,26 +88,27 @@ public final class MCMatchMCConfigCodec {
     public static class ResponseParameters {
 
         /**
-         * true if ETag values are equal; or false otherwise.
+         * Execution result: console command output.
          */
-        public boolean result;
+        public java.lang.String result;
     }
 
-    public static ClientMessage encodeResponse(boolean result) {
+    public static ClientMessage encodeResponse(java.lang.String result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET, result);
         clientMessage.add(initialFrame);
 
+        StringCodec.encode(clientMessage, result);
         return clientMessage;
     }
 
-    public static MCMatchMCConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static MCRunConsoleCommandCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        response.result = decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
+        //empty initial frame
+        iterator.next();
+        response.result = StringCodec.decode(iterator);
         return response;
     }
 
