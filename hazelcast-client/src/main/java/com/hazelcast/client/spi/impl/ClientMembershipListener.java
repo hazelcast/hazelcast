@@ -47,7 +47,7 @@ import static java.util.Collections.unmodifiableSet;
 class ClientMembershipListener extends ClientAddMembershipListenerCodec.AbstractEventHandler
         implements EventHandler<ClientMessage> {
 
-    private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
+    private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
 
     private final ILogger logger;
     private final HazelcastClientInstanceImpl client;
@@ -148,7 +148,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private void waitInitialMemberListFetched() throws InterruptedException {
         boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         if (!success) {
-            logger.warning("Error while getting initial member list from cluster!");
+            throw new IllegalStateException("Could not get initial member list from cluster!");
         }
     }
 
