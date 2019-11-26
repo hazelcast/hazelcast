@@ -29,7 +29,6 @@ fi
 
 JAVA_OPTS_ARRAY=(\
 $JDK_OPTS \
-$JAVA_OPTS_DEFAULT \
 "-Dhazelcast.logging.type=log4j" \
 "-Dlog4j.configuration=file:$JET_HOME/config/log4j.properties" \
 "-Djet.home=$JET_HOME" \
@@ -44,4 +43,4 @@ if [ "$JET_LICENSE_KEY" ]; then
   JAVA_OPTS_ARRAY+=("-Dhazelcast.enterprise.license.key=${JET_LICENSE_KEY}")
 fi
 
-CLASSPATH="$JET_HOME/lib/*:$CLASSPATH:$CLASSPATH_DEFAULT"
+CLASSPATH="$JET_HOME/lib/*:$CLASSPATH"
