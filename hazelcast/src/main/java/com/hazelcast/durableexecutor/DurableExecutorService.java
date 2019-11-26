@@ -132,6 +132,7 @@ public interface DurableExecutorService extends ExecutorService, DistributedObje
      *
      * @param task task submitted to the owner of the specified key
      * @param key  the specified key
+     * @param <T>  the return type of the task
      * @return a Future representing pending completion of the task
      */
     <T> DurableExecutorServiceFuture<T> submitToKeyOwner(@Nonnull Callable<T> task,

@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
 
 import java.net.InetSocketAddress;
@@ -26,7 +27,7 @@ import java.util.List;
  * <b>IMPORTANT</b>
  * This interface is not intended to provide addresses of other cluster members with
  * which the hazelcast instance will form a cluster. This is an SPI for advanced use in
- * cases where the {@link com.hazelcast.instance.DefaultAddressPicker} does not
+ * cases where the {@link AddressPicker} implementation does not
  * pick suitable addresses to bind to and publish to other cluster members.
  * For instance, this could allow easier deployment in some cases when running on
  * Docker, AWS or other cloud environments.
@@ -41,7 +42,6 @@ import java.util.List;
  * <p>
  * This is practical in some cloud environments where the default strategy is not yielding good results.
  *
- * @see com.hazelcast.instance.DefaultAddressPicker
  * @see com.hazelcast.config.NetworkConfig#setMemberAddressProviderConfig(com.hazelcast.config.MemberAddressProviderConfig)
  */
 public interface MemberAddressProvider {

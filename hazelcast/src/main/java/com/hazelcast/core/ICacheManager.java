@@ -50,6 +50,8 @@ public interface ICacheManager {
      * Classloader prefix is generated as a string representation of the specified classloader: ({@code cl.toString()})
      *
      * @param name the prefixed name of the cache
+     * @param <K> the type of key
+     * @param <V> the type of value
      * @return the cache instance with the specified prefixed name
      *
      * @throws com.hazelcast.cache.CacheNotExistsException  if there is no configured or created cache

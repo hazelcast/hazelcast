@@ -549,7 +549,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      * Sets the metadata policy. See {@link MetadataPolicy} for more
      * information.
      *
-     * @param metadataPolicy
+     * @param metadataPolicy the metadata policy
      */
     public MapConfig setMetadataPolicy(MetadataPolicy metadataPolicy) {
         this.metadataPolicy = metadataPolicy;

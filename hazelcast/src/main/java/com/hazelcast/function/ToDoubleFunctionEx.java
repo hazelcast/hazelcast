@@ -34,6 +34,7 @@ public interface ToDoubleFunctionEx<T> extends ToDoubleFunction<T>, Serializable
 
     /**
      * Exception-declaring version of {@link ToDoubleFunction#applyAsDouble}.
+     * @throws Exception in case of any exceptional case
      */
     double applyAsDoubleEx(T value) throws Exception;
 

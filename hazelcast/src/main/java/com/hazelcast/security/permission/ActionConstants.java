@@ -209,9 +209,9 @@ public final class ActionConstants {
     /**
      * Creates a permission
      *
-     * @param name
-     * @param serviceName
-     * @param actions
+     * @param name the permission name
+     * @param serviceName the service name
+     * @param actions the actions
      * @return the created Permission
      * @throws java.lang.IllegalArgumentException if there is no service found with the given serviceName.
      */

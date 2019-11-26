@@ -32,7 +32,7 @@ public interface DomConfigProcessor {
      * Traverses the DOM and fills the config
      *
      * @param rootNode the root node
-     * @throws Exception
+     * @throws Exception in case of any exceptional case
      */
     void buildConfig(Node rootNode) throws Exception;
 }

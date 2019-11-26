@@ -46,7 +46,7 @@ public interface SocketInterceptor {
      * Called when a connection is established.
      *
      * @param connectedSocket related socket
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void onConnect(Socket connectedSocket) throws IOException;
 }

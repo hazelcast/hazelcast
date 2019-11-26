@@ -33,7 +33,7 @@ public interface ByteArraySerializer<T> extends Serializer {
      *
      * @param object that will be serialized
      * @return byte array that object is serialized into
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     byte[] write(T object) throws IOException;
 
@@ -42,7 +42,7 @@ public interface ByteArraySerializer<T> extends Serializer {
      *
      * @param buffer that object will be read from
      * @return deserialized object
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     T read(byte[] buffer) throws IOException;
 }

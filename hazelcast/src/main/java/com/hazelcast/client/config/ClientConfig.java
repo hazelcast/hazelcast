@@ -587,7 +587,7 @@ public class ClientConfig {
     /**
      * Sets the classLoader which is used by serialization and listener configuration
      *
-     * @param classLoader
+     * @param classLoader the classLoader
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setClassLoader(ClassLoader classLoader) {
@@ -768,7 +768,7 @@ public class ClientConfig {
     /**
      * Set User Code Deployment configuration
      *
-     * @param userCodeDeploymentConfig
+     * @param userCodeDeploymentConfig the configuration of User Code Deployment
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @since 3.9
      */
