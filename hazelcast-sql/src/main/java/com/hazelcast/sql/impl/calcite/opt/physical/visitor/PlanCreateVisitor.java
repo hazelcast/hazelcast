@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPhysicalNodeVisitor;
 import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
+import com.hazelcast.sql.impl.OptimizerStatistics;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
 import com.hazelcast.sql.impl.calcite.opt.physical.AggregatePhysicalRel;
@@ -109,6 +110,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Whether physical rel should be saved in the plan. */
     private final boolean savePhysicalRel;
 
+    /** Optimizer statistics. */
+    private final OptimizerStatistics stats;
+
     /** Prepared fragments. */
     private final List<QueryFragment> fragments = new ArrayList<>();
 
@@ -127,7 +131,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<Address> dataMemberAddresses,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
-        boolean savePhysicalRel
+        boolean savePhysicalRel,
+        OptimizerStatistics stats
     ) {
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
@@ -135,6 +140,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.savePhysicalRel = savePhysicalRel;
+        this.stats = stats;
     }
 
     public QueryPlan getPlan() {
@@ -169,6 +175,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             outboundEdgeMap,
             inboundEdgeMap,
             explain,
+            stats,
             savePhysicalRel ? Collections.singleton(rootPhysicalRel) : null
         );
     }

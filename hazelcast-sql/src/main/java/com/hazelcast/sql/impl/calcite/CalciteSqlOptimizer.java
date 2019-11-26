@@ -23,12 +23,14 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.OptimizerStatistics;
 import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.RuleCallTracker;
 import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.statistics.DefaultStatisticProvider;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
 import org.apache.calcite.rel.RelNode;
@@ -73,10 +75,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         LogicalRel logicalRel = context.optimizeLogical(rel);
 
         // 5. Perform physical optimization.
-        PhysicalRel physicalRel = context.optimizePhysical(logicalRel);
+        long start = System.currentTimeMillis();
+
+        boolean statsEnabled = context.getConfig().isStatisticsEnabled();
+
+        RuleCallTracker physicalRuleCallTracker = statsEnabled ? new RuleCallTracker() : null;
+        PhysicalRel physicalRel = context.optimizePhysical(logicalRel, physicalRuleCallTracker);
 
         // 6. Create plan.
-        return doCreatePlan(sql, context, physicalRel);
+        long dur = System.currentTimeMillis() - start;
+
+        OptimizerStatistics stats = statsEnabled ? new OptimizerStatistics(dur, physicalRuleCallTracker) : null;
+
+        return doCreatePlan(sql, context, physicalRel, stats);
     }
 
     /**
@@ -85,7 +96,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private QueryPlan doCreatePlan(String sql, OptimizerContext context, PhysicalRel rel) {
+    private QueryPlan doCreatePlan(String sql, OptimizerContext context, PhysicalRel rel, OptimizerStatistics stats) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
@@ -127,7 +138,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             dataMemberAddresses,
             relIdMap,
             sql,
-            context.getConfig().isSavePhysicalRel()
+            context.getConfig().isSavePhysicalRel(),
+            stats
         );
 
         rel.visit(visitor);

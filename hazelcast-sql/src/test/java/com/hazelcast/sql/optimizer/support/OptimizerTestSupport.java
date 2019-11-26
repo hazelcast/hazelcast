@@ -96,7 +96,7 @@ public abstract class OptimizerTestSupport {
         SqlNode node = context.parse(sql);
         RelNode converted = context.convert(node);
         LogicalRel logical = context.optimizeLogical(converted);
-        PhysicalRel physical = isOptimizePhysical() ? context.optimizePhysical(logical) : null;
+        PhysicalRel physical = isOptimizePhysical() ? context.optimizePhysical(logical, null) : null;
 
         Result res = new Result(node, converted, logical, physical);
 

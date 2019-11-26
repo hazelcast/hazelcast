@@ -16,6 +16,7 @@
 
 package org.apache.calcite.plan;
 
+import com.hazelcast.sql.impl.RuleCallTracker;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -30,6 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class HazelcastRelOptCluster extends RelOptCluster {
     /** Number of members. */
     private final int memberCount;
+
+    /** Rule call tracker. */
+    private RuleCallTracker ruleCallTracker;
 
     private HazelcastRelOptCluster(
         RelOptPlanner planner,
@@ -65,8 +69,16 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
         return memberCount;
     }
 
+    public RuleCallTracker getRuleCallTracker() {
+        return ruleCallTracker;
+    }
+
+    public void setRuleCallTracker(RuleCallTracker ruleCallTracker) {
+        this.ruleCallTracker = ruleCallTracker;
+    }
+
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + "memberCount=" + memberCount + '}';
+        return getClass().getSimpleName() + "{memberCount=" + memberCount + '}';
     }
 }

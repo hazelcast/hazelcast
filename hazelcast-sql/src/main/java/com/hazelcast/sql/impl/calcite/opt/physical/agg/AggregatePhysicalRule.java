@@ -17,10 +17,11 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.agg;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.AbstractPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
@@ -38,7 +39,7 @@ import java.util.List;
  * Rule for physical aggregate optimization.
  */
 // TODO: Handle distinct aggregates - how - accumulate all entries locally, and then redistribute?
-public final class AggregatePhysicalRule extends RelOptRule {
+public final class AggregatePhysicalRule extends AbstractPhysicalRule {
     public static final RelOptRule INSTANCE = new AggregatePhysicalRule();
 
     private AggregatePhysicalRule() {
@@ -49,7 +50,7 @@ public final class AggregatePhysicalRule extends RelOptRule {
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
+    public void onMatch0(RelOptRuleCall call) {
         AggregateLogicalRel logicalAgg = call.rel(0);
         RelNode input = logicalAgg.getInput();
 

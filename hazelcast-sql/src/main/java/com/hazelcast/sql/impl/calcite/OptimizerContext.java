@@ -21,6 +21,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.RuleCallTracker;
 import com.hazelcast.sql.impl.calcite.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
@@ -99,8 +100,14 @@ public final class OptimizerContext {
     /** Converter: whether to trim unused fields. */
     private static final boolean CONVERTER_TRIM_UNUSED_FIELDS = true;
 
+    /** Thread-local optimizer config. */
+    private static final ThreadLocal<OptimizerConfig> OPTIMIZER_CONFIG = new ThreadLocal<>();
+
     /** Optimizer config. */
     private final OptimizerConfig config;
+
+    /** Cluster. */
+    private final HazelcastRelOptCluster cluster;
 
     /** Basic Calcite config. */
     private final VolcanoPlanner planner;
@@ -115,11 +122,13 @@ public final class OptimizerContext {
         OptimizerConfig config,
         SqlValidator validator,
         SqlToRelConverter sqlToRelConverter,
+        HazelcastRelOptCluster cluster,
         VolcanoPlanner planner
     ) {
         this.config = config;
         this.validator = validator;
         this.sqlToRelConverter = sqlToRelConverter;
+        this.cluster = cluster;
         this.planner = planner;
     }
 
@@ -134,7 +143,7 @@ public final class OptimizerContext {
 
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
-        return create(rootSchema, memberCount, OptimizerConfig.builder().build());
+        return create(rootSchema, memberCount, getOptimizerConfig());
     }
 
     /**
@@ -145,6 +154,10 @@ public final class OptimizerContext {
      * @return Context.
      */
     public static OptimizerContext create(HazelcastSchema rootSchema, int memberCount, OptimizerConfig config) {
+        if (config == null) {
+            config = OptimizerConfig.builder().build();
+        }
+
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         CalciteConnectionConfig connectionConfig = createConnectionConfig();
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, connectionConfig, rootSchema);
@@ -153,7 +166,7 @@ public final class OptimizerContext {
         HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, memberCount);
         SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(catalogReader, validator, cluster);
 
-        return new OptimizerContext(config, validator, sqlToRelConverter, planner);
+        return new OptimizerContext(config, validator, sqlToRelConverter, cluster, planner);
     }
 
     /**
@@ -237,7 +250,6 @@ public final class OptimizerContext {
      */
     public LogicalRel optimizeLogical(RelNode rel) {
         RuleSet rules = LogicalRules.getRuleSet();
-
         Program program = Programs.of(rules);
 
         RelNode res = program.run(
@@ -257,7 +269,7 @@ public final class OptimizerContext {
      * @param rel Optimized logical tree.
      * @return Optimized physical tree.
      */
-    public PhysicalRel optimizePhysical(RelNode rel) {
+    public PhysicalRel optimizePhysical(RelNode rel, RuleCallTracker ruleCallTracker) {
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
             RootPhysicalRule.INSTANCE,
@@ -272,15 +284,29 @@ public final class OptimizerContext {
 
         Program program = Programs.of(rules);
 
-        RelNode res = program.run(
-            planner,
-            rel,
-            OptUtils.toPhysicalConvention(rel.getTraitSet(), DistributionTrait.SINGLETON_DIST),
-            ImmutableList.of(),
-            ImmutableList.of()
-        );
+        try {
+            cluster.setRuleCallTracker(ruleCallTracker);
 
-        return (PhysicalRel) res;
+            if (ruleCallTracker != null) {
+                ruleCallTracker.onStart();
+            }
+
+            RelNode res = program.run(
+                planner,
+                rel,
+                OptUtils.toPhysicalConvention(rel.getTraitSet(), DistributionTrait.SINGLETON_DIST),
+                ImmutableList.of(),
+                ImmutableList.of()
+            );
+
+            if (ruleCallTracker != null) {
+                ruleCallTracker.onDone();
+            }
+
+            return (PhysicalRel) res;
+        } finally {
+            cluster.setRuleCallTracker(null);
+        }
     }
 
     public OptimizerConfig getConfig() {
@@ -365,5 +391,21 @@ public final class OptimizerContext {
             StandardConvertletTable.INSTANCE,
             sqlToRelConfigBuilder.build()
         );
+    }
+
+    private static OptimizerConfig getOptimizerConfig() {
+        OptimizerConfig res = OPTIMIZER_CONFIG.get();
+
+        if (res != null) {
+            OPTIMIZER_CONFIG.remove();
+        } else {
+            res = OptimizerConfig.builder().build();
+        }
+
+        return res;
+    }
+
+    public static void setOptimizerConfig(OptimizerConfig optimizerConfig) {
+        OPTIMIZER_CONFIG.set(optimizerConfig);
     }
 }

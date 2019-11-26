@@ -26,7 +26,10 @@ import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.calcite.OptimizerConfig;
+import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.sql.tpch.model.ModelConfig;
 import com.hazelcast.sql.tpch.model.ModelLoader;
@@ -39,6 +42,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Tests of TPC-H benchmark queries.
@@ -893,29 +897,36 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     private static SqlCursorImpl execute(String sql) {
-        SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql);
+        OptimizerContext.setOptimizerConfig(OptimizerConfig.builder().setStatisticsEnabled(true).build());
 
-        // TODO: Do not execute eagerly, check result up the stack.
+        SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql);
+        QueryPlan plan = res.getHandle().getPlan();
+
+        System.out.println(">>> First results: ");
         int cnt = 0;
 
         for (SqlRow row : res) {
             cnt++;
 
             if (cnt <= 10) {
-                printRow(row);
+                System.out.println("\t" + row);
             }
         }
 
-        System.out.println("Done: " + cnt);
+        System.out.println(">>> Total rows: " + cnt);
+        System.out.println();
 
+        System.out.println(">>> Explain:");
         for (SqlRow explainRow : res.getHandle().getPlan().getExplain().asCursor()) {
-            System.out.println((String) explainRow.getColumn(0));
+            System.out.println("\t" + explainRow.getColumn(0));
+        }
+        System.out.println();
+
+        System.out.println(">>> Optimizer statistics (" + plan.getStatistics().getDuration() + " ms):");
+        for (Map.Entry<String, Integer> entry : plan.getStatistics().getPhysicalRuleCalls().getRuleCalls().entrySet()) {
+            System.out.println("\t" + entry.getKey() + " -> " + entry.getValue());
         }
 
         return res;
-    }
-
-    private static void printRow(SqlRow row) {
-        System.out.println(">>> " + row);
     }
 }

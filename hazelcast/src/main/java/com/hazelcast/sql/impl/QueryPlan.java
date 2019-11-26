@@ -49,6 +49,9 @@ public class QueryPlan {
     /** Explain. */
     private final QueryExplain explain;
 
+    /** Optimizer statistics. */
+    private final OptimizerStatistics stats;
+
     /** Optional attachments. */
     private final Collection<Object> attachments;
 
@@ -60,6 +63,7 @@ public class QueryPlan {
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         QueryExplain explain,
+        OptimizerStatistics stats,
         Collection<Object> attachments
     ) {
         this.partMap = partMap;
@@ -69,6 +73,7 @@ public class QueryPlan {
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.explain = explain;
+        this.stats = stats;
         this.attachments = attachments;
     }
 
@@ -98,6 +103,10 @@ public class QueryPlan {
 
     public QueryExplain getExplain() {
         return explain;
+    }
+
+    public OptimizerStatistics getStatistics() {
+        return stats;
     }
 
     @SuppressWarnings("unchecked")

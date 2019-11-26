@@ -17,17 +17,17 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
-import org.apache.calcite.rel.RelCollationImpl;
 import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rex.RexFieldAccess;
@@ -47,7 +47,7 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.DISTR
  * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
  * underlying operator.
  */
-public final class ProjectPhysicalRule extends RelOptRule {
+public final class ProjectPhysicalRule extends AbstractPhysicalRule {
     public static final RelOptRule INSTANCE = new ProjectPhysicalRule();
 
     private ProjectPhysicalRule() {
@@ -58,7 +58,7 @@ public final class ProjectPhysicalRule extends RelOptRule {
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
+    public void onMatch0(RelOptRuleCall call) {
         ProjectLogicalRel logicalProject = call.rel(0);
         RelNode input = logicalProject.getInput();
 
@@ -235,7 +235,7 @@ public final class ProjectPhysicalRule extends RelOptRule {
             fields = Collections.emptyList();
         }
 
-        return RelCollationImpl.of(fields);
+        return RelCollations.of(fields);
     }
 
     /**

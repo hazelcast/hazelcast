@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
@@ -29,7 +29,7 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.SING
 /**
  * Rule to convert the logical root node to physical root node.
  */
-public final class RootPhysicalRule extends RelOptRule {
+public final class RootPhysicalRule extends AbstractPhysicalRule {
     public static final RelOptRule INSTANCE = new RootPhysicalRule();
 
     private RootPhysicalRule() {
@@ -40,7 +40,7 @@ public final class RootPhysicalRule extends RelOptRule {
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
+    public void onMatch0(RelOptRuleCall call) {
         RootLogicalRel logicalRoot = call.rel(0);
         RelNode input = call.rel(1);
 

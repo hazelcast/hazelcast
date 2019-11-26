@@ -17,10 +17,10 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.opt.logical.SortLogicalRel;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.logical.SortLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SingletonSortMergeExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -47,7 +47,7 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.SINGL
  * <p>
  * Local component may be removed altogether in case the input is already sorted on required attributes.
  */
-public final class SortPhysicalRule extends RelOptRule {
+public final class SortPhysicalRule extends AbstractPhysicalRule {
     public static final RelOptRule INSTANCE = new SortPhysicalRule();
 
     private SortPhysicalRule() {
@@ -58,7 +58,7 @@ public final class SortPhysicalRule extends RelOptRule {
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
+    public void onMatch0(RelOptRuleCall call) {
         SortLogicalRel sort = call.rel(0);
         RelNode input = sort.getInput();
 

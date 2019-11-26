@@ -21,9 +21,9 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
@@ -57,7 +57,7 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.DISTR
 /**
  * Convert logical map scan to either replicated or partitioned physical scan.
  */
-public final class MapScanPhysicalRule extends RelOptRule {
+public final class MapScanPhysicalRule extends AbstractPhysicalRule {
     public static final RelOptRule INSTANCE = new MapScanPhysicalRule();
 
     private MapScanPhysicalRule() {
@@ -68,7 +68,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
     }
 
     @Override
-    public void onMatch(RelOptRuleCall call) {
+    public void onMatch0(RelOptRuleCall call) {
         // TODO: Check member count and return SINGLETON if possible.
         MapScanLogicalRel scan = call.rel(0);
 
