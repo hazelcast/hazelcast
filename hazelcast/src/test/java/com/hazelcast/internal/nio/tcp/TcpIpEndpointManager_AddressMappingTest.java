@@ -30,7 +30,7 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -59,8 +59,9 @@ public class TcpIpEndpointManager_AddressMappingTest {
     }
 
     private static HazelcastInstance newMember(String hostname) {
-        Config config = smallInstanceConfig().setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
-        config.setClusterName(hostname);
+        Config config = smallInstanceConfig()
+                .setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "5")
+                .setClusterName(hostname);
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true).clear().addMember(hostname);
