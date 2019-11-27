@@ -28,6 +28,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PollMCEventsMessageTask extends AbstractCallableMessageTask<RequestParameters> {
@@ -39,6 +40,9 @@ public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Request
     @Override
     protected Object call() throws Exception {
         ManagementCenterService mcs = nodeEngine.getManagementCenterService();
+        if (mcs == null) {
+            return Collections.<MCEventDTO>emptyList();
+        }
         List<Event> polledEvents = mcs.pollMCEvents();
         List<MCEventDTO> result = new ArrayList<>(polledEvents.size());
         for (Event event : polledEvents) {

@@ -35,12 +35,17 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<Reques
 
     @Override
     protected Object call() throws Exception {
-        ManagementCenterService mcService = nodeEngine.getManagementCenterService();
+        ManagementCenterService mcs = nodeEngine.getManagementCenterService();
+        if (mcs == null) {
+            // as ManagementCenterService is not initialized yet,
+            // we silently ignore this operation and let MC to retry later
+            return null;
+        }
         ClientBwListDTO.Mode mode = ClientBwListDTO.Mode.getById(parameters.clientBwListMode);
         if (mode == null) {
             throw new IllegalArgumentException("Unexpected client B/W list mode = [" + parameters.clientBwListMode + "]");
         }
-        mcService.applyMCConfig(parameters.eTag, new ClientBwListDTO(mode, parameters.clientBwListEntries));
+        mcs.applyMCConfig(parameters.eTag, new ClientBwListDTO(mode, parameters.clientBwListEntries));
         return null;
     }
 
