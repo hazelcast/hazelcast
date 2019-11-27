@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.Client;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -271,7 +272,11 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
     public void start() {
         handleListenerConfigs();
         clusterViewListenerUUID = listenerService.registerListener(CLUSTER_VIEW_LISTENER_CODEC, new ClusterViewListenerHandler());
-        waitInitialMemberListFetched();
+        ClientConnectionStrategyConfig connectionStrategyConfig = client.getClientConfig().getConnectionStrategyConfig();
+        boolean asyncStart = connectionStrategyConfig.isAsyncStart();
+        if (!asyncStart) {
+            waitInitialMemberListFetched();
+        }
     }
 
     public void shutdown() {
@@ -285,7 +290,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
         try {
             boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
-                logger.warning("Error while getting initial member list from cluster!");
+                throw new IllegalStateException("Could not get initial member list from cluster!");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

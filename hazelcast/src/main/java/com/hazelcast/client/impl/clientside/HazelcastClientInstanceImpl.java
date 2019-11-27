@@ -23,6 +23,7 @@ import com.hazelcast.client.Client;
 import com.hazelcast.client.ClientService;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.cp.internal.CPSubsystemImpl;
@@ -383,7 +384,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 ((SmartClientInvocationService) invocationService).addBackupListener();
             }
             clusterService.start();
-            connectionManager.tryOpenConnectionToAllMembers();
+            ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
+            if (!connectionStrategyConfig.isAsyncStart()) {
+                connectionManager.tryOpenConnectionToAllMembers();
+            }
             loadBalancer.init(getCluster(), config);
             clientStatisticsService.start();
             clientExtension.afterStart(this);
