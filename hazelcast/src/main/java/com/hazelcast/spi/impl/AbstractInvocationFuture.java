@@ -37,7 +37,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -50,6 +49,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -82,23 +82,11 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     private static final AtomicReferenceFieldUpdater<AbstractInvocationFuture, Object> STATE_UPDATER =
             newUpdater(AbstractInvocationFuture.class, Object.class, "state");
 
-    // Default executor for async callbacks: ForkJoinPool.commonPool() or a thread-per-task executor when
-    // the common pool does not support parallelism
-    private static final Executor DEFAULT_ASYNC_EXECUTOR;
-
     // reduce the risk of rare disastrous classloading in first call to
     // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
     static {
         @SuppressWarnings("unused")
         Class<?> ensureLoaded = LockSupport.class;
-
-        Executor asyncExecutor;
-        if (ForkJoinPool.getCommonPoolParallelism() > 1) {
-            asyncExecutor = ForkJoinPool.commonPool();
-        } else {
-            asyncExecutor = command -> new Thread(command).start();
-        }
-        DEFAULT_ASYNC_EXECUTOR = asyncExecutor;
     }
 
     protected final ILogger logger;
