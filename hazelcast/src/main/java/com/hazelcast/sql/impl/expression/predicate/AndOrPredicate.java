@@ -73,9 +73,10 @@ public class AndOrPredicate extends BiCallExpression<Boolean> {
             operand2Checked = true;
         }
 
-        Boolean first = (Boolean) operand1Value;
-        Boolean second = (Boolean) operand2Value;
+        return eval0((Boolean) operand1Value, (Boolean) operand2Value);
+    }
 
+    private Boolean eval0(Boolean first, Boolean second) {
         if (or) {
             if (first == null) {
                 return second;

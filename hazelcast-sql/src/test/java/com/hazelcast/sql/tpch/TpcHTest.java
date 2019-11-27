@@ -919,7 +919,7 @@ public class TpcHTest extends SqlTestSupport {
         if (rowCount < 0) {
             rowCount = 100;
         }
-        
+
         OptimizerContext.setOptimizerConfig(OptimizerConfig.builder().setStatisticsEnabled(true).build());
 
         SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql, args);
@@ -937,7 +937,7 @@ public class TpcHTest extends SqlTestSupport {
         }
 
         List<SqlRow> rows = new ArrayList<>();
-        
+
         System.out.println(">>> Results: ");
         int cnt = 0;
 
