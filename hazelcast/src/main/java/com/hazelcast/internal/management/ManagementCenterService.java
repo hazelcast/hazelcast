@@ -65,6 +65,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.ClusterProperty;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -345,6 +346,7 @@ public class ManagementCenterService {
      * <p>
      * Events are used by Management Center to show the user what happens when on a cluster member.
      */
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void log(Event event) {
         if (this.managementCenterConfig.isEnabled() && isRunning()) {
             events.add(event);
