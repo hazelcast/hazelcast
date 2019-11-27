@@ -311,34 +311,37 @@ public final class ProxyRegistry {
     }
 
     /**
-     * Force-initializes and publishes all uninitialized proxies in this registry.
+     * Force-initializes and publishes the specified proxy (if it exists and
+     * is not initialized).
      * <p>
-     * This method assumes that the uninitialized proxies originate from
-     * {@code doCreateProxy(publishEvent=false, initialize=false, ...)}. Since local
-     * events were already emitted for such proxies, only remote events are published
-     * by this method.
+     * This method assumes that the local events have already been emitted
+     * for the proxy (this is what normally happens during
+     * {@code doCreateProxy(initialize=false, ...)} and only remote events
+     * will published by this method (if {@code publish} is {@code true}).
      * <p>
      * Calling this method concurrently with
-     * {@code doCreateProxy(publishEvent=true)} may result in publishing the remote
-     * events multiple times for some of the proxies.
+     * {@code doCreateProxy(publishEvent=true, ...)} may result in publishing
+     * the remote events multiple times for the proxy.
+     * @return true if initialization was performed, false otherwise.
      */
-    void initializeAndPublishProxies() {
-        for (Map.Entry<String, DistributedObjectFuture> entry : proxies.entrySet()) {
-            String name = entry.getKey();
-            DistributedObjectFuture future = entry.getValue();
-            if (!future.isSetAndInitialized()) {
-                try {
-                    future.get();
-                } catch (Throwable e) {
-                    // proxy initialization failed
-                    // deregister future to avoid infinite hang on future.get()
-                    proxyService.logger.warning("Error while initializing proxy: " + name, e);
-                    future.setError(e);
-                    proxies.remove(entry.getKey());
-                    throw rethrow(e);
-                }
-                publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
-            }
+    boolean initializeProxy(String name, boolean publish) {
+        DistributedObjectFuture future = proxies.get(name);
+        if (future == null || future.isSetAndInitialized()) {
+            return false;
         }
+        try {
+            future.get();
+        } catch (Throwable e) {
+            // proxy initialization failed
+            // deregister future to avoid infinite hang on future.get()
+            proxyService.logger.warning("Error while initializing proxy: " + name, e);
+            future.setError(e);
+            proxies.remove(name);
+            throw rethrow(e);
+        }
+        if (publish) {
+            publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
+        }
+        return true;
     }
 }

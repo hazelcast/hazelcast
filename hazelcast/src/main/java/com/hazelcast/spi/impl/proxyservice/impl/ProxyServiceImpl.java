@@ -126,7 +126,9 @@ public class ProxyServiceImpl
 
     public void initializeAndPublishProxies() {
         for (ProxyRegistry registry : registries.values()) {
-            registry.initializeAndPublishProxies();
+            for (String name : registry.getDistributedObjectNames()) {
+                registry.initializeProxy(name, true);
+            }
         }
     }
 
@@ -243,7 +245,12 @@ public class ProxyServiceImpl
         if (eventPacket.getEventType() == CREATED) {
             try {
                 final ProxyRegistry registry = getOrCreateRegistry(serviceName);
-                if (!registry.contains(eventPacket.getName())) {
+                if (registry.contains(eventPacket.getName())) {
+                    // proxy exists, make sure it is initialized
+                    // listeners will not be called if the proxy is initialized
+                    // here (they were called when the proxy was created)
+                    registry.initializeProxy(eventPacket.getName(), false);
+                } else {
                     registry.createProxy(eventPacket.getName(), false, true);
                     // listeners will be called if proxy is created here.
                 }
