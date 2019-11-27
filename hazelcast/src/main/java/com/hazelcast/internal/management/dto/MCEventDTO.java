@@ -23,7 +23,7 @@ import com.hazelcast.internal.management.events.Event;
  *
  * @see com.hazelcast.internal.management.events.Event
  */
-public class MCEventDTO {
+public final class MCEventDTO {
 
     private final long timestamp;
     private final int type;
@@ -49,6 +49,34 @@ public class MCEventDTO {
 
     public String getDataJson() {
         return dataJson;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MCEventDTO eventDTO = (MCEventDTO) o;
+
+        if (timestamp != eventDTO.timestamp) {
+            return false;
+        }
+        if (type != eventDTO.type) {
+            return false;
+        }
+        return dataJson.equals(eventDTO.dataJson);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (timestamp ^ (timestamp >>> 32));
+        result = 31 * result + type;
+        result = 31 * result + dataJson.hashCode();
+        return result;
     }
 
 }
