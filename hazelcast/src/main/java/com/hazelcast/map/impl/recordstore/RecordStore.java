@@ -218,6 +218,18 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoad(Data key, Object value, Address callerAddress);
 
+    /**
+     * Puts key-value pair (with expiration time) to map which is the result of a load from
+     * map store operation.
+     *
+     * @param key            key to put.
+     * @param value          to put.
+     * @param expirationTime the expiration time of the key-value pair {@link Long#MAX_VALUE
+     *                       if the key-value pair should not expire}.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see com.hazelcast.map.impl.operation.PutFromLoadAllOperation
+     */
     Object putFromLoad(Data key, Object value, long expirationTime, Address callerAddress);
 
     /**
@@ -231,6 +243,18 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoadBackup(Data key, Object value);
 
+    /**
+     * Puts key-value pair (with expiration time) to map which is the result of a load from
+     * map store operation on backup.
+     *
+     * @param key            key to put.
+     * @param value          to put.
+     * @param expirationTime the expiration time of the key-value pair {@link Long#MAX_VALUE
+     *                       if the key-value pair should not expire}.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see com.hazelcast.map.impl.operation.PutFromLoadAllBackupOperation
+     */
     Object putFromLoadBackup(Data key, Object value, long expirationTime);
 
     boolean merge(MapMergeTypes mergingEntry,
