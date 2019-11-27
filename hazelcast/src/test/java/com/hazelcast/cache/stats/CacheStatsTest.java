@@ -79,14 +79,10 @@ public class CacheStatsTest extends CacheTestSupport {
 
     @Test
     public void testStatisticsDisabled() {
-        long now = System.currentTimeMillis();
-
         CacheConfig cacheConfig = createCacheConfig();
         cacheConfig.setStatisticsEnabled(false);
         ICache<Integer, String> cache = createCache(cacheConfig);
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertTrue(stats.getCreationTime() >= now);
 
         final int ENTRY_COUNT = 100;
 
