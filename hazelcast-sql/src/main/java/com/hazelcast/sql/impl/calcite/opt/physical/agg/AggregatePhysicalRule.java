@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.AbstractPhysicalRule;
-import com.hazelcast.sql.impl.calcite.opt.physical.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptCluster;

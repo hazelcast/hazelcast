@@ -28,7 +28,7 @@ import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
 import com.hazelcast.sql.impl.OptimizerStatistics;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
-import com.hazelcast.sql.impl.calcite.opt.physical.AggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;

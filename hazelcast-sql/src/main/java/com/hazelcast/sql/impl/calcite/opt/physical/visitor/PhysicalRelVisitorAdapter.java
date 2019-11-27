@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
-import com.hazelcast.sql.impl.calcite.opt.physical.AggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;

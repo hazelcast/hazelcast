@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.physical;
+package com.hazelcast.sql.impl.calcite.opt.physical.agg;
 
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
