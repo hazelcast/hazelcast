@@ -395,8 +395,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
             for (ManagedExecutorService executorService : executors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("internal-executor")
-                        .withDiscriminator("executor", executorService.getName())
+                        .withPrefix("executor.internal")
+                        .withDiscriminator("name", executorService.getName())
                         .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }
@@ -404,8 +404,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
             for (ManagedExecutorService executorService : durableExecutors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("durable-executor")
-                        .withDiscriminator("executor", executorService.getName())
+                        .withPrefix("executor.durable.internal")
+                        .withDiscriminator("name", executorService.getName())
                         .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }
@@ -413,8 +413,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
             for (ManagedExecutorService executorService : scheduleDurableExecutors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("scheduled-durable-executor")
-                        .withDiscriminator("executor", executorService.getName())
+                        .withPrefix("executor.scheduled.internal")
+                        .withDiscriminator("name", executorService.getName())
                         .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }

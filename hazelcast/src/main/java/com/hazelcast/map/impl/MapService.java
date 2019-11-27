@@ -273,8 +273,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        Map<String, LocalMapStats> stats = localMapStatsProvider.createAllLocalMapStats();
+        Map<String, LocalMapStats> stats = getStats();
         if (stats == null) {
             return;
         }
