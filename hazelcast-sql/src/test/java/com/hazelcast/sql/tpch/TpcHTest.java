@@ -401,12 +401,8 @@ public class TpcHTest extends SqlTestSupport {
         , -1, nation1, nation2, nation2, nation1);
     }
 
-    @Ignore
     @Test
     public void testQ8() {
-        // TODO
-        fail("Type mismatch {expected=DataType{base=INT, precision=11, scale=0}, actual=DataType{base=DECIMAL, precision=-1, scale=-1}}");
-
         String region = "AMERICA";
         String type = "ECONOMY ANODIZED STEEL";
 
@@ -416,7 +412,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    sum(case\n" +
                 "        when nation = 'BRAZIL'\n" + // TODO: Calcite doesn't support ? in CASE, so inline
                 "        then volume\n" +
-                "        else 0\n" +
+                "        else 0.0\n" + // TODO: Had to adjust 0 -> 0.0 to avoid numerous ClassCast problems, BigDecimal-int clash
                 "    end) / sum(volume) as mkt_share\n" +
                 "from (\n" +
                 "    select\n" +
@@ -627,12 +623,8 @@ public class TpcHTest extends SqlTestSupport {
         , -1, comment);
     }
 
-    @Ignore
     @Test
     public void testQ14() {
-        // TODO
-        fail("Type mismatch {expected=DataType{base=INT, precision=11, scale=0}, actual=DataType{base=DECIMAL, precision=-1, scale=-1}}");
-
         LocalDate date = LocalDate.parse("1995-09-01");
 
         List<SqlRow> rows = execute(
@@ -640,7 +632,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    100.00 * sum(case\n" +
                 "        when p.p_type like 'PROMO%'\n" +
                 "        then l.l_extendedprice*(1 - l.l_discount)\n" +
-                "        else 0\n" +
+                "        else 0.0\n" +
                 "    end) / sum(l.l_extendedprice * (1 - l.l_discount)) as promo_revenue\n" +
                 "from\n" +
                 "    lineitem l,\n" +
