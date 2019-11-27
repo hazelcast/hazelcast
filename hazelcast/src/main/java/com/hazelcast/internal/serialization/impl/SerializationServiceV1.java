@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,7 +87,7 @@ import static com.hazelcast.internal.serialization.impl.ConstantSerializers.Shor
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.UuidSerializer;
-import static com.hazelcast.internal.serialization.impl.ConstantSerializers.EntrySerializer;
+import static com.hazelcast.internal.serialization.impl.ConstantSerializers.SimpleEntrySerializer;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.isFlagSet;
@@ -179,7 +180,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(Double.class, new DoubleSerializer());
         registerConstant(String.class, new StringSerializer());
         registerConstant(UUID.class, new UuidSerializer());
-        registerConstant(Map.Entry.class, new EntrySerializer());
+        registerConstant(AbstractMap.SimpleEntry.class, new SimpleEntrySerializer());
+        registerConstant(AbstractMap.SimpleImmutableEntry.class, new ConstantSerializers.SimpleImmutableEntrySerializer());
         //Arrays of primitives and String
         registerConstant(byte[].class, new TheByteArraySerializer());
         registerConstant(boolean[].class, new BooleanArraySerializer());
