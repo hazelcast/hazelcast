@@ -86,7 +86,6 @@ public class ConfigCompatibilityChecker {
                 new PartitionGroupConfigChecker());
         checkCompatibleConfigs("serialization", c1.getSerializationConfig(), c2.getSerializationConfig(),
                 new SerializationConfigChecker());
-        checkCompatibleConfigs("services", c1.getServicesConfig(), c2.getServicesConfig(), new ServicesConfigChecker());
         checkCompatibleConfigs("management center", c1.getManagementCenterConfig(), c2.getManagementCenterConfig(),
                 new ManagementCenterConfigChecker());
         checkCompatibleConfigs("hot restart", c1.getHotRestartPersistenceConfig(), c2.getHotRestartPersistenceConfig(),

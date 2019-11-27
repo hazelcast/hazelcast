@@ -33,7 +33,6 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -394,27 +393,6 @@ public class ConfigXmlGeneratorTest {
         expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
 
         HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testServicesConfig() {
-        Config cfg = new Config();
-
-        Properties properties = new Properties();
-        properties.setProperty("key", "value");
-
-        ServiceConfig serviceConfig = new ServiceConfig()
-                .setName("ServiceConfig")
-                .setEnabled(true)
-                .setClassName("ServiceClass")
-                .setProperties(properties);
-        ServicesConfig expectedConfig = cfg.getServicesConfig()
-                .setEnableDefaults(true)
-                .setServiceConfigs(singletonList(serviceConfig));
-
-        ServicesConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getServicesConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
