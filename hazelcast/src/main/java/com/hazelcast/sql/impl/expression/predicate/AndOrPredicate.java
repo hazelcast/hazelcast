@@ -55,10 +55,9 @@ public class AndOrPredicate extends BiCallExpression<Boolean> {
     @Override
     public Boolean eval(QueryContext ctx, Row row) {
         Object operand1Value = operand1.eval(ctx, row);
+        Object operand2Value = operand2.eval(ctx, row);
 
-        if (operand1Value == null) {
-            return null;
-        } else if (!operand1Checked) {
+        if (operand1Value != null && !operand1Checked) {
             if (operand1.getType() != DataType.BIT) {
                 throw new HazelcastSqlException(-1, "Operand 1 is not BIT.");
             }
@@ -66,11 +65,7 @@ public class AndOrPredicate extends BiCallExpression<Boolean> {
             operand1Checked = true;
         }
 
-        Object operand2Value = operand2.eval(ctx, row);
-
-        if (operand2Value == null) {
-            return null;
-        } else if (!operand2Checked) {
+        if (operand2Value != null && !operand2Checked) {
             if (operand2.getType() != DataType.BIT) {
                 throw new HazelcastSqlException(-1, "Operand 2 is not BIT.");
             }
@@ -78,10 +73,24 @@ public class AndOrPredicate extends BiCallExpression<Boolean> {
             operand2Checked = true;
         }
 
-        boolean first = (boolean) operand1Value;
-        boolean second = (boolean) operand2Value;
+        Boolean first = (Boolean) operand1Value;
+        Boolean second = (Boolean) operand2Value;
 
-        return or ? first || second : first && second;
+        if (or) {
+            if (first == null) {
+                return second;
+            } else if (second == null) {
+                return null;
+            } else {
+                return first || second;
+            }
+        } else {
+            if (first == null || second == null) {
+                return null;
+            } else {
+                return first && second;
+            }
+        }
     }
 
     @Override

@@ -30,12 +30,18 @@ public class FilterExec extends AbstractFilterExec {
     public FilterExec(int id, Exec upstream, Expression<Boolean> filter) {
         super(id, upstream);
 
+        if (filter == null) {
+            throw new IllegalArgumentException("AA");
+        }
+
         this.filter = filter;
     }
 
     @Override
     protected boolean eval(QueryContext ctx, Row row) {
-        return filter.eval(ctx, row);
+        Boolean res = filter.eval(ctx, row);
+
+        return res != null && res;
     }
 
     @Override

@@ -218,6 +218,11 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
     protected void reset1() {
         rightState.reset();
 
+        leftRow = null;
+        rightRows = null;
+        rightRowPos = 0;
+        table.clear();
+
         curRow = null;
     }
 

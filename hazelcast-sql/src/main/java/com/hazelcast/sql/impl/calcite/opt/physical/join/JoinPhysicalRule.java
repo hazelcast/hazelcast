@@ -179,8 +179,8 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         JoinCollocationStrategy strategy
     ) {
         // Step 1: Create inputs for join.
-        RelNode leftCollocated = createCollocatedInputNonEquiJoin(left, strategy.getLeftAction());
-        RelNode rightCollocated = createCollocatedInputNonEquiJoin(right, strategy.getRightAction());
+        RelNode leftCollocated = createCollocatedInputNonEquiJoin(left, strategy.getLeftAction(), true);
+        RelNode rightCollocated = createCollocatedInputNonEquiJoin(right, strategy.getRightAction(), false);
 
         // Step 2: Create the join itself.
         RelOptCluster cluster = left.getCluster();
@@ -212,9 +212,24 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         );
     }
 
-    private RelNode createCollocatedInputNonEquiJoin(RelNode input, JoinCollocationAction action) {
+    private RelNode createCollocatedInputNonEquiJoin(RelNode input, JoinCollocationAction action, boolean left) {
         if (action == JoinCollocationAction.NONE) {
-            return input;
+            if (left) {
+                return input;
+            }
+
+            // TODO: At the moment we pessimistically add materializer here in order to avoid reset() call on operators
+            //  which either do not support reset() or their reset is too expensive.
+            //  This decision is unfortunate:
+            //  1) Some rels which do support reset does not need it, so we end up with not optimal plan
+            //  2) After the optimization is finished, we may optionally remove that step if we pull upstream resetability
+            //     But the problem is that by this point we already made invalid optimizer decision and possibly chosen
+            //     the wrong plan. E.g. the plan A might be refused due to additional costs of materialization, and the plan
+            //     B is chosen. But if we had a chance to remove the materialization from A beforehand, it would have won.
+            //     How to deal with it?
+            //  3) One possible solution is to set resettability flag when a PhysicalRel is created based on the
+            //     resettability of it's inputs.
+            return new MaterializedInputPhysicalRel(input.getCluster(), input.getTraitSet(), input);
         } else {
             // Only BROADCAST actions are expected for non-equi joins.
             assert action == JoinCollocationAction.BROADCAST;
@@ -228,7 +243,12 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             // Step 1: Broadcast data.
             BroadcastExchangePhysicalRel exchange = new BroadcastExchangePhysicalRel(cluster, traitSet, input);
 
+            if (left) {
+                return exchange;
+            }
+
             // Step 2: Accumulate data in an in-memory table for further nested loop join.
+            // TODO: Shouldn't materializer preserve collation?
             return new MaterializedInputPhysicalRel(cluster, traitSet, exchange);
         }
     }

@@ -174,6 +174,9 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
     protected void reset1() {
         rightState.reset();
 
+        leftRow = null;
+        rightMatchFound = false;
+
         curRow = null;
     }
 }

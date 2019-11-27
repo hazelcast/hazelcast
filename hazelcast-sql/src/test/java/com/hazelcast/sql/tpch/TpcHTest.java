@@ -529,12 +529,8 @@ public class TpcHTest extends SqlTestSupport {
         , 20, date, date.plusMonths(3));
     }
 
-    @Ignore
     @Test
     public void testQ11() {
-        // TODO
-        fail("Understand why nested loop appeared. Is this due to a cross join? Then why cross-join appeared?");
-
         String nation = "GERMANY";
         BigDecimal fraction = new BigDecimal("0.0001");
 
@@ -734,13 +730,9 @@ public class TpcHTest extends SqlTestSupport {
         , 100, quantity);
     }
 
-
     @Ignore
     @Test
     public void testQ19() {
-        // TODO
-        fail("Cannot finish. Perhaps due to that bad nested in cross join again.");
-
         int quantity1 = 1;
         int quantity2 = 10;
         int quantity3 = 20;
@@ -748,6 +740,8 @@ public class TpcHTest extends SqlTestSupport {
         String brand2 = "Brand#23";
         String brand3 = "Brand#24";
 
+        // TODO: We need "OR-to-UNION" rule here. Notice how conditions could easily be split into three normal equi-joins.
+        //  But at the moment we fallback to cross-join with materialization which kills us.
         List<SqlRow> rows = execute(
             "select\n" +
                 "    sum(l.l_extendedprice * (1 - l.l_discount) ) as revenue\n" +
@@ -759,7 +753,7 @@ public class TpcHTest extends SqlTestSupport {
                 "        p.p_partkey = l.l_partkey\n" +
                 "        and p.p_brand = ?\n" +
                 "        and p.p_container in ( 'SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')\n" +
-                "        and l.l_quantity >= ? and l.l_quantity <= ? + 10\n" +// TODO
+                "        and l.l_quantity >= ? and l.l_quantity <= ? + 10\n" +
                 "        and p.p_size between 1 and 5\n" +
                 "        and l.l_shipmode in ('AIR', 'AIR REG')\n" +
                 "        and l.l_shipinstruct = 'DELIVER IN PERSON'\n" +
@@ -881,12 +875,8 @@ public class TpcHTest extends SqlTestSupport {
         , 100, nation);
     }
 
-    @Ignore
     @Test
     public void testQ22() {
-        // TODO
-        fail("Nested loop problem again");
-
         String i1 = "13";
         String i2 = "31";
         String i3 = "23";
@@ -972,7 +962,7 @@ public class TpcHTest extends SqlTestSupport {
         System.out.println(">>> Total rows: " + cnt);
         System.out.println();
 
-
+        assert cnt > 0;
 
         return rows;
     }
