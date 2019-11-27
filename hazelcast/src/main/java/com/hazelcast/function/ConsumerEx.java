@@ -36,6 +36,7 @@ public interface ConsumerEx<T> extends Consumer<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link Consumer#accept}
+     * @throws Exception in case of any exceptional case
      */
     void acceptEx(T t) throws Exception;
 
@@ -62,6 +63,7 @@ public interface ConsumerEx<T> extends Consumer<T>, Serializable {
 
     /**
      * Returns a consumer that does nothing.
+     * @param <T> the consumer input type
      */
     static <T> ConsumerEx<T> noop() {
         return x -> {

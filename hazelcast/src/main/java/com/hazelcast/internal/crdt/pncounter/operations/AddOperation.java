@@ -74,12 +74,14 @@ public class AddOperation extends AbstractPNCounterOperation implements Mutating
     private void updateStatistics() {
         final PNCounterService service = getService();
         final LocalPNCounterStatsImpl stats = service.getLocalPNCounterStats(name);
-        if (delta > 0) {
-            stats.incrementIncrementOperationCount();
-        } else if (delta < 0) {
-            stats.incrementDecrementOperationCount();
+        if (stats != null) {
+            if (delta > 0) {
+                stats.incrementIncrementOperationCount();
+            } else if (delta < 0) {
+                stats.incrementDecrementOperationCount();
+            }
+            stats.setValue(getBeforeUpdate ? (response.getValue() + delta) : response.getValue());
         }
-        stats.setValue(getBeforeUpdate ? (response.getValue() + delta) : response.getValue());
     }
 
     @Override

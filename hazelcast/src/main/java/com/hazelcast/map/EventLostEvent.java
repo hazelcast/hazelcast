@@ -58,10 +58,8 @@ public class EventLostEvent implements IMapEvent {
 
     /**
      * Intentionally returns {@code null}.
-     * Used in {@link com.hazelcast.map.impl.querycache.subscriber.InternalQueryCacheListenerAdapter}.
      *
      * @return {@code null}
-     * @see com.hazelcast.map.impl.querycache.subscriber.InternalQueryCacheListenerAdapter
      */
     @Override
     public EntryEventType getEventType() {

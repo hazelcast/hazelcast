@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -26,7 +27,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<MCApplyMCConfigCodec.RequestParameters> {
+public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
     public ApplyMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,7 +45,7 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<MCAppl
     }
 
     @Override
-    protected MCApplyMCConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MCApplyMCConfigCodec.decodeRequest(clientMessage);
     }
 

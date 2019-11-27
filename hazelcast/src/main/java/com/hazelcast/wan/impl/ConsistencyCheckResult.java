@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.wan.impl;
+
+import com.hazelcast.internal.metrics.Probe;
 
 import java.util.UUID;
 
@@ -29,22 +31,27 @@ public class ConsistencyCheckResult {
     /**
      * Number of checked partitions.
      */
+    @Probe
     private final int lastCheckedPartitionCount;
     /**
      * Number of partitions found to be inconsistent.
      */
+    @Probe
     private final int lastDiffPartitionCount;
     /**
      * Number of checked Merkle tree leaves.
      */
+    @Probe
     private final int lastCheckedLeafCount;
     /**
      * Number of different Merkle tree leaves.
      */
+    @Probe
     private final int lastDiffLeafCount;
     /**
      * Number of entries to synchronize to get the clusters into sync.
      */
+    @Probe
     private final int lastEntriesToSync;
 
     public ConsistencyCheckResult(UUID uuid) {

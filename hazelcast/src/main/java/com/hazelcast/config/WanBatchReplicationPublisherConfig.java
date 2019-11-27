@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.wan.WanPublisherState;
+import com.hazelcast.wan.WanReplicationPublisher;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -107,7 +108,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
     }
 
     @Override
-    public Object getImplementation() {
+    public WanReplicationPublisher getImplementation() {
         return null;
     }
 
@@ -129,7 +130,7 @@ public class WanBatchReplicationPublisherConfig extends AbstractWanPublisherConf
      * @return this config
      */
     @Override
-    public WanBatchReplicationPublisherConfig setImplementation(Object implementation) {
+    public WanBatchReplicationPublisherConfig setImplementation(WanReplicationPublisher implementation) {
         return this;
     }
 

@@ -304,8 +304,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public void doPostEvictionOperations(Data dataKey, Record record) {
-        boolean hasEventRegistration = eventService.hasEventRegistration(SERVICE_NAME, name);
-
         Object value = record.getValue();
 
         long now = getNow();
@@ -313,7 +311,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         boolean ttlExpired = isTTLExpired(record, now, false);
         boolean expired = idleExpired || ttlExpired;
 
-        if (hasEventRegistration) {
+        if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
             mapEventPublisher.publishEvent(thisAddress, name,
                     expired ? EXPIRED : EVICTED, dataKey, value, null);
         }

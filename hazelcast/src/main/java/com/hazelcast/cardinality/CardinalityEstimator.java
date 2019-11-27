@@ -77,7 +77,7 @@ public interface CardinalityEstimator extends DistributedObject {
      * </pre>
      * <pre>
      *     CompletionStage&lt;Void&gt; stage = estimator.addAsync();
-     *     stage.whenCompleteAsync((response, throwable) -> {
+     *     stage.whenCompleteAsync((response, throwable) -&gt; {
      *          if (throwable == null) {
      *              // do something
      *          } else {
@@ -108,7 +108,7 @@ public interface CardinalityEstimator extends DistributedObject {
      * </pre>
      * <pre>
      *     CompletionStage&lt;Long&gt; stage = estimator.estimateAsync();
-     *     stage.whenCompleteAsync((response, throwable) -> {
+     *     stage.whenCompleteAsync((response, throwable) -&gt; {
      *          if (throwable == null) {
      *              // do something with the result
      *          } else {

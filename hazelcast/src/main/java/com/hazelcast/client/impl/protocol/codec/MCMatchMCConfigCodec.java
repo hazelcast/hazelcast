@@ -36,15 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if local MC config (client filter list) has the same ETag as provided.
  */
-@Generated("cd0a55e5e95e6c3d3d0cde53b77e9c91")
+@Generated("23e195304957df92f76530eb9b79ad8e")
 public final class MCMatchMCConfigCodec {
     //hex: 0x200C00
     public static final int REQUEST_MESSAGE_TYPE = 2100224;
     //hex: 0x200C01
     public static final int RESPONSE_MESSAGE_TYPE = 2100225;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESULT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESULT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private MCMatchMCConfigCodec() {
     }
@@ -84,14 +84,14 @@ public final class MCMatchMCConfigCodec {
         /**
          * true if ETag values are equal; or false otherwise.
          */
-        public boolean response;
+        public boolean result;
     }
 
-    public static ClientMessage encodeResponse(boolean response) {
+    public static ClientMessage encodeResponse(boolean result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
+        encodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET, result);
         clientMessage.add(initialFrame);
 
         return clientMessage;
@@ -101,7 +101,7 @@ public final class MCMatchMCConfigCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
+        response.result = decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
         return response;
     }
 

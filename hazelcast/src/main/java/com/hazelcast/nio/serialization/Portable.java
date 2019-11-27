@@ -59,7 +59,7 @@ public interface Portable {
      * Serialize this portable object using PortableWriter
      *
      * @param writer PortableWriter
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void writePortable(PortableWriter writer) throws IOException;
 
@@ -67,7 +67,7 @@ public interface Portable {
      * Read portable fields using PortableReader
      *
      * @param reader PortableReader
-     * @throws IOException
+     * @throws IOException in case of any exceptional case
      */
     void readPortable(PortableReader reader) throws IOException;
 }

@@ -59,8 +59,6 @@ public interface Storage<K, R> {
 
     Collection<R> values();
 
-    Iterator<Map.Entry<Data, R>> entryIterator();
-
     /**
      * Returned iterator from this method doesn't throw {@link
      * java.util.ConcurrentModificationException} to fail fast.

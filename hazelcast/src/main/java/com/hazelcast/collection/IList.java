@@ -30,7 +30,7 @@ import java.util.List;
  * <p>Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10
  * in cluster versions 3.10 and higher.
  *
- * @param <E>
+ * @param <E> the type of elements maintained by this list
  * @see List
  */
 public interface IList<E> extends List<E>, ICollection<E> {

@@ -25,6 +25,8 @@ public interface TransactionalTaskContext {
      * Returns the transactional distributed map instance with the specified name.
      *
      * @param name name of the distributed transactional map
+     * @param <K> type of the map key
+     * @param <V> type of the map value
      * @return transactional distributed map instance with the specified name
      */
     <K, V> TransactionalMap<K, V> getMap(String name);
@@ -33,6 +35,7 @@ public interface TransactionalTaskContext {
      * Returns the transactional queue instance with the specified name.
      *
      * @param name name of the transactional queue
+     * @param <E> the type of elements held in the queue
      * @return transactional queue instance with the specified name
      */
     <E> TransactionalQueue<E> getQueue(String name);
@@ -41,6 +44,8 @@ public interface TransactionalTaskContext {
      * Returns the transactional multimap instance with the specified name.
      *
      * @param name name of the transactional multimap
+     * @param <K> type of the multimap key
+     * @param <V> type of the multimap value
      * @return transactional multimap instance with the specified name
      */
     <K, V> TransactionalMultiMap<K, V> getMultiMap(String name);
@@ -49,6 +54,7 @@ public interface TransactionalTaskContext {
      * Returns the transactional list instance with the specified name.
      *
      * @param name name of the transactional list
+     * @param <E> the type of elements held in the list
      * @return transactional list instance with the specified name
      */
     <E> TransactionalList<E> getList(String name);
@@ -57,6 +63,7 @@ public interface TransactionalTaskContext {
      * Returns the transactional set instance with the specified name.
      *
      * @param name name of the transactional set
+     * @param <E> the type of elements held in the set
      * @return transactional set instance with the specified name
      */
     <E> TransactionalSet<E> getSet(String name);
@@ -67,6 +74,7 @@ public interface TransactionalTaskContext {
      *
      * @param serviceName service name for the transactional object instance
      * @param name name of the transactional object instance
+     * @param <T> the type of the transactional object
      * @return transactional object instance with the specified name
      */
     <T extends TransactionalObject> T getTransactionalObject(String serviceName, String name);

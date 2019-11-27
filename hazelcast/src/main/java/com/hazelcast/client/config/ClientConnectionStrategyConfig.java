@@ -92,7 +92,7 @@ public class ClientConnectionStrategyConfig {
      * custom implementations may ignore it if configured.
      * default value is {@link ReconnectMode#ON}
      *
-     * @param reconnectMode
+     * @param reconnectMode the reconnect mode
      * @return the updated ClientConnectionStrategyConfig
      */
     public ClientConnectionStrategyConfig setReconnectMode(ReconnectMode reconnectMode) {
@@ -114,7 +114,7 @@ public class ClientConnectionStrategyConfig {
      * Connection Retry Config is controls the period among the retries and when should a client gave up
      * retrying. Exponential behaviour can be chosen or jitter can be added to wait periods.
      *
-     * @param connectionRetryConfig
+     * @param connectionRetryConfig the connection retry config
      * @return the updated ClientConnectionStrategyConfig
      */
     public ClientConnectionStrategyConfig setConnectionRetryConfig(ConnectionRetryConfig connectionRetryConfig) {

@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Polls events available on member. Once read, events are removed from member's internal queue.
  */
-@Generated("c734282ad0c8df17b06f850c087e0017")
+@Generated("b0c5103d9b637bf32286ac2b0f1d9ed4")
 public final class MCPollMCEventsCodec {
-    //hex: 0x201600
-    public static final int REQUEST_MESSAGE_TYPE = 2102784;
-    //hex: 0x201601
-    public static final int RESPONSE_MESSAGE_TYPE = 2102785;
+    //hex: 0x201800
+    public static final int REQUEST_MESSAGE_TYPE = 2103296;
+    //hex: 0x201801
+    public static final int RESPONSE_MESSAGE_TYPE = 2103297;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 

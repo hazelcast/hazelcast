@@ -56,7 +56,7 @@ public interface ExecutionService {
     String CLIENT_EXECUTOR = "hz:client";
 
     /**
-     * Name of the client executor.
+     * Name of the client query executor.
      */
     String CLIENT_QUERY_EXECUTOR = "hz:client-query";
 
@@ -103,6 +103,12 @@ public interface ExecutionService {
      * @see MapLoader#loadAllKeys()
      */
     String MAP_LOAD_ALL_KEYS_EXECUTOR = "hz:map-loadAllKeys";
+
+    /**
+     * Name of the Management Center executor. Used to execute blocking tasks
+     * related with operations run by Management Center.
+     */
+    String MC_EXECUTOR = "hz:mc";
 
     /**
      * @param name          for the executor service

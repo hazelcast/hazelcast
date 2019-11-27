@@ -19,20 +19,23 @@ package com.hazelcast.internal.crdt.pncounter;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.crdt.CRDTReplicationAwareService;
 import com.hazelcast.internal.crdt.CRDTReplicationContainer;
-import com.hazelcast.crdt.MutationDisallowedException;
-import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.internal.util.Memoizer;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.monitor.impl.LocalPNCounterStatsImpl;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,22 +45,20 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * Service responsible for {@link PNCounter} proxies and replication operation.
  */
-public class PNCounterService implements
-        ManagedService,
-        RemoteService,
-        CRDTReplicationAwareService<PNCounterImpl>,
-        SplitBrainProtectionAwareService,
-        StatisticsAwareService<LocalPNCounterStats> {
+public class PNCounterService implements ManagedService, RemoteService, CRDTReplicationAwareService<PNCounterImpl>,
+                                         SplitBrainProtectionAwareService, StatisticsAwareService<LocalPNCounterStats>,
+                                         DynamicMetricsProvider {
     /** The name under which this service is registered */
     public static final String SERVICE_NAME = "hz:impl:PNCounterService";
 
     /** Map from counter name to counter implementations */
-    private final ConcurrentMap<String, PNCounterImpl> counters = new ConcurrentHashMap<String, PNCounterImpl>();
+    private final ConcurrentMap<String, PNCounterImpl> counters = new ConcurrentHashMap<>();
 
     /** Constructor function for counter implementations */
     private final ConstructorFunction<String, PNCounterImpl> counterConstructorFn =
@@ -73,29 +74,24 @@ public class PNCounterService implements
             };
 
     /** Cache for split brain protection config names */
-    private final Memoizer<String, Object> splitBrainProtectionConfigCache = new Memoizer<String, Object>(
-            new ConstructorFunction<String, Object>() {
-                @Override
-                public Object createNew(String name) {
-                    final PNCounterConfig counterConfig = nodeEngine.getConfig().findPNCounterConfig(name);
-                    final String splitBrainProtectionName = counterConfig.getSplitBrainProtectionName();
-                    return splitBrainProtectionName == null ? Memoizer.NULL_OBJECT : splitBrainProtectionName;
-                }
-            });
+    private final Memoizer<String, Object> splitBrainProtectionConfigCache = new Memoizer<>(
+        new ConstructorFunction<String, Object>() {
+            @Override
+            public Object createNew(String name) {
+                final PNCounterConfig counterConfig = nodeEngine.getConfig().findPNCounterConfig(name);
+                final String splitBrainProtectionName = counterConfig.getSplitBrainProtectionName();
+                return splitBrainProtectionName == null ? Memoizer.NULL_OBJECT : splitBrainProtectionName;
+            }
+        });
 
     /** Map from PN counter name to counter statistics */
-    private final ConcurrentMap<String, LocalPNCounterStatsImpl> statsMap
-            = new ConcurrentHashMap<String, LocalPNCounterStatsImpl>();
+    private final ConcurrentMap<String, LocalPNCounterStatsImpl> statsMap = new ConcurrentHashMap<>();
     /** Unmodifiable statistics map to return from {@link #getStats()} */
     private Map unmodifiableStatsMap = Collections.unmodifiableMap(statsMap);
 
     /** Constructor function for PN counter statistics */
     private final ConstructorFunction<String, LocalPNCounterStatsImpl> statsConstructorFunction =
-            new ConstructorFunction<String, LocalPNCounterStatsImpl>() {
-                public LocalPNCounterStatsImpl createNew(String name) {
-                    return new LocalPNCounterStatsImpl();
-                }
-            };
+        name -> new LocalPNCounterStatsImpl();
 
     /** Mutex for creating new PN counters and for marking the service as shutting down */
     private final Object newCounterCreationMutex = new Object();
@@ -129,6 +125,9 @@ public class PNCounterService implements
      * Returns the PN counter statistics for the counter with the given {@code name}
      */
     public LocalPNCounterStatsImpl getLocalPNCounterStats(String name) {
+        if (!nodeEngine.getConfig().getPNCounterConfig(name).isStatisticsEnabled()) {
+            return null;
+        }
         return getOrPutSynchronized(statsMap, name, statsMap, statsConstructorFunction);
     }
 
@@ -201,8 +200,8 @@ public class PNCounterService implements
 
     @Override
     public CRDTReplicationContainer prepareMigrationOperation(int maxConfiguredReplicaCount) {
-        final HashMap<String, VectorClock> currentVectorClocks = new HashMap<String, VectorClock>();
-        final HashMap<String, PNCounterImpl> counters = new HashMap<String, PNCounterImpl>();
+        final HashMap<String, VectorClock> currentVectorClocks = new HashMap<>();
+        final HashMap<String, PNCounterImpl> counters = new HashMap<>();
         final Config config = nodeEngine.getConfig();
 
         for (Entry<String, PNCounterImpl> counterEntry : this.counters.entrySet()) {
@@ -259,5 +258,10 @@ public class PNCounterService implements
     @SuppressWarnings("unchecked")
     public Map<String, LocalPNCounterStats> getStats() {
         return unmodifiableStatsMap;
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, "pnCounter", getStats());
     }
 }

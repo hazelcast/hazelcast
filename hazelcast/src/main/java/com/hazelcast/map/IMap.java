@@ -926,7 +926,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * methods:
      * <pre>
      *   CompletionStage&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
-     *   future.thenRunAsync(() -> System.out.println("done"));
+     *   future.thenRunAsync(() -&gt; System.out.println("done"));
      * </pre>
      * <p>
      * <b>Warning 1:</b>
@@ -1000,7 +1000,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * methods:
      * <pre>
      *   CompletionStage&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
-     *   future.thenRunAsync(() -> System.out.println("Done"));
+     *   future.thenRunAsync(() -&gt; System.out.println("Done"));
      * </pre>
      * <p>
      * <b>Warning 1:</b>
@@ -1817,6 +1817,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return {@code true} if the lock was acquired, {@code false} if the waiting time
      * elapsed before the lock was acquired
      * @throws NullPointerException if the specified key is {@code null}
+     * @throws InterruptedException if interrupted while trying to acquire the lock
      */
     boolean tryLock(@Nonnull K key, long time, @Nullable TimeUnit timeunit) throws InterruptedException;
 
@@ -1847,6 +1848,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return {@code true} if the lock was acquired, {@code false} if the waiting time
      * elapsed before the lock was acquired
      * @throws NullPointerException if the specified key is {@code null}
+     * @throws InterruptedException if interrupted while trying to acquire the lock
      */
     boolean tryLock(@Nonnull K key,
                     long time, @Nullable TimeUnit timeunit,
@@ -2473,6 +2475,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      *
+     * @param <R> the entry processor return type
      * @return result of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if the specified key is {@code null}
      * @see Offloadable
@@ -2531,6 +2534,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param keys The keys to execute the entry processor on. Can be empty, in
      *             that case it's a local no-op
+     * @param <R>  the entry processor return type
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if there's null element in {@code keys}
      */

@@ -22,7 +22,7 @@ import java.util.concurrent.Future;
 /**
  * A Future where one can obtain the task ID for tracking the response.
  *
- * @param <V>
+ * @param <V> The result type returned by this Future's {@code get} method
  */
 public interface DurableExecutorServiceFuture<V> extends CompletionStage<V>, Future<V> {
 

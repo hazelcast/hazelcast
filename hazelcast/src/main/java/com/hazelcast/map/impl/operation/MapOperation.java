@@ -37,7 +37,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;
@@ -48,6 +47,7 @@ import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
+import static com.hazelcast.map.impl.operation.ForcedEviction.runWithForcedEvictionStrategies;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
@@ -71,28 +71,6 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public MapOperation(String name) {
         this.name = name;
-    }
-
-    private int getRetryCount() {
-        HazelcastProperties properties = getNodeEngine().getProperties();
-        return properties.getInteger(WithForcedEviction.FORCED_EVICTION_RETRY_COUNT);
-    }
-
-    private void runEvictionStrategies() {
-        for (ForcedEviction eviction : WithForcedEviction.EVICTIONS) {
-            if (eviction.execute(getRetryCount(), this, logger())) {
-                return;
-            }
-        }
-    }
-
-    private void rerun() {
-        try {
-            runEvictionStrategies();
-        } catch (NativeOutOfMemoryError e) {
-            disposeDeferredBlocks();
-            throw e;
-        }
     }
 
     @Override
@@ -132,13 +110,22 @@ public abstract class MapOperation extends AbstractNamedOperation
         try {
             runInternal();
         } catch (NativeOutOfMemoryError e) {
-            rerun();
+            rerunWithForcedEviction();
         }
     }
 
     protected void runInternal() {
         // Intentionally empty method body.
         // Concrete classes can override this method.
+    }
+
+    private void rerunWithForcedEviction() {
+        try {
+            runWithForcedEvictionStrategies(this);
+        } catch (NativeOutOfMemoryError e) {
+            disposeDeferredBlocks();
+            throw e;
+        }
     }
 
     @Override

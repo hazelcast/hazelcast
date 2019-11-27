@@ -19,11 +19,13 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.wan.WanReplicationPublisher;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -34,7 +36,7 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
 
     protected String publisherId = "";
     protected String className = "";
-    protected Object implementation;
+    protected WanReplicationPublisher implementation;
     protected Map<String, Comparable> properties = new HashMap<>();
 
     /**
@@ -103,7 +105,7 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
     /**
      * Returns the implementation of {@link com.hazelcast.wan.WanReplicationPublisher}.
      */
-    public Object getImplementation() {
+    public WanReplicationPublisher getImplementation() {
         return implementation;
     }
 
@@ -113,7 +115,7 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
      * @param implementation the implementation for the WAN replication
      * @return this config
      */
-    public AbstractWanPublisherConfig setImplementation(Object implementation) {
+    public AbstractWanPublisherConfig setImplementation(WanReplicationPublisher implementation) {
         this.implementation = implementation;
         return this;
     }
@@ -156,10 +158,10 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
         if (!publisherId.equals(that.publisherId)) {
             return false;
         }
-        if (className != null ? !className.equals(that.className) : that.className != null) {
+        if (!Objects.equals(className, that.className)) {
             return false;
         }
-        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+        if (!Objects.equals(implementation, that.implementation)) {
             return false;
         }
         return properties.equals(that.properties);

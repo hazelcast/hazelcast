@@ -84,11 +84,11 @@ public final class ClientProperty {
 
     /**
      * The maximum number of concurrent invocations allowed.
-     * <p/>
+     * <p>
      * To prevent the system from overloading, user can apply a constraint on the number of concurrent invocations.
      * If the maximum number of concurrent invocations has been exceeded and a new invocation comes in,
      * then hazelcast will throw HazelcastOverloadException
-     * <p/>
+     * <p>
      * By default it is configured as Integer.MaxValue.
      */
     public static final HazelcastProperty MAX_CONCURRENT_INVOCATIONS
@@ -96,14 +96,12 @@ public final class ClientProperty {
 
     /**
      * Control the maximum timeout in millis to wait for an invocation space to be available.
-     * <p/>
+     * <p>
      * If an invocation can't be made because there are too many pending invocations, then an exponential backoff is done
      * to give the system time to deal with the backlog of invocations. This property controls how long an invocation is
      * allowed to wait before getting a {@link com.hazelcast.core.HazelcastOverloadException}.
-     * <p/>
      * <p>
      * When set to -1 then <code>HazelcastOverloadException</code> is thrown immediately without any waiting.
-     * </p>
      */
     public static final HazelcastProperty BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
             = new HazelcastProperty("hazelcast.client.invocation.backoff.timeout.millis", -1, MILLISECONDS);
@@ -141,10 +139,10 @@ public final class ClientProperty {
     /**
      * The interval in seconds between {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
-     * <p/>
+     * <p>
      * Please see the documentation of {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * for a detailed explanation of the problem.
-     * <p/>
+     * <p>
      * The default is 20 seconds. A value smaller than 1 disables the balancer.
      */
     public static final HazelcastProperty IO_BALANCER_INTERVAL_SECONDS

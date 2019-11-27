@@ -262,6 +262,24 @@ public class JmxPublisherTest {
         ));
     }
 
+    @Test
+    public void when_singleMetricUpdates() throws Exception {
+        MetricDescriptor descriptor = newDescriptor()
+            .withMetric("c")
+            .withTag("tag1", "a")
+            .withTag("tag2", "b");
+        jmxPublisher.publishLong(descriptor, 1L);
+        jmxPublisher.whenComplete();
+        assertMBeans(singletonList(
+            of(domainPrefix + ":type=Metrics,instance=inst1,tag0=\"tag1=a\",tag1=\"tag2=b\"",
+                singletonList(entry("c", 1L)))));
+
+        jmxPublisher.publishLong(descriptor, 2L);
+        assertMBeans(singletonList(
+            of(domainPrefix + ":type=Metrics,instance=inst1,tag0=\"tag1=a\",tag1=\"tag2=b\"",
+                singletonList(entry("c", 2L)))));
+    }
+
     private MetricDescriptor newDescriptor() {
         return DEFAULT_DESCRIPTOR_SUPPLIER.get();
     }

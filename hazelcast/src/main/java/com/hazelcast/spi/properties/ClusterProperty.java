@@ -333,13 +333,13 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.map.load.chunk.size", 1000);
 
     /**
-     * The delay until the first run of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler}
+     * The delay until the first run of the split-brain handler.
      */
     public static final HazelcastProperty MERGE_FIRST_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.first.run.delay.seconds", 300, SECONDS);
 
     /**
-     * The interval between invocations of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler}
+     * The interval between invocations of the split-brain handler.
      */
     public static final HazelcastProperty MERGE_NEXT_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.next.run.delay.seconds", 120, SECONDS);
@@ -578,6 +578,13 @@ public final class ClusterProperty {
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.slow.operations.count", 10);
 
+    /**
+     * The number of threads that the Management Center service has available for processing operations
+     * sent from connected Management Center instance.
+     */
+    public static final HazelcastProperty MC_EXECUTOR_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.mc.executor.thread.count", 2);
+
     public static final HazelcastProperty CONNECTION_MONITOR_INTERVAL
             = new HazelcastProperty("hazelcast.connection.monitor.interval", 100, MILLISECONDS);
     public static final HazelcastProperty CONNECTION_MONITOR_MAX_FAULTS
@@ -655,7 +662,8 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.enterprise.license.key");
 
     /**
-     * Setting this capacity is valid if you set {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} to {@code false}.
+     * Setting this capacity is valid if you set {@code writeCoalescing} to {@code false}
+     * (see {@link com.hazelcast.config.MapStoreConfig#setWriteCoalescing(boolean)}).
      * Otherwise its value will not be taken into account.
      * <p>
      * The per node maximum write-behind queue capacity is the total of all write-behind queue sizes in a node, including backups.
@@ -976,11 +984,11 @@ public final class ClusterProperty {
 
     /**
      * Defines whether Moby Names should be used for instance name generating when it is not provided by user.
-     * </p>
+     * <p>
      * Moby Name is a short human-readable name consisting of randomly chosen adjective and the surname of a famous person.
-     * </p>
+     * <p>
      * If set to true, Moby Name will be chosen, otherwise a name that is concatenation of static prefix, number and cluster name.
-     * </p>
+     * <p>
      * By default is true.
      */
     public static final HazelcastProperty MOBY_NAMING_ENABLED

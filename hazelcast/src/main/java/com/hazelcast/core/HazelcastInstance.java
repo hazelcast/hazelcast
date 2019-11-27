@@ -78,6 +78,7 @@ public interface HazelcastInstance {
      * Creates or returns the distributed queue instance with the specified name.
      *
      * @param name name of the distributed queue
+     * @param <E> queue item type
      * @return distributed queue instance with the specified name
      */
     @Nonnull
@@ -87,6 +88,7 @@ public interface HazelcastInstance {
      * Creates or returns the distributed topic instance with the specified name.
      *
      * @param name name of the distributed topic
+     * @param <E> the type of the topic message
      * @return distributed topic instance with the specified name
      */
     @Nonnull
@@ -96,6 +98,7 @@ public interface HazelcastInstance {
      * Creates or returns the distributed set instance with the specified name.
      *
      * @param name name of the distributed set
+     * @param <E> the type of elements maintained by the set
      * @return distributed set instance with the specified name
      */
     @Nonnull
@@ -106,6 +109,7 @@ public interface HazelcastInstance {
      * Index based operations on the list are not supported.
      *
      * @param name name of the distributed list
+     * @param <E> the type of elements maintained by the list
      * @return distributed list instance with the specified name
      */
     @Nonnull
@@ -115,6 +119,8 @@ public interface HazelcastInstance {
      * Creates or returns the distributed map instance with the specified name.
      *
      * @param name name of the distributed map
+     * @param <K> key type
+     * @param <V> value type
      * @return distributed map instance with the specified name
      */
     @Nonnull
@@ -124,6 +130,8 @@ public interface HazelcastInstance {
      * Creates or returns the replicated map instance with the specified name.
      *
      * @param name name of the distributed map
+     * @param <K> the type of keys maintained by the replicated map
+     * @param <V> the type of mapped values
      * @return replicated map instance with specified name
      * @throws ReplicatedMapCantBeCreatedOnLiteMemberException if it is called on a lite member
      * @since 3.2
@@ -135,6 +143,8 @@ public interface HazelcastInstance {
      * Creates or returns the distributed multimap instance with the specified name.
      *
      * @param name name of the distributed multimap
+     * @param <K> type of the multimap key
+     * @param <V> type of the multimap value
      * @return distributed multimap instance with the specified name
      */
     @Nonnull
@@ -144,6 +154,7 @@ public interface HazelcastInstance {
      * Creates or returns the distributed Ringbuffer instance with the specified name.
      *
      * @param name name of the distributed Ringbuffer
+     * @param <E> the type of the elements that the Ringbuffer contains
      * @return distributed RingBuffer instance with the specified name
      */
     @Nonnull
@@ -153,6 +164,7 @@ public interface HazelcastInstance {
      * Creates or returns the reliable topic instance with the specified name.
      *
      * @param name name of the reliable topic
+     * @param <E> the type of the topic message
      * @return the reliable topic
      */
     @Nonnull

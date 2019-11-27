@@ -36,12 +36,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN consistency check for a specific map
  */
-@Generated("638406ba68823e3fabb976f765b6f77f")
+@Generated("cc961ed6e8e1461c98de24e264adcc3c")
 public final class MCCheckWanConsistencyCodec {
-    //hex: 0x201500
-    public static final int REQUEST_MESSAGE_TYPE = 2102528;
-    //hex: 0x201501
-    public static final int RESPONSE_MESSAGE_TYPE = 2102529;
+    //hex: 0x201700
+    public static final int REQUEST_MESSAGE_TYPE = 2103040;
+    //hex: 0x201701
+    public static final int RESPONSE_MESSAGE_TYPE = 2103041;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_UUID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

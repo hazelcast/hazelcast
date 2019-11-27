@@ -32,7 +32,7 @@ import com.hazelcast.map.listener.MapEvictedListener;
  * of operations carried out via the {@link IMap}
  * interface.  Events will not fire, for example, for an entry
  * that comes into the Map via the {@link MapLoader} lifecycle.
- * <p/>
+ * <p>
  * This interface is here for backward compatibility reasons.
  * For a most appropriate alternative please use/check
  * {@link com.hazelcast.map.listener.MapListener} interface.

@@ -715,6 +715,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      *                 or will be resolved to loaded classes and the actual {@code keyType} and {@code valueType} will be copied.
      *                 Otherwise, this configuration's {@code keyClassName} and {@code valueClassName} will be copied to the
      *                 target config, to be resolved at a later time.
+     * @param <T>      the target object type
      * @return the target config
      */
     public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
