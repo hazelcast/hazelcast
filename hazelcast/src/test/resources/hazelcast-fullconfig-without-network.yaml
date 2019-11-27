@@ -572,16 +572,6 @@ hazelcast:
     page-size: 123
     metadata-space-percentage: 12.5
 
-  services:
-    enable-defaults: false
-    service:
-      enabled: true
-      name: custom-service
-      class-name: com.hazelcast.examples.MyService
-      properties:
-        prop1: prop1-value
-        prop2: prop2-value
-
   security:
     enabled: false
     realms:

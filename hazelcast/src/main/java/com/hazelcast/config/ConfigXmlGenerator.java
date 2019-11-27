@@ -156,7 +156,6 @@ public class ConfigXmlGenerator {
         reliableTopicXmlGenerator(gen, config);
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
-        servicesXmlGenerator(gen, config);
         hotRestartXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
@@ -1623,24 +1622,6 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void servicesXmlGenerator(XmlGenerator gen, Config config) {
-        ServicesConfig c = config.getServicesConfig();
-        if (c == null) {
-            return;
-        }
-        gen.open("services", "enable-defaults", c.isEnableDefaults());
-        if (CollectionUtil.isNotEmpty(c.getServiceConfigs())) {
-            for (ServiceConfig serviceConfig : c.getServiceConfigs()) {
-                gen.open("service", "enabled", serviceConfig.isEnabled())
-                        .node("name", serviceConfig.getName())
-                        .node("class-name", classNameOrImplClass(serviceConfig.getClassName(), serviceConfig.getImplementation()))
-                        .appendProperties(serviceConfig.getProperties())
-                        .close();
-            }
-        }
-        gen.close();
-    }
-
     private static void liteMemberXmlGenerator(XmlGenerator gen, Config config) {
         gen.node("lite-member", null, "enabled", config.isLiteMember());
     }
@@ -1758,7 +1739,7 @@ public class ConfigXmlGenerator {
         private static final int CAPACITY = 64;
 
         private final StringBuilder xml;
-        private final ArrayDeque<String> openNodes = new ArrayDeque<String>();
+        private final ArrayDeque<String> openNodes = new ArrayDeque<>();
 
         public XmlGenerator(StringBuilder xml) {
             this.xml = xml;

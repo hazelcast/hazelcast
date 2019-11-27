@@ -38,6 +38,7 @@ import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
 import com.hazelcast.internal.config.RingbufferConfigReadOnly;
 import com.hazelcast.internal.config.ScheduledExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.config.SetConfigReadOnly;
 import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.util.Preconditions;
@@ -46,6 +47,7 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
@@ -59,7 +61,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiConsumer;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
@@ -100,45 +101,41 @@ public class Config {
 
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
-    private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
+    private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, CacheSimpleConfig> cacheConfigs = new ConcurrentHashMap<String, CacheSimpleConfig>();
+    private final Map<String, CacheSimpleConfig> cacheConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
+    private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<String, ReliableTopicConfig>();
+    private final Map<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
+    private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
+    private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
+    private final Map<String, ListConfig> listConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
+    private final Map<String, SetConfig> setConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<String, ExecutorConfig>();
+    private final Map<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, DurableExecutorConfig> durableExecutorConfigs
-            = new ConcurrentHashMap<String, DurableExecutorConfig>();
+    private final Map<String, DurableExecutorConfig> durableExecutorConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, ScheduledExecutorConfig> scheduledExecutorConfigs
-            = new ConcurrentHashMap<String, ScheduledExecutorConfig>();
+    private final Map<String, ScheduledExecutorConfig> scheduledExecutorConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
+    private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
+    private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<>();
 
     private final Map<String, SplitBrainProtectionConfig> splitBrainProtectionConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
+    private final Map<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
-            new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
+    private final Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs = new ConcurrentHashMap<>();
 
-    private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
-            new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
+    private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap = new ConcurrentHashMap<>();
 
-    private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
+    private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
 
     // @since 3.12
     private AdvancedNetworkConfig advancedNetworkConfig = new AdvancedNetworkConfig();
@@ -147,7 +144,7 @@ public class Config {
 
     private SecurityConfig securityConfig = new SecurityConfig();
 
-    private final List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
+    private final List<ListenerConfig> listenerConfigs = new LinkedList<>();
 
     private PartitionGroupConfig partitionGroupConfig = new PartitionGroupConfig();
 
@@ -157,7 +154,7 @@ public class Config {
 
     private ManagedContext managedContext;
 
-    private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
+    private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<>();
 
     private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
 
@@ -2099,28 +2096,6 @@ public class Config {
     }
 
     /**
-     * Returns the configuration for the user services managed by this
-     * hazelcast instance.
-     *
-     * @return the user services configuration
-     */
-    public ServicesConfig getServicesConfig() {
-        return servicesConfig;
-    }
-
-    /**
-     * Sets the configuration for the user services managed by this hazelcast
-     * instance.
-     *
-     * @param servicesConfig the user services configuration
-     * @return this config instance
-     */
-    public Config setServicesConfig(ServicesConfig servicesConfig) {
-        this.servicesConfig = servicesConfig;
-        return this;
-    }
-
-    /**
      * Returns the security configuration for this hazelcast instance.
      * This includes configuration for security interceptors, permissions, etc.
      *
@@ -2249,12 +2224,7 @@ public class Config {
      */
     public FlakeIdGeneratorConfig getFlakeIdGeneratorConfig(String name) {
         return ConfigUtils.getConfig(configPatternMatcher, flakeIdGeneratorConfigMap, name,
-                FlakeIdGeneratorConfig.class, new BiConsumer<FlakeIdGeneratorConfig, String>() {
-                    @Override
-                    public void accept(FlakeIdGeneratorConfig flakeIdGeneratorConfig, String name) {
-                        flakeIdGeneratorConfig.setName(name);
-                    }
-                });
+                FlakeIdGeneratorConfig.class, FlakeIdGeneratorConfig::setName);
     }
 
     /**
@@ -2620,27 +2590,61 @@ public class Config {
         return this;
     }
 
+    /**
+     * Returns the configuration for the user services managed by this
+     * hazelcast instance.
+     *
+     * @return the user services configuration
+     */
+    @PrivateApi
+    protected ServicesConfig getServicesConfig() {
+        return servicesConfig;
+    }
+
     @Override
     public String toString() {
         return "Config{"
-                + "clusterName=" + clusterName
+                + "configurationUrl=" + configurationUrl
+                + ", configurationFile=" + configurationFile
+                + ", classLoader=" + classLoader
                 + ", properties=" + properties
+                + ", instanceName='" + instanceName + '\''
+                + ", clusterName='" + clusterName + '\''
                 + ", networkConfig=" + networkConfig
+                + ", configPatternMatcher=" + configPatternMatcher
                 + ", mapConfigs=" + mapConfigs
+                + ", cacheConfigs=" + cacheConfigs
                 + ", topicConfigs=" + topicConfigs
                 + ", reliableTopicConfigs=" + reliableTopicConfigs
                 + ", queueConfigs=" + queueConfigs
                 + ", multiMapConfigs=" + multiMapConfigs
+                + ", listConfigs=" + listConfigs
+                + ", setConfigs=" + setConfigs
                 + ", executorConfigs=" + executorConfigs
-                + ", ringbufferConfigs=" + ringbufferConfigs
+                + ", durableExecutorConfigs=" + durableExecutorConfigs
+                + ", scheduledExecutorConfigs=" + scheduledExecutorConfigs
+                + ", replicatedMapConfigs=" + replicatedMapConfigs
                 + ", wanReplicationConfigs=" + wanReplicationConfigs
+                + ", splitBrainProtectionConfigs=" + splitBrainProtectionConfigs
+                + ", ringbufferConfigs=" + ringbufferConfigs
+                + ", cardinalityEstimatorConfigs=" + cardinalityEstimatorConfigs
+                + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
+                + ", pnCounterConfigs=" + pnCounterConfigs
+                + ", advancedNetworkConfig=" + advancedNetworkConfig
+                + ", servicesConfig=" + servicesConfig
+                + ", securityConfig=" + securityConfig
                 + ", listenerConfigs=" + listenerConfigs
                 + ", partitionGroupConfig=" + partitionGroupConfig
                 + ", managementCenterConfig=" + managementCenterConfig
-                + ", securityConfig=" + securityConfig
-                + ", liteMember=" + liteMember
+                + ", serializationConfig=" + serializationConfig
+                + ", managedContext=" + managedContext
+                + ", userContext=" + userContext
+                + ", memberAttributeConfig=" + memberAttributeConfig
+                + ", nativeMemoryConfig=" + nativeMemoryConfig
+                + ", hotRestartPersistenceConfig=" + hotRestartPersistenceConfig
+                + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
-                + ", advancedNetworkConfig=" + advancedNetworkConfig
+                + ", liteMember=" + liteMember
                 + ", cpSubsystemConfig=" + cpSubsystemConfig
                 + ", metricsConfig=" + metricsConfig
                 + '}';

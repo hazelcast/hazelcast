@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.ServiceConfig;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -28,7 +30,7 @@ public class ServicesConfig {
 
     private boolean enableDefaults = true;
 
-    private final Map<String, ServiceConfig> services = new HashMap<String, ServiceConfig>();
+    private final Map<String, ServiceConfig> services = new HashMap<>();
 
     public ServicesConfig() {
     }

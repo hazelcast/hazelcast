@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -63,7 +64,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         ServiceConfig serviceConfig = new ServiceConfig()
                 .setEnabled(true).setName("event-counter")
                 .setImplementation(counter);
-        config.getServicesConfig().addServiceConfig(serviceConfig);
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
 
         final HazelcastInstance hz = factory.newHazelcastInstance(config);
         warmUpPartitions(hz);
@@ -108,7 +109,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
 
     private Config newConfig(FailingOperationResponseHandler responseHandler) {
         Config config = new Config();
-        config.getServicesConfig().addServiceConfig(
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(
                 new ServiceConfig().setEnabled(true).setImplementation(new MigrationCommitRollbackTestingService(responseHandler))
                         .setName(MigrationCommitRollbackTestingService.NAME));
         return config;
