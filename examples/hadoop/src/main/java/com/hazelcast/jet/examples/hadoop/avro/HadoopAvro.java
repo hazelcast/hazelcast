@@ -50,39 +50,28 @@ public class HadoopAvro {
     private static final String OUTPUT_PATH = MODULE_DIRECTORY + "/hadoop-avro-output";
 
     public static void main(String[] args) throws Exception {
-        new HadoopAvro().go();
-    }
-
-    private void go() throws Exception {
-        try {
-            createAvroFile();
-            JetInstance jet = Jet.newJetInstance();
-
-            Configuration configuration = createJobConfig();
-            jet.newJob(buildPipeline(configuration)).join();
-
-        } finally {
-            Jet.shutdownAll();
-        }
-    }
-
-    private Configuration createJobConfig() throws IOException {
         Path inputPath = new Path(INPUT_PATH);
         Path outputPath = new Path(OUTPUT_PATH);
 
         FileSystem.get(new Configuration()).delete(outputPath, true);
 
-        Job job = Job.getInstance();
-        job.setInputFormatClass(AvroKeyInputFormat.class);
-        job.setOutputFormatClass(AvroKeyOutputFormat.class);
-        AvroKeyInputFormat.addInputPath(job, inputPath);
-        AvroKeyOutputFormat.setOutputPath(job, outputPath);
-        AvroJob.setInputKeySchema(job, User.SCHEMA$);
-        AvroJob.setOutputKeySchema(job, User.SCHEMA$);
-        return job.getConfiguration();
+        createAvroFile();
+
+        executeSample(createJobConfig(inputPath, outputPath));
     }
 
-    private void createAvroFile() throws IOException {
+    public static void executeSample(Configuration configuration) {
+        try {
+            JetInstance jet = Jet.newJetInstance();
+            Jet.newJetInstance();
+
+            jet.newJob(buildPipeline(configuration)).join();
+        } finally {
+            Jet.shutdownAll();
+        }
+    }
+
+    private static void createAvroFile() throws IOException {
         Path inputPath = new Path(INPUT_PATH);
         FileSystem fs = FileSystem.get(new Configuration());
         fs.delete(inputPath, true);
@@ -108,6 +97,19 @@ public class HadoopAvro {
     private static String moduleDirectory() {
         String resourcePath = HadoopAvro.class.getClassLoader().getResource("").getPath();
         return Paths.get(resourcePath).getParent().getParent().toString();
+    }
+
+    public static Configuration createJobConfig(Path inputPath, Path outputPath) throws IOException {
+        FileSystem.get(new Configuration()).delete(outputPath, true);
+
+        Job job = Job.getInstance();
+        job.setInputFormatClass(AvroKeyInputFormat.class);
+        job.setOutputFormatClass(AvroKeyOutputFormat.class);
+        AvroKeyInputFormat.addInputPath(job, inputPath);
+        AvroKeyOutputFormat.setOutputPath(job, outputPath);
+        AvroJob.setInputKeySchema(job, User.SCHEMA$);
+        AvroJob.setOutputKeySchema(job, User.SCHEMA$);
+        return job.getConfiguration();
     }
 
 }

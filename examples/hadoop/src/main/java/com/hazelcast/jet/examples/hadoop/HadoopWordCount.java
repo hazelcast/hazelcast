@@ -20,7 +20,6 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.examples.wordcount.WordCount;
 import com.hazelcast.jet.hadoop.HadoopSinks;
 import com.hazelcast.jet.hadoop.HadoopSources;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -65,40 +64,43 @@ public class HadoopWordCount {
 
     private static final String OUTPUT_PATH = "hadoop-word-count";
 
-    private static Pipeline buildPipeline(Path inputPath, Path outputPath) {
-        JobConf jobConfig = new JobConf();
-        jobConfig.setInputFormat(TextInputFormat.class);
-        jobConfig.setOutputFormat(TextOutputFormat.class);
-        TextOutputFormat.setOutputPath(jobConfig, outputPath);
-        TextInputFormat.addInputPath(jobConfig, inputPath);
-
-        final Pattern regex = Pattern.compile("\\W+");
-        Pipeline p = Pipeline.create();
-        p.readFrom(HadoopSources.inputFormat(jobConfig, (k, v) -> v.toString()))
-         .flatMap(line -> traverseArray(regex.split(line.toLowerCase())).filter(w -> !w.isEmpty()))
-         .groupingKey(wholeItem())
-         .aggregate(counting())
-         .writeTo(HadoopSinks.outputFormat(jobConfig));
-        return p;
-    }
-
     public static void main(String[] args) throws Exception {
-        Path inputPath = new Path(WordCount.class.getResource("/books").getPath());
+        Path inputPath = new Path(HadoopWordCount.class.getResource("/books").getPath());
         Path outputPath = new Path(OUTPUT_PATH);
         // delete the output directory, if already exists
         FileSystem.get(new Configuration()).delete(outputPath, true);
+        executeSample(new JobConf(), inputPath, outputPath);
+    }
+
+    public static void executeSample(JobConf jobConf, Path inputPath, Path outputPath) {
         try {
             JetInstance jet = Jet.newJetInstance();
             Jet.newJetInstance();
             System.out.print("\nCounting words from " + inputPath);
             long start = nanoTime();
-            Pipeline p = buildPipeline(inputPath, outputPath);
+            Pipeline p = buildPipeline(jobConf, inputPath, outputPath);
             jet.newJob(p).join();
             System.out.println("Done in " + NANOSECONDS.toMillis(nanoTime() - start) + " milliseconds.");
             System.out.println("Output written to " + outputPath);
         } finally {
             Jet.shutdownAll();
         }
+    }
+
+    private static Pipeline buildPipeline(JobConf jobConf, Path inputPath, Path outputPath) {
+        jobConf.setInputFormat(TextInputFormat.class);
+        jobConf.setOutputFormat(TextOutputFormat.class);
+        TextOutputFormat.setOutputPath(jobConf, outputPath);
+        TextInputFormat.addInputPath(jobConf, inputPath);
+
+        final Pattern regex = Pattern.compile("\\W+");
+        Pipeline p = Pipeline.create();
+        p.readFrom(HadoopSources.inputFormat(jobConf, (k, v) -> v.toString()))
+         .flatMap(line -> traverseArray(regex.split(line.toLowerCase())).filter(w -> !w.isEmpty()))
+         .groupingKey(wholeItem())
+         .aggregate(counting())
+         .writeTo(HadoopSinks.outputFormat(jobConf));
+        return p;
     }
 
 }

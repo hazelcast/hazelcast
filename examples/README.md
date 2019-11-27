@@ -145,6 +145,13 @@ samples using the Core API.
 - [File Sink](files/src/main/java/com/hazelcast/jet/examples/files/AccessLogAnalyzer.java)
   - variant with [Avro serialization](files/src/main/java/com/hazelcast/jet/examples/files/avro/AvroSink.java)
 - [Amazon AWS S3 Source and Sink](/files/src/main/java/com/hazelcast/jet/examples/files/s3/S3WordCount.java)
+- [Hadoop Source and Sink](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/HadoopWordCount.java)
+    - variant with [Avro serialization](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/avro/HadoopAvro.java)
+    - variant with [Parquet format](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/parquet/HadoopParquet.java)
+    - variant with [Amazon S3](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/cloud/AmazonS3.java)
+    - variant with [Azure Cloud Storage](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/cloud/AzureCloudStorage.java)
+    - variant with [Azure Data Lake](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/cloud/AzureDataLake.java)
+    - variant with [Google Cloud Storage](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/cloud/GoogleCloudStorage.java)
 
 ## Custom Sources and Sinks
 - [Custom Source](source-sink-builder/src/main/java/com/hazelcast/jet/examples/sourcebuilder/HttpSource.java):
