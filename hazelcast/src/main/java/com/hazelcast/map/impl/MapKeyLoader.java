@@ -20,6 +20,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.StateMachine;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
@@ -36,12 +38,11 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.Closeable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Loads keys from a {@link MapLoader} and sends them to all partitions for loading
+ *
+ * Created one instance per record store
  */
 public class MapKeyLoader {
 
@@ -414,6 +417,10 @@ public class MapKeyLoader {
 
         try {
             Iterable<Object> allKeys = mapStoreContext.loadAllKeys();
+            // if no keys to load
+            if (allKeys == Collections.emptyList()) {
+                return;
+            }
             keys = allKeys.iterator();
             Iterator<Data> dataKeys = map(keys, toData);
             int mapMaxSize = clusterSize * maxSizePerNode;
