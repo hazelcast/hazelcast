@@ -16,24 +16,23 @@
 
 package com.hazelcast.spi.impl.merge;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.internal.util.MutableLong;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -280,33 +279,6 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         }
     }
 
-    /**
-     * Consumer for legacy merge operations.
-     */
-    private class LegacyOperationBiConsumer implements BiConsumer<Integer, Operation> {
-
-        private final BiConsumer<Object, Throwable> mergeCallback = (r, throwable) -> {
-            semaphore.release(1);
-            if (throwable != null) {
-                logger.warning("Error while running merge operation: " + throwable.getMessage());
-            }
-        };
-
-        private int mergedCount;
-
-        @Override
-        public void accept(Integer partitionId, Operation operation) {
-            try {
-                operationService.invokeOnPartition(serviceName, operation, partitionId)
-                        .whenCompleteAsync(mergeCallback);
-            } catch (Throwable t) {
-                throw rethrow(t);
-            }
-
-            mergedCount++;
-        }
-    }
-
     protected InternalSerializationService getSerializationService() {
         return serializationService;
     }
@@ -335,8 +307,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     protected abstract void mergeStore(Store recordStore, BiConsumer<Integer, MergingItem> consumer);
 
     /**
-     * This batch size can only be used with {@link SplitBrainMergePolicy},
-     * legacy merge policies don't support batch data sending.
+     * This batch size can only be used with {@link SplitBrainMergePolicy}.
      *
      * @return batch size from {@link com.hazelcast.config.MergePolicyConfig}
      */
@@ -357,8 +328,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     protected abstract InMemoryFormat getInMemoryFormat(String dataStructureName);
 
     /**
-     * Returns an {@link OperationFactory} for {@link SplitBrainMergePolicy},
-     * legacy merge policies don't use this method.
+     * Returns an {@link OperationFactory} for {@link SplitBrainMergePolicy}.
      *
      * @return a new operation factory
      */

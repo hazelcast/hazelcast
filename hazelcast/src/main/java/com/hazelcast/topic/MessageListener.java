@@ -28,6 +28,7 @@ import java.util.EventListener;
  *
  * @param <E> message
  */
+@FunctionalInterface
 public interface MessageListener<E> extends EventListener {
 
     /**
