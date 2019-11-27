@@ -22,6 +22,8 @@ import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN;
@@ -32,6 +34,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_CHAR_ARRAY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_ENTRY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT_ARRAY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_INTEGER;
@@ -408,6 +411,25 @@ public final class ConstantSerializers {
         public void write(final ObjectDataOutput out, final UUID uuid) throws IOException {
             out.writeLong(uuid.getMostSignificantBits());
             out.writeLong(uuid.getLeastSignificantBits());
+        }
+    }
+
+    public static final class EntrySerializer extends SingletonSerializer<Map.Entry> {
+
+        @Override
+        public int getTypeId() {
+            return CONSTANT_TYPE_ENTRY;
+        }
+
+        @Override
+        public Map.Entry read(final ObjectDataInput in) throws IOException {
+            return new AbstractMap.SimpleEntry(in.readObject(), in.readObject());
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final Map.Entry entry) throws IOException {
+            out.writeObject(entry.getKey());
+            out.writeObject(entry.getValue());
         }
     }
 
