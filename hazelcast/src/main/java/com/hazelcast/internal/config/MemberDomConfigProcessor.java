@@ -130,8 +130,6 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.impl.IndexUtils;
