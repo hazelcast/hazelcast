@@ -20,13 +20,19 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.internal.util.StringUtil;
+
+import org.w3c.dom.Attr;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.Boolean.parseBoolean;
@@ -84,6 +90,16 @@ public final class DomConfigHelper {
         return new IterableNodeList(node, Node.ELEMENT_NODE, null);
     }
 
+    public static Stream<Node> streamOfChildElements(Node node) {
+        return StreamSupport.stream(new IterableNodeList(node, Node.ELEMENT_NODE, null).spliterator(), false);
+    }
+
+    public static Stream<Node> streamOfAttributes(Node node) {
+        return Optional.ofNullable(node.getAttributes())
+            .map(attrs -> IntStream.range(0, attrs.getLength()).mapToObj(attrs::item))
+            .orElse(Stream.empty());
+    }
+
     public static Iterable<Node> childElementsWithName(Node node, String nodeName) {
         return new IterableNodeList(node, Node.ELEMENT_NODE, nodeName);
     }
@@ -103,7 +119,12 @@ public final class DomConfigHelper {
     }
 
     public static String cleanNodeName(final Node node) {
-        final String nodeName = node.getLocalName();
+        final String nodeName;
+        if (node instanceof Attr) {
+            nodeName = node.getNodeName();
+        } else {
+            nodeName = node.getLocalName();
+        }
         if (nodeName == null) {
             throw new HazelcastException("Local node name is null for " + node);
         }
@@ -113,7 +134,9 @@ public final class DomConfigHelper {
     public static String getTextContent(final Node node, boolean domLevel3) {
         if (node != null) {
             final String text;
-            if (domLevel3) {
+            if (node instanceof Attr) {
+                text = node.getNodeValue();
+            } else if (domLevel3) {
                 text = node.getTextContent();
             } else {
                 text = getTextContentOld(node);

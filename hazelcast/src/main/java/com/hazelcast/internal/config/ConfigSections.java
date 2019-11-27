@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.config;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Configuration sections for the members shared by XML and YAML based
  * configurations
@@ -64,6 +67,14 @@ public enum ConfigSections {
     CP_SUBSYSTEM("cp-subsystem", false),
     METRICS("metrics", false);
 
+    public static final Map<String, ConfigSections> NAME_MAPPING = new HashMap<>();
+
+    static {
+        for (ConfigSections element : values()) {
+            NAME_MAPPING.put(element.name, element);
+        }
+    }
+
     final boolean multipleOccurrence;
     private final String name;
 
@@ -73,12 +84,7 @@ public enum ConfigSections {
     }
 
     public static boolean canOccurMultipleTimes(String name) {
-        for (ConfigSections element : values()) {
-            if (name.equals(element.name)) {
-                return element.multipleOccurrence;
-            }
-        }
-        return false;
+        return NAME_MAPPING.get(name).multipleOccurrence;
     }
 
     public boolean isEqual(String name) {
