@@ -61,6 +61,11 @@ public class OnJoinOp
     }
 
     @Override
+    public String getServiceName() {
+        return ClusterServiceImpl.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
         if (!operations.isEmpty()) {
             NodeEngine nodeEngine = getNodeEngine();
@@ -98,7 +103,7 @@ public class OnJoinOp
                 for (Member member : clusterService.getMembers()) {
                     if (!member.localMember() && !member.getUuid().equals(getCallerUuid())) {
                         OnJoinOp operation = new OnJoinOp(operations);
-                        operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
+                        operationService.invokeOnTarget(getServiceName(), operation, member.getAddress());
                     }
                 }
             }
