@@ -30,6 +30,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -126,6 +127,10 @@ class ReferenceObjects {
     static CustomByteArraySerializable aCustomByteArraySerializable = new CustomByteArraySerializable(anInt, aFloat);
     static Portable[] portables = {anInnerPortable, anInnerPortable, anInnerPortable};
 
+    static AbstractMap.SimpleEntry aSimpleMapEntry = new AbstractMap.SimpleEntry(aString, anInnerPortable);
+    static AbstractMap.SimpleImmutableEntry aSimpleImmutableMapEntry = new AbstractMap.SimpleImmutableEntry(aString,
+            anInnerPortable);
+
     static AnIdentifiedDataSerializable anIdentifiedDataSerializable = new AnIdentifiedDataSerializable(
             aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
@@ -164,7 +169,7 @@ class ReferenceObjects {
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
-            aDate, aBigInteger, aBigDecimal, aClass, anEnum,
+            aDate, aBigInteger, aBigDecimal, aClass, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry,
             serializable, externalizable));
 
     static ArrayList arrayList = new ArrayList(asList(aNullObject, nonNullList));
@@ -214,7 +219,7 @@ class ReferenceObjects {
 
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,
-            booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
+            aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
             aDate, aBigInteger, aBigDecimal, aClass, anEnum,
