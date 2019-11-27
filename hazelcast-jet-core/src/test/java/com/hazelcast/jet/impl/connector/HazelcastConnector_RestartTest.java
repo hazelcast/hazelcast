@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.partition.MigrationAwareService;
@@ -63,11 +64,12 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
         cacheConfig.getEventJournalConfig().setEnabled(true);
         hazelcastConfig.addCacheConfig(cacheConfig);
-        config.getHazelcastConfig().getServicesConfig().addServiceConfig(
-                new ServiceConfig()
-                        .setName("MigrationBlockingService")
-                        .setEnabled(true)
-                        .setImplementation(new MigrationBlockingService()));
+        ConfigAccessor.getServicesConfig(config.getHazelcastConfig())
+                      .addServiceConfig(
+                              new ServiceConfig()
+                                      .setName("MigrationBlockingService")
+                                      .setEnabled(true)
+                                      .setImplementation(new MigrationBlockingService()));
 
         instance1 = createJetMember(config);
         instance2 = createJetMember(config);

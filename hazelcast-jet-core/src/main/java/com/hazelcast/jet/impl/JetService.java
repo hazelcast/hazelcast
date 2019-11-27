@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
@@ -124,7 +125,8 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     }
 
     static JetConfig findJetServiceConfig(Config hzConfig) {
-        return (JetConfig) hzConfig.getServicesConfig().getServiceConfig(SERVICE_NAME).getConfigObject();
+        return (JetConfig) ConfigAccessor.getServicesConfig(hzConfig)
+                                         .getServiceConfig(SERVICE_NAME).getConfigObject();
     }
 
     /**
