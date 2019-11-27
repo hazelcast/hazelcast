@@ -221,9 +221,9 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, groupPassword);
     }
 
-    public String getClusterState(String clusterName, String groupPassword) throws IOException {
+    public ConnectionResponse getClusterState(String clusterName, String groupPassword) throws IOException {
         String url = address + "management/cluster/state";
-        return doPost(url, clusterName, groupPassword).response;
+        return doPost(url, clusterName, groupPassword);
     }
 
     public ConnectionResponse changeClusterState(String clusterName, String groupPassword, String newState) throws IOException {

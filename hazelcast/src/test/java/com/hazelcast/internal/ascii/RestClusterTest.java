@@ -126,12 +126,12 @@ public class RestClusterTest {
         HTTPCommunicator communicator2 = new HTTPCommunicator(instance2);
 
         instance1.getCluster().changeClusterState(ClusterState.FROZEN);
-        assertJsonContains(communicator1.getClusterState(clusterName, getPassword()),
+        assertJsonContains(communicator1.getClusterState(clusterName, getPassword()).response,
                 "status", "success",
                 "state", "frozen");
 
         instance1.getCluster().changeClusterState(ClusterState.PASSIVE);
-        assertJsonContains(communicator2.getClusterState(clusterName, getPassword()),
+        assertJsonContains(communicator2.getClusterState(clusterName, getPassword()).response,
                 "status", "success",
                 "state", "passive");
     }
