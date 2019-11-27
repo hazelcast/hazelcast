@@ -55,7 +55,6 @@ import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -888,20 +887,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 .withPrefix("cache")
                 .withDiscriminator("name", cacheName);
             context.collect(dsDescriptor, localInstanceStats);
-        }
-
-        // near cache
-        for (Map.Entry<String, CacheStatisticsImpl> entry : statistics.entrySet()) {
-            String cacheName = entry.getKey();
-            CacheStatisticsImpl cacheStatsImpl = entry.getValue();
-            NearCacheStats nearCacheStats = cacheStatsImpl.getNearCacheStatistics();
-            if (nearCacheStats != null) {
-                MetricDescriptor nearCacheDescriptor = descriptor
-                    .copy()
-                    .withPrefix("cache.nearcache")
-                    .withDiscriminator("name", cacheName);
-                context.collect(nearCacheDescriptor, nearCacheStats);
-            }
         }
     }
 }
