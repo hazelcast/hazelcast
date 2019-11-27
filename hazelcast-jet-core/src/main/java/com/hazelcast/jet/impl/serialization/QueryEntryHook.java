@@ -21,49 +21,41 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.query.impl.QueryEntry;
 
 import java.io.IOException;
-import java.util.PriorityQueue;
+import java.util.Map;
 
-public final class PriorityQueueHook implements SerializerHook<PriorityQueue> {
+import static com.hazelcast.jet.Util.entry;
+
+public final class QueryEntryHook implements SerializerHook<QueryEntry> {
 
     @Override
-    public Class<PriorityQueue> getSerializationType() {
-        return PriorityQueue.class;
+    public Class<QueryEntry> getSerializationType() {
+        return QueryEntry.class;
     }
 
     @Override
-    @SuppressWarnings("checkstyle:anoninnerlength")
     public Serializer createSerializer() {
-        return new StreamSerializer<PriorityQueue>() {
-
+        return new StreamSerializer<Map.Entry>() {
             @Override
             public int getTypeId() {
-                return SerializerHookConstants.PRIORITY_QUEUE;
+                return SerializerHookConstants.QUERY_ENTRY;
+            }
+
+            @Override
+            public void write(ObjectDataOutput out, Map.Entry object) throws IOException {
+                out.writeObject(object.getKey());
+                out.writeObject(object.getValue());
+            }
+
+            @Override
+            public Map.Entry read(ObjectDataInput in) throws IOException {
+                return entry(in.readObject(), in.readObject());
             }
 
             @Override
             public void destroy() {
-            }
-
-            @Override
-            public void write(ObjectDataOutput out, PriorityQueue queue) throws IOException {
-                out.writeInt(queue.size());
-                out.writeObject(queue.comparator());
-                for (Object o : queue) {
-                    out.writeObject(o);
-                }
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public PriorityQueue read(ObjectDataInput in) throws IOException {
-                int size = in.readInt();
-                PriorityQueue res = new PriorityQueue(Math.max(1, size), in.readObject());
-                for (int i = 0; i < size; i++) {
-                    res.add(in.readObject());
-                }
-                return res;
             }
         };
     }

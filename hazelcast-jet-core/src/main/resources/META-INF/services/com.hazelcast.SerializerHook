@@ -37,5 +37,5 @@ com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastKeyHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$DoneItemHook
 com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject$Hook
 com.hazelcast.jet.impl.serialization.MapEntryHook
-com.hazelcast.jet.impl.serialization.PriorityQueueHook
+com.hazelcast.jet.impl.serialization.QueryEntryHook
 com.hazelcast.jet.impl.metrics.JetMetricsDataSerializerHook

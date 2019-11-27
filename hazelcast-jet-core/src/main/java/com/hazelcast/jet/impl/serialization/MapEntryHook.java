@@ -23,15 +23,16 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
 
-public final class MapEntryHook implements SerializerHook<Entry> {
+public final class MapEntryHook implements SerializerHook<AbstractMap.SimpleImmutableEntry> {
 
     @Override
-    public Class<Entry> getSerializationType() {
-        return Entry.class;
+    public Class<AbstractMap.SimpleImmutableEntry> getSerializationType() {
+        return AbstractMap.SimpleImmutableEntry.class;
     }
 
     @Override
