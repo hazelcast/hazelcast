@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.Sort;
@@ -36,23 +35,6 @@ public final class SortLogicalRule extends ConverterRule {
             HazelcastConventions.LOGICAL,
             SortLogicalRule.class.getSimpleName()
         );
-    }
-
-    @Override
-    public void onMatch(RelOptRuleCall call) {
-        Sort sort = call.rel(0);
-        RelNode input = sort.getInput();
-
-        SortLogicalRel newSort = new SortLogicalRel(
-            sort.getCluster(),
-            OptUtils.toLogicalConvention(sort.getTraitSet()),
-            OptUtils.toLogicalInput(input),
-            sort.getCollation(),
-            sort.offset,
-            sort.fetch
-        );
-
-        call.transformTo(newSort);
     }
 
     @Override

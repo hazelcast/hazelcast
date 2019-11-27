@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.Project;
@@ -36,22 +35,6 @@ public final class ProjectLogicalRule extends ConverterRule {
             HazelcastConventions.LOGICAL,
             ProjectLogicalRule.class.getSimpleName()
         );
-    }
-
-    @Override
-    public void onMatch(RelOptRuleCall call) {
-        Project project = call.rel(0);
-        RelNode input = project.getInput();
-
-        ProjectLogicalRel newProject = new ProjectLogicalRel(
-            project.getCluster(),
-            OptUtils.toLogicalConvention(project.getTraitSet()),
-            OptUtils.toLogicalInput(input),
-            project.getProjects(),
-            project.getRowType()
-        );
-
-        call.transformTo(newProject);
     }
 
     @Override
