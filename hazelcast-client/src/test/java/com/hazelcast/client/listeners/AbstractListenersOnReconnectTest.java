@@ -131,7 +131,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         ClientConfig clientConfig = createClientConfig(true);
         ListenerConfig listenerConfig = new ListenerConfig();
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final AtomicInteger connectCount = new AtomicInteger();
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch reconnectedLatch = new CountDownLatch(1);
         listenerConfig.setImplementation(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -139,12 +141,18 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     disconnectedLatch.countDown();
                 }
                 if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
+                    int count = connectCount.incrementAndGet();
+                    if (count == 1) {
+                        connectedLatch.countDown();
+                    } else if (count == 2) {
+                        reconnectedLatch.countDown();
+                    }
                 }
             }
         });
         clientConfig.addListenerConfig(listenerConfig);
         client = factory.newHazelcastClient(clientConfig);
+        assertOpenEventually(connectedLatch);
 
         setupListener();
 
@@ -171,7 +179,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         }
 
         assertOpenEventually(disconnectedLatch);
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectedLatch);
 
         sleepAtLeastMillis(endpointDelaySeconds * 1000 + 2000);
         clusterSize = clusterSize - 1;
@@ -189,7 +197,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         ClientConfig clientConfig = createClientConfig(true);
         ListenerConfig listenerConfig = new ListenerConfig();
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final AtomicInteger connectCount = new AtomicInteger();
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch reconnectedLatch = new CountDownLatch(1);
         listenerConfig.setImplementation(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -197,12 +207,18 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     disconnectedLatch.countDown();
                 }
                 if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
+                    int count = connectCount.incrementAndGet();
+                    if (count == 1) {
+                        connectedLatch.countDown();
+                    } else if (count == 2) {
+                        reconnectedLatch.countDown();
+                    }
                 }
             }
         });
         clientConfig.addListenerConfig(listenerConfig);
         client = factory.newHazelcastClient(clientConfig);
+        assertOpenEventually(connectedLatch);
         HazelcastInstance server2 = factory.newHazelcastInstance(config);
 
         setupListener();
@@ -216,7 +232,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         unblockMessagesToInstance(server2, client);
 
         assertOpenEventually(disconnectedLatch);
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectedLatch);
 
         clusterSize = clusterSize - 1;
         validateRegistrationsAndListenerFunctionality();
@@ -233,7 +249,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         ClientConfig clientConfig = createClientConfig(true);
         ListenerConfig listenerConfig = new ListenerConfig();
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final AtomicInteger connectCount = new AtomicInteger();
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch reconnectedLatch = new CountDownLatch(1);
         listenerConfig.setImplementation(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -241,13 +259,19 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     disconnectedLatch.countDown();
                 }
                 if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
+                    int count = connectCount.incrementAndGet();
+                    if (count == 1) {
+                        connectedLatch.countDown();
+                    } else if (count == 2) {
+                        reconnectedLatch.countDown();
+                    }
                 }
             }
         });
         clientConfig.addListenerConfig(listenerConfig);
         client = factory.newHazelcastClient(clientConfig);
         factory.newHazelcastInstance(config);
+        assertOpenEventually(connectedLatch);
         setupListener();
 
         blockMessagesToInstance(ownerServer, client);
@@ -257,7 +281,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
         unblockMessagesToInstance(ownerServer, client);
 
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectedLatch);
 
         validateRegistrationsAndListenerFunctionality();
     }
@@ -335,7 +359,9 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         ClientConfig clientConfig = createClientConfig(isSmart);
         ListenerConfig listenerConfig = new ListenerConfig();
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final AtomicInteger connectCount = new AtomicInteger();
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch reconnectedLatch = new CountDownLatch(1);
         listenerConfig.setImplementation(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -343,12 +369,18 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     disconnectedLatch.countDown();
                 }
                 if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
+                    int count = connectCount.incrementAndGet();
+                    if (count == 1) {
+                        connectedLatch.countDown();
+                    } else if (count == 2) {
+                        reconnectedLatch.countDown();
+                    }
                 }
             }
         });
         clientConfig.addListenerConfig(listenerConfig);
         client = factory.newHazelcastClient(clientConfig);
+        assertOpenEventually(connectedLatch);
 
         setupListener();
 
@@ -359,7 +391,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         assertOpenEventually(disconnectedLatch);
 
         unblockMessagesFromInstance(server, client);
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectedLatch);
 
         validateRegistrationsAndListenerFunctionality();
     }
@@ -393,21 +425,28 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         ClientConfig clientConfig = createClientConfig(isSmartClient);
         ListenerConfig listenerConfig = new ListenerConfig();
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final AtomicInteger connectCount = new AtomicInteger();
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch reconnectedLatch = new CountDownLatch(1);
         listenerConfig.setImplementation(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-
                 if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
                     disconnectedLatch.countDown();
                 }
                 if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
+                    int count = connectCount.incrementAndGet();
+                    if (count == 1) {
+                        connectedLatch.countDown();
+                    } else if (count == 2) {
+                        reconnectedLatch.countDown();
+                    }
                 }
             }
         });
         clientConfig.addListenerConfig(listenerConfig);
         client = factory.newHazelcastClient(clientConfig);
+        assertOpenEventually(connectedLatch);
 
         setupListener();
 
@@ -421,7 +460,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         assertClusterSizeEventually(clusterSize, client);
 
         assertOpenEventually(disconnectedLatch);
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectedLatch);
 
         validateRegistrationsAndListenerFunctionality();
     }
