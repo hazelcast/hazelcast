@@ -306,7 +306,7 @@ public final class ClientConfigXmlGenerator {
             }
             for (SerializerConfig serializer : serializers) {
                 gen.node("serializer", null,
-                        "type-class", classNameOrImplClass(serializer.getTypeClassName(), serializer.getTypeClass()),
+                        "type-class", classNameOrClass(serializer.getTypeClassName(), serializer.getTypeClass()),
                         "class-name", classNameOrImplClass(serializer.getClassName(), serializer.getImplementation()));
             }
             //close serializers
@@ -581,6 +581,12 @@ public final class ClientConfigXmlGenerator {
 
         // close connection-strategy
         gen.close();
+    }
+
+    private static String classNameOrClass(String className, Class clazz) {
+        return !isNullOrEmpty(className) ? className
+            : clazz != null ? clazz.getName()
+            : null;
     }
 
     private static String classNameOrImplClass(String className, Object impl) {
