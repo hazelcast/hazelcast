@@ -783,7 +783,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
             public void query(Predicate predicate) {
                 map.project(Projections.singleAttribute("this"), predicate);
             }
-        }};
+        }
+        };
     }
-
 }
