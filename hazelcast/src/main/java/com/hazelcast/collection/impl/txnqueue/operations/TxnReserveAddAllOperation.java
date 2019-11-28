@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,20 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.transaction.TransactionalQueue;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * Transaction prepare operation for a queue offer, executed on the primary replica.
+ * Transaction prepare operation for a queue addAll, executed on the primary replica.
  * <p>
- * Checks if the queue can accommodate one more item in addition to the number provided
+ * Checks if the queue can accommodate the items in addition to the number provided
  * to the constructor and returns the next item ID. This check is done on a scope of
  * one transaction and does not include other transactions. It can also happen that
  * after this check succeeds, the user will add more items to the queue which means that
@@ -42,33 +44,35 @@ import java.util.UUID;
  * <p>
  * The operation can also wait until there is enough room or the wait timeout has elapsed.
  *
- * @see TransactionalQueue#offer(Object)
- * @see TxnOfferOperation
+ * @see TransactionalQueue#addAll(Collection)
+ * @see TxnAddAllOperation
  */
-public class TxnReserveOfferOperation extends QueueBackupAwareOperation implements BlockingOperation, MutatingOperation {
+public class TxnReserveAddAllOperation extends QueueBackupAwareOperation implements BlockingOperation, MutatingOperation {
     /** The number of items already offered in this transactional queue */
     private int txSize;
+    private int requestedAllocation;
     private UUID transactionId;
 
-    public TxnReserveOfferOperation() {
+    public TxnReserveAddAllOperation() {
     }
 
-    public TxnReserveOfferOperation(String name, long timeoutMillis, int txSize, UUID transactionId) {
+    public TxnReserveAddAllOperation(String name, long timeoutMillis, int txSize, int requestedAllocation, UUID transactionId) {
         super(name, timeoutMillis);
         this.txSize = txSize;
+        this.requestedAllocation = requestedAllocation;
         this.transactionId = transactionId;
     }
 
     /**
      * {@inheritDoc}
-     * Sets the response to the next item ID if the queue can
-     * accommodate {@code txSize + 1} items.
+     * Sets the response to the next item IDs if the queue can
+     * accommodate {@code txSize + requestedAllocation} items.
      */
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getContainer();
-        if (queueContainer.hasEnoughCapacity(txSize + 1)) {
-            response = queueContainer.txnOfferReserve(transactionId);
+        if (queueContainer.hasEnoughCapacity(txSize + requestedAllocation)) {
+            response = queueContainer.txnAddAllReserve(transactionId, requestedAllocation);
         }
     }
 
@@ -81,7 +85,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     @Override
     public boolean shouldWait() {
         QueueContainer queueContainer = getContainer();
-        return getWaitTimeout() != 0 && !queueContainer.hasEnoughCapacity(txSize + 1);
+        return getWaitTimeout() != 0 && !queueContainer.hasEnoughCapacity(txSize + requestedAllocation);
     }
 
     @Override
@@ -96,7 +100,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnReserveOfferBackupOperation(name, (Long) response, transactionId);
+        return new TxnReserveAddAllBackupOperation(name, (Set<Long>) response, transactionId);
     }
 
     @Override
@@ -108,6 +112,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(txSize);
+        out.writeInt(requestedAllocation);
         UUIDSerializationUtil.writeUUID(out, transactionId);
     }
 
@@ -115,6 +120,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         txSize = in.readInt();
+        requestedAllocation = in.readInt();
         transactionId = UUIDSerializationUtil.readUUID(in);
     }
 }

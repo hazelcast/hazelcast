@@ -22,10 +22,15 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 
 import javax.annotation.Nonnull;
+
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
+import static java.util.Arrays.asList;
 
 /**
  * Provides proxy for the Transactional Queue.
@@ -100,6 +105,19 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         checkTransactionState();
         Data data = peekInternal(unit.toMillis(timeout));
         return (E) toObjectIfNeeded(data);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> collection) {
+        checkTransactionState();
+        NodeEngine nodeEngine = getNodeEngine();
+        List<Data> data = collection.stream().map(nodeEngine::toData).collect(Collectors.toList());
+        return addAllInternal(data, 0);
+    }
+
+    @Override
+    public boolean addAll(E... items) {
+        return addAll(asList(items));
     }
 
     @Override

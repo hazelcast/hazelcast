@@ -127,6 +127,8 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 44;
     public static final int MERGE_BACKUP = 45;
 
+    public static final int TXN_ADD_ALL = 46;
+
     public int getFactoryId() {
         return F_ID;
     }
@@ -134,7 +136,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
 
         //noinspection unchecked
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE_BACKUP + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[TXN_ADD_ALL + 1];
         constructors[OFFER] = arg -> new OfferOperation();
         constructors[OFFER_BACKUP] = arg -> new OfferBackupOperation();
         constructors[POLL] = arg -> new PollOperation();

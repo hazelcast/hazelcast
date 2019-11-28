@@ -20,6 +20,8 @@ import com.hazelcast.collection.BaseQueue;
 import com.hazelcast.collection.IQueue;
 
 import javax.annotation.Nonnull;
+
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -77,4 +79,8 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
      */
     @Override
     int size();
+
+    boolean addAll(Collection<? extends E> collection);
+
+    boolean addAll(E... items);
 }

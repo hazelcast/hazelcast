@@ -20,9 +20,11 @@ import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.BaseTxnQueueOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnAddAllOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPeekOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPollOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnReserveAddAllOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReserveOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation;
 import com.hazelcast.config.QueueConfig;
@@ -40,6 +42,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -55,9 +58,9 @@ public abstract class TransactionalQueueProxySupport<E>
     protected final QueueConfig config;
 
     /** The list of items offered to the transactional queue */
-    private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
+    private final LinkedList<QueueItem> offeredQueue = new LinkedList<>();
     /** The IDs of the items modified by the transaction, either added or removed from the queue */
-    private final Set<Long> itemIdSet = new HashSet<Long>();
+    private final Set<Long> itemIdSet = new HashSet<>();
 
     TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service, tx);
@@ -96,7 +99,7 @@ public abstract class TransactionalQueueProxySupport<E>
     }
 
     /**
-     * Tries to accomodate one more item in the queue in addition to the
+     * Tries to accommodate one more item in the queue in addition to the
      * already offered items. If it succeeds by getting an item ID, it will
      * add the item to the
      * Makes a reservation for a {@link TransactionalQueue#offer} operation
@@ -198,5 +201,41 @@ public abstract class TransactionalQueueProxySupport<E>
     private <T> InternalCompletableFuture<T> invoke(Operation operation) {
         OperationService operationService = getNodeEngine().getOperationService();
         return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+    }
+
+    boolean addAllInternal(List<Data> data, int timeout) {
+        TxnReserveAddAllOperation operation
+            = new TxnReserveAddAllOperation(name, timeout, offeredQueue.size(), data.size(), tx.getTxnId());
+        operation.setCallerUuid(tx.getOwnerUuid());
+        try {
+            Future<Set<Long>> future = invoke(operation);
+            Set<Long> itemIds = future.get();
+            if (itemIds != null) {
+                if (data.size() != itemIds.size()) {
+                    throw new TransactionException("Could not preallocate needed space for all items to add");
+                }
+                Set<Long> duplicates = new HashSet<>();
+                for (Long itemId : itemIds) {
+                    if (!itemIdSet.add(itemId)) {
+                        duplicates.add(itemId);
+                    }
+                }
+                if (!duplicates.isEmpty()) {
+                    throw new TransactionException("Duplicate itemIds: " + duplicates);
+                }
+                int i = 0;
+                for (Long itemId : itemIds) {
+                    Data datum = data.get(i);
+                    offeredQueue.offer(new QueueItem(null, itemId, datum));
+                    i++;
+                }
+                TxnAddAllOperation txnAddAllOperation = new TxnAddAllOperation(name, itemIds, data);
+                putToRecord(txnAddAllOperation);
+                return true;
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+        return false;
     }
 }

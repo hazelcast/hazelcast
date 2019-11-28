@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -303,6 +304,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return itemId;
     }
 
+    public Set<Long> txnAddAllReserve(UUID transactionId, int size) {
+        Set<Long> itemIds = new HashSet<>();
+        for (int i = 0; i < size; i++) {
+            long itemId = nextId();
+            txnOfferReserveInternal(itemId, transactionId);
+            itemIds.add(itemId);
+        }
+        return itemIds;
+    }
+
     /**
      * Reserves an ID for a future queue item and associates it with the given {@code transactionId}.
      * The item is not yet visible in the queue, it is just reserved for future insertion.
@@ -314,6 +325,15 @@ public class QueueContainer implements IdentifiedDataSerializable {
         TxQueueItem o = txnOfferReserveInternal(itemId, transactionId);
         if (o != null) {
             logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
+        }
+    }
+
+    public void txnAddAllBackupReserve(Set<Long> itemIds, UUID transactionId) {
+        for (Long itemId : itemIds) {
+            TxQueueItem o = txnOfferReserveInternal(itemId, transactionId);
+            if (o != null) {
+                logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
+            }
         }
     }
 
@@ -358,6 +378,37 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (store.isEnabled() && !backup) {
             try {
                 store.store(item.getItemId(), data);
+            } catch (Exception e) {
+                logger.warning("Exception during store", e);
+            }
+        }
+        return true;
+    }
+
+    public boolean txnCommitAddAll(Set<Long> itemIds, List<Data> data, boolean backup) {
+        int i = 0;
+        Map<Long, Data> toStore = new HashMap<>();
+        for (Long itemId : itemIds) {
+            Data datum = data.get(i);
+            QueueItem item = txMap.remove(itemId);
+            if (item == null && !backup) {
+                throw new TransactionException("No reserve: " + itemId);
+            } else if (item == null) {
+                item = new QueueItem(this, itemId, datum);
+            }
+            item.setData(datum);
+            if (!backup) {
+                getItemQueue().offer(item);
+                cancelEvictionIfExists();
+            } else {
+                getBackupMap().put(itemId, item);
+            }
+            i++;
+            toStore.put(itemId, datum);
+        }
+        if (store.isEnabled() && !backup) {
+            try {
+                store.storeAll(toStore);
             } catch (Exception e) {
                 logger.warning("Exception during store", e);
             }

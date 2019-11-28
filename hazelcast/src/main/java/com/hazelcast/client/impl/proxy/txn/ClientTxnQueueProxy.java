@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.proxy.txn;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
@@ -28,10 +29,15 @@ import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
+
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static java.lang.Thread.currentThread;
+import static java.util.Arrays.asList;
 
 /**
  * Proxy implementation of {@link TransactionalQueue}.
@@ -68,7 +74,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     public E take() throws InterruptedException {
         ClientMessage request = TransactionalQueueTakeCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
-        return (E) toObject(TransactionalQueueTakeCodec.decodeResponse(response).response);
+        return toObject(TransactionalQueueTakeCodec.decodeResponse(response).response);
     }
 
     @Override
@@ -86,7 +92,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         ClientMessage request = TransactionalQueuePollCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), unit.toMillis(timeout));
         ClientMessage response = invoke(request);
-        return (E) toObject(TransactionalQueuePollCodec.decodeResponse(response).response);
+        return toObject(TransactionalQueuePollCodec.decodeResponse(response).response);
     }
 
     @Override
@@ -104,7 +110,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         ClientMessage request = TransactionalQueuePeekCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), unit.toMillis(timeout));
         ClientMessage response = invoke(request);
-        return (E) toObject(TransactionalQueuePeekCodec.decodeResponse(response).response);
+        return toObject(TransactionalQueuePeekCodec.decodeResponse(response).response);
     }
 
     @Override
@@ -112,6 +118,19 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         ClientMessage request = TransactionalQueueSizeCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
         return TransactionalQueueSizeCodec.decodeResponse(response).response;
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> collection) {
+        List<Data> items = collection.stream().map(this::toData).collect(Collectors.toList());
+        ClientMessage request = TransactionalQueueAddAllCodec.encodeRequest(name, getTransactionId(), getThreadId(), items, 0);
+        ClientMessage response = invoke(request);
+        return TransactionalQueueAddAllCodec.decodeResponse(response).response;
+    }
+
+    @Override
+    public boolean addAll(E... items) {
+        return addAll(asList(items));
     }
 
     @Override
