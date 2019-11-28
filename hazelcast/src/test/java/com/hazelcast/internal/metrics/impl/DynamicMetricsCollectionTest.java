@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
@@ -180,8 +180,13 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
 
         });
 
-        metricsRegistry.collect(collectorMock);
-        // we just expect there is no exception
+        // we just expect there is no exception apart from AssertionError,
+        // which is for testing only
+        try {
+            metricsRegistry.collect(collectorMock);
+        } catch (AssertionError ex) {
+            // nop
+        }
     }
 
     private static class SourceObject {
