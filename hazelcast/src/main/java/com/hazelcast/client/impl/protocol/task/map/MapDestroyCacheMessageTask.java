@@ -30,6 +30,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 /**
  * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec#REQUEST_MESSAGE_TYPE}
@@ -69,7 +71,7 @@ public class MapDestroyCacheMessageTask
 
     @Override
     public String getServiceName() {
-        return null;
+        return SERVICE_NAME;
     }
 
     @Override
