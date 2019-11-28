@@ -235,7 +235,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void loadAwareIterator(BiConsumer<Data, Record> consumer, boolean backup) {
+    public void forEachAfterLoad(BiConsumer<Data, Record> consumer, boolean backup) {
         checkIfLoaded();
         forEach(consumer, backup);
     }

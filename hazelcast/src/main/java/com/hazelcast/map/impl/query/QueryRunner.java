@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
@@ -29,7 +30,6 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Collection;
 
@@ -208,7 +208,7 @@ public class QueryRunner {
 
     protected Result populateEmptyResult(Query query, Collection<Integer> initialPartitions) {
         return resultProcessorRegistry.get(query.getResultType())
-                                      .populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()));
+                .populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()));
     }
 
     protected Result populateNonEmptyResult(Query query, Collection<QueryableEntry> entries,
@@ -254,8 +254,8 @@ public class QueryRunner {
         return null;
     }
 
-    protected Result runUsingPartitionScanSafely(Query query, Predicate predicate, PartitionIdSet partitions,
-                                                 int migrationStamp) {
+    protected Result runUsingPartitionScanSafely(Query query, Predicate predicate,
+                                                 PartitionIdSet partitions, int migrationStamp) {
 
         if (!validateMigrationStamp(migrationStamp)) {
             return null;
