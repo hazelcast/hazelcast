@@ -54,14 +54,17 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(publisherCreateMessage, urgent);
 
         if (info.isIncludeValue()) {
-            Collection<Map.Entry<Data, Data>> result = new ArrayList<>();
             ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response, (key, value) -> {
-                result.add(new AbstractMap.SimpleEntry<>(key, value));
+                if (!queryCache.reachedMaxCapacity()) {
+                    queryCache.prepopulate(key, value);
+                }
             });
-            prepopulate(queryCache, result);
         } else {
-            List<Data> result = ContinuousQueryPublisherCreateCodec.decodeResponse(response).response;
-            prepopulate(queryCache, result);
+            ContinuousQueryPublisherCreateCodec.decodeResponse(response, (elem) -> {
+                if (!queryCache.reachedMaxCapacity()) {
+                    queryCache.prepopulate(elem, null);
+                }
+            });
         }
 
 
@@ -91,25 +94,5 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
     private void madePublishable(String mapName, String cacheName, boolean urgent) throws Exception {
         ClientMessage request = ContinuousQueryMadePublishableCodec.encodeRequest(mapName, cacheName);
         context.getInvokerWrapper().invokeOnAllPartitions(request, urgent);
-    }
-
-    private static void prepopulate(InternalQueryCache queryCache, Collection<Map.Entry<Data, Data>> result) {
-        for (Map.Entry<Data, Data> entry : result) {
-            if (queryCache.reachedMaxCapacity()) {
-                break;
-            }
-
-            queryCache.prepopulate(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private static void prepopulate(InternalQueryCache queryCache, List<Data> result) {
-        for (Data key : result) {
-            if (queryCache.reachedMaxCapacity()) {
-                break;
-            }
-
-            queryCache.prepopulate(key, null);
-        }
     }
 }

@@ -18,10 +18,12 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
@@ -68,7 +70,7 @@ public final class ListMultiFrameCodec {
 
     public static <T> List<T> decode(ClientMessage.ForwardFrameIterator iterator,
                                      Function<ClientMessage.ForwardFrameIterator, T> decodeFunction) {
-        List<T> result = new LinkedList<>();
+        List<T> result = new ArrayList<>();
         //begin frame, list
         iterator.next();
         while (!nextFrameIsDataStructureEndFrame(iterator)) {
@@ -77,6 +79,18 @@ public final class ListMultiFrameCodec {
         //end frame, list
         iterator.next();
         return result;
+    }
+
+    public static <T> void decode(ClientMessage.ForwardFrameIterator iterator,
+                                  Function<ClientMessage.ForwardFrameIterator, T> decodeFunction,
+                                  Consumer<T> consumer) {
+        //begin frame, list
+        iterator.next();
+        while (!nextFrameIsDataStructureEndFrame(iterator)) {
+            consumer.accept(decodeFunction.apply(iterator));
+        }
+        //end frame, list
+        iterator.next();
     }
 
     public static <T> List<T> decodeContainsNullable(ClientMessage.ForwardFrameIterator iterator,
@@ -95,5 +109,13 @@ public final class ListMultiFrameCodec {
     public static <T> List<T> decodeNullable(ClientMessage.ForwardFrameIterator iterator,
                                              Function<ClientMessage.ForwardFrameIterator, T> decodeFunction) {
         return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator, decodeFunction);
+    }
+
+    public static <T> void decodeNullable(ClientMessage.ForwardFrameIterator iterator,
+                                          Function<ClientMessage.ForwardFrameIterator, T> decodeFunction,
+                                          Consumer<T> consumer) {
+        if (nextFrameIsNullEndFrame(iterator)) {
+            decode(iterator, decodeFunction, consumer);
+        }
     }
 }

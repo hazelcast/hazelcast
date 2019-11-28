@@ -434,11 +434,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public Set<K> keySet() {
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
-        ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-        List<Entry> keys = new ArrayList<>(result.response.size());
-        for (Data dataKey : result.response) {
-            keys.add(new AbstractMap.SimpleImmutableEntry<K, V>(toObject(dataKey), null));
-        }
+        List<Entry> keys = new ArrayList<>();
+        ReplicatedMapKeySetCodec.decodeResponse(response, data -> {
+            K key = toObject(data);
+            keys.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
+        });
+
         return (Set) new ResultSet(keys, IterationType.KEY);
     }
 
@@ -453,8 +454,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public Collection<V> values() {
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
-        ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<>(result.response, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        ReplicatedMapValuesCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<>(result, getSerializationService());
     }
 
     @Nonnull

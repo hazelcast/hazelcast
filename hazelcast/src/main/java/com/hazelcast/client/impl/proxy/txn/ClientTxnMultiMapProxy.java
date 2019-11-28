@@ -30,6 +30,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.transaction.TransactionException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -60,8 +61,9 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         ClientMessage request = TransactionalMultiMapGetCodec.encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
 
         ClientMessage response = invoke(request);
-        List<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).response;
-        return new UnmodifiableLazyList<V>(collection, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        TransactionalMultiMapGetCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<V>(result, getSerializationService());
     }
 
     @Override
@@ -77,8 +79,9 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         ClientMessage request = TransactionalMultiMapRemoveCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        List<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).response;
-        return new UnmodifiableLazyList<V>(collection, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        TransactionalMultiMapRemoveCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<V>(result, getSerializationService());
     }
 
     @Override

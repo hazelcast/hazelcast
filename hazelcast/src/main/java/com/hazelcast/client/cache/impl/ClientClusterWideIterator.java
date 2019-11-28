@@ -95,9 +95,11 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
             try {
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, name, partitionIndex);
                 ClientInvocationFuture future = clientInvocation.invoke();
-                CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(future.get());
-                setLastTableIndex(responseParameters.keys, responseParameters.tableIndex);
-                return responseParameters.keys;
+                List<Data> keys = new ArrayList<>();
+                CacheIterateCodec.ResponseParameters responseParameters
+                        = CacheIterateCodec.decodeResponse(future.get(), keys::add);
+                setLastTableIndex(keys, responseParameters.tableIndex);
+                return keys;
             } catch (Exception e) {
                 throw rethrow(e);
             }

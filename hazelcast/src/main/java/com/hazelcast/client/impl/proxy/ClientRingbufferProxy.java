@@ -43,7 +43,9 @@ import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -86,9 +88,11 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         partitionId = getContext().getPartitionService().getPartitionId(partitionKey);
 
         readManyAsyncResponseDecoder = clientMessage -> {
-            final RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(clientMessage);
+            List<Data> items = new ArrayList<>();
+            final RingbufferReadManyCodec.ResponseParameters params
+                    = RingbufferReadManyCodec.decodeResponse(clientMessage, items::add);
             final ReadResultSetImpl readResultSet = new ReadResultSetImpl(
-                    params.readCount, params.items, params.itemSeqs, params.nextSeq);
+                    params.readCount, items, params.itemSeqs, params.nextSeq);
             readResultSet.setSerializationService(getSerializationService());
             return readResultSet;
         };

@@ -1040,8 +1040,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MapKeySetCodec_decodeResponse() {
         int fileClientMessageIndex = 110;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MapKeySetCodec.ResponseParameters parameters = MapKeySetCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MapKeySetCodec.ResponseParameters parameters = MapKeySetCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -1073,8 +1074,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MapValuesCodec_decodeResponse() {
         int fileClientMessageIndex = 114;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MapValuesCodec.ResponseParameters parameters = MapValuesCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MapValuesCodec.ResponseParameters parameters = MapValuesCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -1106,8 +1108,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MapKeySetWithPredicateCodec_decodeResponse() {
         int fileClientMessageIndex = 118;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MapKeySetWithPredicateCodec.ResponseParameters parameters = MapKeySetWithPredicateCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MapKeySetWithPredicateCodec.ResponseParameters parameters = MapKeySetWithPredicateCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -1122,8 +1125,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MapValuesWithPredicateCodec_decodeResponse() {
         int fileClientMessageIndex = 120;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MapValuesWithPredicateCodec.ResponseParameters parameters = MapValuesWithPredicateCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MapValuesWithPredicateCodec.ResponseParameters parameters = MapValuesWithPredicateCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -1330,8 +1334,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MapKeySetWithPagingPredicateCodec_decodeResponse() {
         int fileClientMessageIndex = 146;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MapKeySetWithPagingPredicateCodec.ResponseParameters parameters = MapKeySetWithPagingPredicateCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MapKeySetWithPagingPredicateCodec.ResponseParameters parameters = MapKeySetWithPagingPredicateCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -1395,9 +1400,10 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MapFetchKeysCodec_decodeResponse() {
         int fileClientMessageIndex = 154;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MapFetchKeysCodec.ResponseParameters parameters = MapFetchKeysCodec.decodeResponse(fromFile);
+        List<Data> keysList = new ArrayList<>();
+        MapFetchKeysCodec.ResponseParameters parameters = MapFetchKeysCodec.decodeResponse(fromFile, keysList::add);
         assertTrue(isEqual(anInt, parameters.tableIndex));
-        assertTrue(isEqual(aListOfData, parameters.keys));
+        assertTrue(isEqual(aListOfData, keysList));
     }
 
     @Test
@@ -1625,9 +1631,10 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MapEventJournalReadCodec_decodeResponse() {
         int fileClientMessageIndex = 180;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MapEventJournalReadCodec.ResponseParameters parameters = MapEventJournalReadCodec.decodeResponse(fromFile);
+        List<Data> itemsList = new ArrayList<>();
+        MapEventJournalReadCodec.ResponseParameters parameters = MapEventJournalReadCodec.decodeResponse(fromFile, itemsList::add);
         assertTrue(isEqual(anInt, parameters.readCount));
-        assertTrue(isEqual(aListOfData, parameters.items));
+        assertTrue(isEqual(aListOfData, itemsList));
         assertTrue(isEqual(aLongArray, parameters.itemSeqs));
         assertTrue(isEqual(aLong, parameters.nextSeq));
     }
@@ -1740,8 +1747,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MultiMapGetCodec_decodeResponse() {
         int fileClientMessageIndex = 194;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MultiMapGetCodec.ResponseParameters parameters = MultiMapGetCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MultiMapGetCodec.ResponseParameters parameters = MultiMapGetCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -1756,8 +1764,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MultiMapRemoveCodec_decodeResponse() {
         int fileClientMessageIndex = 196;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MultiMapRemoveCodec.ResponseParameters parameters = MultiMapRemoveCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MultiMapRemoveCodec.ResponseParameters parameters = MultiMapRemoveCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -1772,8 +1781,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MultiMapKeySetCodec_decodeResponse() {
         int fileClientMessageIndex = 198;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MultiMapKeySetCodec.ResponseParameters parameters = MultiMapKeySetCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MultiMapKeySetCodec.ResponseParameters parameters = MultiMapKeySetCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -1788,8 +1798,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_MultiMapValuesCodec_decodeResponse() {
         int fileClientMessageIndex = 200;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MultiMapValuesCodec.ResponseParameters parameters = MultiMapValuesCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        MultiMapValuesCodec.ResponseParameters parameters = MultiMapValuesCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -2225,8 +2236,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_QueueIteratorCodec_decodeResponse() {
         int fileClientMessageIndex = 252;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        QueueIteratorCodec.ResponseParameters parameters = QueueIteratorCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        QueueIteratorCodec.ResponseParameters parameters = QueueIteratorCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -2241,8 +2253,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_QueueDrainToCodec_decodeResponse() {
         int fileClientMessageIndex = 254;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        QueueDrainToCodec.ResponseParameters parameters = QueueDrainToCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        QueueDrainToCodec.ResponseParameters parameters = QueueDrainToCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -2257,8 +2270,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_QueueDrainToMaxSizeCodec_decodeResponse() {
         int fileClientMessageIndex = 256;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        QueueDrainToMaxSizeCodec.ResponseParameters parameters = QueueDrainToMaxSizeCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        QueueDrainToMaxSizeCodec.ResponseParameters parameters = QueueDrainToMaxSizeCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -2656,8 +2670,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_ListGetAllCodec_decodeResponse() {
         int fileClientMessageIndex = 304;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ListGetAllCodec.ResponseParameters parameters = ListGetAllCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        ListGetAllCodec.ResponseParameters parameters = ListGetAllCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -2848,8 +2863,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_ListSubCodec_decodeResponse() {
         int fileClientMessageIndex = 327;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ListSubCodec.ResponseParameters parameters = ListSubCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        ListSubCodec.ResponseParameters parameters = ListSubCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -2864,8 +2880,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_ListIteratorCodec_decodeResponse() {
         int fileClientMessageIndex = 329;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ListIteratorCodec.ResponseParameters parameters = ListIteratorCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        ListIteratorCodec.ResponseParameters parameters = ListIteratorCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -2880,8 +2897,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_ListListIteratorCodec_decodeResponse() {
         int fileClientMessageIndex = 331;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ListListIteratorCodec.ResponseParameters parameters = ListListIteratorCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        ListListIteratorCodec.ResponseParameters parameters = ListListIteratorCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -3039,8 +3057,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_SetGetAllCodec_decodeResponse() {
         int fileClientMessageIndex = 351;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SetGetAllCodec.ResponseParameters parameters = SetGetAllCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        SetGetAllCodec.ResponseParameters parameters = SetGetAllCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -3971,8 +3990,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_ReplicatedMapKeySetCodec_decodeResponse() {
         int fileClientMessageIndex = 460;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ReplicatedMapKeySetCodec.ResponseParameters parameters = ReplicatedMapKeySetCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        ReplicatedMapKeySetCodec.ResponseParameters parameters = ReplicatedMapKeySetCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -3987,8 +4007,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_ReplicatedMapValuesCodec_decodeResponse() {
         int fileClientMessageIndex = 462;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ReplicatedMapValuesCodec.ResponseParameters parameters = ReplicatedMapValuesCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        ReplicatedMapValuesCodec.ResponseParameters parameters = ReplicatedMapValuesCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -4263,8 +4284,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_TransactionalMapKeySetCodec_decodeResponse() {
         int fileClientMessageIndex = 495;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        TransactionalMapKeySetCodec.ResponseParameters parameters = TransactionalMapKeySetCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        TransactionalMapKeySetCodec.ResponseParameters parameters = TransactionalMapKeySetCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -4279,8 +4301,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_TransactionalMapKeySetWithPredicateCodec_decodeResponse() {
         int fileClientMessageIndex = 497;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        TransactionalMapKeySetWithPredicateCodec.ResponseParameters parameters = TransactionalMapKeySetWithPredicateCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        TransactionalMapKeySetWithPredicateCodec.ResponseParameters parameters = TransactionalMapKeySetWithPredicateCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -4295,8 +4318,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_TransactionalMapValuesCodec_decodeResponse() {
         int fileClientMessageIndex = 499;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        TransactionalMapValuesCodec.ResponseParameters parameters = TransactionalMapValuesCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        TransactionalMapValuesCodec.ResponseParameters parameters = TransactionalMapValuesCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -4311,8 +4335,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_TransactionalMapValuesWithPredicateCodec_decodeResponse() {
         int fileClientMessageIndex = 501;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        TransactionalMapValuesWithPredicateCodec.ResponseParameters parameters = TransactionalMapValuesWithPredicateCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        TransactionalMapValuesWithPredicateCodec.ResponseParameters parameters = TransactionalMapValuesWithPredicateCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -4359,8 +4384,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_TransactionalMultiMapGetCodec_decodeResponse() {
         int fileClientMessageIndex = 507;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        TransactionalMultiMapGetCodec.ResponseParameters parameters = TransactionalMultiMapGetCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        TransactionalMultiMapGetCodec.ResponseParameters parameters = TransactionalMultiMapGetCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -4375,8 +4401,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_TransactionalMultiMapRemoveCodec_decodeResponse() {
         int fileClientMessageIndex = 509;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        TransactionalMultiMapRemoveCodec.ResponseParameters parameters = TransactionalMultiMapRemoveCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        TransactionalMultiMapRemoveCodec.ResponseParameters parameters = TransactionalMultiMapRemoveCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -4837,9 +4864,10 @@ public class ClientCompatibilityTest_2_0 {
     public void test_CacheIterateCodec_decodeResponse() {
         int fileClientMessageIndex = 566;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        CacheIterateCodec.ResponseParameters parameters = CacheIterateCodec.decodeResponse(fromFile);
+        List<Data> keysList = new ArrayList<>();
+        CacheIterateCodec.ResponseParameters parameters = CacheIterateCodec.decodeResponse(fromFile, keysList::add);
         assertTrue(isEqual(anInt, parameters.tableIndex));
-        assertTrue(isEqual(aListOfData, parameters.keys));
+        assertTrue(isEqual(aListOfData, keysList));
     }
 
     @Test
@@ -5193,9 +5221,10 @@ public class ClientCompatibilityTest_2_0 {
     public void test_CacheEventJournalReadCodec_decodeResponse() {
         int fileClientMessageIndex = 607;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        CacheEventJournalReadCodec.ResponseParameters parameters = CacheEventJournalReadCodec.decodeResponse(fromFile);
+        List<Data> itemsList = new ArrayList<>();
+        CacheEventJournalReadCodec.ResponseParameters parameters = CacheEventJournalReadCodec.decodeResponse(fromFile, itemsList::add);
         assertTrue(isEqual(anInt, parameters.readCount));
-        assertTrue(isEqual(aListOfData, parameters.items));
+        assertTrue(isEqual(aListOfData, itemsList));
         assertTrue(isEqual(aLongArray, parameters.itemSeqs));
         assertTrue(isEqual(aLong, parameters.nextSeq));
     }
@@ -5398,8 +5427,9 @@ public class ClientCompatibilityTest_2_0 {
     public void test_ContinuousQueryPublisherCreateCodec_decodeResponse() {
         int fileClientMessageIndex = 633;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ContinuousQueryPublisherCreateCodec.ResponseParameters parameters = ContinuousQueryPublisherCreateCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfData, parameters.response));
+        List<Data> responseList = new ArrayList<>();
+        ContinuousQueryPublisherCreateCodec.ResponseParameters parameters = ContinuousQueryPublisherCreateCodec.decodeResponse(fromFile, responseList::add);
+        assertTrue(isEqual(aListOfData, responseList));
     }
 
     @Test
@@ -5635,9 +5665,10 @@ public class ClientCompatibilityTest_2_0 {
     public void test_RingbufferReadManyCodec_decodeResponse() {
         int fileClientMessageIndex = 661;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        RingbufferReadManyCodec.ResponseParameters parameters = RingbufferReadManyCodec.decodeResponse(fromFile);
+        List<Data> itemsList = new ArrayList<>();
+        RingbufferReadManyCodec.ResponseParameters parameters = RingbufferReadManyCodec.decodeResponse(fromFile, itemsList::add);
         assertTrue(isEqual(anInt, parameters.readCount));
-        assertTrue(isEqual(aListOfData, parameters.items));
+        assertTrue(isEqual(aListOfData, itemsList));
         assertTrue(isEqual(aLongArray, parameters.itemSeqs));
         assertTrue(isEqual(aLong, parameters.nextSeq));
     }

@@ -43,6 +43,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -210,9 +211,9 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     private Collection<E> getAll() {
         ClientMessage request = SetGetAllCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        SetGetAllCodec.ResponseParameters resultParameters = SetGetAllCodec.decodeResponse(response);
-        List<Data> resultCollection = resultParameters.response;
-        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        SetGetAllCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<E>(result, getSerializationService());
     }
 
     @Override

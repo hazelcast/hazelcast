@@ -53,6 +53,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -148,9 +149,9 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     public Iterator<E> iterator() {
         ClientMessage request = ListIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
-        List<Data> resultCollection = resultParameters.response;
-        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService()).iterator();
+        List<Data> result = new ArrayList<>();
+        ListIteratorCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<E>(result, getSerializationService()).iterator();
     }
 
     @Override
@@ -272,8 +273,9 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     private Collection<E> getAll() {
         ClientMessage request = ListGetAllCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        ListGetAllCodec.ResponseParameters resultParameters = ListGetAllCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<E>(resultParameters.response, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        ListGetAllCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<E>(result, getSerializationService());
     }
 
     @Override
@@ -305,18 +307,18 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     public ListIterator<E> listIterator(int index) {
         ClientMessage request = ListListIteratorCodec.encodeRequest(name, index);
         ClientMessage response = invokeOnPartition(request);
-        ListListIteratorCodec.ResponseParameters resultParameters = ListListIteratorCodec.decodeResponse(response);
-        List<Data> resultCollection = resultParameters.response;
-        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService()).listIterator();
+        List<Data> result = new ArrayList<>();
+        ListListIteratorCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<E>(result, getSerializationService()).listIterator();
     }
 
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
         ClientMessage request = ListSubCodec.encodeRequest(name, fromIndex, toIndex);
         ClientMessage response = invokeOnPartition(request);
-        ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);
-        List<Data> resultCollection = resultParameters.response;
-        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        ListSubCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<E>(result, getSerializationService());
     }
 
     @Override

@@ -50,10 +50,13 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.MutableInteger;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -243,13 +246,13 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         ClientMessage request = QueueDrainToCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueDrainToCodec.ResponseParameters resultParameters = QueueDrainToCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
-        for (Data data : resultCollection) {
+        MutableInteger size = new MutableInteger();
+        QueueDrainToCodec.decodeResponse(response, data -> {
             E e = toObject(data);
             objects.add(e);
-        }
-        return resultCollection.size();
+            size.getAndInc();
+        });
+        return size.value;
     }
 
     @Override
@@ -258,13 +261,13 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         ClientMessage request = QueueDrainToMaxSizeCodec.encodeRequest(name, maxElements);
         ClientMessage response = invokeOnPartition(request);
-        QueueDrainToMaxSizeCodec.ResponseParameters resultParameters = QueueDrainToMaxSizeCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
-        for (Data data : resultCollection) {
+        MutableInteger size = new MutableInteger();
+        QueueDrainToMaxSizeCodec.decodeResponse(response, data -> {
             E e = toObject(data);
             c.add(e);
-        }
-        return resultCollection.size();
+            size.getAndInc();
+        });
+        return size.value;
     }
 
     @Override
@@ -323,20 +326,20 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public Iterator<E> iterator() {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
-        return new QueueIterator<E>(resultCollection.iterator(), getSerializationService(), false);
+        List<Data> result = new ArrayList<>();
+        QueueIteratorCodec.decodeResponse(response, result::add);
+        return new QueueIterator<E>(result.iterator(), getSerializationService(), false);
     }
 
     @Override
     public Object[] toArray() {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
+        List<Data> result = new ArrayList<>();
+        QueueIteratorCodec.decodeResponse(response, result::add);
         int i = 0;
-        Object[] array = new Object[resultCollection.size()];
-        for (Data data : resultCollection) {
+        Object[] array = new Object[result.size()];
+        for (Data data : result) {
             array[i++] = toObject(data);
         }
         return array;
@@ -349,14 +352,14 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
-        int size = resultCollection.size();
+        List<Data> result = new ArrayList<>();
+        QueueIteratorCodec.decodeResponse(response, result::add);
+        int size = result.size();
         if (ts.length < size) {
             ts = (T[]) java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
         }
         int i = 0;
-        for (Data data : resultCollection) {
+        for (Data data : result) {
             ts[i++] = (T) toObject(data);
         }
         return ts;

@@ -28,6 +28,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.iterator.AbstractMapPartitionIterator;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -67,9 +68,11 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
         ClientInvocation clientInvocation = new ClientInvocation(client, request, mapProxy.getName(), partitionId);
         try {
             ClientInvocationFuture f = clientInvocation.invoke();
-            MapFetchKeysCodec.ResponseParameters responseParameters = MapFetchKeysCodec.decodeResponse(f.get());
-            setLastTableIndex(responseParameters.keys, responseParameters.tableIndex);
-            return responseParameters.keys;
+            List<Data> keys = new ArrayList<>();
+            MapFetchKeysCodec.ResponseParameters responseParameters
+                    = MapFetchKeysCodec.decodeResponse(f.get(), keys::add);
+            setLastTableIndex(keys, responseParameters.tableIndex);
+            return keys;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

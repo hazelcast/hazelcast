@@ -61,8 +61,10 @@ import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -114,8 +116,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyData = toData(key);
         ClientMessage request = MultiMapGetCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapGetCodec.ResponseParameters resultParameters = MultiMapGetCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        MultiMapGetCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<V>(result, getSerializationService());
     }
 
     @Override
@@ -139,8 +142,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyData = toData(key);
         ClientMessage request = MultiMapRemoveCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapRemoveCodec.ResponseParameters resultParameters = MultiMapRemoveCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        MultiMapRemoveCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<V>(result, getSerializationService());
     }
 
     public void delete(@Nonnull Object key) {
@@ -161,13 +165,11 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Set<K> keySet() {
         ClientMessage request = MultiMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MultiMapKeySetCodec.ResponseParameters resultParameters = MultiMapKeySetCodec.decodeResponse(response);
-        Collection<Data> result = resultParameters.response;
-        Set<K> keySet = new HashSet<K>(result.size());
-        for (Data data : result) {
-            final K key = toObject(data);
+        Set<K> keySet = new HashSet<K>(0);
+        MultiMapKeySetCodec.decodeResponse(response, data -> {
+            K key = toObject(data);
             keySet.add(key);
-        }
+        });
         return keySet;
     }
 
@@ -176,8 +178,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Collection<V> values() {
         ClientMessage request = MultiMapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MultiMapValuesCodec.ResponseParameters resultParameters = MultiMapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        MultiMapValuesCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<V>(result, getSerializationService());
     }
 
     @Nonnull

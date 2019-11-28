@@ -1117,14 +1117,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public Set<K> keySet() {
         ClientMessage request = MapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MapKeySetCodec.ResponseParameters resultParameters = MapKeySetCodec.decodeResponse(response);
-
         ImmutableInflatableSet.ImmutableSetBuilder<K> setBuilder =
-                ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
-        for (Data data : resultParameters.response) {
-            K key = toObject(data);
-            setBuilder.add(key);
-        }
+                ImmutableInflatableSet.newImmutableSetBuilder(0);
+        MapKeySetCodec.ResponseParameters resultParameters
+                = MapKeySetCodec.decodeResponse(response, elem -> setBuilder.add(toObject(elem)));
+
         return setBuilder.build();
     }
 
@@ -1191,8 +1188,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public Collection<V> values() {
         ClientMessage request = MapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MapValuesCodec.ResponseParameters resultParameters = MapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        MapValuesCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<>(result, getSerializationService());
     }
 
     @Nonnull
@@ -1227,14 +1225,13 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage request = MapKeySetWithPredicateCodec.encodeRequest(name, toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
-
         ImmutableInflatableSet.ImmutableSetBuilder<K> setBuilder =
-                ImmutableInflatableSet.newImmutableSetBuilder(resultParameters.response.size());
-        for (Data data : resultParameters.response) {
-            K key = toObject(data);
+                ImmutableInflatableSet.newImmutableSetBuilder(0);
+        MapKeySetWithPredicateCodec.decodeResponse(response, elem -> {
+            K key = toObject(elem);
             setBuilder.add(key);
-        }
+        });
+
         return setBuilder.build();
     }
 
@@ -1246,14 +1243,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapKeySetWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
 
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec
-                .decodeResponse(response);
+        List<Entry> resultList = new ArrayList<>();
+        MapKeySetWithPagingPredicateCodec.decodeResponse(response,
+                elem -> resultList.add(new AbstractMap.SimpleEntry<K, V>(toObject(elem), null)));
 
-        ArrayList<Map.Entry> resultList = new ArrayList<>();
-        for (Data keyData : resultParameters.response) {
-            K key = toObject(keyData);
-            resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
-        }
         return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
     }
 
@@ -1303,9 +1296,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage request = MapValuesWithPredicateCodec.encodeRequest(name, toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapValuesWithPredicateCodec.ResponseParameters resultParameters = MapValuesWithPredicateCodec.decodeResponse(response);
+        List<Data> result = new ArrayList<>();
+        MapValuesWithPredicateCodec.decodeResponse(response, result::add);
 
-        return new UnmodifiableLazyList<>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList<>(result, getSerializationService());
     }
 
     private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
@@ -1789,9 +1783,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
         return new ClientDelegatingFuture<>(fut, ss, message -> {
-            MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
+            List<Data> items = new ArrayList<>();
+            MapEventJournalReadCodec.ResponseParameters params
+                    = MapEventJournalReadCodec.decodeResponse(message, items::add);
             ReadResultSetImpl resultSet = new ReadResultSetImpl<>(
-                    params.readCount, params.items, params.itemSeqs, params.nextSeq);
+                    params.readCount, items, params.itemSeqs, params.nextSeq);
             resultSet.setSerializationService(getSerializationService());
             return resultSet;
         });

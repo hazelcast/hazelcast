@@ -101,9 +101,11 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     protected void onInitialize() {
         super.onInitialize();
         eventJournalReadResponseDecoder = message -> {
-            final CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(message);
+            List<Data> items = new ArrayList<>();
+            final CacheEventJournalReadCodec.ResponseParameters params
+                    = CacheEventJournalReadCodec.decodeResponse(message, items::add);
             final ReadResultSetImpl resultSet = new ReadResultSetImpl<>(
-                    params.readCount, params.items, params.itemSeqs, params.nextSeq);
+                    params.readCount, items, params.itemSeqs, params.nextSeq);
             resultSet.setSerializationService(getSerializationService());
             return resultSet;
         };

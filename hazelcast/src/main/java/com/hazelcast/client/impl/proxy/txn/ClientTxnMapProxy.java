@@ -196,12 +196,13 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Set<K> keySet() {
         ClientMessage request = TransactionalMapKeySetCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
-        Collection<Data> dataKeySet = TransactionalMapKeySetCodec.decodeResponse(response).response;
 
-        HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
-        for (Data data : dataKeySet) {
-            keySet.add((K) toObject(data));
-        }
+        HashSet<K> keySet = new HashSet<K>(0);
+        TransactionalMapKeySetCodec.decodeResponse(response, data -> {
+            Object key = toObject(data);
+            keySet.add((K) key);
+        });
+
         return keySet;
     }
 
@@ -213,12 +214,13 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapKeySetWithPredicateCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
-        Collection<Data> dataKeySet = TransactionalMapKeySetWithPredicateCodec.decodeResponse(response).response;
+        HashSet<K> keySet = new HashSet<K>(0);
 
-        HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
-        for (Data data : dataKeySet) {
-            keySet.add((K) toObject(data));
-        }
+        TransactionalMapKeySetWithPredicateCodec.decodeResponse(response, data -> {
+            Object key = toObject(data);
+            keySet.add((K) key);
+        });
+
         return keySet;
     }
 
@@ -227,8 +229,9 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Collection<V> values() {
         ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
-        List dataValues = TransactionalMapValuesCodec.decodeResponse(response).response;
-        return new UnmodifiableLazyList<V>(dataValues, getSerializationService());
+        List<Data> result = new ArrayList<>();
+        TransactionalMapValuesCodec.decodeResponse(response, result::add);
+        return new UnmodifiableLazyList<V>(result, getSerializationService());
     }
 
     @Override
@@ -239,12 +242,12 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapValuesWithPredicateCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
-        Collection<Data> dataValues = TransactionalMapValuesWithPredicateCodec.decodeResponse(response).response;
+        List<V> values = new ArrayList<>();
+        TransactionalMapValuesWithPredicateCodec.decodeResponse(response, data -> {
+            Object value = toObject(data);
+            values.add((V) value);
+        });
 
-        List<V> values = new ArrayList<V>(dataValues.size());
-        for (Data value : dataValues) {
-            values.add((V) toObject(value));
-        }
         return values;
     }
 
