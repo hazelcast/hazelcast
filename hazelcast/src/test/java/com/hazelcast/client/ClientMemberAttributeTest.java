@@ -18,15 +18,14 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MemberAttributeConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -56,7 +55,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testChangeMemberAttributes() throws Exception {
+    public void testChangeMemberAttributes() {
         final int count = 10;
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig config = new ClientConfig();
@@ -75,11 +74,8 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testConfigAttributes() throws Exception {
+    public void testConfigAttributes() {
         Config c = new Config();
-        JoinConfig join = c.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
         MemberAttributeConfig memberAttributeConfig = c.getMemberAttributeConfig();
         memberAttributeConfig.setAttribute("Test", "123");
 
@@ -114,17 +110,12 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testPresharedAttributes() throws Exception {
-        Config c = new Config();
-        JoinConfig join = c.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
-
-        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(c);
+    public void testPresharedAttributes() {
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
         m1.setAttribute("Test", "123");
 
-        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(c);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance();
         assertClusterSize(2, h2);
 
         Member member = null;
@@ -154,17 +145,12 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testAddAttributes() throws Exception {
-        Config c = new Config();
-        JoinConfig join = c.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
-
-        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(c);
+    public void testAddAttributes() {
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
         m1.setAttribute("Test", "123");
 
-        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(c);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance();
         assertClusterSize(2, h2);
 
         Member member = null;
@@ -209,17 +195,12 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testChangeAttributes() throws Exception {
-        Config c = new Config();
-        JoinConfig join = c.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
-
-        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(c);
+    public void testChangeAttributes() {
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
         m1.setAttribute("Test", "123");
 
-        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(c);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance();
         assertClusterSize(2, h2);
 
         Member member = null;
@@ -264,17 +245,12 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    public void testRemoveAttributes() throws Exception {
-        Config c = new Config();
-        JoinConfig join = c.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
-
-        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(c);
+    public void testRemoveAttributes() {
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
         m1.setAttribute("Test", "123");
 
-        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(c);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance();
         assertClusterSize(2, h2);
 
         Member member = null;

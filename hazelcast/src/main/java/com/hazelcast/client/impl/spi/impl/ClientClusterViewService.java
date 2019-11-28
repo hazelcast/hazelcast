@@ -35,11 +35,9 @@ import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeEvent;
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -59,7 +57,6 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
@@ -78,8 +75,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
+import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
 /**
@@ -110,7 +110,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
         }
     };
     private static final ClusterViewSnapshot EMPTY_SNAPSHOT =
-            new ClusterViewSnapshot(-1, new LinkedHashMap<>(), Collections.emptySet(), -1, new Int2ObjectHashMap<>());
+            new ClusterViewSnapshot(-1, new LinkedHashMap<>(), Collections.emptyMap(), -1, new Int2ObjectHashMap<>());
     private static final long BLOCKING_GET_ONCE_SLEEP_MILLIS = 100;
     private final HazelcastClientInstanceImpl client;
     private final AtomicReference<ClusterViewSnapshot> clusterSnapshot = new AtomicReference<>(EMPTY_SNAPSHOT);
@@ -127,11 +127,11 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
     private static final class ClusterViewSnapshot {
         private final int version;
         private final LinkedHashMap<Address, Member> members;
-        private final Set<Member> memberSet;
+        private final Map<Member, Member> memberSet;
         private final int partitionSateVersion;
         private final Int2ObjectHashMap<Address> partitions;
 
-        private ClusterViewSnapshot(int version, LinkedHashMap<Address, Member> members, Set<Member> memberSet,
+        private ClusterViewSnapshot(int version, LinkedHashMap<Address, Member> members, Map<Member, Member> memberSet,
                                     int partitionSateVersion, Int2ObjectHashMap<Address> partitions) {
             this.version = version;
             this.members = members;
@@ -244,7 +244,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
             UUID id = addMembershipListenerWithoutInit(listener);
             if (listener instanceof InitialMembershipListener) {
                 Cluster cluster = client.getCluster();
-                Set<Member> members = clusterSnapshot.get().memberSet;
+                Set<Member> members = clusterSnapshot.get().memberSet.keySet();
                 //if members are empty,it means initial event did not arrive yet
                 //it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
                 if (!members.isEmpty()) {
@@ -299,9 +299,9 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the cluster snapshot");
             }
-            ClusterViewSnapshot cleanSnapshot = new ClusterViewSnapshot(-1, new LinkedHashMap<>(), Collections.emptySet(),
+            ClusterViewSnapshot cleanSnapshot = new ClusterViewSnapshot(-1, new LinkedHashMap<>(), Collections.emptyMap(),
                     -1, new Int2ObjectHashMap<>());
-            events = detectMembershipEvents(clusterSnapshot.get().memberSet, Collections.emptySet());
+            events = detectMembershipEvents(clusterSnapshot.get().memberSet.keySet(), Collections.emptySet());
             clusterSnapshot.set(cleanSnapshot);
         }
         fireEvents(events);
@@ -313,7 +313,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
         ClusterViewSnapshot snapshot = createSnapshot(version, memberInfos, map, partitionStateVersion);
         clusterSnapshot.set(snapshot);
         logger.info(membersString(snapshot));
-        Set<Member> members = snapshot.memberSet;
+        Set<Member> members = snapshot.memberSet.keySet();
         InitialMembershipEvent event = new InitialMembershipEvent(client.getCluster(), members);
         for (MembershipListener listener : listeners.values()) {
             if (listener instanceof InitialMembershipListener) {
@@ -375,13 +375,16 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
                                                Int2ObjectHashMap<Address> partitions,
                                                int partitionStateVersion) {
         LinkedHashMap<Address, Member> newMembers = new LinkedHashMap<>();
+        LinkedHashMap<Member, Member> newMembersMap = new LinkedHashMap<>();
         for (MemberInfo memberInfo : memberInfos) {
             Address address = memberInfo.getAddress();
-            newMembers.put(address, new MemberImpl(address, memberInfo.getVersion(), memberInfo.getUuid(),
-                    memberInfo.getAttributes(), memberInfo.isLiteMember()));
+            MemberImpl member = new MemberImpl(address, memberInfo.getVersion(), memberInfo.getUuid(),
+                    memberInfo.getAttributes(), memberInfo.isLiteMember());
+            newMembers.put(address, member);
+            newMembersMap.put(member, member);
         }
-        Set<Member> memberSet = unmodifiableSet(new HashSet<>(newMembers.values()));
-        return new ClusterViewSnapshot(version, newMembers, memberSet, partitionStateVersion, partitions);
+        Map<Member, Member> memberMap = unmodifiableMap(newMembersMap);
+        return new ClusterViewSnapshot(version, newMembers, memberMap, partitionStateVersion, partitions);
     }
 
     private List<MembershipEvent> detectMembershipEvents(Set<Member> prevMembers, Set<Member> currentMembers) {
@@ -475,32 +478,56 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
                 synchronized (clusterViewLock) {
                     clusterViewSnapshot = clusterSnapshot.get();
                     if (memberListVersion >= clusterViewSnapshot.version) {
-                        Set<Member> prevMembers = clusterSnapshot.get().memberSet;
+                        Map<Member, Member> prevMembers = clusterSnapshot.get().memberSet;
                         applyNewState(memberListVersion, memberInfos, partitions, partitionStateVersion, clusterViewSnapshot);
-                        Set<Member> currentMembers = clusterSnapshot.get().memberSet;
-                        events = detectMembershipEvents(prevMembers, currentMembers);
+                        Map<Member, Member> currentMembers = clusterSnapshot.get().memberSet;
+                        events = detectMembershipEvents(prevMembers.keySet(), currentMembers.keySet());
+                        detectMemberAttributeChanges(events, prevMembers, currentMembers);
                     }
                 }
             }
             fireEvents(events);
         }
 
-        @Override
-        public void handleMemberAttributeChangeEvent(Member member, String key, int operationType, @Nullable String value) {
-            Set<Member> currentMembers = clusterSnapshot.get().memberSet;
-            Cluster cluster = client.getCluster();
-            UUID uuid = member.getUuid();
-            for (Member target : currentMembers) {
-                if (target.getUuid().equals(uuid)) {
-                    MemberAttributeOperationType type = MemberAttributeOperationType.getValue(operationType);
-                    ((AbstractMember) target).updateAttribute(type, key, value);
-                    MemberAttributeEvent event = new MemberAttributeEvent(cluster, target, currentMembers, type, key, value);
-                    for (MembershipListener listener : listeners.values()) {
-                        listener.memberAttributeChanged(event);
-                    }
-                    break;
-                }
+    }
+
+    private void detectMemberAttributeChanges(List<MembershipEvent> events,
+                                              Map<Member, Member> prevMembers,
+                                              Map<Member, Member> currentMembers) {
+        for (Map.Entry<Member, Member> entry : currentMembers.entrySet()) {
+            Member oldMemberState = prevMembers.get(entry.getKey());
+            if (oldMemberState != null) {
+                detectMemberAttributeChanges(currentMembers.keySet(), events, oldMemberState, entry.getValue());
             }
+        }
+    }
+
+    private void detectMemberAttributeChanges(Set<Member> members, List<MembershipEvent> events,
+                                              Member oldMemberState, Member newMemberState) {
+        Map<String, String> oldAttributes = oldMemberState.getAttributes();
+        Map<String, String> currentAttributes = newMemberState.getAttributes();
+
+        if (oldAttributes.equals(currentAttributes)) {
+            return;
+        }
+
+        LinkedHashMap<String, String> copyValues = new LinkedHashMap<>(oldAttributes);
+
+        for (Map.Entry<String, String> entry : currentAttributes.entrySet()) {
+            String currentKey = entry.getKey();
+            String currentValue = entry.getValue();
+            String oldValue = copyValues.remove(currentKey);
+            if (!currentValue.equals(oldValue)) {
+                MemberAttributeEvent event = new MemberAttributeEvent(client.getCluster(), newMemberState,
+                        members, PUT, currentKey, currentValue);
+                events.add(event);
+            }
+        }
+
+        for (Map.Entry<String, String> entry : copyValues.entrySet()) {
+            MemberAttributeEvent event = new MemberAttributeEvent(client.getCluster(), newMemberState,
+                    members, REMOVE, entry.getKey(), entry.getValue());
+            events.add(event);
         }
     }
 
@@ -509,8 +536,10 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
             for (MembershipListener listener : listeners.values()) {
                 if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
                     listener.memberAdded(event);
-                } else {
+                } else if (event.getEventType() == MembershipEvent.MEMBER_REMOVED) {
                     listener.memberRemoved(event);
+                } else if (event.getEventType() == MembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
+                    listener.memberAttributeChanged((MemberAttributeEvent) event);
                 }
             }
         }
@@ -533,7 +562,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
     }
 
     @Override
-    public int getPartitionId(Data key) {
+    public int getPartitionId(@Nonnull Data key) {
         final int pc = getPartitionCount();
         if (pc <= 0) {
             return 0;
@@ -543,7 +572,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
     }
 
     @Override
-    public int getPartitionId(Object key) {
+    public int getPartitionId(@Nonnull Object key) {
         final Data data = client.getSerializationService().toData(key);
         return getPartitionId(data);
     }
@@ -551,7 +580,7 @@ public class ClientClusterViewService implements ClientClusterService, ClientPar
     @Override
     public int getPartitionCount() {
         while (partitionCount == 0 && connectionManager.isAlive()) {
-            Set<Member> memberList = clusterSnapshot.get().memberSet;
+            Set<Member> memberList = clusterSnapshot.get().memberSet.keySet();
             if (MemberSelectingCollection.count(memberList, MemberSelectors.DATA_MEMBER_SELECTOR) == 0) {
                 throw new NoDataMemberInClusterException(
                         "Partitions can't be assigned since all nodes in the cluster are lite members");

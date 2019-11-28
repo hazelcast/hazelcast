@@ -383,6 +383,14 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void onMemberAttributeChange() {
+        ClientClusterListenerService service = node.clientEngine.getClientClusterListenerService();
+        if (service != null) {
+            service.onMemberAttributeChange();
+        }
+    }
+
+    @Override
     public void onInitialClusterState(ClusterState initialState) {
     }
 

@@ -250,6 +250,11 @@ public interface NodeExtension {
     void onMemberListChange();
 
     /**
+     * Called synchronously when member attribute changes
+     */
+    void onMemberAttributeChange();
+
+    /**
      * Called after cluster version is changed.
      *
      * @param newVersion the new version at which the cluster operates.

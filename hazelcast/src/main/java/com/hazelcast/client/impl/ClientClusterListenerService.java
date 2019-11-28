@@ -60,6 +60,10 @@ public class ClientClusterListenerService {
         onClusterViewChange();
     }
 
+    public void onMemberAttributeChange() {
+        onClusterViewChange();
+    }
+
     private void onClusterViewChange() {
         ClientMessage clientMessage = getClusterViewMessage();
         for (Map.Entry<ClientEndpoint, Long> entry : clusterListeningEndpoints.entrySet()) {

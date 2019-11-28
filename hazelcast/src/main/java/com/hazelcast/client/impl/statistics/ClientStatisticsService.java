@@ -105,7 +105,11 @@ public class ClientStatisticsService {
      * @return the cluster listening connection to the server
      */
     private ClientConnection getConnection() {
-        return (ClientConnection) client.getConnectionManager().getRandomConnection();
+        try {
+            return (ClientConnection) client.getConnectionManager().getRandomConnection();
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     /**
@@ -121,7 +125,7 @@ public class ClientStatisticsService {
 
         ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
         CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
-            publisherMetricsCollector);
+                publisherMetricsCollector);
 
         client.getClientExecutionService().scheduleWithRepetition(() -> {
             long collectionTimestamp = System.currentTimeMillis();
@@ -315,23 +319,23 @@ public class ClientStatisticsService {
 
     class PeriodicStatistics {
         private final Gauge[] allGauges = {
-            metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
-            metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
-            metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
-            metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
-            metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
-            metricsRegistry.newLongGauge("os.processCpuTime"),
-            metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
-            metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
-            metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
-            metricsRegistry.newLongGauge("runtime.availableProcessors"),
-            metricsRegistry.newLongGauge("runtime.freeMemory"),
-            metricsRegistry.newLongGauge("runtime.maxMemory"),
-            metricsRegistry.newLongGauge("runtime.totalMemory"),
-            metricsRegistry.newLongGauge("runtime.uptime"),
-            metricsRegistry.newLongGauge("runtime.usedMemory"),
-            metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
-            };
+                metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
+                metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
+                metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
+                metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
+                metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
+                metricsRegistry.newLongGauge("os.processCpuTime"),
+                metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
+                metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
+                metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
+                metricsRegistry.newLongGauge("runtime.availableProcessors"),
+                metricsRegistry.newLongGauge("runtime.freeMemory"),
+                metricsRegistry.newLongGauge("runtime.maxMemory"),
+                metricsRegistry.newLongGauge("runtime.totalMemory"),
+                metricsRegistry.newLongGauge("runtime.uptime"),
+                metricsRegistry.newLongGauge("runtime.usedMemory"),
+                metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
+        };
 
         void fillMetrics(long collectionTimestamp, final StringBuilder stats, final ClientConnection mainConnection) {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(collectionTimestamp);
@@ -341,7 +345,7 @@ public class ClientStatisticsService {
             addStat(stats, "clusterConnectionTimestamp", mainConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-                 .append(mainConnection.getLocalSocketAddress().getAddress().getHostAddress());
+                    .append(mainConnection.getLocalSocketAddress().getAddress().getHostAddress());
 
             addStat(stats, "clientName", client.getName());
 
@@ -359,7 +363,7 @@ public class ClientStatisticsService {
     }
 
     private class ClientMetricCollector
-        implements MetricsCollector {
+            implements MetricsCollector {
 
         private final MetricsCompressor compressor = new MetricsCompressor();
 

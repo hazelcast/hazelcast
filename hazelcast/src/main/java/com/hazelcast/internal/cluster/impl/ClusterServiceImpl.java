@@ -502,6 +502,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 member.updateAttribute(operationType, key, value);
             }
             sendMemberAttributeEvent(member, memberMap, operationType, key, value);
+            node.getNodeExtension().onMemberAttributeChange();
         } finally {
             lock.unlock();
         }
