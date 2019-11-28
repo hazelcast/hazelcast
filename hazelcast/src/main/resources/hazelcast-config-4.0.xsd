@@ -58,7 +58,6 @@
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="member-attributes" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="split-brain-protection" type="split-brain-protection" minOccurs="0" maxOccurs="1"/>
@@ -2554,53 +2553,6 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="services">
-        <xs:sequence>
-            <xs:element name="service" type="service" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-        <xs:attribute name="enable-defaults" type="xs:boolean" default="true"/>
-    </xs:complexType>
-    <xs:complexType name="service">
-        <xs:all>
-            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Name of the service to be registered.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Name of the class that you develop for your service.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        The custom properties that you can add to your service. You enable/disable
-                        these properties and set their values using this element.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="configuration" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        You can include configuration items which you develop using the Config object
-                        in your code.
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:any minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                    <xs:attribute name="parser" type="xs:string" use="required"/>
-                </xs:complexType>
-            </xs:element>
-        </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
     </xs:complexType>
     <xs:complexType name="security">
         <xs:all>

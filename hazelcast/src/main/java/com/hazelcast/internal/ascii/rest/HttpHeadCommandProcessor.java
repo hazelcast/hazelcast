@@ -64,7 +64,7 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
         InternalPartitionService partitionService = node.getPartitionService();
         long migrationQueueSize = partitionService.getMigrationQueueSize();
 
-        Map<String, Object> headervals = new LinkedHashMap<String, Object>();
+        Map<String, Object> headervals = new LinkedHashMap<>();
         headervals.put("NodeState", nodeState);
         headervals.put("ClusterState", clusterState);
         headervals.put("MigrationQueueSize", migrationQueueSize);

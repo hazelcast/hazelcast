@@ -372,7 +372,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (mapDataStore.isWithExpirationTime()) {
             MetadataAwareValue loaderEntry = (MetadataAwareValue) value;
             long proposedTtl = expirationTimeToTtl(loaderEntry.getExpirationTime());
-            if (proposedTtl < 0) {
+            if (proposedTtl <= 0) {
                 return null;
             }
             value = loaderEntry.getValue();
@@ -396,7 +396,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return record;
     }
 
-    private long expirationTimeToTtl(long definedExpirationTime) {
+    protected long expirationTimeToTtl(long definedExpirationTime) {
         return definedExpirationTime - System.currentTimeMillis();
     }
 
@@ -628,7 +628,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (mapDataStore.isWithExpirationTime()) {
                 MetadataAwareValue loaderEntry = (MetadataAwareValue) value;
 
-                if (expirationTimeToTtl(loaderEntry.getExpirationTime()) >= 0) {
+                if (expirationTimeToTtl(loaderEntry.getExpirationTime()) > 0) {
                     resultMap.put(key, loaderEntry.getValue());
                 }
                 putFromLoad(key, loaderEntry.getValue(), loaderEntry.getExpirationTime(), callerAddress);
@@ -921,7 +921,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return putFromLoad(key, value, callerAddress);
         }
         long ttl = expirationTimeToTtl(expirationTime);
-        if (ttl < 0) {
+        if (ttl <= 0) {
             return null;
         }
         return putFromLoadInternal(key, value, ttl, UNSET, false, callerAddress);
@@ -938,7 +938,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return putFromLoadBackup(key, value);
         }
         long ttl = expirationTimeToTtl(expirationTime);
-        if (ttl < 0) {
+        if (ttl <= 0) {
             return null;
         }
         return putFromLoadInternal(key, value, ttl, UNSET, true, null);

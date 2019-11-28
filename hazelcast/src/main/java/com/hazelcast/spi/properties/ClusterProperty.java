@@ -946,13 +946,6 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.init.cluster.version");
 
     /**
-     * Enables legacy (pre-3.9) member list format which is printed in logs. New format is introduced by 3.9
-     * includes member list version.
-     */
-    public static final HazelcastProperty USE_LEGACY_MEMBER_LIST_FORMAT
-            = new HazelcastProperty("hazelcast.legacy.memberlist.format.enabled", false);
-
-    /**
      * Controls whether we apply more strict checks upon BIND requests towards a cluster member.
      * The checks mainly validate the remote BIND request against the remote address as found in the socket.
      * By default they are disabled, to avoid connectivity issues when deployed under NAT'ed infrastructure.

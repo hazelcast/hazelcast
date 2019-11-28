@@ -16,14 +16,15 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
@@ -248,7 +249,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
     private Config newConfigWithMigrationAwareService() {
         Config config = new Config();
-        config.getServicesConfig().addServiceConfig(new ServiceConfig()
+        ConfigAccessor.getServicesConfig(config).addServiceConfig(new ServiceConfig()
                 .setEnabled(true)
                 .setName("no-replication-service")
                 .setImplementation(service));

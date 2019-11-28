@@ -32,6 +32,7 @@ import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -85,7 +86,6 @@ public class ConfigCompatibilityChecker {
                 new PartitionGroupConfigChecker());
         checkCompatibleConfigs("serialization", c1.getSerializationConfig(), c2.getSerializationConfig(),
                 new SerializationConfigChecker());
-        checkCompatibleConfigs("services", c1.getServicesConfig(), c2.getServicesConfig(), new ServicesConfigChecker());
         checkCompatibleConfigs("management center", c1.getManagementCenterConfig(), c2.getManagementCenterConfig(),
                 new ManagementCenterConfigChecker());
         checkCompatibleConfigs("hot restart", c1.getHotRestartPersistenceConfig(), c2.getHotRestartPersistenceConfig(),

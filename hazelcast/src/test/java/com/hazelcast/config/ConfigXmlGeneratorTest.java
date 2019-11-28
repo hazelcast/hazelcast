@@ -398,27 +398,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testServicesConfig() {
-        Config cfg = new Config();
-
-        Properties properties = new Properties();
-        properties.setProperty("key", "value");
-
-        ServiceConfig serviceConfig = new ServiceConfig()
-                .setName("ServiceConfig")
-                .setEnabled(true)
-                .setClassName("ServiceClass")
-                .setProperties(properties);
-        ServicesConfig expectedConfig = cfg.getServicesConfig()
-                .setEnableDefaults(true)
-                .setServiceConfigs(singletonList(serviceConfig));
-
-        ServicesConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getServicesConfig();
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testSecurityConfig() {
         Config cfg = new Config();
 

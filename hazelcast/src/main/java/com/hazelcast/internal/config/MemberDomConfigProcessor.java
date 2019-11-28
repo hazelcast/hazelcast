@@ -101,8 +101,6 @@ import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
@@ -132,9 +130,6 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.services.ServiceConfigurationParser;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.impl.IndexUtils;
@@ -196,7 +191,6 @@ import static com.hazelcast.internal.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.SECURITY;
 import static com.hazelcast.internal.config.ConfigSections.SERIALIZATION;
-import static com.hazelcast.internal.config.ConfigSections.SERVICES;
 import static com.hazelcast.internal.config.ConfigSections.SET;
 import static com.hazelcast.internal.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
@@ -282,8 +276,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDurableExecutor(node);
         } else if (SCHEDULED_EXECUTOR_SERVICE.isEqual(nodeName)) {
             handleScheduledExecutor(node);
-        } else if (SERVICES.isEqual(nodeName)) {
-            handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
             handleQueue(node);
         } else if (MAP.isEqual(nodeName)) {
@@ -636,58 +628,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 .withMinStdDeviationMillis(minStdDeviation)
                 .withMaxSampleSize(maxSampleSize);
         return splitBrainProtectionConfigBuilder;
-    }
-
-    private void handleServices(Node node) {
-        Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");
-        boolean enableDefaults = attDefaults == null || getBooleanValue(getTextContent(attDefaults));
-        ServicesConfig servicesConfig = config.getServicesConfig();
-        servicesConfig.setEnableDefaults(enableDefaults);
-
-        handleServiceNodes(node, servicesConfig);
-    }
-
-    protected void handleServiceNodes(Node node, ServicesConfig servicesConfig) {
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if ("service".equals(nodeName)) {
-                ServiceConfig serviceConfig = new ServiceConfig();
-                String enabledValue = getAttribute(child, "enabled");
-                boolean enabled = getBooleanValue(enabledValue);
-                serviceConfig.setEnabled(enabled);
-
-                for (Node n : childElements(child)) {
-                    handleServiceNode(n, serviceConfig);
-                }
-                servicesConfig.addServiceConfig(serviceConfig);
-            }
-        }
-    }
-
-    protected void handleServiceNode(Node n, ServiceConfig serviceConfig) {
-        String value = cleanNodeName(n);
-        if ("name".equals(value)) {
-            String name = getTextContent(n);
-            serviceConfig.setName(name);
-        } else if ("class-name".equals(value)) {
-            String className = getTextContent(n);
-            serviceConfig.setClassName(className);
-        } else if ("properties".equals(value)) {
-            fillProperties(n, serviceConfig.getProperties());
-        } else if ("configuration".equals(value)) {
-            Node parserNode = n.getAttributes().getNamedItem("parser");
-            String parserClass = getTextContent(parserNode);
-            if (parserNode == null || parserClass == null) {
-                throw new InvalidConfigurationException("Parser is required!");
-            }
-            try {
-                ServiceConfigurationParser parser = ClassLoaderUtil.newInstance(config.getClassLoader(), parserClass);
-                Object obj = parser.parse((Element) n);
-                serviceConfig.setConfigObject(obj);
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
     }
 
     protected void handleWanReplication(Node node) {

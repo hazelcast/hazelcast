@@ -55,7 +55,6 @@ import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -89,6 +88,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -876,32 +876,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        Map<String, LocalCacheStats> stats = getStats();
-
-        // cache
-        for (Map.Entry<String, LocalCacheStats> entry : stats.entrySet()) {
-            String cacheName = entry.getKey();
-            LocalCacheStats localInstanceStats = entry.getValue();
-
-            MetricDescriptor dsDescriptor = descriptor
-                .copy()
-                .withPrefix("cache")
-                .withDiscriminator("name", cacheName);
-            context.collect(dsDescriptor, localInstanceStats);
-        }
-
-        // near cache
-        for (Map.Entry<String, CacheStatisticsImpl> entry : statistics.entrySet()) {
-            String cacheName = entry.getKey();
-            CacheStatisticsImpl cacheStatsImpl = entry.getValue();
-            NearCacheStats nearCacheStats = cacheStatsImpl.getNearCacheStatistics();
-            if (nearCacheStats != null) {
-                MetricDescriptor nearCacheDescriptor = descriptor
-                    .copy()
-                    .withPrefix("cache.nearcache")
-                    .withDiscriminator("name", cacheName);
-                context.collect(nearCacheDescriptor, nearCacheStats);
-            }
-        }
+        provide(descriptor, context, "cache", getStats());
     }
 }

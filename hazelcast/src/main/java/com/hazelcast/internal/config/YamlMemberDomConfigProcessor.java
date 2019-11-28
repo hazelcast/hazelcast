@@ -60,8 +60,6 @@ import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
@@ -587,25 +585,6 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             String listenerClass = listenerNode.getNodeValue().trim();
             splitBrainProtectionConfig.addListenerConfig(new SplitBrainProtectionListenerConfig(listenerClass));
-        }
-    }
-
-    @Override
-    protected void handleServiceNodes(Node node, ServicesConfig servicesConfig) {
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if (!"enable-defaults".equals(nodeName)) {
-                ServiceConfig serviceConfig = new ServiceConfig();
-                serviceConfig.setName(nodeName);
-                String enabledValue = getAttribute(child, "enabled");
-                boolean enabled = getBooleanValue(enabledValue);
-                serviceConfig.setEnabled(enabled);
-
-                for (Node n : childElements(child)) {
-                    handleServiceNode(n, serviceConfig);
-                }
-                servicesConfig.addServiceConfig(serviceConfig);
-            }
         }
     }
 

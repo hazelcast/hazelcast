@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -67,6 +68,7 @@ public class CollectionSerializationTest {
                 new LinkedBlockingQueue(),
                 new ArrayBlockingQueue(2),
                 new PriorityBlockingQueue<>(5, new SerializationConcurrencyTest.PortablePersonComparator()),
+                new PriorityQueue<>(),
                 new DelayQueue(),
                 new LinkedTransferQueue());
     }

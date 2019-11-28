@@ -2070,38 +2070,6 @@ hazelcast:
     metadata-space-percentage: 12.5
     persistent-memory-directory: /mnt/optane
   #
-  # ===== HAZELCAST USER DEFINED SERVICES CONFIGURATION =====
-  #
-  # This part is used to perform configurations after you develop your own data structure or service using
-  # Hazelcast's Service Provider Interface (SPI). Configuration element's name is "services". You can list
-  # your services here.
-  # It has the following attribute:
-  # * enable-defaults:
-  #     Set as true if you want to use Hazelcast's services and operations (getMap, putAsync, etc.)
-  #     in your own service implementation. Its default value is true.
-  #
-  # Each service has the following sub-elements:
-  # * "enabled":
-  #     Specifies whether the service is enabled.
-  # * "name":
-  #     Name of your service to be registered.
-  # * "class-name":
-  #     Full name of the class that you developed for your service on top of Hazelcast SPI.
-  # * "properties":
-  #     Lists the properties, with which you can specify the name and value of your
-  #     custom service properties.
-  # * "configuration":
-  #     Lists the configuration elements that you defined for your service using Hazelcast's "Config" object.
-  #
-  services:
-    enable-defaults: false
-    custom-service:
-      enabled: true
-      class-name: com.hazelcast.examples.MyService
-      properties:
-        prop1: prop1-value
-        prop2: prop2-value
-  #
   # ===== HAZELCAST SECURITY CONFIGURATION =====
   #
   # This feature is available only in Hazelcast Enterprise. Configuration element's name is "security".
