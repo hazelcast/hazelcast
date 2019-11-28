@@ -28,6 +28,8 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +56,11 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
+
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     @Override

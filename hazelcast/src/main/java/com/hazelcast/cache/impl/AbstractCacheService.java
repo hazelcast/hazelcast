@@ -58,12 +58,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.wan.impl.WanReplicationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -165,7 +167,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
         this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
 
-        postInit(nodeEngine, properties);
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        postInit(nodeEngine, properties, dsMetricsEnabled);
     }
 
     public SplitBrainMergePolicyProvider getMergePolicyProvider() {
@@ -186,7 +189,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         return cacheConfigs;
     }
 
-    protected void postInit(NodeEngine nodeEngine, Properties properties) {
+    protected void postInit(NodeEngine nodeEngine, Properties properties, boolean metricsEnabled) {
+        if (metricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     protected abstract CachePartitionSegment newPartitionSegment(int partitionId);

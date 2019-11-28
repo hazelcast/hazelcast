@@ -50,10 +50,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.WanReplicationEvent;
@@ -116,6 +118,11 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         managedService.init(nodeEngine, properties);
+
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     @Override
