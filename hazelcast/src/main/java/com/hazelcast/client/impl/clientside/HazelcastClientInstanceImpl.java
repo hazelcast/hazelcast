@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.clientside;
 
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
@@ -132,6 +133,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -167,7 +169,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManagerServiceImpl transactionManager;
-    private final NearCacheManager nearCacheManager;
+    private final Map<String, NearCacheManager> nearCacheManagers;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
@@ -242,7 +244,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         hazelcastCacheManager = new ClientICacheManager(this);
         queryCacheContext = new ClientQueryCacheContext(this);
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
-        nearCacheManager = clientExtension.createNearCacheManager();
+        nearCacheManagers = new ConcurrentHashMap<>();
+        nearCacheManagers.put(MapService.SERVICE_NAME, clientExtension.createNearCacheManager());
+        nearCacheManagers.put(ReplicatedMapService.SERVICE_NAME, clientExtension.createNearCacheManager());
+        nearCacheManagers.put(ICacheService.SERVICE_NAME, clientExtension.createNearCacheManager());
         clientExceptionFactory = initClientExceptionFactory();
         clientStatisticsService = new ClientStatisticsService(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
@@ -719,8 +724,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return listenerService;
     }
 
-    public NearCacheManager getNearCacheManager() {
-        return nearCacheManager;
+    public Map<String, NearCacheManager> getNearCacheManagers() {
+        return nearCacheManagers;
+    }
+
+    public NearCacheManager getNearCacheManager(String serviceName) {
+        return nearCacheManagers.get(serviceName);
     }
 
     public LoadBalancer getLoadBalancer() {
@@ -758,7 +767,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService.shutdown();
         executionService.shutdown();
         listenerService.shutdown();
-        nearCacheManager.destroyAllNearCaches();
+        nearCacheManagers.values().forEach(NearCacheManager::destroyAllNearCaches);
         metricsRegistry.shutdown();
         diagnostics.shutdown();
         serializationService.dispose();
@@ -801,8 +810,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client");
         //reset near caches, clears all near cache data
-        nearCacheManager.clearAllNearCaches();
-        //clear the member list
+        nearCacheManagers.values().forEach(NearCacheManager::clearAllNearCaches);
+        //clear the member lists
         clusterService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
         //non retryable client messages will fail immediately
