@@ -514,10 +514,11 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected <R> BiConsumer<Data, Data> createResponseConsumer(Map<K, R> result) {
-        return (key, value) -> {
-            K deserializedKey = toObject(key);
-            invalidateNearCache(serializeKeys ? key : deserializedKey);
-            result.put(deserializedKey, toObject(value));
+        return (keyData, valueData) -> {
+            K key = toObject(keyData);
+            R value = toObject(valueData);
+            invalidateNearCache(serializeKeys ? keyData : key);
+            result.put(key, value);
         };
     }
 

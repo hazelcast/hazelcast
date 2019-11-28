@@ -1118,8 +1118,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invoke(request);
         ImmutableInflatableSet.ImmutableSetBuilder<K> setBuilder =
                 ImmutableInflatableSet.newImmutableSetBuilder(0);
-        MapKeySetCodec.ResponseParameters resultParameters
-                = MapKeySetCodec.decodeResponse(response, elem -> setBuilder.add(toObject(elem)));
+        MapKeySetCodec.decodeResponse(response, data -> {
+            K key = toObject(data);
+            setBuilder.add(key);
+        });
 
         return setBuilder.build();
     }
@@ -1155,8 +1157,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
         for (Future<ClientMessage> future : futures) {
             try {
                 ClientMessage response = future.get();
-                MapGetAllCodec.decodeResponse(response, (key, value) -> {
-                    result.put(toObject(key), toObject(value));
+                MapGetAllCodec.decodeResponse(response, (keyData, valueData) -> {
+                    K key = toObject(keyData);
+                    V value = toObject(valueData);
+                    result.put(key, value);
                 });
             } catch (Exception e) {
                 throw rethrow(e);
@@ -1201,8 +1205,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ImmutableInflatableSet.ImmutableSetBuilder<Entry<K, V>> setBuilder =
                 ImmutableInflatableSet.newImmutableSetBuilder(0);
         InternalSerializationService serializationService = getContext().getSerializationService();
-        MapEntrySetCodec.decodeResponse(response, (key, value) -> {
-            setBuilder.add(new LazyMapEntry<>(key, value, serializationService));
+        MapEntrySetCodec.decodeResponse(response, (keyData, valueData) -> {
+            setBuilder.add(new LazyMapEntry<>(keyData, valueData, serializationService));
         });
 
         return setBuilder.build();
@@ -1226,8 +1230,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         ImmutableInflatableSet.ImmutableSetBuilder<K> setBuilder =
                 ImmutableInflatableSet.newImmutableSetBuilder(0);
-        MapKeySetWithPredicateCodec.decodeResponse(response, elem -> {
-            K key = toObject(elem);
+        MapKeySetWithPredicateCodec.decodeResponse(response, data -> {
+            K key = toObject(data);
             setBuilder.add(key);
         });
 
@@ -1243,8 +1247,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage response = invokeWithPredicate(request, predicate);
         List<Entry> resultList = new ArrayList<>();
-        MapKeySetWithPagingPredicateCodec.decodeResponse(response,
-                elem -> resultList.add(new AbstractMap.SimpleEntry<K, V>(toObject(elem), null)));
+        MapKeySetWithPagingPredicateCodec.decodeResponse(response, data -> {
+            K key = toObject(data);
+            resultList.add(new AbstractMap.SimpleEntry<K, V>(key, null));
+        });
 
         return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
     }
@@ -1263,8 +1269,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 ImmutableInflatableSet.newImmutableSetBuilder(0);
         InternalSerializationService serializationService = getContext().getSerializationService();
 
-        MapEntriesWithPredicateCodec.decodeResponse(response, (key, value) -> {
-            setBuilder.add(new LazyMapEntry<>(key, value, serializationService));
+        MapEntriesWithPredicateCodec.decodeResponse(response, (keyData, valueData) -> {
+            setBuilder.add(new LazyMapEntry<>(keyData, valueData, serializationService));
         });
 
         return setBuilder.build();
@@ -1279,8 +1285,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
 
         List<Map.Entry> resultList = new ArrayList<>();
-        MapEntriesWithPagingPredicateCodec.decodeResponse(response, (key, value) -> {
-            resultList.add(new AbstractMap.SimpleEntry<>(toObject(key), toObject(value)));
+        MapEntriesWithPagingPredicateCodec.decodeResponse(response, (keyData, valueData) -> {
+            K key = toObject(keyData);
+            V value = toObject(valueData);
+            resultList.add(new AbstractMap.SimpleEntry<>(key, value));
         });
 
         return getSortedQueryResultSet(resultList, pagingPredicate, iterationType);
@@ -1321,8 +1329,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
 
         List<Entry> resultList = new ArrayList<>();
-        MapValuesWithPagingPredicateCodec.decodeResponse(response, (key, value) -> {
-            resultList.add(new AbstractMap.SimpleEntry<>(toObject(key), toObject(value)));
+        MapValuesWithPagingPredicateCodec.decodeResponse(response, (keyData, valueData) -> {
+            K key = toObject(keyData);
+            V value = toObject(valueData);
+            resultList.add(new AbstractMap.SimpleEntry<>(key, value));
         });
 
         return (Collection<V>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.VALUE);
@@ -1420,7 +1430,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
 
     protected <R> BiConsumer<Data, Data> createResponseConsumer(Map<K, R> result) {
-        return (key, value) -> result.put(toObject(key), toObject(value));
+        return (keyData, valueData) -> {
+            K key = toObject(keyData);
+            R value = toObject(valueData);
+            result.put(key, value);
+        };
     }
 
     @Override

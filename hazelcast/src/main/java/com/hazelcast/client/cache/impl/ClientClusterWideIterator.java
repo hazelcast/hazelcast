@@ -81,8 +81,8 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
                 ClientInvocationFuture future = clientInvocation.invoke();
                 List result = new ArrayList();
                 CacheIterateEntriesCodec.ResponseParameters responseParameters = CacheIterateEntriesCodec.decodeResponse(
-                        future.get(), (key, value) -> {
-                            result.add(new AbstractMap.SimpleEntry<>(key, value));
+                        future.get(), (keyData, valueData) -> {
+                            result.add(new AbstractMap.SimpleEntry<>(keyData, valueData));
                         });
                 setLastTableIndex(result, responseParameters.tableIndex);
                 return result;

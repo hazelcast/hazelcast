@@ -197,10 +197,10 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapKeySetCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
 
-        HashSet<K> keySet = new HashSet<K>(0);
+        HashSet<K> keySet = new HashSet<>();
         TransactionalMapKeySetCodec.decodeResponse(response, data -> {
-            Object key = toObject(data);
-            keySet.add((K) key);
+            K key = (K) toObject(data);
+            keySet.add(key);
         });
 
         return keySet;
@@ -214,11 +214,11 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapKeySetWithPredicateCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
-        HashSet<K> keySet = new HashSet<K>(0);
+        HashSet<K> keySet = new HashSet<>();
 
         TransactionalMapKeySetWithPredicateCodec.decodeResponse(response, data -> {
-            Object key = toObject(data);
-            keySet.add((K) key);
+            K key = (K) toObject(data);
+            keySet.add(key);
         });
 
         return keySet;
@@ -244,8 +244,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage response = invoke(request);
         List<V> values = new ArrayList<>();
         TransactionalMapValuesWithPredicateCodec.decodeResponse(response, data -> {
-            Object value = toObject(data);
-            values.add((V) value);
+            V value = (V) toObject(data);
+            values.add(value);
         });
 
         return values;

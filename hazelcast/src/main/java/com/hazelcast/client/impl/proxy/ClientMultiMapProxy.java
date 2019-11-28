@@ -165,7 +165,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Set<K> keySet() {
         ClientMessage request = MultiMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        Set<K> keySet = new HashSet<K>(0);
+        Set<K> keySet = new HashSet<>();
         MultiMapKeySetCodec.decodeResponse(response, data -> {
             K key = toObject(data);
             keySet.add(key);
@@ -190,8 +190,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage response = invoke(request);
 
         Set<Map.Entry<K, V>> entrySet = createHashSet(0);
-        MultiMapEntrySetCodec.decodeResponse(response, (key, value) -> {
-            entrySet.add(new AbstractMap.SimpleEntry<>(toObject(key), toObject(value)));
+        MultiMapEntrySetCodec.decodeResponse(response, (keyData, valueData) -> {
+            K key = toObject(keyData);
+            V value = toObject(valueData);
+            entrySet.add(new AbstractMap.SimpleEntry<>(key, value));
         });
 
         return entrySet;

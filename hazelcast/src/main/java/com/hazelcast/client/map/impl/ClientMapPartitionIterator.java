@@ -85,8 +85,8 @@ public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterat
             ClientInvocationFuture f = clientInvocation.invoke();
             List result = new ArrayList();
             MapFetchEntriesCodec.ResponseParameters responseParameters
-                    = MapFetchEntriesCodec.decodeResponse(f.get(), (key, value) -> {
-                result.add(new AbstractMap.SimpleEntry<>(key, value));
+                    = MapFetchEntriesCodec.decodeResponse(f.get(), (keyData, valueData) -> {
+                result.add(new AbstractMap.SimpleEntry<>(keyData, valueData));
             });
             setLastTableIndex(result, responseParameters.tableIndex);
             return result;
