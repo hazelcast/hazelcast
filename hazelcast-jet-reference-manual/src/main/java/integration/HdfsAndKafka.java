@@ -21,15 +21,18 @@ import com.hazelcast.jet.hadoop.HadoopSources;
 import com.hazelcast.jet.kafka.KafkaSinks;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.io.IOException;
 import java.util.Properties;
 
 import static com.hazelcast.function.Functions.wholeItem;
@@ -37,6 +40,7 @@ import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 
 public class HdfsAndKafka {
+
     static void s1() {
         //tag::s1[]
         JobConf jobConfig = new JobConf();
@@ -47,9 +51,28 @@ public class HdfsAndKafka {
         //end::s1[]
     }
 
-    static void s2() {
-        JobConf jobConfig = new JobConf();
+    static void s2() throws IOException {
         //tag::s2[]
+        Job job = Job.getInstance();
+        job.setInputFormatClass(org.apache.hadoop.mapreduce.lib.input.TextInputFormat.class);
+        job.setOutputFormatClass(org.apache.hadoop.mapreduce.lib.output.TextOutputFormat.class);
+        org.apache.hadoop.mapreduce.lib.input.TextInputFormat.addInputPath(job, new Path("input-path"));
+        org.apache.hadoop.mapreduce.lib.output.TextOutputFormat.setOutputPath(job, new Path("output-path"));
+        Configuration configuration = job.getConfiguration();
+        //end::s2[]
+    }
+
+    static void s3() throws IOException {
+        //tag::s2[]
+        Job job = Job.getInstance();
+        Configuration configuration = job.getConfiguration();
+        configuration.set(HadoopSources.COPY_ON_READ, "false");
+        //end::s2[]
+    }
+
+    static void s4() {
+        JobConf jobConfig = new JobConf();
+        //tag::s4[]
         Pipeline p = Pipeline.create();
         p.readFrom(HadoopSources.inputFormat(jobConfig, (k, v) -> v.toString()))
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+"))
@@ -57,11 +80,11 @@ public class HdfsAndKafka {
          .groupingKey(wholeItem())
          .aggregate(counting())
          .writeTo(HadoopSinks.outputFormat(jobConfig));
-        //end::s2[]
+        //end::s4[]
     }
 
-    static void s3() {
-        //tag::s3[]
+    static void s5() {
+        //tag::s5[]
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", "localhost:9092");
         props.setProperty("key.serializer", StringSerializer.class.getCanonicalName());
@@ -74,16 +97,6 @@ public class HdfsAndKafka {
         p.readFrom(KafkaSources.kafka(props, "t1", "t2"))
          .withoutTimestamps()
          .writeTo(KafkaSinks.kafka(props, "t3"));
-        //end::s3[]
-    }
-
-    static void s4() {
-        //tag::s4[]
-        //end::s4[]
-    }
-
-    static void s5() {
-        //tag::s5[]
         //end::s5[]
     }
 

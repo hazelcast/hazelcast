@@ -1,29 +1,61 @@
-= HDFS
+= Hadoop
 
 The Hadoop Distributed File System is a production-worthy choice for
 both a data source and a data sink in a batch computation job. It is a
 distributed, replicated storage system that handles these concerns
 automatically, exposing a simple unified view to the client.
 
-The HDFS source and sink require a configuration object of type
-https://hadoop.apache.org/docs/r2.7.3/api/org/apache/hadoop/mapred/JobConf.html[JobConf]
+The Hadoop source and sink require a configuration object of type
+https://hadoop.apache.org/docs/r2.8.3/api/org/apache/hadoop/conf/Configuration.html[Configuration]
 which supplies the input and output paths and formats. They don't
 actually create a MapReduce job, this config is simply used to describe
-the required inputs and outputs. You can share the same `JobConf`
+the required inputs and outputs. You can share the same `Configuration`
 instance between several source/sink instances.
 
-Here's a configuration sample:
+The Hadoop source and sink will use either the new or the old MapReduce
+API based on the input format configuration. If it is stored under
+`MRJobConfig.INPUT_FORMAT_CLASS_ATTR` (`mapreduce.job.inputformat.class`)
+the new API will be used, otherwise the old API will be used.
+
+Here's a configuration sample for old API:
 
 [source]
 ----
 include::{javasource}/integration/HdfsAndKafka.java[tag=s1]
 ----
 
-The word count pipeline can then be expressed using HDFS as follows
+Here's a configuration sample for new API:
 
 [source]
 ----
 include::{javasource}/integration/HdfsAndKafka.java[tag=s2]
+----
+
+With the new API, most of the `RecordReader`s return the same key/value
+instances for each record, aiming to lessen object creation. Hazelcast Jet
+expects the objects to be immutable thus makes a copy of each object after the
+configured projection function applied to the record. The source copies the
+objects by serializing and de-serializing them. The objects should be either
+https://hadoop.apache.org/docs/r2.8.3/api/org/apache/hadoop/io/Writable.html[Writable]
+or serializable in a way which Hazelcast Jet can serialize/de-serialize.
+
+For readers which create a new instance for each record, the source can be
+configured to not copy the objects for performance. Also if the configured
+projection function doesn't refer to any mutable state from the key or value,
+again the source can be configured to not copy the objects.
+
+Here's a configuration sample which disables copying objects:
+
+[source]
+----
+include::{javasource}/integration/HdfsAndKafka.java[tag=s3]
+----
+
+The word count pipeline can then be expressed using Hadoop connector as follows
+
+[source]
+----
+include::{javasource}/integration/HdfsAndKafka.java[tag=s4]
 ----
 
 == Data Locality When Reading
@@ -40,7 +72,7 @@ Each processor will write to a different file in the output folder
 identified by the unique processor id. The files will be in a temporary
 state until the job is completed and will be committed when the job is
 complete. For streaming jobs, they will be committed when the job is
-cancelled. We have plans to introduce a rolling sink for HDFS in the
+cancelled. We have plans to introduce a rolling sink for Hadoop in the
 future to have better streaming support.
 
 == Dealing with Writables
