@@ -35,8 +35,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_MAP;
 
-public abstract class AbstractMultiTargetMessageTask<P>
-        extends AbstractAsyncMessageTask<P, Object> {
+public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMessageTask<P, Object> {
 
     protected AbstractMultiTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
