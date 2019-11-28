@@ -7,8 +7,7 @@ methods:
     doc: ''
     request:
       retryable: false
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long
@@ -32,8 +31,7 @@ methods:
     doc: ''
     request:
       retryable: false
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long
@@ -52,8 +50,7 @@ methods:
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long
@@ -73,7 +70,6 @@ methods:
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
       partitionIdentifier: -1
       params: []
     response:
@@ -89,8 +85,7 @@ methods:
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long
@@ -104,8 +99,7 @@ methods:
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
-      partitionIdentifier: name
+      partitionIdentifier: -1
       params:
         - name: name
           type: String
@@ -119,15 +113,13 @@ methods:
           nullable: false
           since: 2.0
           doc: ''
-            
   - id: 7
     name: getJobSubmissionTime
     since: 2.0
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long
@@ -147,8 +139,7 @@ methods:
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long
@@ -168,8 +159,7 @@ methods:
     doc: ''
     request:
       retryable: false
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long
@@ -183,8 +173,7 @@ methods:
     doc: ''
     request:
       retryable: false
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long
@@ -208,7 +197,6 @@ methods:
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
       partitionIdentifier: -1
       params: []
     response:
@@ -224,7 +212,6 @@ methods:
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
       partitionIdentifier: -1
       params:
         - name: serviceName
@@ -245,60 +232,12 @@ methods:
           since: 2.0
           doc: ''
   - id: 13
-    name: getClusterMetadata
-    since: 2.0
-    doc: ''
-    request:
-      retryable: true
-      acquiresResource: false
-      partitionIdentifier: -1
-      params: []
-    response:
-      params:
-        - name: name
-          type: String
-          nullable: false
-          since: 2.0
-          doc: ''
-        - name: version
-          type: String
-          nullable: false
-          since: 2.0
-          doc: ''
-        - name: clusterTime
-          type: long
-          nullable: false
-          since: 2.0
-          doc: ''
-        - name: state
-          type: int
-          nullable: false
-          since: 2.0
-          doc: ''
-  - id: 14
-    name: getMemberXmlConfiguration
-    since: 2.0
-    doc: ''
-    request:
-      retryable: true
-      acquiresResource: false
-      partitionIdentifier: -1
-      params: []
-    response:
-      params:
-        - name: response
-          type: String
-          nullable: false
-          since: 2.0
-          doc: ''
-  - id: 15
     name: getJobMetrics
     since: 2.0
     doc: ''
     request:
       retryable: true
-      acquiresResource: false
-      partitionIdentifier: jobId
+      partitionIdentifier: -1
       params:
         - name: jobId
           type: long

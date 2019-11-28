@@ -19,8 +19,13 @@ package com.hazelcast.jet.server;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.config.YamlClientConfigBuilder;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.management.MCClusterMetadata;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
@@ -29,7 +34,6 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.config.ConfigProvider;
@@ -395,11 +399,15 @@ public class JetCommandLine implements Runnable {
     ) throws IOException {
         runWithJet(verbosity, jet -> {
             JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
-            ClusterMetadata clusterMetadata = ((JetClientInstanceImpl) jet).getClusterMetadata();
+            HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
+            ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
+            Member masterMember = clientClusterService.getMember(clientClusterService.getMasterAddress());
+            MCClusterMetadata clusterMetadata = FutureUtil.getValue(hazelcastClient.getManagementCenterService()
+                                                                                   .getClusterMetadata(masterMember));
             Cluster cluster = client.getCluster();
 
-            println("State: " + clusterMetadata.getState());
-            println("Version: " + clusterMetadata.getVersion());
+            println("State: " + clusterMetadata.getCurrentState());
+            println("Version: " + clusterMetadata.getJetVersion());
             println("Size: " + cluster.getMembers().size());
 
             println("");

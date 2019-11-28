@@ -36,6 +36,6 @@ $PIP3 install -r requirements.txt
 
 $PYTHON generator.py -r $JET_HOME -p $JET_HOME/hazelcast-jet-core/src/main/resources/client-protocol-definition \
 -o hazelcast-jet-core/src/main/java/com/hazelcast/jet/impl/client/protocol/codec \
--n com.hazelcast.jet.impl.client.protocol.codec
+-n com.hazelcast.jet.impl.client.protocol.codec --no-binary --no-id-check
 
 rm -rf $PROTOCOL_DIRECTORY
