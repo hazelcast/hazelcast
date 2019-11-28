@@ -54,6 +54,7 @@ public interface MapEventPublisher {
 
     /**
      * Publish an event to the event subsystem.
+     * Note: Exceptions during publications are caught and logged.
      *
      * @param caller    the address of the caller that caused the event
      * @param mapName   the map name
@@ -69,6 +70,7 @@ public interface MapEventPublisher {
      * Publish an event to the event subsystem. This method
      * can be used for a merge event since it also accepts
      * the value which was used in the merge process.
+     * Note: Exceptions during publications are caught and logged.
      *
      * @param caller           the address of the caller that caused the event
      * @param mapName          the map name
