@@ -22,8 +22,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.projection.Projections;
+import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -91,6 +91,11 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         map = instance.getMap(mapName);
         noStatsMap = instance.getMap(noStatsMapName);
         queryTypes = initQueryTypes();
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     protected HazelcastInstance createInstance(Config config) {
@@ -778,7 +783,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
             public void query(Predicate predicate) {
                 map.project(Projections.singleAttribute("this"), predicate);
             }
-        }, };
+        },};
     }
 
 }

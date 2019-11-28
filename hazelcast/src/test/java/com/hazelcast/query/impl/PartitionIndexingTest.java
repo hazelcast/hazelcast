@@ -87,12 +87,12 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "101");
         config.getMapConfig(MAP_NAME).setInMemoryFormat(inMemoryFormat);
         ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
-                                                         .setImplementation(migrationFailingService)
-                                                         .setName(MigrationFailingService.class.getName());
+                .setImplementation(migrationFailingService)
+                .setName(MigrationFailingService.class.getName());
         ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
         return config;
     }
