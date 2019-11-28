@@ -25,8 +25,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.events.AddWanConfigIgnoredEvent;
 import com.hazelcast.internal.management.events.WanConsistencyCheckIgnoredEvent;
 import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
-import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
@@ -410,10 +408,5 @@ public class WanReplicationServiceImpl implements WanReplicationService,
                 }
             }
         }
-    }
-
-    @Override
-    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        // nop
     }
 }

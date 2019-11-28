@@ -16,20 +16,14 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
@@ -55,10 +49,7 @@ import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -79,8 +70,6 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.topic.impl.TopicService;
-import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.version.MemberVersion;
@@ -231,23 +220,6 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
         operationService.start();
         splitBrainProtectionService.start();
-
-        MetricsConfig metricsConfig = node.getConfig().getMetricsConfig();
-        HazelcastProperties properties = new HazelcastProperties(node.getConfig().getProperties());
-        boolean dataStructureMetrics = properties.getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
-        if (metricsConfig.isEnabled() && dataStructureMetrics) {
-            metricsRegistry.registerDynamicMetricsProvider(getService(MapService.SERVICE_NAME));
-            metricsRegistry.registerDynamicMetricsProvider(getService(ICacheService.SERVICE_NAME));
-            metricsRegistry.registerDynamicMetricsProvider(getService(QueueService.SERVICE_NAME));
-            metricsRegistry.registerDynamicMetricsProvider(getService(TopicService.SERVICE_NAME));
-            metricsRegistry.registerDynamicMetricsProvider(getService(ReliableTopicService.SERVICE_NAME));
-            metricsRegistry.registerDynamicMetricsProvider(getService(ReplicatedMapService.SERVICE_NAME));
-            metricsRegistry.registerDynamicMetricsProvider(getService(MultiMapService.SERVICE_NAME));
-            metricsRegistry.registerDynamicMetricsProvider(getService(PNCounterService.SERVICE_NAME));
-            metricsRegistry.registerDynamicMetricsProvider(getService(FlakeIdGeneratorService.SERVICE_NAME));
-        }
-        metricsRegistry.registerDynamicMetricsProvider(getService(DistributedExecutorService.SERVICE_NAME));
-        metricsRegistry.registerDynamicMetricsProvider(getService(WanReplicationService.SERVICE_NAME));
 
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);

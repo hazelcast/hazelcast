@@ -33,9 +33,11 @@ import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.Message;
@@ -81,6 +83,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             orderingLocks[i] = new ReentrantLock();
         }
         eventService = nodeEngine.getEventService();
+
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
     }
 
     // only for testing

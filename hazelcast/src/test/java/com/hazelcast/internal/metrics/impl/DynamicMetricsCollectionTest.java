@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -171,6 +173,7 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
         verify(collectorMock, never()).collectDouble(expectedDescriptor, 42.42D);
     }
 
+    @RequireAssertEnabled
     @Test
     public void testDynamicProviderExceptionsAreNotPropagated() {
         MetricsCollector collectorMock = mock(MetricsCollector.class);
@@ -180,8 +183,14 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
 
         });
 
-        metricsRegistry.collect(collectorMock);
-        // we just expect there is no exception
+        // we just expect there is no exception apart from AssertionError,
+        // which is for testing only
+        try {
+            metricsRegistry.collect(collectorMock);
+            fail("Should throw AssertionError");
+        } catch (AssertionError ex) {
+            // nop
+        }
     }
 
     private static class SourceObject {
