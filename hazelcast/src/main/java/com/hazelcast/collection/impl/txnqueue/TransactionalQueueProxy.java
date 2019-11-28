@@ -109,15 +109,25 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
 
     @Override
     public boolean addAll(Collection<? extends E> collection) {
+        return addAll(collection, 0, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> collection, long timeout, @Nonnull TimeUnit unit) {
         checkTransactionState();
         NodeEngine nodeEngine = getNodeEngine();
         List<Data> data = collection.stream().map(nodeEngine::toData).collect(Collectors.toList());
-        return addAllInternal(data, 0);
+        return addAllInternal(data, unit.toMillis(timeout));
     }
 
     @Override
     public boolean addAll(E... items) {
-        return addAll(asList(items));
+        return addAll(0, TimeUnit.MILLISECONDS, items);
+    }
+
+    @Override
+    public boolean addAll(long timeout, @Nonnull TimeUnit unit, E... items) {
+        return addAll(asList(items), timeout, unit);
     }
 
     @Override

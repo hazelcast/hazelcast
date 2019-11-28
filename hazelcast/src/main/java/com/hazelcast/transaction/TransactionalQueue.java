@@ -82,5 +82,9 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
 
     boolean addAll(Collection<? extends E> collection);
 
+    boolean addAll(Collection<? extends E> collection, long timeout, @Nonnull TimeUnit unit);
+
     boolean addAll(E... items);
+
+    boolean addAll(long timeout, @Nonnull TimeUnit unit, E... items);
 }
