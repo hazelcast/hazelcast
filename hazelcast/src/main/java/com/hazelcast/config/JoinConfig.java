@@ -203,9 +203,7 @@ public class JoinConfig {
             countEnabled++;
         }
         Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
-        if (discoveryStrategyConfigs.size() > 0) {
-            countEnabled++;
-        }
+        countEnabled += discoveryStrategyConfigs.size();
 
         if (countEnabled > 1) {
             throw new InvalidConfigurationException("Multiple join configuration cannot be enabled at the same time. Enable only "
