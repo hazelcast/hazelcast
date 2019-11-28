@@ -21,6 +21,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlTransientException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -129,7 +130,7 @@ public class Outbox extends AbstractMailbox {
                 targetMember = nodeEngine.getClusterService().getMember(targetMemberId);
             }
 
-            nodeEngine.getSqlService().sendRequest(op, targetMember.getAddress());
+            ((SqlServiceImpl) nodeEngine.getSqlService()).sendRequest(op, targetMember.getAddress());
         } catch (Exception e) {
             throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE,
                 "Failed to send data batch to member: " + this);
