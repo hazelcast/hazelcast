@@ -31,7 +31,6 @@ import javax.cache.Cache;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;

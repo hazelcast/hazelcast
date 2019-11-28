@@ -23,17 +23,9 @@ import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWi
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor;
-import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.internal.serialization.Data;
-
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Client-side implementation of {@code QueryCacheEndToEndConstructor}.
