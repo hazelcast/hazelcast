@@ -51,17 +51,12 @@ public class TxnAddAllBackupOperation extends QueueOperation implements BackupOp
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getContainer();
-        int i = 0;
-        for (Long itemId : itemIds) {
-            Data datum = data.get(i);
-            queueContainer.txnCommitOffer(itemId, datum, true);
-            i++;
-        }
+        queueContainer.txnCommitAddAll(itemIds, data, true);
     }
 
     @Override
     public int getClassId() {
-        return QueueDataSerializerHook.TXN_OFFER_BACKUP;
+        return QueueDataSerializerHook.TXN_ADD_ALL_BACKUP;
     }
 
     @Override
