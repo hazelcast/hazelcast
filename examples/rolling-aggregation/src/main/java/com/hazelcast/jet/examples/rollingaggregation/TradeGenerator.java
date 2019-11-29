@@ -60,7 +60,6 @@ public final class TradeGenerator {
 
     private void generateTrades(TimestampedSourceBuffer<Trade> buf) {
         if (scheduledTimeNanos >= endTimeNanos) {
-            buf.close();
             return;
         }
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
