@@ -19,6 +19,7 @@ package com.hazelcast.internal.ascii;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RestApiConfig;
+import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -97,6 +98,22 @@ public class RestClusterTest {
         } catch (IOException ignored) {
             // ignored
         }
+    }
+
+    @Test
+    public void testClusterInfo_whenAdvancedNetworkWithoutClientEndpoint() throws Exception {
+        // when advanced network config is enabled and no client endpoint is defined
+        // then client connections are reported as 0
+        Config config = createConfig();
+        config.getAdvancedNetworkConfig().setEnabled(true)
+              .setRestEndpointConfig(new RestServerEndpointConfig()
+                      .setPort(9999)
+                      .enableAllGroups());
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        String response = communicator.getClusterInfo();
+        assertThat(response, CoreMatchers.containsString("ConnectionCount: 0"));
     }
 
     @Test

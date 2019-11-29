@@ -354,7 +354,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         NetworkingService ns = node.getNetworkingService();
         EndpointManager cem = ns.getEndpointManager(CLIENT);
         AggregateEndpointManager aem = ns.getAggregateEndpointManager();
-        res.append("ConnectionCount: ").append(cem.getActiveConnections().size());
+        res.append("ConnectionCount: ").append(cem == null ? "0" : cem.getActiveConnections().size());
         res.append("\n");
         res.append("AllConnectionCount: ").append(aem.getActiveConnections().size());
         res.append("\n");
