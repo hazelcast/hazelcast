@@ -345,7 +345,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                       .forEach(membersArray::add);
         JsonObject response = new JsonObject()
                 .add("members", membersArray)
-                .add("connectionCount", cem.getActiveConnections().size())
+                .add("connectionCount", cem == null ? 0 : cem.getActiveConnections().size())
                 .add("allConnectionCount", aem.getActiveConnections().size());
         prepareResponse(command, response);
     }
