@@ -244,16 +244,21 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         hazelcastCacheManager = new ClientICacheManager(this);
         queryCacheContext = new ClientQueryCacheContext(this);
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
-        nearCacheManagers = new ConcurrentHashMap<>();
-        nearCacheManagers.put(MapService.SERVICE_NAME, clientExtension.createNearCacheManager());
-        nearCacheManagers.put(ReplicatedMapService.SERVICE_NAME, clientExtension.createNearCacheManager());
-        nearCacheManagers.put(ICacheService.SERVICE_NAME, clientExtension.createNearCacheManager());
+        nearCacheManagers = createNearCacheManagers();
         clientExceptionFactory = initClientExceptionFactory();
         clientStatisticsService = new ClientStatisticsService(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
         managementCenterService = new ManagementCenterService(this, serializationService);
+    }
+
+    private ConcurrentMap<String, NearCacheManager> createNearCacheManagers() {
+        ConcurrentMap<String, NearCacheManager> nearCacheManagers = new ConcurrentHashMap<>();
+        nearCacheManagers.put(MapService.SERVICE_NAME, clientExtension.createNearCacheManager());
+        nearCacheManagers.put(ReplicatedMapService.SERVICE_NAME, clientExtension.createNearCacheManager());
+        nearCacheManagers.put(ICacheService.SERVICE_NAME, clientExtension.createNearCacheManager());
+        return nearCacheManagers;
     }
 
     private ConcurrencyDetection initConcurrencyDetection() {
