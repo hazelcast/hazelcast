@@ -217,7 +217,7 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
 
         return createNearCacheContextBuilder(cacheConfig)
                 .setDataInstance(member)
-                .setDataAdapter(new ICacheDataStructureAdapter<K, V>(memberCache))
+                .setDataAdapter(new ICacheDataStructureAdapter<>(memberCache))
                 .setMemberCacheManager(memberCacheManager)
                 .build();
     }
@@ -268,12 +268,12 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
         String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(DEFAULT_NEAR_CACHE_NAME);
         ICache<K, V> clientCache = cacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager(clientCache.getServiceName());
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
+                .setNearCacheAdapter(new ICacheDataStructureAdapter<>(clientCache))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setCacheManager(cacheManager);

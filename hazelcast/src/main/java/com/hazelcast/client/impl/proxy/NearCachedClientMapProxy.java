@@ -89,7 +89,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         serializeKeys = nearCacheConfig.isSerializeKeys();
 
-        NearCacheManager nearCacheManager = getContext().getNearCacheManager();
+        NearCacheManager nearCacheManager = getContext().getNearCacheManager(getServiceName());
         IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<>(this);
         nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
 
@@ -575,7 +575,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     protected void postDestroy() {
         try {
             removeNearCacheInvalidationListener();
-            getContext().getNearCacheManager().destroyNearCache(name);
+            getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
         } finally {
             super.postDestroy();
         }
@@ -584,7 +584,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     protected void onShutdown() {
         removeNearCacheInvalidationListener();
-        getContext().getNearCacheManager().destroyNearCache(name);
+        getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
 
         super.onShutdown();
     }

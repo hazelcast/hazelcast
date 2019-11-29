@@ -37,6 +37,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -61,7 +62,7 @@ public class ClientContext {
     private final ClientConfig clientConfig;
     private final LoggingService loggingService;
     private final HazelcastProperties properties;
-    private final NearCacheManager nearCacheManager;
+    private final Map<String, NearCacheManager> nearCacheManagers;
     private final MinimalPartitionService minimalPartitionService;
     private final ClientQueryCacheContext queryCacheContext;
     private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<>();
@@ -82,7 +83,7 @@ public class ClientContext {
         this.clientConfig = client.getClientConfig();
         this.transactionManager = client.getTransactionManager();
         this.loggingService = client.getLoggingService();
-        this.nearCacheManager = client.getNearCacheManager();
+        this.nearCacheManagers = client.getNearCacheManagers();
         this.properties = client.getProperties();
         this.minimalPartitionService = new ClientMinimalPartitionService();
         this.queryCacheContext = client.getQueryCacheContext();
@@ -169,8 +170,8 @@ public class ClientContext {
         return listenerService;
     }
 
-    public NearCacheManager getNearCacheManager() {
-        return nearCacheManager;
+    public NearCacheManager getNearCacheManager(String serviceName) {
+        return nearCacheManagers.get(serviceName);
     }
 
     public LoggingService getLoggingService() {
