@@ -46,15 +46,15 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(publisherCreateMessage, urgent);
 
         if (info.isIncludeValue()) {
-            ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response, (key, value) -> {
+            ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response, (keyData, valueData) -> {
                 if (!queryCache.reachedMaxCapacity()) {
-                    queryCache.prepopulate(key, value);
+                    queryCache.prepopulate(keyData, valueData);
                 }
             });
         } else {
-            ContinuousQueryPublisherCreateCodec.decodeResponse(response, (elem) -> {
+            ContinuousQueryPublisherCreateCodec.decodeResponse(response, (data) -> {
                 if (!queryCache.reachedMaxCapacity()) {
-                    queryCache.prepopulate(elem, null);
+                    queryCache.prepopulate(data, null);
                 }
             });
         }

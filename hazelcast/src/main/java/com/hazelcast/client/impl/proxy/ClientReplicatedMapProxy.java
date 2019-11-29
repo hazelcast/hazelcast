@@ -477,7 +477,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ReplicatedMapEntrySetCodec.decodeResponse(response, (keyData, valueData) -> {
             K key = toObject(keyData);
             V value = toObject(valueData);
-            entries.add(new AbstractMap.SimpleEntry<>(key, value));
+            entries.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
         });
         return (Set) new ResultSet(entries, IterationType.ENTRY);
     }

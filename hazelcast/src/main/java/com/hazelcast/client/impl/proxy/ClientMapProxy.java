@@ -1253,7 +1253,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         List<Entry> resultList = new ArrayList<>();
         MapKeySetWithPagingPredicateCodec.decodeResponse(response, data -> {
             K key = toObject(data);
-            resultList.add(new AbstractMap.SimpleEntry<K, V>(key, null));
+            resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
         });
 
         return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
@@ -1336,7 +1336,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapValuesWithPagingPredicateCodec.decodeResponse(response, (keyData, valueData) -> {
             K key = toObject(keyData);
             V value = toObject(valueData);
-            resultList.add(new AbstractMap.SimpleEntry<>(key, value));
+            resultList.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
         });
 
         return (Collection<V>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.VALUE);

@@ -114,7 +114,7 @@ public final class ListMultiFrameCodec {
     public static <T> void decodeNullable(ClientMessage.ForwardFrameIterator iterator,
                                           Function<ClientMessage.ForwardFrameIterator, T> decodeFunction,
                                           Consumer<T> consumer) {
-        if (nextFrameIsNullEndFrame(iterator)) {
+        if (!nextFrameIsNullEndFrame(iterator)) {
             decode(iterator, decodeFunction, consumer);
         }
     }
