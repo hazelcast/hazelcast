@@ -1136,13 +1136,18 @@ public class ClientMapProxy<K, V> extends ClientProxy
         int keysSize = keys.size();
         Map<K, V> result = createHashMap(keysSize);
         Map<Integer, List<Data>> partitionToKeyData = new HashMap<>();
-        getAllInternal(keys, partitionToKeyData, result);
+        getAllInternal(keys, partitionToKeyData, result, (keyData, valueData) -> {
+            K key = toObject(keyData);
+            V value = toObject(valueData);
+            result.put(key, value);
+        });
         return Collections.unmodifiableMap(result);
     }
 
-    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
+    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData,
+                                  Map<K, V> result, BiConsumer<Data, Data> biConsumer) {
         if (partitionToKeyData.isEmpty()) {
-            fillPartitionToKeyData(keys, partitionToKeyData, null);
+            fillPartitionToKeyData(keys, partitionToKeyData, null, null);
         }
         List<Future<ClientMessage>> futures = new ArrayList<>(partitionToKeyData.size());
         for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
@@ -1157,11 +1162,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         for (Future<ClientMessage> future : futures) {
             try {
                 ClientMessage response = future.get();
-                MapGetAllCodec.decodeResponse(response, (keyData, valueData) -> {
-                    K key = toObject(keyData);
-                    V value = toObject(valueData);
-                    result.put(key, value);
-                });
+                MapGetAllCodec.decodeResponse(response, biConsumer);
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -1169,7 +1170,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     protected void fillPartitionToKeyData(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData,
-                                          Map<Object, Data> keyMap) {
+                                          Map<Object, Data> keyMap, Map<Data, Object> reverseKeyMap) {
         ClientPartitionService partitionService = getContext().getPartitionService();
         for (K key : keys) {
             Data keyData = toData(key);
@@ -1182,6 +1183,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
             keyList.add(keyData);
             if (keyMap != null) {
                 keyMap.put(key, keyData);
+            }
+            if (reverseKeyMap != null) {
+                reverseKeyMap.put(keyData, key);
             }
         }
     }

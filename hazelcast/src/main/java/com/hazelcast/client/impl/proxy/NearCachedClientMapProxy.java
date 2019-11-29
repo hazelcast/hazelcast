@@ -393,10 +393,11 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
+    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData,
+                                  Map<K, V> result, BiConsumer<Data, Data> biConsumer) {
         Map<Object, Data> keyMap = createHashMap(keys.size());
         if (serializeKeys) {
-            fillPartitionToKeyData(keys, partitionToKeyData, keyMap);
+            fillPartitionToKeyData(keys, partitionToKeyData, keyMap, null);
         }
         Collection<?> ncKeys = serializeKeys ? keyMap.values() : new LinkedList<>(keys);
 
@@ -407,14 +408,29 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             return;
         }
 
+        Map<Data, Object> reverseKeyMap = null;
         if (!serializeKeys) {
-            fillPartitionToKeyData(keys, partitionToKeyData, keyMap);
+            reverseKeyMap = createHashMap(ncKeys.size());
+            fillPartitionToKeyData(keys, partitionToKeyData, keyMap, reverseKeyMap);
         }
 
         Map<Object, Long> reservations = getNearCacheReservations(ncKeys, keyMap);
         try {
-            super.getAllInternal(keys, partitionToKeyData, result);
-            populateResultFromRemote(result, reservations, keyMap);
+            final Map<Data, Object> finalReverseKeyMap = reverseKeyMap;
+            super.getAllInternal(keys, partitionToKeyData, result, (keyData, valueData) -> {
+                Object ncKey = serializeKeys ? keyData : finalReverseKeyMap.get(keyData);
+                K key = serializeKeys ? toObject(keyData) : (K) ncKey;
+
+                Long reservationId = reservations.get(ncKey);
+                if (reservationId != null) {
+                    V cachedValue = (V) tryPublishReserved(ncKey, valueData, reservationId);
+                    result.put(key, cachedValue);
+                    reservations.remove(ncKey);
+                } else {
+                    V value = toObject(valueData);
+                    result.put(key, value);
+                }
+            });
             result.putAll(nearCacheResult);
         } finally {
             releaseRemainingReservedKeys(reservations);
@@ -443,20 +459,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             }
         }
         return reservations;
-    }
-
-    private void populateResultFromRemote(Map<K, V> result, Map<Object, Long> reservations, Map<Object, Data> keyMap) {
-        for (Map.Entry<K, V> entry : result.entrySet()) {
-            K key = entry.getKey();
-            Object ncKey = serializeKeys ? keyMap.get(key) : key;
-
-            Long reservationId = reservations.get(ncKey);
-            if (reservationId != null) {
-                Object cachedValue = tryPublishReserved(ncKey, entry.getValue(), reservationId);
-                result.put(key, (V) cachedValue);
-                reservations.remove(ncKey);
-            }
-        }
     }
 
     private void releaseRemainingReservedKeys(Map<Object, Long> reservedKeys) {
