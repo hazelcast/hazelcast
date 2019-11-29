@@ -257,6 +257,16 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Chooses the {@link RoutingPolicy#UNICAST UNICAST} routing policy for
+     * this edge.
+     */
+    @Nonnull
+    public Edge unicast() {
+        routingPolicy = RoutingPolicy.UNICAST;
+        return this;
+    }
+
+    /**
      * Activates the {@link RoutingPolicy#PARTITIONED PARTITIONED} routing
      * policy and applies the {@link Partitioner#defaultPartitioner() default}
      * Hazelcast partitioning strategy. The strategy is applied to the result of

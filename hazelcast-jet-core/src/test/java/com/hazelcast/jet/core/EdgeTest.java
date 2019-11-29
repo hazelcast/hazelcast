@@ -171,6 +171,12 @@ public class EdgeTest {
     }
 
     @Test
+    public void whenBroadcastAndThenUnicast_thenIsUnicast() {
+        final Edge e = Edge.from(a).broadcast().unicast();
+        assertSame(RoutingPolicy.UNICAST, e.getRoutingPolicy());
+    }
+
+    @Test
     public void whenDistributedSet_thenIsDistributed() {
         final Edge e = Edge.from(a).distributed();
         assertTrue(e.isDistributed());
