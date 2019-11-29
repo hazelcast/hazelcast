@@ -312,4 +312,36 @@ public final class ProxyRegistry {
             ((AbstractDistributedObject) distributedObject).invalidate();
         }
     }
+
+    /**
+     * Force-initializes and publishes all uninitialized proxies in this registry.
+     * <p>
+     * This method assumes that the uninitialized proxies originate from
+     * {@code doCreateProxy(publishEvent=false, initialize=false, ...)}. Since local
+     * events were already emitted for such proxies, only remote events are published
+     * by this method.
+     * <p>
+     * Calling this method concurrently with
+     * {@code doCreateProxy(publishEvent=true)} may result in publishing the remote
+     * events multiple times for some of the proxies.
+     */
+    void initializeAndPublishProxies() {
+        for (Map.Entry<String, DistributedObjectFuture> entry : proxies.entrySet()) {
+            String name = entry.getKey();
+            DistributedObjectFuture future = entry.getValue();
+            if (!future.isSetAndInitialized()) {
+                try {
+                    future.get();
+                } catch (Throwable e) {
+                    // proxy initialization failed
+                    // deregister future to avoid infinite hang on future.get()
+                    proxyService.logger.warning("Error while initializing proxy: " + name, e);
+                    future.setError(e);
+                    proxies.remove(entry.getKey());
+                    throw rethrow(e);
+                }
+                publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
+            }
+        }
+    }
 }
