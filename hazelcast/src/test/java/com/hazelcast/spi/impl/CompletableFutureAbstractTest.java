@@ -39,6 +39,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.impl.operationservice.impl.CompletableFutureTestUtil.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
@@ -260,7 +261,8 @@ public abstract class CompletableFutureAbstractTest {
     @Test
     public void thenRun_whenCompletedFuture() {
         CompletionStage<Object> future = newCompletableFuture(false, 0L);
-        CompletableFuture<Void> chained = future.thenRun(CompletableFutureTestUtil::ignore).toCompletableFuture();
+        CompletableFuture<Void> chained = future.thenRunAsync(CompletableFutureTestUtil::ignore, CALLER_RUNS)
+                                                .toCompletableFuture();
 
         assertTrue(chained.isDone());
     }
@@ -356,10 +358,10 @@ public abstract class CompletableFutureAbstractTest {
     @Test
     public void whenComplete_whenCompletedFuture() {
         CompletableFuture<Object> future = newCompletableFuture(false, 0L);
-        CompletableFuture<Object> chained = future.whenComplete((v, t) -> {
+        CompletableFuture<Object> chained = future.whenCompleteAsync((v, t) -> {
             assertEquals(returnValue, v);
             assertNull(t);
-        });
+        }, CALLER_RUNS);
 
         assertTrue(chained.isDone());
         assertEquals(returnValue, chained.join());
@@ -538,7 +540,8 @@ public abstract class CompletableFutureAbstractTest {
     @Test
     public void handle_whenCompletedFuture() {
         CompletionStage<Object> future = newCompletableFuture(false, 0L);
-        CompletableFuture<Object> chained = future.handle((v, t) -> chainedReturnValue).toCompletableFuture();
+        CompletableFuture<Object> chained = future.handleAsync((v, t) -> chainedReturnValue, CALLER_RUNS)
+                                                  .toCompletableFuture();
 
         assertTrue(chained.isDone());
         assertEquals(chainedReturnValue, chained.join());

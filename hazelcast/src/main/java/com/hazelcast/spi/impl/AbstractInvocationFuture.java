@@ -49,7 +49,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
-import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -897,10 +896,6 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
                 }
             }
         }
-    }
-
-    public Executor defaultExecutor() {
-        return DEFAULT_ASYNC_EXECUTOR;
     }
 
     protected <U> void unblockCompose(@Nonnull final Function<? super V, ? extends CompletionStage<U>> function,

@@ -82,6 +82,19 @@ import java.util.concurrent.CompletionStage;
  * <p>
  * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in
  * cluster versions 3.10 and higher.
+ * <p>
+ * <b>Asynchronous methods</b>
+ * <p>
+ * Asynchronous methods return a {@link CompletionStage} that can be used to
+ * chain further computation stages. Alternatively, a {@link java.util.concurrent.CompletableFuture}
+ * can be obtained via {@link CompletionStage#toCompletableFuture()} to wait
+ * for the operation to complete in a blocking way.
+ * <p>
+ * Actions supplied for dependent completions of default non-async methods and async methods
+ * without an explicit {@link java.util.concurrent.Executor} argument are performed
+ * by the {@link java.util.concurrent.ForkJoinPool#commonPool()} (unless it does not
+ * support a parallelism level of at least 2, in which case a new {@code Thread} is
+ * created per task).
  *
  * @param <E> The type of the elements that the Ringbuffer contains
  * @since 3.5
@@ -202,7 +215,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * <pre>{@code
      * long sleepMs = 100;
      * for (; ; ) {
-     *   long result = ringbuffer.addAsync(item, FAIL).get();
+     *   long result = ringbuffer.addAsync(item, FAIL).toCompletableFuture().get();
      *   if (result != -1) {
      *     break;
      *   }

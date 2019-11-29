@@ -167,8 +167,8 @@ public class ClientInvocationTest extends ClientTestSupport {
             // t is ExecutionException < HazelcastClientNotActiveException < RejectedExecutionException
             if (t.getCause() == null
                     || !(t.getCause().getCause() instanceof RejectedExecutionException)) {
-                System.out.println("Throwable was unexpected instance of " +
-                        (t.getCause() == null ? t.getClass() : t.getCause().getClass()));
+                System.out.println("Throwable was unexpected instance of "
+                        + (t.getCause() == null ? t.getClass() : t.getCause().getClass()));
                 throw rethrow(t);
             }
         });
