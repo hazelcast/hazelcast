@@ -169,7 +169,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManagerServiceImpl transactionManager;
-    private final Map<String, NearCacheManager> nearCacheManagers;
+    private final ConcurrentMap<String, NearCacheManager> nearCacheManagers;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
