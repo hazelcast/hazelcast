@@ -24,6 +24,7 @@ import com.hazelcast.map.MapPartitionLostEvent;
  * @see MapPartitionLostEvent
  * @since 3.5
  */
+@FunctionalInterface
 public interface MapPartitionLostListener extends MapListener {
 
     /**

@@ -33,6 +33,7 @@ import com.hazelcast.core.EntryEvent;
  *
  * @since 3.6
  */
+@FunctionalInterface
 public interface EntryExpiredListener<K, V> extends MapListener {
 
     /**
