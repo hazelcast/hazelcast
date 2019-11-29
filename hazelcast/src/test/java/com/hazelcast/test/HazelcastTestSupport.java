@@ -84,6 +84,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -158,6 +159,24 @@ public abstract class HazelcastTestSupport {
         LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
         String pmemDirectory = System.getProperty("hazelcast.persistent.memory");
         PERSISTENT_MEMORY_DIRECTORY =  pmemDirectory != null ? pmemDirectory : "/tmp/pmem";
+    }
+
+    protected static <T> boolean containsIn(T item1, Collection<T> collection, Comparator<T> comparator) {
+        for (T item2 : collection) {
+            if (comparator.compare(item1, item2) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
+        assertEquals(expected.size(), actual.size());
+        for (T item : expected) {
+            if (!containsIn(item, actual, comparator)) {
+                throw new AssertionError("Actual collection does not contain the item " + item);
+            }
+        }
     }
 
     @After
