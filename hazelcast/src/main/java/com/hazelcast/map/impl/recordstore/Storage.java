@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -56,8 +55,6 @@ public interface Storage<K, R> {
     void removeRecord(Data dataKey, @Nonnull R record);
 
     boolean containsKey(K key);
-
-    Collection<R> values();
 
     /**
      * Returned iterator from this method doesn't throw {@link
