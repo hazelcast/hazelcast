@@ -51,6 +51,7 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
+
     protected final int partitionId;
     protected final String name;
     protected final LockStore lockStore;

@@ -34,12 +34,10 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
@@ -346,11 +344,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         setExpirationTime(record);
     }
 
-    protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {
-        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
-                mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
-    }
-
     protected void mergeRecordExpiration(Record record, MapMergeTypes mergingEntry) {
         mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getMaxIdle(), mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
@@ -371,75 +364,5 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         setExpirationTime(record);
 
         markRecordStoreExpirable(record.getTtl(), record.getMaxIdle());
-    }
-
-    /**
-     * Read only iterator. Iterates by checking whether a record expired or not.
-     */
-    protected final class ReadOnlyRecordIterator implements Iterator<Map.Entry<Data, Record>> {
-        private final long now;
-        private final boolean checkExpiration;
-        private final boolean backup;
-        private final Iterator<Map.Entry<Data, Record>> iterator;
-        private Map.Entry<Data, Record> nextRecord;
-        private Map.Entry<Data, Record> lastReturned;
-
-        protected ReadOnlyRecordIterator(Collection<Map.Entry<Data, Record>> values,
-                                         long now, boolean backup) {
-            this(values, now, true, backup);
-        }
-
-        protected ReadOnlyRecordIterator(Collection<Map.Entry<Data, Record>> values) {
-            this(values, -1L, false, false);
-        }
-
-        private ReadOnlyRecordIterator(Collection<Map.Entry<Data, Record>> values,
-                                       long now, boolean checkExpiration, boolean backup) {
-            this.iterator = values.iterator();
-            this.now = now;
-            this.checkExpiration = checkExpiration;
-            this.backup = backup;
-            advance();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return nextRecord != null;
-        }
-
-        @Override
-        public Map.Entry<Data, Record> next() {
-            if (nextRecord == null) {
-                throw new NoSuchElementException();
-            }
-            lastReturned = nextRecord;
-            advance();
-            return lastReturned;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("remove() is not supported by this iterator");
-        }
-
-        private void advance() {
-            long now = this.now;
-            boolean checkExpiration = this.checkExpiration;
-            Iterator<Map.Entry<Data, Record>> iterator = this.iterator;
-
-            while (iterator.hasNext()) {
-                nextRecord = iterator.next();
-                if (nextRecord != null) {
-                    if (!checkExpiration) {
-                        return;
-                    }
-
-                    if (!isExpired(nextRecord.getValue(), now, backup)) {
-                        return;
-                    }
-                }
-            }
-            nextRecord = null;
-        }
     }
 }
