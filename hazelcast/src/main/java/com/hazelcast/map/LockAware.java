@@ -19,6 +19,7 @@ package com.hazelcast.map;
 /**
  * Determines if the object implementing this interface is locked or not.
  */
+@FunctionalInterface
 public interface LockAware {
 
     /**

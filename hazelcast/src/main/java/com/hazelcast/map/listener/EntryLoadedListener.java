@@ -31,6 +31,7 @@ import com.hazelcast.map.MapLoader;
  * @param <V> the type of value.
  * @since 3.11
  */
+@FunctionalInterface
 public interface EntryLoadedListener<K, V> extends MapListener {
 
     /**

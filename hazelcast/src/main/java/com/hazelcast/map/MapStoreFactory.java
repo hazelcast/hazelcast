@@ -26,6 +26,7 @@ import java.util.Properties;
  * @param <K> type of the MapStore key
  * @param <V> type of the MapStore value
  */
+@FunctionalInterface
 public interface MapStoreFactory<K, V> {
 
     /**

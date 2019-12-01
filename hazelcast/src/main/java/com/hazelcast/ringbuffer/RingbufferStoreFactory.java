@@ -23,6 +23,7 @@ import java.util.Properties;
  *
  * @param <T> type of the ringbuffer items
  */
+@FunctionalInterface
 public interface RingbufferStoreFactory<T> {
 
     RingbufferStore<T> newRingbufferStore(String name, Properties properties);

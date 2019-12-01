@@ -25,6 +25,7 @@ package com.hazelcast.spi.discovery.integration;
  *
  * @since 3.6
  */
+@FunctionalInterface
 public interface DiscoveryServiceProvider {
 
     /**

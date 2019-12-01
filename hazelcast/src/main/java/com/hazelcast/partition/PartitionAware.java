@@ -40,6 +40,7 @@ package com.hazelcast.partition;
  * @see com.hazelcast.core.DistributedObject
  * @param <T> key type
  */
+@FunctionalInterface
 public interface PartitionAware<T> {
 
     /**

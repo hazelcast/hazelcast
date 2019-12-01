@@ -24,6 +24,7 @@ import java.io.Serializable;
  *
  * @param <K> key type
  */
+@FunctionalInterface
 public interface PartitioningStrategy<K> extends Serializable {
 
     /**

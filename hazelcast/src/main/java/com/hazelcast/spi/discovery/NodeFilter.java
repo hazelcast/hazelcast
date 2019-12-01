@@ -31,6 +31,7 @@ package com.hazelcast.spi.discovery;
  *
  * @since 3.6
  */
+@FunctionalInterface
 public interface NodeFilter {
 
     /**
