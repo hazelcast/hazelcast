@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.event;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapContainer;
@@ -75,10 +76,12 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     protected final FilteringStrategy filteringStrategy;
     protected final InternalSerializationService serializationService;
     protected final QueryCacheEventPublisher queryCacheEventPublisher;
+    protected final ILogger logger;
 
     public MapEventPublisherImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.logger = nodeEngine.getLogger(MapEventPublisherImpl.class);
         this.partitionService = nodeEngine.getPartitionService();
         this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.eventService = nodeEngine.getEventService();
@@ -218,22 +221,35 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         int orderKey = pickOrderKey(dataKey);
 
         for (EventRegistration registration : registrations) {
-            EventFilter filter = registration.getFilter();
-            // a filtering strategy determines whether the event must be published on the specific
-            // event registration and may alter the type of event to be published
-            int eventTypeForPublishing = filteringStrategy.doFilter(filter, dataKey, oldValue, newValue, eventType, mapName);
-            if (eventTypeForPublishing == FILTER_DOES_NOT_MATCH) {
-                continue;
-            }
-
-            EntryEventData eventDataToBePublished = eventDataCache.getOrCreateEventData(mapName, caller, dataKey,
-                    newValue, oldValue, mergingValue, eventTypeForPublishing, isIncludeValue(filter));
-            eventService.publishEvent(SERVICE_NAME, registration, eventDataToBePublished, orderKey);
+            publishEventQuietly(caller, mapName, eventType, dataKey, oldValue, newValue,
+                    mergingValue, eventDataCache, orderKey, registration);
         }
 
         // if events were generated, execute the post-publish hook on each one
         if (!eventDataCache.isEmpty()) {
             postPublishEvent(eventDataCache.eventDataIncludingValues(), eventDataCache.eventDataExcludingValues());
+        }
+    }
+
+    @SuppressWarnings("checkstyle:parameternumber")
+    private void publishEventQuietly(Address caller, String mapName, EntryEventType eventType, Data dataKey, Object oldValue,
+                                     Object newValue, Object mergingValue, EntryEventDataCache eventDataCache, int orderKey,
+                                     EventRegistration registration) {
+        try {
+            EventFilter filter = registration.getFilter();
+            // a filtering strategy determines whether the event must be published on the specific
+            // event registration and may alter the type of event to be published
+            int eventTypeForPublishing = filteringStrategy.doFilter(filter, dataKey, oldValue, newValue, eventType, mapName);
+            if (eventTypeForPublishing == FILTER_DOES_NOT_MATCH) {
+                return;
+            }
+
+            EntryEventData eventDataToBePublished = eventDataCache
+                    .getOrCreateEventData(mapName, caller, dataKey, newValue, oldValue, mergingValue, eventTypeForPublishing,
+                            isIncludeValue(filter));
+            eventService.publishEvent(SERVICE_NAME, registration, eventDataToBePublished, orderKey);
+        } catch (Exception ex) {
+            logger.warning("Event publication error for registration: " + registration, ex);
         }
     }
 
